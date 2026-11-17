@@ -145,5 +145,22 @@ export function DropdownLabel({ children }: { children: ReactNode }) {
   return <DM.Label className={labelCls}>{children}</DM.Label>;
 }
 
+/** Untermenü im Dropdown (gleiche API wie `ContextSub`). */
+export function DropdownSub({ icon, label, children }: { icon?: ReactNode; label: ReactNode; children: ReactNode }) {
+  return (
+    <DM.Sub>
+      <DM.SubTrigger className={item}>
+        <ItemInner icon={icon}>{label}</ItemInner>
+        <ChevronRight size={14} className="text-dim" />
+      </DM.SubTrigger>
+      <DM.Portal>
+        <DM.SubContent className={panel} sideOffset={4} collisionPadding={8}>
+          {children}
+        </DM.SubContent>
+      </DM.Portal>
+    </DM.Sub>
+  );
+}
+
 /** Styles für eigene Menüs (z. B. Text-Kontextmenü). */
 export const menuStyles = { panel, item, sep, label: labelCls };

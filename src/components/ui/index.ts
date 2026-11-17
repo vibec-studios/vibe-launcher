@@ -9,4 +9,5 @@ export * from "./Controls";
 export * from "./Toast";
 export * from "./Confirm";
 export * from "./Spinner";
+export * from "./Settings";
 export { cn } from "./cn";
