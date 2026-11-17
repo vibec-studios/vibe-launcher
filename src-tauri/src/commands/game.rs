@@ -44,6 +44,11 @@ pub async fn instance_install(state: State<'_, AppState>, id: String, force: Opt
 #[tauri::command]
 pub async fn instance_launch(state: State<'_, AppState>, id: String, account_id: Option<String>) -> AppResult<String> {
     let inst = state.instances.get(&id)?;
+    // Ohne Account gar nicht erst installieren/laden – sofort verständlich melden.
+    let dev_offline = cfg!(debug_assertions) && std::env::var_os("VIBE_DEV_OFFLINE_ACCOUNT").is_some();
+    if state.auth.list().is_empty() && !dev_offline {
+        return Err(AppError::NotConfigured("Kein Account – bitte unter Accounts mit Microsoft anmelden".into()));
+    }
     state.game.begin(&id)?;
     let st = state.inner().clone();
     let iid = id.clone();
