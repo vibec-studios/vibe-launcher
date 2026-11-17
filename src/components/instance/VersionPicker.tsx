@@ -101,7 +101,7 @@ export function VersionPicker({
       if (pick !== value.loaderVersion) onChange({ ...value, loaderVersion: pick });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaderVersions.data, value.loader, value.mc]);
+  }, [loaderVersions.data, value.loader, value.mc, value.loaderVersion]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const v = useVirtualizer({ count: list.length, getScrollElement: () => scrollRef.current, estimateSize: () => 34, overscan: 8 });
@@ -128,7 +128,7 @@ export function VersionPicker({
       <span className="label">{t("newinst.loader")}</span>
       <Segmented
         value={value.loader}
-        onChange={(loader) => onChange({ ...value, loader, loaderVersion: null })}
+        onChange={(loader) => loader !== value.loader && onChange({ ...value, loader, loaderVersion: null })}
         items={LOADERS.map((l) => ({
           value: l,
           label: (
@@ -177,7 +177,7 @@ export function VersionPicker({
                   type="button"
                   role="option"
                   aria-selected={active}
-                  onClick={() => onChange({ ...value, mc: ver.id, loaderVersion: null })}
+                  onClick={() => ver.id !== value.mc && onChange({ ...value, mc: ver.id, loaderVersion: null })}
                   className={cn(
                     "absolute left-0 top-0 flex h-[34px] w-full items-center gap-3 px-3 text-left text-[13px] transition-colors duration-100",
                     active ? "bg-accent/15 text-white shadow-[inset_2px_0_0_var(--accent)]" : "text-text hover:bg-white/[.04]",
