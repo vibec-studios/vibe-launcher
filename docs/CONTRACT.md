@@ -64,7 +64,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Kern | instances_list, instance_get, instance_create, instance_update, instance_delete, instance_duplicate, instance_set_icon, instance_open_folder, settings_get, settings_set, tasks_list, task_cancel, tasks_clear, system_info, open_path, open_data_dir |
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
-| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss |
+| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external |
 
 ### Wichtige Abläufe
 
@@ -96,6 +96,27 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   unbekannte Hashes), fehlende Downloads in `instances/<id>/missing.json`, Icons unter `cache/icons/`.
 - Eigenes Modpack-Format `.vlpack`: siehe `docs/VLPACK.md`.
 - Export als Prism/MultiMC wird nicht angeboten (Import schon).
+
+### Import aus anderen Launchern
+
+- `launchers_detect()` -> `ExternalLauncher[]`: Modrinth App (`%APPDATA%\ModrinthApp` bzw. `com.modrinth.theseus`),
+  Prism (`%APPDATA%\PrismLauncher`, `InstanceDir`/`IconsDir` aus `prismlauncher.cfg`), CurseForge
+  (`%USERPROFILE%\curseforge\minecraft\Instances`), ATLauncher (`%APPDATA%\ATLauncher\instances`). Schnell: keine
+  Hashes, Mod-Anzahl per Verzeichnis-Listing, `size` bleibt `null`.
+- `launcher_scan_dir(path)` -> `ExternalLauncher` für einen gewählten Ordner: Launcher-Wurzel, Instanzen-Ordner,
+  einzelne Instanz (Marker `app.db`, `prismlauncher.cfg`/`multimc.cfg`, `instance.cfg`, `minecraftinstance.json`,
+  `instance.json`) oder beliebiger Spielordner (`id: "folder"`; Version/Loader aus den Mods geschätzt + `warning`).
+- `import_external(source, sourcePath, name?, mcVersion?, loader?)` -> Task-ID (eine Aufgabe je Instanz): legt die
+  Instanz an (`task.set_instance`), **kopiert** den Spielordner (Original wird nie verändert), übernimmt Icon,
+  Spielzeit, zuletzt gespielt, Prism-Speicher/JVM-Argumente; `instance.source` = Herkunft (Modrinth-/CF-Modpack-ID,
+  falls bekannt). Das Spiel wird nicht installiert (Frontend ruft danach `instanceInstall`). Fehler/Abbruch entfernt
+  die halbe Instanz. `mcVersion`/`loader` überschreiben erkannte Werte (nötig, wenn `mc_version` leer ist).
+- Modrinth App: `app.db` (SQLite, WAL) wird samt `-wal`/`-shm` nach `cache/tmp/modrinth-db-*` kopiert, gelesen wird
+  nur die Kopie. Neues Schema (`instances` + `instance_content_sets` + `instance_links`), älteres (`profiles`) und
+  sehr alte `profile.json` werden unterstützt; Profile ohne Metadaten -> Schätzung + `warning`. `settings.custom_dir`
+  wird beachtet.
+- Bereits importiert: `instances/<id>/external.json` merkt den Quellpfad -> `ExternalInstance.imported_as`.
+- Frontend: `openImport(null, "launcher")` öffnet den Import-Dialog direkt im Launcher-Modus.
 - **Start** (`instance_launch`): installiert bei Bedarf, holt Zugangsdaten über `state.auth.launch_account(...)`,
   startet den Prozess, sendet `game://state` + `game://log`.
 - **Accounts**: nur Microsoft (`AccountKind = "microsoft"`, keine Offline-Accounts). Login: `auth_msa_begin` -> Code

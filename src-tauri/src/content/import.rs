@@ -255,6 +255,60 @@ struct MmcComponent {
     cached_version: Option<String>,
 }
 
+/// Ausgewertete Prism-/MultiMC-Instanz (`instance.cfg` + `mmc-pack.json`).
+#[derive(Debug, Clone)]
+pub struct PrismInfo {
+    pub format: PackFormat,
+    pub name: Option<String>,
+    pub mc_version: String,
+    pub loader: Loader,
+    pub settings: PrismSettings,
+    /// Icon-Schlüssel (`iconKey`), ohne eingebaute Standard-Icons
+    pub icon_key: Option<String>,
+    /// Zuletzt gestartet (ms)
+    pub last_launch: Option<i64>,
+    /// Gesamtspielzeit (s)
+    pub total_time: Option<u64>,
+}
+
+pub fn prism_info(cfg_text: &str, mmc_pack: Option<&[u8]>) -> PrismInfo {
+    let cfg = parse_ini(cfg_text);
+    let pack: Option<MmcPack> = mmc_pack.and_then(|b| serde_json::from_slice(b.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(b)).ok());
+    let mut mc = cfg.get("IntendedVersion").cloned().unwrap_or_default();
+    let mut loader = Loader { kind: LoaderKind::Vanilla, version: None };
+    if let Some(p) = &pack {
+        for c in &p.components {
+            let v = c.version.clone().or(c.cached_version.clone());
+            match c.uid.as_str() {
+                "net.minecraft" => mc = v.unwrap_or_default(),
+                "net.fabricmc.fabric-loader" => loader = Loader { kind: LoaderKind::Fabric, version: v },
+                "org.quiltmc.quilt-loader" => loader = Loader { kind: LoaderKind::Quilt, version: v },
+                "net.minecraftforge" => loader = Loader { kind: LoaderKind::Forge, version: v },
+                "net.neoforged" => loader = Loader { kind: LoaderKind::Neoforge, version: v },
+                _ => {}
+            }
+        }
+    }
+    let mem = |k: &str| cfg.get(k).and_then(|v| v.parse::<u32>().ok());
+    let override_mem = cfg.get("OverrideMemory").is_some_and(|v| v == "true");
+    let override_args = cfg.get("OverrideJavaArgs").is_some_and(|v| v == "true");
+    PrismInfo {
+        format: if cfg_text.contains("[General]") { PackFormat::Prism } else { PackFormat::Multimc },
+        name: cfg.get("name").cloned().filter(|n| !n.is_empty()),
+        mc_version: mc,
+        loader,
+        settings: PrismSettings {
+            min_memory_mb: if override_mem { mem("MinMemAlloc") } else { None },
+            max_memory_mb: if override_mem { mem("MaxMemAlloc") } else { None },
+            jvm_args: if override_args { cfg.get("JvmArgs").cloned().filter(|s| !s.is_empty()) } else { None },
+            notes: cfg.get("notes").cloned().filter(|s| !s.is_empty()),
+        },
+        icon_key: cfg.get("iconKey").cloned().filter(|k| !k.is_empty() && k != "default"),
+        last_launch: cfg.get("lastLaunchTime").and_then(|v| v.parse::<i64>().ok()).filter(|v| *v > 0),
+        total_time: cfg.get("totalTimePlayed").and_then(|v| v.parse::<u64>().ok()),
+    }
+}
+
 fn read_zip_file<R: std::io::Read + std::io::Seek>(zip: &mut zip::ZipArchive<R>, name: &str) -> Option<Vec<u8>> {
     let mut f = zip.by_name(name).ok()?;
     if f.size() > 64 * 1024 * 1024 {
@@ -373,55 +427,30 @@ pub fn analyze(path: &Path) -> AppResult<PackPlan> {
     if let Some(cfg_name) = cfg_name {
         let root = cfg_name.strip_suffix("instance.cfg").unwrap_or("").to_string();
         let cfg_text = String::from_utf8_lossy(&read_zip_file(&mut zip, &cfg_name).unwrap_or_default()).to_string();
-        let cfg = parse_ini(&cfg_text);
-        let pack: Option<MmcPack> = read_zip_file(&mut zip, &format!("{root}mmc-pack.json")).and_then(|b| serde_json::from_slice(&b).ok());
-        let mut mc = cfg.get("IntendedVersion").cloned().unwrap_or_default();
-        let mut loader = Loader { kind: LoaderKind::Vanilla, version: None };
-        if let Some(p) = &pack {
-            for c in &p.components {
-                let v = c.version.clone().or(c.cached_version.clone());
-                match c.uid.as_str() {
-                    "net.minecraft" => mc = v.unwrap_or_default(),
-                    "net.fabricmc.fabric-loader" => loader = Loader { kind: LoaderKind::Fabric, version: v },
-                    "org.quiltmc.quilt-loader" => loader = Loader { kind: LoaderKind::Quilt, version: v },
-                    "net.minecraftforge" => loader = Loader { kind: LoaderKind::Forge, version: v },
-                    "net.neoforged" => loader = Loader { kind: LoaderKind::Neoforge, version: v },
-                    _ => {}
-                }
-            }
-        }
-        if mc.is_empty() {
+        let pack = read_zip_file(&mut zip, &format!("{root}mmc-pack.json"));
+        let info = prism_info(&cfg_text, pack.as_deref());
+        if info.mc_version.is_empty() {
             return Err(AppError::Invalid("Prism/MultiMC-Export ohne Minecraft-Version (mmc-pack.json fehlt)".into()));
         }
         let game = [".minecraft/", "minecraft/"].iter().map(|g| format!("{root}{g}")).find(|g| names.iter().any(|n| n.starts_with(g.as_str())));
         let embedded_mods = game.as_ref().map(|g| names.iter().filter(|n| n.starts_with(&format!("{g}mods/")) && n.ends_with(".jar")).count() as u32).unwrap_or(0);
-        let icon = cfg
-            .get("iconKey")
-            .filter(|k| !k.is_empty() && k.as_str() != "default")
+        let icon = info
+            .icon_key
+            .as_ref()
             .and_then(|k| read_zip_file(&mut zip, &format!("{root}{k}.png")))
             .filter(|b| super::meta::image_mime(b).is_some());
-        let mem = |k: &str| cfg.get(k).and_then(|v| v.parse::<u32>().ok());
-        let override_mem = cfg.get("OverrideMemory").is_some_and(|v| v == "true");
-        let override_args = cfg.get("OverrideJavaArgs").is_some_and(|v| v == "true");
-        let settings = PrismSettings {
-            min_memory_mb: if override_mem { mem("MinMemAlloc") } else { None },
-            max_memory_mb: if override_mem { mem("MaxMemAlloc") } else { None },
-            jvm_args: if override_args { cfg.get("JvmArgs").cloned().filter(|s| !s.is_empty()) } else { None },
-            notes: cfg.get("notes").cloned().filter(|s| !s.is_empty()),
-        };
-        let format = if cfg_text.contains("[General]") { PackFormat::Prism } else { PackFormat::Multimc };
         return Ok(PackPlan {
-            format,
-            name: cfg.get("name").cloned().filter(|n| !n.is_empty()).unwrap_or(stem),
+            format: info.format,
+            name: info.name.unwrap_or(stem),
             version_name: None,
             author: None,
-            mc_version: mc,
-            loader,
+            mc_version: info.mc_version,
+            loader: info.loader,
             icon,
             overrides: game.into_iter().collect(),
             files: vec![],
             cf_files: vec![],
-            prism: Some(settings),
+            prism: Some(info.settings),
             embedded_mods,
         });
     }
@@ -576,7 +605,7 @@ async fn resolve_cf(state: &AppState, refs: &[CfRef]) -> AppResult<ResolvedCf> {
     Ok(out)
 }
 
-async fn set_icon_bytes(state: &AppState, instance_id: &str, bytes: &[u8]) -> AppResult<()> {
+pub(crate) async fn set_icon_bytes(state: &AppState, instance_id: &str, bytes: &[u8]) -> AppResult<()> {
     let ext = match super::meta::image_mime(bytes) {
         Some("image/png") => "png",
         Some("image/jpeg") => "jpg",

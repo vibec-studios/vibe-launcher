@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, FileArchive, FolderInput, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
-import { Button, Dialog, Field, Input, Progress, Skeleton } from "@/components/ui";
+import { Button, Dialog, Field, Input, Progress, Segmented, Skeleton } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatLoader } from "@/lib/format";
@@ -14,16 +14,20 @@ import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { Pill } from "@/components/content/Pill";
 import { baseName } from "@/components/content/util";
 import { finishNewInstance } from "@/components/content/install";
+import { useExternalImport } from "./ExternalImport";
 
+export type ImportMode = "file" | "launcher";
 interface ImportState {
   open: boolean;
   path: string | null;
+  /** "file" = Modpack-Datei, "launcher" = aus anderem Launcher übernehmen */
+  mode: ImportMode;
 }
-export const useImportDialog = create<ImportState>(() => ({ open: false, path: null }));
+export const useImportDialog = create<ImportState>(() => ({ open: false, path: null, mode: "file" }));
 
-/** Import-Dialog öffnen, optional direkt mit einer Datei. */
-export function openImport(path: string | null = null) {
-  useImportDialog.setState({ open: true, path });
+/** Import-Dialog öffnen, optional direkt mit einer Datei oder im Launcher-Modus. */
+export function openImport(path: string | null = null, mode?: ImportMode) {
+  useImportDialog.setState((s) => ({ open: true, path, mode: path ? "file" : (mode ?? s.mode) }));
 }
 
 export const PACK_EXTENSIONS = ["mrpack", "zip", "vlpack"];
@@ -44,7 +48,7 @@ export async function pickPackFile(title: string, filterName: string): Promise<s
 
 export function ImportDialog() {
   const t = useT();
-  const { open, path } = useImportDialog();
+  const { open, path, mode } = useImportDialog();
   const [taskId, setTaskId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [startError, setStartError] = useState<string | null>(null);
@@ -112,6 +116,34 @@ export function ImportDialog() {
   };
 
   const p = preview.data;
+  const external = useExternalImport(open && mode === "launcher", close);
+  const modeSwitch = !running && !(path && mode === "file") && !(mode === "launcher" && external.progressView) && (
+    <Segmented<ImportMode>
+      className="mb-4"
+      value={mode}
+      onChange={(m) => useImportDialog.setState({ mode: m })}
+      items={[
+        { value: "file", label: t("import.mode.file") },
+        { value: "launcher", label: t("import.mode.launcher") },
+      ]}
+    />
+  );
+
+  if (mode === "launcher") {
+    return (
+      <Dialog
+        open={open}
+        onOpenChange={(o) => !o && close()}
+        title={t("import.title_any")}
+        description={t("import.description_launcher")}
+        size="lg"
+        footer={external.footer}
+      >
+        {modeSwitch}
+        {external.body}
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog
@@ -142,6 +174,7 @@ export function ImportDialog() {
         )
       }
     >
+      {modeSwitch}
       {!path ? (
         <button
           onClick={choose}

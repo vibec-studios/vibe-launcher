@@ -92,4 +92,9 @@ export const api = {
   exportInstance: (instanceId: string, options: T.ExportOptions) => call<string>("export_instance", { instanceId, options }),
   contentMissing: (instanceId: string) => call<T.MissingDownload[]>("content_missing", { instanceId }),
   contentMissingDismiss: (instanceId: string) => call<void>("content_missing_dismiss", { instanceId }),
+  launchersDetect: () => call<T.ExternalLauncher[]>("launchers_detect"),
+  launcherScanDir: (path: string) => call<T.ExternalLauncher>("launcher_scan_dir", { path }),
+  /** Gibt Task-ID zurück; mcVersion/loader überschreiben erkannte Werte. */
+  importExternal: (source: T.LauncherKind, sourcePath: string, name?: string | null, mcVersion?: string | null, loader?: T.Loader | null) =>
+    call<string>("import_external", { source, sourcePath, name: name ?? null, mcVersion: mcVersion ?? null, loader: loader ?? null }),
 };

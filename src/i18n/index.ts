@@ -8,12 +8,13 @@ import discover from "./discover";
 import accounts from "./accounts";
 import settings from "./settings";
 import logs from "./logs";
+import external from "./external";
 
 export type Lang = "de" | "en";
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external];
 const dicts: Record<Lang, Dict> = { de: {}, en: {} };
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);

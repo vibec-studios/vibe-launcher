@@ -392,3 +392,33 @@ export interface MissingDownload {
   page_url: string;
   kind: ContentKind;
 }
+
+// ------------------------------------------------------------------ Import aus anderen Launchern
+
+/** folder = beliebiger Spielordner (nur über launcherScanDir) */
+export type LauncherKind = "modrinth" | "prism" | "multimc" | "curseforge" | "atlauncher" | "folder";
+
+export interface ExternalInstance {
+  /** Instanzordner im fremden Launcher (Kennung für importExternal) */
+  source_path: string;
+  name: string;
+  /** leer = unbekannt (dann warning gesetzt) */
+  mc_version: string;
+  loader: Loader;
+  /** data:-URL */
+  icon: string | null;
+  mod_count: number;
+  last_played: number | null;
+  play_time_secs: number | null;
+  size: number | null;
+  warning: string | null;
+  /** Vibe-Instanz-ID, falls schon importiert */
+  imported_as: string | null;
+}
+
+export interface ExternalLauncher {
+  id: LauncherKind;
+  name: string;
+  path: string;
+  instances: ExternalInstance[];
+}
