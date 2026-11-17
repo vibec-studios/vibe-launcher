@@ -1,0 +1,33 @@
+name: Runner wählen
+
+# Wiederverwendbar: liefert den Windows-Runner für Builds.
+# Blacksmith nur solange das Freikontingent reicht, sonst kostenloser GitHub-Runner (siehe scripts/pick-runner.mjs).
+# Fest überschreiben: Repo-Variable WINDOWS_RUNNER (z. B. "windows-latest").
+on:
+  workflow_call:
+    outputs:
+      runner:
+        description: Runner-Label
+        value: ${{ jobs.pick.outputs.runner }}
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  pick:
+    name: Runner wählen
+    # Kostenlos für öffentliche Repos
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      runner: ${{ steps.pick.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+      - id: pick
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_RUNNER: ${{ vars.WINDOWS_RUNNER }}
+        run: node scripts/pick-runner.mjs

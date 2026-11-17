@@ -11,15 +11,20 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  runner:
+    uses: ./.github/workflows/pick-runner.yml
+
   release:
+    needs: runner
     name: Windows-Release
-    runs-on: blacksmith-4vcpu-windows-2025
+    runs-on: ${{ needs.runner.outputs.runner }}
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4

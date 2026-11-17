@@ -36,10 +36,16 @@ git push origin main v1.1.0
 Der Workflow „Release“ baut, signiert und veröffentlicht das GitHub-Release (mit `latest.json`). Ab dann bieten alle
 Launcher im Release-Kanal das Update an.
 
-## Runner
+## Runner (kostet nie etwas)
 
-Alle Workflows laufen auf **Blacksmith** (`blacksmith-4vcpu-windows-2025`, GitHub-App ist für die Org installiert),
-solange das Freikontingent reicht. Zurück auf GitHub-Runner: `runs-on: windows-latest` in den drei Workflows.
+Jeder Workflow fragt zuerst `.github/workflows/pick-runner.yml` (läuft auf dem kostenlosen `ubuntu-latest`):
+
+- `scripts/pick-runner.mjs` zählt den **Blacksmith-Verbrauch der Org im laufenden Monat** über die GitHub-API
+  (so wie Blacksmith abrechnet: in 2-vCPU-x64-Minuten, Windows ×2, 4 vCPU ×2 → 1 Build-Minute = 4 Freiminuten).
+- Unter **2.600 von 3.000** Freiminuten → `blacksmith-4vcpu-windows-2025`, sonst **`windows-latest`**
+  (GitHub-Runner sind für öffentliche Repos kostenlos). Ist der Verbrauch nicht ermittelbar → ebenfalls `windows-latest`.
+- Erzwingen: Repo-Variable **`WINDOWS_RUNNER`** setzen (z. B. `windows-latest`), löschen = wieder automatisch.
+- Harte Garantie zusätzlich: **keine Zahlungsmethode im Blacksmith-Dashboard hinterlegen.**
 
 ## Caching in Actions
 

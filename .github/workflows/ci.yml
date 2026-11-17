@@ -8,14 +8,22 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  runner:
+    uses: ./.github/workflows/pick-runner.yml
+
   check:
+    needs: runner
     name: Typecheck, Build, Tests
-    runs-on: blacksmith-4vcpu-windows-2025
+    runs-on: ${{ needs.runner.outputs.runner }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4

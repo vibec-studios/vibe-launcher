@@ -24,6 +24,8 @@ runs:
         workspaces: src-tauri -> target
         shared-key: ${{ inputs.cache-key }}
         save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
+        # Auch bei Fehlschlag speichern – sonst kostet ein Fehler im letzten Schritt wieder den vollen Build
+        cache-on-failure: true
 
     # NSIS + Signier-Tools, die die Tauri-CLI beim ersten Bundle herunterlädt
     - uses: actions/cache@v4
