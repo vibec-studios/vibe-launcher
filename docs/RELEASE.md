@@ -36,8 +36,13 @@ git push origin main v1.1.0
 Der Workflow „Release“ baut, signiert und veröffentlicht das GitHub-Release (mit `latest.json`). Ab dann bieten alle
 Launcher im Release-Kanal das Update an.
 
+## Runner
+
+Alle Workflows laufen auf **Blacksmith** (`blacksmith-4vcpu-windows-2025`, GitHub-App ist für die Org installiert),
+solange das Freikontingent reicht. Zurück auf GitHub-Runner: `runs-on: windows-latest` in den drei Workflows.
+
 ## Caching in Actions
 
-`.github/actions/setup` richtet ein: pnpm-Store (setup-node), Cargo-Registry + `target/` (Swatinem/rust-cache, getrennte
+`.github/actions/setup` richtet ein (auf Blacksmith automatisch über deren schnellen Cache): pnpm-Store (setup-node), Cargo-Registry + `target/` (Swatinem/rust-cache, getrennte
 Schlüssel für Debug/CI und Release; gespeichert nur auf `main`/Tags), Tauri-Bundler-Tools (NSIS) unter
 `%LOCALAPPDATA%\tauri`.

@@ -19,7 +19,7 @@ concurrency:
 jobs:
   release:
     name: Windows-Release
-    runs-on: windows-latest
+    runs-on: blacksmith-4vcpu-windows-2025
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4

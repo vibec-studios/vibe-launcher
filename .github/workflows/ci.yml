@@ -15,7 +15,7 @@ concurrency:
 jobs:
   check:
     name: Typecheck, Build, Tests
-    runs-on: windows-latest
+    runs-on: blacksmith-4vcpu-windows-2025
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
