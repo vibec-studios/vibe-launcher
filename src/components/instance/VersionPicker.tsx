@@ -186,8 +186,8 @@ export function VersionPicker({
                 >
                   <span className="w-4 text-accent">{active && <Check size={14} />}</span>
                   <span className="flex-1 font-mono">{ver.id}</span>
-                  {ver.kind !== "release" && <span className="font-mono text-[10px] uppercase tracking-[.08em] text-warn">{kindLabel(ver.kind, t)}</span>}
-                  <span className="w-[84px] text-right font-mono text-[11px] text-dim">{ver.release_time.slice(0, 10)}</span>
+                  {ver.kind !== "release" && <span className="text-[11px] font-medium text-warn">{kindLabel(ver.kind, t)}</span>}
+                  <span className="w-[84px] text-right text-[12px] tabular-nums text-dim">{ver.release_time.slice(0, 10)}</span>
                 </button>
               );
             })}

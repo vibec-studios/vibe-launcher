@@ -305,7 +305,7 @@ function LogViewer({
           className={cn("scroll h-full bg-[#030305] py-2 outline-none", "focus-visible:shadow-[inset_0_0_0_1px_var(--accent)]")}
         >
           {lines.length === 0 ? (
-            <div className="grid h-full place-items-center px-6 text-center font-mono text-[12px] text-dim">{emptyText}</div>
+            <div className="grid h-full place-items-center px-6 text-center text-[13px] text-dim">{emptyText}</div>
           ) : (
             <div ref={innerRef} className="selectable relative w-full" style={{ height: total }}>
               {v.getVirtualItems().map((row) => (
@@ -326,7 +326,7 @@ function LogViewer({
       {!follow && lines.length > 0 && (
         <button
           onClick={jumpDown}
-          className="absolute bottom-4 right-6 flex h-9 items-center gap-2 border border-accent/60 bg-black/90 px-3.5 font-mono text-[11px] uppercase tracking-[.1em] text-white shadow-[0_8px_24px_rgba(0,0,0,.6)] transition-colors duration-150 animate-pop-in hover:bg-accent hover:text-[var(--on-accent)]"
+          className="absolute bottom-4 right-6 flex h-9 items-center gap-2 border border-line2 bg-surface3 px-3.5 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,.6)] transition-colors duration-150 animate-pop-in hover:bg-accent hover:text-[var(--on-accent)]"
         >
           <ArrowDown size={13} />
           {t("logs.jump_bottom")}
@@ -561,7 +561,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
               onClick={() => toggleCat(c)}
               aria-pressed={cats.includes(c)}
               className={cn(
-                "flex h-6 items-center gap-1.5 border px-2 font-mono text-[10.5px] uppercase tracking-[.06em] transition-colors duration-100",
+                "flex h-7 items-center gap-1.5 border px-2.5 text-[12px] font-medium transition-colors duration-100",
                 cats.includes(c) ? "border-line2 bg-white/[.04] text-white" : "border-transparent text-dim line-through decoration-dim/60 hover:text-muted",
               )}
             >
@@ -576,7 +576,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
             </button>
           ))}
           <div className="flex-1" />
-          <span className="flex items-center gap-2 font-mono text-[11px] text-dim">
+          <span className="flex items-center gap-2 text-[12px] text-dim">
             {!isFile && running && (
               <span className="flex items-center gap-1.5 text-ok">
                 <span className="h-1.5 w-1.5 animate-pulse bg-ok" />

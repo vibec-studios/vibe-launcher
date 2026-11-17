@@ -1,13 +1,13 @@
-// OWNER: Frontend-Agent A. Instanzseite: Kopf im Stil von .mod-hero in der Instanz-Akzentfarbe, großer
-// Spielen-Knopf, Tabs (Mods, Resourcepacks, Shader, Welten, Logs, Einstellungen), Crash-Banner.
+// OWNER: Frontend-Agent A. Instanzseite: kompakter Kopf (Icon, Name, Metazeile, Spielen/Ordner/Mehr),
+// Tabs (Mods, Resourcepacks, Shader, Welten, Logs, Einstellungen), Crash-Banner.
 import { useEffect, useState } from "react";
-import { Link, getRouteApi, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, FileText, FolderOpen, MoreHorizontal, UploadCloud, X } from "lucide-react";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { AlertTriangle, FileText, FolderOpen, MoreHorizontal, UploadCloud, X } from "lucide-react";
 import { useGameState, useInstance } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import type { InstanceTab } from "@/app/router";
-import { formatDuration, formatRelative, instanceAccent, loaderColors, loaderNames } from "@/lib/format";
-import { Button, DropdownMenu, ErrorState, IconButton, Skeleton, Tabs, Tag, Tooltip, cn } from "@/components/ui";
+import { formatDuration, formatRelative, instanceAccent, loaderNames } from "@/lib/format";
+import { Button, DropdownMenu, ErrorState, IconButton, Skeleton, Tabs, Tooltip, cn } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { StatusHint } from "@/components/instance/InstanceCard";
 import { InstanceDropdownContent } from "@/components/instance/InstanceMenu";
@@ -21,7 +21,7 @@ import { InstanceSettingsTab } from "./InstanceSettingsTab";
 import { accentVars } from "@/components/instance/accent";
 
 const route = getRouteApi("/instances/$id");
-const wrap = "mx-auto w-full max-w-[1320px] px-8";
+const wrap = "w-full px-6";
 
 function CrashBanner({ instance }: { instance: Instance }) {
   const t = useT();
@@ -33,7 +33,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
   if (!key || dismissed === key) return null;
   return (
     <div className="shrink-0 border-b border-danger/30 bg-danger/[.08] animate-fade-in">
-      <div className={cn(wrap, "flex items-center gap-4 py-3")}>
+      <div className={cn(wrap, "flex items-center gap-3 py-2.5")}>
         <AlertTriangle size={18} className="shrink-0 text-danger" />
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-semibold text-white">{t("inst.crash.title")}</div>
@@ -76,29 +76,51 @@ function CrashBanner({ instance }: { instance: Instance }) {
 function HeaderSkeleton() {
   return (
     <header className="shrink-0 border-b border-line">
-      <div className={cn(wrap, "flex items-center gap-5 pb-5 pt-5")}>
-        <Skeleton className="h-[76px] w-[76px]" />
-        <div className="flex flex-1 flex-col gap-2.5">
-          <Skeleton className="h-3 w-28" />
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-4 w-52" />
+      <div className={cn(wrap, "flex items-center gap-4 pb-3 pt-5")}>
+        <Skeleton className="h-16 w-16" />
+        <div className="flex flex-1 flex-col gap-2">
+          <Skeleton className="h-6 w-64" />
+          <Skeleton className="h-4 w-80" />
         </div>
-        <Skeleton className="h-[52px] w-[220px]" />
+        <Skeleton className="h-10 w-[136px]" />
       </div>
-      <div className={cn(wrap, "flex h-12 items-center gap-6")}>
+      <div className={cn(wrap, "flex h-11 items-center gap-6")}>
         {Array.from({ length: 6 }, (_, i) => (
-          <Skeleton key={i} className="h-3 w-20" />
+          <Skeleton key={i} className="h-3.5 w-16" />
         ))}
       </div>
     </header>
   );
 }
 
-function Meta({ label, children }: { label: string; children: React.ReactNode }) {
+/** Metazeile: „Fabric 0.16.9 · Minecraft 1.21.4 · 12 h gespielt · Modpack …“ */
+function MetaLine({ instance: i }: { instance: Instance }) {
+  const t = useT();
+  const src = i.source;
+  const parts: React.ReactNode[] = [
+    i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]}${i.loader.version ? ` ${i.loader.version}` : ""}`,
+    `Minecraft ${i.mc_version}`,
+  ];
+  if (i.play_time_secs >= 60) parts.push(t("inst.meta.played", { time: formatDuration(i.play_time_secs) }));
+  parts.push(i.last_played ? t("inst.meta.last", { when: formatRelative(i.last_played) }) : t("inst.never_played"));
+  if (src) parts.push(`${t("inst.modpack")}: ${src.name ?? src.kind}${src.version_name ? ` ${src.version_name}` : ""}`);
   return (
-    <span className="flex items-baseline gap-1.5 whitespace-nowrap">
-      <span className="text-dim">{label}</span>
-      <span className="text-muted">{children}</span>
+    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted">
+      {parts.map((p, n) => (
+        <span key={n} className="flex items-center gap-2 whitespace-nowrap">
+          {n > 0 && <span className="text-dim">·</span>}
+          {p}
+        </span>
+      ))}
+      <StatusHintInline instance={i} />
+    </div>
+  );
+}
+
+function StatusHintInline({ instance }: { instance: Instance }) {
+  return (
+    <span className="flex items-center gap-2 whitespace-nowrap before:text-dim before:content-['·'] empty:hidden">
+      <StatusHint instance={instance} />
     </span>
   );
 }
@@ -127,80 +149,45 @@ export function InstancePage() {
   }
 
   const accent = instanceAccent(inst.id, inst.accent);
-  const src = inst.source;
 
   return (
     <div className="flex h-full flex-col" style={accentVars(accent)}>
-      <header
-        className="relative shrink-0 border-b border-line"
-        style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${accent} 20%, #000) 0%, #000 100%)` }}
-      >
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-50"
-          style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
-        />
-        <div className={cn(wrap, "flex items-center gap-5 pb-4 pt-5")}>
+      <header className="shrink-0 border-b border-line bg-panel">
+        <div className={cn(wrap, "flex items-center gap-4 pb-3 pt-5")}>
           <Tooltip content={t("inst.icon.choose")}>
-            <button
-              onClick={() => setIcon(inst)}
-              className="shrink-0 transition-transform duration-150 hover:-translate-y-px"
-              aria-label={t("inst.icon.choose")}
-            >
-              <InstanceIcon icon={inst.icon} accent={accent} size={76} className="border-line2" />
+            <button onClick={() => setIcon(inst)} className="shrink-0" aria-label={t("inst.icon.choose")}>
+              <InstanceIcon icon={inst.icon} accent={accent} size={64} />
             </button>
           </Tooltip>
           <div className="min-w-0 flex-1">
-            <div className="mb-1.5 flex items-center gap-2">
-              <Link to="/instances" className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-[.12em] text-dim hover:text-white">
-                <ArrowLeft size={12} />
-                {t("nav.instances")}
-              </Link>
-              <span className="text-dim">/</span>
-              <span className="eyebrow truncate">
-                {src ? `${t("inst.modpack")} · ${src.name ?? src.kind}${src.version_name ? ` ${src.version_name}` : ""}` : t("inst.instance")}
-              </span>
-            </div>
-            <h1 className="display truncate text-[30px]" title={inst.name}>
+            <h1 className="display truncate text-[22px]" title={inst.name}>
               {inst.name}
             </h1>
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 font-mono text-[11px]">
-              <span className="flex items-center gap-1.5">
-                <Tag>{inst.mc_version}</Tag>
-                <Tag color={loaderColors[inst.loader.kind]}>
-                  {loaderNames[inst.loader.kind]}
-                  {inst.loader.version && <span className="normal-case opacity-80">{inst.loader.version}</span>}
-                </Tag>
-              </span>
-              <Meta label={t("inst.play_time")}>{inst.play_time_secs > 0 ? formatDuration(inst.play_time_secs) : "–"}</Meta>
-              <Meta label={t("inst.last_played")}>{inst.last_played ? formatRelative(inst.last_played) : t("inst.never_played")}</Meta>
-              <span className="uppercase tracking-[.06em]">
-                <StatusHint instance={inst} />
-              </span>
-            </div>
+            <MetaLine instance={inst} />
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <PlayButton instance={inst} size="md" />
             <Tooltip content={t("common.open_folder")}>
-              <IconButton label={t("common.open_folder")} className="h-[52px] w-[52px]" onClick={() => openFolder(inst)}>
-                <FolderOpen size={18} />
+              <IconButton label={t("common.open_folder")} className="h-10 w-10" onClick={() => openFolder(inst)}>
+                <FolderOpen size={17} />
               </IconButton>
             </Tooltip>
             <DropdownMenu
               trigger={
-                <IconButton label={t("common.more")} className="h-[52px] w-[52px] data-[state=open]:border-white">
-                  <MoreHorizontal size={18} />
+                <IconButton label={t("common.more")} className="h-10 w-10 data-[state=open]:bg-surface3 data-[state=open]:text-white">
+                  <MoreHorizontal size={17} />
                 </IconButton>
               }
             >
               <InstanceDropdownContent instance={inst} onDeleted={() => nav({ to: "/instances" })} />
             </DropdownMenu>
-            <PlayButton instance={inst} size="lg" className="ml-1" />
           </div>
         </div>
         <div className={wrap}>
           <Tabs<InstanceTab>
             value={active}
             onChange={setTab}
-            className="-mx-3.5 border-b-0"
+            className="-mx-3 h-11! border-b-0"
             items={[
               ...(vanilla ? [] : [{ value: "content" as const, label: t("inst.tab.mods") }]),
               { value: "resourcepacks", label: t("inst.tab.resourcepacks") },

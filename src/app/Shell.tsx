@@ -11,6 +11,7 @@ import { isRunning, useGameStore, useInstance, useInstances, useInstanceTasks } 
 import { instanceAccent } from "@/lib/format";
 import type { Instance } from "@/lib/types";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
+import { Logo3D } from "@/components/Logo3D";
 import { InstanceContextMenuContent } from "@/components/instance/InstanceMenu";
 import { killInstance, openNewInstance } from "@/components/instance/actions";
 import { InstanceDialogs } from "@/features/instances/InstanceDialogs";
@@ -74,7 +75,7 @@ function Rail() {
     <nav className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-line bg-black py-2">
       <Tooltip content="Vibe Launcher" side="right">
         <button aria-label="Vibe Launcher" onClick={() => nav({ to: "/" })} className="mb-1 grid h-10 w-10 place-items-center">
-          <img src="/logo.svg" width={26} height={26} alt="" draggable={false} />
+          <Logo3D size={34} speed={0} hoverSpin float={false} interactive={false} />
         </button>
       </Tooltip>
       <RailButton label={t("nav.home")} active={path === "/"} onClick={() => nav({ to: "/" })}>

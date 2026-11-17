@@ -11,11 +11,14 @@ import { useRunPhase } from "./status";
 
 export const PlayButton = memo(function PlayButton({
   instance,
-  size = "lg",
+  size = "md",
+  subtle,
   className,
 }: {
   instance: Instance;
   size?: "lg" | "md" | "icon";
+  /** Zurückhaltend (grau), Akzent erst beim Hover über der umgebenden `group` */
+  subtle?: boolean;
   className?: string;
 }) {
   const t = useT();
@@ -33,49 +36,55 @@ export const PlayButton = memo(function PlayButton({
             if (phase === "running") killInstance(instance);
             else if (phase === "idle") launch(instance);
           }}
-          onDoubleClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
           className={cn(
-            "grid h-10 w-10 place-items-center border transition-[filter,transform,background-color] duration-150 active:translate-y-px",
+            "grid h-9 w-9 shrink-0 place-items-center border transition-[filter,background-color,color] duration-100 active:translate-y-px",
             phase === "running"
-              ? "border-danger/60 bg-black/70 text-danger hover:bg-danger hover:text-black"
-              : "border-transparent bg-accent text-[var(--on-accent)] hover:brightness-110",
+              ? "border-danger/50 bg-black/80 text-danger hover:bg-danger hover:text-black"
+              : phase === "idle"
+                ? subtle
+                  ? "border-line bg-surface3 text-muted group-hover:border-transparent group-hover:bg-accent group-hover:text-[var(--on-accent)]"
+                  : "border-transparent bg-accent text-[var(--on-accent)] hover:brightness-110"
+                : "border-line2 bg-black/80 text-accent",
             className,
           )}
         >
-          {phase === "running" ? <Square size={14} fill="currentColor" /> : phase === "idle" ? <Play size={17} fill="currentColor" /> : <Spinner size={14} />}
+          {phase === "running" ? <Square size={13} fill="currentColor" /> : phase === "idle" ? <Play size={16} fill="currentColor" /> : <Spinner size={13} />}
         </button>
       </Tooltip>
     );
   }
 
-  const h = size === "lg" ? "h-[52px] min-w-[220px]" : "h-10 min-w-[150px]";
+  const h = size === "lg" ? "h-11 min-w-[168px]" : "h-10 min-w-[136px]";
 
   if (phase === "preparing" || phase === "busy") {
     const p = task?.progress ?? null;
     return (
-      <div className={cn("relative flex items-stretch overflow-hidden border border-accent/60 bg-black/50", h, className)}>
+      <div
+        className={cn("relative flex items-stretch overflow-hidden border border-line2 bg-surface2", h, size === "lg" ? "w-[240px]" : "w-[220px]", className)}
+      >
         <div
-          className="absolute inset-y-0 left-0 bg-accent/25 transition-[width] duration-150 ease-linear"
+          className="absolute inset-y-0 left-0 bg-accent/20 transition-[width] duration-150 ease-linear"
           style={{ width: p === null ? "100%" : `${Math.round(p * 100)}%`, opacity: p === null ? 0.5 : 1 }}
         />
-        <div className="relative flex min-w-0 flex-1 items-center gap-3 px-4">
-          <Spinner size={size === "lg" ? 15 : 13} className="text-accent" />
+        <div className="relative flex min-w-0 flex-1 items-center gap-2.5 px-3">
+          <Spinner size={13} className="shrink-0 text-accent" />
           <div className="min-w-0 flex-1 leading-tight">
-            <div className="font-mono text-[12px] font-semibold uppercase tracking-[.1em] text-white">
-              {phase === "preparing" && !task ? t("inst.starting") : t("inst.preparing")}
-              {p !== null && <span className="ml-2 text-accent">{Math.round(p * 100)}%</span>}
+            <div className="flex items-center gap-1.5 text-[13px] font-semibold text-white">
+              <span className="truncate">{phase === "preparing" && !task ? t("inst.starting") : t("inst.preparing")}</span>
+              {p !== null && <span className="tabular-nums text-accent">{Math.round(p * 100)}%</span>}
             </div>
-            {size === "lg" && task?.message && <div className="truncate text-[11px] text-muted">{task.message}</div>}
+            {task?.message && <div className="truncate text-[11px] text-muted">{task.message}</div>}
           </div>
         </div>
         {task && (
           <Tooltip content={t("common.cancel")}>
             <button
               aria-label={t("common.cancel")}
-              className="relative grid w-11 shrink-0 place-items-center border-l border-accent/30 text-muted transition-colors hover:bg-white/5 hover:text-white"
+              className="relative grid w-9 shrink-0 place-items-center border-l border-line text-muted transition-colors hover:bg-white/5 hover:text-white"
               onClick={() => api.taskCancel(task.id).catch((e) => toast.error(e))}
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           </Tooltip>
         )}
@@ -89,7 +98,7 @@ export const PlayButton = memo(function PlayButton({
         variant="danger"
         size={size === "lg" ? "lg" : "md"}
         className={cn(h, className)}
-        icon={<Square size={13} fill="currentColor" />}
+        icon={<Square size={12} fill="currentColor" />}
         onClick={() => killInstance(instance)}
       >
         {t("common.stop")}
@@ -101,8 +110,8 @@ export const PlayButton = memo(function PlayButton({
     <Button
       variant="accent"
       size={size === "lg" ? "lg" : "md"}
-      className={cn(h, "hover:-translate-y-px", className)}
-      icon={<Play size={size === "lg" ? 17 : 15} fill="currentColor" />}
+      className={cn(h, className)}
+      icon={<Play size={15} fill="currentColor" />}
       onClick={() => launch(instance)}
     >
       {t("common.play")}

@@ -71,7 +71,7 @@ function VersionCard({ instance: i }: { instance: Instance }) {
           description={i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]} ${i.loader.version ?? ""}`}
         />
       ) : (
-        <div className="flex flex-col gap-5 px-5 py-5">
+        <div className="flex flex-col gap-5 px-4 py-5">
           <div className="flex items-start gap-3 border border-warn/30 bg-warn/[.06] px-4 py-3 text-[13px] text-warn">
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <span>{t("isettings.version.warn")}</span>
@@ -162,7 +162,7 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
         <SaveIndicator state={state} />
       </div>
       <div className="scroll h-full">
-        <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-5 px-8 py-6">
+        <div className="flex w-full flex-col gap-4 px-6 py-5">
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-5">
             <div className="flex flex-col gap-5">
               <SettingsCard title={t("isettings.general")}>
@@ -246,7 +246,7 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
                   />
                 </SettingRow>
                 {ramOverride && (
-                  <div className="border-t border-line px-5 py-4">
+                  <div className="border-t border-line px-4 py-4">
                     <MemoryField
                       min={d.java.min_memory_mb ?? 512}
                       max={d.java.max_memory_mb ?? 4096}

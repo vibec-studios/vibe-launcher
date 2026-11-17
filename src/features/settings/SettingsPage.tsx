@@ -124,8 +124,8 @@ function JavaDownload({ major, installed }: { major: number; installed: boolean 
 function JavaRow({ j }: { j: JavaInstall }) {
   const t = useT();
   return (
-    <div className="flex items-center gap-4 px-5 py-3 [&+&]:border-t [&+&]:border-line">
-      <div className="w-[58px] shrink-0 font-display text-[20px] font-bold leading-none text-white">{j.major}</div>
+    <div className="flex items-center gap-4 px-4 py-3 [&+&]:border-t [&+&]:border-line">
+      <div className="w-[44px] shrink-0 text-[18px] font-bold leading-none text-white">{j.major}</div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-[13px] text-white">
           {j.version}
@@ -211,22 +211,21 @@ export function SettingsPage() {
 
   return (
     <div className="flex h-full">
-      <aside className="flex w-[244px] shrink-0 flex-col border-r border-line bg-black">
-        <div className="px-6 pb-5 pt-8">
-          <p className="eyebrow mb-2">{t("settings.eyebrow")}</p>
-          <h1 className="display text-[19px]">{t("nav.settings")}</h1>
+      <aside className="flex w-[220px] shrink-0 flex-col border-r border-line">
+        <div className="px-5 pb-3 pt-5">
+          <h1 className="display text-[22px]">{t("nav.settings")}</h1>
         </div>
-        <nav className="flex flex-col gap-px px-3">
+        <nav className="flex flex-col gap-0.5 px-2.5">
           {SECTIONS.map((sec) => (
             <button
               key={sec.id}
               onClick={() => jump(sec.id)}
               className={cn(
-                "flex h-9 items-center gap-3 px-3 text-left text-[13px] transition-colors duration-100",
-                active === sec.id ? "bg-white/[.05] text-white shadow-[inset_2px_0_0_var(--accent)]" : "text-muted hover:bg-white/[.03] hover:text-white",
+                "flex h-9 items-center gap-3 px-3 text-left text-[14px] font-medium transition-colors duration-100",
+                active === sec.id ? "bg-surface3 text-white" : "text-muted hover:bg-surface2 hover:text-white",
               )}
             >
-              <span className={active === sec.id ? "text-accent" : "text-dim"}>{sec.icon}</span>
+              <span className={active === sec.id ? "text-white" : "text-dim"}>{sec.icon}</span>
               {t(`settings.section.${sec.id}`)}
             </button>
           ))}
@@ -239,14 +238,14 @@ export function SettingsPage() {
 
       <div ref={scrollRef} onScroll={onScroll} className="scroll min-w-0 flex-1">
         {!s ? (
-          <div className="mx-auto flex max-w-[880px] flex-col gap-5 px-10 py-8">
+          <div className="flex max-w-[900px] flex-col gap-4 px-6 py-5">
             {Array.from({ length: 3 }, (_, i) => (
               <div key={i} className="border border-line bg-surface">
-                <div className="border-b border-line px-5 py-4">
+                <div className="border-b border-line px-4 py-4">
                   <Skeleton className="h-3 w-24" />
                 </div>
                 {Array.from({ length: 3 }, (_, j) => (
-                  <div key={j} className="flex items-center gap-6 px-5 py-4">
+                  <div key={j} className="flex items-center gap-6 px-4 py-4">
                     <div className="flex flex-1 flex-col gap-2">
                       <Skeleton className="h-4 w-40" />
                       <Skeleton className="h-3 w-72" />
@@ -258,7 +257,7 @@ export function SettingsPage() {
             ))}
           </div>
         ) : (
-          <div className="mx-auto flex max-w-[880px] flex-col gap-5 px-10 pb-16 pt-8">
+          <div className="flex max-w-[900px] flex-col gap-4 px-6 pb-12 pt-5">
             <SettingsCard id="set-general" title={t("settings.section.general")}>
               <SettingRow title={t("settings.language")} description={t("settings.language.desc")}>
                 <Segmented
@@ -357,20 +356,20 @@ export function SettingsPage() {
                 <Switch checked={s.auto_java} onChange={(auto_java) => update({ auto_java })} label={t("settings.auto_java")} />
               </SettingRow>
               <div className="border-t border-line">
-                <div className="px-5 pb-2 pt-4">
+                <div className="px-4 pb-2 pt-4">
                   <div className="text-[14px] font-medium text-white">{t("settings.java.found")}</div>
                 </div>
                 {java.isLoading ? (
-                  <div className="flex flex-col gap-2 px-5 pb-4">
+                  <div className="flex flex-col gap-2 px-4 pb-4">
                     <Skeleton className="h-10" />
                     <Skeleton className="h-10" />
                   </div>
                 ) : java.isError ? (
-                  <p className="px-5 pb-4 text-[13px] text-danger">{String((java.error as { message?: string })?.message ?? java.error)}</p>
+                  <p className="px-4 pb-4 text-[13px] text-danger">{String((java.error as { message?: string })?.message ?? java.error)}</p>
                 ) : !java.data?.length ? (
-                  <p className="px-5 pb-4 text-[13px] text-dim">{t("settings.java.none")}</p>
+                  <p className="px-4 pb-4 text-[13px] text-dim">{t("settings.java.none")}</p>
                 ) : (
-                  <div className="mx-5 mb-4 border border-line bg-black/40">
+                  <div className="mx-4 mb-4 border border-line bg-black/40">
                     {java.data
                       .slice()
                       .sort((a, b) => b.major - a.major)
@@ -478,22 +477,22 @@ export function SettingsPage() {
             </SettingsCard>
 
             <SettingsCard id="set-launcher" title={t("settings.section.launcher")}>
-              <div className="flex items-center gap-6 px-5 py-5">
-                <Logo3D size={96} speed={0.3} interactive={false} />
+              <div className="flex items-center gap-6 px-4 py-5">
+                <Logo3D size={56} speed={0} hoverSpin float={false} interactive={false} />
                 <div className="min-w-0 flex-1">
-                  <div className="display text-[22px]">Vibe Launcher</div>
+                  <div className="brand text-[18px] text-white">Vibe Launcher</div>
                   <div className="mt-1 font-mono text-[12px] text-muted">
                     {sys.data ? `v${sys.data.version} · ${sys.data.os} ${sys.data.arch}` : <Spinner size={12} />}
                   </div>
                   <div className="mt-1 text-[12.5px] text-dim">{t("settings.about")}</div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <a href={WEBSITE} className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[.1em] text-muted hover:text-white">
+                  <a href={WEBSITE} className="flex items-center gap-2 text-[13px] font-medium text-muted hover:text-white">
                     <Globe size={13} />
                     {t("settings.website")}
                     <ExternalLink size={11} className="text-dim" />
                   </a>
-                  <a href={GITHUB} className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[.1em] text-muted hover:text-white">
+                  <a href={GITHUB} className="flex items-center gap-2 text-[13px] font-medium text-muted hover:text-white">
                     <GitBranch size={13} />
                     GitHub
                     <ExternalLink size={11} className="text-dim" />

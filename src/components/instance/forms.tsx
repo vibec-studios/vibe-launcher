@@ -79,9 +79,7 @@ export function SaveIndicator({ state }: { state: SaveState }) {
   const t = useT();
   if (state === "idle" || state === "error") return null;
   return (
-    <span
-      className={cn("flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[.1em] animate-fade-in", state === "saved" ? "text-ok" : "text-dim")}
-    >
+    <span className={cn("flex items-center gap-1.5 text-[12px] font-medium animate-fade-in", state === "saved" ? "text-ok" : "text-dim")}>
       {state === "saving" ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
       {state === "saving" ? t("form.saving") : t("form.saved")}
     </span>
@@ -112,7 +110,7 @@ export function MemoryField({
       <span className="label">{label}</span>
       <div className="flex flex-col gap-1">
         <Slider value={value} min={lo} max={limit} step={256} onChange={(v) => set(v, 400)} disabled={disabled} />
-        <div className="flex justify-between font-mono text-[10px] text-dim">
+        <div className="flex justify-between text-[11px] tabular-nums text-dim">
           <span>{formatMb(lo)}</span>
           <span className="text-muted">{formatMb(value)}</span>
           <span>{formatMb(limit)}</span>

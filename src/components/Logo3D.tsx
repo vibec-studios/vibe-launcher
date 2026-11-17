@@ -114,11 +114,23 @@ export interface Logo3DProps {
   className?: string;
   /** Neigung zur Maus (Standard: an) */
   interactive?: boolean;
-  /** Drehgeschwindigkeit in rad/s */
+  /** Drehgeschwindigkeit im Ruhezustand in rad/s (0 = still in Logo-Pose) */
   speed?: number;
+  /** Beim Hover (über dem Elternelement) schnell drehen, danach zurück in die Logo-Pose */
+  hoverSpin?: boolean;
+  /** Sanftes Schweben mit Bodenschatten */
+  float?: boolean;
 }
 
-export function Logo3D({ size = 160, className, interactive = true, speed = 0.42 }: Logo3DProps) {
+interface Opts {
+  size: number;
+  interactive: boolean;
+  speed: number;
+  hoverSpin: boolean;
+  float: boolean;
+}
+
+export function Logo3D({ size = 160, className, interactive = true, speed = 0.42, hoverSpin = false, float = true }: Logo3DProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   // Neu aufsetzen, wenn „Animationen reduzieren“ umgeschaltet wird
@@ -137,7 +149,7 @@ export function Logo3D({ size = 160, className, interactive = true, speed = 0.42
     import("three")
       .then((THREE) => {
         if (disposed) return;
-        cleanup = setup(THREE, wrap, canvas, size, interactive, speed, () => {
+        cleanup = setup(THREE, wrap, canvas, { size, interactive, speed, hoverSpin, float }, () => {
           if (disposed) return;
           canvas.style.opacity = "1";
           setReady(true);
@@ -151,7 +163,7 @@ export function Logo3D({ size = 160, className, interactive = true, speed = 0.42
       canvas.remove();
       setReady(false);
     };
-  }, [size, interactive, speed, reduce]);
+  }, [size, interactive, speed, hoverSpin, float, reduce]);
 
   return (
     <div ref={wrapRef} className={cn("relative shrink-0", className)} style={{ width: size, height: size }} aria-hidden>
@@ -165,15 +177,7 @@ export function Logo3D({ size = 160, className, interactive = true, speed = 0.42
   );
 }
 
-function setup(
-  THREE: typeof THREE_NS,
-  wrap: HTMLDivElement,
-  canvas: HTMLCanvasElement,
-  size: number,
-  interactive: boolean,
-  speed: number,
-  onFirstFrame: () => void,
-): () => void {
+function setup(THREE: typeof THREE_NS, wrap: HTMLDivElement, canvas: HTMLCanvasElement, o: Opts, onFirstFrame: () => void): () => void {
   let renderer: THREE_NS.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" });
@@ -181,14 +185,16 @@ function setup(
     return () => {}; // Kein WebGL: das SVG bleibt einfach stehen
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(size, size, false);
+  renderer.setSize(o.size, o.size, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(24, 1, 0.1, 50);
   // Fast isometrisch, wie im Logo (Ecke zeigt zur Kamera)
   camera.position.set(0, 2.7, 4.05);
-  camera.lookAt(0, -0.06, 0);
+  camera.lookAt(0, o.float ? -0.06 : 0, 0);
+  if (!o.float) camera.zoom = 1.18;
+  camera.updateProjectionMatrix();
 
   const tex = (c: HTMLCanvasElement) => {
     const t = new THREE.CanvasTexture(c);
@@ -214,13 +220,14 @@ function setup(
   pivot.add(cube);
   scene.add(pivot);
 
-  // Weicher Bodenschatten
+  // Weicher Bodenschatten (nur beim Schweben)
   const tShadow = new THREE.CanvasTexture(shadowCanvas());
   const shadowMat = new THREE.MeshBasicMaterial({ map: tShadow, transparent: true, depthWrite: false, opacity: 0.8 });
   const shadowGeo = new THREE.PlaneGeometry(1.9, 1.9);
   const shadow = new THREE.Mesh(shadowGeo, shadowMat);
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = -0.92;
+  shadow.visible = o.float;
   scene.add(shadow);
 
   // Licht so abgestimmt, dass in der Logo-Pose Deckfläche und rechte Seite volle Farbe haben und die linke
@@ -235,7 +242,12 @@ function setup(
 
   const still = prefersStatic();
   const BASE_YAW = Math.PI / 4;
+  const QUARTER = Math.PI / 2;
+  const HOVER_SPEED = 4.2;
   let yaw = BASE_YAW;
+  let vel = o.speed;
+  let hovered = false;
+  let settleTo: number | null = null;
   let t = 0;
   let tiltX = 0,
     tiltZ = 0,
@@ -247,7 +259,7 @@ function setup(
   let firstDone = false;
 
   const draw = () => {
-    const bob = still ? 0 : Math.sin(t * 1.6) * 0.07;
+    const bob = still || !o.float ? 0 : Math.sin(t * 1.6) * 0.07;
     pivot.position.y = bob;
     pivot.rotation.set(tiltX, yaw, tiltZ);
     const s = 1 - bob * 0.9;
@@ -260,17 +272,35 @@ function setup(
     }
   };
 
+  /** Läuft noch etwas? Sonst hält die Schleife an (kein Dauer-Rendern im Ruhezustand). */
+  const active = () => o.float || o.speed > 0 || hovered || settleTo !== null || Math.abs(targetX - tiltX) > 1e-3 || Math.abs(targetZ - tiltZ) > 1e-3;
+
   const loop = (now: number) => {
     raf = 0;
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     t += dt;
-    yaw += dt * speed;
     const k = 1 - Math.pow(0.002, dt);
+    if (hovered) {
+      vel += (HOVER_SPEED - vel) * (1 - Math.pow(0.02, dt));
+      yaw += vel * dt;
+    } else if (settleTo !== null) {
+      // Auslaufen bis zur nächsten Logo-Pose
+      const rest = settleTo - yaw;
+      const step = Math.max(Math.min(vel, rest * 5), 0.4) * dt;
+      vel = Math.max(o.speed, vel * Math.pow(0.15, dt));
+      if (step >= rest) {
+        yaw = settleTo;
+        settleTo = null;
+        vel = o.speed;
+      } else yaw += step;
+    } else {
+      yaw += o.speed * dt;
+    }
     tiltX += (targetX - tiltX) * k;
     tiltZ += (targetZ - tiltZ) * k;
     draw();
-    schedule();
+    if (active()) schedule();
   };
 
   const schedule = () => {
@@ -285,7 +315,24 @@ function setup(
     const ny = (e.clientY - (r.top + r.height / 2)) / Math.max(window.innerHeight / 2, 1);
     targetX = Math.max(-1, Math.min(1, ny)) * 0.22;
     targetZ = -Math.max(-1, Math.min(1, nx)) * 0.18;
+    schedule();
   };
+
+  const hoverEl = wrap.parentElement ?? wrap;
+  const onEnter = () => {
+    hovered = true;
+    settleTo = null;
+    schedule();
+  };
+  const onLeave = () => {
+    hovered = false;
+    if (o.speed === 0) settleTo = BASE_YAW + Math.ceil((yaw - BASE_YAW + 0.35) / QUARTER) * QUARTER;
+    schedule();
+  };
+  if (o.hoverSpin && !still) {
+    hoverEl.addEventListener("pointerenter", onEnter);
+    hoverEl.addEventListener("pointerleave", onLeave);
+  }
 
   const io = new IntersectionObserver((entries) => {
     visible = entries.some((e) => e.isIntersecting);
@@ -298,16 +345,18 @@ function setup(
   io.observe(wrap);
   const onVis = () => (document.hidden ? (cancelAnimationFrame(raf), (raf = 0)) : schedule());
   document.addEventListener("visibilitychange", onVis);
-  if (interactive && !still) window.addEventListener("pointermove", onPointer, { passive: true });
+  if (o.interactive && !still) window.addEventListener("pointermove", onPointer, { passive: true });
 
   draw();
-  schedule();
+  if (active()) schedule();
 
   return () => {
     cancelAnimationFrame(raf);
     io.disconnect();
     document.removeEventListener("visibilitychange", onVis);
     window.removeEventListener("pointermove", onPointer);
+    hoverEl.removeEventListener("pointerenter", onEnter);
+    hoverEl.removeEventListener("pointerleave", onLeave);
     geo.dispose();
     shadowGeo.dispose();
     for (const m of [mTop, mLeft, mRight, mBottom, shadowMat]) m.dispose();

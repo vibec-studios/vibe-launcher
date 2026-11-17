@@ -55,7 +55,7 @@ export function GroupInput({ value, onChange, groups, autoFocus }: { value: stri
               type="button"
               onClick={() => onChange(g === value ? "" : g)}
               className={cn(
-                "h-6 border px-2 font-mono text-[11px] transition-colors",
+                "h-6 border px-2 text-[12px] font-medium transition-colors",
                 g === value ? "border-accent bg-accent text-[var(--on-accent)]" : "border-line2 text-muted hover:border-accent hover:text-white",
               )}
             >

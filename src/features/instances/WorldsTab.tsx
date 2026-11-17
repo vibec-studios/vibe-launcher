@@ -26,7 +26,7 @@ import { PixelBlock } from "@/components/instance/InstanceIcon";
 import { useT } from "@/i18n";
 
 const MODES = ["survival", "creative", "adventure", "spectator", "hardcore"];
-const wrap = "mx-auto w-full max-w-[1320px] px-8";
+const wrap = "w-full px-6";
 
 function WorldIcon({ world }: { world: World }) {
   const [failed, setFailed] = useState(false);
@@ -95,8 +95,8 @@ const WorldRow = memo(function WorldRow({ instance, world }: { instance: Instanc
           <div className="truncate font-mono text-[11px] text-dim">saves/{world.folder}</div>
         </div>
         {mode && <Tag color={gm === "hardcore" ? "#ff5470" : undefined}>{mode}</Tag>}
-        <div className="w-[120px] text-right font-mono text-[11px] text-muted">{world.last_played ? formatRelative(world.last_played) : "–"}</div>
-        <div className="w-[80px] text-right font-mono text-[11px] text-dim">{formatBytes(world.size)}</div>
+        <div className="w-[120px] text-right text-[12px] text-muted">{world.last_played ? formatRelative(world.last_played) : "–"}</div>
+        <div className="w-[80px] text-right text-[12px] tabular-nums text-dim">{formatBytes(world.size)}</div>
         <div className="flex w-[76px] justify-end gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
           <Tooltip content={t("common.open_folder")}>
             <IconButton label={t("common.open_folder")} size="sm" className="border-transparent hover:border-line2" onClick={openDir}>
@@ -132,7 +132,7 @@ export function WorldsTab({ instance }: { instance: Instance }) {
       <div className={`${wrap} flex flex-col gap-4 py-6`}>
         <div className="flex items-center gap-3">
           <SearchInput value={query} onChange={setQuery} placeholder={t("worlds.search")} className="max-w-[320px] flex-1" />
-          <span className="font-mono text-[11px] text-dim">{q.data ? t("worlds.count", { n: q.data.length }) : ""}</span>
+          <span className="text-[12px] text-dim">{q.data ? t("worlds.count", { n: q.data.length }) : ""}</span>
           <div className="flex-1" />
           <Button size="sm" icon={<FolderOpen size={13} />} onClick={() => api.instanceOpenFolder(instance.id, "saves").catch((e) => toast.error(e))}>
             {t("worlds.open_saves")}
