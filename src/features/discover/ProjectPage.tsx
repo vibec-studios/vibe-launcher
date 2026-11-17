@@ -182,7 +182,7 @@ function Header({ p, instanceId }: { p: ProjectDetails; instanceId?: string }) {
       </div>
       <div className="grid grid-cols-4 border-t border-line [&>*+*]:border-l [&>*+*]:border-line">
         <Stat icon={<Download size={11} />} label={t("project.downloads")} value={formatCount(p.downloads)} title={p.downloads.toLocaleString()} />
-        <Stat icon={<Heart size={11} />} label={t("project.follows")} value={formatCount(p.follows)} title={p.follows.toLocaleString()} />
+        <Stat icon={<Heart size={11} />} label={t("project.follows")} value={p.source === "curseforge" ? "–" : formatCount(p.follows)} title={p.source === "curseforge" ? undefined : p.follows.toLocaleString()} />
         <Stat icon={<Calendar size={11} />} label={t("project.updated")} value={formatRelative(p.updated)} title={formatDate(p.updated)} />
         <Stat icon={<Scale size={11} />} label={t("project.license")} value={p.license ? p.license.replace(/^LicenseRef-/, "").replace(/-/g, " ") : "–"} />
       </div>

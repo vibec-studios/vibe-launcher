@@ -28,7 +28,7 @@ export function Select<V extends string = string>({
   size?: "sm" | "md";
 }) {
   return (
-    <S.Root value={value ?? undefined} onValueChange={(v) => onChange(v as V)} disabled={disabled}>
+    <S.Root value={value ?? ""} onValueChange={(v) => v && onChange(v as V)} disabled={disabled}>
       <S.Trigger
         className={cn(
           "inline-flex w-full items-center justify-between gap-2 border border-line2 bg-surface px-3 text-left text-text outline-none transition-colors duration-150",

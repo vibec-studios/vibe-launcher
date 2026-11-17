@@ -56,6 +56,10 @@ pub fn run() {
         .setup(move |app| {
             let _guard = &guard;
             let state = AppState::init(app.handle().clone());
+            // Lokale Bilder (Instanz-Icons usw.) aus dem tatsächlichen Datenordner erlauben
+            if let Err(e) = app.asset_protocol_scope().allow_directory(&state.paths.root, true) {
+                tracing::warn!("Asset-Scope für {:?} nicht setzbar: {e}", state.paths.root);
+            }
             tracing::info!("Vibe Launcher {} – Daten: {:?}", env!("CARGO_PKG_VERSION"), state.paths.root);
             app.manage(state);
             // Fallback: Fenster spätestens nach 3 s zeigen, falls das Frontend hängt

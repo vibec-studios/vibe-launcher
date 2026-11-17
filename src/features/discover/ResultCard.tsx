@@ -173,10 +173,12 @@ export const ResultCard = memo(function ResultCard({ hit, target, installed, ins
                 <b className="font-semibold text-white">{formatCount(hit.downloads)}</b>
               </span>
             </Tooltip>
-            <span className="flex items-center gap-1.5">
-              <Heart size={12} className="text-dim" />
-              {formatCount(hit.follows)}
-            </span>
+            {hit.source === "modrinth" && (
+              <span className="flex items-center gap-1.5">
+                <Heart size={12} className="text-dim" />
+                {formatCount(hit.follows)}
+              </span>
+            )}
             {hit.updated && <span className="text-[11px] text-dim">{formatRelative(hit.updated)}</span>}
           </div>
           <InstallButton hit={hit} target={target} installed={installed} />
