@@ -2066,6 +2066,8 @@ dependencies = [
  "num-traits",
  "png",
  "tiff",
+ "zune-core",
+ "zune-jpeg",
 ]
 
 [[package]]
@@ -5487,6 +5489,7 @@ dependencies = [
  "flate2",
  "futures",
  "hex",
+ "image",
  "keyring",
  "md-5",
  "parking_lot",

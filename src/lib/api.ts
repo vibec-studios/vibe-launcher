@@ -57,7 +57,9 @@ export const api = {
   loaderGameVersions: (loader: T.LoaderKind) => call<string[]>("loader_game_versions", { loader }),
   loaderVersions: (loader: T.LoaderKind, mcVersion: string) => call<T.LoaderVersion[]>("loader_versions", { loader, mcVersion }),
   instanceInstall: (id: string, force = false) => call<string>("instance_install", { id, force }),
-  instanceLaunch: (id: string, accountId?: string | null) => call<string>("instance_launch", { id, accountId: accountId ?? null }),
+  /** `world`: Ordnername unter saves/ – startet per Quick Play direkt in diese Welt (ab Minecraft 1.20). */
+  instanceLaunch: (id: string, accountId?: string | null, world?: string | null) =>
+    call<string>("instance_launch", { id, accountId: accountId ?? null, world: world ?? null }),
   instanceKill: (id: string) => call<void>("instance_kill", { id }),
   gameStates: () => call<T.GameState[]>("game_states"),
   instanceLogSession: (id: string) => call<T.LogLine[]>("instance_log_session", { id }),
@@ -99,4 +101,12 @@ export const api = {
   /** Gibt Task-ID zurück; mcVersion/loader überschreiben erkannte Werte. */
   importExternal: (source: T.LauncherKind, sourcePath: string, name?: string | null, mcVersion?: string | null, loader?: T.Loader | null) =>
     call<string>("import_external", { source, sourcePath, name: name ?? null, mcVersion: mcVersion ?? null, loader: loader ?? null }),
+
+  // ---------------------------------------------------------------- Screenshots
+  screenshotsList: (instanceId?: string | null) => call<T.Screenshot[]>("screenshots_list", { instanceId: instanceId ?? null }),
+  /** Pfad eines gecachten Vorschaubilds (JPEG, max. 480×360) */
+  screenshotThumb: (path: string) => call<string>("screenshot_thumb", { path }),
+  screenshotDelete: (path: string) => call<void>("screenshot_delete", { path }),
+  screenshotCopy: (path: string) => call<void>("screenshot_copy", { path }),
+  screenshotOpenFolder: (path: string) => call<void>("screenshot_open_folder", { path }),
 };

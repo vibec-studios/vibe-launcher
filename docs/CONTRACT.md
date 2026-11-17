@@ -65,6 +65,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
 | Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external |
+| Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
 
 ### Wichtige Abläufe
 
@@ -119,6 +120,12 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 - Frontend: `openImport(null, "launcher")` öffnet den Import-Dialog direkt im Launcher-Modus.
 - **Start** (`instance_launch`): installiert bei Bedarf, holt Zugangsdaten über `state.auth.launch_account(...)`,
   startet den Prozess, sendet `game://state` + `game://log`.
+  Optional `world` (Ordnername unter `saves/`): startet per Quick Play (`--quickPlaySingleplayer`, ab MC 1.20)
+  direkt in diese Welt – Frontend blendet die Option für ältere Versionen aus.
+- **Screenshots**: `screenshots_list(instance_id?)` liefert `Screenshot[]` (alle Instanzen, neueste zuerst);
+  `screenshot_thumb(path)` erzeugt/cached ein JPEG-Vorschaubild (max. 480×360, `cache/thumbs/<sha1>.jpg`) und gibt
+  dessen Pfad zurück; `screenshot_copy` legt das Bild in die Zwischenablage, `screenshot_open_folder` markiert die
+  Datei im Explorer. Alle Pfade müssen in `instances/<id>/minecraft/screenshots/` liegen.
 - **Accounts**: nur Microsoft (`AccountKind = "microsoft"`, keine Offline-Accounts). Login: `auth_msa_begin` -> Code
   anzeigen -> `auth_msa_wait` (liefert den Account) bzw. `auth_msa_cancel`. Tokens liegen im Windows-Schlüsselbund,
   `accounts.json` enthält keine Geheimnisse. `launch_account` erneuert den Minecraft-Token automatisch (< 5 min Rest);

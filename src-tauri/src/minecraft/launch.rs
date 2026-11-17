@@ -257,7 +257,7 @@ pub fn build(state: &AppState, inst: &Instance, prep: &Prepared, acc: &LaunchAcc
 }
 
 /// Komplettablauf von `instance_launch` (innerhalb der Aufgabe).
-pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, task: &TaskHandle) -> AppResult<()> {
+pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, world: Option<String>, task: &TaskHandle) -> AppResult<()> {
     let gm = state.game.clone();
     let inst = state.instances.get(id)?;
     gm.launcher_line(id, LogLevel::Launcher, format!("Vibe Launcher {} – {} wird vorbereitet", env!("CARGO_PKG_VERSION"), inst.name));
@@ -272,7 +272,12 @@ pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, task
     task.check()?;
     let inst = state.instances.get(id)?;
     let settings = state.settings();
-    let plan = build(state, &inst, &prep, &acc, &settings)?;
+    let mut plan = build(state, &inst, &prep, &acc, &settings)?;
+    // Quick Play (ab 1.20): direkt in eine Einzelspielerwelt starten
+    if let Some(w) = world {
+        plan.args.extend(["--quickPlaySingleplayer".to_string(), w.clone()]);
+        plan.display.push_str(&format!(" --quickPlaySingleplayer \"{w}\""));
+    }
     let j = &prep.java;
     gm.launcher_line(
         id,

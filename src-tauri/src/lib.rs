@@ -116,6 +116,12 @@ pub fn run() {
             commands::game::instance_log_files,
             commands::game::instance_log_read,
             commands::game::mclogs_upload,
+            // screenshots
+            commands::screenshots::screenshots_list,
+            commands::screenshots::screenshot_thumb,
+            commands::screenshots::screenshot_delete,
+            commands::screenshots::screenshot_copy,
+            commands::screenshots::screenshot_open_folder,
             commands::game::java_list,
             commands::game::java_test,
             commands::game::java_install,

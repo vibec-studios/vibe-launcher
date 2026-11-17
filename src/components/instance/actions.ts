@@ -77,9 +77,10 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
   const open = (i: Instance, tab?: "content" | "worlds" | "logs" | "settings") =>
     nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: tab ?? "content" } });
 
-  const launch = async (i: Instance) => {
+  /** `world`: per Quick Play direkt in diese Welt (Ordnername unter saves/) */
+  const launch = async (i: Instance, world?: string | null) => {
     try {
-      await api.instanceLaunch(i.id);
+      await api.instanceLaunch(i.id, null, world ?? null);
       const s = queryClient.getQueryData<Settings>(qk.settings);
       if (s?.open_log_on_launch) open(i, "logs");
     } catch (e) {
@@ -117,4 +118,14 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
   };
 
   return { open, launch, duplicate, remove };
+}
+
+/** Quick Play (`--quickPlaySingleplayer`) gibt es ab Minecraft 1.20 bzw. Snapshot 23w14a. */
+export function supportsQuickPlay(mc: string): boolean {
+  let m = /^1\.(\d+)/.exec(mc);
+  if (m) return Number(m[1]) >= 20;
+  m = /^(\d+)w(\d+)/.exec(mc);
+  if (m) return Number(m[1]) > 23 || (Number(m[1]) === 23 && Number(m[2]) >= 14);
+  m = /^(\d+)\./.exec(mc);
+  return !!m && Number(m[1]) >= 2;
 }
