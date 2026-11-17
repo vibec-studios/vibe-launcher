@@ -147,7 +147,7 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
   const allLeaves = useMemo(() => tree.flatMap((n) => n.leaves), [tree]);
   const sizeOf = useMemo(() => {
     const m = new Map<string, number>();
-    const walk = (n: Node) => (n.isDir ? n.children.forEach(walk) : m.set(n.path, n.size));
+    const walk = (n: Node) => (n.isDir && n.children.length ? n.children.forEach(walk) : m.set(n.path, n.size));
     tree.forEach(walk);
     return m;
   }, [tree]);
@@ -197,7 +197,7 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
             <Button variant="ghost" icon={<FolderOpen size={14} />} onClick={() => dest && api.openPath(dirName(dest)).catch((e) => toast.error(e))}>
               {t("export.show_folder")}
             </Button>
-            <Button variant="accent" onClick={() => onOpenChange(false)} autoFocus>
+            <Button variant="primary" onClick={() => onOpenChange(false)} autoFocus>
               {t("common.done")}
             </Button>
           </>
@@ -210,7 +210,7 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
             <Button variant="subtle" onClick={() => onOpenChange(false)}>
               {t("common.cancel")}
             </Button>
-            <Button variant="accent" icon={<PackageOpen size={14} />} onClick={start} disabled={!name.trim() || !entriesQ.data || sel.size === 0}>
+            <Button variant="primary" icon={<PackageOpen size={14} />} onClick={start} disabled={!name.trim() || !entriesQ.data || sel.size === 0}>
               {failed ? t("common.retry") : t("export.start")}
             </Button>
           </>
@@ -229,13 +229,13 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
                 disabled={running || done}
                 onClick={() => setFormat(f.value)}
                 className={cn(
-                  "flex flex-col items-start gap-1 border border-t-2 px-3.5 py-3 text-left transition-colors duration-150 disabled:opacity-60",
-                  on ? "border-line2 border-t-accent bg-white/[.03]" : "border-line border-t-line hover:border-line2",
+                  "flex flex-col items-start gap-1 border px-3.5 py-3 text-left transition-colors duration-150 disabled:opacity-60",
+                  on ? "border-brand bg-white/[.04]" : "border-line hover:border-line2",
                 )}
               >
                 <span className="flex w-full items-center justify-between">
                   <span className="text-[13.5px] font-semibold text-white">{t(`export.format.${f.value}`)}</span>
-                  <span className="font-mono text-[10.5px] text-dim">.{f.ext}</span>
+                  <span className="font-mono text-[11px] text-dim">.{f.ext}</span>
                 </span>
                 <span className="text-[12px] leading-snug text-muted">{t(`export.format_text.${f.value}`)}</span>
               </button>
@@ -381,7 +381,7 @@ function FileTree({ tree, sel, setSel, disabled }: { tree: Node[]; sel: Set<stri
                 <span
                   className={cn(
                     "grid h-4 w-4 shrink-0 place-items-center border transition-colors duration-100",
-                    state === "off" ? "border-line2" : "border-accent bg-accent text-[var(--on-accent)]",
+                    state === "off" ? "border-line2" : "border-brand bg-brand text-white",
                   )}
                 >
                   {state === "on" ? <Check size={11} strokeWidth={3} /> : state === "mixed" ? <Minus size={11} strokeWidth={3} /> : null}

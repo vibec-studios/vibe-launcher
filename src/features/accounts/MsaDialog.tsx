@@ -94,12 +94,12 @@ export function MsaDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
       ) : avail.data === false || avail.isError ? (
         <div className="flex flex-col items-center gap-3 px-4 py-6 text-center">
           <KeyRound size={30} className="text-warn" />
-          <div className="display text-[17px]">{t("accounts.msa.unavailable")}</div>
+          <div className="text-[16px] font-semibold text-white">{t("accounts.msa.unavailable")}</div>
           <p className="max-w-[420px] text-[13px] text-muted">{t("accounts.msa.unavailable_text")}</p>
           <Link
             to="/settings"
             onClick={() => onOpenChange(false)}
-            className="mt-1 inline-flex h-10 items-center border border-line2 px-5 font-mono text-[12px] font-semibold uppercase tracking-[.1em] transition-colors hover:border-white"
+            className="mt-1 inline-flex h-9 items-center border border-line bg-surface2 px-4 text-[14px] font-semibold transition-colors hover:bg-surface3"
           >
             {t("accounts.msa.to_settings")}
           </Link>
@@ -149,26 +149,26 @@ function CodeView({ code, started, copied, onCopy }: { code: DeviceCode; started
   return (
     <div className="flex flex-col items-center gap-5 py-2 animate-fade-in">
       <ol className="flex w-full flex-col gap-1.5 text-[13px] text-muted">
-        <li>
-          <span className="mr-2 font-mono text-accent">01</span>
+        <li className="flex items-start">
+          <span className="mr-2.5 inline-grid h-5 w-5 shrink-0 place-items-center bg-white/[.08] text-[12px] font-semibold text-white">1</span>
           {t("accounts.msa.step1")}
         </li>
-        <li>
-          <span className="mr-2 font-mono text-accent">02</span>
+        <li className="flex items-start">
+          <span className="mr-2.5 inline-grid h-5 w-5 shrink-0 place-items-center bg-white/[.08] text-[12px] font-semibold text-white">2</span>
           {t("accounts.msa.step2")}
         </li>
-        <li>
-          <span className="mr-2 font-mono text-accent">03</span>
+        <li className="flex items-start">
+          <span className="mr-2.5 inline-grid h-5 w-5 shrink-0 place-items-center bg-white/[.08] text-[12px] font-semibold text-white">3</span>
           {t("accounts.msa.step3")}
         </li>
       </ol>
       <button
         onClick={onCopy}
-        className="group relative flex w-full flex-col items-center gap-2 border border-line2 border-t-2 border-t-accent bg-black px-6 py-5 transition-colors duration-150 hover:border-white/40"
+        className="group relative flex w-full flex-col items-center gap-2.5 border border-line2 bg-black px-6 py-5 transition-colors duration-150 hover:border-white/40"
         aria-label={t("common.copy")}
       >
-        <span className="selectable font-display text-[44px] font-bold leading-none tracking-[.12em] text-white">{code.user_code}</span>
-        <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[.1em] text-muted group-hover:text-white">
+        <span className="selectable font-mono text-[40px] font-bold leading-none tracking-[.08em] text-white">{code.user_code}</span>
+        <span className="flex items-center gap-1.5 text-[12.5px] text-muted group-hover:text-white">
           {copied ? <Check size={12} className="text-ok" /> : <Copy size={12} />}
           {copied ? t("accounts.msa.copied") : t("common.copy")}
         </span>

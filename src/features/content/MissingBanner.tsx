@@ -27,7 +27,7 @@ export function MissingBanner({ instanceId, kind }: { instanceId: string; kind: 
       .catch((e) => toast.error(e));
 
   return (
-    <div className="mx-4 mb-3 shrink-0 border border-warn/35 bg-warn/[.05] animate-fade-in">
+    <div className="mx-4 mb-3 shrink-0 border border-warn/30 bg-warn/[.04] animate-fade-in">
       <div className="flex items-center gap-3 px-4 py-2.5">
         <AlertTriangle size={16} className="shrink-0 text-warn" />
         <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
@@ -53,7 +53,7 @@ export function MissingBanner({ instanceId, kind }: { instanceId: string; kind: 
             <div key={m.file_name} className="flex h-9 items-center gap-3 text-[12.5px]">
               <span className="min-w-0 flex-1 truncate text-white">{m.project_name}</span>
               <span className="hidden min-w-0 max-w-[40%] truncate font-mono text-[11px] text-dim @min-[700px]:block">{m.file_name}</span>
-              <a href={m.page_url} className="inline-flex shrink-0 items-center gap-1.5 font-mono text-[11px] uppercase tracking-[.1em] text-accent hover:brightness-125">
+              <a href={m.page_url} className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-brand hover:brightness-125">
                 {t("missing.download")}
                 <ExternalLink size={11} />
               </a>

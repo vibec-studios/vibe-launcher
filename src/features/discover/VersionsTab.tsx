@@ -2,20 +2,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Download, FolderPlus } from "lucide-react";
 import { memo, useMemo, useState } from "react";
-import { Button, EmptyState, ErrorState, Segmented, Select, Skeleton, Tag, cn } from "@/components/ui";
+import { Button, EmptyState, ErrorState, Segmented, Select, Skeleton, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { formatBytes, formatCount, formatDate, formatLoader } from "@/lib/format";
 import { qk, useInstances } from "@/lib/queries";
 import type { ProjectDetails, ProjectVersion } from "@/lib/types";
 import { RichText } from "@/components/content/RichText";
+import { Pill, prettyLoader } from "@/components/content/Pill";
 import { openInstall } from "@/components/content/InstallDialog";
 import { compareMc } from "@/components/content/util";
 
 const ALL = "__all";
 const STEP = 40;
 const typeColor: Record<ProjectVersion["release_type"], string> = { release: "#3fe0c5", beta: "#ffb547", alpha: "#ff5470" };
-const COLS = "grid-cols-[minmax(0,1fr)_140px_110px_88px_72px_148px]";
+const COLS = "grid-cols-[minmax(0,1fr)_110px_96px_84px_136px] @min-[900px]:grid-cols-[minmax(0,1fr)_140px_110px_88px_72px_148px]";
 
 export function VersionsTab({ project, instanceId }: { project: ProjectDetails; instanceId?: string }) {
   const t = useT();
@@ -88,16 +89,16 @@ export function VersionsTab({ project, instanceId }: { project: ProjectDetails; 
             { value: "alpha", label: t("versions.type.alpha") },
           ]}
         />
-        <span className="ml-auto font-mono text-[11px] text-dim">{q.data && t("versions.count", { n: filtered.length })}</span>
+        <span className="ml-auto text-[12.5px] text-dim">{q.data && t("versions.count", { n: filtered.length })}</span>
       </div>
 
-      <div className="border border-line bg-surface">
+      <div className="@container border border-line bg-surface">
         <div className={cn("grid items-center gap-4 border-b border-line px-4 py-2.5", COLS)}>
           <span className="label">{t("versions.col.name")}</span>
           <span className="label">{t("versions.col.game")}</span>
           <span className="label">{t("versions.col.loader")}</span>
           <span className="label">{t("versions.col.date")}</span>
-          <span className="label text-right">{t("versions.col.downloads")}</span>
+          <span className="label hidden text-right @min-[900px]:block">{t("versions.col.downloads")}</span>
           <span />
         </div>
         {q.isPending ? (
@@ -107,7 +108,7 @@ export function VersionsTab({ project, instanceId }: { project: ProjectDetails; 
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-4 w-16" />
               <Skeleton className="h-4 w-20" />
-              <Skeleton className="ml-auto h-4 w-12" />
+              <Skeleton className="ml-auto hidden h-4 w-12 @min-[900px]:block" />
               <Skeleton className="ml-auto h-8 w-24" />
             </div>
           ))
@@ -157,7 +158,7 @@ const VersionRow = memo(function VersionRow({
       >
         <div className="flex min-w-0 items-center gap-3">
           <span
-            className="grid h-6 w-6 shrink-0 place-items-center border font-mono text-[10px] font-bold uppercase"
+            className="grid h-6 w-6 shrink-0 place-items-center border text-[11px] font-bold uppercase"
             style={{ color: typeColor[v.release_type], borderColor: `color-mix(in srgb, ${typeColor[v.release_type]} 45%, transparent)` }}
             title={t(`versions.type.${v.release_type}`)}
           >
@@ -177,11 +178,11 @@ const VersionRow = memo(function VersionRow({
         </div>
         <div className="flex min-w-0 gap-1 overflow-hidden">
           {v.loaders.slice(0, 2).map((l) => (
-            <Tag key={l}>{["fabric", "forge", "neoforge", "quilt"].includes(l) ? formatLoader({ kind: l as never, version: null }) : l}</Tag>
+            <Pill key={l}>{prettyLoader(l)}</Pill>
           ))}
         </div>
-        <div className="font-mono text-[12px] text-muted">{formatDate(v.date)}</div>
-        <div className="text-right font-mono text-[12px] text-muted">{formatCount(v.downloads)}</div>
+        <div className="text-[13px] text-muted">{formatDate(v.date)}</div>
+        <div className="hidden text-right text-[13px] text-muted @min-[900px]:block">{formatCount(v.downloads)}</div>
         <div className="flex items-center justify-end gap-2">
           <Button
             size="sm"
@@ -206,7 +207,7 @@ const VersionRow = memo(function VersionRow({
             <p className="text-[12.5px] text-dim">{t("versions.no_changelog")}</p>
           )}
           {v.dependencies.filter((d) => d.kind === "required").length > 0 && (
-            <div className="mt-3 font-mono text-[11px] text-dim">{t("versions.deps", { n: v.dependencies.filter((d) => d.kind === "required").length })}</div>
+            <div className="mt-3 text-[12px] text-dim">{t("versions.deps", { n: v.dependencies.filter((d) => d.kind === "required").length })}</div>
           )}
         </div>
       )}

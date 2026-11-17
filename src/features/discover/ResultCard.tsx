@@ -1,19 +1,20 @@
 // Ergebnis-Karte der Entdecken-Seite. memo: Fortschritt abonniert nur der Installieren-Knopf der Karte.
-import { Check, Copy, Download, ExternalLink, FolderPlus, Heart, PackagePlus, RefreshCw, SquareArrowOutUpRight } from "lucide-react";
+import { CalendarClock, Check, Copy, Download, ExternalLink, FolderPlus, Heart, PackagePlus, RefreshCw, SquareArrowOutUpRight } from "lucide-react";
 import { memo, type KeyboardEvent, type MouseEvent } from "react";
-import { Button, ContextItem, ContextLabel, ContextMenu, ContextSeparator, ContextSub, Progress, Tag, Tooltip, cn, toast } from "@/components/ui";
+import { Button, ContextItem, ContextLabel, ContextMenu, ContextSeparator, ContextSub, Progress, Tooltip, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { errorMessage } from "@/lib/api";
-import { formatCount, formatLoader, formatRelative } from "@/lib/format";
+import { formatCount, formatRelative } from "@/lib/format";
 import { useTask } from "@/lib/queries";
 import type { Instance, ProjectHit } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
+import { Pill, prettyCategory, prettyLoader } from "@/components/content/Pill";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { openInstall } from "@/components/content/InstallDialog";
 import { installKey, packKey, startContentInstall, useInstallTasks } from "@/components/content/install";
 import { compatibility, copyText, openExternal, projectWebUrl } from "@/components/content/util";
 
-export const CARD_H = 124;
+export const CARD_H = 112;
 
 export interface CardProps {
   hit: ProjectHit;
@@ -33,8 +34,8 @@ function InstallButton({ hit, target, installed }: { hit: ProjectHit; target: In
 
   if (task && task.status === "running") {
     return (
-      <div className="flex w-[132px] flex-col gap-1.5" onClick={stop}>
-        <span className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[.1em] text-muted">
+      <div className="flex w-[124px] flex-col gap-1.5" onClick={stop}>
+        <span className="flex items-center justify-between text-[12px] text-muted">
           {t("install.installing")}
           <span>{task.progress != null ? `${Math.round(task.progress * 100)}%` : ""}</span>
         </span>
@@ -44,7 +45,7 @@ function InstallButton({ hit, target, installed }: { hit: ProjectHit; target: In
   }
   if (installed || task?.status === "done") {
     return (
-      <span className="inline-flex h-8 items-center gap-1.5 border border-ok/40 px-3 font-mono text-[11px] font-semibold uppercase tracking-[.1em] text-ok">
+      <span className="inline-flex h-8 items-center gap-1.5 px-2 text-[13px] font-semibold text-ok">
         <Check size={13} />
         {t("common.installed")}
       </span>
@@ -135,7 +136,6 @@ function CardMenu({ hit, instances, onOpen }: { hit: ProjectHit; instances: Inst
 export const ResultCard = memo(function ResultCard({ hit, target, installed, instances, onOpen }: CardProps) {
   const t = useT();
   const open = () => onOpen(hit);
-  const tags = hit.categories.slice(0, 4);
   const loaders = hit.project_type === "mod" || hit.project_type === "modpack" ? hit.loaders.filter((l) => ["fabric", "forge", "neoforge", "quilt"].includes(l)) : [];
   return (
     <ContextMenu content={<CardMenu hit={hit} instances={instances} onOpen={open} />}>
@@ -145,41 +145,48 @@ export const ResultCard = memo(function ResultCard({ hit, target, installed, ins
         onClick={open}
         onKeyDown={(e: KeyboardEvent) => e.key === "Enter" && open()}
         className={cn(
-          "group flex h-full items-stretch gap-4 border border-line bg-surface px-4 py-3 transition-[background-color,border-color,box-shadow] duration-150",
-          "hover:border-line2 hover:bg-surface2 hover:shadow-[inset_3px_0_0_var(--accent)] focus-visible:shadow-[inset_3px_0_0_var(--accent)] data-[state=open]:border-line2 data-[state=open]:bg-surface2",
+          "group flex h-full items-center gap-4 border border-line bg-surface px-3.5 transition-[background-color,border-color] duration-100",
+          "hover:border-line2 hover:bg-surface2 data-[state=open]:border-line2 data-[state=open]:bg-surface2",
         )}
       >
-        <ProjectIcon src={hit.icon_url} size={84} className="self-center" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <span className="truncate text-[15.5px] font-semibold text-white">{hit.title}</span>
-            <span className="shrink-0 truncate text-[12.5px] text-dim">{t("discover.by", { author: hit.author })}</span>
+        <ProjectIcon src={hit.icon_url} size={80} className="border-0" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex min-w-0 items-baseline gap-1.5">
+            <span className="truncate text-[16px] font-bold text-white">{hit.title}</span>
+            <span className="shrink-0 truncate text-[13px] text-dim">{t("discover.by", { author: hit.author })}</span>
           </div>
-          <p className="mt-1 line-clamp-2 text-[13px] leading-[1.5] text-muted">{hit.description}</p>
-          <div className="mt-auto flex min-w-0 items-center gap-1.5 overflow-hidden pt-2">
+          <p className="line-clamp-2 text-[13px] leading-[1.45] text-muted">{hit.description}</p>
+          <div className="mt-0.5 flex min-w-0 items-center gap-1 overflow-hidden">
             {loaders.map((l) => (
-              <Tag key={l}>{formatLoader({ kind: l as never, version: null })}</Tag>
+              <Pill key={l} className="text-text">
+                {prettyLoader(l)}
+              </Pill>
             ))}
-            {tags.map((c) => (
-              <Tag key={c}>{c.replace(/-/g, " ")}</Tag>
+            {hit.categories.slice(0, 4).map((c) => (
+              <Pill key={c}>{prettyCategory(c)}</Pill>
             ))}
           </div>
         </div>
-        <div className="flex w-[150px] shrink-0 flex-col items-end justify-between">
-          <div className="flex flex-col items-end gap-0.5 font-mono text-[11.5px] text-muted">
+        <div className="flex h-full shrink-0 flex-col items-end justify-between py-3">
+          <div className="flex flex-col items-end gap-0.5 text-[12.5px] text-muted">
             <Tooltip content={t("discover.downloads_n", { n: hit.downloads.toLocaleString() })}>
               <span className="flex items-center gap-1.5">
-                <Download size={12} className="text-dim" />
-                <b className="font-semibold text-white">{formatCount(hit.downloads)}</b>
+                <Download size={13} className="text-dim" />
+                <b className="font-semibold text-text">{formatCount(hit.downloads)}</b>
               </span>
             </Tooltip>
             {hit.source === "modrinth" && (
               <span className="flex items-center gap-1.5">
-                <Heart size={12} className="text-dim" />
+                <Heart size={13} className="text-dim" />
                 {formatCount(hit.follows)}
               </span>
             )}
-            {hit.updated && <span className="text-[11px] text-dim">{formatRelative(hit.updated)}</span>}
+            {hit.updated && (
+              <span className="flex items-center gap-1.5 text-dim">
+                <CalendarClock size={13} />
+                {formatRelative(hit.updated)}
+              </span>
+            )}
           </div>
           <InstallButton hit={hit} target={target} installed={installed} />
         </div>
@@ -190,18 +197,18 @@ export const ResultCard = memo(function ResultCard({ hit, target, installed, ins
 
 export function ResultSkeleton() {
   return (
-    <div className="flex h-full items-stretch gap-4 border border-line bg-surface px-4 py-3">
-      <div className="skeleton h-[84px] w-[84px] shrink-0 self-center" />
-      <div className="flex min-w-0 flex-1 flex-col gap-2.5 pt-0.5">
+    <div className="flex h-full items-center gap-4 border border-line bg-surface px-3.5">
+      <div className="skeleton h-[80px] w-[80px] shrink-0" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="skeleton h-4 w-2/5" />
         <div className="skeleton h-3 w-11/12" />
         <div className="skeleton h-3 w-3/5" />
-        <div className="mt-auto flex gap-1.5">
-          <div className="skeleton h-5 w-14" />
-          <div className="skeleton h-5 w-16" />
+        <div className="flex gap-1">
+          <div className="skeleton h-[22px] w-14" />
+          <div className="skeleton h-[22px] w-16" />
         </div>
       </div>
-      <div className="flex w-[150px] shrink-0 flex-col items-end justify-between">
+      <div className="flex h-full shrink-0 flex-col items-end justify-between py-3">
         <div className="skeleton h-3 w-14" />
         <div className="skeleton h-8 w-28" />
       </div>

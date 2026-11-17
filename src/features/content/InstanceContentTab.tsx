@@ -4,17 +4,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { FilePlus2, FolderOpen, PackagePlus, Power, PowerOff, RefreshCw, SearchX, Trash2, Upload, X } from "lucide-react";
+import { Check, FilePlus2, FolderOpen, PackagePlus, Plus, Power, PowerOff, RefreshCw, SearchX, Trash2, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type MouseEvent } from "react";
 import { create } from "zustand";
-import { Button, EmptyState, ErrorState, IconButton, Progress, SearchInput, Spinner, Tooltip, confirm, cn, toast } from "@/components/ui";
+import { Button, EmptyState, ErrorState, IconButton, SearchInput, Spinner, Tooltip, confirm, cn, toast } from "@/components/ui";
 import { useT, t as tt } from "@/i18n";
 import { api, errorMessage, isCancelled } from "@/lib/api";
 import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
 import type { ContentItem, ContentKind, ContentUpdate, Instance } from "@/lib/types";
 import { registerDropTarget, useDragState } from "@/components/content/dragdrop";
 import { contentKey, fileExt, kindExtensions, kindFolder } from "@/components/content/util";
-import { ContentRow, ROW_H, RowSkeleton, type RowActions } from "./ContentRow";
+import { ContentRow, GRID, ROW_H, RowSkeleton, SelectBox, type RowActions } from "./ContentRow";
 import { MissingBanner } from "./MissingBanner";
 
 type Filter = "all" | "enabled" | "disabled" | "updates";
@@ -229,6 +229,13 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
           setSelection(sel.size === 1 && sel.has(key) ? new Set() : new Set([key]));
         }
       },
+      toggle: (key: string) => {
+        anchor.current = key;
+        const next = new Set(state.current.selection);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        setSelection(next);
+      },
       context: (key: string) => {
         if (!state.current.selection.has(key)) {
           anchor.current = key;
@@ -296,31 +303,40 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
 
   const toDiscover = () => navigate({ to: "/discover", search: { instance: id, type: discoverType[kind] as never } });
 
+  const allVisibleSelected = visible.length > 0 && visible.every((c) => selection.has(contentKey(c.file_name)));
+  const headState: "on" | "off" | "mixed" = selection.size === 0 ? "off" : allVisibleSelected ? "on" : "mixed";
+
   return (
     <div className="@container flex h-full min-h-0 flex-col outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
-      {/* Kopfzeile */}
-      <div className="flex h-14 shrink-0 items-center gap-2.5 px-4">
-        <SearchInput value={text} onChange={setText} placeholder={t(`content.search.${kind}`)} className="w-[280px] min-w-0 shrink" disabled={empty} />
+      {/* Werkzeugleiste */}
+      <div className="flex h-14 shrink-0 items-center gap-2 px-4">
+        <SearchInput
+          value={text}
+          onChange={setText}
+          placeholder={t(`content.search.${kind}`)}
+          className="w-[200px] min-w-0 shrink @min-[900px]:w-[260px]"
+          disabled={empty}
+        />
+        {!empty && (
+          <div className="flex items-center gap-1">
+            {(["all", "enabled", "disabled", "updates"] as Filter[]).map((f) =>
+              f === "updates" && !checked ? null : (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={cn(
+                    "flex h-8 items-center gap-1.5 px-2.5 text-[13px] font-medium transition-colors duration-100",
+                    filter === f ? "bg-surface3 text-white" : "text-muted hover:bg-white/[.04] hover:text-white",
+                  )}
+                >
+                  {t(`content.filter.${f}`)}
+                  <span className="text-[12px] text-dim">{q.isSuccess ? counts[f] : ""}</span>
+                </button>
+              ),
+            )}
+          </div>
+        )}
         <div className="flex-1" />
-        {kind === "mod" || kind === "resourcepack" || kind === "shader" ? (
-          updatesRunning ? (
-            <div className="flex w-[190px] flex-col gap-1.5">
-              <span className="flex justify-between font-mono text-[10px] uppercase tracking-[.1em] text-muted">
-                {t("content.updating")}
-                <span>{updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : ""}</span>
-              </span>
-              <Progress value={updTask?.progress ?? null} />
-            </div>
-          ) : counts.updates > 0 ? (
-            <Button size="sm" variant="outline" icon={<RefreshCw size={13} />} onClick={() => update(all.filter((c) => updates.has(contentKey(c.file_name))))}>
-              {t("content.update_all", { n: counts.updates })}
-            </Button>
-          ) : (
-            <Button size="sm" variant="ghost" loading={updatesQ.isFetching} disabled={empty} icon={<RefreshCw size={13} />} onClick={checkUpdates}>
-              {checked && updatesQ.isSuccess ? t("content.no_updates") : t("content.check_updates")}
-            </Button>
-          )
-        ) : null}
         <Tooltip content={t(`content.add_files.${kind}`)}>
           <IconButton label={t(`content.add_files.${kind}`)} size="sm" onClick={addFiles}>
             <FilePlus2 size={15} />
@@ -331,61 +347,81 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
             <FolderOpen size={15} />
           </IconButton>
         </Tooltip>
-        <Button size="sm" variant="accent" icon={<PackagePlus size={14} />} onClick={toDiscover}>
+        <Button size="sm" variant="accent" icon={<Plus size={15} />} onClick={toDiscover}>
           {t("content.add")}
         </Button>
       </div>
 
       <MissingBanner instanceId={id} kind={kind} />
 
-      {/* Filter- bzw. Auswahlleiste (gleiche Höhe -> kein Springen) */}
-      <div className={cn("flex h-10 shrink-0 items-center gap-1 border-y border-line px-4", empty && "invisible")}>
-        {selection.size > 0 ? (
-          <div className="flex w-full items-center gap-1 animate-fade-in">
-            <span className="mr-2 font-mono text-[11px] uppercase tracking-[.1em] text-white">{t("content.selected", { n: selection.size })}</span>
-            <BarButton icon={<Power size={13} />} onClick={() => setEnabled(selItems, true)} disabled={!selItems.some((c) => !c.enabled)}>
-              {t("content.menu.enable")}
-            </BarButton>
-            <BarButton icon={<PowerOff size={13} />} onClick={() => setEnabled(selItems, false)} disabled={!selItems.some((c) => c.enabled)}>
-              {t("content.menu.disable")}
-            </BarButton>
-            <BarButton icon={<RefreshCw size={13} />} onClick={() => update(selUpdates)} disabled={!selUpdates.length || updatesRunning}>
-              {t("common.update")}
-              {selUpdates.length > 0 && ` (${selUpdates.length})`}
-            </BarButton>
-            <BarButton icon={<Trash2 size={13} />} onClick={() => remove(selItems)} danger>
-              {t("common.remove")}
-            </BarButton>
-            <div className="flex-1" />
-            <Tooltip content={t("content.clear_selection")}>
-              <button aria-label={t("content.clear_selection")} className="grid h-7 w-7 place-items-center text-dim hover:text-white" onClick={() => setSelection(new Set())}>
-                <X size={14} />
-              </button>
-            </Tooltip>
-          </div>
-        ) : (
-          <>
-            {(["all", "enabled", "disabled", "updates"] as Filter[]).map((f) =>
-              f === "updates" && !checked ? null : (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={cn(
-                    "flex h-7 items-center gap-1.5 px-2.5 font-mono text-[11px] uppercase tracking-[.1em] transition-colors duration-150",
-                    filter === f ? "bg-white/[.07] text-white" : "text-muted hover:text-white",
-                  )}
-                >
-                  {t(`content.filter.${f}`)}
-                  <span className={cn("text-[10px]", filter === f ? "text-muted" : "text-dim")}>{q.isSuccess ? counts[f] : "–"}</span>
+      {/* Tabellenkopf bzw. Auswahlleiste (gleiche Höhe -> kein Springen) */}
+      {!empty && (
+        <div className={cn(GRID, "h-10 shrink-0 border-y border-line bg-surface text-[12.5px] font-medium text-muted")}>
+          <SelectBox
+            state={headState}
+            label={t("common.select_all")}
+            onClick={() => setSelection(headState === "off" ? new Set(visible.map((c) => contentKey(c.file_name))) : new Set())}
+          />
+          {selection.size > 0 ? (
+            <div className="col-span-3 flex min-w-0 items-center gap-0.5 animate-fade-in">
+              <span className="mr-2 text-[13px] font-semibold text-white">{t("content.selected", { n: selection.size })}</span>
+              <BarButton icon={<Power size={14} />} onClick={() => setEnabled(selItems, true)} disabled={!selItems.some((c) => !c.enabled)}>
+                {t("content.menu.enable")}
+              </BarButton>
+              <BarButton icon={<PowerOff size={14} />} onClick={() => setEnabled(selItems, false)} disabled={!selItems.some((c) => c.enabled)}>
+                {t("content.menu.disable")}
+              </BarButton>
+              <BarButton icon={<RefreshCw size={14} />} onClick={() => update(selUpdates)} disabled={!selUpdates.length || updatesRunning}>
+                {t("common.update")}
+                {selUpdates.length > 0 && ` (${selUpdates.length})`}
+              </BarButton>
+              <BarButton icon={<Trash2 size={14} />} onClick={() => remove(selItems)} danger>
+                {t("common.remove")}
+              </BarButton>
+              <div className="flex-1" />
+              <Tooltip content={t("content.clear_selection")}>
+                <button aria-label={t("content.clear_selection")} className="grid h-7 w-7 place-items-center text-dim hover:text-white" onClick={() => setSelection(new Set())}>
+                  <X size={14} />
                 </button>
-              ),
-            )}
-            <div className="flex-1" />
-            {q.isFetching && !q.isPending && <Spinner size={11} className="text-dim" />}
-            <span className="hidden font-mono text-[10.5px] text-dim @min-[700px]:inline">{t("content.hint_select")}</span>
-          </>
-        )}
-      </div>
+              </Tooltip>
+            </div>
+          ) : (
+            <>
+              <span>{t("content.col.name")}</span>
+              <span>{t("content.col.version")}</span>
+              <div className="flex items-center justify-end">
+                {updatesRunning ? (
+                  <span className="flex items-center gap-1.5 text-[12px] text-muted">
+                    <Spinner size={11} className="text-brand" />
+                    {updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : ""}
+                  </span>
+                ) : counts.updates > 0 ? (
+                  <Tooltip content={t("content.update_all", { n: counts.updates })}>
+                    <button
+                      onClick={() => update(all.filter((c) => updates.has(contentKey(c.file_name))))}
+                      className="flex h-7 items-center gap-1 px-1.5 text-[12.5px] font-semibold text-accent hover:bg-white/[.06]"
+                    >
+                      <RefreshCw size={13} />
+                      {counts.updates}
+                    </button>
+                  </Tooltip>
+                ) : (
+                  <Tooltip content={checked && updatesQ.isSuccess ? t("content.no_updates") : t("content.check_updates")}>
+                    <button
+                      aria-label={t("content.check_updates")}
+                      onClick={checkUpdates}
+                      disabled={updatesQ.isFetching}
+                      className="grid h-7 w-7 place-items-center text-dim transition-colors hover:bg-white/[.06] hover:text-white disabled:opacity-60"
+                    >
+                      {updatesQ.isFetching ? <Spinner size={11} className="text-brand" /> : checked && updatesQ.isSuccess ? <Check size={14} className="text-ok" /> : <RefreshCw size={14} />}
+                    </button>
+                  </Tooltip>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Liste */}
       <div ref={dropRef} className="relative min-h-0 flex-1">
@@ -399,15 +435,15 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
           </div>
         ) : empty ? (
           <EmptyState
-            icon={<PackagePlus size={32} />}
+            icon={<PackagePlus size={30} />}
             title={t(`content.empty.${kind}`)}
             text={t(`content.empty_text.${kind}`)}
             action={
-              <div className="flex gap-2.5">
-                <Button variant="accent" icon={<PackagePlus size={14} />} onClick={toDiscover}>
+              <div className="flex gap-2">
+                <Button variant="accent" icon={<Plus size={15} />} onClick={toDiscover}>
                   {t("content.add")}
                 </Button>
-                <Button variant="ghost" icon={<FilePlus2 size={14} />} onClick={addFiles}>
+                <Button variant="ghost" icon={<FilePlus2 size={15} />} onClick={addFiles}>
                   {t("content.add_files_short")}
                 </Button>
               </div>
@@ -431,10 +467,10 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
           </div>
         )}
         {over && (
-          <div className="pointer-events-none absolute inset-2 z-10 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-accent bg-black/80 animate-fade-in">
-            <Upload size={28} className="text-accent" />
-            <div className="display text-[18px]">{t(`content.drop.${kind}`)}</div>
-            <div className="font-mono text-[11px] uppercase tracking-[.1em] text-muted">{instance.name}</div>
+          <div className="pointer-events-none absolute inset-2 z-10 flex flex-col items-center justify-center gap-2.5 border-2 border-dashed border-accent bg-black/80 animate-fade-in">
+            <Upload size={26} className="text-accent" />
+            <div className="text-[16px] font-semibold text-white">{t(`content.drop.${kind}`)}</div>
+            <div className="text-[13px] text-muted">{instance.name}</div>
           </div>
         )}
       </div>
@@ -448,7 +484,7 @@ function BarButton({ icon, children, onClick, disabled, danger }: { icon: React.
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex h-7 items-center gap-1.5 px-2.5 font-mono text-[11px] uppercase tracking-[.1em] transition-colors duration-150 disabled:pointer-events-none disabled:opacity-35",
+        "flex h-7 items-center gap-1.5 px-2 text-[13px] font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-35",
         danger ? "text-danger hover:bg-danger/10" : "text-text hover:bg-white/[.07]",
       )}
     >
