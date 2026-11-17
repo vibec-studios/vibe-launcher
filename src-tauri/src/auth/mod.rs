@@ -6,6 +6,7 @@
 //! Minecraft-Access-Token liegen als JSON im OS-Schlüsselbund (siehe [`secrets`]).
 pub mod msa;
 pub mod secrets;
+pub mod skins;
 
 use crate::error::{AppError, AppResult};
 use crate::events;
@@ -143,6 +144,8 @@ pub struct AuthState {
     generation: std::sync::atomic::AtomicU64,
     /// Refreshs nacheinander (Refresh-Tokens rotieren)
     refresh_lock: tokio::sync::Mutex<()>,
+    /// Lokale Skin-Bibliothek
+    pub skins: skins::Library,
 }
 
 impl AuthState {
@@ -160,6 +163,7 @@ impl AuthState {
             store.active = store.accounts.first().map(|a| a.id.clone());
         }
         let secrets = secrets::SecretStore::new(&paths);
+        let skins = skins::Library::load(&paths.root);
         Arc::new(AuthState {
             paths,
             app,
@@ -169,6 +173,7 @@ impl AuthState {
             pending: Mutex::new(None),
             generation: Default::default(),
             refresh_lock: tokio::sync::Mutex::new(()),
+            skins,
         })
     }
 
@@ -450,6 +455,34 @@ impl AuthState {
                 tracing::warn!("Erneuern von {} fehlgeschlagen: {e}", acc.username);
                 Err(e)
             }
+        }
+    }
+
+    /// Account-ID + gültiger Minecraft-Token für Profil-Änderungen (Skins/Capes). Frischt bei Bedarf auf.
+    pub async fn mc_session(&self, state: &crate::state::AppState, account_id: Option<&str>) -> AppResult<(String, String)> {
+        let explicit = account_id.filter(|s| !s.is_empty()).map(str::to_string);
+        let active = self.store.lock().active.clone();
+        let id = explicit
+            .or(active)
+            .ok_or_else(|| AppError::NotConfigured("Kein Account – bitte unter Accounts mit Microsoft anmelden".into()))?;
+        let la = self.launch_account(state, Some(&id)).await?;
+        Ok((id, la.access_token))
+    }
+
+    /// Nach Skin-Änderungen: Skin-URL im Account aktualisieren (-> `accounts://changed`).
+    pub fn set_skin_url(&self, id: &str, url: Option<String>) {
+        let changed = {
+            let mut s = self.store.lock();
+            match s.accounts.iter_mut().find(|a| a.id == id) {
+                Some(a) if a.skin_url != url => {
+                    a.skin_url = url;
+                    true
+                }
+                _ => false,
+            }
+        };
+        if changed {
+            let _ = self.persist();
         }
     }
 

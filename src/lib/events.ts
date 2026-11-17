@@ -12,6 +12,8 @@ export interface EventMap {
   "content://changed": { instance_id: string };
   "accounts://changed": Account[];
   "settings://changed": Settings;
+  /** Skin-Bibliothek oder Skin/Cape eines Accounts geändert */
+  "skins://changed": { scope: "library" } | { scope: "profile"; account_id: string };
 }
 
 export type EventName = keyof EventMap;

@@ -3,11 +3,12 @@ import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import core from "./core";
 import a from "./a";
 import b from "./b";
+import skins from "./skins";
 import type { Handlers } from "./util";
 
 mockWindows("main");
 
-const handlers: Handlers = { ...core, ...a, ...b };
+const handlers: Handlers = { ...core, ...a, ...b, ...skins };
 
 mockIPC(
   async (cmd, args) => {

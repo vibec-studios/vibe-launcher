@@ -157,6 +157,45 @@ export interface DeviceCode {
   message: string;
 }
 
+// ------------------------------------------------------------------ Skins & Capes
+
+export type SkinVariant = "classic" | "slim";
+
+export interface ActiveSkin {
+  id: string;
+  url: string;
+  variant: SkinVariant;
+  /** PNG als data:-URL (null, wenn nicht ladbar) */
+  data_url: string | null;
+}
+
+export interface Cape {
+  id: string;
+  alias: string;
+  url: string;
+  state: "ACTIVE" | "INACTIVE";
+  data_url: string | null;
+}
+
+export interface SkinProfile {
+  account_id: string;
+  username: string;
+  skin: ActiveSkin | null;
+  capes: Cape[];
+}
+
+/** Eintrag der lokalen Skin-Bibliothek (`skins/` im Datenordner). */
+export interface LibrarySkin {
+  id: string;
+  name: string;
+  variant: SkinVariant;
+  file: string;
+  added_at: number;
+  /** "file" | "account:<name>" | "player:<name>" */
+  source: string | null;
+  data_url: string;
+}
+
 // ------------------------------------------------------------------ Spiel
 
 export interface McVersion {
