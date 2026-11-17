@@ -3,7 +3,7 @@
 // kompakte Topbar (Zurück/Vor, Titel, laufende Spiele, Aufgaben, Fensterknöpfe), Inhaltsfläche.
 import { Outlet, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ChevronLeft, ChevronRight, Compass, Copy, Home, LibraryBig, Minus, Plus, Settings as SettingsIcon, Square, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Compass, Copy, Home, Images, LibraryBig, Minus, Plus, Settings as SettingsIcon, Shirt, Square, X } from "lucide-react";
 import { memo, useEffect, useState, type ReactNode } from "react";
 import { ContextMenu, Spinner, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -88,6 +88,12 @@ function Rail() {
       <RailButton label={t("nav.discover")} active={at("/discover") || at("/project")} onClick={() => nav({ to: "/discover" })}>
         <Compass size={20} />
       </RailButton>
+      <RailButton label={t("nav.skins")} active={path === "/skins"} onClick={() => nav({ to: "/skins" })}>
+        <Shirt size={20} />
+      </RailButton>
+      <RailButton label={t("nav.screenshots")} active={path === "/screenshots"} onClick={() => nav({ to: "/screenshots" })}>
+        <Images size={20} />
+      </RailButton>
       <div className="my-1.5 h-px w-8 bg-line" />
       <div className="scroll flex min-h-0 w-full flex-1 flex-col items-center gap-1.5 [scrollbar-gutter:auto] [&::-webkit-scrollbar]:w-0">
         {recent.map((i) => (
@@ -140,6 +146,8 @@ function usePageTitle(): ReactNode {
     );
   if (path === "/accounts") return t("nav.accounts");
   if (path === "/settings") return t("nav.settings");
+  if (path === "/skins") return t("nav.skins");
+  if (path === "/screenshots") return t("nav.screenshots");
   return null;
 }
 

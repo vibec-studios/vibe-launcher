@@ -9,6 +9,8 @@ import { DiscoverPage } from "@/features/discover/DiscoverPage";
 import { ProjectPage } from "@/features/discover/ProjectPage";
 import { AccountsPage } from "@/features/accounts/AccountsPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
+import { SkinsPage } from "@/features/skins/SkinsPage";
+import { ScreenshotsPage } from "@/features/screenshots/ScreenshotsPage";
 import type { ProjectType, Source } from "@/lib/types";
 
 export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "logs" | "settings";
@@ -65,6 +67,13 @@ const projectRoute = createRoute({
 
 const accountsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/accounts", component: AccountsPage });
 const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/settings", component: SettingsPage });
+const skinsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/skins", component: SkinsPage });
+const screenshotsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/screenshots",
+  component: ScreenshotsPage,
+  validateSearch: (s: Record<string, unknown>): { instance?: string } => ({ instance: typeof s.instance === "string" ? s.instance : undefined }),
+});
 
 const routeTree = rootRoute.addChildren([
   homeRoute,
@@ -74,6 +83,8 @@ const routeTree = rootRoute.addChildren([
   projectRoute,
   accountsRoute,
   settingsRoute,
+  skinsRoute,
+  screenshotsRoute,
 ]);
 
 export const router = createRouter({
