@@ -1,5 +1,5 @@
 // App-Rahmen: eigene Titelleiste im Stil der Website-Navigation + Seiteninhalt.
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Copy, Minus, Settings as SettingsIcon, Square, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -54,6 +54,8 @@ function WindowControls() {
 
 export function Titlebar() {
   const t = useT();
+  const nav = useNavigate();
+  const settingsActive = useRouterState({ select: (s) => s.location.pathname === "/settings" });
   return (
     <header
       className="drag relative z-40 flex h-[48px] shrink-0 items-stretch border-b border-line bg-black/85 backdrop-blur-md"
@@ -78,11 +80,15 @@ export function Titlebar() {
         <TaskDock />
         <AccountChip />
         <Tooltip content={t("nav.settings")} side="bottom">
-          <Link to="/settings">
-            <IconButton label={t("nav.settings")} size="sm" className="border-transparent hover:border-line2">
-              <SettingsIcon size={16} />
-            </IconButton>
-          </Link>
+          <IconButton
+            label={t("nav.settings")}
+            size="sm"
+            active={settingsActive}
+            className={settingsActive ? "" : "border-transparent hover:border-line2"}
+            onClick={() => nav({ to: "/settings" })}
+          >
+            <SettingsIcon size={16} />
+          </IconButton>
         </Tooltip>
       </div>
       <div className="w-px self-stretch bg-line" />
