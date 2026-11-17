@@ -14,7 +14,6 @@ import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { InstanceCard, LoaderTag, StatusHint } from "@/components/instance/InstanceCard";
 import { PlayButton } from "@/components/instance/PlayButton";
 import { openNewInstance, useInstanceActions } from "@/components/instance/actions";
-import { InstanceDialogs } from "@/features/instances/InstanceDialogs";
 import { gridCls } from "@/features/instances/InstancesPage";
 import { openImport } from "@/features/import/ImportDialog";
 import { useT } from "@/i18n";
@@ -142,7 +141,6 @@ export function HomePage() {
 
   return (
     <div className="scroll h-full">
-      <InstanceDialogs />
       <section
         className="relative overflow-hidden border-b border-line"
         style={{ background: `radial-gradient(55% 75% at 80% 50%, color-mix(in srgb, ${tint} 17%, transparent), transparent 72%)` }}

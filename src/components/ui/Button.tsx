@@ -17,16 +17,16 @@ const variants: Record<ButtonVariant, string> = {
   primary: "bg-brand text-white border-transparent hover:brightness-110",
   // Akzent der aktuellen Instanz
   accent: "bg-accent text-[var(--on-accent)] border-transparent hover:brightness-110",
-  ghost: "bg-transparent text-text border-line2 hover:border-white",
+  ghost: "bg-surface2 text-text border-line hover:bg-surface3 hover:border-line2",
   outline: "bg-transparent text-text border-line2 hover:border-accent",
   subtle: "bg-transparent text-muted border-transparent hover:text-white hover:bg-white/5",
   danger: "bg-transparent text-danger border-danger/40 hover:bg-danger hover:text-black hover:border-danger",
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-8 px-3 text-[11px] gap-2",
-  md: "h-10 px-5 text-[12px] gap-2.5",
-  lg: "h-[52px] px-7 text-[13px] gap-3",
+  sm: "h-8 px-3 text-[13px] gap-1.5",
+  md: "h-9 px-4 text-[14px] gap-2",
+  lg: "h-11 px-6 text-[15px] gap-2.5",
 };
 
 /** Knopf im Website-Stil: Mono, Großbuchstaben, eckig. */
@@ -39,7 +39,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center border font-mono font-semibold uppercase tracking-[0.1em] whitespace-nowrap",
+        "inline-flex shrink-0 items-center justify-center border font-sans font-semibold whitespace-nowrap",
         "transition-[background-color,color,border-color,filter,transform] duration-150 active:translate-y-px",
         "disabled:opacity-45 disabled:pointer-events-none",
         variants[variant],
@@ -72,7 +72,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-pressed={active}
       className={cn(
         "inline-grid shrink-0 place-items-center border text-text transition-colors duration-150",
-        active ? "border-white bg-white/5" : "border-line2 hover:border-white",
+        active ? "border-line2 bg-surface3 text-white" : "border-line bg-surface2 text-muted hover:bg-surface3 hover:text-white",
         "disabled:opacity-45 disabled:pointer-events-none",
         size === "sm" ? "h-8 w-8" : "h-9 w-9",
         className,

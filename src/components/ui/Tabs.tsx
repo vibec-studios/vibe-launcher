@@ -33,14 +33,14 @@ export function Tabs<V extends string>({
             aria-selected={active}
             onClick={() => onChange(it.value)}
             className={cn(
-              "flex items-center gap-2 px-3.5 font-mono text-[12px] uppercase tracking-[.1em] transition-colors duration-150",
+              "flex items-center gap-2 px-3 text-[14px] font-semibold transition-colors duration-150",
               active ? "text-white shadow-[inset_0_-2px_0_var(--accent)]" : "text-muted hover:text-white",
             )}
           >
             {it.icon}
             {it.label}
             {it.badge !== undefined && it.badge !== null && (
-              <span className="min-w-5 bg-white/[.08] px-1.5 text-center text-[10px] leading-5 text-muted">{it.badge}</span>
+              <span className="min-w-5 bg-white/[.08] px-1.5 text-center text-[11px] font-medium leading-5 text-muted">{it.badge}</span>
             )}
           </button>
         );
@@ -72,7 +72,7 @@ export function Segmented<V extends string>({
           disabled={it.disabled}
           onClick={() => onChange(it.value)}
           className={cn(
-            "h-9 px-3.5 font-mono text-[11px] font-semibold uppercase tracking-[.1em] transition-colors duration-150 disabled:opacity-40",
+            "h-8 px-3 text-[13px] font-semibold transition-colors duration-150 disabled:opacity-40",
             it.value === value ? "bg-accent text-[var(--on-accent)]" : "text-muted hover:text-white",
           )}
         >

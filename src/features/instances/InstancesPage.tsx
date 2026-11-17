@@ -9,7 +9,6 @@ import { openNewInstance, useInstanceActions } from "@/components/instance/actio
 import { PixelBlock } from "@/components/instance/InstanceIcon";
 import { openImport } from "@/features/import/ImportDialog";
 import { useT } from "@/i18n";
-import { InstanceDialogs } from "./InstanceDialogs";
 
 type SortKey = "recent" | "name" | "created" | "playtime";
 const SORTS: SortKey[] = ["recent", "name", "created", "playtime"];
@@ -80,7 +79,6 @@ export function InstancesPage() {
 
   return (
     <div className="scroll h-full">
-      <InstanceDialogs />
       <div className="mx-auto flex max-w-[1320px] flex-col gap-7 px-8 pb-12 pt-9">
         <header className="flex flex-wrap items-end gap-x-6 gap-y-4">
           <div className="min-w-0 flex-1">

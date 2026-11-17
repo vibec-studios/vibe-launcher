@@ -33,14 +33,13 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100vh-80px)] max-w-[calc(100vw-48px)] -translate-x-1/2 -translate-y-1/2 flex-col",
             "border border-line2 bg-[#07070a] shadow-[0_24px_60px_rgba(0,0,0,.7)] data-[state=open]:animate-pop-in",
-            "border-t-2 border-t-accent",
-            widths[size],
+                        widths[size],
             className,
           )}
         >
           <div className="flex items-start gap-4 border-b border-line px-6 pb-4 pt-5">
             <div className="min-w-0 flex-1">
-              <D.Title className="display text-[20px]">{title}</D.Title>
+              <D.Title className="display text-[18px]">{title}</D.Title>
               {description ? (
                 <D.Description className="mt-1.5 text-[13px] text-muted">{description}</D.Description>
               ) : (

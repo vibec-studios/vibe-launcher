@@ -16,7 +16,6 @@ import { openFolder, setIcon } from "@/components/instance/actions";
 import { InstanceContentTab } from "@/features/content/InstanceContentTab";
 import { LogsTab, showLogFile, uploadCrash } from "@/features/logs/LogsTab";
 import { useT } from "@/i18n";
-import { InstanceDialogs } from "./InstanceDialogs";
 import { WorldsTab } from "./WorldsTab";
 import { InstanceSettingsTab } from "./InstanceSettingsTab";
 import { accentVars } from "@/components/instance/accent";
@@ -132,7 +131,6 @@ export function InstancePage() {
 
   return (
     <div className="flex h-full flex-col" style={accentVars(accent)}>
-      <InstanceDialogs />
       <header
         className="relative shrink-0 border-b border-line"
         style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${accent} 20%, #000) 0%, #000 100%)` }}

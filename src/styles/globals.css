@@ -22,6 +22,8 @@
   --color-surface: #0b0b0e;
   --color-surface2: #121217;
   --color-surface3: #18181f;
+  /* Inhaltsfläche der App (heller als die schwarze Leiste) */
+  --color-panel: #08080b;
   --color-line: rgba(255, 255, 255, 0.09);
   --color-line2: rgba(255, 255, 255, 0.16);
   --color-text: #f4f4f5;
@@ -124,25 +126,30 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 
 /* ------------------------------------------------------------------ Typo-Bausteine */
 
+/* App-Typo (Modrinth-App-artig): Inter für Überschriften, normale Schreibweise.
+   Silkscreen nur noch für die Wortmarke (.brand). */
 .display {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: #fff;
+}
+.brand {
   font-family: var(--font-display);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.01em;
-  line-height: 1.08;
-  color: #fff;
+  letter-spacing: 0.02em;
 }
-.eyebrow {
-  font: 600 11px/1.4 var(--font-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
+/* Kleine Abschnitts-Überschrift */
 .label {
-  font: 500 11px/1.4 var(--font-mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-dim);
+  font: 600 12px/1.4 var(--font-sans);
+  color: var(--color-muted);
+}
+/* Veraltet (Landing-Page-Stil) – nicht mehr verwenden */
+.eyebrow {
+  font: 600 12px/1.4 var(--font-sans);
+  color: var(--color-muted);
 }
 
 /* Fenster-Drag-Bereich der eigenen Titelleiste */

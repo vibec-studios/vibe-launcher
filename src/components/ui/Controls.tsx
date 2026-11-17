@@ -76,7 +76,7 @@ export function Chip({ children, active, onClick, className }: { children: React
     <Tag
       onClick={onClick}
       className={cn(
-        "inline-flex h-7 items-center gap-1.5 border px-2.5 font-mono text-[11px] transition-colors duration-150",
+        "inline-flex h-7 items-center gap-1.5 border px-2.5 text-[12px] font-medium transition-colors duration-150",
         active ? "border-accent bg-accent text-[var(--on-accent)]" : "border-line2 text-text",
         onClick && !active && "hover:border-accent",
         className,
@@ -107,7 +107,7 @@ export function EmptyState({ icon, title, text, action, className }: { icon?: Re
   return (
     <div className={cn("flex flex-col items-center justify-center gap-3 px-6 py-16 text-center", className)}>
       {icon && <div className="mb-1 text-dim">{icon}</div>}
-      <div className="display text-[18px]">{title}</div>
+      <div className="display text-[16px]">{title}</div>
       {text && <p className="max-w-[420px] text-[13px] text-muted">{text}</p>}
       {action && <div className="mt-2">{action}</div>}
     </div>
@@ -134,7 +134,7 @@ export function Section({ title, right, children, className }: { title: ReactNod
   return (
     <section className={cn("flex flex-col gap-3", className)}>
       <div className="flex items-center gap-3">
-        <h3 className="label">{title}</h3>
+        <h3 className="text-[14px] font-semibold text-white">{title}</h3>
         <div className="h-px flex-1 bg-line" />
         {right}
       </div>

@@ -1,43 +1,55 @@
-// Aktiver Account in der Titelleiste, Umschalten per Dropdown.
+// Account-Knopf unten in der Icon-Leiste: aktiver Account, Wechseln, Microsoft-Konto hinzufügen.
 import { useNavigate } from "@tanstack/react-router";
-import { Check, ChevronDown, UserPlus, Users } from "lucide-react";
+import { Check, LogIn, UserRound, Users } from "lucide-react";
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAccounts } from "@/lib/queries";
 import { DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { PlayerHead } from "@/components/PlayerHead";
+import { MsaDialog } from "@/features/accounts/MsaDialog";
 
 export function AccountChip() {
   const t = useT();
   const nav = useNavigate();
   const { data: accounts = [] } = useAccounts();
   const active = accounts.find((a) => a.active) ?? accounts[0];
+  const [login, setLogin] = useState(false);
 
   return (
-    <DropdownMenu
-      trigger={
-        <button className="flex h-8 items-center gap-2 border border-transparent pl-1 pr-2 text-[13px] text-muted transition-colors duration-150 hover:border-line2 hover:text-white">
-          {active ? <PlayerHead uuid={active.uuid} name={active.username} size={22} /> : <Users size={16} className="mx-0.5" />}
-          <span className="max-w-[140px] truncate">{active ? active.username : t("nav.accounts")}</span>
-          <ChevronDown size={13} className="text-dim" />
-        </button>
-      }
-    >
-      {accounts.length > 0 && <DropdownLabel>{t("nav.accounts")}</DropdownLabel>}
-      {accounts.map((a) => (
-        <DropdownItem
-          key={a.id}
-          icon={a.active ? <Check size={14} className="text-accent" /> : <PlayerHead uuid={a.uuid} name={a.username} size={16} />}
-          onSelect={() => api.accountSetActive(a.id).catch((e) => toast.error(e))}
-        >
-          {a.username}
-          <span className="ml-2 font-mono text-[10px] uppercase text-dim">{a.kind === "microsoft" ? "MSA" : "Offline"}</span>
+    <>
+      <DropdownMenu
+        side="right"
+        align="end"
+        trigger={
+          <button
+            aria-label={active ? active.username : t("nav.accounts")}
+            className="relative mt-1 grid h-10 w-10 place-items-center border border-line bg-surface2 text-muted transition-colors duration-100 hover:border-line2 hover:text-white"
+          >
+            {active ? <PlayerHead uuid={active.uuid} name={active.username} size={30} /> : <UserRound size={18} />}
+            {active?.needs_relogin && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 border-2 border-black bg-warn" />}
+          </button>
+        }
+      >
+        {accounts.length > 0 ? <DropdownLabel>{t("nav.accounts")}</DropdownLabel> : <DropdownLabel>{t("rail.no_account")}</DropdownLabel>}
+        {accounts.map((a) => (
+          <DropdownItem
+            key={a.id}
+            icon={a.id === active?.id ? <Check size={14} className="text-brand" /> : <PlayerHead uuid={a.uuid} name={a.username} size={16} />}
+            onSelect={() => api.accountSetActive(a.id).catch((e) => toast.error(e))}
+          >
+            {a.username}
+          </DropdownItem>
+        ))}
+        <DropdownSeparator />
+        <DropdownItem icon={<LogIn size={14} />} onSelect={() => setLogin(true)}>
+          {t("rail.add_account")}
         </DropdownItem>
-      ))}
-      {accounts.length > 0 && <DropdownSeparator />}
-      <DropdownItem icon={<UserPlus size={14} />} onSelect={() => nav({ to: "/accounts" })}>
-        {t("nav.accounts")}
-      </DropdownItem>
-    </DropdownMenu>
+        <DropdownItem icon={<Users size={14} />} onSelect={() => nav({ to: "/accounts" })}>
+          {t("rail.manage_accounts")}
+        </DropdownItem>
+      </DropdownMenu>
+      <MsaDialog open={login} onOpenChange={setLogin} />
+    </>
   );
 }
