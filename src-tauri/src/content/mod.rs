@@ -35,6 +35,7 @@ pub mod perf;
 pub mod modpack;
 pub mod autoupdate;
 pub mod worlds;
+pub mod worldbackup;
 
 /// Herkunft: Modrinth, CurseForge oder ein eigener Store (serialisiert als `"store:<id>"`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

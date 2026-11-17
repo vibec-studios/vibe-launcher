@@ -1,7 +1,7 @@
-// Welten einer Instanz (saves/). Rechtsklick: Ordner öffnen, Löschen.
+// Welten einer Instanz (saves/). Rechtsklick: Ordner öffnen, Backup erstellen, in andere Instanz kopieren, Löschen.
 import { memo, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FolderOpen, Globe2, Trash2 } from "lucide-react";
+import { Archive, Copy, FileArchive, FolderOpen, Globe2, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
 import type { Instance, World } from "@/lib/types";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui";
 import { PixelBlock } from "@/components/instance/InstanceIcon";
 import { useT } from "@/i18n";
+import { CopyWorldDialog, backupWorld, importWorldZip } from "@/features/backups/worldActions";
 
 const MODES = ["survival", "creative", "adventure", "spectator", "hardcore"];
 const wrap = "w-full px-6";
@@ -50,7 +51,7 @@ function WorldIcon({ world }: { world: World }) {
   );
 }
 
-const WorldRow = memo(function WorldRow({ instance, world }: { instance: Instance; world: World }) {
+const WorldRow = memo(function WorldRow({ instance, world, onCopy }: { instance: Instance; world: World; onCopy: (w: World) => void }) {
   const t = useT();
   const openDir = () => api.instanceOpenFolder(instance.id, `saves/${world.folder}`).catch((e) => toast.error(e));
   const del = async () => {
@@ -78,6 +79,12 @@ const WorldRow = memo(function WorldRow({ instance, world }: { instance: Instanc
           <ContextItem icon={<FolderOpen size={14} />} onSelect={openDir}>
             {t("common.open_folder")}
           </ContextItem>
+          <ContextItem icon={<Archive size={14} />} onSelect={() => backupWorld(instance, world)}>
+            {t("worlds.backup")}
+          </ContextItem>
+          <ContextItem icon={<Copy size={14} />} onSelect={() => onCopy(world)}>
+            {t("worlds.copy")}
+          </ContextItem>
           <ContextSeparator />
           <ContextItem icon={<Trash2 size={14} />} danger onSelect={del}>
             {t("common.delete")}
@@ -97,7 +104,17 @@ const WorldRow = memo(function WorldRow({ instance, world }: { instance: Instanc
         {mode && <Tag color={gm === "hardcore" ? "#ff5470" : undefined}>{mode}</Tag>}
         <div className="w-[120px] text-right text-[12px] text-muted">{world.last_played ? formatRelative(world.last_played) : "–"}</div>
         <div className="w-[80px] text-right text-[12px] tabular-nums text-dim">{formatBytes(world.size)}</div>
-        <div className="flex w-[76px] justify-end gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+        <div className="flex w-[136px] justify-end gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+          <Tooltip content={t("worlds.backup")}>
+            <IconButton label={t("worlds.backup")} size="sm" className="border-transparent hover:border-line2" onClick={() => backupWorld(instance, world)}>
+              <Archive size={14} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip content={t("worlds.copy")}>
+            <IconButton label={t("worlds.copy")} size="sm" className="border-transparent hover:border-line2" onClick={() => onCopy(world)}>
+              <Copy size={14} />
+            </IconButton>
+          </Tooltip>
           <Tooltip content={t("common.open_folder")}>
             <IconButton label={t("common.open_folder")} size="sm" className="border-transparent hover:border-line2" onClick={openDir}>
               <FolderOpen size={14} />
@@ -118,6 +135,7 @@ export function WorldsTab({ instance }: { instance: Instance }) {
   const t = useT();
   const q = useQuery({ queryKey: qk.worlds(instance.id), queryFn: () => api.worldsList(instance.id) });
   const [query, setQuery] = useState("");
+  const [copying, setCopying] = useState<World | null>(null);
   const dq = useDeferredValue(query.trim().toLowerCase());
   const list = useMemo(
     () =>
@@ -134,6 +152,9 @@ export function WorldsTab({ instance }: { instance: Instance }) {
           <SearchInput value={query} onChange={setQuery} placeholder={t("worlds.search")} className="max-w-[320px] flex-1" />
           <span className="text-[12px] text-dim">{q.data ? t("worlds.count", { n: q.data.length }) : ""}</span>
           <div className="flex-1" />
+          <Button size="sm" icon={<FileArchive size={13} />} onClick={() => importWorldZip(instance)}>
+            {t("worlds.import")}
+          </Button>
           <Button size="sm" icon={<FolderOpen size={13} />} onClick={() => api.instanceOpenFolder(instance.id, "saves").catch((e) => toast.error(e))}>
             {t("worlds.open_saves")}
           </Button>
@@ -159,11 +180,12 @@ export function WorldsTab({ instance }: { instance: Instance }) {
         ) : (
           <div className="flex flex-col gap-2">
             {list.map((w) => (
-              <WorldRow key={w.folder} instance={instance} world={w} />
+              <WorldRow key={w.folder} instance={instance} world={w} onCopy={setCopying} />
             ))}
           </div>
         )}
       </div>
+      <CopyWorldDialog instance={instance} world={copying} onClose={() => setCopying(null)} />
     </div>
   );
 }

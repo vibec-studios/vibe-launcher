@@ -193,6 +193,18 @@ pub fn run() {
             commands::content::modset_delete,
             commands::content::perf_preview,
             commands::content::perf_install,
+            // backups
+            commands::backups::snapshots_list,
+            commands::backups::snapshot_create,
+            commands::backups::snapshot_restore,
+            commands::backups::snapshot_delete,
+            commands::backups::world_backups_list,
+            commands::backups::world_backup_create,
+            commands::backups::world_backup_restore,
+            commands::backups::world_backup_delete,
+            commands::backups::world_copy,
+            commands::backups::world_import_zip,
+            commands::backups::backups_open_folder,
         ])
         .run(tauri::generate_context!())
         .expect("Fehler beim Starten des Launchers");

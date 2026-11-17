@@ -67,6 +67,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
 | Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, perf_preview, perf_install |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
+| Backups | snapshots_list, snapshot_create, snapshot_restore, snapshot_delete, world_backups_list, world_backup_create, world_backup_restore, world_backup_delete, world_copy, world_import_zip, backups_open_folder (`commands/backups.rs`) |
 
 ### Wichtige Abläufe
 
@@ -196,6 +197,40 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   (Cache unter `cache/textures/`). Skin-Änderungen aktualisieren `Account.skin_url` (-> `accounts://changed`,
   `PlayerHead` zeigt eigene Accounts direkt aus der Textur). Bibliothek: `skins/<id>.png` + `skins.json` im Datenordner
   (Duplikate per SHA-1 erkannt). Nur PNG 64×64 / 64×32. `accountId = null` -> aktiver Account.
+
+### Backups (Snapshots + Welt-Backups)
+
+- **Snapshots** (`content/snapshots.rs`): sichern `mods/ resourcepacks/ shaderpacks/ datapacks/ config/ defaultconfigs/
+  kubejs/`, `options.txt`, `optionsof.txt`, `optionsshaders.txt` (Spielordner) und `content.json`, `pack.json`,
+  `modsets.json` (Instanzordner) – keine Welten/Logs/Screenshots. Objekte nach SHA-1 unter
+  `backups/objects/<ab>/<sha1>` (dedupliziert), Manifeste `backups/snapshots/<instanz>/<id>.json`
+  (`files/meta: {rel_path, sha1, size}[]` + `dirs`). `.jar`/`.zip` (auch `.disabled`) per Hardlink (Fallback Kopie),
+  alles andere kopiert. Löschen räumt nicht mehr referenzierte Objekte auf. Wiederherstellen legt vorher den
+  automatischen Snapshot „Vor Wiederherstellung“ an, bringt die Ordner exakt auf den Snapshot-Stand (entfernt
+  zusätzliche Dateien/Ordner) und sendet `content://changed`; verweigert, solange die Instanz läuft.
+  Rust-API (Vertrag, z. B. für automatische Snapshots vor Updates):
+  ```rust
+  content::snapshots::create(state, instance_id, name, auto, progress: Option<&SubProgress>) -> AppResult<SnapshotInfo>
+  content::snapshots::restore(state, instance_id, snapshot_id, progress) -> AppResult<()>
+  content::snapshots::list(state, instance_id) -> AppResult<Vec<SnapshotInfo>>   // neueste zuerst
+  content::snapshots::delete(state, instance_id, snapshot_id) -> AppResult<()>
+  ```
+  `SnapshotInfo { id, name, created, auto, file_count, size }`; leerer Name -> „Snapshot vom <Datum>“.
+  `auto = true` zählt zur Grenze `Settings.snapshot_keep` (Standard 10 je Instanz, nur automatische).
+- **Welt-Backups** (`content/worldbackup.rs`): ZIP `backups/worlds/<instanz>/<ordner>/<zeitstempel>.zip` (Wurzel
+  `<ordner>/`, ohne `session.lock`) + Sidecar `.json` (Name, Zeit, Größe, `auto`, Fingerabdruck aus
+  Pfad/Größe/mtime). `WorldBackup { id: "<ordner>/<zeitstempel>", folder, world_name, created, size, auto }`.
+  `world_backup_restore` sichert eine vorhandene Welt vorher (auto) und ersetzt sie dann; `world_copy` und
+  `world_import_zip` (level.dat in der Wurzel oder eine Ebene tiefer, Zip-Slip-sicher) wählen einen freien
+  Ordnernamen („Welt (2)“). Alle langen Operationen sind Tasks (`kind: "backup"`), streamen in `spawn_blocking`,
+  melden Fortschritt nach Bytes und sind abbrechbar. Danach `content://changed`.
+- **Vor dem Start**: `content::worldbackup::before_launch(state, id, task)` (in `minecraft::launch` nach dem
+  Auto-Update): bei `Settings.world_backup_on_launch` (Standard aus) werden alle seit dem letzten Backup geänderten
+  Welten gesichert (Stufe „Welten werden gesichert …“), danach gilt `Settings.world_backups_keep` (Standard 5 je
+  Welt, nur automatische). Scheitert nie – Probleme stehen im Spiel-Log.
+- Frontend: Instanz-Tab „Backups“ (`features/backups/BackupsTab.tsx`), Welt-Aktionen im Welten-Tab
+  (`features/backups/worldActions.tsx`), Karte „Backups“ in den Einstellungen. Query-Keys
+  `["content", id, "snapshots"]` / `["worlds", id, "backups"]` werden über `content://changed` mit aktualisiert.
 
 ## Events (Backend -> Frontend)
 

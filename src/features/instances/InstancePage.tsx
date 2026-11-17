@@ -19,6 +19,7 @@ import { useT } from "@/i18n";
 import { WorldsTab } from "./WorldsTab";
 import { ActiveModSet } from "@/features/content/ModSetsMenu";
 import { InstanceSettingsTab } from "./InstanceSettingsTab";
+import { BackupsTab } from "@/features/backups/BackupsTab";
 import { accentVars } from "@/components/instance/accent";
 
 const route = getRouteApi("/instances/$id");
@@ -86,7 +87,7 @@ function HeaderSkeleton() {
         <Skeleton className="h-10 w-[136px]" />
       </div>
       <div className={cn(wrap, "flex h-11 items-center gap-6")}>
-        {Array.from({ length: 6 }, (_, i) => (
+        {Array.from({ length: 7 }, (_, i) => (
           <Skeleton key={i} className="h-3.5 w-16" />
         ))}
       </div>
@@ -197,6 +198,7 @@ export function InstancePage() {
               { value: "resourcepacks", label: t("inst.tab.resourcepacks") },
               { value: "shaders", label: t("inst.tab.shaders") },
               { value: "worlds", label: t("inst.tab.worlds") },
+              { value: "backups", label: t("inst.tab.backups") },
               { value: "logs", label: t("inst.tab.logs") },
               { value: "settings", label: t("inst.tab.settings") },
             ]}
@@ -211,6 +213,8 @@ export function InstancePage() {
           </div>
         ) : active === "worlds" ? (
           <WorldsTab instance={inst} />
+        ) : active === "backups" ? (
+          <BackupsTab instance={inst} />
         ) : active === "logs" ? (
           <LogsTab instance={inst} />
         ) : (
