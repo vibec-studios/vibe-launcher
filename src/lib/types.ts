@@ -134,7 +134,7 @@ export interface TaskInfo {
 
 // ------------------------------------------------------------------ Accounts
 
-export type AccountKind = "microsoft" | "offline";
+export type AccountKind = "microsoft";
 
 export interface Account {
   id: string;

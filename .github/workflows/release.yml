@@ -1,0 +1,92 @@
+name: Release
+
+# Neues Release: Version in package.json + src-tauri/Cargo.toml erhöhen, committen,
+# Tag `vX.Y.Z` pushen. Ergebnis ist ein Draft-Release mit NSIS-Installer, .sig und latest.json.
+# Details: docs/RELEASE.md
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Windows-Release
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag passt zur Version?
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          pkg=$(node -p "require('./package.json').version")
+          cargo_ver=$(grep -m1 '^version' src-tauri/Cargo.toml | sed -E 's/.*"(.*)".*/\1/')
+          tag="${GITHUB_REF_NAME#v}"
+          echo "Tag: $tag, package.json: $pkg, Cargo.toml: $cargo_ver"
+          if [ "$tag" != "$pkg" ] || [ "$tag" != "$cargo_ver" ]; then
+            echo "::error::Tag v$tag passt nicht zu package.json ($pkg) / Cargo.toml ($cargo_ver)"
+            exit 1
+          fi
+
+      - name: Secrets vorhanden?
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          VIBE_MSA_CLIENT_ID: ${{ secrets.VIBE_MSA_CLIENT_ID }}
+        run: |
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::error::Secret TAURI_SIGNING_PRIVATE_KEY fehlt (Updater-Artefakte können nicht signiert werden)"
+            exit 1
+          fi
+          [ -n "$CURSEFORGE_API_KEY" ] || echo "::warning::CURSEFORGE_API_KEY fehlt – CurseForge ist im Build deaktiviert"
+          [ -n "$VIBE_MSA_CLIENT_ID" ] || echo "::warning::VIBE_MSA_CLIENT_ID fehlt – Microsoft-Login ist im Build deaktiviert"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build + Release (Draft)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Werden beim Kompilieren eingebettet (option_env! in settings.rs)
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          VIBE_MSA_CLIENT_ID: ${{ secrets.VIBE_MSA_CLIENT_ID }}
+        with:
+          tagName: v__VERSION__
+          releaseName: Vibe Launcher v__VERSION__
+          releaseBody: |
+            **Download:** die Datei `…_x64-setup.exe` unten unter „Assets“ (Windows 10/11, 64 Bit).
+            Bereits installierte Launcher aktualisieren sich automatisch.
+
+            **Download:** grab the `…_x64-setup.exe` file below under "Assets" (Windows 10/11, 64-bit).
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
+          args: --bundles nsis
