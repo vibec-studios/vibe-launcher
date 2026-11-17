@@ -65,7 +65,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
 | Skins | skins_profile, skin_upload_file, skin_apply_library, skin_set_variant, skin_reset, cape_set, skin_library_list, skin_library_add_file, skin_library_add_current, skin_library_import_player, skin_library_rename, skin_library_set_variant, skin_library_remove, skin_library_export, skin_library_reveal |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
-| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled |
+| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, config_tree, config_read, config_write, config_restore, config_validate, config_search |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
 
 ### Wichtige Abläufe
@@ -131,6 +131,28 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   (`https://vibec-studios.github.io/data/store.json`) ist immer enthalten und nur deaktivierbar.
 - Commands: `stores_list() -> StoreInfo[]` (lädt aktivierte Stores, liefert Name/Icon/Projektanzahl/Fehler),
   `store_add(url)` (laden + prüfen; ID/Name/Icon aus der Datei), `store_remove(id)`, `store_set_enabled(id, enabled)`.
+
+### Konfigurations-Editor (Tab „Configs“)
+
+- Backend `content/configs.rs` + `commands/configs.rs`, Frontend `features/configs/` (CodeMirror 6, nur per
+  dynamischem `import()` geladen – nicht im Haupt-Bundle), Texte in `i18n/configs.ts`.
+- Pfade sind **relativ zum Spielordner** mit `/`. Erlaubt: `config/**`, `defaultconfigs/**`, `options.txt`,
+  `optionsof.txt`, `optionsshaders.txt` (nicht `servers.dat`). Abgelehnt: `..`, absolute Pfade, Laufwerksbuchstaben,
+  Symlinks und alles, was kanonisch außerhalb der Wurzel landet.
+- `config_tree(instanceId) -> ConfigEntry[]` (flach, Ordner + Dateien; `binary = true` für Endungen außerhalb von
+  json, json5, toml, properties, cfg, conf, txt, yaml, yml, ini, snbt, js, zs, mcmeta -> nicht bearbeitbar).
+- `config_read(instanceId, path) -> ConfigFile` (`language`: json|json5|toml|properties|yaml|ini|javascript|text).
+  `readonly` + `readonly_reason`: `too_large` (> 2 MB, kein Inhalt), `binary` (kein Inhalt), `encoding` (kein UTF-8,
+  Inhalt nur zur Ansicht). UTF-8-BOM wird beim Lesen entfernt und beim Schreiben beibehalten, ebenso CRLF.
+- `config_write(instanceId, path, content) -> ConfigFile`: sichert die alte Fassung nach
+  `instances/<id>/config-backups/<pfad>/<ms>-<nr>` (höchstens 10 je Datei, älteste fliegt), schreibt atomar
+  (tmp + rename). Gleicher Inhalt -> keine neue Sicherung. Nicht-UTF-8-Dateien werden abgelehnt.
+- `config_restore(instanceId, path) -> ConfigFile`: spielt die neueste Sicherung zurück; die aktuelle Fassung wird
+  vorher selbst gesichert (erneutes Zurücksetzen = rückgängig).
+- `config_validate(path, content) -> ValidationError[] {line, column, message}` (1-basiert): JSON (Kommentare
+  erlaubt), JSON5 (Kommentare + abschließende Kommas; JSON5-Erweiterungen werden nicht als Fehler gemeldet), TOML.
+  Andere Formate: nie Fehler.
+- `config_search(instanceId, query) -> {path, line, text}[]`: ohne Groß-/Kleinschreibung, höchstens 200 Treffer.
 
 ### Auto-Update von Inhalten und fixierte Versionen
 

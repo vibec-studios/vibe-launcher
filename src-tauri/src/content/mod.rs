@@ -28,6 +28,7 @@ pub mod nbt;
 pub mod provider;
 pub mod store;
 pub mod autoupdate;
+pub mod configs;
 pub mod worlds;
 
 /// Herkunft: Modrinth, CurseForge oder ein eigener Store (serialisiert als `"store:<id>"`).

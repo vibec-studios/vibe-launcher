@@ -18,6 +18,7 @@ import { LogsTab, showLogFile, uploadCrash } from "@/features/logs/LogsTab";
 import { useT } from "@/i18n";
 import { WorldsTab } from "./WorldsTab";
 import { InstanceSettingsTab } from "./InstanceSettingsTab";
+import { ConfigsTab } from "@/features/configs/ConfigsTab";
 import { accentVars } from "@/components/instance/accent";
 
 const route = getRouteApi("/instances/$id");
@@ -194,6 +195,7 @@ export function InstancePage() {
               { value: "shaders", label: t("inst.tab.shaders") },
               { value: "worlds", label: t("inst.tab.worlds") },
               { value: "logs", label: t("inst.tab.logs") },
+              { value: "configs", label: t("inst.tab.configs") },
               { value: "settings", label: t("inst.tab.settings") },
             ]}
           />
@@ -209,6 +211,8 @@ export function InstancePage() {
           <WorldsTab instance={inst} />
         ) : active === "logs" ? (
           <LogsTab instance={inst} />
+        ) : active === "configs" ? (
+          <ConfigsTab instance={inst} />
         ) : (
           <InstanceSettingsTab instance={inst} />
         )}

@@ -138,4 +138,16 @@ export const api = {
   screenshotDelete: (path: string) => call<void>("screenshot_delete", { path }),
   screenshotCopy: (path: string) => call<void>("screenshot_copy", { path }),
   screenshotOpenFolder: (path: string) => call<void>("screenshot_open_folder", { path }),
+
+  // ---------------------------------------------------------------- Konfigurations-Editor
+  /** config/, defaultconfigs/ (rekursiv) und options*.txt einer Instanz als flache Liste */
+  configTree: (instanceId: string) => call<T.ConfigEntry[]>("config_tree", { instanceId }),
+  configRead: (instanceId: string, path: string) => call<T.ConfigFile>("config_read", { instanceId, path }),
+  /** Sichert die alte Fassung (max. 10 je Datei) und schreibt atomar */
+  configWrite: (instanceId: string, path: string, content: string) => call<T.ConfigFile>("config_write", { instanceId, path, content }),
+  /** Letzte Sicherung zurückspielen (aktuelle Fassung wird selbst gesichert -> rückgängig machbar) */
+  configRestore: (instanceId: string, path: string) => call<T.ConfigFile>("config_restore", { instanceId, path }),
+  configValidate: (path: string, content: string) => call<T.ConfigValidationError[]>("config_validate", { path, content }),
+  /** Volltextsuche in allen Konfigurationsdateien (max. 200 Treffer) */
+  configSearch: (instanceId: string, query: string) => call<T.ConfigSearchHit[]>("config_search", { instanceId, query }),
 };

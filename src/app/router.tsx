@@ -13,8 +13,8 @@ import { SkinsPage } from "@/features/skins/SkinsPage";
 import { ScreenshotsPage } from "@/features/screenshots/ScreenshotsPage";
 import type { ProjectType, Source } from "@/lib/types";
 
-export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "logs" | "settings";
-const instanceTabs: InstanceTab[] = ["content", "resourcepacks", "shaders", "worlds", "logs", "settings"];
+export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "logs" | "configs" | "settings";
+const instanceTabs: InstanceTab[] = ["content", "resourcepacks", "shaders", "worlds", "logs", "configs", "settings"];
 const projectTypes: ProjectType[] = ["mod", "modpack", "resourcepack", "shader", "datapack"];
 
 export interface DiscoverSearch {
