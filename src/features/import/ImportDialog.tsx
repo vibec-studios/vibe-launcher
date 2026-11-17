@@ -4,13 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, FileArchive, FolderInput, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
-import { Button, Dialog, Field, Input, Progress, Skeleton, Tag } from "@/components/ui";
+import { Button, Dialog, Field, Input, Progress, Skeleton } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatLoader } from "@/lib/format";
 import { useTask, waitForTask } from "@/lib/queries";
 import type { PackFormat } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
+import { Pill } from "@/components/content/Pill";
 import { baseName } from "@/components/content/util";
 import { finishNewInstance } from "@/components/content/install";
 
@@ -134,7 +135,7 @@ export function ImportDialog() {
                 {t("import.other_file")}
               </Button>
             )}
-            <Button variant="accent" disabled={!p || !name.trim()} onClick={start} icon={<Upload size={14} />}>
+            <Button variant="primary" disabled={!p || !name.trim()} onClick={start} icon={<Upload size={14} />}>
               {failed ? t("common.retry") : t("import.start")}
             </Button>
           </>
@@ -146,8 +147,8 @@ export function ImportDialog() {
           onClick={choose}
           className="flex w-full flex-col items-center justify-center gap-3 border border-dashed border-line2 px-6 py-12 text-center transition-colors duration-150 hover:border-accent hover:bg-white/[.02]"
         >
-          <FileArchive size={30} className="text-accent" />
-          <span className="display text-[16px]">{t("import.drop_or_choose")}</span>
+          <FileArchive size={28} className="text-brand" />
+          <span className="text-[15px] font-semibold text-white">{t("import.drop_or_choose")}</span>
           <span className="text-[12.5px] text-muted">{t("import.formats")}</span>
         </button>
       ) : preview.isPending ? (
@@ -181,7 +182,7 @@ export function ImportDialog() {
                 {[p.version_name, p.author && t("discover.by", { author: p.author })].filter(Boolean).join(" · ") || baseName(path)}
               </div>
             </div>
-            <Tag>{formatNames[p.format] ?? p.format}</Tag>
+            <Pill>{formatNames[p.format] ?? p.format}</Pill>
           </div>
           <div className="grid grid-cols-3 gap-px border border-line bg-line">
             <Fact label={t("discover.filter.version")} value={p.mc_version} />

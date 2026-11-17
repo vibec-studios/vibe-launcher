@@ -1,5 +1,5 @@
 // OWNER: Frontend-Agent B. Minecraft-Konten (nur Microsoft): Liste, aktiv setzen, auffrischen, entfernen, Anmeldung.
-import { AlertTriangle, CheckCircle2, LogIn, MoreHorizontal, RefreshCw, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
+import { AlertTriangle, CheckCircle2, LogIn, MoreVertical, RefreshCw, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
 import { memo, useState } from "react";
 import {
   Button,
@@ -12,7 +12,6 @@ import {
   ErrorState,
   IconButton,
   Skeleton,
-  Tag,
   Tooltip,
   cn,
   confirm,
@@ -70,12 +69,11 @@ export function AccountsPage() {
 
   return (
     <div className="scroll h-full">
-      <div className="mx-auto w-full max-w-[920px] px-8 pb-16 pt-10">
-        <div className="flex items-end justify-between gap-6">
+      <div className="mx-auto w-full max-w-[860px] px-6 pb-12 pt-6">
+        <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <div className="eyebrow">{t("accounts.eyebrow")}</div>
-            <h1 className="display text-[34px]">{t("nav.accounts")}</h1>
-            <p className="mt-2.5 max-w-[540px] text-[14px] text-muted">{t("accounts.lead")}</p>
+            <h1 className="display text-[22px]">{t("nav.accounts")}</h1>
+            <p className="mt-0.5 text-[13px] text-muted">{t("accounts.lead")}</p>
           </div>
           {accounts.length > 0 && (
             <Button variant="primary" icon={<LogIn size={15} />} onClick={() => setMsa(true)}>
@@ -84,88 +82,56 @@ export function AccountsPage() {
           )}
         </div>
 
-        <div className="mt-8">
+        <div className="mt-5 border border-line bg-surface">
           {q.isPending ? (
-            <div className="flex flex-col gap-3">
-              {[0, 1].map((i) => (
-                <div key={i} className="flex h-[88px] items-center gap-4 border border-line bg-surface px-5">
-                  <Skeleton className="h-12 w-12" />
-                  <div className="flex flex-1 flex-col gap-2">
-                    <Skeleton className="h-4 w-40" />
-                    <Skeleton className="h-3 w-64" />
-                  </div>
-                  <Skeleton className="h-8 w-28" />
+            [0, 1].map((i) => (
+              <div key={i} className="flex h-[68px] items-center gap-3.5 border-b border-line px-4 last:border-b-0">
+                <Skeleton className="h-10 w-10" />
+                <div className="flex flex-1 flex-col gap-2">
+                  <Skeleton className="h-3.5 w-36" />
+                  <Skeleton className="h-3 w-56" />
                 </div>
-              ))}
-            </div>
+                <Skeleton className="h-8 w-24" />
+              </div>
+            ))
           ) : q.isError ? (
-            <div className="border border-line bg-surface">
-              <ErrorState error={q.error} onRetry={() => q.refetch()} />
-            </div>
+            <ErrorState error={q.error} onRetry={() => q.refetch()} />
           ) : accounts.length === 0 ? (
             <EmptyAccounts onLogin={() => setMsa(true)} />
           ) : (
-            <div className="flex flex-col gap-3">
-              {accounts.map((a) => (
-                <AccountCard key={a.id} account={a} onRelogin={() => setMsa(true)} />
-              ))}
-            </div>
+            accounts.map((a) => <AccountRow key={a.id} account={a} onRelogin={() => setMsa(true)} />)
           )}
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-3">
-          <InfoTile icon={<ShieldCheck size={16} />} title={t("accounts.info.secure")} text={t("accounts.info.secure_text")} />
-          <InfoTile icon={<UserRound size={16} />} title={t("accounts.info.java")} text={t("accounts.info.java_text")} />
-        </div>
+        <p className="mt-4 flex items-start gap-2 text-[12.5px] leading-relaxed text-dim">
+          <ShieldCheck size={14} className="mt-0.5 shrink-0" />
+          {t("accounts.info.secure_text")} {t("accounts.info.java_text")}
+        </p>
       </div>
       <MsaDialog open={msa} onOpenChange={setMsa} />
     </div>
   );
 }
 
-function InfoTile({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
-  return (
-    <div className="border border-line px-5 py-4">
-      <div className="flex items-center gap-2 text-[13px] font-semibold text-white">
-        <span className="text-accent">{icon}</span>
-        {title}
-      </div>
-      <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">{text}</p>
-    </div>
-  );
-}
-
-const STEVE = ["HHHHHHHH", "HHHHHHHH", "HSSSSSSH", "SSSSSSSS", "SWESSEWS", "SSSNNSSS", "SSMMMMSS", "SSMSSMSS"];
-const PIXEL: Record<string, string> = { H: "#3b2a1a", S: "#c69c7a", W: "#ffffff", E: "var(--accent)", N: "#8b5a3c", M: "#5a2f1e" };
-
 function EmptyAccounts({ onLogin }: { onLogin: () => void }) {
   const t = useT();
   return (
-    <div className="relative overflow-hidden border border-line border-t-2 border-t-accent bg-surface">
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "radial-gradient(70% 120% at 90% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%)" }}
-      />
-      <div className="relative flex items-center gap-8 px-9 py-10">
-        <div className="grid h-[96px] w-[96px] shrink-0 grid-cols-8 grid-rows-8 border border-line2 bg-black p-2" aria-hidden>
-          {/* Pixel-Kopf als Platzhalter */}
-          {STEVE.join("").split("").map((c, i) => (
-            <span key={i} style={{ background: PIXEL[c] }} />
-          ))}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="display text-[24px]">{t("accounts.empty.title")}</div>
-          <p className="mt-2 max-w-[460px] text-[14px] text-muted">{t("accounts.empty.text")}</p>
-          <Button variant="primary" size="lg" className="mt-6" icon={<LogIn size={16} />} onClick={onLogin} autoFocus>
-            {t("accounts.empty.cta")}
-          </Button>
-        </div>
+    <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+      <span className="grid h-12 w-12 place-items-center bg-surface3 text-muted">
+        <UserRound size={22} />
+      </span>
+      <div>
+        <div className="text-[15px] font-semibold text-white">{t("accounts.empty.title")}</div>
+        <p className="mt-1 max-w-[420px] text-[13px] text-muted">{t("accounts.empty.text")}</p>
       </div>
+      <Button variant="primary" className="mt-1" icon={<LogIn size={15} />} onClick={onLogin} autoFocus>
+        {t("accounts.empty.cta")}
+      </Button>
     </div>
   );
 }
 
-const AccountCard = memo(function AccountCard({ account: a, onRelogin }: { account: Account; onRelogin: () => void }) {
+const AccountRow = memo(function AccountRow({ account: a, onRelogin }: { account: Account; onRelogin: () => void }) {
   const t = useT();
   const [busy, setBusy] = useState(false);
   const refresh = () => {
@@ -188,7 +154,7 @@ const AccountCard = memo(function AccountCard({ account: a, onRelogin }: { accou
           {t("accounts.relogin")}
         </ContextItem>
       )}
-      <ContextItem icon={<UserRound size={14} />} onSelect={() => void actions.copyUuid(a)}>
+      <ContextItem icon={<UserRound size={14} />} onSelect={() => void actions.copyUuid(a).catch((e) => toast.error(e))}>
         {t("accounts.copy_uuid")}
       </ContextItem>
       <ContextSeparator />
@@ -201,42 +167,42 @@ const AccountCard = memo(function AccountCard({ account: a, onRelogin }: { accou
     <ContextMenu content={menu}>
       <div
         className={cn(
-          "flex items-center gap-4 border bg-surface px-5 py-4 transition-[border-color,box-shadow] duration-150 data-[state=open]:border-line2",
-          a.active ? "border-line2 shadow-[inset_3px_0_0_var(--accent)]" : "border-line hover:border-line2",
+          "flex h-[68px] items-center gap-3.5 border-b border-line px-4 transition-colors duration-100 last:border-b-0 data-[state=open]:bg-white/[.03]",
+          a.active ? "shadow-[inset_3px_0_0_var(--color-brand)]" : "hover:bg-white/[.02]",
         )}
       >
-        <PlayerHead uuid={a.uuid} name={a.username} size={52} />
+        <PlayerHead uuid={a.uuid} name={a.username} size={40} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2.5">
-            <span className="truncate text-[16px] font-semibold text-white">{a.username}</span>
-            <Tag>Microsoft</Tag>
+          <div className="flex items-center gap-2">
+            <span className="truncate text-[15px] font-semibold text-white">{a.username}</span>
             {a.active && (
-              <span className="inline-flex h-5 items-center gap-1 bg-accent px-1.5 font-mono text-[10px] font-semibold uppercase tracking-[.08em] text-[var(--on-accent)]">
+              <span className="inline-flex h-5 items-center gap-1 bg-brand/20 px-1.5 text-[11.5px] font-semibold text-[#c4b5ff]">
                 <CheckCircle2 size={11} />
                 {t("accounts.active")}
               </span>
             )}
           </div>
-          <div className="selectable mt-1 truncate font-mono text-[11.5px] text-dim">{formatUuid(a.uuid)}</div>
           {expired ? (
-            <div className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-warn">
+            <div className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-warn">
               <AlertTriangle size={13} />
               {t("accounts.needs_relogin")}
             </div>
-          ) : a.expires_at ? (
-            <div className="mt-1 text-[12px] text-dim">
-              {a.expires_at > Date.now() ? t("accounts.expires", { time: formatRelative(a.expires_at) }) : t("accounts.expired_refresh")}
+          ) : (
+            <div className="mt-0.5 truncate text-[12.5px] text-dim">
+              Microsoft
+              {a.expires_at ? ` · ${a.expires_at > Date.now() ? t("accounts.expires", { time: formatRelative(a.expires_at) }) : t("accounts.expired_refresh")}` : ""}
+              <span className="selectable ml-2 font-mono text-[11px]">{formatUuid(a.uuid)}</span>
             </div>
-          ) : null}
+          )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           {expired ? (
-            <Button size="sm" variant="accent" icon={<LogIn size={13} />} onClick={onRelogin}>
+            <Button size="sm" variant="primary" icon={<LogIn size={14} />} onClick={onRelogin}>
               {t("accounts.relogin")}
             </Button>
           ) : (
             !a.active && (
-              <Button size="sm" variant="ghost" icon={<Star size={13} />} onClick={() => void actions.setActive(a)}>
+              <Button size="sm" variant="ghost" onClick={() => void actions.setActive(a)}>
                 {t("accounts.set_active")}
               </Button>
             )
@@ -249,7 +215,7 @@ const AccountCard = memo(function AccountCard({ account: a, onRelogin }: { accou
           <DropdownMenu
             trigger={
               <IconButton label={t("common.more")} size="sm">
-                <MoreHorizontal size={15} />
+                <MoreVertical size={15} />
               </IconButton>
             }
           >

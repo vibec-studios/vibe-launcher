@@ -94,7 +94,7 @@ export function GlobalDropZone() {
             ) : (
               <Info size={36} className="text-muted" />
             )}
-            <div className="display text-[22px]">
+            <div className="text-[20px] font-bold text-white">
               {hint.kind === "pack"
                 ? t("drop.import")
                 : hint.kind === "jar"

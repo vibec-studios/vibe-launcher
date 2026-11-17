@@ -1,18 +1,22 @@
-// Eine Zeile im Inhalte-Tab. memo + stabile Aktionen -> beim Umschalten/Auswählen rendert nur die betroffene Zeile neu.
-import { ArrowUpCircle, ExternalLink, FolderOpen, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react";
+// Zeile der Inhalte-Tabelle (Stil Modrinth App). memo + stabile Aktionen -> beim Umschalten/Auswählen rendert nur
+// die betroffene Zeile neu.
+import { ArrowUpCircle, Check, ExternalLink, FolderOpen, MoreVertical, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react";
 import { memo, type MouseEvent } from "react";
-import { ContextItem, ContextMenu, ContextSeparator, Switch, Tooltip, cn } from "@/components/ui";
+import { ContextItem, ContextMenu, ContextSeparator, DropdownItem, DropdownMenu, DropdownSeparator, Switch, Tooltip, cn, type MenuItemProps } from "@/components/ui";
 import { useT } from "@/i18n";
 import type { ContentItem, ContentUpdate } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { sourceNames } from "@/components/content/util";
 
-export const ROW_H = 56;
+export const ROW_H = 52;
+/** Spalten: Auswahl | Name | Version | Aktionen */
+export const GRID = "grid grid-cols-[18px_minmax(0,1fr)_minmax(0,190px)_88px] items-center gap-3 px-4 @min-[820px]:grid-cols-[18px_minmax(0,1fr)_minmax(0,260px)_88px]";
 
 export interface RowActions {
   click: (key: string, e: MouseEvent) => void;
+  toggle: (key: string) => void;
   context: (key: string) => void;
-  /** Ziel-Einträge eines Kontextmenüs: Auswahl, falls die Zeile dazugehört */
+  /** Ziel-Einträge eines Menüs: Auswahl, falls die Zeile dazugehört */
   menuTargets: (key: string) => ContentItem[];
   setEnabled: (items: ContentItem[], enabled: boolean) => void;
   update: (items: ContentItem[]) => void;
@@ -22,7 +26,7 @@ export interface RowActions {
   hasUpdate: (item: ContentItem) => boolean;
 }
 
-function RowMenu({ itemKey, actions }: { itemKey: string; actions: RowActions }) {
+function RowMenu({ itemKey, actions, Item, Sep }: { itemKey: string; actions: RowActions; Item: (p: MenuItemProps) => React.ReactNode; Sep: () => React.ReactNode }) {
   const t = useT();
   const items = actions.menuTargets(itemKey);
   const n = items.length;
@@ -33,34 +37,52 @@ function RowMenu({ itemKey, actions }: { itemKey: string; actions: RowActions })
   return (
     <>
       {anyOff && (
-        <ContextItem icon={<Power size={14} />} onSelect={() => actions.setEnabled(items, true)}>
+        <Item icon={<Power size={14} />} onSelect={() => actions.setEnabled(items, true)}>
           {n > 1 ? t("content.menu.enable_n", { n }) : t("content.menu.enable")}
-        </ContextItem>
+        </Item>
       )}
       {anyOn && (
-        <ContextItem icon={<PowerOff size={14} />} onSelect={() => actions.setEnabled(items, false)}>
+        <Item icon={<PowerOff size={14} />} onSelect={() => actions.setEnabled(items, false)}>
           {n > 1 ? t("content.menu.disable_n", { n }) : t("content.menu.disable")}
-        </ContextItem>
+        </Item>
       )}
       {upd.length > 0 && (
-        <ContextItem icon={<RefreshCw size={14} />} onSelect={() => actions.update(upd)}>
+        <Item icon={<RefreshCw size={14} />} onSelect={() => actions.update(upd)}>
           {upd.length > 1 ? t("content.menu.update_n", { n: upd.length }) : t("common.update")}
-        </ContextItem>
+        </Item>
       )}
-      <ContextSeparator />
+      <Sep />
       {one?.project_id && one.source && (
-        <ContextItem icon={<ExternalLink size={14} />} onSelect={() => actions.openProject(one)}>
+        <Item icon={<ExternalLink size={14} />} onSelect={() => actions.openProject(one)}>
           {t("content.menu.open_on", { source: sourceNames[one.source] })}
-        </ContextItem>
+        </Item>
       )}
-      <ContextItem icon={<FolderOpen size={14} />} onSelect={actions.openFolder}>
+      <Item icon={<FolderOpen size={14} />} onSelect={actions.openFolder}>
         {t("content.menu.show_folder")}
-      </ContextItem>
-      <ContextSeparator />
-      <ContextItem icon={<Trash2 size={14} />} danger onSelect={() => actions.remove(items)} shortcut={t("content.key.delete")}>
+      </Item>
+      <Sep />
+      <Item icon={<Trash2 size={14} />} danger onSelect={() => actions.remove(items)} shortcut={t("content.key.delete")}>
         {n > 1 ? t("content.menu.remove_n", { n }) : t("common.remove")}
-      </ContextItem>
+      </Item>
     </>
+  );
+}
+
+export function SelectBox({ state, onClick, label }: { state: "on" | "off" | "mixed"; onClick: (e: MouseEvent) => void; label: string }) {
+  return (
+    <button
+      role="checkbox"
+      aria-checked={state === "mixed" ? "mixed" : state === "on"}
+      aria-label={label}
+      onClick={onClick}
+      onDoubleClick={(e) => e.stopPropagation()}
+      className={cn(
+        "grid h-[18px] w-[18px] place-items-center border transition-colors duration-100",
+        state === "off" ? "border-line2 hover:border-white/40" : "border-accent bg-accent text-[var(--on-accent)]",
+      )}
+    >
+      {state === "on" ? <Check size={12} strokeWidth={3} /> : state === "mixed" ? <span className="h-0.5 w-2 bg-current" /> : null}
+    </button>
   );
 }
 
@@ -78,8 +100,11 @@ export const ContentRow = memo(function ContentRow({
   actions: RowActions;
 }) {
   const t = useT();
+  const sub = [item.authors.length ? t("discover.by", { author: item.authors.join(", ") }) : null, item.source ? sourceNames[item.source] : t("content.local")]
+    .filter(Boolean)
+    .join(" · ");
   return (
-    <ContextMenu content={<RowMenu itemKey={itemKey} actions={actions} />}>
+    <ContextMenu content={<RowMenu itemKey={itemKey} actions={actions} Item={ContextItem} Sep={ContextSeparator} />}>
       <div
         role="row"
         aria-selected={selected}
@@ -88,50 +113,57 @@ export const ContentRow = memo(function ContentRow({
         onDoubleClick={() => item.project_id && actions.openProject(item)}
         onContextMenu={() => actions.context(itemKey)}
         className={cn(
-          "grid h-full grid-cols-[36px_minmax(0,1fr)_140px_92px_40px] items-center gap-3.5 border-b border-line px-4 transition-colors duration-100",
-          "@min-[820px]:grid-cols-[36px_minmax(0,1fr)_150px_170px_92px_40px]",
-          selected ? "bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] shadow-[inset_2px_0_0_var(--accent)]" : "hover:bg-white/[.025]",
+          GRID,
+          "h-full border-b border-line transition-colors duration-100",
+          selected ? "bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]" : "hover:bg-white/[.025]",
         )}
       >
-        <ProjectIcon src={item.icon} size={36} className={cn("transition-opacity duration-150", !item.enabled && "opacity-40 grayscale")} />
-        <div className={cn("min-w-0 transition-opacity duration-150", !item.enabled && "opacity-55")}>
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-[13.5px] font-medium text-white">{item.name}</span>
+        <SelectBox
+          state={selected ? "on" : "off"}
+          label={item.name}
+          onClick={(e) => {
+            e.stopPropagation();
+            actions.toggle(itemKey);
+          }}
+        />
+        <div className={cn("flex min-w-0 items-center gap-3 transition-opacity duration-150", !item.enabled && "opacity-50")}>
+          <ProjectIcon src={item.icon} size={34} className={cn(!item.enabled && "grayscale")} />
+          <div className="min-w-0">
+            <div className="truncate text-[14px] font-semibold text-white">{item.name}</div>
+            <div className="truncate text-[12px] text-dim">{sub}</div>
+          </div>
+        </div>
+        <div className={cn("min-w-0 transition-opacity duration-150", !item.enabled && "opacity-50")}>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-[13px] text-text" title={item.version ?? ""}>
+              {item.version ?? "–"}
+            </span>
             {update && (
               <Tooltip content={t("content.update_to", { version: update.new_version.version_number })}>
-                <span className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] font-semibold uppercase tracking-[.08em] text-accent">
-                  <ArrowUpCircle size={12} />
-                  {t("content.update_badge")}
+                <span className="shrink-0 text-accent">
+                  <ArrowUpCircle size={14} />
                 </span>
               </Tooltip>
             )}
           </div>
-          <div className="truncate font-mono text-[11px] text-dim">{item.file_name}</div>
+          <div className="truncate font-mono text-[11px] text-dim" title={item.file_name}>
+            {item.file_name}
+          </div>
         </div>
-        <div className="truncate font-mono text-[12px] text-muted" title={item.version ?? ""}>
-          {item.version ?? "–"}
-        </div>
-        <div className="hidden truncate text-[12.5px] text-muted @min-[820px]:block" title={item.authors.join(", ")}>
-          {item.authors.join(", ") || "–"}
-        </div>
-        <div>
-          {item.source ? (
-            <span
-              className={cn(
-                "inline-flex h-5 items-center border px-1.5 font-mono text-[9.5px] font-semibold uppercase tracking-[.08em]",
-                item.source === "modrinth" ? "border-[#1bd96a]/40 text-[#1bd96a]" : "border-[#f16436]/45 text-[#f16436]",
-              )}
-            >
-              {sourceNames[item.source]}
-            </span>
-          ) : (
-            <span className="inline-flex h-5 items-center border border-line2 px-1.5 font-mono text-[9.5px] font-semibold uppercase tracking-[.08em] text-dim">
-              {t("content.local")}
-            </span>
-          )}
-        </div>
-        <div className="flex justify-end" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
           <Switch checked={item.enabled} onChange={(v) => actions.setEnabled([item], v)} label={item.enabled ? t("content.menu.disable") : t("content.menu.enable")} />
+          <DropdownMenu
+            trigger={
+              <button
+                aria-label={t("common.more")}
+                className="grid h-8 w-8 place-items-center text-dim transition-colors duration-100 hover:bg-white/[.06] hover:text-white data-[state=open]:bg-white/[.06] data-[state=open]:text-white"
+              >
+                <MoreVertical size={16} />
+              </button>
+            }
+          >
+            <RowMenu itemKey={itemKey} actions={actions} Item={DropdownItem} Sep={DropdownSeparator} />
+          </DropdownMenu>
         </div>
       </div>
     </ContextMenu>
@@ -140,14 +172,19 @@ export const ContentRow = memo(function ContentRow({
 
 export function RowSkeleton() {
   return (
-    <div className="grid h-[56px] grid-cols-[36px_minmax(0,1fr)_140px_92px_40px] items-center gap-3.5 border-b border-line px-4">
-      <div className="skeleton h-9 w-9" />
-      <div className="flex flex-col gap-1.5">
-        <div className="skeleton h-3.5 w-2/5" />
-        <div className="skeleton h-2.5 w-1/3" />
+    <div className={cn(GRID, "h-[52px] border-b border-line")}>
+      <div className="skeleton h-[18px] w-[18px]" />
+      <div className="flex items-center gap-3">
+        <div className="skeleton h-[34px] w-[34px] shrink-0" />
+        <div className="flex flex-1 flex-col gap-1.5">
+          <div className="skeleton h-3.5 w-2/5" />
+          <div className="skeleton h-2.5 w-1/4" />
+        </div>
       </div>
-      <div className="skeleton h-3 w-20" />
-      <div className="skeleton h-5 w-16" />
+      <div className="flex flex-col gap-1.5">
+        <div className="skeleton h-3 w-16" />
+        <div className="skeleton h-2.5 w-28" />
+      </div>
       <div className="skeleton ml-auto h-5 w-9" />
     </div>
   );

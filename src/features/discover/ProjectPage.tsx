@@ -1,25 +1,26 @@
-// Projektseite: Kopf (Icon, Titel, Stats, Kategorien, Loader/Versionen, Installieren, Links) + Tabs
-// Beschreibung (bereinigt), Galerie (Lightbox), Versionen (filterbar, Changelog, bestimmte Version installieren).
+// Projektseite im Stil der Modrinth App: kompakter Kopf (Icon, Titel, Kurzbeschreibung, Stats inline, Tags,
+// Installieren + Links-Menü), Tabs Beschreibung / Versionen / Galerie, rechts Infospalte (Kompatibilität, Links, Details).
 import { useQuery } from "@tanstack/react-query";
-import { getRouteApi, Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, BookOpen, Bug, Calendar, Code2, Copy, Download, ExternalLink, FolderPlus, Globe, Heart, MessageCircle, Scale } from "lucide-react";
+import { getRouteApi } from "@tanstack/react-router";
+import { BookOpen, Bug, CalendarClock, Code2, Copy, Download, ExternalLink, FolderPlus, Globe, Heart, MessageCircle, MoreVertical } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
-import { Button, ErrorState, IconButton, Skeleton, Tabs, Tag, Tooltip, toast } from "@/components/ui";
+import { Button, DropdownItem, DropdownMenu, DropdownSeparator, ErrorState, IconButton, Skeleton, Tabs, Tooltip, toast } from "@/components/ui";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
-import { formatCount, formatDate, formatLoader, formatRelative } from "@/lib/format";
+import { formatCount, formatDate, formatRelative } from "@/lib/format";
 import { qk, useInstances } from "@/lib/queries";
 import type { ProjectDetails, Source } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { RichText } from "@/components/content/RichText";
 import { openInstall } from "@/components/content/InstallDialog";
-import { copyText, openExternal, sourceNames, versionRange } from "@/components/content/util";
+import { Pill, prettyCategory, prettyLoader } from "@/components/content/Pill";
+import { compareMc, copyText, openExternal, sourceNames, versionRange } from "@/components/content/util";
 import { VersionsTab } from "./VersionsTab";
 
 const route = getRouteApi("/project/$source/$id");
 
-type Tab = "description" | "gallery" | "versions";
+type Tab = "description" | "versions" | "gallery";
 
 export function ProjectPage() {
   const t = useT();
@@ -37,12 +38,9 @@ export function ProjectPage() {
 
   return (
     <div className="scroll h-full">
-      <div className="mx-auto w-full max-w-[1140px] px-8 pb-16 pt-5">
-        <BackBar type={p?.project_type} instance={search.instance} />
+      <div className="mx-auto w-full max-w-[1180px] px-6 pb-12 pt-5">
         {q.isError ? (
-          <div className="mt-4 border border-line bg-surface">
-            <ErrorState error={q.error} onRetry={() => q.refetch()} />
-          </div>
+          <ErrorState error={q.error} onRetry={() => q.refetch()} className="border border-line bg-surface" />
         ) : !p ? (
           <HeaderSkeleton />
         ) : (
@@ -50,27 +48,31 @@ export function ProjectPage() {
         )}
         {p && (
           <>
-            <div className="sticky top-0 z-10 mt-6 bg-black">
+            <div className="sticky top-0 z-10 mt-4 bg-panel">
               <Tabs
                 value={tab}
                 onChange={setTab}
+                className="-mx-3 h-11"
                 items={[
                   { value: "description", label: t("project.tab.description") },
-                  { value: "gallery", label: t("project.tab.gallery"), badge: p.gallery.length || undefined },
                   { value: "versions", label: t("project.tab.versions") },
+                  { value: "gallery", label: t("project.tab.gallery"), badge: p.gallery.length || undefined },
                 ]}
               />
             </div>
-            <div className="pt-6">
-              {tab === "description" && <Description p={p} />}
-              {tab === "gallery" && <Gallery p={p} />}
-              {tab === "versions" && <VersionsTab project={p} instanceId={search.instance} />}
+            <div className="flex items-start gap-6 pt-5">
+              <div className="min-w-0 flex-1">
+                {tab === "description" && <Description p={p} />}
+                {tab === "gallery" && <Gallery p={p} />}
+                {tab === "versions" && <VersionsTab project={p} instanceId={search.instance} />}
+              </div>
+              {tab !== "versions" && <InfoSidebar p={p} />}
             </div>
           </>
         )}
         {!p && !q.isError && (
           <div className="mt-6 flex flex-col gap-3">
-            <Skeleton className="h-12" />
+            <Skeleton className="h-11" />
             <Skeleton className="h-4 w-4/5" />
             <Skeleton className="h-4 w-3/5" />
             <Skeleton className="h-4 w-2/3" />
@@ -81,55 +83,38 @@ export function ProjectPage() {
   );
 }
 
-function BackBar({ type, instance }: { type?: string; instance?: string }) {
+function LinkItems({ p, Item }: { p: ProjectDetails; Item: typeof DropdownItem }) {
   const t = useT();
-  const router = useRouter();
-  const canBack = typeof window !== "undefined" && window.history.length > 1;
+  const l = p.links;
+  const open = (u: string) => void openExternal(u);
   return (
-    <div className="flex h-9 items-center gap-3 font-mono text-[11px] uppercase tracking-[.1em] text-dim">
-      <button
-        className="flex items-center gap-1.5 text-muted transition-colors hover:text-white"
-        onClick={() => (canBack ? router.history.back() : router.navigate({ to: "/discover", search: { instance } }))}
-      >
-        <ArrowLeft size={13} />
-        {t("common.back")}
-      </button>
-      <span className="text-line2">/</span>
-      <Link to="/discover" search={{ instance, type: (type as never) || undefined }} className="transition-colors hover:text-white">
-        {t("nav.discover")}
-      </Link>
-      {type && (
-        <>
-          <span className="text-line2">/</span>
-          <span>{t(`discover.tab.${type}`)}</span>
-        </>
+    <>
+      {l.website && (
+        <Item icon={<Globe size={14} />} onSelect={() => open(l.website!)}>
+          {t("project.link.website")}
+        </Item>
       )}
-    </div>
-  );
-}
-
-function Stat({ icon, label, value, title }: { icon: ReactNode; label: string; value: ReactNode; title?: string }) {
-  return (
-    <div className="min-w-0 px-6 py-4" title={title}>
-      <div className="label flex items-center gap-1.5">
-        {icon}
-        {label}
-      </div>
-      <div className="mt-1.5 truncate font-mono text-[15px] font-semibold text-white">{value}</div>
-    </div>
-  );
-}
-
-function LinkChip({ href, icon, children }: { href: string; icon: ReactNode; children: ReactNode }) {
-  return (
-    <a
-      href={href}
-      className="inline-flex h-8 items-center gap-2 border border-line2 px-3 font-mono text-[11.5px] text-text transition-colors duration-150 hover:border-accent"
-    >
-      {icon}
-      {children}
-      <ExternalLink size={11} className="text-dim" />
-    </a>
+      {l.source && (
+        <Item icon={<Code2 size={14} />} onSelect={() => open(l.source!)}>
+          {t("project.link.source")}
+        </Item>
+      )}
+      {l.issues && (
+        <Item icon={<Bug size={14} />} onSelect={() => open(l.issues!)}>
+          {t("project.link.issues")}
+        </Item>
+      )}
+      {l.wiki && (
+        <Item icon={<BookOpen size={14} />} onSelect={() => open(l.wiki!)}>
+          {t("project.link.wiki")}
+        </Item>
+      )}
+      {l.discord && (
+        <Item icon={<MessageCircle size={14} />} onSelect={() => open(l.discord!)}>
+          Discord
+        </Item>
+      )}
+    </>
   );
 }
 
@@ -140,125 +125,214 @@ function Header({ p, instanceId }: { p: ProjectDetails; instanceId?: string }) {
   const isPack = p.project_type === "modpack";
   const loaders = p.loaders.filter((l) => ["fabric", "forge", "neoforge", "quilt"].includes(l));
   const range = versionRange(p.game_versions);
-  const links = p.links;
+  const hasLinks = !!(p.links.website || p.links.source || p.links.issues || p.links.wiki || p.links.discord);
   const install = () => openInstall({ project: p, instanceId: isPack ? null : instanceId });
 
   return (
-    <div className="mt-3 border border-line border-t-2 border-t-accent bg-surface animate-fade-in">
-      <div className="flex items-start gap-6 p-7">
-        <ProjectIcon src={p.icon_url} size={104} eager />
-        <div className="min-w-0 flex-1">
-          <div className="eyebrow mb-2">
-            {t(`discover.type.${p.project_type}`)} · {sourceNames[p.source]}
-          </div>
-          <h1 className="display break-words text-[30px]">{p.title}</h1>
-          <p className="selectable mt-2.5 max-w-[640px] text-[15px] leading-relaxed text-muted">{p.description}</p>
-          <div className="mt-2 text-[13px] text-dim">{t("discover.by", { author: p.author })}</div>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-3">
-          <Button variant="accent" size="lg" icon={isPack ? <FolderPlus size={16} /> : <Download size={16} />} onClick={install} className="min-w-[200px]">
-            {isPack ? t("install.as_new_instance_short") : target ? t("project.install_into", { name: target.name }) : t("common.install")}
-          </Button>
-          <div className="flex gap-2">
-            <Tooltip content={t("discover.menu.browser")}>
-              <IconButton label={t("discover.menu.browser")} onClick={() => void openExternal(p.page_url)}>
-                <ExternalLink size={15} />
-              </IconButton>
+    <div className="flex items-start gap-5 animate-fade-in">
+      <ProjectIcon src={p.icon_url} size={96} eager />
+      <div className="min-w-0 flex-1">
+        <h1 className="display truncate text-[24px]" title={p.title}>
+          {p.title}
+        </h1>
+        <p className="selectable mt-1 line-clamp-2 max-w-[720px] text-[14px] leading-relaxed text-muted">{p.description}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted">
+          <Tooltip content={p.downloads.toLocaleString()}>
+            <span className="flex items-center gap-1.5">
+              <Download size={14} className="text-dim" />
+              <b className="font-semibold text-text">{formatCount(p.downloads)}</b> {t("project.downloads_lc")}
+            </span>
+          </Tooltip>
+          {p.source === "modrinth" && (
+            <span className="flex items-center gap-1.5">
+              <Heart size={14} className="text-dim" />
+              <b className="font-semibold text-text">{formatCount(p.follows)}</b> {t("project.follows_lc")}
+            </span>
+          )}
+          {p.updated && (
+            <Tooltip content={formatDate(p.updated)}>
+              <span className="flex items-center gap-1.5">
+                <CalendarClock size={14} className="text-dim" />
+                {t("project.updated_ago", { time: formatRelative(p.updated) })}
+              </span>
             </Tooltip>
-            <Tooltip content={t("discover.menu.copy_link")}>
-              <IconButton
-                label={t("discover.menu.copy_link")}
-                onClick={() =>
-                  copyText(p.page_url)
-                    .then(() => toast.success(t("common.copied"), p.page_url))
-                    .catch((e) => toast.error(e))
-                }
-              >
-                <Copy size={15} />
-              </IconButton>
-            </Tooltip>
-          </div>
+          )}
+          <span className="text-dim">{t("discover.by", { author: p.author })}</span>
+        </div>
+        <div className="mt-2.5 flex flex-wrap items-center gap-1">
+          {loaders.map((l) => (
+            <Pill key={l} className="text-text">
+              {prettyLoader(l)}
+            </Pill>
+          ))}
+          {range && <Pill className="font-mono text-[11.5px] text-text">{range}</Pill>}
+          {p.categories.map((c) => (
+            <Pill key={c}>{prettyCategory(c)}</Pill>
+          ))}
         </div>
       </div>
-      <div className="grid grid-cols-4 border-t border-line [&>*+*]:border-l [&>*+*]:border-line">
-        <Stat icon={<Download size={11} />} label={t("project.downloads")} value={formatCount(p.downloads)} title={p.downloads.toLocaleString()} />
-        <Stat icon={<Heart size={11} />} label={t("project.follows")} value={p.source === "curseforge" ? "–" : formatCount(p.follows)} title={p.source === "curseforge" ? undefined : p.follows.toLocaleString()} />
-        <Stat icon={<Calendar size={11} />} label={t("project.updated")} value={formatRelative(p.updated)} title={formatDate(p.updated)} />
-        <Stat icon={<Scale size={11} />} label={t("project.license")} value={p.license ? p.license.replace(/^LicenseRef-/, "").replace(/-/g, " ") : "–"} />
+      <div className="flex shrink-0 items-center gap-2">
+        <Button variant="primary" icon={isPack ? <FolderPlus size={15} /> : <Download size={15} />} onClick={install}>
+          {isPack ? t("install.as_new_instance_short") : target ? t("project.install_into", { name: target.name }) : t("common.install")}
+        </Button>
+        <DropdownMenu
+          trigger={
+            <IconButton label={t("common.more")}>
+              <MoreVertical size={16} />
+            </IconButton>
+          }
+        >
+          {hasLinks && (
+            <>
+              <LinkItems p={p} Item={DropdownItem} />
+              <DropdownSeparator />
+            </>
+          )}
+          <DropdownItem icon={<ExternalLink size={14} />} onSelect={() => void openExternal(p.page_url)}>
+            {t("project.open_on", { source: sourceNames[p.source] })}
+          </DropdownItem>
+          <DropdownItem
+            icon={<Copy size={14} />}
+            onSelect={() =>
+              copyText(p.page_url)
+                .then(() => toast.success(t("common.copied"), p.page_url))
+                .catch((e) => toast.error(e))
+            }
+          >
+            {t("discover.menu.copy_link")}
+          </DropdownItem>
+        </DropdownMenu>
       </div>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line px-7 py-4">
-        {(loaders.length > 0 || range) && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {loaders.map((l) => (
-              <Tag key={l}>{formatLoader({ kind: l as never, version: null })}</Tag>
-            ))}
-            {range && <Tag className="normal-case tracking-normal text-text">MC {range}</Tag>}
-          </div>
-        )}
-        {p.categories.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {p.categories.map((c) => (
-              <Tag key={c}>{c.replace(/-/g, " ")}</Tag>
-            ))}
-          </div>
-        )}
-      </div>
-      {(links.website || links.source || links.issues || links.wiki || links.discord) && (
-        <div className="flex flex-wrap gap-2 border-t border-line px-7 py-4">
-          {links.website && (
-            <LinkChip href={links.website} icon={<Globe size={13} />}>
-              {t("project.link.website")}
-            </LinkChip>
-          )}
-          {links.source && (
-            <LinkChip href={links.source} icon={<Code2 size={13} />}>
-              {t("project.link.source")}
-            </LinkChip>
-          )}
-          {links.issues && (
-            <LinkChip href={links.issues} icon={<Bug size={13} />}>
-              {t("project.link.issues")}
-            </LinkChip>
-          )}
-          {links.wiki && (
-            <LinkChip href={links.wiki} icon={<BookOpen size={13} />}>
-              {t("project.link.wiki")}
-            </LinkChip>
-          )}
-          {links.discord && (
-            <LinkChip href={links.discord} icon={<MessageCircle size={13} />}>
-              Discord
-            </LinkChip>
-          )}
-        </div>
-      )}
     </div>
   );
 }
 
 function HeaderSkeleton() {
   return (
-    <div className="mt-3 border border-line border-t-2 border-t-line2 bg-surface">
-      <div className="flex items-start gap-6 p-7">
-        <Skeleton className="h-[104px] w-[104px] shrink-0" />
-        <div className="flex min-w-0 flex-1 flex-col gap-3 pt-1">
-          <Skeleton className="h-3 w-28" />
-          <Skeleton className="h-8 w-2/5" />
-          <Skeleton className="h-4 w-4/5" />
-          <Skeleton className="h-3 w-24" />
+    <div className="flex items-start gap-5">
+      <Skeleton className="h-[96px] w-[96px] shrink-0" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2.5 pt-1">
+        <Skeleton className="h-6 w-2/5" />
+        <Skeleton className="h-4 w-4/5" />
+        <Skeleton className="h-3.5 w-1/2" />
+        <div className="flex gap-1">
+          <Skeleton className="h-[22px] w-14" />
+          <Skeleton className="h-[22px] w-20" />
         </div>
-        <Skeleton className="h-[52px] w-[200px] shrink-0" />
       </div>
-      <div className="grid grid-cols-4 border-t border-line">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="flex flex-col gap-2 px-6 py-4">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-4 w-20" />
-          </div>
-        ))}
-      </div>
-      <div className="h-[61px] border-t border-line" />
+      <Skeleton className="h-9 w-[132px] shrink-0" />
     </div>
+  );
+}
+
+function SideSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="border-b border-line py-4 first:pt-0 last:border-b-0">
+      <h3 className="mb-2.5 text-[14px] font-semibold text-white">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function SideLink({ href, icon, children }: { href: string; icon: ReactNode; children: ReactNode }) {
+  return (
+    <a href={href} className="flex h-8 items-center gap-2.5 px-1 text-[13px] text-muted transition-colors hover:bg-white/[.04] hover:text-white">
+      <span className="text-dim">{icon}</span>
+      <span className="flex-1 truncate">{children}</span>
+      <ExternalLink size={12} className="text-dim" />
+    </a>
+  );
+}
+
+function InfoSidebar({ p }: { p: ProjectDetails }) {
+  const t = useT();
+  const l = p.links;
+  const versions = useMemo(() => {
+    const rel = p.game_versions.filter((v) => /^\d+\.\d+(\.\d+)?$/.test(v)).sort((a, b) => compareMc(b, a));
+    return rel.length ? rel : p.game_versions;
+  }, [p.game_versions]);
+  const shown = versions.slice(0, 12);
+  const platforms = p.loaders.filter((x) => x !== "minecraft");
+  return (
+    <aside className="w-[260px] shrink-0">
+      <SideSection title={t("project.side.compat")}>
+        <div className="text-[12px] text-dim">Minecraft: Java Edition</div>
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {shown.map((v) => (
+            <Pill key={v} className="font-mono text-[11.5px] text-text">
+              {v}
+            </Pill>
+          ))}
+          {versions.length > shown.length && <Pill>+{versions.length - shown.length}</Pill>}
+          {!versions.length && <span className="text-[13px] text-dim">–</span>}
+        </div>
+        {platforms.length > 0 && (
+          <>
+            <div className="mt-3 text-[12px] text-dim">{t("project.side.platforms")}</div>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {platforms.map((x) => (
+                <Pill key={x} className="text-text">
+                  {prettyLoader(x)}
+                </Pill>
+              ))}
+            </div>
+          </>
+        )}
+      </SideSection>
+      {(l.website || l.source || l.issues || l.wiki || l.discord) && (
+        <SideSection title={t("project.side.links")}>
+          <div className="flex flex-col">
+            {l.website && (
+              <SideLink href={l.website} icon={<Globe size={14} />}>
+                {t("project.link.website")}
+              </SideLink>
+            )}
+            {l.source && (
+              <SideLink href={l.source} icon={<Code2 size={14} />}>
+                {t("project.link.source")}
+              </SideLink>
+            )}
+            {l.issues && (
+              <SideLink href={l.issues} icon={<Bug size={14} />}>
+                {t("project.link.issues")}
+              </SideLink>
+            )}
+            {l.wiki && (
+              <SideLink href={l.wiki} icon={<BookOpen size={14} />}>
+                {t("project.link.wiki")}
+              </SideLink>
+            )}
+            {l.discord && (
+              <SideLink href={l.discord} icon={<MessageCircle size={14} />}>
+                Discord
+              </SideLink>
+            )}
+          </div>
+        </SideSection>
+      )}
+      <SideSection title={t("project.side.details")}>
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13px]">
+          <dt className="text-dim">{t("project.license")}</dt>
+          <dd className="truncate text-text" title={p.license ?? ""}>
+            {p.license ? p.license.replace(/^LicenseRef-/, "").replace(/-/g, " ") : "–"}
+          </dd>
+          {p.published && (
+            <>
+              <dt className="text-dim">{t("project.published")}</dt>
+              <dd className="text-text">{formatDate(p.published)}</dd>
+            </>
+          )}
+          {p.updated && (
+            <>
+              <dt className="text-dim">{t("project.updated")}</dt>
+              <dd className="text-text">{formatDate(p.updated)}</dd>
+            </>
+          )}
+          <dt className="text-dim">{t("project.source")}</dt>
+          <dd className="text-text">{sourceNames[p.source]}</dd>
+        </dl>
+      </SideSection>
+    </aside>
   );
 }
 
@@ -279,7 +353,7 @@ function Gallery({ p }: { p: ProjectDetails }) {
   if (!images.length) return <p className="text-[13px] text-dim">{t("project.no_gallery")}</p>;
   return (
     <>
-      <div className="grid grid-cols-3 gap-4 animate-fade-in">
+      <div className="grid grid-cols-2 gap-3 animate-fade-in xl:grid-cols-3">
         {images.map((g, i) => (
           <button
             key={g.url}
@@ -296,9 +370,9 @@ function Gallery({ p }: { p: ProjectDetails }) {
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-150 group-hover:scale-[1.02]"
               />
             </span>
-            <span className="flex h-[52px] flex-col justify-center px-3.5">
+            <span className="flex h-[48px] flex-col justify-center px-3">
               <span className="truncate text-[13px] font-medium text-white">{g.title || t("project.image", { n: i + 1 })}</span>
-              {g.description && <span className="truncate text-[11.5px] text-dim">{g.description}</span>}
+              {g.description && <span className="truncate text-[12px] text-dim">{g.description}</span>}
             </span>
           </button>
         ))}

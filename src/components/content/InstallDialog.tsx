@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, FolderPlus, PackagePlus } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { create } from "zustand";
-import { Button, Dialog, Progress, Select, Skeleton, Switch, Tag, cn } from "@/components/ui";
+import { Button, Dialog, Progress, Select, Skeleton, Switch, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatLoader, formatRelative } from "@/lib/format";
@@ -14,6 +14,7 @@ import type { Instance, ProjectHit, ProjectVersion } from "@/lib/types";
 import { InstanceBadge } from "./InstanceBadge";
 import { startContentInstall, startModpackInstall } from "./install";
 import { ProjectIcon } from "./ProjectIcon";
+import { Pill } from "./Pill";
 import { compatibility, contentKindOf, loaderFilterFor, navigateTo, type Compat } from "./util";
 
 export type InstallProject = Pick<ProjectHit, "source" | "id" | "slug" | "title" | "icon_url" | "project_type" | "loaders" | "game_versions" | "author">;
@@ -82,7 +83,7 @@ function InstallDialog({ target, open, onOpenChange }: { target: InstallTarget; 
           <div className="truncate text-[15px] font-semibold text-white">{project.title}</div>
           <div className="truncate text-[12px] text-dim">{t("discover.by", { author: project.author })}</div>
         </div>
-        <Tag>{t(`discover.type.${project.project_type}`)}</Tag>
+        <Pill>{t(`discover.type.${project.project_type}`)}</Pill>
       </div>
       {phase.k === "select" &&
         (isPack ? (
@@ -128,7 +129,7 @@ function Footer({ phase, setPhase, isPack, onClose }: { phase: Phase; setPhase: 
         <Button variant="subtle" onClick={onClose}>
           {t("common.cancel")}
         </Button>
-        <Button variant="accent" disabled={start.disabled} loading={start.busy} onClick={() => start.run?.()} icon={isPack ? <FolderPlus size={14} /> : <PackagePlus size={14} />}>
+        <Button variant="primary" disabled={start.disabled} loading={start.busy} onClick={() => start.run?.()} icon={isPack ? <FolderPlus size={14} /> : <PackagePlus size={14} />}>
           {start.label}
         </Button>
       </>
@@ -151,7 +152,7 @@ function Footer({ phase, setPhase, isPack, onClose }: { phase: Phase; setPhase: 
         >
           {t("install.go_instance")}
         </Button>
-        <Button variant="accent" onClick={onClose} autoFocus>
+        <Button variant="primary" onClick={onClose} autoFocus>
           {t("common.done")}
         </Button>
       </>
@@ -270,9 +271,9 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
   if (!sorted.length) {
     return (
       <div className="mt-5 flex flex-col items-center gap-3 border border-dashed border-line2 px-6 py-8 text-center">
-        <div className="display text-[16px]">{t("install.no_instances")}</div>
+        <div className="text-[15px] font-semibold text-white">{t("install.no_instances")}</div>
         <p className="max-w-[360px] text-[13px] text-muted">{t("install.no_instances_text")}</p>
-        <Button size="sm" variant="accent" icon={<FolderPlus size={14} />} onClick={() => navigateTo({ to: "/instances" })}>
+        <Button size="sm" variant="primary" icon={<FolderPlus size={14} />} onClick={() => navigateTo({ to: "/instances" })}>
           {t("install.create_instance")}
         </Button>
       </div>
@@ -303,7 +304,7 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
                 tabIndex={on ? 0 : -1}
                 className={cn(
                   "flex h-[54px] shrink-0 items-center gap-3 border px-3 text-left transition-colors duration-150",
-                  on ? "border-accent bg-white/[.03] shadow-[inset_3px_0_0_var(--accent)]" : "border-line hover:border-line2 hover:bg-white/[.02]",
+                  on ? "border-brand bg-white/[.04] shadow-[inset_3px_0_0_var(--color-brand)]" : "border-line hover:border-line2 hover:bg-white/[.02]",
                 )}
               >
                 <InstanceBadge instance={inst} size={30} />
@@ -314,7 +315,7 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
                   </div>
                 </div>
                 {!compat.ok && (
-                  <span className="flex shrink-0 items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[.06em] text-warn">
+                  <span className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-warn">
                     <AlertTriangle size={12} />
                     {reasonText(t, compat, inst)}
                   </span>
@@ -339,7 +340,7 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
           <div className="flex h-10 items-center gap-2 text-[12.5px] text-danger">
             <AlertTriangle size={14} />
             <span className="truncate">{errorMessage(versionsQ.error)}</span>
-            <button className="ml-auto font-mono text-[11px] uppercase tracking-[.1em] text-muted hover:text-white" onClick={() => versionsQ.refetch()}>
+            <button className="ml-auto text-[13px] font-medium text-muted hover:text-white" onClick={() => versionsQ.refetch()}>
               {t("common.retry")}
             </button>
           </div>
@@ -395,7 +396,7 @@ function PackSelect({ target, onStart, onError, isOpen }: { target: InstallTarge
           <div className="flex h-10 items-center gap-2 text-[12.5px] text-danger">
             <AlertTriangle size={14} />
             <span className="truncate">{errorMessage(versionsQ.error)}</span>
-            <button className="ml-auto font-mono text-[11px] uppercase tracking-[.1em] text-muted hover:text-white" onClick={() => versionsQ.refetch()}>
+            <button className="ml-auto text-[13px] font-medium text-muted hover:text-white" onClick={() => versionsQ.refetch()}>
               {t("common.retry")}
             </button>
           </div>

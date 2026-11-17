@@ -2,7 +2,7 @@
 export default {
   de: {
     "accounts.eyebrow": "Minecraft: Java Edition",
-    "accounts.lead": "Melde dich mit deinem Microsoft-Konto an, um Minecraft zu spielen. Du kannst mehrere Konten hinterlegen und jederzeit wechseln.",
+    "accounts.lead": "Deine Microsoft-Konten für Minecraft: Java Edition.",
     "accounts.add_msa": "Microsoft-Konto hinzufügen",
     "accounts.active": "Aktiv",
     "accounts.set_active": "Aktiv setzen",
@@ -42,7 +42,7 @@ export default {
   } as Record<string, string>,
   en: {
     "accounts.eyebrow": "Minecraft: Java Edition",
-    "accounts.lead": "Sign in with your Microsoft account to play Minecraft. You can add several accounts and switch any time.",
+    "accounts.lead": "Your Microsoft accounts for Minecraft: Java Edition.",
     "accounts.add_msa": "Add Microsoft account",
     "accounts.active": "Active",
     "accounts.set_active": "Set active",
