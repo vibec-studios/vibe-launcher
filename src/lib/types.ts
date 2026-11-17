@@ -106,6 +106,9 @@ export interface Settings {
   check_updates: boolean;
   /** "release" = nur GitHub-Releases, "dev" = jeder Commit */
   update_channel: "release" | "dev";
+  /** Vibe-Online-Dienste – alle optional */
+  vibe: VibeServices;
+  discord_rpc: boolean;
   wrapper_command: string | null;
   open_log_on_launch: boolean;
   reduce_motion: boolean;
@@ -518,4 +521,14 @@ export interface Screenshot {
   height: number | null;
   /** ms seit 1970 (aus dem Dateinamen, sonst Änderungszeit) */
   taken_at: number;
+}
+
+export interface VibeServices {
+  /** Hauptschalter: aus = keine Verbindung zum Vibe-Backend/Relay */
+  enabled: boolean;
+  api_url: string;
+  social: boolean;
+  presence: boolean;
+  hosting: boolean;
+  sharing: boolean;
 }

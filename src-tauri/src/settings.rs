@@ -42,6 +42,10 @@ pub struct Settings {
     pub msa_client_id: Option<String>,
     /// Nach Launcher-Updates suchen
     pub check_updates: bool,
+    /// Vibe-Online-Dienste (optional)
+    pub vibe: VibeServices,
+    /// Discord Rich Presence
+    pub discord_rpc: bool,
     /// Update-Kanal: "release" (nur GitHub-Releases) oder "dev" (jeder Commit)
     pub update_channel: String,
     /// Wrapper-Befehl vor java (z. B. "prime-run"), optional
@@ -67,6 +71,37 @@ pub struct StoreConfig {
     pub icon: Option<String>,
 }
 
+/// Online-Dienste von Vibe Craft Studios (alle optional, einzeln abschaltbar).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct VibeServices {
+    /// Hauptschalter: aus = der Launcher spricht nie mit dem Vibe-Backend/Relay
+    pub enabled: bool,
+    /// Basis-URL des Backends
+    pub api_url: String,
+    /// Freunde, Chats, Einladungen
+    pub social: bool,
+    /// Online-Status/„spielt gerade“ an Freunde senden
+    pub presence: bool,
+    /// Welten/Server über den Vibey-Relay hosten
+    pub hosting: bool,
+    /// Modpacks per Link/Code teilen
+    pub sharing: bool,
+}
+
+impl Default for VibeServices {
+    fn default() -> Self {
+        VibeServices {
+            enabled: true,
+            api_url: option_env!("VIBE_API_URL").unwrap_or("https://vibe.henny.dev").to_string(),
+            social: true,
+            presence: true,
+            hosting: true,
+            sharing: true,
+        }
+    }
+}
+
 impl Default for Settings {
     fn default() -> Self {
         Settings {
@@ -86,6 +121,8 @@ impl Default for Settings {
             msa_client_id: None,
             check_updates: true,
             update_channel: crate::updater::default_channel(),
+            vibe: VibeServices::default(),
+            discord_rpc: true,
             wrapper_command: None,
             open_log_on_launch: false,
             reduce_motion: false,
