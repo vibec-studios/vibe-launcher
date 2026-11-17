@@ -257,7 +257,7 @@ pub fn build(state: &AppState, inst: &Instance, prep: &Prepared, acc: &LaunchAcc
 }
 
 /// Komplettablauf von `instance_launch` (innerhalb der Aufgabe).
-pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, task: &TaskHandle) -> AppResult<()> {
+pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, world: Option<String>, task: &TaskHandle) -> AppResult<()> {
     let gm = state.game.clone();
     let inst = state.instances.get(id)?;
     gm.launcher_line(id, LogLevel::Launcher, format!("Vibe Launcher {} – {} wird vorbereitet", env!("CARGO_PKG_VERSION"), inst.name));
@@ -275,7 +275,14 @@ pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, task
     task.check()?;
     let inst = state.instances.get(id)?;
     let settings = state.settings();
-    let plan = build(state, &inst, &prep, &acc, &settings)?;
+    let mut plan = build(state, &inst, &prep, &acc, &settings)?;
+    // Quick Play (ab 1.20): direkt in eine Einzelspielerwelt starten
+    if let Some(w) = world {
+        // Der Barrierefreiheits-Willkommensbildschirm beim allerersten Start würde Quick Play blockieren
+        skip_onboarding(&plan.cwd);
+        plan.args.extend(["--quickPlaySingleplayer".to_string(), w.clone()]);
+        plan.display.push_str(&format!(" --quickPlaySingleplayer \"{w}\""));
+    }
     let j = &prep.java;
     gm.launcher_line(
         id,
@@ -304,6 +311,22 @@ pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, task
     let child = cmd.spawn().map_err(|e| AppError::msg(format!("Spiel konnte nicht gestartet werden ({}): {e}", program.display())))?;
     gm.attach(state.clone(), id.to_string(), child);
     Ok(())
+}
+
+/// `onboardAccessibility:false` in options.txt setzen (nur dieser Schlüssel, Rest bleibt unverändert).
+fn skip_onboarding(game_dir: &std::path::Path) {
+    let file = game_dir.join("options.txt");
+    let text = std::fs::read_to_string(&file).unwrap_or_default();
+    if text.lines().any(|l| l.trim() == "onboardAccessibility:false") {
+        return;
+    }
+    let mut out: Vec<String> = text.lines().filter(|l| !l.starts_with("onboardAccessibility:")).map(str::to_string).collect();
+    out.push("onboardAccessibility:false".into());
+    if let Err(e) = std::fs::create_dir_all(game_dir).and_then(|_| std::fs::write(&file, out.join("
+") + "
+")) {
+        tracing::warn!("options.txt nicht anpassbar: {e}");
+    }
 }
 
 #[cfg(test)]
