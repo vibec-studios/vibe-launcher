@@ -284,7 +284,10 @@ pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, task
     task.stage("Spiel wird gestartet …", Some(0.97));
 
     tokio::fs::create_dir_all(&plan.cwd).await?;
-    let mut cmd = tokio::process::Command::new(&plan.program);
+    // java.exe statt javaw.exe (CREATE_NO_WINDOW verhindert das Konsolenfenster): Startfehler der
+    // JVM landen so im Log statt in einem blockierenden Windows-Dialog.
+    let program = super::java::console_java(&plan.program);
+    let mut cmd = tokio::process::Command::new(&program);
     cmd.args(&plan.args)
         .current_dir(&plan.cwd)
         .envs(&plan.env)
@@ -295,7 +298,7 @@ pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, task
     cmd.creation_flags(super::java::CREATE_NO_WINDOW);
     #[cfg(unix)]
     cmd.process_group(0);
-    let child = cmd.spawn().map_err(|e| AppError::msg(format!("Spiel konnte nicht gestartet werden ({}): {e}", plan.program.display())))?;
+    let child = cmd.spawn().map_err(|e| AppError::msg(format!("Spiel konnte nicht gestartet werden ({}): {e}", program.display())))?;
     gm.attach(state.clone(), id.to_string(), child);
     Ok(())
 }
