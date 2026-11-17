@@ -47,6 +47,8 @@ async fn apply_all(state: &AppState, inst: &Instance, task: &TaskHandle) -> AppR
 /// Hook vor dem Spielstart (aus `minecraft::launch`). Schlägt nie fehl – Probleme landen im Log.
 pub async fn before_launch(state: &AppState, id: &str, task: &TaskHandle) {
     let Ok(inst) = state.instances.get(id) else { return };
+    // Abhängigkeits-Check: nur Warnung im Log, der Start geht weiter
+    super::deps::warn_before_launch(state, id).await;
     if !enabled_for(&state.settings(), &inst) {
         return;
     }
@@ -78,7 +80,8 @@ pub async fn update_counts(state: &AppState) -> HashMap<String, u32> {
             for inst in st.instances.list() {
                 match install::check_updates(&st, &inst.id).await {
                     Ok(list) => {
-                        st.content.update_counts.lock().insert(inst.id.clone(), list.len() as u32);
+                        let pack = super::modpack::check(&st, &inst.id).await.ok().flatten().is_some() as u32;
+                        st.content.update_counts.lock().insert(inst.id.clone(), list.len() as u32 + pack);
                     }
                     Err(e) => tracing::debug!("Update-Prüfung {} fehlgeschlagen: {e}", inst.id),
                 }

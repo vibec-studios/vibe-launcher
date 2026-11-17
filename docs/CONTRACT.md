@@ -65,7 +65,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
 | Skins | skins_profile, skin_upload_file, skin_apply_library, skin_set_variant, skin_reset, cape_set, skin_library_list, skin_library_add_file, skin_library_add_current, skin_library_import_player, skin_library_rename, skin_library_set_variant, skin_library_remove, skin_library_export, skin_library_reveal |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
-| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled |
+| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, perf_preview, perf_install |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
 
 ### Wichtige Abläufe
@@ -144,6 +144,39 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   „Alle aktualisieren“ geändert.
 - `content_update_counts() -> Record<instanceId, number>`: startet bei Bedarf (höchstens alle 30 min) eine
   Hintergrundprüfung aller Instanzen und liefert die zuletzt bekannten Zahlen (Badge „N Updates“ in der Bibliothek).
+  Ein verfügbares Modpack-Update zählt als +1.
+
+### Modpack-Updates
+
+- Beim Import/`modpack_install` wird der Installationsstand in `instances/<id>/pack.json` gespeichert (Quelle,
+  Projekt/Version, Pack-Dateien mit SHA-1/Projekt, SHA-1 aller Overrides).
+- `modpack_check(instanceId) -> ModpackUpdate | null` (Modrinth, CurseForge, Stores; ältere Instanzen ohne
+  pack.json über `instance.source`). `modpack_update_preview(instanceId, versionId?) -> ModpackPreview`
+  (hinzugefügt/aktualisiert/entfernt mit Seite, Overrides `new|update|conflict|remove`, MC-/Loader-Wechsel,
+  eigene Inhalte, fehlende CF-Dateien). `modpack_update(instanceId, versionId?) -> taskId`: automatischer Snapshot,
+  Pack-Dateien tauschen (Deaktiviert-Status bleibt), eigene Inhalte bleiben, Overrides nur überschreiben, wenn
+  unverändert seit der Installation (sonst Nutzer-Version behalten), MC/Loader mitziehen (`install_state` wird
+  zurückgesetzt – Frontend ruft danach `instanceInstall`).
+
+### Abhängigkeits-Check, Seiten, Mod-Sets, Performance
+
+- `content_check_deps(instanceId) -> DepIssue[]` (`missing_dependency | version_mismatch | incompatible |
+  duplicate | wrong_loader | wrong_minecraft`) aus fabric.mod.json/quilt.mod.json (`depends/breaks`, Semver-Ausdrücke)
+  und mods.toml/neoforge.mods.toml (`[[dependencies]]`, Maven-Bereiche); eingebettete JARs zählen als vorhanden.
+  `fixes`: `install` (Modrinth-Projekt), `remove`, `disable`. Vor dem Start schreibt der Launch-Hook Probleme als
+  Warnung ins Spiel-Log (Start geht weiter).
+- `Side = "client" | "both" | "server" | "unknown"`; `ContentItem.side`, `ImportPreview.files[].side`,
+  `content_sides(instanceId) -> SideInfo[]`. Quellen: Modrinth `client_side/server_side` (per Projekt/Hash),
+  mrpack `env`, CurseForge-Tags „Client/Server“, Store `client_side/server_side`, `environment` aus fabric.mod.json.
+  Resourcepacks/Shader = client, Datapacks = server.
+  **Rust-API für andere Module:** `content::sides::classify(&AppState, instance_id) -> AppResult<Vec<SideInfo>>`
+  mit `SideInfo { file_name, kind, side, enabled, rel_path }` (ordnet unbekannte Dateien vorher per Hash zu und lädt
+  fehlende Modrinth-Angaben nach) – z. B. für „Server aus Profil erstellen“: `side == Client` weglassen.
+- Mod-Sets (`instances/<id>/modsets.json`): `modsets_list`, `modset_create(name)` (aus aktuellem Zustand, wird aktiv),
+  `modset_apply(setId)` (aktiviert/deaktiviert per `.disabled`; unbekannte neue Dateien bleiben), `modset_save`,
+  `modset_rename`, `modset_delete`. `ModSets.active_modified` = aktuelle Auswahl weicht vom aktiven Set ab.
+- `perf_preview(instanceId) -> PerfCandidate[]` (Modrinth-Optimierungsmods je Loader, nur kompatible Versionen,
+  ein Renderer-Ersatz) und `perf_install(instanceId, projectIds) -> taskId` (vorher Snapshot).
 - **Start** (`instance_launch`): installiert bei Bedarf, holt Zugangsdaten über `state.auth.launch_account(...)`,
   startet den Prozess, sendet `game://state` + `game://log`.
   Optional `world` (Ordnername unter `saves/`): startet per Quick Play (`--quickPlaySingleplayer`, ab MC 1.20)

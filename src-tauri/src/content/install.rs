@@ -18,6 +18,7 @@ pub struct Planned {
     pub kind: ContentKind,
     pub version: ProjectVersion,
     pub file: VersionFile,
+    pub side: Option<Side>,
 }
 
 fn loader_label(inst: &Instance) -> String {
@@ -129,7 +130,8 @@ pub async fn plan(
                 _ => {}
             }
         }
-        out.push(Planned { brief, source, kind, version, file });
+        let side = brief.side;
+        out.push(Planned { brief, source, kind, version, file, side });
     }
     Ok(out)
 }
@@ -207,6 +209,7 @@ pub async fn apply(state: &AppState, inst: &Instance, planned: Vec<Planned>, sub
                 size: Some(p.file.size),
                 date: Some(p.version.date.clone()),
                 release_type: Some(p.version.release_type.clone()),
+                side: p.side,
             },
             old_keys,
         ));

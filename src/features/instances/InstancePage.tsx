@@ -17,6 +17,7 @@ import { InstanceContentTab } from "@/features/content/InstanceContentTab";
 import { LogsTab, showLogFile, uploadCrash } from "@/features/logs/LogsTab";
 import { useT } from "@/i18n";
 import { WorldsTab } from "./WorldsTab";
+import { ActiveModSet } from "@/features/content/ModSetsMenu";
 import { InstanceSettingsTab } from "./InstanceSettingsTab";
 import { accentVars } from "@/components/instance/accent";
 
@@ -113,6 +114,9 @@ function MetaLine({ instance: i }: { instance: Instance }) {
         </span>
       ))}
       <StatusHintInline instance={i} />
+      <span className="flex items-center gap-2 whitespace-nowrap before:text-dim before:content-['·'] empty:hidden">
+        <ActiveModSet instanceId={i.id} />
+      </span>
     </div>
   );
 }

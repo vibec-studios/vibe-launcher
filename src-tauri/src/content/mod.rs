@@ -27,6 +27,12 @@ pub mod murmur;
 pub mod nbt;
 pub mod provider;
 pub mod store;
+pub mod snapshots;
+pub mod deps;
+pub mod sides;
+pub mod modsets;
+pub mod perf;
+pub mod modpack;
 pub mod autoupdate;
 pub mod worlds;
 
@@ -284,6 +290,13 @@ pub struct ContentItem {
     /// Version fixiert: kein automatisches Update, nicht bei „Alle aktualisieren“
     #[serde(default)]
     pub pinned: bool,
+    /// Client/Server-Einordnung
+    #[serde(default = "side_unknown")]
+    pub side: Side,
+}
+
+fn side_unknown() -> Side {
+    Side::Unknown
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -331,6 +344,15 @@ pub struct ImportPreview {
     /// data:-URL
     pub icon: Option<String>,
     pub author: Option<String>,
+    /// Herunterzuladende Dateien mit Client/Server-Einordnung (mrpack `env`; sonst unbekannt)
+    #[serde(default)]
+    pub files: Vec<ImportFile>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImportFile {
+    pub path: String,
+    pub side: Side,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -365,6 +387,20 @@ pub struct MissingDownload {
     /// Seite, auf der der Nutzer die Datei manuell herunterladen kann
     pub page_url: String,
     pub kind: ContentKind,
+}
+
+/// Wo ein Inhalt gebraucht wird.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum Side {
+    /// nur Client (z. B. Shader, Minimap)
+    Client,
+    /// Client und Server
+    Both,
+    /// nur Server
+    Server,
+    /// unbekannt
+    Unknown,
 }
 
 /// Anderer Launcher, aus dem Instanzen übernommen werden können.

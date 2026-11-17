@@ -2,7 +2,7 @@
 //!
 //! Unterstützt: `fabric.mod.json`, `quilt.mod.json`, `META-INF/mods.toml`, `META-INF/neoforge.mods.toml`,
 //! `mcmod.info`, `pack.mcmeta` + `pack.png` (Zip oder Ordner). Icons werden unter `cache/icons/` abgelegt.
-use super::index::LocalMeta;
+use super::index::{LocalMeta, MetaDep};
 use super::ContentKind;
 use base64::Engine;
 use serde_json::Value;
@@ -20,6 +20,32 @@ struct Parsed {
     description: Option<String>,
     authors: Vec<String>,
     icon_path: Option<String>,
+    loader: Option<String>,
+    deps: Vec<MetaDep>,
+    provides: Vec<String>,
+    environment: Option<String>,
+    /// eingebettete JARs (Pfade im Archiv)
+    nested: Vec<String>,
+}
+
+fn dep(id: &str, range: Option<String>, kind: &str) -> MetaDep {
+    MetaDep { id: id.to_string(), range: range.filter(|r| !r.trim().is_empty()), kind: kind.to_string() }
+}
+
+/// Fabric-`depends`-Wert (String oder Liste von Strings = ODER) -> Bereich.
+fn fabric_range(v: &Value) -> Option<String> {
+    match v {
+        Value::String(s) => Some(s.clone()),
+        Value::Array(a) => {
+            let parts: Vec<String> = a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect();
+            if parts.is_empty() {
+                None
+            } else {
+                Some(parts.join(" || "))
+            }
+        }
+        _ => None,
+    }
 }
 
 /// Minecraft-Formatcodes (§x) entfernen und trimmen.
@@ -103,6 +129,20 @@ fn parse_fabric(v: &Value) -> Parsed {
                 .collect()
         })
         .unwrap_or_default();
+    let mut deps = Vec::new();
+    for (key, kind) in [("depends", "required"), ("recommends", "optional"), ("suggests", "optional"), ("breaks", "breaks"), ("conflicts", "breaks")] {
+        if let Some(o) = v.get(key).and_then(|d| d.as_object()) {
+            for (id, r) in o {
+                deps.push(dep(id, fabric_range(r), kind));
+            }
+        }
+    }
+    let provides = v.get("provides").and_then(|p| p.as_array()).map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()).unwrap_or_default();
+    let nested = v
+        .get("jars")
+        .and_then(|j| j.as_array())
+        .map(|a| a.iter().filter_map(|x| x.get("file").and_then(|f| f.as_str()).map(str::to_string)).collect())
+        .unwrap_or_default();
     Parsed {
         mod_id: str_of(v.get("id")),
         name: str_of(v.get("name")),
@@ -110,6 +150,11 @@ fn parse_fabric(v: &Value) -> Parsed {
         description: str_of(v.get("description")),
         authors,
         icon_path: icon_of(v.get("icon")),
+        loader: Some("fabric".into()),
+        deps,
+        provides,
+        environment: v.get("environment").and_then(|e| e.as_str()).map(str::to_string),
+        nested,
     }
 }
 
@@ -121,6 +166,28 @@ fn parse_quilt(v: &Value) -> Parsed {
         .and_then(|c| c.as_object())
         .map(|o| o.keys().cloned().collect())
         .unwrap_or_default();
+    let mut deps = Vec::new();
+    for (key, kind) in [("depends", "required"), ("breaks", "breaks")] {
+        if let Some(a) = ql.get(key).and_then(|d| d.as_array()) {
+            for d in a {
+                match d {
+                    Value::String(id) => deps.push(dep(id, None, kind)),
+                    Value::Object(o) => {
+                        let Some(id) = o.get("id").and_then(|x| x.as_str()) else { continue };
+                        let optional = o.get("optional").and_then(|x| x.as_bool()).unwrap_or(false);
+                        let range = o.get("versions").and_then(fabric_range);
+                        deps.push(dep(id, range, if kind == "required" && optional { "optional" } else { kind }));
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    let provides = ql
+        .get("provides")
+        .and_then(|p| p.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_string).or_else(|| x.get("id").and_then(|i| i.as_str()).map(str::to_string))).collect())
+        .unwrap_or_default();
     Parsed {
         mod_id: str_of(ql.get("id")),
         name: str_of(md.get("name")),
@@ -128,12 +195,47 @@ fn parse_quilt(v: &Value) -> Parsed {
         description: str_of(md.get("description")),
         authors,
         icon_path: icon_of(md.get("icon")),
+        loader: Some("quilt".into()),
+        deps,
+        provides,
+        environment: v.get("minecraft").and_then(|m| m.get("environment")).and_then(|e| e.as_str()).map(str::to_string),
+        nested: vec![],
     }
 }
 
 fn toml_fallback(text: &str, key: &str) -> Option<String> {
     let re = regex::Regex::new(&format!(r#"(?m)^\s*{key}\s*=\s*["']([^"'\n]*)["']"#)).ok()?;
     re.captures(text).map(|c| c[1].to_string()).filter(|s| !s.is_empty())
+}
+
+/// `[[dependencies.<modid>]]` aus mods.toml / neoforge.mods.toml.
+fn toml_deps(t: &toml::Table, own: Option<&str>) -> Vec<MetaDep> {
+    let mut out = Vec::new();
+    let Some(deps) = t.get("dependencies").and_then(|d| d.as_table()) else { return out };
+    for (owner, list) in deps {
+        if own.is_some_and(|o| o != owner) {
+            continue;
+        }
+        let Some(arr) = list.as_array() else { continue };
+        for d in arr.iter().filter_map(|x| x.as_table()) {
+            let Some(id) = d.get("modId").and_then(|x| x.as_str()) else { continue };
+            let kind = match d.get("type").and_then(|x| x.as_str()).map(|s| s.to_ascii_lowercase()) {
+                Some(t) if t == "required" => "required",
+                Some(t) if t == "incompatible" => "breaks",
+                Some(_) => "optional",
+                None => {
+                    if d.get("mandatory").and_then(|x| x.as_bool()).unwrap_or(false) {
+                        "required"
+                    } else {
+                        "optional"
+                    }
+                }
+            };
+            let range = d.get("versionRange").and_then(|x| x.as_str()).map(str::to_string);
+            out.push(dep(id, range, kind));
+        }
+    }
+    out
 }
 
 fn parse_mods_toml(text: &str, manifest_version: Option<&str>) -> Parsed {
@@ -152,13 +254,22 @@ fn parse_mods_toml(text: &str, manifest_version: Option<&str>) -> Parsed {
                 .or_else(|| get(&t, "authors"))
                 .map(|a| a.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect())
                 .unwrap_or_default();
+            let mod_id = get(&first, "modId");
+            let provides = t
+                .get("mods")
+                .and_then(|m| m.as_array())
+                .map(|a| a.iter().skip(1).filter_map(|m| m.get("modId").and_then(|x| x.as_str()).map(str::to_string)).collect())
+                .unwrap_or_default();
             Parsed {
-                mod_id: get(&first, "modId"),
+                deps: toml_deps(&t, mod_id.as_deref()),
+                mod_id,
                 name: get(&first, "displayName"),
                 version: fix_version(get(&first, "version")),
                 description: get(&first, "description"),
                 authors,
                 icon_path: get(&first, "logoFile").or_else(|| get(&t, "logoFile")),
+                provides,
+                ..Default::default()
             }
         }
         Err(_) => Parsed {
@@ -168,6 +279,7 @@ fn parse_mods_toml(text: &str, manifest_version: Option<&str>) -> Parsed {
             description: toml_fallback(text, "description"),
             authors: toml_fallback(text, "authors").map(|a| vec![a]).unwrap_or_default(),
             icon_path: toml_fallback(text, "logoFile"),
+            ..Default::default()
         },
     }
 }
@@ -192,6 +304,8 @@ fn parse_mcmod_info(v: &Value) -> Parsed {
         description: str_of(first.get("description")),
         authors,
         icon_path: str_of(first.get("logoFile")),
+        loader: Some("forge".into()),
+        ..Default::default()
     }
 }
 
@@ -247,12 +361,25 @@ fn parse_container(c: &mut dyn Container, kind: ContentKind) -> (Parsed, Option<
     if kind == ContentKind::Mod {
         if let Some(v) = c.read("fabric.mod.json").and_then(|b| lenient_json(&b)) {
             parsed = parse_fabric(&v);
+            // Mehrloader-JAR (fabric.mod.json + mods.toml): Loader nicht festlegen
+            if c.read("META-INF/mods.toml").is_some() || c.read("META-INF/neoforge.mods.toml").is_some() {
+                parsed.loader = Some("multi".into());
+            }
         } else if let Some(v) = c.read("quilt.mod.json").and_then(|b| lenient_json(&b)) {
             parsed = parse_quilt(&v);
-        } else if let Some(t) = c.read("META-INF/neoforge.mods.toml").or_else(|| c.read("META-INF/mods.toml")) {
+        } else if let Some((t, loader)) = c.read("META-INF/neoforge.mods.toml").map(|t| (t, "neoforge")).or_else(|| c.read("META-INF/mods.toml").map(|t| (t, "forge"))) {
             let manifest = c.read("META-INF/MANIFEST.MF").map(|b| String::from_utf8_lossy(&b).to_string());
             let mv = manifest.as_deref().and_then(manifest_impl_version);
             parsed = parse_mods_toml(&String::from_utf8_lossy(&t), mv.as_deref());
+            parsed.loader = Some(loader.into());
+            // Jar-in-Jar (NeoForge/Forge)
+            if let Some(v) = c.read("META-INF/jarjar/metadata.json").and_then(|b| lenient_json(&b)) {
+                parsed.nested = v
+                    .get("jars")
+                    .and_then(|j| j.as_array())
+                    .map(|a| a.iter().filter_map(|x| x.get("path").and_then(|p| p.as_str()).map(str::to_string)).collect())
+                    .unwrap_or_default();
+            }
         } else if let Some(v) = c.read("mcmod.info").and_then(|b| lenient_json(&b)) {
             parsed = parse_mcmod_info(&v);
         } else if let Some(b) = c.read("pack.mcmeta") {
@@ -265,6 +392,27 @@ fn parse_container(c: &mut dyn Container, kind: ContentKind) -> (Parsed, Option<
             parsed.icon_path = Some("pack.png".into());
         }
     }
+    // IDs eingebetteter Mods (eine Ebene) als "provides"
+    for path in parsed.nested.clone().iter().take(128) {
+        let Some(bytes) = c.read(path) else { continue };
+        let Ok(z) = zip::ZipArchive::new(std::io::Cursor::new(bytes)) else { continue };
+        let mut inner = ZipC(z);
+        let sub = if let Some(v) = inner.read("fabric.mod.json").and_then(|b| lenient_json(&b)) {
+            parse_fabric(&v)
+        } else if let Some(v) = inner.read("quilt.mod.json").and_then(|b| lenient_json(&b)) {
+            parse_quilt(&v)
+        } else if let Some(t) = inner.read("META-INF/neoforge.mods.toml").or_else(|| inner.read("META-INF/mods.toml")) {
+            parse_mods_toml(&String::from_utf8_lossy(&t), None)
+        } else {
+            continue;
+        };
+        if let Some(id) = sub.mod_id {
+            parsed.provides.push(id);
+        }
+        parsed.provides.extend(sub.provides);
+    }
+    parsed.provides.sort();
+    parsed.provides.dedup();
     let icon = parsed.icon_path.as_deref().and_then(|p| c.read(p)).filter(|b| !b.is_empty() && b.len() <= MAX_ICON && image_mime(b).is_some());
     (parsed, icon)
 }
@@ -315,11 +463,16 @@ fn apply(meta: &mut LocalMeta, p: Parsed) {
     meta.version = p.version;
     meta.description = p.description;
     meta.authors = p.authors;
+    meta.loader = p.loader;
+    meta.deps = p.deps;
+    meta.provides = p.provides;
+    meta.environment = p.environment;
+    meta.meta_version = super::index::META_VERSION;
 }
 
 /// Datei oder Ordner einlesen: Hashes + Metadaten + Icon. `size`/`mtime` setzt der Aufrufer.
 pub fn read_entry(path: &Path, kind: ContentKind, icons_dir: &Path) -> LocalMeta {
-    let mut meta = LocalMeta::default();
+    let mut meta = LocalMeta { meta_version: super::index::META_VERSION, ..Default::default() };
     if path.is_dir() {
         meta.is_dir = true;
         let (parsed, icon) = parse_container(&mut DirC(path), kind);

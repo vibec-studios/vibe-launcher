@@ -24,6 +24,8 @@ pub struct PackFile {
     pub size: Option<u64>,
     /// (Quelle, Projekt-ID, Versions-/Datei-ID), falls bekannt
     pub origin: Option<(Source, String, String)>,
+    /// Client/Server laut Pack (mrpack `env`)
+    pub side: Option<Side>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -345,7 +347,8 @@ pub fn analyze(path: &Path) -> AppResult<PackPlan> {
                 continue;
             };
             let origin = modrinth_ids_from_url(&url).map(|(p, v)| (Source::Modrinth, p, v));
-            files.push(PackFile { path: f.path, url, sha1: f.hashes.get("sha1").cloned(), size: f.file_size, origin });
+            let side = f.env.as_ref().map(|e| super::sides::from_sides(e.get("client").map(String::as_str), e.get("server").map(String::as_str)));
+            files.push(PackFile { path: f.path, url, sha1: f.hashes.get("sha1").cloned(), size: f.file_size, origin, side });
         }
         return Ok(PackPlan {
             format: PackFormat::Mrpack,
@@ -376,7 +379,7 @@ pub fn analyze(path: &Path) -> AppResult<PackPlan> {
                 "curseforge" => f.project_id.clone().zip(f.file_id.clone().or(f.version_id.clone())).map(|(a, b)| (Source::Curseforge, a, b)),
                 _ => None,
             };
-            files.push(PackFile { path: f.path, url: f.url, sha1: f.sha1, size: f.size, origin });
+            files.push(PackFile { path: f.path, url: f.url, sha1: f.sha1, size: f.size, origin, side: None });
         }
         let icon = p.icon.as_deref().and_then(|i| read_zip_file(&mut zip, i)).filter(|b| super::meta::image_mime(b).is_some());
         return Ok(PackPlan {
@@ -471,6 +474,14 @@ pub async fn preview(path: &str) -> AppResult<ImportPreview> {
         version_name: plan.version_name,
         mc_version: plan.mc_version,
         loader: plan.loader,
+        files: plan
+            .files
+            .iter()
+            .map(|f| ImportFile {
+                path: f.path.clone(),
+                side: f.side.unwrap_or(if f.path.starts_with("resourcepacks/") || f.path.starts_with("shaderpacks/") { Side::Client } else { Side::Unknown }),
+            })
+            .collect(),
         author: plan.author,
     })
 }
@@ -483,11 +494,24 @@ pub struct ImportOptions {
     pub name: Option<String>,
     pub source: Option<PackSource>,
     pub icon_url: Option<String>,
+    /// Quelle für spätere Modpack-Updates (Modrinth/CurseForge/Store)
+    pub pack_source: Option<Source>,
 }
 
 /// Overrides aus dem Archiv in den Spielordner entpacken (blockierend).
 /// `progress` meldet 0..1 und liefert `Err(Cancelled)` bei Abbruch.
-fn extract_overrides(zip_path: &Path, prefixes: &[String], game_dir: &Path, progress: &dyn Fn(f64) -> AppResult<()>) -> AppResult<()> {
+pub(crate) fn extract_overrides(zip_path: &Path, prefixes: &[String], game_dir: &Path, progress: &dyn Fn(f64) -> AppResult<()>) -> AppResult<()> {
+    extract_overrides_only(zip_path, prefixes, game_dir, None, progress)
+}
+
+/// Wie `extract_overrides`, optional nur bestimmte relative Pfade.
+pub(crate) fn extract_overrides_only(
+    zip_path: &Path,
+    prefixes: &[String],
+    game_dir: &Path,
+    only: Option<&HashSet<String>>,
+    progress: &dyn Fn(f64) -> AppResult<()>,
+) -> AppResult<()> {
     let f = std::fs::File::open(zip_path)?;
     let mut zip = zip::ZipArchive::new(std::io::BufReader::new(f))?;
     let total = (zip.len() * prefixes.len()).max(1);
@@ -499,7 +523,7 @@ fn extract_overrides(zip_path: &Path, prefixes: &[String], game_dir: &Path, prog
             let mut entry = zip.by_index(i)?;
             let name = entry.name().replace('\\', "/");
             let Some(rel) = name.strip_prefix(prefix.as_str()) else { continue };
-            if rel.is_empty() {
+            if rel.is_empty() || only.is_some_and(|o| !o.contains(rel.trim_end_matches('/'))) {
                 continue;
             }
             let Some(target) = safe_join(game_dir, rel) else {
@@ -517,6 +541,40 @@ fn extract_overrides(zip_path: &Path, prefixes: &[String], game_dir: &Path, prog
         }
     }
     progress(1.0)
+}
+
+/// Override-Dateien im Archiv: relativer Pfad -> (SHA-1, Größe). Spätere Präfixe gewinnen.
+pub(crate) fn override_entries(zip_path: &Path, prefixes: &[String]) -> AppResult<std::collections::BTreeMap<String, (String, u64)>> {
+    use sha1::Digest;
+    let f = std::fs::File::open(zip_path)?;
+    let mut zip = zip::ZipArchive::new(std::io::BufReader::new(f))?;
+    let mut out = std::collections::BTreeMap::new();
+    for prefix in prefixes {
+        for i in 0..zip.len() {
+            let mut entry = zip.by_index(i)?;
+            if entry.is_dir() {
+                continue;
+            }
+            let name = entry.name().replace('\\', "/");
+            let Some(rel) = name.strip_prefix(prefix.as_str()) else { continue };
+            if rel.is_empty() || safe_join(Path::new("base"), rel).is_none() {
+                continue;
+            }
+            let mut h = sha1::Sha1::new();
+            let mut buf = [0u8; 64 * 1024];
+            let mut size = 0u64;
+            loop {
+                let n = entry.read(&mut buf)?;
+                if n == 0 {
+                    break;
+                }
+                size += n as u64;
+                h.update(&buf[..n]);
+            }
+            out.insert(rel.to_string(), (hex::encode(h.finalize()), size));
+        }
+    }
+    Ok(out)
 }
 
 fn new_instance(name: String, plan: &PackPlan, source: Option<PackSource>) -> Instance {
@@ -557,14 +615,14 @@ fn pack_source_kind(f: PackFormat) -> PackSourceKind {
     }
 }
 
-struct ResolvedCf {
-    files: Vec<PackFile>,
-    missing: Vec<MissingEntry>,
+pub(crate) struct ResolvedCf {
+    pub(crate) files: Vec<PackFile>,
+    pub(crate) missing: Vec<MissingEntry>,
     warnings: Vec<String>,
 }
 
 /// CurseForge-Manifest auflösen: Datei-Infos + Projekte (Klasse -> Zielordner).
-async fn resolve_cf(state: &AppState, refs: &[CfRef]) -> AppResult<ResolvedCf> {
+pub(crate) async fn resolve_cf(state: &AppState, refs: &[CfRef]) -> AppResult<ResolvedCf> {
     let refs: Vec<&CfRef> = refs.iter().filter(|r| r.required).collect();
     let file_ids: Vec<u64> = refs.iter().map(|r| r.file_id).collect();
     let mod_ids: Vec<u64> = refs.iter().map(|r| r.project_id).collect::<HashSet<_>>().into_iter().collect();
@@ -587,6 +645,7 @@ async fn resolve_cf(state: &AppState, refs: &[CfRef]) -> AppResult<ResolvedCf> {
                 sha1: f.sha1(),
                 size: Some(f.file_length).filter(|s| *s > 0),
                 origin: Some((Source::Curseforge, r.project_id.to_string(), r.file_id.to_string())),
+                side: super::sides::from_cf_versions(&f.game_versions),
             }),
             None => out.missing.push(MissingEntry {
                 info: MissingDownload {
@@ -647,6 +706,7 @@ pub async fn run_import(state: &AppState, task: &TaskHandle, path: &Path, opts: 
                         sha1: m.sha1.clone(),
                         size: Some(mi.size),
                         origin: Some((Source::Modrinth, mi.project_id.clone(), mi.version_id.clone())),
+                        side: None,
                     }),
                     None => still.push(m),
                 }
@@ -723,12 +783,18 @@ pub async fn run_import(state: &AppState, task: &TaskHandle, path: &Path, opts: 
                         size: f.size,
                         date: None,
                         release_type: None,
+                        side: f.side,
                     },
                 );
             }
             idx.save(&state.paths, &inst.id)?;
         }
         missing::add(&state.paths, &inst.id, cf_res.missing.clone())?;
+
+        // Installationsstand für spätere Modpack-Updates merken
+        if let Err(e) = super::modpack::record_after_import(state, &inst.id, path, &plan, &files, &opts).await {
+            tracing::warn!("pack.json für {} nicht geschrieben: {e}", inst.id);
+        }
 
         // Icon
         let icon = match (&plan.icon, &opts.icon_url) {
@@ -865,6 +931,7 @@ pub async fn run_modpack_install(state: AppState, task: TaskHandle, source: Sour
                     version_name: Some(version.version_number.clone()),
                 }),
                 icon_url: brief.icon_url.clone(),
+                pack_source: Some(source),
             };
             run_import(&state, &task, &tmp, opts, task.sub(0.15, 1.0)).await.map(|_| ())
         }

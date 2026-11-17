@@ -15,6 +15,10 @@ import { Pill } from "@/components/content/Pill";
 import { baseName } from "@/components/content/util";
 import { finishNewInstance } from "@/components/content/install";
 import { useExternalImport } from "./ExternalImport";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { useMemo } from "react";
+import type { ImportFile } from "@/lib/types";
+import { SideFilterBar, SideTag, countSides, sideMatches, type SideFilter } from "@/components/content/sides";
 
 export type ImportMode = "file" | "launcher";
 interface ImportState {
@@ -222,6 +226,7 @@ export function ImportDialog() {
             <Fact label={t("discover.filter.loader")} value={formatLoader(p.loader)} />
             <Fact label={t("import.files")} value={p.file_count.toLocaleString()} />
           </div>
+          {p.files.length > 0 && <ImportFileList files={p.files} />}
           <Field label={t("import.name")} error={!name.trim() ? t("import.name_required") : undefined}>
             <Input value={name} onChange={(e) => setName(e.target.value)} disabled={running} onKeyDown={(e) => e.key === "Enter" && !running && name.trim() && start()} />
           </Field>
@@ -252,6 +257,37 @@ function Fact({ label, value }: { label: string; value: string }) {
     <div className="min-w-0 bg-[#07070a] px-3.5 py-2.5">
       <div className="label">{label}</div>
       <div className="mt-0.5 truncate font-mono text-[13px] text-white">{value}</div>
+    </div>
+  );
+}
+
+/** Dateiliste der Import-Vorschau mit Client/Server-Filter (Content-Agent). */
+function ImportFileList({ files }: { files: ImportFile[] }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [side, setSide] = useState<SideFilter>("all");
+  const counts = useMemo(() => countSides(files, (f) => f.side), [files]);
+  const shown = files.filter((f) => sideMatches(side, f.side));
+  return (
+    <div className="border border-line">
+      <button className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] font-medium text-text hover:bg-white/[.03]" onClick={() => setOpen((o) => !o)}>
+        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {t("modpack.files")}
+        <span className="text-dim">{files.length}</span>
+      </button>
+      {open && (
+        <div className="border-t border-line">
+          <SideFilterBar value={side} onChange={setSide} counts={counts} className="px-2 py-1.5" />
+          <div className="scroll max-h-[200px] border-t border-line">
+            {shown.map((f) => (
+              <div key={f.path} className="flex items-center gap-2 border-b border-line/50 px-3 py-1.5 last:border-b-0">
+                <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-text">{f.path}</span>
+                <SideTag side={f.side} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

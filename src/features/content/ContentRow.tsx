@@ -7,6 +7,7 @@ import { useT } from "@/i18n";
 import type { ContentItem, ContentUpdate } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { sourceName } from "@/components/content/util";
+import { SideTag } from "@/components/content/sides";
 
 export const ROW_H = 52;
 /** Spalten: Auswahl | Name | Version | Aktionen */
@@ -140,7 +141,10 @@ export const ContentRow = memo(function ContentRow({
         <div className={cn("flex min-w-0 items-center gap-3 transition-opacity duration-150", !item.enabled && "opacity-50")}>
           <ProjectIcon src={item.icon} size={34} className={cn(!item.enabled && "grayscale")} />
           <div className="min-w-0">
-            <div className="truncate text-[14px] font-semibold text-white">{item.name}</div>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="truncate text-[14px] font-semibold text-white">{item.name}</span>
+              {item.kind === "mod" && item.side !== "unknown" && <SideTag side={item.side} />}
+            </div>
             <div className="truncate text-[12px] text-dim">{sub}</div>
           </div>
         </div>

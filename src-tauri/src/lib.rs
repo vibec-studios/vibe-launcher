@@ -180,6 +180,19 @@ pub fn run() {
             commands::content::store_add,
             commands::content::store_remove,
             commands::content::store_set_enabled,
+            commands::content::modpack_check,
+            commands::content::modpack_update_preview,
+            commands::content::modpack_update,
+            commands::content::content_check_deps,
+            commands::content::content_sides,
+            commands::content::modsets_list,
+            commands::content::modset_create,
+            commands::content::modset_apply,
+            commands::content::modset_save,
+            commands::content::modset_rename,
+            commands::content::modset_delete,
+            commands::content::perf_preview,
+            commands::content::perf_install,
         ])
         .run(tauri::generate_context!())
         .expect("Fehler beim Starten des Launchers");

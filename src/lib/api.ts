@@ -125,6 +125,22 @@ export const api = {
   storeAdd: (url: string) => call<T.StoreInfo>("store_add", { url }),
   storeRemove: (id: string) => call<void>("store_remove", { id }),
   storeSetEnabled: (id: string, enabled: boolean) => call<void>("store_set_enabled", { id, enabled }),
+  modpackCheck: (instanceId: string) => call<T.ModpackUpdate | null>("modpack_check", { instanceId }),
+  modpackUpdatePreview: (instanceId: string, versionId?: string | null) =>
+    call<T.ModpackPreview>("modpack_update_preview", { instanceId, versionId: versionId ?? null }),
+  /** Gibt Task-ID zurück (vorher automatischer Snapshot). */
+  modpackUpdate: (instanceId: string, versionId?: string | null) => call<string>("modpack_update", { instanceId, versionId: versionId ?? null }),
+  contentCheckDeps: (instanceId: string) => call<T.DepIssue[]>("content_check_deps", { instanceId }),
+  contentSides: (instanceId: string) => call<T.SideInfo[]>("content_sides", { instanceId }),
+  modsetsList: (instanceId: string) => call<T.ModSets>("modsets_list", { instanceId }),
+  modsetCreate: (instanceId: string, name: string) => call<T.ModSets>("modset_create", { instanceId, name }),
+  modsetApply: (instanceId: string, setId: string) => call<T.ModSets>("modset_apply", { instanceId, setId }),
+  modsetSave: (instanceId: string, setId: string) => call<T.ModSets>("modset_save", { instanceId, setId }),
+  modsetRename: (instanceId: string, setId: string, name: string) => call<T.ModSets>("modset_rename", { instanceId, setId, name }),
+  modsetDelete: (instanceId: string, setId: string) => call<T.ModSets>("modset_delete", { instanceId, setId }),
+  perfPreview: (instanceId: string) => call<T.PerfCandidate[]>("perf_preview", { instanceId }),
+  /** Gibt Task-ID zurück (vorher Snapshot). */
+  perfInstall: (instanceId: string, projectIds: string[]) => call<string>("perf_install", { instanceId, projectIds }),
   launchersDetect: () => call<T.ExternalLauncher[]>("launchers_detect"),
   launcherScanDir: (path: string) => call<T.ExternalLauncher>("launcher_scan_dir", { path }),
   /** Gibt Task-ID zurück; mcVersion/loader überschreiben erkannte Werte. */

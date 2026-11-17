@@ -347,6 +347,7 @@ function itemFromHit(h: ProjectHit, kind: ContentKind, i: number, enabled = true
   return {
     file_name: enabled ? file : `${file}.disabled`,
     pinned: false,
+    side: "unknown",
     kind,
     enabled,
     name: h.title,
