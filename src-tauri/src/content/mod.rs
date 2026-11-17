@@ -29,6 +29,8 @@ pub mod provider;
 pub mod store;
 pub mod autoupdate;
 pub mod worlds;
+pub mod snapshots;
+pub mod worldbackup;
 
 /// Herkunft: Modrinth, CurseForge oder ein eigener Store (serialisiert als `"store:<id>"`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

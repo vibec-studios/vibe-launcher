@@ -58,6 +58,12 @@ pub struct Settings {
     pub auto_update_content: bool,
     /// Eigene Inhalte-Stores (Vibe Store v1, siehe docs/STORE.md). Der Standard-Store ist immer enthalten.
     pub stores: Vec<StoreConfig>,
+    /// Aufbewahrte automatische Snapshots je Instanz
+    pub snapshot_keep: u32,
+    /// Vor jedem Spielstart geänderte Welten sichern
+    pub world_backup_on_launch: bool,
+    /// Aufbewahrte automatische Backups je Welt
+    pub world_backups_keep: u32,
 }
 
 /// Eintrag in der Store-Liste.
@@ -128,6 +134,9 @@ impl Default for Settings {
             reduce_motion: false,
             auto_update_content: false,
             stores: crate::content::store::default_stores(),
+            snapshot_keep: 10,
+            world_backup_on_launch: false,
+            world_backups_keep: 5,
         }
     }
 }

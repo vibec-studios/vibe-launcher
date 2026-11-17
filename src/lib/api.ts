@@ -138,4 +138,23 @@ export const api = {
   screenshotDelete: (path: string) => call<void>("screenshot_delete", { path }),
   screenshotCopy: (path: string) => call<void>("screenshot_copy", { path }),
   screenshotOpenFolder: (path: string) => call<void>("screenshot_open_folder", { path }),
+
+  // ---------------------------------------------------------------- Backups (Snapshots + Welt-Backups)
+  snapshotsList: (instanceId: string) => call<T.SnapshotInfo[]>("snapshots_list", { instanceId }),
+  /** Gibt Task-ID zurück */
+  snapshotCreate: (instanceId: string, name?: string | null) => call<string>("snapshot_create", { instanceId, name: name ?? null }),
+  /** Gibt Task-ID zurück; legt vorher automatisch „Vor Wiederherstellung“ an */
+  snapshotRestore: (instanceId: string, snapshotId: string) => call<string>("snapshot_restore", { instanceId, snapshotId }),
+  snapshotDelete: (instanceId: string, snapshotId: string) => call<void>("snapshot_delete", { instanceId, snapshotId }),
+  worldBackupsList: (instanceId: string) => call<T.WorldBackup[]>("world_backups_list", { instanceId }),
+  /** Gibt Task-ID zurück */
+  worldBackupCreate: (instanceId: string, folder: string) => call<string>("world_backup_create", { instanceId, folder }),
+  /** Gibt Task-ID zurück; vorhandene Welt wird vorher gesichert */
+  worldBackupRestore: (instanceId: string, backupId: string) => call<string>("world_backup_restore", { instanceId, backupId }),
+  worldBackupDelete: (instanceId: string, backupId: string) => call<void>("world_backup_delete", { instanceId, backupId }),
+  /** Gibt Task-ID zurück (Task gehört zur Ziel-Instanz) */
+  worldCopy: (instanceId: string, folder: string, targetInstanceId: string) => call<string>("world_copy", { instanceId, folder, targetInstanceId }),
+  /** Gibt Task-ID zurück */
+  worldImportZip: (instanceId: string, path: string) => call<string>("world_import_zip", { instanceId, path }),
+  backupsOpenFolder: (instanceId: string, kind: "worlds" | "snapshots") => call<void>("backups_open_folder", { instanceId, kind }),
 };

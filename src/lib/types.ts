@@ -115,6 +115,12 @@ export interface Settings {
   /** Mods/Packs/Shader vor jedem Start automatisch aktualisieren (je Instanz überschreibbar) */
   auto_update_content: boolean;
   stores: StoreConfig[];
+  /** Aufbewahrte automatische Snapshots je Instanz */
+  snapshot_keep: number;
+  /** Vor jedem Spielstart geänderte Welten sichern */
+  world_backup_on_launch: boolean;
+  /** Aufbewahrte automatische Backups je Welt */
+  world_backups_keep: number;
 }
 
 export interface StoreConfig {
@@ -531,4 +537,28 @@ export interface VibeServices {
   presence: boolean;
   hosting: boolean;
   sharing: boolean;
+}
+
+// ------------------------------------------------------------------ Backups (Snapshots + Welt-Backups)
+
+/** Snapshot einer Instanz (Mods, Configs, Packs, Optionen – keine Welten). */
+export interface SnapshotInfo {
+  id: string;
+  name: string;
+  created: number;
+  /** Automatisch angelegt (z. B. „Vor Wiederherstellung“) – zählt zur Grenze `snapshot_keep` */
+  auto: boolean;
+  file_count: number;
+  size: number;
+}
+
+/** ZIP-Backup einer Welt. `id` = "<weltordner>/<zeitstempel>" */
+export interface WorldBackup {
+  id: string;
+  folder: string;
+  world_name: string;
+  created: number;
+  size: number;
+  /** Automatisch (vor Spielstart / vor Wiederherstellung) – zählt zur Grenze `world_backups_keep` */
+  auto: boolean;
 }
