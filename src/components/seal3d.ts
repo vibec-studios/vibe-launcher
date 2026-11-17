@@ -1,47 +1,28 @@
 // Vibe-Craft-Studios-Logo: Robbe im Minecraft-Stil – aus Quadern gebaut, mit Pixel-Texturen (1 Texel = 1 Einheit),
-// in den Markenfarben (Lila-Robbe auf türkisem Eis). Wird vom 3D-Logo in der App genutzt und zum Rendern der Icons.
+// natürliche Farben (graue Robbe auf hellem Eis). Wird vom 3D-Logo in der App genutzt und zum Rendern der Icons.
 // Animierbare Teile: Kopf, vordere/hintere Flossen, Blinzeln.
 import type * as THREE_NS from "three";
 
 export const SEAL_COLORS = {
-  body: "#9a84ff",
-  back: "#8a72fb",
-  belly: "#d9d0ff",
-  spot: "#7457ec",
-  snout: "#f3f0ff",
-  flipper: "#7a5ff0",
-  eye: "#17121f",
+  body: "#8f9aa6",
+  back: "#7d8894",
+  belly: "#cdd4db",
+  spot: "#68737f",
+  snout: "#e8ecf0",
+  flipper: "#707b87",
+  eye: "#141418",
   shine: "#ffffff",
-  lid: "#7a62ee",
-  nose: "#2a2138",
-  whisker: "#b7a9f5",
+  lid: "#7d8894",
+  nose: "#2a2a30",
+  whisker: "#a3acb5",
   cheek: "#ff9db8",
-  ice: "#3fe0c5",
-  iceLight: "#8ff5e3",
-  iceSide: "#2fb8a3",
-  iceDark: "#1f9e8a",
+  ice: "#e3f0f9",
+  iceLight: "#f6fbff",
+  iceSide: "#bcd9ee",
+  iceDark: "#9cc4e2",
 };
 export type SealPalette = typeof SEAL_COLORS;
 
-/** Alternative Farbschemata (zum Ausprobieren). */
-export const SEAL_PALETTES: Record<string, SealPalette> = {
-  marke: SEAL_COLORS,
-  natur: {
-    body: "#8f9aa6", back: "#7d8894", belly: "#cdd4db", spot: "#68737f", snout: "#e8ecf0", flipper: "#707b87",
-    eye: "#141418", shine: "#ffffff", lid: "#7d8894", nose: "#2a2a30", whisker: "#a3acb5", cheek: "#ff9db8",
-    ice: "#e3f0f9", iceLight: "#f6fbff", iceSide: "#bcd9ee", iceDark: "#9cc4e2",
-  },
-  dezent: {
-    body: "#9a9cb3", back: "#888aa3", belly: "#d6d6e6", spot: "#727493", snout: "#eeeef6", flipper: "#7b7d99",
-    eye: "#141418", shine: "#ffffff", lid: "#888aa3", nose: "#2a2a34", whisker: "#aeb0c6", cheek: "#ff9db8",
-    ice: "#e6f2f6", iceLight: "#f7fbfd", iceSide: "#b7dbe3", iceDark: "#93c4cf",
-  },
-  dunkel: {
-    body: "#5d6573", back: "#4f5765", belly: "#a9b0bb", spot: "#424956", snout: "#d9dde3", flipper: "#4a515e",
-    eye: "#0e0e12", shine: "#ffffff", lid: "#4f5765", nose: "#1c1c22", whisker: "#7c8491", cheek: "#ff9db8",
-    ice: "#e3f0f9", iceLight: "#f6fbff", iceSide: "#bcd9ee", iceDark: "#9cc4e2",
-  },
-};
 let C: SealPalette = SEAL_COLORS;
 
 type Painter = (g: CanvasRenderingContext2D, w: number, h: number) => void;
