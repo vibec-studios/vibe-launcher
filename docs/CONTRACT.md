@@ -103,6 +103,13 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 ## Prüfen
 
 - `pnpm typecheck`, `pnpm build`, `cd src-tauri && cargo check` / `cargo test`
-- App mit Remote-Debugging starten:
-  `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222 VIBE_LAUNCHER_HOME=<tmp> pnpm tauri dev`
-  und per CDP (playwright-core `chromium.connectOverCDP("http://127.0.0.1:9222")`) bedienen/screenshotten.
+- **Echte App testen ohne Vite** (mehrere Testläufe parallel möglich – eigenen Port + eigene Ordner wählen):
+  ```bash
+  pnpm install && pnpm build                                   # Frontend nach dist/
+  cd src-tauri && cargo build --features tauri/custom-protocol # Debug-Build mit eingebettetem Frontend
+  WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=<PORT>   WEBVIEW2_USER_DATA_FOLDER=<TMP>/wv VIBE_LAUNCHER_HOME=<TMP>/home     ./target/debug/vibe-launcher.exe &
+  ```
+  Dann per CDP (playwright-core `chromium.connectOverCDP("http://127.0.0.1:<PORT>")`) Screenshots machen,
+  klicken oder Commands direkt aufrufen: `page.evaluate(() => window.__TAURI_INTERNALS__.invoke("game_versions", {}))`.
+  Beenden: `taskkill //F //PID <pid>` (nicht alle vibe-launcher.exe – andere Testläufe laufen evtl. parallel).
+- `VIBE_LAUNCHER_HOME` gesetzt => Single-Instance-Sperre ist aus (Testmodus).
