@@ -217,7 +217,8 @@ export interface JavaInstall {
 
 export type Source = "modrinth" | "curseforge";
 export type ProjectType = "mod" | "modpack" | "resourcepack" | "shader" | "datapack";
-export type ContentKind = "mod" | "resourcepack" | "shader";
+/** datapack = `datapacks/` im Spielordner (global; Vanilla lädt den Ordner nicht automatisch, siehe CONTRACT.md) */
+export type ContentKind = "mod" | "resourcepack" | "shader" | "datapack";
 export type SortOrder = "relevance" | "downloads" | "follows" | "newest" | "updated";
 
 export interface SearchQuery {
@@ -287,6 +288,8 @@ export interface VersionFile {
   size: number;
   sha1: string | null;
   primary: boolean;
+  /** nur Modrinth */
+  sha512?: string | null;
 }
 
 export type DependencyKind = "required" | "optional" | "incompatible" | "embedded";

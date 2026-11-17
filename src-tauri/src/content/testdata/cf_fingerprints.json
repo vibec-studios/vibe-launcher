@@ -1,0 +1,32 @@
+{
+  "data": {
+    "isCacheBuilt": true,
+    "exactMatches": [
+      {
+        "id": 238222,
+        "file": {
+          "id": 4712866,
+          "gameId": 432,
+          "modId": 238222,
+          "isAvailable": true,
+          "displayName": "jei-1.20.1-forge-15.2.0.27",
+          "fileName": "jei-1.20.1-forge-15.2.0.27.jar",
+          "releaseType": 1,
+          "hashes": [ { "value": "0123456789abcdef0123456789abcdef01234567", "algo": 1 } ],
+          "fileDate": "2023-09-11T20:31:39.087Z",
+          "fileLength": 1291637,
+          "downloadUrl": "https://edge.forgecdn.net/files/4712/866/jei-1.20.1-forge-15.2.0.27.jar",
+          "gameVersions": [ "1.20.1", "Forge" ],
+          "dependencies": [],
+          "fileFingerprint": 3089143260
+        },
+        "latestFiles": []
+      }
+    ],
+    "exactFingerprints": [ 3089143260 ],
+    "partialMatches": [],
+    "partialMatchFingerprints": {},
+    "installedFingerprints": [ 3089143260 ],
+    "unmatchedFingerprints": [ 12345 ]
+  }
+}
