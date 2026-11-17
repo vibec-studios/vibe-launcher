@@ -63,6 +63,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 |---|---|
 | Kern | instances_list, instance_get, instance_create, instance_update, instance_delete, instance_duplicate, instance_set_icon, instance_open_folder, settings_get, settings_set, tasks_list, task_cancel, tasks_clear, system_info, open_path, open_data_dir |
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
+| Skins | skins_profile, skin_upload_file, skin_apply_library, skin_set_variant, skin_reset, cape_set, skin_library_list, skin_library_add_file, skin_library_add_current, skin_library_import_player, skin_library_rename, skin_library_set_variant, skin_library_remove, skin_library_export, skin_library_reveal |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
 | Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external |
 
@@ -125,6 +126,11 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   schlägt das wegen der Anmeldung fehl, wird `needs_relogin = true` gesetzt.
   Nur Debug-Builds (automatisierte Tests): `VIBE_DEV_OFFLINE_ACCOUNT=<Name>` -> ohne aktiven Account startet das Spiel
   mit einem Offline-Profil (nicht in UI/accounts.json, im Release wegkompiliert).
+- **Skins & Capes** (`auth/skins.rs`, `commands/skins.rs`): Profil über `api.minecraftservices.com/minecraft/profile`
+  (Token aus dem Schlüsselbund, bei 401 einmal Refresh + Wiederholung). Texturen gehen als `data:`-URL ans Frontend
+  (Cache unter `cache/textures/`). Skin-Änderungen aktualisieren `Account.skin_url` (-> `accounts://changed`,
+  `PlayerHead` zeigt eigene Accounts direkt aus der Textur). Bibliothek: `skins/<id>.png` + `skins.json` im Datenordner
+  (Duplikate per SHA-1 erkannt). Nur PNG 64×64 / 64×32. `accountId = null` -> aktiver Account.
 
 ## Events (Backend -> Frontend)
 
@@ -138,6 +144,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | `content://changed` | {instance_id} | Mods/Packs/Shader/Welten geändert |
 | `accounts://changed` | Account[] | Accounts geändert |
 | `settings://changed` | Settings | Einstellungen gespeichert |
+| `skins://changed` | {scope: "library"} \| {scope: "profile", account_id} | Skin-Bibliothek bzw. Skin/Cape eines Accounts geändert |
 
 `app/EventBridge.tsx` hält damit React-Query-Caches und Stores aktuell – Seiten brauchen kein Polling.
 
