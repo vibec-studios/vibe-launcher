@@ -4,11 +4,12 @@ import core from "./core";
 import a from "./a";
 import b from "./b";
 import skins from "./skins";
+import servers from "./servers";
 import type { Handlers } from "./util";
 
 mockWindows("main");
 
-const handlers: Handlers = { ...core, ...a, ...b, ...skins };
+const handlers: Handlers = { ...core, ...a, ...b, ...skins, ...servers };
 
 mockIPC(
   async (cmd, args) => {

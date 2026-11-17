@@ -187,7 +187,7 @@ function EditDialog({ entry, onSave, onClose }: { entry: ServerEntry; onSave: (e
 export function ServersTab({ instance }: { instance: Instance }) {
   const t = useT();
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: key(instance.id), queryFn: () => api.serversList(instance.id) });
+  const q = useQuery({ queryKey: key(instance.id), queryFn: () => api.instanceServersList(instance.id) });
   const { phase } = useRunPhase(instance.id);
   const locked = phase !== "idle";
   const [editing, setEditing] = useState<number | null>(null);
@@ -197,7 +197,7 @@ export function ServersTab({ instance }: { instance: Instance }) {
     const prev = q.data;
     qc.setQueryData(key(instance.id), next);
     try {
-      await api.serversSave(instance.id, next);
+      await api.instanceServersSave(instance.id, next);
     } catch (e) {
       qc.setQueryData(key(instance.id), prev);
       toast.error(e, t("servers.save_failed"));

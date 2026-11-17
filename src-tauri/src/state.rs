@@ -5,6 +5,7 @@ use crate::instance::InstanceStore;
 use crate::minecraft::GameManager;
 use crate::net::Net;
 use crate::paths::Paths;
+use crate::server::{ServerManager, ServerStore};
 use crate::settings::Settings;
 use crate::tasks::Tasks;
 use parking_lot::RwLock;
@@ -22,6 +23,10 @@ pub struct AppState {
     pub auth: Arc<AuthState>,
     pub game: Arc<GameManager>,
     pub content: Arc<ContentState>,
+    /// Lokale Server (Modell/Speicher)
+    pub servers: Arc<ServerStore>,
+    /// Laufende lokale Server
+    pub server_mgr: Arc<ServerManager>,
     /// Gefundenes Launcher-Update (zwischen Prüfung und Installation)
     pub pending_update: crate::updater::PendingUpdate,
 }
@@ -39,6 +44,8 @@ impl AppState {
         let auth = AuthState::load(paths.clone(), app.clone());
         let game = GameManager::new(paths.clone(), app.clone());
         let content = ContentState::new(paths.clone(), app.clone());
+        let servers = ServerStore::load(paths.clone(), app.clone());
+        let server_mgr = ServerManager::new(paths.clone(), app.clone());
         AppState {
             app,
             paths,
@@ -49,6 +56,8 @@ impl AppState {
             auth,
             game,
             content,
+            servers,
+            server_mgr,
             pending_update: Default::default(),
         }
     }

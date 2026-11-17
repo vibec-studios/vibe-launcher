@@ -2,10 +2,43 @@
 import * as Sw from "@radix-ui/react-switch";
 import * as Sl from "@radix-ui/react-slider";
 import type { ReactNode } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Check } from "lucide-react";
 import { cn } from "./cn";
 import { Button } from "./Button";
 import { t } from "@/i18n";
+
+/** Eckige Checkbox (Akzentfarbe). */
+export function Checkbox({
+  checked,
+  onChange,
+  disabled,
+  label,
+  className,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  label?: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "grid h-[18px] w-[18px] shrink-0 place-items-center border transition-colors duration-100 disabled:opacity-45",
+        checked ? "border-accent bg-accent text-[var(--on-accent)]" : "border-line2 hover:border-white/40",
+        className,
+      )}
+    >
+      {checked && <Check size={12} strokeWidth={3} />}
+    </button>
+  );
+}
 
 export function Switch({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label?: string }) {
   return (

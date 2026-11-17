@@ -67,7 +67,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
 | Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
-| Plattform | crash_analyze, servers_list, servers_save, server_ping, servers_recent, playtime_sessions, optsync_get, optsync_set_instance, optsync_capture, optsync_apply_all, shortcut_create, app_actions_take, discord_available (`commands/platform.rs`, Logik in `platform/`, OWNER Frontend-Agent A) |
+| Plattform | crash_analyze, instance_servers_list, instance_servers_save, server_ping, servers_recent, playtime_sessions, optsync_get, optsync_set_instance, optsync_capture, optsync_apply_all, shortcut_create, app_actions_take, discord_available (`commands/platform.rs`, Logik in `platform/`, OWNER Frontend-Agent A) |
 
 ### Wichtige Abläufe
 
@@ -196,6 +196,33 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 - Rust: `minecraft::install_instance(state, id, progress)` (Vertrag) und `install_instance_opts(..., force)`
   (liefert zusätzlich die aufgelösten Startdaten). Installationen laufen nacheinander (globale Sperre).
 
+### Lokale Server (Game-Agent, `src-tauri/src/server/`, `commands/server.rs`, Frontend `features/servers`)
+
+- Ordner `servers/<id>/` = Arbeitsordner des Servers (server.properties, world, mods …) + `vibe-server.json`
+  (Modell `Server`), `backups/` (ZIP je Welt), `playit/` (Secret + Agent-Log), `.vibe-pid` (laufender Prozess).
+  Gemeinsamer Cache der Vanilla-Server-JARs: `meta/server-jars/<mc>/server.jar`; playit-Agent: `tools/playit/<tag>/`.
+- Commands: servers_list, server_get, server_create (-> `{server, task_id}`), server_mod_candidates, server_update,
+  server_delete, server_set_icon, server_install, server_accept_eula, server_start, server_stop, server_restart,
+  server_kill, server_command, server_statuses, server_log, server_addresses, server_properties_get/_set/_raw/_raw_set,
+  server_players, server_player_action, server_set_whitelist, server_worlds, server_backups, server_backup_create,
+  server_backup_delete, server_backup_restore, server_open_folder, server_tunnel_reset, servers_quit.
+- Tasks der Server haben `TaskInfo.instance_id = "server:<id>"` (Installation, Backups, Java).
+- Installation: Vanilla `downloads.server` (SHA-1), Fabric-Server-Launcher (Fabric-Meta), Quilt-Installer
+  `install server`, Forge/NeoForge-Installer `--installServer` (Start über `run.bat`-Argumentdateien bzw. JAR).
+  Java wie beim Spiel (`java::resolve_with`). Start: `java -Xms… -Xmx… [JVM-Args] <Startargumente> nogui`,
+  stdin = Konsole. Stop = `stop`, nach 60 s Prozessbaum beenden. Auto-Neustart nach Absturz (max. 3× in 10 min).
+- `server://status` (ServerStatus inkl. `tunnel`), `server://log` ({server_id, lines}), `servers://changed/removed`.
+  Spielerliste aus „joined/left the game“ und der `list`-Antwort.
+- Schließen des Fensters mit laufenden Servern: Backend verhindert das Schließen und sendet
+  `servers://close-requested {running}`; Frontend fragt und ruft `servers_quit(stop)` (beendet den Launcher).
+  Weiterlaufende Server werden beim nächsten Start über `.vibe-pid` erkannt (`detached`: keine Konsole, Stopp = Beenden).
+- Verbindungen: `local` (localhost + LAN-IP), `relay` (nur wenn `settings.vibe.enabled && hosting`; Vibey-Relay-Protokoll
+  mit `hello` + `slot` (≥ 1), `kind: "server"`, `client: "launcher"`; Account über `auth.launch_account`; Adresse
+  `relay_address` bzw. Env `VIBE_RELAY`, Standard `vibey.henny.dev:25565`), `playit` (offizieller `playitd`-Agent,
+  SHA-256 aus der GitHub-API geprüft; Claim-Link -> `TunnelStatus.claim_url`, danach Adresse aus `/v1/agents/rundata`).
+- Mod-Einordnung (Client/Server) über `server::sides::classify` (Heuristik über fabric.mod.json/quilt.mod.json/mods.toml
+  + Liste bekannter Client-Mods) – Einstiegspunkt für eine spätere Einordnung aus dem Content-Modul.
+
 ## Regeln Frontend (UX-Vorgaben des Auftraggebers)
 
 - **Kein komisches Scrollen**: Fenster scrollt nie. Jede Seite ist `h-full` und hat eigene Scroll-Container
@@ -241,7 +268,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   `logs/latest.log` und Sitzungslog (fehlende Abhängigkeit, falsche MC-/Java-Version, Mixin, OOM, doppelte Mods, Grafik,
   verdächtige Mods, Exit-Codes). Aktionen (`DiagnosisAction`) führt das Frontend mit den vorhandenen Commands aus.
 - **Server-Liste** `servers.dat` (unkomprimiertes NBT, unbekannte Felder bleiben erhalten); `server_ping` per Server-List-Ping
-  (MOTD mit §-Codes, `§#rrggbb` für Hex-Farben). Während das Spiel läuft, ist `servers_save` gesperrt.
+  (MOTD mit §-Codes, `§#rrggbb` für Hex-Farben). Während das Spiel läuft, ist `instance_servers_save` gesperrt.
 - **Spielzeit**: jede Sitzung landet in `<daten>/sessions.jsonl` (`{instance_id,start,end,world?,server?}`); Quelle ist das
   Event `game://state` (Backend-Listener). `servers_recent` leitet „zuletzt gespielte Server“ daraus ab.
 - **Optionen-Sync**: `<daten>/options-sync.json` (Master-Profil + je Instanz an/aus und Kategorien `controls|sound|video|language|accessibility`).

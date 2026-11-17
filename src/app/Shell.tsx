@@ -3,11 +3,12 @@
 // kompakte Topbar (Zurück/Vor, Titel, laufende Spiele, Aufgaben, Fensterknöpfe), Inhaltsfläche.
 import { Outlet, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ChevronLeft, ChevronRight, Compass, Copy, Home, Images, LibraryBig, Minus, Plus, Settings as SettingsIcon, Shirt, Square, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Compass, Copy, Home, Images, LibraryBig, Minus, Plus, Server as ServerIcon, Settings as SettingsIcon, Shirt, Square, X } from "lucide-react";
 import { memo, useEffect, useState, type ReactNode } from "react";
 import { ContextMenu, Spinner, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
-import { isRunning, useGameStore, useInstance, useInstances, useInstanceTasks } from "@/lib/queries";
+import { isRunning, useGameStore, useInstance, useInstances, useInstanceTasks, useServer, useServerStore } from "@/lib/queries";
+import { ServerDialogs } from "@/features/servers/ServerDialogs";
 import { instanceAccent } from "@/lib/format";
 import type { Instance } from "@/lib/types";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
@@ -72,6 +73,7 @@ function Rail() {
   const { data: instances = [] } = useInstances();
   const recent = instances.slice(0, 8);
   const at = (p: string) => path === p || path.startsWith(p + "/");
+  const serversRunning = useServerStore((s) => Object.values(s.statuses).some((x) => x.state === "running"));
   return (
     <nav className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-line bg-black py-2">
       <Tooltip content="Vibe Launcher" side="right">
@@ -84,6 +86,10 @@ function Rail() {
       </RailButton>
       <RailButton label={t("nav.instances")} active={path === "/instances"} onClick={() => nav({ to: "/instances" })}>
         <LibraryBig size={20} />
+      </RailButton>
+      <RailButton label={t("nav.servers")} active={at("/servers")} onClick={() => nav({ to: "/servers" })}>
+        <ServerIcon size={20} />
+        {serversRunning && <span className="absolute bottom-1.5 right-1.5 h-2 w-2 border border-black bg-ok" />}
       </RailButton>
       <RailButton label={t("nav.discover")} active={at("/discover") || at("/project")} onClick={() => nav({ to: "/discover" })}>
         <Compass size={20} />
@@ -125,8 +131,19 @@ function usePageTitle(): ReactNode {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const instId = path.startsWith("/instances/") ? decodeURIComponent(path.split("/")[2] ?? "") : "";
   const { data: inst } = useInstance(instId);
+  const serverId = path.startsWith("/servers/") ? decodeURIComponent(path.split("/")[2] ?? "") : "";
+  const { data: server } = useServer(serverId);
   if (path === "/") return t("nav.home");
   if (path === "/instances") return t("nav.instances");
+  if (path === "/servers") return t("nav.servers");
+  if (serverId)
+    return (
+      <>
+        <span className="text-muted">{t("nav.servers")}</span>
+        <ChevronRight size={14} className="text-dim" />
+        <span className="truncate">{server?.name ?? serverId}</span>
+      </>
+    );
   if (instId)
     return (
       <>
@@ -258,6 +275,7 @@ export function Shell() {
         </main>
       </div>
       <InstanceDialogs />
+      <ServerDialogs />
     </div>
   );
 }

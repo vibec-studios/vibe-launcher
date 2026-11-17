@@ -134,7 +134,8 @@ const LogRow = memo(function LogRow({ line, q, current, wrap, plain }: { line: L
 
 // ------------------------------------------------------------------ Viewer
 
-function LogViewer({
+/** Virtualisierte Log-Ansicht (auch für die Server-Konsole genutzt). */
+export function LogViewer({
   lines,
   q,
   currentIdx,

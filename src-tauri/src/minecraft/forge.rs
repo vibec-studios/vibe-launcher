@@ -145,6 +145,23 @@ fn lib_download_items(libs: &[Library], libs_dir: &Path, env: &super::meta::Env)
     (items, local)
 }
 
+/// Installer-JAR laden (Cache unter libraries/). Gibt (Pfad, volle Maven-Version) zurück.
+pub async fn download_installer(state: &AppState, spec: &ForgeSpec<'_>, force: bool, sp: &SubProgress) -> AppResult<(PathBuf, String)> {
+    let name = if spec.neoforge { "NeoForge" } else { "Forge" };
+    let full = full_version(state, spec).await;
+    let (url, coord) = installer_url(spec, &full);
+    let installer = state.paths.libraries().join(maven_path(&coord).ctx("Installer-Pfad")?);
+    sp.message(format!("{name}-Installer wird geladen …"));
+    if force {
+        let _ = tokio::fs::remove_file(&installer).await;
+    }
+    state.net.download_all(vec![DownloadItem::new(&url, &installer)], None).await.map_err(|e| {
+        AppError::msg(format!("{name} {} für Minecraft {} konnte nicht geladen werden: {e}", spec.version, spec.mc))
+    })?;
+    sp.check()?;
+    Ok((installer, full))
+}
+
 /// Forge/NeoForge installieren. Gibt die Versions-ID des Profils zurück.
 /// Voraussetzung: Vanilla-JSON + Client-JAR sind vorhanden, `java` ist eine passende Java-Installation.
 pub async fn install(state: &AppState, spec: ForgeSpec<'_>, java: &Path, force: bool, sp: &SubProgress) -> AppResult<String> {
@@ -165,19 +182,8 @@ pub async fn install(state: &AppState, spec: ForgeSpec<'_>, java: &Path, force: 
             }
         }
     }
-    let name = if spec.neoforge { "NeoForge" } else { "Forge" };
-    let full = full_version(state, &spec).await;
-    let (url, coord) = installer_url(&spec, &full);
+    let (installer, full) = download_installer(state, &spec, force, sp).await?;
     let libs_dir = state.paths.libraries();
-    let installer = libs_dir.join(maven_path(&coord).ctx("Installer-Pfad")?);
-    sp.message(format!("{name}-Installer wird geladen …"));
-    if force {
-        let _ = tokio::fs::remove_file(&installer).await;
-    }
-    state.net.download_all(vec![DownloadItem::new(&url, &installer)], None).await.map_err(|e| {
-        AppError::msg(format!("{name} {} für Minecraft {} konnte nicht geladen werden: {e}", spec.version, spec.mc))
-    })?;
-    sp.check()?;
 
     // Installer öffnen, Profil lesen, maven/ entpacken
     let inst2 = installer.clone();

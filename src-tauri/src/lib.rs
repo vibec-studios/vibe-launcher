@@ -11,6 +11,7 @@ pub mod minecraft;
 pub mod net;
 pub mod paths;
 pub mod platform;
+pub mod server;
 pub mod settings;
 pub mod state;
 pub mod tasks;
@@ -76,6 +77,7 @@ pub fn run() {
                 tracing::warn!("Asset-Scope für {:?} nicht setzbar: {e}", state.paths.root);
             }
             tracing::info!("Vibe Launcher {} – Daten: {:?}", env!("CARGO_PKG_VERSION"), state.paths.root);
+            let startup_state = state.clone();
             app.manage(state);
             platform::init(app.handle());
             {
@@ -93,6 +95,10 @@ pub fn run() {
                     platform::handle_urls(&h, ev.urls().iter().map(|u| u.to_string()).collect());
                 });
             }
+            // Lokale Server: Server aus früheren Sitzungen erkennen, Auto-Start
+            tauri::async_runtime::spawn(async move {
+                startup_state.server_mgr.on_startup(&startup_state);
+            });
             #[cfg(debug_assertions)]
             devlive::start(app.handle());
             // Fallback: Fenster spätestens nach 3 s zeigen, falls das Frontend hängt
@@ -106,6 +112,20 @@ pub fn run() {
                 }
             });
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Lokale Server laufen noch -> Frontend fragt, ob sie gestoppt werden sollen
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" {
+                    if let Some(state) = window.try_state::<AppState>() {
+                        let n = state.server_mgr.running_count();
+                        if n > 0 && !state.server_mgr.quitting() {
+                            api.prevent_close();
+                            events::emit(window.app_handle(), server::EV_CLOSE_REQUESTED, &serde_json::json!({ "running": n }));
+                        }
+                    }
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             // core
@@ -173,6 +193,39 @@ pub fn run() {
             commands::game::java_list,
             commands::game::java_test,
             commands::game::java_install,
+            // lokale Server
+            commands::server::servers_list,
+            commands::server::server_get,
+            commands::server::server_create,
+            commands::server::server_mod_candidates,
+            commands::server::server_update,
+            commands::server::server_delete,
+            commands::server::server_set_icon,
+            commands::server::server_install,
+            commands::server::server_accept_eula,
+            commands::server::server_start,
+            commands::server::server_stop,
+            commands::server::server_restart,
+            commands::server::server_kill,
+            commands::server::server_command,
+            commands::server::server_statuses,
+            commands::server::server_log,
+            commands::server::server_addresses,
+            commands::server::server_properties_get,
+            commands::server::server_properties_set,
+            commands::server::server_properties_raw,
+            commands::server::server_properties_raw_set,
+            commands::server::server_players,
+            commands::server::server_player_action,
+            commands::server::server_set_whitelist,
+            commands::server::server_worlds,
+            commands::server::server_backups,
+            commands::server::server_backup_create,
+            commands::server::server_backup_delete,
+            commands::server::server_backup_restore,
+            commands::server::server_open_folder,
+            commands::server::server_tunnel_reset,
+            commands::server::servers_quit,
             // content
             commands::content::curseforge_available,
             commands::content::content_search,
@@ -206,8 +259,8 @@ pub fn run() {
             commands::content::store_set_enabled,
             // plattform (Frontend A)
             commands::platform::crash_analyze,
-            commands::platform::servers_list,
-            commands::platform::servers_save,
+            commands::platform::instance_servers_list,
+            commands::platform::instance_servers_save,
             commands::platform::server_ping,
             commands::platform::servers_recent,
             commands::platform::playtime_sessions,

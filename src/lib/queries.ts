@@ -3,7 +3,7 @@
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { create } from "zustand";
 import { api } from "./api";
-import type { GameState, Instance, LogLine, TaskInfo } from "./types";
+import type { GameState, Instance, LogLine, Server, ServerStatus, TaskInfo } from "./types";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -153,4 +153,76 @@ export function useGameState(instanceId: string): GameState | undefined {
 
 export function isRunning(s: GameState | undefined) {
   return !!s && (s.state === "running" || s.state === "preparing");
+}
+
+// ------------------------------------------------------------------ Lokale Server
+
+export const sqk = {
+  servers: ["servers"] as const,
+  server: (id: string) => ["server", id] as const,
+  addresses: (id: string) => ["server-addresses", id] as const,
+  properties: (id: string) => ["server-properties", id] as const,
+  propertiesRaw: (id: string) => ["server-properties-raw", id] as const,
+  players: (id: string) => ["server-players", id] as const,
+  worlds: (id: string) => ["server-worlds", id] as const,
+  backups: (id: string) => ["server-backups", id] as const,
+  modCandidates: (instanceId: string) => ["server-mod-candidates", instanceId] as const,
+};
+
+export function useServers() {
+  return useQuery({ queryKey: sqk.servers, queryFn: api.serversList, staleTime: Infinity });
+}
+
+/** Einzelner Server – nimmt sofort den Eintrag aus der Liste, falls vorhanden. */
+export function useServer(id: string) {
+  return useQuery({
+    queryKey: sqk.server(id),
+    queryFn: () => api.serverGet(id),
+    enabled: !!id,
+    staleTime: Infinity,
+    initialData: () => queryClient.getQueryData<Server[]>(sqk.servers)?.find((s) => s.id === id),
+  });
+}
+
+interface ServerStore {
+  statuses: Record<string, ServerStatus>;
+  /** Konsolen-Puffer je Server (max. 50 000 Zeilen) */
+  logs: Record<string, LogLine[]>;
+  setStatus: (s: ServerStatus) => void;
+  setAll: (list: ServerStatus[]) => void;
+  remove: (id: string) => void;
+  appendLogs: (serverId: string, lines: LogLine[]) => void;
+  setLogs: (serverId: string, lines: LogLine[]) => void;
+}
+
+export const useServerStore = create<ServerStore>((set, get) => ({
+  statuses: {},
+  logs: {},
+  setStatus: (s) => set({ statuses: { ...get().statuses, [s.server_id]: s } }),
+  setAll: (list) => set({ statuses: Object.fromEntries(list.map((s) => [s.server_id, s])) }),
+  remove: (id) => {
+    const statuses = { ...get().statuses };
+    const logs = { ...get().logs };
+    delete statuses[id];
+    delete logs[id];
+    set({ statuses, logs });
+  },
+  appendLogs: (id, lines) => {
+    const cur = get().logs[id] ?? [];
+    let next = cur.length + lines.length > MAX_LOG ? cur.slice(cur.length + lines.length - MAX_LOG) : cur.slice();
+    // Neue Sitzung (seq beginnt von vorn) -> Puffer leeren
+    if (lines.length && cur.length && lines[0].seq <= cur[cur.length - 1].seq) next = [];
+    next.push(...lines);
+    set({ logs: { ...get().logs, [id]: next } });
+  },
+  setLogs: (id, lines) => set({ logs: { ...get().logs, [id]: lines } }),
+}));
+
+export function useServerStatus(serverId: string): ServerStatus | undefined {
+  return useServerStore((s) => s.statuses[serverId]);
+}
+
+/** Server läuft (oder startet/stoppt gerade) */
+export function isServerActive(s: ServerStatus | undefined) {
+  return !!s && (s.state === "running" || s.state === "starting" || s.state === "stopping");
 }

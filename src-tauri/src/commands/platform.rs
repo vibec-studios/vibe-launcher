@@ -79,7 +79,7 @@ fn servers_path(state: &AppState, id: &str) -> AppResult<PathBuf> {
 }
 
 #[tauri::command]
-pub async fn servers_list(
+pub async fn instance_servers_list(
     state: State<'_, AppState>,
     instance_id: String,
 ) -> AppResult<Vec<servers::ServerEntry>> {
@@ -90,7 +90,7 @@ pub async fn servers_list(
 }
 
 #[tauri::command]
-pub async fn servers_save(
+pub async fn instance_servers_save(
     state: State<'_, AppState>,
     instance_id: String,
     servers: Vec<servers::ServerEntry>,

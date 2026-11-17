@@ -3,7 +3,7 @@ import { memo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Signal, SignalLow, SignalMedium, SignalZero, Users } from "lucide-react";
 import { api } from "@/lib/api";
-import type { ServerStatus } from "@/lib/types";
+import type { ServerPing } from "@/lib/types";
 import { Skeleton, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 
@@ -100,7 +100,7 @@ export function usePing(address: string | null, enabled = true) {
   });
 }
 
-export function PingBars({ status }: { status: ServerStatus | undefined }) {
+export function PingBars({ status }: { status: ServerPing | undefined }) {
   const t = useT();
   if (!status) return <SignalZero size={16} className="text-dim" />;
   if (!status.online) return <SignalZero size={16} className="text-danger" aria-label={t("servers.offline")} />;

@@ -20,7 +20,9 @@ import {
   Link as LinkIcon,
   Monitor,
   LayoutList,
+  Server as ServerIcon,
 } from "lucide-react";
+import { openNewServer } from "@/features/servers/actions";
 import {
   ContextItem,
   ContextLabel,
@@ -118,6 +120,9 @@ function MenuBody({ instance: i, kit, onPage, onDeleted }: { instance: Instance;
           {t("inst.shortcut.start_menu")}
         </Item>
       </Sub>
+      <Item icon={<ServerIcon size={14} />} onSelect={() => openNewServer(i.id)}>
+        {t("srv.host_instance")}
+      </Item>
       <Sep />
       <Sub icon={<ImageIcon size={14} />} label={t("inst.icon")}>
         <Item icon={<ImageIcon size={14} />} onSelect={() => setIcon(i)}>
