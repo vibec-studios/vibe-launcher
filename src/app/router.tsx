@@ -11,10 +11,14 @@ import { AccountsPage } from "@/features/accounts/AccountsPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { SkinsPage } from "@/features/skins/SkinsPage";
 import { ScreenshotsPage } from "@/features/screenshots/ScreenshotsPage";
+import { ServersPage } from "@/features/servers/ServersPage";
+import { ServerPage } from "@/features/servers/ServerPage";
 import type { ProjectType, Source } from "@/lib/types";
 
 export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "logs" | "settings";
 const instanceTabs: InstanceTab[] = ["content", "resourcepacks", "shaders", "worlds", "logs", "settings"];
+export type ServerTab = "console" | "settings" | "players" | "worlds" | "connection";
+const serverTabs: ServerTab[] = ["console", "settings", "players", "worlds", "connection"];
 const projectTypes: ProjectType[] = ["mod", "modpack", "resourcepack", "shader", "datapack"];
 
 export interface DiscoverSearch {
@@ -76,10 +80,22 @@ const screenshotsRoute = createRoute({
   validateSearch: (s: Record<string, unknown>): { instance?: string } => ({ instance: typeof s.instance === "string" ? s.instance : undefined }),
 });
 
+const serversRoute = createRoute({ getParentRoute: () => rootRoute, path: "/servers", component: ServersPage });
+const serverRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/servers/$id",
+  component: ServerPage,
+  validateSearch: (s: Record<string, unknown>): { tab: ServerTab } => ({
+    tab: serverTabs.includes(s.tab as ServerTab) ? (s.tab as ServerTab) : "console",
+  }),
+});
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   instancesRoute,
   instanceRoute,
+  serversRoute,
+  serverRoute,
   discoverRoute,
   projectRoute,
   accountsRoute,

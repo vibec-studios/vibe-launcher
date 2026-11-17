@@ -1,7 +1,7 @@
 // Backend-Events (siehe src-tauri/src/events.rs).
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useRef } from "react";
-import type { Account, GameState, Instance, LogLine, Settings, TaskInfo } from "./types";
+import type { Account, GameState, Instance, LogLine, Server, ServerStatus, Settings, TaskInfo } from "./types";
 
 export interface EventMap {
   "task://update": TaskInfo;
@@ -14,6 +14,15 @@ export interface EventMap {
   "settings://changed": Settings;
   /** Skin-Bibliothek oder Skin/Cape eines Accounts geändert */
   "skins://changed": { scope: "library" } | { scope: "profile"; account_id: string };
+  /** Server angelegt/geändert (vollständig) */
+  "servers://changed": Server;
+  "servers://removed": { id: string };
+  /** Laufzeitstatus eines Servers (inkl. Tunnel) */
+  "server://status": ServerStatus;
+  /** Konsolenausgabe, gebündelt ≤10/s */
+  "server://log": { server_id: string; lines: LogLine[] };
+  /** Fenster soll schließen, aber Server laufen -> Frontend fragt und ruft api.serversQuit(stop) */
+  "servers://close-requested": { running: number };
 }
 
 export type EventName = keyof EventMap;

@@ -42,13 +42,26 @@ pub async fn instance_install(state: State<'_, AppState>, id: String, force: Opt
 
 /// Instanz starten (installiert bei Bedarf). Gibt Task-ID der Vorbereitung zurück.
 #[tauri::command]
-pub async fn instance_launch(state: State<'_, AppState>, id: String, account_id: Option<String>, world: Option<String>) -> AppResult<String> {
+pub async fn instance_launch(
+    state: State<'_, AppState>,
+    id: String,
+    account_id: Option<String>,
+    world: Option<String>,
+    server: Option<String>,
+) -> AppResult<String> {
     let inst = state.instances.get(&id)?;
     // Quick Play: nur ein Ordnername unter saves/, nichts anderes
     let world = world.filter(|w| !w.trim().is_empty());
     if let Some(w) = &world {
         if w.contains(['/', '\\', ':']) || w == "." || w == ".." {
             return Err(AppError::Invalid("Ungültiger Weltname".into()));
+        }
+    }
+    // Direkt-Join: host[:port]
+    let server = server.map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+    if let Some(s) = &server {
+        if s.len() > 255 || s.contains(char::is_whitespace) {
+            return Err(AppError::Invalid("Ungültige Serveradresse".into()));
         }
     }
     // Ohne Account gar nicht erst installieren/laden – sofort verständlich melden.
@@ -60,7 +73,7 @@ pub async fn instance_launch(state: State<'_, AppState>, id: String, account_id:
     let st = state.inner().clone();
     let iid = id.clone();
     let task_id = state.tasks.spawn("launch", format!("{} wird gestartet", inst.name), Some(id.clone()), move |task| async move {
-        let r = minecraft::launch::launch(&st, &iid, account_id, world, &task).await;
+        let r = minecraft::launch::launch(&st, &iid, account_id, world, server, &task).await;
         if let Err(e) = &r {
             st.game.fail(&iid, e);
         }

@@ -194,6 +194,33 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 - Rust: `minecraft::install_instance(state, id, progress)` (Vertrag) und `install_instance_opts(..., force)`
   (liefert zusätzlich die aufgelösten Startdaten). Installationen laufen nacheinander (globale Sperre).
 
+### Lokale Server (Game-Agent, `src-tauri/src/server/`, `commands/server.rs`, Frontend `features/servers`)
+
+- Ordner `servers/<id>/` = Arbeitsordner des Servers (server.properties, world, mods …) + `vibe-server.json`
+  (Modell `Server`), `backups/` (ZIP je Welt), `playit/` (Secret + Agent-Log), `.vibe-pid` (laufender Prozess).
+  Gemeinsamer Cache der Vanilla-Server-JARs: `meta/server-jars/<mc>/server.jar`; playit-Agent: `tools/playit/<tag>/`.
+- Commands: servers_list, server_get, server_create (-> `{server, task_id}`), server_mod_candidates, server_update,
+  server_delete, server_set_icon, server_install, server_accept_eula, server_start, server_stop, server_restart,
+  server_kill, server_command, server_statuses, server_log, server_addresses, server_properties_get/_set/_raw/_raw_set,
+  server_players, server_player_action, server_set_whitelist, server_worlds, server_backups, server_backup_create,
+  server_backup_delete, server_backup_restore, server_open_folder, server_tunnel_reset, servers_quit.
+- Tasks der Server haben `TaskInfo.instance_id = "server:<id>"` (Installation, Backups, Java).
+- Installation: Vanilla `downloads.server` (SHA-1), Fabric-Server-Launcher (Fabric-Meta), Quilt-Installer
+  `install server`, Forge/NeoForge-Installer `--installServer` (Start über `run.bat`-Argumentdateien bzw. JAR).
+  Java wie beim Spiel (`java::resolve_with`). Start: `java -Xms… -Xmx… [JVM-Args] <Startargumente> nogui`,
+  stdin = Konsole. Stop = `stop`, nach 60 s Prozessbaum beenden. Auto-Neustart nach Absturz (max. 3× in 10 min).
+- `server://status` (ServerStatus inkl. `tunnel`), `server://log` ({server_id, lines}), `servers://changed/removed`.
+  Spielerliste aus „joined/left the game“ und der `list`-Antwort.
+- Schließen des Fensters mit laufenden Servern: Backend verhindert das Schließen und sendet
+  `servers://close-requested {running}`; Frontend fragt und ruft `servers_quit(stop)` (beendet den Launcher).
+  Weiterlaufende Server werden beim nächsten Start über `.vibe-pid` erkannt (`detached`: keine Konsole, Stopp = Beenden).
+- Verbindungen: `local` (localhost + LAN-IP), `relay` (nur wenn `settings.vibe.enabled && hosting`; Vibey-Relay-Protokoll
+  mit `hello` + `slot` (≥ 1), `kind: "server"`, `client: "launcher"`; Account über `auth.launch_account`; Adresse
+  `relay_address` bzw. Env `VIBE_RELAY`, Standard `vibey.henny.dev:25565`), `playit` (offizieller `playitd`-Agent,
+  SHA-256 aus der GitHub-API geprüft; Claim-Link -> `TunnelStatus.claim_url`, danach Adresse aus `/v1/agents/rundata`).
+- Mod-Einordnung (Client/Server) über `server::sides::classify` (Heuristik über fabric.mod.json/quilt.mod.json/mods.toml
+  + Liste bekannter Client-Mods) – Einstiegspunkt für eine spätere Einordnung aus dem Content-Modul.
+
 ## Regeln Frontend (UX-Vorgaben des Auftraggebers)
 
 - **Kein komisches Scrollen**: Fenster scrollt nie. Jede Seite ist `h-full` und hat eigene Scroll-Container

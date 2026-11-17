@@ -2,15 +2,17 @@
 import { useEffect } from "react";
 import { api } from "@/lib/api";
 import { useEvent } from "@/lib/events";
-import { qk, queryClient, useGameStore, useTaskStore } from "@/lib/queries";
-import type { Instance } from "@/lib/types";
+import { qk, queryClient, sqk, useGameStore, useServerStore, useTaskStore } from "@/lib/queries";
+import type { Instance, Server } from "@/lib/types";
 import { useLang } from "@/i18n";
+import { useServerDialogs } from "@/features/servers/actions";
 
 export function EventBridge() {
   // Anfangszustand laden
   useEffect(() => {
     api.tasksList().then((l) => useTaskStore.getState().set(l)).catch(() => {});
     api.gameStates().then((l) => useGameStore.getState().setAll(l)).catch(() => {});
+    api.serverStatuses().then((l) => useServerStore.getState().setAll(l)).catch(() => {});
     api
       .settingsGet()
       .then((s) => {
@@ -50,6 +52,35 @@ export function EventBridge() {
   });
 
   useEvent("accounts://changed", (accounts) => queryClient.setQueryData(qk.accounts, accounts));
+
+  // ---------------------------------------------------------------- Lokale Server
+  useEvent("servers://changed", (srv) => {
+    queryClient.setQueryData<Server>(sqk.server(srv.id), srv);
+    queryClient.setQueryData<Server[]>(sqk.servers, (list) => {
+      if (!list) return list;
+      const i = list.findIndex((x) => x.id === srv.id);
+      if (i === -1) return [srv, ...list];
+      const next = list.slice();
+      next[i] = srv;
+      return next;
+    });
+  });
+  useEvent("servers://removed", ({ id }) => {
+    queryClient.setQueryData<Server[]>(sqk.servers, (list) => list?.filter((x) => x.id !== id));
+    queryClient.removeQueries({ queryKey: sqk.server(id) });
+    useServerStore.getState().remove(id);
+  });
+  useEvent("server://status", (s) => {
+    const prev = useServerStore.getState().statuses[s.server_id];
+    useServerStore.getState().setStatus(s);
+    // Nach dem Stoppen haben sich Welten/Spielerlisten evtl. geändert
+    if (prev && prev.state !== s.state && (s.state === "stopped" || s.state === "running")) {
+      queryClient.invalidateQueries({ queryKey: sqk.worlds(s.server_id) });
+      queryClient.invalidateQueries({ queryKey: sqk.players(s.server_id) });
+    }
+  });
+  useEvent("server://log", ({ server_id, lines }) => useServerStore.getState().appendLogs(server_id, lines));
+  useEvent("servers://close-requested", ({ running }) => useServerDialogs.setState({ quit: running }));
 
   useEvent("settings://changed", (s) => {
     queryClient.setQueryData(qk.settings, s);

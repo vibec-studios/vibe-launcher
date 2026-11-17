@@ -633,9 +633,21 @@ pub async fn resolve(
     force: bool,
     sp: &SubProgress,
 ) -> AppResult<JavaInstall> {
-    if let Some(p) = inst.java.path.as_deref().filter(|p| !p.trim().is_empty()) {
+    resolve_with(state, inst.java.path.as_deref(), major, component, force, sp).await
+}
+
+/// Wie [`resolve`], mit beliebigem festem Pfad (z. B. für lokale Server).
+pub async fn resolve_with(
+    state: &AppState,
+    fixed_path: Option<&str>,
+    major: u32,
+    component: Option<&str>,
+    force: bool,
+    sp: &SubProgress,
+) -> AppResult<JavaInstall> {
+    if let Some(p) = fixed_path.filter(|p| !p.trim().is_empty()) {
         let path = normalize_java_path(Path::new(p.trim()))
-            .ok_or_else(|| AppError::msg(format!("Der eingestellte Java-Pfad der Instanz existiert nicht: {p}")))?;
+            .ok_or_else(|| AppError::msg(format!("Der eingestellte Java-Pfad existiert nicht: {p}")))?;
         return probe(&path, false).await;
     }
     let settings = state.settings();

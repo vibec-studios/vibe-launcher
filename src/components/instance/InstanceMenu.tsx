@@ -17,7 +17,9 @@ import {
   ExternalLink,
   RotateCcw,
   Plus,
+  Server as ServerIcon,
 } from "lucide-react";
+import { openNewServer } from "@/features/servers/actions";
 import {
   ContextItem,
   ContextLabel,
@@ -105,6 +107,9 @@ function MenuBody({ instance: i, kit, onPage, onDeleted }: { instance: Instance;
       </Item>
       <Item icon={<Upload size={14} />} onSelect={() => openExport(i)}>
         {t("inst.export")}
+      </Item>
+      <Item icon={<ServerIcon size={14} />} onSelect={() => openNewServer(i.id)}>
+        {t("srv.host_instance")}
       </Item>
       <Sep />
       <Sub icon={<ImageIcon size={14} />} label={t("inst.icon")}>
