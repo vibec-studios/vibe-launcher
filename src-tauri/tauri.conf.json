@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Vibe Launcher",
+  "mainBinaryName": "vibe-launcher",
+  "version": "../package.json",
+  "identifier": "eu.vibecraft.launcher",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Vibe Launcher",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 980,
+        "minHeight": 620,
+        "center": true,
+        "decorations": false,
+        "visible": false,
+        "backgroundColor": "#000000",
+        "zoomHotkeysEnabled": false,
+        "dragDropEnabled": true,
+        "shadow": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data: blob: https:; media-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost https:; font-src 'self' data:; frame-src https://www.youtube.com https://www.youtube-nocookie.com",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$APPDATA/**", "$DATA/**", "$DATA/VibeLauncher/**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Vibe Craft Studios",
+    "copyright": "© Vibe Craft Studios",
+    "category": "Game",
+    "shortDescription": "Minecraft Launcher",
+    "longDescription": "Vibe Launcher – Minecraft-Launcher mit Instanzen, Modrinth- und CurseForge-Integration.",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["German", "English"],
+        "displayLanguageSelector": false
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdBNDUyOERBOTQzMkUwNUIKUldSYjRES1UyaWhGZXFIMUxaY3FRcUt1dzBtMUxRdDkrWFdaM0lBQUN5L1VCUnRSbGFiZDFYTGYK",
+      "endpoints": ["https://github.com/vibec-studios/vibe-launcher/releases/latest/download/latest.json"],
+      "windows": { "installMode": "passive" }
+    }
+  }
+}

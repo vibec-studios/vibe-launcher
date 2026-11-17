@@ -1,0 +1,153 @@
+//! Instanzen, Einstellungen, Aufgaben, System. OWNER: Integrator (Haupt-Agent).
+use crate::error::{AppError, AppResult};
+use crate::events;
+use crate::instance::{CreateInstance, Instance, InstancePatch};
+use crate::settings::Settings;
+use crate::state::AppState;
+use crate::tasks::TaskInfo;
+use serde::Serialize;
+use tauri::State;
+
+// ---------------------------------------------------------------- Instanzen
+
+#[tauri::command]
+pub async fn instances_list(state: State<'_, AppState>) -> AppResult<Vec<Instance>> {
+    Ok(state.instances.list())
+}
+
+#[tauri::command]
+pub async fn instance_get(state: State<'_, AppState>, id: String) -> AppResult<Instance> {
+    state.instances.get(&id)
+}
+
+#[tauri::command]
+pub async fn instance_create(state: State<'_, AppState>, req: CreateInstance) -> AppResult<Instance> {
+    state.instances.create(req)
+}
+
+#[tauri::command]
+pub async fn instance_update(state: State<'_, AppState>, id: String, patch: InstancePatch) -> AppResult<Instance> {
+    state.instances.patch(&id, patch)
+}
+
+#[tauri::command]
+pub async fn instance_delete(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    if state.game.is_running(&id) {
+        return Err(AppError::Invalid("Die Instanz läuft gerade".into()));
+    }
+    let store = state.instances.clone();
+    tokio::task::spawn_blocking(move || store.delete(&id)).await?
+}
+
+#[tauri::command]
+pub async fn instance_duplicate(state: State<'_, AppState>, id: String, name: Option<String>) -> AppResult<Instance> {
+    let store = state.instances.clone();
+    tokio::task::spawn_blocking(move || store.duplicate(&id, name)).await?
+}
+
+#[tauri::command]
+pub async fn instance_set_icon(state: State<'_, AppState>, id: String, path: Option<String>) -> AppResult<Instance> {
+    match path {
+        Some(p) => state.instances.set_icon_from_file(&id, std::path::Path::new(&p)),
+        None => state.instances.modify(&id, |i| i.icon = None),
+    }
+}
+
+/// Ordner der Instanz öffnen. `sub` relativ zum Spielordner (z. B. "mods", "saves").
+#[tauri::command]
+pub async fn instance_open_folder(state: State<'_, AppState>, id: String, sub: Option<String>) -> AppResult<()> {
+    state.instances.get(&id)?;
+    let base = state.paths.game_dir(&id);
+    let dir = match sub.as_deref() {
+        Some(s) if !s.is_empty() => crate::util::safe_join(&base, s).ok_or_else(|| AppError::Invalid("Pfad".into()))?,
+        _ => base,
+    };
+    std::fs::create_dir_all(&dir)?;
+    crate::util::open_in_explorer(&dir)
+}
+
+// ---------------------------------------------------------------- Einstellungen
+
+#[tauri::command]
+pub async fn settings_get(state: State<'_, AppState>) -> AppResult<Settings> {
+    Ok(state.settings())
+}
+
+#[tauri::command]
+pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> AppResult<Settings> {
+    let mut s = settings;
+    s.max_memory_mb = s.max_memory_mb.max(512);
+    s.min_memory_mb = s.min_memory_mb.clamp(256, s.max_memory_mb);
+    s.concurrent_downloads = s.concurrent_downloads.clamp(1, 64);
+    if !["de", "en"].contains(&s.language.as_str()) {
+        s.language = "de".into();
+    }
+    s.save(&state.paths.settings_file())?;
+    state.net.set_concurrency(s.concurrent_downloads as usize);
+    *state.settings.write() = s.clone();
+    events::emit(&state.app, events::SETTINGS_CHANGED, &s);
+    Ok(s)
+}
+
+// ---------------------------------------------------------------- Aufgaben
+
+#[tauri::command]
+pub async fn tasks_list(state: State<'_, AppState>) -> AppResult<Vec<TaskInfo>> {
+    Ok(state.tasks.list())
+}
+
+#[tauri::command]
+pub async fn task_cancel(state: State<'_, AppState>, id: String) -> AppResult<bool> {
+    Ok(state.tasks.cancel(&id))
+}
+
+#[tauri::command]
+pub async fn tasks_clear(state: State<'_, AppState>) -> AppResult<()> {
+    state.tasks.clear_finished();
+    Ok(())
+}
+
+// ---------------------------------------------------------------- System
+
+#[derive(Serialize, Clone)]
+pub struct SystemInfo {
+    pub version: String,
+    pub data_dir: String,
+    pub os: String,
+    pub arch: String,
+    pub total_memory_mb: u64,
+    pub curseforge_available: bool,
+    pub msa_available: bool,
+}
+
+#[tauri::command]
+pub async fn system_info(state: State<'_, AppState>) -> AppResult<SystemInfo> {
+    let s = state.settings();
+    Ok(SystemInfo {
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        data_dir: state.paths.root.to_string_lossy().to_string(),
+        os: std::env::consts::OS.to_string(),
+        arch: std::env::consts::ARCH.to_string(),
+        total_memory_mb: crate::settings::system_memory_mb(),
+        curseforge_available: s.curseforge_key().is_some(),
+        msa_available: s.msa_client().is_some(),
+    })
+}
+
+/// Beliebigen Pfad im Explorer öffnen (nur innerhalb des Datenordners).
+#[tauri::command]
+pub async fn open_path(state: State<'_, AppState>, path: String) -> AppResult<()> {
+    let p = std::path::PathBuf::from(&path);
+    let canon = p.canonicalize().map_err(|_| AppError::NotFound(path.clone()))?;
+    let root = state.paths.root.canonicalize().unwrap_or(state.paths.root.clone());
+    if !canon.starts_with(&root) {
+        return Err(AppError::Invalid("Pfad außerhalb des Launcher-Ordners".into()));
+    }
+    crate::util::open_in_explorer(&canon)
+}
+
+/// Datenordner öffnen.
+#[tauri::command]
+pub async fn open_data_dir(state: State<'_, AppState>) -> AppResult<()> {
+    crate::util::open_in_explorer(&state.paths.root)
+}

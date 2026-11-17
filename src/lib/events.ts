@@ -1,0 +1,39 @@
+// Backend-Events (siehe src-tauri/src/events.rs).
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { useEffect, useRef } from "react";
+import type { Account, GameState, Instance, LogLine, Settings, TaskInfo } from "./types";
+
+export interface EventMap {
+  "task://update": TaskInfo;
+  "instance://changed": Instance;
+  "instance://removed": { id: string };
+  "game://state": GameState;
+  "game://log": { instance_id: string; lines: LogLine[] };
+  "content://changed": { instance_id: string };
+  "accounts://changed": Account[];
+  "settings://changed": Settings;
+}
+
+export type EventName = keyof EventMap;
+
+export function on<K extends EventName>(name: K, cb: (payload: EventMap[K]) => void): Promise<UnlistenFn> {
+  return listen<EventMap[K]>(name, (e) => cb(e.payload));
+}
+
+/** Event abonnieren, solange die Komponente gemountet ist. Der Callback darf sich ändern. */
+export function useEvent<K extends EventName>(name: K, cb: (payload: EventMap[K]) => void) {
+  const ref = useRef(cb);
+  ref.current = cb;
+  useEffect(() => {
+    let un: UnlistenFn | undefined;
+    let dead = false;
+    on(name, (p) => ref.current(p)).then((u) => {
+      if (dead) u();
+      else un = u;
+    });
+    return () => {
+      dead = true;
+      un?.();
+    };
+  }, [name]);
+}

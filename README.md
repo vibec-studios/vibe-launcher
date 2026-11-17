@@ -1,5 +1,5 @@
-<img src="assets/icon.svg" width="64" height="64" alt="">
+# Vibe Launcher
 
-# vibe-launcher
+Minecraft-Launcher von Vibe Craft Studios – Instanzen, Modrinth & CurseForge, Import/Export, Logs mit mclo.gs.
 
-Created in [T3 Code](https://t3.codes).
+Siehe [docs/CONTRACT.md](docs/CONTRACT.md) für Architektur und Entwicklung.
