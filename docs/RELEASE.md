@@ -1,58 +1,43 @@
-# Release-Checkliste
+# Releases & Update-Kanäle
 
-Releases entstehen ausschließlich über GitHub Actions (`.github/workflows/release.yml`, Windows/NSIS).
+Der Launcher aktualisiert sich selbst (Tauri-Updater, signierte NSIS-Installer). Es gibt zwei Kanäle,
+umschaltbar unter *Einstellungen → Über & Updates → Update-Kanal*:
 
-## Einmalig
+| Kanal | Quelle | Workflow | Updater-Endpoint |
+|---|---|---|---|
+| **Release** | veröffentlichte GitHub-Releases (Tag `vX.Y.Z`) | `.github/workflows/release.yml` | `releases/latest/download/latest.json` |
+| **Dev** | jeder Commit auf `main` | `.github/workflows/dev.yml` | `releases/download/dev/latest.json` |
 
-- [ ] Repository-Secrets (*Settings → Secrets and variables → Actions*):
-  - `TAURI_SIGNING_PRIVATE_KEY` – **Inhalt** der privaten Updater-Schlüsseldatei (minisign, von `pnpm tauri signer generate`)
-  - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` – Passwort des Schlüssels (weglassen, wenn keins gesetzt ist)
-  - `CURSEFORGE_API_KEY` – von console.curseforge.com
-  - `VIBE_MSA_CLIENT_ID` – Azure-App (siehe README, „Microsoft-Login: Azure-App registrieren“)
-- [ ] Azure-App ist von Mojang für die Minecraft-API freigegeben (<https://aka.ms/mce-reviewappid>).
-      Sonst scheitert der Login nach der Xbox-Anmeldung.
-- [ ] Public Key in `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`) gehört zum privaten Schlüssel.
-- [ ] Privater Schlüssel sicher gesichert (Passwortmanager). Ohne ihn können installierte Launcher keine Updates mehr annehmen.
+- Ist ein Update da, zeigt der Launcher oben rechts **„Update verfügbar“** → Klick → *Jetzt aktualisieren* →
+  Download mit Fortschritt → Installer läuft passiv → Launcher startet neu.
+- Dev-Builds tragen die Version `<nächster Patch>-dev.<Laufnummer>` (z. B. `1.0.1-dev.42`) und suchen standardmäßig
+  im Dev-Kanal. Wer von Dev auf Release zurückwechselt, bekommt das aktuelle Release angeboten (auch wenn die
+  Versionsnummer kleiner ist).
+- Der Dev-Kanal ist **ein** Vorab-Release mit Tag `dev`, das bei jedem Push ersetzt wird (immer nur der neueste Build).
+  Ein neuer Push bricht einen noch laufenden Dev-Build ab.
 
-## Pro Release
+## Einmalig (erledigt)
 
-- [ ] `main` ist grün (CI: Typecheck, Build, `cargo check`, `cargo test`).
-- [ ] Manuell getestet (Debug- oder lokaler Release-Build): Microsoft-Login, Instanz anlegen/installieren/starten,
-      Modrinth- und CurseForge-Suche, Modpack-Import, Export, Logs/mclo.gs, Einstellungen.
-- [ ] Version erhöht in **`package.json`** und **`src-tauri/Cargo.toml`** (gleiche Version; `tauri.conf.json` liest
-      `package.json`). Danach `cargo check`, damit `Cargo.lock` passt. Commit „Release vX.Y.Z“.
-- [ ] Tag pushen:
-      ```bash
-      git tag vX.Y.Z
-      git push origin vX.Y.Z
-      ```
-      (Alternativ: Workflow „Release“ manuell starten – Tag wird aus der Version erzeugt.)
-- [ ] Workflow erfolgreich; der Schritt „Secrets vorhanden?“ zeigt keine Warnungen.
-- [ ] Draft-Release enthält:
-  - `Vibe.Launcher_X.Y.Z_x64-setup.exe` (NSIS-Installer)
-  - `Vibe.Launcher_X.Y.Z_x64-setup.exe.sig` (Updater-Signatur)
-  - `latest.json` (Version, Notes, `platforms.windows-x86_64` mit `signature` und `url` auf den Installer)
-- [ ] Installer auf einem sauberen Windows (oder VM) testen: Installation ohne Admin-Rechte, Start, Login.
-- [ ] Release-Notes ergänzen → **Publish release**.
-- [ ] Auto-Update prüfen: ältere Version starten → Update wird angeboten und installiert
-      (Endpoint `https://github.com/vibec-studios/vibe-launcher/releases/latest/download/latest.json` –
-      Drafts und Pre-Releases sind dort **nicht** sichtbar).
+- Repository-Secrets: `TAURI_SIGNING_PRIVATE_KEY` (Inhalt der privaten Updater-Schlüsseldatei),
+  `CURSEFORGE_API_KEY`, `VIBE_MSA_CLIENT_ID`. Optional `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+- Public Key in `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`) gehört zum privaten Schlüssel.
+- Privaten Schlüssel sicher aufbewahren (Passwortmanager). Ohne ihn nehmen installierte Launcher keine Updates mehr an.
 
-## Lokaler Release-Build (zum Testen)
+## Release veröffentlichen
 
-```powershell
-pnpm install
-$env:TAURI_SIGNING_PRIVATE_KEY = "C:\Pfad\zu\vibe-launcher.key"   # Pfad oder Inhalt
-$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""                        # leer, wenn ohne Passwort
-$env:CURSEFORGE_API_KEY = "..."; $env:VIBE_MSA_CLIENT_ID = "..."    # optional
-pnpm tauri build
+```bash
+node scripts/set-version.mjs 1.1.0      # package.json + Cargo.toml
+cd src-tauri && cargo check && cd ..    # Cargo.lock aktualisieren
+git commit -am "Release v1.1.0"
+git tag v1.1.0
+git push origin main v1.1.0
 ```
 
-Ergebnis unter `src-tauri/target/release/bundle/nsis/` (`…_x64-setup.exe` + `.sig`).
+Der Workflow „Release“ baut, signiert und veröffentlicht das GitHub-Release (mit `latest.json`). Ab dann bieten alle
+Launcher im Release-Kanal das Update an.
 
-## Wenn etwas schiefgeht
+## Caching in Actions
 
-- **„A public key has been found, but no private key“** – `TAURI_SIGNING_PRIVATE_KEY` fehlt/leer.
-- **Signatur-/Passwortfehler** – falsches Passwort-Secret; bei Schlüssel ohne Passwort das Secret leer lassen.
-- **Updater findet kein Update** – Release noch Draft/Pre-Release, oder Version in `latest.json` nicht höher als installiert.
-- **Tag passt nicht zur Version** – Versionen in `package.json`/`Cargo.toml` angleichen, Tag löschen und neu setzen.
+`.github/actions/setup` richtet ein: pnpm-Store (setup-node), Cargo-Registry + `target/` (Swatinem/rust-cache, getrennte
+Schlüssel für Debug/CI und Release; gespeichert nur auf `main`/Tags), Tauri-Bundler-Tools (NSIS) unter
+`%LOCALAPPDATA%\tauri`.

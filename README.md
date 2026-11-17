@@ -87,23 +87,13 @@ Azure-App-Registrierung:
    Bis zur Freigabe endet der Login nach erfolgreicher Microsoft-/Xbox-Anmeldung mit der Meldung
    „Die Azure-App ist (noch) nicht für die Minecraft-API freigeschaltet“. Die Freigabe kann einige Tage dauern.
 
-## Release-Prozess
+## Release-Prozess & Update-Kanäle
 
-Releases baut GitHub Actions (`.github/workflows/release.yml`) – Checkliste in [docs/RELEASE.md](docs/RELEASE.md).
+- **Release-Kanal:** Tag `vX.Y.Z` pushen → GitHub Actions baut und veröffentlicht das Release.
+- **Dev-Kanal:** jeder Commit auf `main` → neuer Dev-Build im Vorab-Release `dev`.
+- Im Launcher unter *Einstellungen → Über & Updates* umschaltbar; Updates erscheinen oben rechts als „Update verfügbar“.
 
-1. Einmalig Repository-Secrets anlegen (*Settings → Secrets and variables → Actions*):
-   `TAURI_SIGNING_PRIVATE_KEY` (Inhalt der privaten Updater-Schlüsseldatei),
-   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (leer lassen/weglassen, wenn der Schlüssel kein Passwort hat),
-   `CURSEFORGE_API_KEY`, `VIBE_MSA_CLIENT_ID`.
-2. Version in `package.json` **und** `src-tauri/Cargo.toml` erhöhen, committen.
-3. Tag pushen: `git tag v1.0.1 && git push origin v1.0.1`.
-4. Der Workflow erstellt ein **Draft-Release** mit Installer, `.sig` und `latest.json`. Prüfen → **Publish**.
-   Erst veröffentlichte Releases sieht der Auto-Updater (`releases/latest/download/latest.json`).
-
-Der private Updater-Schlüssel gehört **nie** ins Repository. Geht er verloren, können bestehende Installationen keine
-Updates mehr annehmen (neuer Schlüssel = neuer Public Key in `tauri.conf.json` = manuelle Neuinstallation).
-
----
+Details: [docs/RELEASE.md](docs/RELEASE.md). Der private Updater-Schlüssel gehört **nie** ins Repository.
 
 ## English
 
