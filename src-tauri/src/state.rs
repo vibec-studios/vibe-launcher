@@ -22,6 +22,8 @@ pub struct AppState {
     pub auth: Arc<AuthState>,
     pub game: Arc<GameManager>,
     pub content: Arc<ContentState>,
+    /// Gefundenes Launcher-Update (zwischen Prüfung und Installation)
+    pub pending_update: crate::updater::PendingUpdate,
 }
 
 impl AppState {
@@ -47,6 +49,7 @@ impl AppState {
             auth,
             game,
             content,
+            pending_update: Default::default(),
         }
     }
 

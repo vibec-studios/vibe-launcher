@@ -16,6 +16,7 @@ import { InstanceContextMenuContent } from "@/components/instance/InstanceMenu";
 import { killInstance, openNewInstance } from "@/components/instance/actions";
 import { InstanceDialogs } from "@/features/instances/InstanceDialogs";
 import { TaskDock } from "./TaskDock";
+import { UpdateButton } from "./UpdateNotice";
 import { AccountChip } from "./AccountChip";
 import { ErrorBoundary } from "./ErrorBoundary";
 
@@ -222,6 +223,7 @@ function Topbar() {
       </div>
       <div data-tauri-drag-region className="h-full flex-1" />
       <div className="flex items-center gap-2 pr-2">
+        <UpdateButton />
         <RunningGames />
         <TaskDock />
       </div>

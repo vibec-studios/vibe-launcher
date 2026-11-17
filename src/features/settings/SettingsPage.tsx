@@ -42,6 +42,7 @@ import {
 } from "@/components/ui";
 import { JavaPathField, MemoryField, SaveIndicator, useAutoSave, useJavaList } from "@/components/instance/forms";
 import { Logo3D } from "@/components/Logo3D";
+import { checkForUpdate } from "@/app/UpdateNotice";
 import { useLang, useT } from "@/i18n";
 
 type SectionId = "general" | "game" | "java" | "downloads" | "integrations" | "appearance" | "launcher";
@@ -184,24 +185,7 @@ export function SettingsPage() {
   const checkUpdates = async () => {
     setChecking(true);
     try {
-      const { check } = await import("@tauri-apps/plugin-updater");
-      const u = await check();
-      if (!u) toast.success(t("settings.update.none"));
-      else
-        toast.info(t("update.available", { version: u.version }), u.body?.slice(0, 200), {
-          label: t("update.install"),
-          onClick: async () => {
-            try {
-              await u.downloadAndInstall();
-              const { relaunch } = await import("@tauri-apps/plugin-process");
-              await relaunch();
-            } catch (e) {
-              toast.error(e);
-            }
-          },
-        });
-    } catch (e) {
-      toast.error(e, t("settings.update.failed"));
+      await checkForUpdate(true);
     } finally {
       setChecking(false);
     }
@@ -499,6 +483,16 @@ export function SettingsPage() {
                   </a>
                 </div>
               </div>
+              <SettingRow title={t("settings.channel")} description={s.update_channel === "dev" ? t("settings.channel.dev.desc") : t("settings.channel.release.desc")}>
+                <Segmented
+                  value={s.update_channel}
+                  onChange={(update_channel) => update({ update_channel })}
+                  items={[
+                    { value: "release", label: t("settings.channel.release") },
+                    { value: "dev", label: t("settings.channel.dev") },
+                  ]}
+                />
+              </SettingRow>
               <SettingRow title={t("settings.check_updates")} description={t("settings.check_updates.desc")}>
                 <div className="flex items-center gap-3">
                   <Button size="sm" icon={<RefreshCw size={13} />} loading={checking} onClick={checkUpdates}>

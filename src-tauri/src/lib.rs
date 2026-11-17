@@ -11,6 +11,7 @@ pub mod paths;
 pub mod settings;
 pub mod state;
 pub mod tasks;
+pub mod updater;
 pub mod util;
 
 use state::AppState;
@@ -92,6 +93,8 @@ pub fn run() {
             commands::core::system_info,
             commands::core::open_path,
             commands::core::open_data_dir,
+            commands::core::update_check,
+            commands::core::update_install,
             // auth
             commands::auth::accounts_list,
             commands::auth::account_remove,

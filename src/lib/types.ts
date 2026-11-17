@@ -101,6 +101,8 @@ export interface Settings {
   curseforge_api_key: string | null;
   msa_client_id: string | null;
   check_updates: boolean;
+  /** "release" = nur GitHub-Releases, "dev" = jeder Commit */
+  update_channel: "release" | "dev";
   wrapper_command: string | null;
   open_log_on_launch: boolean;
   reduce_motion: boolean;
@@ -391,4 +393,12 @@ export interface MissingDownload {
   project_name: string;
   page_url: string;
   kind: ContentKind;
+}
+
+export interface UpdateInfo {
+  version: string;
+  current_version: string;
+  channel: "release" | "dev";
+  notes: string | null;
+  date: string | null;
 }

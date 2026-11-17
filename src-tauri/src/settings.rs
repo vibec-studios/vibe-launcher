@@ -42,6 +42,8 @@ pub struct Settings {
     pub msa_client_id: Option<String>,
     /// Nach Launcher-Updates suchen
     pub check_updates: bool,
+    /// Update-Kanal: "release" (nur GitHub-Releases) oder "dev" (jeder Commit)
+    pub update_channel: String,
     /// Wrapper-Befehl vor java (z. B. "prime-run"), optional
     pub wrapper_command: Option<String>,
     /// Konsole beim Start automatisch öffnen
@@ -68,6 +70,7 @@ impl Default for Settings {
             curseforge_api_key: None,
             msa_client_id: None,
             check_updates: true,
+            update_channel: crate::updater::default_channel(),
             wrapper_command: None,
             open_log_on_launch: false,
             reduce_motion: false,

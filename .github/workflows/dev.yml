@@ -1,0 +1,70 @@
+name: Dev-Build
+
+# Jeder Commit auf main -> neuer Dev-Build im Vorab-Release "dev".
+# Launcher im Update-Kanal "Dev" laden ihn über
+#   https://github.com/<repo>/releases/download/dev/latest.json
+# Version: <nächster Patch>-dev.<Laufnummer>, z. B. 1.0.1-dev.42 (immer neuer als der vorige Dev-Build).
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**", ".github/workflows/ci.yml", ".github/workflows/release.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Neuerer Commit bricht einen laufenden Dev-Build ab – nur der neueste zählt
+concurrency:
+  group: dev-build
+  cancel-in-progress: true
+
+jobs:
+  dev:
+    name: Windows Dev-Build
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup
+        with:
+          cache-key: release
+
+      - name: Version setzen
+        id: ver
+        shell: bash
+        run: node scripts/set-version.mjs dev ${{ github.run_number }}
+
+      - name: Build (NSIS, signiert)
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          VIBE_MSA_CLIENT_ID: ${{ secrets.VIBE_MSA_CLIENT_ID }}
+          # Dev-Builds suchen standardmäßig im Dev-Kanal nach Updates
+          VIBE_UPDATE_CHANNEL: dev
+        run: pnpm tauri build --bundles nsis
+
+      - name: Release-Dateien + latest.json
+        shell: bash
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          first_line="$(printf '%s' "$MSG" | head -n1)"
+          node scripts/prepare-release.mjs --tag dev --version "${{ steps.ver.outputs.version }}" \
+            --notes "Dev-Build ${{ steps.ver.outputs.version }} (${GITHUB_SHA::7}): ${first_line}"
+
+      - name: Vorab-Release "dev" ersetzen
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          gh release delete dev --yes --cleanup-tag || true
+          printf 'Automatischer Dev-Build von %s\n\n%s\n' "${GITHUB_SHA::7}" "$MSG" > notes.md
+          gh release create dev release-files/* \
+            --title "Dev-Build ${{ steps.ver.outputs.version }}" \
+            --notes-file notes.md \
+            --prerelease \
+            --target "$GITHUB_SHA"

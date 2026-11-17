@@ -79,6 +79,9 @@ pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> App
     s.max_memory_mb = s.max_memory_mb.max(512);
     s.min_memory_mb = s.min_memory_mb.clamp(256, s.max_memory_mb);
     s.concurrent_downloads = s.concurrent_downloads.clamp(1, 64);
+    if s.update_channel != "dev" {
+        s.update_channel = "release".into();
+    }
     if !["de", "en"].contains(&s.language.as_str()) {
         s.language = "de".into();
     }
@@ -150,4 +153,22 @@ pub async fn open_path(state: State<'_, AppState>, path: String) -> AppResult<()
 #[tauri::command]
 pub async fn open_data_dir(state: State<'_, AppState>) -> AppResult<()> {
     crate::util::open_in_explorer(&state.paths.root)
+}
+
+// ---------------------------------------------------------------- Launcher-Updates
+
+/// Nach einem Launcher-Update im eingestellten Kanal suchen. `None` = aktuell.
+#[tauri::command]
+pub async fn update_check(state: State<'_, AppState>) -> AppResult<Option<crate::updater::UpdateInfo>> {
+    crate::updater::check(&state).await
+}
+
+/// Gefundenes Update herunterladen und installieren (Task). Der Launcher startet danach neu.
+#[tauri::command]
+pub async fn update_install(state: State<'_, AppState>) -> AppResult<String> {
+    if state.pending_update.0.lock().is_none() {
+        return Err(AppError::Invalid("Kein Update gefunden – bitte erneut suchen".into()));
+    }
+    let st = state.inner().clone();
+    Ok(state.tasks.spawn("update", "Launcher-Update", None, move |task| async move { crate::updater::install(&st, &task).await }))
 }

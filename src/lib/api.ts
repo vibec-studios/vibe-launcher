@@ -39,6 +39,8 @@ export const api = {
   tasksClear: () => call<void>("tasks_clear"),
   openPath: (path: string) => call<void>("open_path", { path }),
   openDataDir: () => call<void>("open_data_dir"),
+  updateCheck: () => call<T.UpdateInfo | null>("update_check"),
+  updateInstall: () => call<string>("update_install"),
 
   // ---------------------------------------------------------------- Accounts
   accountsList: () => call<T.Account[]>("accounts_list"),

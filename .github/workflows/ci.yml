@@ -1,5 +1,6 @@
 name: CI
 
+# Prüft jeden Push und jeden Pull Request: Typecheck, Frontend-Build, cargo check + test.
 on:
   push:
     branches: ["**"]
@@ -13,23 +14,15 @@ concurrency:
 
 jobs:
   check:
-    name: Typecheck, Build, Cargo
+    name: Typecheck, Build, Tests
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - uses: ./.github/actions/setup
         with:
-          version: 11
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: pnpm install
-        run: pnpm install --frozen-lockfile
+          cache-key: debug
 
       - name: Typecheck
         run: pnpm typecheck
@@ -37,12 +30,6 @@ jobs:
       # Muss vor cargo laufen: tauri::generate_context! erwartet ../dist
       - name: Frontend-Build
         run: pnpm build
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri -> target
 
       - name: cargo check
         working-directory: src-tauri

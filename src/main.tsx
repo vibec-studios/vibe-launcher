@@ -11,7 +11,7 @@ import { EventBridge } from "@/app/EventBridge";
 import { TextMenuHost } from "@/app/TextMenu";
 import { ConfirmHost, Toaster, TooltipProvider } from "@/components/ui";
 import { GlobalDropZone } from "@/features/import/GlobalDropZone";
-import { UpdateNotice } from "@/app/UpdateNotice";
+import { UpdateChecker } from "@/app/UpdateNotice";
 import { useLang } from "@/i18n";
 
 // Simuliertes Backend nur für Frontend-Entwicklung im Browser (VITE_MOCK=1)
@@ -30,7 +30,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         <ConfirmHost />
         <TextMenuHost />
         <Toaster />
-        <UpdateNotice />
+        <UpdateChecker />
       </TooltipProvider>
     </QueryClientProvider>
   </React.StrictMode>,

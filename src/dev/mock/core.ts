@@ -54,6 +54,7 @@ let settings: Settings = {
   curseforge_api_key: null,
   msa_client_id: null,
   check_updates: true,
+  update_channel: "release",
   wrapper_command: null,
   open_log_on_launch: false,
   reduce_motion: false,

@@ -50,6 +50,7 @@ keyring = { version = "3", features = ["windows-native", "apple-native", "linux-
 md-5 = "0.10"
 urlencoding = "2"
 bytes = "1"
+semver = "1"
 
 [profile.dev.package."*"]
 opt-level = 2
