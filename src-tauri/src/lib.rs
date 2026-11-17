@@ -1,6 +1,8 @@
 //! Vibe Launcher – Backend.
 pub mod auth;
 pub mod commands;
+#[cfg(debug_assertions)]
+mod devlive;
 pub mod content;
 pub mod error;
 pub mod events;
@@ -48,6 +50,10 @@ pub fn run() {
             }
         }));
     }
+    #[cfg(debug_assertions)]
+    {
+        builder = devlive::register(builder);
+    }
     builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -63,6 +69,8 @@ pub fn run() {
             }
             tracing::info!("Vibe Launcher {} – Daten: {:?}", env!("CARGO_PKG_VERSION"), state.paths.root);
             app.manage(state);
+            #[cfg(debug_assertions)]
+            devlive::start(app.handle());
             // Fallback: Fenster spätestens nach 3 s zeigen, falls das Frontend hängt
             let handle = app.handle().clone();
             std::thread::spawn(move || {

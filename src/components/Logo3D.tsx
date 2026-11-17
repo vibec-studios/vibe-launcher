@@ -16,6 +16,8 @@ export interface Logo3DProps {
   float?: boolean;
   /** Beim Hover (über dem Elternelement) animieren */
   hoverSpin?: boolean;
+  /** Ohne Eisscholle, enger eingepasst – für kleine Größen (Leiste) */
+  compact?: boolean;
 }
 
 /** Logo-Pose (wie die gerenderten Icons) */
@@ -28,7 +30,7 @@ function prefersStatic(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.reduceMotion === "true";
 }
 
-export function Logo3D({ size = 160, className, hoverSpin = true }: Logo3DProps) {
+export function Logo3D({ size = 160, className, hoverSpin = true, compact = size < 48 }: Logo3DProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const reduce = useSettings().data?.reduce_motion ?? false;
@@ -44,7 +46,7 @@ export function Logo3D({ size = 160, className, hoverSpin = true }: Logo3DProps)
     import("three")
       .then((THREE) => {
         if (disposed) return;
-        cleanup = setup(THREE, wrap, canvas, size, hoverSpin, () => {
+        cleanup = setup(THREE, wrap, canvas, size, hoverSpin, compact, () => {
           if (disposed) return;
           canvas.style.opacity = "1";
           setReady(true);
@@ -57,12 +59,12 @@ export function Logo3D({ size = 160, className, hoverSpin = true }: Logo3DProps)
       canvas.remove();
       setReady(false);
     };
-  }, [size, hoverSpin, reduce]);
+  }, [size, hoverSpin, compact, reduce]);
 
   return (
     <div ref={wrapRef} className={cn("relative shrink-0", className)} style={{ width: size, height: size }} aria-hidden>
       <img
-        src="/logo.png"
+        src={compact ? "/logo-seal.png" : "/logo.png"}
         alt=""
         draggable={false}
         className={cn("absolute inset-0 h-full w-full object-contain transition-opacity duration-150", ready && "opacity-0")}
@@ -71,7 +73,7 @@ export function Logo3D({ size = 160, className, hoverSpin = true }: Logo3DProps)
   );
 }
 
-function setup(THREE: typeof THREE_NS, wrap: HTMLDivElement, canvas: HTMLCanvasElement, size: number, hoverSpin: boolean, onFirstFrame: () => void): () => void {
+function setup(THREE: typeof THREE_NS, wrap: HTMLDivElement, canvas: HTMLCanvasElement, size: number, hoverSpin: boolean, compact: boolean, onFirstFrame: () => void): () => void {
   let renderer: THREE_NS.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" });
@@ -86,15 +88,17 @@ function setup(THREE: typeof THREE_NS, wrap: HTMLDivElement, canvas: HTMLCanvasE
   addSealLights(THREE, scene);
   const parts = buildSeal(THREE);
   parts.group.scale.setScalar(1 / 16);
+  parts.ice.visible = !compact;
   const pivot = new THREE.Group();
   pivot.add(parts.group);
   pivot.rotation.y = LOGO_YAW;
   scene.add(pivot);
 
   // Orthografische Kamera, auf die Logo-Pose eingepasst (Platz für den Hüpfer lassen)
-  const box = new THREE.Box3().setFromObject(pivot, true);
+  pivot.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(compact ? parts.seal : pivot, true);
   const sphere = box.getBoundingSphere(new THREE.Sphere());
-  const r = sphere.radius * 0.84;
+  const r = sphere.radius * (compact ? 0.74 : 0.84);
   const cam = new THREE.OrthographicCamera(-r, r, r, -r, 0.1, 100);
   const dir = new THREE.Vector3(0, Math.sin(LOGO_PITCH), Math.cos(LOGO_PITCH));
   cam.position.copy(sphere.center).addScaledVector(dir, 10);

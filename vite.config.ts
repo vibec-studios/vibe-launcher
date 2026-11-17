@@ -11,6 +11,8 @@ export default defineConfig(() => ({
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
   clearScreen: false,
+  // Alle Abhängigkeiten beim Start vorab bündeln – kein Neuladen mitten in der Sitzung (Dev)
+  optimizeDeps: { entries: ["index.html", "src/**/*.tsx"] },
   build: {
     target: "es2022",
     chunkSizeWarningLimit: 1500,
