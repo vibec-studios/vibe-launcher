@@ -14,6 +14,9 @@ import { GlobalDropZone } from "@/features/import/GlobalDropZone";
 import { UpdateNotice } from "@/app/UpdateNotice";
 import { useLang } from "@/i18n";
 
+// Simuliertes Backend nur für Frontend-Entwicklung im Browser (VITE_MOCK=1)
+if (import.meta.env.VITE_MOCK === "1") await import("@/dev/mock");
+
 installGuards();
 document.documentElement.lang = useLang.getState().lang;
 

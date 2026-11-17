@@ -266,6 +266,17 @@ pub struct ExportEntry {
     pub default_selected: bool,
 }
 
+/// Datei, die nicht automatisch geladen werden durfte (CurseForge: Drittanbieter-Download gesperrt).
+/// Wird je Instanz in `instances/<id>/missing.json` gespeichert.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MissingDownload {
+    pub file_name: String,
+    pub project_name: String,
+    /// Seite, auf der der Nutzer die Datei manuell herunterladen kann
+    pub page_url: String,
+    pub kind: ContentKind,
+}
+
 pub struct ContentState {
     #[allow(dead_code)]
     paths: Paths,

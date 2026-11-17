@@ -198,6 +198,13 @@ impl TaskHandle {
         self.throttled_emit(info, true);
     }
 
+    /// Instanz nachträglich zuordnen (z. B. wenn ein Import die Instanz erst anlegt).
+    pub fn set_instance(&self, instance_id: impl Into<String>) {
+        let id = instance_id.into();
+        let info = self.inner.tasks.update(&self.inner.id, |i| i.instance_id = Some(id));
+        self.throttled_emit(info, true);
+    }
+
     pub fn set_title(&self, title: impl Into<String>) {
         let title = title.into();
         let info = self.inner.tasks.update(&self.inner.id, |i| i.title = title);

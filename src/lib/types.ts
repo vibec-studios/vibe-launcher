@@ -382,3 +382,10 @@ export interface ExportEntry {
   size: number;
   default_selected: boolean;
 }
+
+export interface MissingDownload {
+  file_name: string;
+  project_name: string;
+  page_url: string;
+  kind: ContentKind;
+}

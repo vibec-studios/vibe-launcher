@@ -136,3 +136,16 @@ pub async fn export_entries(_state: State<'_, AppState>, _instance_id: String) -
 pub async fn export_instance(_state: State<'_, AppState>, _instance_id: String, _options: ExportOptions) -> AppResult<String> {
     todo()
 }
+
+/// Dateien, die manuell heruntergeladen werden müssen (z. B. nach CurseForge-Import).
+/// Bereits vorhandene Dateien (vom Nutzer in den Ordner gelegt) werden nicht mehr gelistet.
+#[tauri::command]
+pub async fn content_missing(_state: State<'_, AppState>, _instance_id: String) -> AppResult<Vec<MissingDownload>> {
+    Ok(vec![])
+}
+
+/// Liste der fehlenden Downloads verwerfen.
+#[tauri::command]
+pub async fn content_missing_dismiss(_state: State<'_, AppState>, _instance_id: String) -> AppResult<()> {
+    Ok(())
+}

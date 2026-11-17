@@ -1,0 +1,129 @@
+// Mock: Kern-Commands (Instanzen, Einstellungen, Aufgaben, System). OWNER: Integrator.
+import type { Instance, Settings } from "@/lib/types";
+import { mockEmit, tasks, type Handlers } from "./util";
+
+const now = Date.now();
+function inst(id: string, name: string, mc: string, kind: Instance["loader"]["kind"], ver: string | null, extra: Partial<Instance> = {}): Instance {
+  return {
+    id,
+    name,
+    icon: null,
+    accent: null,
+    group: null,
+    mc_version: mc,
+    loader: { kind, version: ver },
+    java: { path: null, min_memory_mb: null, max_memory_mb: null, jvm_args: null, env: {} },
+    window: { width: null, height: null, fullscreen: null },
+    source: null,
+    install_state: "installed",
+    version_id: null,
+    created_at: now - 86400000 * 20,
+    last_played: null,
+    play_time_secs: 0,
+    notes: null,
+    ...extra,
+  };
+}
+
+export const instances = new Map<string, Instance>(
+  [
+    inst("survival", "Survival 1.21", "1.21.4", "fabric", "0.16.9", { last_played: now - 3600_000, play_time_secs: 36000, accent: "#3fe0c5" }),
+    inst("hh-armors", "H&H Armors Test", "1.21.11", "fabric", "0.17.2", { last_played: now - 86400_000 * 2, play_time_secs: 5400, accent: "#ff6b9a" }),
+    inst("all-the-mods", "All the Mods 10", "1.21.1", "neoforge", "21.1.77", {
+      source: { kind: "curseforge", project_id: "925200", version_id: "1", name: "All the Mods 10", version_name: "2.3" },
+      install_state: "not_installed",
+    }),
+    inst("vanilla", "Vanilla", "1.21.4", "vanilla", null),
+    inst("old-forge", "Forge 1.12.2", "1.12.2", "forge", "14.23.5.2860", { group: "Alt" }),
+  ].map((i) => [i.id, i]),
+);
+
+let settings: Settings = {
+  language: "de",
+  min_memory_mb: 512,
+  max_memory_mb: 4096,
+  jvm_args: "",
+  game_width: 1280,
+  game_height: 720,
+  fullscreen: false,
+  java_overrides: {},
+  auto_java: true,
+  launch_behavior: "keep",
+  show_snapshots: false,
+  concurrent_downloads: 16,
+  curseforge_api_key: null,
+  msa_client_id: null,
+  check_updates: true,
+  wrapper_command: null,
+  open_log_on_launch: false,
+  reduce_motion: false,
+};
+
+const handlers: Handlers = {
+  instances_list: () => [...instances.values()],
+  instance_get: ({ id }) => {
+    const i = instances.get(id as string);
+    if (!i) throw { kind: "not_found", message: "Instanz nicht gefunden" };
+    return i;
+  },
+  instance_create: ({ req }) => {
+    const r = req as { name: string; mc_version: string; loader: Instance["loader"]; icon?: string; accent?: string; group?: string };
+    const id = r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "instance";
+    const i = inst(id, r.name, r.mc_version, r.loader.kind, r.loader.version, { install_state: "not_installed", accent: r.accent ?? null, group: r.group ?? null, created_at: Date.now() });
+    instances.set(id, i);
+    mockEmit("instance://changed", i);
+    return i;
+  },
+  instance_update: ({ id, patch }) => {
+    const i = { ...instances.get(id as string)!, ...(patch as object) } as Instance;
+    instances.set(i.id, i);
+    mockEmit("instance://changed", i);
+    return i;
+  },
+  instance_delete: ({ id }) => {
+    instances.delete(id as string);
+    mockEmit("instance://removed", { id: id as string });
+  },
+  instance_duplicate: ({ id, name }) => {
+    const src = instances.get(id as string)!;
+    const n = (name as string) || `${src.name} (Kopie)`;
+    const i = { ...src, id: src.id + "-2", name: n, last_played: null };
+    instances.set(i.id, i);
+    mockEmit("instance://changed", i);
+    return i;
+  },
+  instance_set_icon: ({ id }) => instances.get(id as string),
+  instance_open_folder: () => null,
+  settings_get: () => settings,
+  settings_set: ({ settings: s }) => {
+    settings = s as Settings;
+    mockEmit("settings://changed", settings);
+    return settings;
+  },
+  system_info: () => ({
+    version: "1.0.0",
+    data_dir: "C:\\Users\\steve\\AppData\\Roaming\\VibeLauncher",
+    os: "windows",
+    arch: "x86_64",
+    total_memory_mb: 32768,
+    curseforge_available: !!settings.curseforge_api_key,
+    msa_available: !!settings.msa_client_id,
+  }),
+  tasks_list: () => [...tasks.values()],
+  task_cancel: ({ id }) => {
+    const t = tasks.get(id as string);
+    if (t) {
+      const c = { ...t, status: "cancelled" as const };
+      tasks.set(t.id, c);
+      mockEmit("task://update", c);
+    }
+    return true;
+  },
+  tasks_clear: () => {
+    for (const [k, t] of tasks) if (t.status !== "running") tasks.delete(k);
+  },
+  open_path: () => null,
+  open_data_dir: () => null,
+};
+
+export default handlers;

@@ -91,4 +91,6 @@ export const api = {
   importPack: (path: string, name?: string | null) => call<string>("import_pack", { path, name: name ?? null }),
   exportEntries: (instanceId: string) => call<T.ExportEntry[]>("export_entries", { instanceId }),
   exportInstance: (instanceId: string, options: T.ExportOptions) => call<string>("export_instance", { instanceId, options }),
+  contentMissing: (instanceId: string) => call<T.MissingDownload[]>("content_missing", { instanceId }),
+  contentMissingDismiss: (instanceId: string) => call<void>("content_missing_dismiss", { instanceId }),
 };
