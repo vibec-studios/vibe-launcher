@@ -1,6 +1,9 @@
 // Instanz-Karten im Stil eines Desktop-Launchers: Raster-Karte (Bibliothek) und kompakte Zeile (Start).
 // Klick öffnet, Rechtsklick = Aktionsmenü, Spielen-Knopf erscheint beim Hover über dem Icon.
 import { memo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowUpCircle } from "lucide-react";
+import { api } from "@/lib/api";
 import type { Instance } from "@/lib/types";
 import { ContextMenu, Progress, cn } from "@/components/ui";
 import { formatDuration, formatRelative, imageSrc, instanceAccent, loaderNames } from "@/lib/format";
@@ -65,6 +68,20 @@ function RunningBadge({ id }: { id: string }) {
   );
 }
 
+/** „N Updates“ (Hintergrundprüfung im Backend, höchstens alle 30 min). OWNER Badge: Content-Agent. */
+function UpdatesBadge({ id }: { id: string }) {
+  const t = useT();
+  const { data } = useQuery({ queryKey: ["update-counts"], queryFn: api.contentUpdateCounts, staleTime: 60_000, refetchInterval: 120_000 });
+  const n = data?.[id] ?? 0;
+  if (!n) return null;
+  return (
+    <span className="absolute right-2 top-2 inline-flex h-6 items-center gap-1 bg-black/80 px-2 text-[12px] font-medium text-accent">
+      <ArrowUpCircle size={12} />
+      {n === 1 ? t("instances.updates_badge_1") : t("instances.updates_badge", { n })}
+    </span>
+  );
+}
+
 /** Icon füllt die Fläche (eigenes Bild) bzw. Pixel-Block in der Akzentfarbe auf leicht getönter Fläche. */
 function IconArea({ instance: i, accent }: { instance: Instance; accent: string }) {
   const [failed, setFailed] = useState<string | null>(null);
@@ -111,6 +128,7 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
         <div className="relative aspect-[4/3] overflow-hidden border border-line">
           <IconArea instance={i} accent={accent} />
           <RunningBadge id={i.id} />
+          <UpdatesBadge id={i.id} />
           <div className="absolute bottom-2 right-2 translate-y-1 opacity-0 transition-[opacity,transform] duration-150 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100">
             <PlayButton instance={i} size="icon" />
           </div>

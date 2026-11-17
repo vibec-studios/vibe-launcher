@@ -332,6 +332,7 @@ pub fn read_entry(path: &Path, kind: ContentKind, icons_dir: &Path) -> LocalMeta
     }
     let Ok(data) = std::fs::read(path) else { return meta };
     let sha1 = hex::encode(Sha1::digest(&data));
+    meta.sha256 = Some(hex::encode(<sha2::Sha256 as sha2::Digest>::digest(&data)));
     meta.murmur2 = Some(super::murmur::cf_fingerprint(&data));
     if let Ok(zip) = zip::ZipArchive::new(std::io::Cursor::new(&data[..])) {
         let (parsed, icon) = parse_container(&mut ZipC(zip), kind);

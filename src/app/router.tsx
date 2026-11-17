@@ -47,7 +47,8 @@ const discoverRoute = createRoute({
   path: "/discover",
   component: DiscoverPage,
   validateSearch: (s: Record<string, unknown>): DiscoverSearch => ({
-    source: s.source === "curseforge" ? "curseforge" : s.source === "modrinth" ? "modrinth" : undefined,
+    source:
+      s.source === "curseforge" ? "curseforge" : s.source === "modrinth" ? "modrinth" : typeof s.source === "string" && /^store:[\w-]+$/.test(s.source) ? (s.source as Source) : undefined,
     type: projectTypes.includes(s.type as ProjectType) ? (s.type as ProjectType) : undefined,
     q: typeof s.q === "string" ? s.q : undefined,
     instance: typeof s.instance === "string" ? s.instance : undefined,

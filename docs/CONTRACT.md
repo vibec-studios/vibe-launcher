@@ -64,7 +64,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Kern | instances_list, instance_get, instance_create, instance_update, instance_delete, instance_duplicate, instance_set_icon, instance_open_folder, settings_get, settings_set, tasks_list, task_cancel, tasks_clear, system_info, open_path, open_data_dir |
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
-| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external |
+| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled |
 
 ### Wichtige Abläufe
 
@@ -117,6 +117,31 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   wird beachtet.
 - Bereits importiert: `instances/<id>/external.json` merkt den Quellpfad -> `ExternalInstance.imported_as`.
 - Frontend: `openImport(null, "launcher")` öffnet den Import-Dialog direkt im Launcher-Modus.
+
+### Eigene Stores (Vibe Store v1)
+
+- Format: `docs/STORE.md`. `Source` = `"modrinth" | "curseforge" | "store:<id>"` (Rust: `Source::Store(StoreKey)`,
+  internierte ID, serialisiert als String). Suche, Kategorien, Projekt, Versionen, Installation (inkl.
+  Abhängigkeiten aus anderen Quellen über `Dependency.source`), Updates, Modpack-Installation und Hash-Zuordnung
+  (sha1/sha256) funktionieren wie bei Modrinth. Die Datei wird mit ETag/If-Modified-Since geladen, ~10 min im
+  Speicher und unter `cache/stores/<id>.json` gehalten (Offline-Fallback); die Suche läuft clientseitig.
+- `Settings.stores: StoreConfig[]`; der Standard-Store **Vibe Craft Studios**
+  (`https://vibec-studios.github.io/data/store.json`) ist immer enthalten und nur deaktivierbar.
+- Commands: `stores_list() -> StoreInfo[]` (lädt aktivierte Stores, liefert Name/Icon/Projektanzahl/Fehler),
+  `store_add(url)` (laden + prüfen; ID/Name/Icon aus der Datei), `store_remove(id)`, `store_set_enabled(id, enabled)`.
+
+### Auto-Update von Inhalten und fixierte Versionen
+
+- `Settings.auto_update_content` (Standard aus) und `Instance.auto_update_content: bool | null` (null = global;
+  Modpack-Instanzen mit `source.project_id` dann aus). `InstancePatch`: `null` setzt auf „global“ zurück (gilt jetzt
+  auch für `icon`/`accent`/`group`/`notes`: `null` leert, fehlendes Feld = unverändert).
+- Wirkung: `minecraft::launch` ruft `content::autoupdate::before_launch` vor der Installation auf (Stufe „Mods werden
+  aktualisiert …“, Zeitlimit 120 s). Fehler/Offline verhindern den Start nie, Ergebnis steht im Spiel-Log.
+- `content_set_pinned(instanceId, kind, fileName, pinned) -> ContentItem`; `ContentItem.pinned`. Fixierte Dateien
+  (`content.json` → `pinned`) erscheinen nicht in `content_check_updates` und werden weder automatisch noch bei
+  „Alle aktualisieren“ geändert.
+- `content_update_counts() -> Record<instanceId, number>`: startet bei Bedarf (höchstens alle 30 min) eine
+  Hintergrundprüfung aller Instanzen und liefert die zuletzt bekannten Zahlen (Badge „N Updates“ in der Bibliothek).
 - **Start** (`instance_launch`): installiert bei Bedarf, holt Zugangsdaten über `state.auth.launch_account(...)`,
   startet den Prozess, sendet `game://state` + `game://log`.
 - **Accounts**: nur Microsoft (`AccountKind = "microsoft"`, keine Offline-Accounts). Login: `auth_msa_begin` -> Code

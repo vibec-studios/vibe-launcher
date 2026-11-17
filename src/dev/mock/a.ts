@@ -323,6 +323,7 @@ function mods(id: string): ContentItem[] {
   const n = id === "survival" ? 84 : id === "hh-armors" ? 23 : id === "all-the-mods" ? 412 : 9;
   return Array.from({ length: n }, (_, i) => ({
     file_name: `mod-${i}.jar`,
+    pinned: false,
     kind: "mod",
     enabled: true,
     name: `Mod ${i}`,

@@ -537,6 +537,7 @@ fn new_instance(name: String, plan: &PackPlan, source: Option<PackSource>) -> In
         last_played: None,
         play_time_secs: 0,
         notes: None,
+        auto_update_content: None,
     };
     if let Some(p) = &plan.prism {
         inst.java.min_memory_mb = p.min_memory_mb;
@@ -817,6 +818,17 @@ pub async fn run_modpack_install(state: AppState, task: TaskHandle, source: Sour
             let file = v.files[0].clone();
             (v, file)
         }
+        Source::Store(k) => {
+            let v = match &version_id {
+                Some(v) => super::store::version(&state, k, &brief.id, v).await?,
+                None => {
+                    let (list, _) = super::store::versions(&state, k, &brief.id).await?;
+                    provider::pick_best(&list, None).ok_or_else(|| AppError::NotFound(format!("keine Version von {}", brief.title)))?
+                }
+            };
+            let file = v.files.iter().find(|f| f.primary).or(v.files.first()).cloned().ok_or_else(|| AppError::msg(format!("{} {}: keine Datei", brief.title, v.version_number)))?;
+            (v, file)
+        }
     };
     let Some(url) = file.url.clone() else {
         return Err(AppError::msg(format!(
@@ -826,7 +838,11 @@ pub async fn run_modpack_install(state: AppState, task: TaskHandle, source: Sour
         )));
     };
     task.check()?;
-    let ext = if source == Source::Modrinth { "mrpack" } else { "zip" };
+    let ext = match source {
+        Source::Modrinth => "mrpack",
+        Source::Curseforge => "zip",
+        Source::Store(_) => file.filename.rsplit('.').next().filter(|e| ["mrpack", "zip", "vlpack"].contains(e)).unwrap_or("zip"),
+    };
     let tmp = state.paths.tmp().join(format!("{}.{ext}", uuid::Uuid::new_v4()));
     task.stage(format!("Lade {} …", file.filename), Some(0.0));
     let dl = state
@@ -838,7 +854,11 @@ pub async fn run_modpack_install(state: AppState, task: TaskHandle, source: Sour
             let opts = ImportOptions {
                 name: Some(brief.title.clone()),
                 source: Some(PackSource {
-                    kind: if source == Source::Modrinth { PackSourceKind::Modrinth } else { PackSourceKind::Curseforge },
+                    kind: match source {
+                        Source::Modrinth => PackSourceKind::Modrinth,
+                        Source::Curseforge => PackSourceKind::Curseforge,
+                        Source::Store(_) => PackSourceKind::Vlpack,
+                    },
                     project_id: Some(brief.id.clone()),
                     version_id: Some(version.id.clone()),
                     name: Some(brief.title.clone()),

@@ -130,6 +130,10 @@ pub struct Instance {
     pub play_time_secs: u64,
     #[serde(default)]
     pub notes: Option<String>,
+    /// Inhalte vor dem Start automatisch aktualisieren: `None` = globale Einstellung
+    /// (bei Modpack-Instanzen dann aus), `Some(..)` = explizit für diese Instanz
+    #[serde(default)]
+    pub auto_update_content: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -147,14 +151,29 @@ pub struct CreateInstance {
 #[serde(default)]
 pub struct InstancePatch {
     pub name: Option<String>,
+    #[serde(deserialize_with = "double_option")]
     pub icon: Option<Option<String>>,
+    #[serde(deserialize_with = "double_option")]
     pub accent: Option<Option<String>>,
+    #[serde(deserialize_with = "double_option")]
     pub group: Option<Option<String>>,
     pub mc_version: Option<String>,
     pub loader: Option<Loader>,
     pub java: Option<JavaOptions>,
     pub window: Option<WindowOptions>,
+    #[serde(deserialize_with = "double_option")]
     pub notes: Option<Option<String>>,
+    #[serde(deserialize_with = "double_option")]
+    pub auto_update_content: Option<Option<bool>>,
+}
+
+/// `null` -> `Some(None)` (Feld leeren), fehlendes Feld -> `None` (unverändert).
+fn double_option<'de, D, T>(d: D) -> Result<Option<Option<T>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Ok(Some(Option::deserialize(d)?))
 }
 
 pub struct InstanceStore {
@@ -265,6 +284,7 @@ impl InstanceStore {
             last_played: None,
             play_time_secs: 0,
             notes: None,
+            auto_update_content: None,
         };
         std::fs::create_dir_all(self.paths.game_dir(&id))?;
         self.persist(&inst)?;
@@ -307,6 +327,7 @@ impl InstanceStore {
             if let Some(v) = p.java { i.java = v; }
             if let Some(v) = p.window { i.window = v; }
             if let Some(v) = p.notes { i.notes = v; }
+            if let Some(v) = p.auto_update_content { i.auto_update_content = v; }
         })
     }
 
@@ -370,6 +391,14 @@ impl InstanceStore {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn patch_null_clears() {
+        let p: super::InstancePatch = serde_json::from_str(r#"{"accent":null,"auto_update_content":true}"#).unwrap();
+        assert_eq!(p.accent, Some(None));
+        assert_eq!(p.auto_update_content, Some(Some(true)));
+        assert_eq!(p.group, None);
+    }
+
     #[test]
     fn slug() {
         assert_eq!(super::slugify("Mein Tolles Pack!"), "mein-tolles-pack");

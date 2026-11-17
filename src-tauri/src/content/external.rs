@@ -807,6 +807,7 @@ pub async fn run_import(
         last_played: f.info.last_played,
         play_time_secs: f.info.play_time_secs.unwrap_or(0),
         notes: None,
+        auto_update_content: None,
     };
     if let Some(p) = &f.prism {
         inst.java.min_memory_mb = p.min_memory_mb;

@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { useSettings, useSystemInfo } from "@/lib/queries";
 import type { Instance, InstancePatch, JavaOptions, WindowOptions } from "@/lib/types";
 import { instanceAccent, loaderNames } from "@/lib/format";
-import { Button, IconButton, Input, NumberInput, SettingRow, SettingsCard, Switch, Textarea, Tooltip, confirm, toast } from "@/components/ui";
+import { Button, IconButton, Input, NumberInput, Select, SettingRow, SettingsCard, Switch, Textarea, Tooltip, confirm, toast } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { VersionPicker, type VersionValue } from "@/components/instance/VersionPicker";
 import { JavaPathField, MemoryField, SaveIndicator, useAutoSave } from "@/components/instance/forms";
@@ -208,6 +208,23 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
                 </SettingRow>
                 <SettingRow title={t("inst.group")} stacked>
                   <GroupInput value={d.group ?? ""} groups={groups} onChange={(g) => update({ group: g.trim() || null }, 600)} />
+                </SettingRow>
+                <SettingRow title={t("isettings.auto_update")} description={t("isettings.auto_update.desc")}>
+                  <Select<"default" | "on" | "off">
+                    className="w-[220px]"
+                    value={d.auto_update_content === null || d.auto_update_content === undefined ? "default" : d.auto_update_content ? "on" : "off"}
+                    onChange={(v) => update({ auto_update_content: v === "default" ? null : v === "on" })}
+                    options={[
+                      {
+                        value: "default",
+                        label: d.source?.project_id
+                          ? t("isettings.auto_update.default_pack")
+                          : t("isettings.auto_update.default", { state: settings?.auto_update_content ? t("common.on") : t("common.off") }),
+                      },
+                      { value: "on", label: t("isettings.auto_update.on") },
+                      { value: "off", label: t("isettings.auto_update.off") },
+                    ]}
+                  />
                 </SettingRow>
                 <SettingRow title={t("isettings.notes")} stacked>
                   <Textarea

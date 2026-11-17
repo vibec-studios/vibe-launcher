@@ -37,7 +37,10 @@ export function DiscoverPage() {
   const nav = useNavigate();
   const sys = useSystemInfo();
   const cfAvailable = !!sys.data?.curseforge_available;
-  const source: Source = search.source === "curseforge" && cfAvailable ? "curseforge" : "modrinth";
+  const stores = useQuery({ queryKey: ["stores"], queryFn: api.storesList, staleTime: 5 * 60_000 });
+  const enabledStores = (stores.data ?? []).filter((s) => s.enabled && !s.error);
+  const storeSource = search.source?.startsWith("store:") && enabledStores.some((s) => `store:${s.id}` === search.source) ? search.source : null;
+  const source: Source = storeSource ?? (search.source === "curseforge" && cfAvailable ? "curseforge" : "modrinth");
   const instances = useInstances();
   const target = useMemo(() => (search.instance ? (instances.data?.find((i) => i.id === search.instance) ?? null) : null), [instances.data, search.instance]);
   const type: ProjectType = search.type ?? "mod";
@@ -142,11 +145,20 @@ export function DiscoverPage() {
                     </Tooltip>
                   )}
                   <Segmented
-                    value={search.source === "curseforge" ? "curseforge" : "modrinth"}
+                    value={storeSource ?? (search.source === "curseforge" ? "curseforge" : "modrinth")}
                     onChange={(v: Source) => navigate({ search: (s) => ({ ...s, source: v === "modrinth" ? undefined : v }), replace: true })}
                     items={[
                       { value: "modrinth", label: "Modrinth" },
                       { value: "curseforge", label: "CurseForge", disabled: !cfAvailable },
+                      ...enabledStores.map((s) => ({
+                        value: `store:${s.id}` as Source,
+                        label: (
+                          <span className="flex items-center gap-1.5">
+                            {s.icon && <img src={s.icon} alt="" width={16} height={16} className="h-4 w-4 object-contain" />}
+                            {s.name}
+                          </span>
+                        ),
+                      })),
                     ]}
                   />
                 </div>

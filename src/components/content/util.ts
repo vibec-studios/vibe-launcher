@@ -1,6 +1,7 @@
 // Hilfsfunktionen für Inhalte (Entdecken, Projektseite, Inhalte-Tab, Import). OWNER: Frontend-Agent B.
 import { router } from "@/app/router";
-import type { ContentKind, Instance, LoaderKind, ProjectHit, ProjectType, Source } from "@/lib/types";
+import { queryClient } from "@/lib/queries";
+import type { ContentKind, Instance, LoaderKind, ProjectHit, ProjectType, Source, StoreInfo } from "@/lib/types";
 
 /** Navigation außerhalb des Router-Kontexts (globale Dialoge). */
 export function navigateTo(opts: { to: string; params?: Record<string, string>; search?: Record<string, unknown> }) {
@@ -23,10 +24,19 @@ export const kindFolder: Record<ContentKind, string> = { mod: "mods", resourcepa
 /** Dateiendungen, die je Inhaltsart hinzugefügt werden können. */
 export const kindExtensions: Record<ContentKind, string[]> = { mod: ["jar"], resourcepack: ["zip"], shader: ["zip"], datapack: ["zip"] };
 
-export const sourceNames: Record<Source, string> = { modrinth: "Modrinth", curseforge: "CurseForge" };
+/** Anzeigename einer Quelle (Stores: Name aus der Store-Liste, sonst die ID). */
+export function sourceName(s: Source): string {
+  if (s === "modrinth") return "Modrinth";
+  if (s === "curseforge") return "CurseForge";
+  const id = s.slice("store:".length);
+  return queryClient.getQueryData<StoreInfo[]>(["stores"])?.find((x) => x.id === id)?.name ?? id;
+}
 
-/** Öffentliche Projektseite im Browser. */
+export const isStoreSource = (s: Source | null | undefined): s is `store:${string}` => !!s && s.startsWith("store:");
+
+/** Öffentliche Projektseite im Browser ("" bei Stores – dort liefert die Projektseite `page_url`). */
 export function projectWebUrl(p: Pick<ProjectHit, "source" | "slug" | "id" | "project_type">): string {
+  if (isStoreSource(p.source)) return "";
   if (p.source === "modrinth") {
     const seg = p.project_type === "shader" ? "shader" : p.project_type;
     return `https://modrinth.com/${seg}/${p.slug || p.id}`;

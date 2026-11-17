@@ -15,7 +15,7 @@ import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { RichText } from "@/components/content/RichText";
 import { openInstall } from "@/components/content/InstallDialog";
 import { Pill, prettyCategory, prettyLoader } from "@/components/content/Pill";
-import { compareMc, copyText, openExternal, sourceNames, versionRange } from "@/components/content/util";
+import { compareMc, copyText, openExternal, sourceName, versionRange } from "@/components/content/util";
 import { VersionsTab } from "./VersionsTab";
 
 const route = getRouteApi("/project/$source/$id");
@@ -26,7 +26,8 @@ export function ProjectPage() {
   const t = useT();
   const params = route.useParams();
   const search = route.useSearch();
-  const source: Source = params.source === "curseforge" ? "curseforge" : "modrinth";
+  const decoded = decodeURIComponent(params.source);
+  const source: Source = decoded === "curseforge" ? "curseforge" : decoded.startsWith("store:") ? (decoded as Source) : "modrinth";
   const q = useQuery({
     queryKey: qk.project(source, params.id),
     queryFn: () => api.contentProject(source, params.id),
@@ -189,7 +190,7 @@ function Header({ p, instanceId }: { p: ProjectDetails; instanceId?: string }) {
             </>
           )}
           <DropdownItem icon={<ExternalLink size={14} />} onSelect={() => void openExternal(p.page_url)}>
-            {t("project.open_on", { source: sourceNames[p.source] })}
+            {t("project.open_on", { source: sourceName(p.source) })}
           </DropdownItem>
           <DropdownItem
             icon={<Copy size={14} />}
@@ -329,7 +330,7 @@ function InfoSidebar({ p }: { p: ProjectDetails }) {
             </>
           )}
           <dt className="text-dim">{t("project.source")}</dt>
-          <dd className="text-text">{sourceNames[p.source]}</dd>
+          <dd className="text-text">{sourceName(p.source)}</dd>
         </dl>
       </SideSection>
     </aside>

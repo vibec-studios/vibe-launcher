@@ -302,6 +302,7 @@ pub fn convert_file(f: &CfFile) -> ProjectVersion {
                     1 | 6 => DependencyKind::Embedded,
                     _ => DependencyKind::Optional,
                 },
+                source: None,
             })
             .collect(),
         changelog: None,

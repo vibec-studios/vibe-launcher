@@ -199,3 +199,37 @@ pub async fn import_external(
     let title = std::path::Path::new(&source_path).file_name().map(|n| format!("{} übernehmen", n.to_string_lossy())).unwrap_or_else(|| "Instanz übernehmen".into());
     Ok(state.tasks.spawn("import", title, None, move |task| external::run_import(st, task, source, source_path, name, mc_version, loader)))
 }
+
+/// Version eines Inhalts fixieren (kein Auto-Update, nicht bei „Alle aktualisieren“) oder lösen.
+#[tauri::command]
+pub async fn content_set_pinned(state: State<'_, AppState>, instance_id: String, kind: ContentKind, file_name: String, pinned: bool) -> AppResult<ContentItem> {
+    autoupdate::set_pinned(&state, &instance_id, kind, &file_name, pinned).await
+}
+
+/// Anzahl verfügbarer Updates je Instanz (Hintergrundprüfung, höchstens alle 30 min; danach `content://changed`).
+#[tauri::command]
+pub async fn content_update_counts(state: State<'_, AppState>) -> AppResult<std::collections::HashMap<String, u32>> {
+    Ok(autoupdate::update_counts(&state).await)
+}
+
+/// Konfigurierte Stores (Standard-Store immer enthalten) mit Name/Icon/Projektanzahl aus der Datei.
+#[tauri::command]
+pub async fn stores_list(state: State<'_, AppState>) -> AppResult<Vec<store::StoreInfo>> {
+    Ok(store::list(&state).await)
+}
+
+/// Store per URL hinzufügen (lädt und prüft die Datei).
+#[tauri::command]
+pub async fn store_add(state: State<'_, AppState>, url: String) -> AppResult<store::StoreInfo> {
+    store::add(&state, &url).await
+}
+
+#[tauri::command]
+pub async fn store_remove(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    store::remove(&state, &id)
+}
+
+#[tauri::command]
+pub async fn store_set_enabled(state: State<'_, AppState>, id: String, enabled: bool) -> AppResult<()> {
+    store::set_enabled(&state, &id, enabled)
+}

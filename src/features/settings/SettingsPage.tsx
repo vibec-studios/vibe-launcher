@@ -15,8 +15,10 @@ import {
   Globe,
   Info,
   Languages,
+  PackageCheck,
   Plug,
   RefreshCw,
+  Store,
   Sparkles,
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -43,15 +45,18 @@ import {
 import { JavaPathField, MemoryField, SaveIndicator, useAutoSave, useJavaList } from "@/components/instance/forms";
 import { Logo3D } from "@/components/Logo3D";
 import { checkForUpdate } from "@/app/UpdateNotice";
+import { StoresCard } from "./StoresCard";
 import { useLang, useT } from "@/i18n";
 
-type SectionId = "general" | "game" | "java" | "downloads" | "integrations" | "appearance" | "launcher";
+type SectionId = "general" | "game" | "content" | "java" | "downloads" | "integrations" | "stores" | "appearance" | "launcher";
 const SECTIONS: { id: SectionId; icon: ReactNode }[] = [
   { id: "general", icon: <Languages size={15} /> },
   { id: "game", icon: <Gamepad2 size={15} /> },
+  { id: "content", icon: <PackageCheck size={15} /> },
   { id: "java", icon: <Coffee size={15} /> },
   { id: "downloads", icon: <Download size={15} /> },
   { id: "integrations", icon: <Plug size={15} /> },
+  { id: "stores", icon: <Store size={15} /> },
   { id: "appearance", icon: <Sparkles size={15} /> },
   { id: "launcher", icon: <Info size={15} /> },
 ];
@@ -325,6 +330,12 @@ export function SettingsPage() {
               </SettingRow>
             </SettingsCard>
 
+            <SettingsCard id="set-content" title={t("settings.section.content")}>
+              <SettingRow title={t("settings.auto_update")} description={t("settings.auto_update.desc")}>
+                <Switch checked={s.auto_update_content} onChange={(v) => update({ auto_update_content: v })} label={t("settings.auto_update")} />
+              </SettingRow>
+            </SettingsCard>
+
             <SettingsCard
               id="set-java"
               title={t("settings.section.java")}
@@ -446,6 +457,8 @@ export function SettingsPage() {
                 />
               </SettingRow>
             </SettingsCard>
+
+            <StoresCard id="set-stores" />
 
             <SettingsCard id="set-appearance" title={t("settings.section.appearance")}>
               <SettingRow title={t("settings.reduce_motion")} description={t("settings.reduce_motion.desc")}>

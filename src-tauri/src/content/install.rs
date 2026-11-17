@@ -119,10 +119,11 @@ pub async fn plan(
             if d.kind != DependencyKind::Required {
                 continue;
             }
+            let dsrc = d.source.unwrap_or(source);
             match (&d.project_id, &d.version_id) {
-                (Some(p), v) => queue.push_back((source, p.clone(), v.clone(), false)),
-                (None, Some(v)) if source == Source::Modrinth => match mr::raw_version(state, v).await {
-                    Ok(rv) => queue.push_back((source, rv.project_id.clone(), Some(v.clone()), false)),
+                (Some(p), v) => queue.push_back((dsrc, p.clone(), v.clone(), false)),
+                (None, Some(v)) if dsrc == Source::Modrinth => match mr::raw_version(state, v).await {
+                    Ok(rv) => queue.push_back((dsrc, rv.project_id.clone(), Some(v.clone()), false)),
                     Err(e) => warnings.push(format!("Abhängigkeit (Version {v}) nicht gefunden: {e}")),
                 },
                 _ => {}
@@ -237,6 +238,7 @@ pub async fn apply(state: &AppState, inst: &Instance, planned: Vec<Planned>, sub
     drop(_g);
     let out: Vec<MissingDownload> = missing_list.iter().map(|m| m.info.clone()).collect();
     missing::add(&state.paths, &inst.id, missing_list)?;
+    state.content.update_counts.lock().remove(&inst.id);
     state.content.emit_changed(&inst.id);
     Ok(out)
 }
@@ -381,6 +383,41 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
         .await;
         out.extend(results.into_iter().flatten());
     }
+
+    // Eigene Stores: neueste kompatible Version je Projekt
+    let store_entries: Vec<(ContentKind, local::Scanned, IndexEntry, StoreKey)> = all
+        .iter()
+        .filter_map(|(k, s)| {
+            let e = idx.files.get(&s.key)?;
+            match e.source {
+                Source::Store(key) => Some((*k, s.clone(), e.clone(), key)),
+                _ => None,
+            }
+        })
+        .collect();
+    for (kind, s, e, key) in store_entries {
+        let l = if kind == ContentKind::Mod { Some(loader) } else { None };
+        let Ok((list, pref, _)) = provider::versions_for(state, Source::Store(key), &e.project_id, Some(&mc), l).await else { continue };
+        let only_release = e.release_type.as_deref().map_or(true, |r| r == "release");
+        let pool: Vec<ProjectVersion> = list.into_iter().filter(|v| !only_release || v.release_type == "release").collect();
+        let Some(nv) = provider::pick_best(&pool, pref.as_deref()) else { continue };
+        if nv.id == e.version_id || e.date.as_deref().is_some_and(|d| nv.date.as_str() <= d) {
+            continue;
+        }
+        out.push(ContentUpdate {
+            file_name: s.file_name.clone(),
+            kind,
+            source: Source::Store(key),
+            project_id: e.project_id.clone(),
+            current_version: e.version_number.clone().or(s.meta.version.clone()),
+            new_version: nv,
+        });
+    }
+    // Fixierte Inhalte nie anbieten
+    out.retain(|u| {
+        let folder = u.kind.folder();
+        !idx.pinned.contains(&index::key(folder, &u.file_name))
+    });
     out.sort_by_key(|u| u.file_name.to_lowercase());
     Ok(out)
 }

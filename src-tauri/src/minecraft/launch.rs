@@ -261,6 +261,9 @@ pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, task
     let gm = state.game.clone();
     let inst = state.instances.get(id)?;
     gm.launcher_line(id, LogLevel::Launcher, format!("Vibe Launcher {} – {} wird vorbereitet", env!("CARGO_PKG_VERSION"), inst.name));
+    // Inhalte automatisch aktualisieren (Content-Modul; schlägt nie fehl)
+    crate::content::autoupdate::before_launch(state, id, task).await;
+    task.check()?;
     let prep = super::install::install_instance_opts(state, id, &task.sub(0.0, 0.9), false).await?;
     task.check()?;
     task.stage("Account wird geprüft …", Some(0.92));
