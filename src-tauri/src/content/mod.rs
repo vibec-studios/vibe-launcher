@@ -26,13 +26,73 @@ pub mod modrinth;
 pub mod murmur;
 pub mod nbt;
 pub mod provider;
+pub mod store;
+pub mod autoupdate;
 pub mod worlds;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "snake_case")]
+/// Herkunft: Modrinth, CurseForge oder ein eigener Store (serialisiert als `"store:<id>"`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Source {
     Modrinth,
     Curseforge,
+    Store(StoreKey),
+}
+
+/// Internierte Store-ID (hält `Source` klein und `Copy`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct StoreKey(u32);
+
+static STORE_IDS: std::sync::OnceLock<parking_lot::RwLock<Vec<String>>> = std::sync::OnceLock::new();
+
+impl StoreKey {
+    pub fn intern(id: &str) -> StoreKey {
+        let reg = STORE_IDS.get_or_init(Default::default);
+        if let Some(i) = reg.read().iter().position(|s| s == id) {
+            return StoreKey(i as u32);
+        }
+        let mut w = reg.write();
+        if let Some(i) = w.iter().position(|s| s == id) {
+            return StoreKey(i as u32);
+        }
+        w.push(id.to_string());
+        StoreKey((w.len() - 1) as u32)
+    }
+    pub fn id(&self) -> String {
+        STORE_IDS.get_or_init(Default::default).read().get(self.0 as usize).cloned().unwrap_or_default()
+    }
+}
+
+impl Source {
+    pub fn store(id: &str) -> Source {
+        Source::Store(StoreKey::intern(id))
+    }
+    pub fn as_string(&self) -> String {
+        match self {
+            Source::Modrinth => "modrinth".into(),
+            Source::Curseforge => "curseforge".into(),
+            Source::Store(k) => format!("store:{}", k.id()),
+        }
+    }
+    pub fn parse(s: &str) -> Option<Source> {
+        match s {
+            "modrinth" => Some(Source::Modrinth),
+            "curseforge" => Some(Source::Curseforge),
+            _ => s.strip_prefix("store:").filter(|id| !id.is_empty()).map(Source::store),
+        }
+    }
+}
+
+impl Serialize for Source {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(&self.as_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for Source {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(d)?;
+        Source::parse(&s).ok_or_else(|| serde::de::Error::custom(format!("unbekannte Quelle: {s}")))
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -170,6 +230,9 @@ pub struct Dependency {
     pub project_id: Option<String>,
     pub version_id: Option<String>,
     pub kind: DependencyKind,
+    /// Quelle der Abhängigkeit, falls sie von der Quelle des Projekts abweicht (Stores -> Modrinth)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<Source>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -218,6 +281,9 @@ pub struct ContentItem {
     pub version_id: Option<String>,
     pub size: u64,
     pub modified: i64,
+    /// Version fixiert: kein automatisches Update, nicht bei „Alle aktualisieren“
+    #[serde(default)]
+    pub pinned: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -378,6 +444,10 @@ pub struct ContentState {
     pub(crate) identifying: Mutex<HashSet<String>>,
     /// Letzter fehlgeschlagener Zuordnungsversuch je Instanz (Netzwerk) – nicht sofort wiederholen
     pub(crate) identify_backoff: Mutex<HashMap<String, Instant>>,
+    /// Geladene Store-Dateien (Vibe Store v1)
+    pub(crate) stores: Mutex<HashMap<String, store::CacheEntry>>,
+    /// Anzahl verfügbarer Updates je Instanz (Hintergrundprüfung nach dem Start)
+    pub(crate) update_counts: Mutex<HashMap<String, u32>>,
 }
 
 impl ContentState {
@@ -389,6 +459,8 @@ impl ContentState {
             locks: Mutex::new(HashMap::new()),
             identifying: Mutex::new(HashSet::new()),
             identify_backoff: Mutex::new(HashMap::new()),
+            stores: Mutex::new(HashMap::new()),
+            update_counts: Mutex::new(HashMap::new()),
         })
     }
 

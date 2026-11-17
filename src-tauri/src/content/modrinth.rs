@@ -277,6 +277,7 @@ pub fn convert_version(v: MrVersion) -> ProjectVersion {
                     "embedded" => DependencyKind::Embedded,
                     _ => DependencyKind::Optional,
                 },
+                source: None,
             })
             .collect(),
         changelog: v.changelog.filter(|c| !c.trim().is_empty()),

@@ -200,6 +200,7 @@ pub fn to_item(s: &Scanned, idx: &ContentIndex, kind: ContentKind, icons: &Path)
         version_id: entry.map(|e| e.version_id.clone()),
         size: s.size,
         modified: s.modified,
+        pinned: idx.pinned.contains(&s.key),
     }
 }
 
@@ -218,6 +219,7 @@ pub async fn items(state: &AppState, scanned: &[Scanned], idx: &ContentIndex, ki
 pub struct Pending {
     pub key: String,
     pub sha1: String,
+    pub sha256: Option<String>,
     pub murmur: Option<u32>,
 }
 
@@ -239,7 +241,7 @@ pub fn pending(scanned: &[Scanned], idx: &ContentIndex, cf_available: bool) -> (
             Some(u) => now - u.checked_at > UNKNOWN_RECHECK_MS || (cf_available && !u.curseforge && s.meta.murmur2.is_some()),
         };
         if need {
-            p.push(Pending { key: s.key.clone(), sha1: sha1.clone(), murmur: s.meta.murmur2 });
+            p.push(Pending { key: s.key.clone(), sha1: sha1.clone(), sha256: s.meta.sha256.clone(), murmur: s.meta.murmur2 });
         }
     }
     (p, enrich)
@@ -324,6 +326,32 @@ pub async fn identify(state: &AppState, instance_id: &str, pending: Vec<Pending>
                 Err(e) => tracing::warn!("CurseForge-Fingerprint-Abfrage fehlgeschlagen: {e}"),
             }
         }
+        // Eigene Stores (sha1/sha256)
+        let rest: Vec<(String, Option<String>)> = pending.iter().filter(|p| !found.contains_key(&p.key)).map(|p| (p.sha1.clone(), p.sha256.clone())).collect();
+        if !rest.is_empty() {
+            let hits = super::store::by_hash(state, &rest).await;
+            for p in &pending {
+                if let Some(h) = hits.get(&p.sha1) {
+                    found.insert(
+                        p.key.clone(),
+                        IndexEntry {
+                            source: Source::Store(h.key),
+                            project_id: h.version.project_id.clone(),
+                            version_id: h.version.id.clone(),
+                            sha1: Some(p.sha1.to_ascii_lowercase()),
+                            sha512: None,
+                            title: Some(h.title.clone()),
+                            icon_url: h.icon.clone(),
+                            version_number: Some(h.version.version_number.clone()),
+                            url: Some(h.url.clone()),
+                            size: Some(h.size),
+                            date: Some(h.version.date.clone()),
+                            release_type: Some(h.version.release_type.clone()),
+                        },
+                    );
+                }
+            }
+        }
     }
 
     // Titel/Icons für bekannte Einträge ohne Titel nachladen
@@ -379,6 +407,7 @@ pub async fn identify(state: &AppState, instance_id: &str, pending: Vec<Pending>
             let tag = match e.source {
                 Source::Modrinth => format!("mr:{}", e.project_id),
                 Source::Curseforge => format!("cf:{}", e.project_id),
+                Source::Store(_) => continue,
             };
             if let Some((title, icon)) = enriched.get(&tag) {
                 e.title = Some(title.clone());

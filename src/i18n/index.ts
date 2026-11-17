@@ -10,12 +10,13 @@ import settings from "./settings";
 import logs from "./logs";
 import external from "./external";
 import skins from "./skins";
+import stores from "./stores";
 
 export type Lang = "de" | "en";
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores];
 const dicts: Record<Lang, Dict> = { de: {}, en: {} };
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);

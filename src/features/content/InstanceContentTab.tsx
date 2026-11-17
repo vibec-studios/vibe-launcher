@@ -137,6 +137,24 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
     [id, kind],
   );
 
+  const setPinned = useCallback(
+    async (items: ContentItem[], pinned: boolean) => {
+      const targets = items.filter((i) => i.pinned !== pinned);
+      if (!targets.length) return;
+      const keys = new Set(targets.map((i) => contentKey(i.file_name)));
+      queryClient.setQueryData<ContentItem[]>(listKey, (l) => l?.map((c) => (keys.has(contentKey(c.file_name)) ? { ...c, pinned } : c)));
+      try {
+        for (const it of targets) await api.contentSetPinned(id, kind, it.file_name, pinned);
+      } catch (e) {
+        toast.error(e);
+      }
+      queryClient.invalidateQueries({ queryKey: listKey });
+      queryClient.invalidateQueries({ queryKey: qk.contentUpdates(id) });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [id, kind],
+  );
+
   const remove = useCallback(
     async (items: ContentItem[]) => {
       if (!items.length) return;
@@ -247,6 +265,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
         return sel.has(key) ? byKeys(sel) : byKeys([key]);
       },
       setEnabled: (items, v) => void setEnabled(items, v),
+      setPinned: (items, v) => void setPinned(items, v),
       update: (items) => void update(items),
       remove: (items) => void remove(items),
       openProject: (item) =>
@@ -255,7 +274,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
       hasUpdate: (item) => state.current.updates.has(contentKey(item.file_name)),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [setEnabled, update, remove, openFolder, navigate, id],
+    [setEnabled, setPinned, update, remove, openFolder, navigate, id],
   );
 
   const onKeyDown = (e: React.KeyboardEvent) => {

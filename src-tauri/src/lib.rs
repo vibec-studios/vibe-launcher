@@ -168,6 +168,12 @@ pub fn run() {
             commands::content::launchers_detect,
             commands::content::launcher_scan_dir,
             commands::content::import_external,
+            commands::content::content_set_pinned,
+            commands::content::content_update_counts,
+            commands::content::stores_list,
+            commands::content::store_add,
+            commands::content::store_remove,
+            commands::content::store_set_enabled,
         ])
         .run(tauri::generate_context!())
         .expect("Fehler beim Starten des Launchers");

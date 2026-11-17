@@ -5,6 +5,7 @@ import { mockEmit, tasks, type Handlers } from "./util";
 const now = Date.now();
 function inst(id: string, name: string, mc: string, kind: Instance["loader"]["kind"], ver: string | null, extra: Partial<Instance> = {}): Instance {
   return {
+    auto_update_content: null,
     id,
     name,
     icon: null,
@@ -58,6 +59,8 @@ let settings: Settings = {
   wrapper_command: null,
   open_log_on_launch: false,
   reduce_motion: false,
+  auto_update_content: false,
+  stores: [{ id: "vibe-craft-studios", name: "Vibe Craft Studios", url: "https://vibec-studios.github.io/data/store.json", enabled: true, icon: null }],
 };
 
 const handlers: Handlers = {

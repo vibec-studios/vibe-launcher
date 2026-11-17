@@ -47,6 +47,7 @@ pub struct LocalMeta {
     pub mtime: i64,
     pub is_dir: bool,
     pub sha1: Option<String>,
+    pub sha256: Option<String>,
     /// CurseForge-Fingerprint
     pub murmur2: Option<u32>,
     pub mod_id: Option<String>,
@@ -73,6 +74,8 @@ pub struct ContentIndex {
     pub files: BTreeMap<String, IndexEntry>,
     pub local: BTreeMap<String, LocalMeta>,
     pub unknown: BTreeMap<String, UnknownHash>,
+    /// Fixierte Dateien (Schlüssel wie `files`): nie automatisch aktualisieren
+    pub pinned: std::collections::BTreeSet<String>,
 }
 
 pub fn index_path(paths: &Paths, instance_id: &str) -> PathBuf {

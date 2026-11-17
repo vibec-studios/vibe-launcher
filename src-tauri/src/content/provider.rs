@@ -18,6 +18,7 @@ pub async fn search(state: &AppState, q: &SearchQuery) -> AppResult<SearchResult
     match q.source {
         Source::Modrinth => mr::search(state, q).await,
         Source::Curseforge => cf::search(state, q).await,
+        Source::Store(k) => super::store::search(state, k, q).await,
     }
 }
 
@@ -25,6 +26,7 @@ pub async fn categories(state: &AppState, source: Source, pt: ProjectType) -> Ap
     match source {
         Source::Modrinth => mr::categories(state, pt).await,
         Source::Curseforge => cf::categories(state, pt).await,
+        Source::Store(k) => super::store::categories(state, k, pt).await,
     }
 }
 
@@ -32,6 +34,7 @@ pub async fn project(state: &AppState, source: Source, id: &str) -> AppResult<Pr
     match source {
         Source::Modrinth => mr::project(state, id).await,
         Source::Curseforge => cf::project(state, id).await,
+        Source::Store(k) => super::store::project(state, k, id).await,
     }
 }
 
@@ -47,6 +50,7 @@ pub async fn brief(state: &AppState, source: Source, id: &str) -> AppResult<Brie
             let hit = cf::mod_to_hit(&m);
             Ok(Brief { page_url: cf::page_url(&m), id: hit.id, title: hit.title, icon_url: hit.icon_url, project_type: hit.project_type })
         }
+        Source::Store(k) => super::store::brief(state, k, id).await,
     }
 }
 
@@ -127,6 +131,19 @@ pub async fn versions_for(
             cf::sort_files(&mut files);
             Ok((files.iter().map(cf::convert_file).collect(), None, pt))
         }
+        Source::Store(k) => {
+            let (all, pt) = super::store::versions(state, k, id).await?;
+            let sets = loader.and_then(|l| modrinth_loaders(pt, l, mc.unwrap_or("")));
+            let out: Vec<ProjectVersion> = all
+                .into_iter()
+                .filter(|v| mc.map_or(true, |mc| v.game_versions.iter().any(|g| g == mc)))
+                .filter(|v| match &sets {
+                    None => true,
+                    Some((a, b)) => v.loaders.iter().any(|l| a.contains(l) || b.contains(l)),
+                })
+                .collect();
+            Ok((out, sets.map(|(a, _)| a), pt))
+        }
     }
 }
 
@@ -142,6 +159,7 @@ pub async fn version(state: &AppState, source: Source, project_id: &str, version
             }
             Ok(v)
         }
+        Source::Store(k) => super::store::version(state, k, project_id, version_id).await,
     }
 }
 
@@ -151,7 +169,7 @@ pub fn compatible(v: &ProjectVersion, pt: ProjectType, mc: &str, loader: LoaderK
         return false;
     }
     match v.source {
-        Source::Modrinth => match modrinth_loaders(pt, loader, mc) {
+        Source::Modrinth | Source::Store(_) => match modrinth_loaders(pt, loader, mc) {
             None => true,
             Some((a, b)) => v.loaders.iter().any(|l| a.contains(l) || b.contains(l)),
         },

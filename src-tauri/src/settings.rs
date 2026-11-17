@@ -50,6 +50,21 @@ pub struct Settings {
     pub open_log_on_launch: bool,
     /// Animationen reduzieren (zusätzlich zur System-Einstellung)
     pub reduce_motion: bool,
+    /// Mods/Resourcepacks/Shader vor jedem Spielstart automatisch aktualisieren (je Instanz überschreibbar)
+    pub auto_update_content: bool,
+    /// Eigene Inhalte-Stores (Vibe Store v1, siehe docs/STORE.md). Der Standard-Store ist immer enthalten.
+    pub stores: Vec<StoreConfig>,
+}
+
+/// Eintrag in der Store-Liste.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct StoreConfig {
+    pub id: String,
+    pub name: String,
+    pub url: String,
+    pub enabled: bool,
+    #[serde(default)]
+    pub icon: Option<String>,
 }
 
 impl Default for Settings {
@@ -74,6 +89,8 @@ impl Default for Settings {
             wrapper_command: None,
             open_log_on_launch: false,
             reduce_motion: false,
+            auto_update_content: false,
+            stores: crate::content::store::default_stores(),
         }
     }
 }

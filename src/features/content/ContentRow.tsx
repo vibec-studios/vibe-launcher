@@ -1,12 +1,12 @@
 // Zeile der Inhalte-Tabelle (Stil Modrinth App). memo + stabile Aktionen -> beim Umschalten/Auswählen rendert nur
 // die betroffene Zeile neu.
-import { ArrowUpCircle, Check, ExternalLink, FolderOpen, MoreVertical, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowUpCircle, Check, ExternalLink, FolderOpen, Lock, LockOpen, MoreVertical, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react";
 import { memo, type MouseEvent } from "react";
 import { ContextItem, ContextMenu, ContextSeparator, DropdownItem, DropdownMenu, DropdownSeparator, Switch, Tooltip, cn, type MenuItemProps } from "@/components/ui";
 import { useT } from "@/i18n";
 import type { ContentItem, ContentUpdate } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
-import { sourceNames } from "@/components/content/util";
+import { sourceName } from "@/components/content/util";
 
 export const ROW_H = 52;
 /** Spalten: Auswahl | Name | Version | Aktionen */
@@ -19,6 +19,8 @@ export interface RowActions {
   /** Ziel-Einträge eines Menüs: Auswahl, falls die Zeile dazugehört */
   menuTargets: (key: string) => ContentItem[];
   setEnabled: (items: ContentItem[], enabled: boolean) => void;
+  /** Version fixieren/lösen */
+  setPinned: (items: ContentItem[], pinned: boolean) => void;
   update: (items: ContentItem[]) => void;
   remove: (items: ContentItem[]) => void;
   openProject: (item: ContentItem) => void;
@@ -51,10 +53,19 @@ function RowMenu({ itemKey, actions, Item, Sep }: { itemKey: string; actions: Ro
           {upd.length > 1 ? t("content.menu.update_n", { n: upd.length }) : t("common.update")}
         </Item>
       )}
+      {items.every((i) => i.pinned) ? (
+        <Item icon={<LockOpen size={14} />} onSelect={() => actions.setPinned(items, false)}>
+          {t("content.unpin")}
+        </Item>
+      ) : (
+        <Item icon={<Lock size={14} />} onSelect={() => actions.setPinned(items, true)}>
+          {t("content.pin")}
+        </Item>
+      )}
       <Sep />
       {one?.project_id && one.source && (
         <Item icon={<ExternalLink size={14} />} onSelect={() => actions.openProject(one)}>
-          {t("content.menu.open_on", { source: sourceNames[one.source] })}
+          {t("content.menu.open_on", { source: sourceName(one.source) })}
         </Item>
       )}
       <Item icon={<FolderOpen size={14} />} onSelect={actions.openFolder}>
@@ -100,7 +111,7 @@ export const ContentRow = memo(function ContentRow({
   actions: RowActions;
 }) {
   const t = useT();
-  const sub = [item.authors.length ? t("discover.by", { author: item.authors.join(", ") }) : null, item.source ? sourceNames[item.source] : t("content.local")]
+  const sub = [item.authors.length ? t("discover.by", { author: item.authors.join(", ") }) : null, item.source ? sourceName(item.source) : t("content.local")]
     .filter(Boolean)
     .join(" · ");
   return (
@@ -138,7 +149,14 @@ export const ContentRow = memo(function ContentRow({
             <span className="truncate text-[13px] text-text" title={item.version ?? ""}>
               {item.version ?? "–"}
             </span>
-            {update && (
+            {item.pinned && (
+              <Tooltip content={t("content.pinned")}>
+                <span className="shrink-0 text-muted" aria-label={t("content.pinned_short")}>
+                  <Lock size={13} />
+                </span>
+              </Tooltip>
+            )}
+            {update && !item.pinned && (
               <Tooltip content={t("content.update_to", { version: update.new_version.version_number })}>
                 <span className="shrink-0 text-accent">
                   <ArrowUpCircle size={14} />

@@ -115,6 +115,14 @@ export const api = {
   exportInstance: (instanceId: string, options: T.ExportOptions) => call<string>("export_instance", { instanceId, options }),
   contentMissing: (instanceId: string) => call<T.MissingDownload[]>("content_missing", { instanceId }),
   contentMissingDismiss: (instanceId: string) => call<void>("content_missing_dismiss", { instanceId }),
+  contentSetPinned: (instanceId: string, kind: T.ContentKind, fileName: string, pinned: boolean) =>
+    call<T.ContentItem>("content_set_pinned", { instanceId, kind, fileName, pinned }),
+  /** Updates je Instanz (Hintergrundprüfung, höchstens alle 30 min; danach content://changed) */
+  contentUpdateCounts: () => call<Record<string, number>>("content_update_counts"),
+  storesList: () => call<T.StoreInfo[]>("stores_list"),
+  storeAdd: (url: string) => call<T.StoreInfo>("store_add", { url }),
+  storeRemove: (id: string) => call<void>("store_remove", { id }),
+  storeSetEnabled: (id: string, enabled: boolean) => call<void>("store_set_enabled", { id, enabled }),
   launchersDetect: () => call<T.ExternalLauncher[]>("launchers_detect"),
   launcherScanDir: (path: string) => call<T.ExternalLauncher>("launcher_scan_dir", { path }),
   /** Gibt Task-ID zurück; mcVersion/loader überschreiben erkannte Werte. */

@@ -57,6 +57,8 @@ export interface Instance {
   last_played: number | null;
   play_time_secs: number;
   notes: string | null;
+  /** Inhalte vor dem Start aktualisieren; null = globale Einstellung (Modpacks: aus) */
+  auto_update_content: boolean | null;
 }
 
 export interface CreateInstance {
@@ -79,6 +81,7 @@ export interface InstancePatch {
   java?: JavaOptions;
   window?: WindowOptions;
   notes?: string | null;
+  auto_update_content?: boolean | null;
 }
 
 // ------------------------------------------------------------------ Einstellungen / System
@@ -106,6 +109,32 @@ export interface Settings {
   wrapper_command: string | null;
   open_log_on_launch: boolean;
   reduce_motion: boolean;
+  /** Mods/Packs/Shader vor jedem Start automatisch aktualisieren (je Instanz überschreibbar) */
+  auto_update_content: boolean;
+  stores: StoreConfig[];
+}
+
+export interface StoreConfig {
+  id: string;
+  name: string;
+  url: string;
+  enabled: boolean;
+  icon: string | null;
+}
+
+/** Store mit Angaben aus der geladenen Datei (storesList). */
+export interface StoreInfo {
+  id: string;
+  name: string;
+  url: string;
+  enabled: boolean;
+  icon: string | null;
+  /** Standard-Store (nur deaktivierbar) */
+  builtin: boolean;
+  homepage: string | null;
+  description: string | null;
+  project_count: number | null;
+  error: string | null;
 }
 
 export interface SystemInfo {
@@ -256,7 +285,8 @@ export interface JavaInstall {
 
 // ------------------------------------------------------------------ Inhalte
 
-export type Source = "modrinth" | "curseforge";
+/** Eigene Stores (docs/STORE.md) erscheinen als "store:<id>". */
+export type Source = "modrinth" | "curseforge" | `store:${string}`;
 export type ProjectType = "mod" | "modpack" | "resourcepack" | "shader" | "datapack";
 /** datapack = `datapacks/` im Spielordner (global; Vanilla lädt den Ordner nicht automatisch, siehe CONTRACT.md) */
 export type ContentKind = "mod" | "resourcepack" | "shader" | "datapack";
@@ -339,6 +369,8 @@ export interface Dependency {
   project_id: string | null;
   version_id: string | null;
   kind: DependencyKind;
+  /** Abweichende Quelle (z. B. Store-Projekt braucht Modrinth-Mod) */
+  source?: Source | null;
 }
 
 export interface ProjectVersion {
@@ -377,6 +409,8 @@ export interface ContentItem {
   version_id: string | null;
   size: number;
   modified: number;
+  /** Version fixiert (kein Auto-Update, nicht bei „Alle aktualisieren“) */
+  pinned: boolean;
 }
 
 export interface ContentUpdate {

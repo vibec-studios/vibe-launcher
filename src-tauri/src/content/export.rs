@@ -154,7 +154,7 @@ pub async fn run_export(state: AppState, task: TaskHandle, instance_id: String, 
                 (PackFormat::Mrpack, Source::Modrinth) => true,
                 (PackFormat::Curseforge, Source::Curseforge) => true,
                 (PackFormat::Vlpack, Source::Modrinth) => true,
-                (PackFormat::Vlpack, Source::Curseforge) => e.url.is_some(),
+                (PackFormat::Vlpack, Source::Curseforge) | (PackFormat::Vlpack, Source::Store(_)) => e.url.is_some(),
                 _ => false,
             };
             if usable {
@@ -224,8 +224,12 @@ pub async fn run_export(state: AppState, task: TaskHandle, instance_id: String, 
             }
             _ => vl_files.push(VlFile {
                 path: f.rel.clone(),
-                source: if e.source == Source::Modrinth { "modrinth".into() } else { "curseforge".into() },
-                project_id: Some(e.project_id.clone()),
+                source: match e.source {
+                    Source::Modrinth => "modrinth".into(),
+                    Source::Curseforge => "curseforge".into(),
+                    Source::Store(_) => "url".into(),
+                },
+                project_id: (!matches!(e.source, Source::Store(_))).then(|| e.project_id.clone()),
                 version_id: (e.source == Source::Modrinth).then(|| e.version_id.clone()),
                 file_id: (e.source == Source::Curseforge).then(|| e.version_id.clone()),
                 url: e.url.clone().unwrap_or_default(),

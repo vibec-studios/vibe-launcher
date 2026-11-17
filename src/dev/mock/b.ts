@@ -346,6 +346,7 @@ function itemFromHit(h: ProjectHit, kind: ContentKind, i: number, enabled = true
   const file = `${h.slug}-${ver}.${ext}`;
   return {
     file_name: enabled ? file : `${file}.disabled`,
+    pinned: false,
     kind,
     enabled,
     name: h.title,
@@ -435,6 +436,7 @@ function newInstance(name: string, mc: string, kind: Instance["loader"]["kind"],
   for (let i = 2; instances.has(id); i++) id = `${base}-${i}`;
   const inst: Instance = {
     id,
+    auto_update_content: null,
     name,
     icon: null,
     accent: null,
@@ -579,7 +581,7 @@ const handlers: Handlers = {
     const h = findHit(source as Source, projectId as string);
     if (!h) throw { kind: "not_found", message: "Modpack nicht gefunden" };
     const inst = newInstance(h.title, h.game_versions.at(-1) ?? "1.21.1", (h.loaders[0] as Instance["loader"]["kind"]) ?? "fabric", "0.16.9", {
-      kind: h.source,
+      kind: h.source === "curseforge" ? "curseforge" : h.source === "modrinth" ? "modrinth" : "vlpack",
       project_id: h.id,
       version_id: null,
       name: h.title,

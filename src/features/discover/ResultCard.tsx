@@ -115,20 +115,24 @@ function CardMenu({ hit, instances, onOpen }: { hit: ProjectHit; instances: Inst
           </ContextItem>
         </ContextSub>
       )}
-      <ContextSeparator />
-      <ContextItem icon={<ExternalLink size={14} />} onSelect={() => void openExternal(url)}>
-        {t("discover.menu.browser")}
-      </ContextItem>
-      <ContextItem
-        icon={<Copy size={14} />}
-        onSelect={() =>
-          copyText(url)
-            .then(() => toast.success(t("common.copied"), url))
-            .catch((e) => toast.error(e))
-        }
-      >
-        {t("discover.menu.copy_link")}
-      </ContextItem>
+      {url && (
+        <>
+          <ContextSeparator />
+          <ContextItem icon={<ExternalLink size={14} />} onSelect={() => void openExternal(url)}>
+            {t("discover.menu.browser")}
+          </ContextItem>
+          <ContextItem
+            icon={<Copy size={14} />}
+            onSelect={() =>
+              copyText(url)
+                .then(() => toast.success(t("common.copied"), url))
+                .catch((e) => toast.error(e))
+            }
+          >
+            {t("discover.menu.copy_link")}
+          </ContextItem>
+        </>
+      )}
     </>
   );
 }
