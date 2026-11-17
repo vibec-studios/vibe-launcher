@@ -2,11 +2,17 @@
 //! Mod-Loader (Fabric/Quilt/Forge/NeoForge), Start, Prozessverwaltung, Logs, mclo.gs.
 //!
 //! OWNER: Game-Agent. Öffentliche Typen/Signaturen sind Teil des Vertrags (docs/CONTRACT.md).
-use crate::error::{AppError, AppResult};
-use crate::paths::Paths;
+use crate::error::AppResult;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use tauri::AppHandle;
+
+pub mod forge;
+pub mod install;
+pub mod java;
+pub mod launch;
+pub mod loaders;
+pub mod logs;
+pub mod meta;
+pub mod process;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McVersion {
@@ -107,30 +113,11 @@ pub struct JavaInstall {
     pub managed: bool,
 }
 
-/// Verwaltet laufende Spielprozesse und ihre Log-Puffer.
-pub struct GameManager {
-    #[allow(dead_code)]
-    paths: Paths,
-    #[allow(dead_code)]
-    app: AppHandle,
-}
-
-impl GameManager {
-    pub fn new(paths: Paths, app: AppHandle) -> Arc<Self> {
-        Arc::new(GameManager { paths, app })
-    }
-
-    pub fn states(&self) -> Vec<GameState> {
-        vec![]
-    }
-
-    pub fn is_running(&self, _instance_id: &str) -> bool {
-        false
-    }
-}
+pub use install::{install_instance_opts, Prepared};
+pub use process::GameManager;
 
 /// Stellt sicher, dass eine Instanz vollständig installiert ist (Vanilla + Loader + Java),
 /// setzt `install_state`/`version_id` der Instanz. Wird auch vom Import verwendet.
-pub async fn install_instance(_state: &crate::state::AppState, _instance_id: &str, _progress: &crate::tasks::SubProgress) -> AppResult<()> {
-    Err(AppError::msg("noch nicht implementiert"))
+pub async fn install_instance(state: &crate::state::AppState, instance_id: &str, progress: &crate::tasks::SubProgress) -> AppResult<()> {
+    install::install_instance_opts(state, instance_id, progress, false).await.map(|_| ())
 }

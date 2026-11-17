@@ -97,6 +97,20 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 
 `app/EventBridge.tsx` hält damit React-Query-Caches und Stores aktuell – Seiten brauchen kein Polling.
 
+### Spiel – Details (Game-Agent)
+
+- `LogLine.text` ist immer **einzeilig**: mehrzeilige Log4j-Events (Stacktraces) werden in mehrere LogLines mit
+  gleichen `time/level/thread/logger` zerlegt. Klartext ohne Zeitstempel bekommt die Empfangszeit.
+  Eigene Launcher-Zeilen haben `level: "launcher"` (Fehler beim Start: `"error"`), `logger: "Vibe Launcher"`.
+  Das Zugangstoken wird in Sitzungslogs und im angezeigten Startbefehl maskiert.
+- `game_states` liefert alle Sitzungen seit Launcher-Start (auch beendete, mit `exit_code`/`crashed`).
+  `instance_kill` bricht auch eine laufende Vorbereitung ab. Vom Nutzer beendete Spiele gelten nicht als Absturz.
+- `loader_versions`: stabile/empfohlene zuerst. Forge: `stable = true` nur für die empfohlene (sonst neueste)
+  Version. Forge/NeoForge-`version` ohne MC-Präfix (z. B. `"47.3.0"`, `"21.1.77"`, NeoForge 1.20.1: `"47.1.106"`).
+- Loader-Version `null` in der Instanz => bei der Installation wird die empfohlene Version bestimmt und gespeichert.
+- Rust: `minecraft::install_instance(state, id, progress)` (Vertrag) und `install_instance_opts(..., force)`
+  (liefert zusätzlich die aufgelösten Startdaten). Installationen laufen nacheinander (globale Sperre).
+
 ## Regeln Frontend (UX-Vorgaben des Auftraggebers)
 
 - **Kein komisches Scrollen**: Fenster scrollt nie. Jede Seite ist `h-full` und hat eigene Scroll-Container
