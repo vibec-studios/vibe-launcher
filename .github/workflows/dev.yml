@@ -28,7 +28,7 @@ jobs:
 
       - uses: ./.github/actions/setup
         with:
-          cache-key: release
+          cache-key: dev
 
       - name: Version setzen
         id: ver
@@ -44,6 +44,9 @@ jobs:
           VIBE_MSA_CLIENT_ID: ${{ secrets.VIBE_MSA_CLIENT_ID }}
           # Dev-Builds suchen standardmäßig im Dev-Kanal nach Updates
           VIBE_UPDATE_CHANNEL: dev
+          # Schneller bauen als Releases: Thin-LTO + parallele Codegen-Units statt Fat-LTO auf einem Kern
+          CARGO_PROFILE_RELEASE_LTO: thin
+          CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
         run: pnpm tauri build --bundles nsis
 
       - name: Release-Dateien + latest.json
