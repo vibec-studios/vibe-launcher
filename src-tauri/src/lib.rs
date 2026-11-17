@@ -205,6 +205,13 @@ pub fn run() {
             commands::backups::world_copy,
             commands::backups::world_import_zip,
             commands::backups::backups_open_folder,
+            // configs
+            commands::configs::config_tree,
+            commands::configs::config_read,
+            commands::configs::config_write,
+            commands::configs::config_restore,
+            commands::configs::config_validate,
+            commands::configs::config_search,
         ])
         .run(tauri::generate_context!())
         .expect("Fehler beim Starten des Launchers");

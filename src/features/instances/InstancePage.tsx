@@ -20,6 +20,7 @@ import { WorldsTab } from "./WorldsTab";
 import { ActiveModSet } from "@/features/content/ModSetsMenu";
 import { InstanceSettingsTab } from "./InstanceSettingsTab";
 import { BackupsTab } from "@/features/backups/BackupsTab";
+import { ConfigsTab } from "@/features/configs/ConfigsTab";
 import { accentVars } from "@/components/instance/accent";
 
 const route = getRouteApi("/instances/$id");
@@ -200,6 +201,7 @@ export function InstancePage() {
               { value: "worlds", label: t("inst.tab.worlds") },
               { value: "backups", label: t("inst.tab.backups") },
               { value: "logs", label: t("inst.tab.logs") },
+              { value: "configs", label: t("inst.tab.configs") },
               { value: "settings", label: t("inst.tab.settings") },
             ]}
           />
@@ -217,6 +219,8 @@ export function InstancePage() {
           <BackupsTab instance={inst} />
         ) : active === "logs" ? (
           <LogsTab instance={inst} />
+        ) : active === "configs" ? (
+          <ConfigsTab instance={inst} />
         ) : (
           <InstanceSettingsTab instance={inst} />
         )}

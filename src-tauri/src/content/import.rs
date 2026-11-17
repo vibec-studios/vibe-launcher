@@ -536,8 +536,17 @@ pub(crate) fn extract_overrides_only(
             if let Some(p) = target.parent() {
                 std::fs::create_dir_all(p)?;
             }
-            let mut out = std::fs::File::create(&target)?;
-            std::io::copy(&mut entry, &mut out)?;
+            // Über Temp-Datei + Umbenennen schreiben: vorhandene Dateien können Hardlinks in den
+            // Snapshot-Speicher sein und dürfen nicht an Ort und Stelle verändert werden.
+            let tmp = target.with_file_name(format!(".{}.vltmp", target.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default()));
+            {
+                let mut out = std::fs::File::create(&tmp)?;
+                std::io::copy(&mut entry, &mut out)?;
+            }
+            if target.exists() {
+                let _ = std::fs::remove_file(&target);
+            }
+            std::fs::rename(&tmp, &target)?;
         }
     }
     progress(1.0)

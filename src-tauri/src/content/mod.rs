@@ -34,6 +34,7 @@ pub mod modsets;
 pub mod perf;
 pub mod modpack;
 pub mod autoupdate;
+pub mod configs;
 pub mod worlds;
 pub mod worldbackup;
 

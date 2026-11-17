@@ -77,6 +77,28 @@ pub async fn record_after_import(state: &AppState, instance_id: &str, zip: &Path
     crate::util::write_json_atomic(&record_path(state, instance_id), &rec)
 }
 
+/// Nach einer Snapshot-Wiederherstellung: Minecraft/Loader der Instanz an pack.json angleichen.
+pub fn sync_instance_with_record(state: &AppState, instance_id: &str) -> AppResult<()> {
+    let Some(rec) = load_record(state, instance_id) else { return Ok(()) };
+    let Some(loader) = rec.loader.clone() else { return Ok(()) };
+    let inst = state.instances.get(instance_id)?;
+    if rec.mc_version.is_empty() || (inst.mc_version == rec.mc_version && inst.loader == loader) {
+        return Ok(());
+    }
+    let (vid, vnum) = (rec.version_id.clone(), rec.version_number.clone());
+    state.instances.modify(instance_id, |i| {
+        i.mc_version = rec.mc_version.clone();
+        i.loader = loader.clone();
+        if let Some(s) = i.source.as_mut() {
+            if vid.is_some() {
+                s.version_id = vid.clone();
+                s.version_name = vnum.clone();
+            }
+        }
+    })?;
+    Ok(())
+}
+
 /// Stand aus pack.json oder (ältere Instanzen) aus `instance.source`. `bool` = nur Fallback (ohne Datei-Liste).
 fn record_or_fallback(state: &AppState, inst: &Instance) -> Option<(PackRecord, bool)> {
     if let Some(r) = load_record(state, &inst.id).filter(|r| r.source.is_some() && r.project_id.is_some()) {

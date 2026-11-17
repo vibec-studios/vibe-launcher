@@ -668,3 +668,46 @@ export interface WorldBackup {
   /** Automatisch (vor Spielstart / vor Wiederherstellung) – zählt zur Grenze `world_backups_keep` */
   auto: boolean;
 }
+
+// ------------------------------------------------------------------ Konfigurations-Editor
+
+export interface ConfigEntry {
+  /** Relativ zum Spielordner, mit "/" getrennt (z. B. "config/sodium-options.json") */
+  path: string;
+  is_dir: boolean;
+  size: number;
+  /** ms seit 1970 */
+  modified: number;
+  has_backup: boolean;
+  /** Keine Text-Endung -> nicht bearbeitbar */
+  binary: boolean;
+}
+
+export type ConfigLanguage = "json" | "json5" | "toml" | "properties" | "yaml" | "ini" | "javascript" | "text";
+
+export interface ConfigFile {
+  path: string;
+  /** Leer, wenn readonly wegen Größe/Binärdatei */
+  content: string;
+  size: number;
+  modified: number;
+  has_backup: boolean;
+  language: ConfigLanguage;
+  readonly: boolean;
+  readonly_reason: "too_large" | "binary" | "encoding" | null;
+}
+
+export interface ConfigValidationError {
+  /** 1-basiert */
+  line: number;
+  /** 1-basiert */
+  column: number;
+  message: string;
+}
+
+export interface ConfigSearchHit {
+  path: string;
+  /** 1-basiert */
+  line: number;
+  text: string;
+}

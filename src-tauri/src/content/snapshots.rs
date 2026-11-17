@@ -586,14 +586,36 @@ pub async fn restore(state: &AppState, instance_id: &str, snapshot_id: &str, pro
     let iid = instance_id.to_string();
     let p2 = prog.sub(0.5, 1.0);
     let res = tokio::task::spawn_blocking(move || restore_sync(&root, &iid, &paths.game_dir(&iid), &paths.instance_dir(&iid), &manifest, &p2)).await?;
+    if res.is_ok() {
+        // Modpack-Instanzen: Minecraft/Loader wieder auf den wiederhergestellten Pack-Stand setzen
+        if let Err(e) = super::modpack::sync_instance_with_record(state, instance_id) {
+            tracing::warn!("Instanz {instance_id} nicht an pack.json angeglichen: {e}");
+        }
+    }
     state.content.emit_changed(instance_id);
     res
 }
 
 pub async fn list(state: &AppState, instance_id: &str) -> AppResult<Vec<SnapshotInfo>> {
-    state.instances.get(instance_id)?;
+    let inst = state.instances.get(instance_id)?;
     let root = backups_root(&state.paths);
     let id = instance_id.to_string();
+    // Snapshots einer früher gelöschten Instanz mit gleicher ID (älter als die Instanz) verwerfen
+    let stale: Vec<String> = manifests(&root, &id).iter().filter(|m| m.created < inst.created_at).map(|m| m.id.clone()).collect();
+    if !stale.is_empty() {
+        let _g = LOCK.lock().await;
+        let r2 = root.clone();
+        let dir = snapshot_dir(&root, &id);
+        tokio::task::spawn_blocking(move || {
+            for s in stale {
+                let _ = std::fs::remove_file(dir.join(format!("{s}.json")));
+            }
+            if let Err(e) = gc(&r2) {
+                tracing::warn!("Snapshot-Speicher nicht aufgeräumt: {e}");
+            }
+        })
+        .await?;
+    }
     Ok(tokio::task::spawn_blocking(move || manifests(&root, &id).iter().map(Manifest::info).collect()).await?)
 }
 

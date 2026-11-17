@@ -5,3 +5,4 @@ pub mod game;
 pub mod skins;
 pub mod screenshots;
 pub mod backups;
+pub mod configs;

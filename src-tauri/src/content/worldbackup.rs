@@ -72,7 +72,9 @@ fn rel_string(base: &Path, p: &Path) -> Option<String> {
 }
 
 /// Dateien und Ordner einer Welt (ohne `session.lock`), sortiert.
-fn list_tree(dir: &Path) -> AppResult<(Vec<(String, PathBuf, std::fs::Metadata)>, Vec<String>)> {
+type Tree = (Vec<(String, PathBuf, std::fs::Metadata)>, Vec<String>);
+
+fn list_tree(dir: &Path) -> AppResult<Tree> {
     let mut files = Vec::new();
     let mut dirs = Vec::new();
     for e in walkdir::WalkDir::new(dir).min_depth(1).follow_links(false).sort_by_file_name() {

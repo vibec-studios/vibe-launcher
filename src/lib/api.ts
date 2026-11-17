@@ -173,4 +173,15 @@ export const api = {
   /** Gibt Task-ID zurück */
   worldImportZip: (instanceId: string, path: string) => call<string>("world_import_zip", { instanceId, path }),
   backupsOpenFolder: (instanceId: string, kind: "worlds" | "snapshots") => call<void>("backups_open_folder", { instanceId, kind }),
+  // ---------------------------------------------------------------- Konfigurations-Editor
+  /** config/, defaultconfigs/ (rekursiv) und options*.txt einer Instanz als flache Liste */
+  configTree: (instanceId: string) => call<T.ConfigEntry[]>("config_tree", { instanceId }),
+  configRead: (instanceId: string, path: string) => call<T.ConfigFile>("config_read", { instanceId, path }),
+  /** Sichert die alte Fassung (max. 10 je Datei) und schreibt atomar */
+  configWrite: (instanceId: string, path: string, content: string) => call<T.ConfigFile>("config_write", { instanceId, path, content }),
+  /** Letzte Sicherung zurückspielen (aktuelle Fassung wird selbst gesichert -> rückgängig machbar) */
+  configRestore: (instanceId: string, path: string) => call<T.ConfigFile>("config_restore", { instanceId, path }),
+  configValidate: (path: string, content: string) => call<T.ConfigValidationError[]>("config_validate", { path, content }),
+  /** Volltextsuche in allen Konfigurationsdateien (max. 200 Treffer) */
+  configSearch: (instanceId: string, query: string) => call<T.ConfigSearchHit[]>("config_search", { instanceId, query }),
 };
