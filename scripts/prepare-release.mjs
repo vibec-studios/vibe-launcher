@@ -24,6 +24,8 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
 fs.copyFileSync(path.join(nsisDir, installer), path.join(out, assetName));
 fs.copyFileSync(sigFile, path.join(out, assetName + ".sig"));
+// Fester Name für Download-Links (Website/README): …/releases/latest/download/Vibe-Launcher-Setup.exe
+if (tag !== "dev") fs.copyFileSync(path.join(nsisDir, installer), path.join(out, "Vibe-Launcher-Setup.exe"));
 
 const latest = {
   version,
@@ -37,4 +39,4 @@ const latest = {
   },
 };
 fs.writeFileSync(path.join(out, "latest.json"), JSON.stringify(latest, null, 2));
-console.log(`Bereit in ${out}/: ${assetName}, ${assetName}.sig, latest.json`);
+console.log(`Bereit in ${out}/: ${fs.readdirSync(out).join(", ")}`);

@@ -1,31 +1,63 @@
+<div align="center">
+
+<img src="branding/vibe-seal-1024.png" width="200" alt="Vibe Launcher – Robbe">
+
 # Vibe Launcher
 
-Minecraft-Launcher von **Vibe Craft Studios** für Windows – Instanzen, Modrinth & CurseForge, Modpacks,
-Import/Export, Microsoft-Accounts, Logs mit mclo.gs-Upload. Gebaut mit Tauri 2 (Rust) und React.
+**Der Minecraft-Launcher von Vibe Craft Studios.**<br>
+Instanzen, Mods, Modpacks, Skins – schnell, aufgeräumt und ohne Schnickschnack.
 
-*English below.*
+[![Neueste Version](https://img.shields.io/github/v/release/vibec-studios/vibe-launcher?include_prereleases&label=Version&color=8b6cff&style=flat-square)](https://github.com/vibec-studios/vibe-launcher/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/vibec-studios/vibe-launcher/total?label=Downloads&color=3fe0c5&style=flat-square)](https://github.com/vibec-studios/vibe-launcher/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/vibec-studios/vibe-launcher/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/vibec-studios/vibe-launcher/actions/workflows/ci.yml)
+![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0b0b0e?style=flat-square)
 
-## Features
+### [⬇ Download für Windows](https://github.com/vibec-studios/vibe-launcher/releases/latest/download/Vibe-Launcher-Setup.exe)
 
-- **Instanzen** mit Vanilla, Fabric, Quilt, Forge und NeoForge – eigene Ordner, RAM, Java, JVM-Argumente
-- **Inhalte entdecken & installieren**: Mods, Resource-/Shader-Packs, Datapacks und Modpacks von Modrinth und CurseForge,
-  Updates prüfen, Mods (de)aktivieren
-- **Import/Export**: `.mrpack`, CurseForge-Zip, Ordner anderer Launcher; Export als Modrinth- oder CurseForge-Pack
-- **Accounts**: Microsoft-Login (Device-Code – kein eingebettetes Browserfenster), mehrere Konten, automatische
-  Token-Erneuerung; Tokens liegen verschlüsselt in der Windows-Anmeldeinformationsverwaltung, nie in Klartextdateien
-- **Java automatisch**: passende Java-Runtime wird bei Bedarf heruntergeladen
-- **Logs**: Live-Konsole, Crash-Reports, Upload zu mclo.gs
-- **Automatische Updates** über signierte GitHub-Releases
+<sub>Kostenlos · Installation ohne Admin-Rechte · aktualisiert sich selbst</sub>
 
-## Download & Installation
+</div>
 
-1. Neueste Version unter [Releases](https://github.com/vibec-studios/vibe-launcher/releases/latest) öffnen.
-2. `…_x64-setup.exe` herunterladen und ausführen (Installation für den aktuellen Benutzer, keine Admin-Rechte nötig).
-3. Updates installiert der Launcher danach selbst.
+<br>
 
-Voraussetzung: Windows 10/11 (64 Bit). WebView2 wird bei Bedarf automatisch nachinstalliert.
+<img src="docs/images/home.png" alt="Startseite mit Hotbar">
 
-Daten liegen unter `%APPDATA%\VibeLauncher` (Instanzen, Einstellungen, `accounts.json` ohne Tokens).
+<table>
+<tr>
+<td width="50%"><img src="docs/images/instance.png" alt="Instanz mit Mods"></td>
+<td width="50%"><img src="docs/images/discover.png" alt="Mods entdecken"></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/images/skins.png" alt="Skins und Capes"></td>
+<td width="50%"><img src="docs/images/project.png" alt="Projektseite"></td>
+</tr>
+</table>
+
+## Was er kann
+
+| | |
+|---|---|
+| 🎮 **Instanzen** | Vanilla, Fabric, Quilt, Forge und NeoForge – je Instanz eigener Ordner, RAM, Java und JVM-Argumente. Java lädt der Launcher selbst. |
+| 🧭 **Entdecken** | Mods, Modpacks, Resource- und Shaderpacks von **Modrinth**, **CurseForge** und eigenen **Stores** (Vibe Craft Studios ist schon drin) – inklusive Abhängigkeiten. |
+| 🔄 **Mod-Updates** | Updates prüfen und mit einem Klick einspielen – oder automatisch vor jedem Start. Einzelne Mods lassen sich fixieren. |
+| 📦 **Import & Export** | `.mrpack`, CurseForge-ZIP, eigenes `.vlpack`, Prism/MultiMC – und **direkt aus anderen Launchern** (Modrinth App, Prism, CurseForge App, ATLauncher). |
+| 🟫 **Hotbar & Direkt in die Welt** | Die Startseite ist eine Minecraft-Hotbar (Tasten 1–9). Ein Klick auf eine Welt startet das Spiel direkt darin. |
+| 👕 **Skins & Capes** | 3D-Vorschau, eigene Skin-Bibliothek, Skins per Datei oder Spielername, Capes umschalten. |
+| 🖼️ **Screenshots** | Alle Screenshots aller Instanzen an einem Ort – mit Großansicht, Kopieren und Löschen. |
+| 📜 **Logs** | Live-Konsole mit Filtern und Suche, Crash-Erkennung, Upload zu **mclo.gs** mit einem Klick. |
+| 🔐 **Accounts** | Microsoft-Login, mehrere Konten; Tokens liegen im Windows-Tresor, nie im Klartext. |
+| ⬆️ **Updates** | Der Launcher aktualisiert sich selbst – Kanal **Release** (stabil) oder **Dev** (jeder neue Commit). |
+
+## Installation
+
+1. **[Vibe-Launcher-Setup.exe](https://github.com/vibec-studios/vibe-launcher/releases/latest/download/Vibe-Launcher-Setup.exe)** herunterladen und starten.
+2. Windows warnt eventuell („Der Computer wurde durch Windows geschützt“), weil der Installer (noch) kein gekauftes
+   Code-Signing-Zertifikat hat → **Weitere Informationen → Trotzdem ausführen**.
+3. Unten links mit dem Microsoft-Konto anmelden, mit dem Minecraft: Java Edition gekauft wurde – fertig.
+
+Voraussetzung: Windows 10/11 (64 Bit). Daten liegen unter `%APPDATA%\VibeLauncher`.
+
+---
 
 ## Entwicklung
 
@@ -34,7 +66,7 @@ Visual Studio Build Tools („Desktopentwicklung mit C++“).
 
 ```bash
 pnpm install
-pnpm tauri dev                   # App mit Hot-Reload
+node scripts/dev-live.mjs        # App mit Live-Reload (lädt dist/ direkt von der Platte)
 pnpm typecheck && pnpm build     # Frontend prüfen/bauen
 cd src-tauri && cargo test       # Backend-Tests
 ```
@@ -102,7 +134,7 @@ Modrinth & CurseForge browsing, modpack import/export, Microsoft accounts (devic
 mclo.gs and signed auto-updates. Download the `…_x64-setup.exe` from the
 [latest release](https://github.com/vibec-studios/vibe-launcher/releases/latest).
 
-**Development:** `pnpm install`, `pnpm tauri dev`, `cd src-tauri && cargo test`. Set `VIBE_LAUNCHER_HOME` to use a
+**Development:** `pnpm install`, `node scripts/dev-live.mjs` (live reload), `cd src-tauri && cargo test`. Set `VIBE_LAUNCHER_HOME` to use a
 separate data folder (test mode, no single-instance lock, separate keyring namespace).
 
 **Configuration (build time):** `CURSEFORGE_API_KEY` (from console.curseforge.com) and `VIBE_MSA_CLIENT_ID`
