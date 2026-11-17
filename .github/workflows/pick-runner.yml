@@ -1,14 +1,21 @@
 name: Runner wählen
 
-# Wiederverwendbar: liefert den Windows-Runner für Builds.
+# Wiederverwendbar: liefert die Runner für Builds (Windows, Linux, macOS).
 # Blacksmith nur solange das Freikontingent reicht, sonst kostenloser GitHub-Runner (siehe scripts/pick-runner.mjs).
-# Fest überschreiben: Repo-Variable WINDOWS_RUNNER (z. B. "windows-latest").
+# macOS läuft immer auf dem kostenlosen GitHub-Runner.
+# Fest überschreiben: Repo-Variablen WINDOWS_RUNNER, LINUX_RUNNER, MACOS_RUNNER (z. B. "windows-latest").
 on:
   workflow_call:
     outputs:
       runner:
-        description: Runner-Label
+        description: Windows-Runner-Label
         value: ${{ jobs.pick.outputs.runner }}
+      linux:
+        description: Linux-Runner-Label
+        value: ${{ jobs.pick.outputs.linux }}
+      macos:
+        description: macOS-Runner-Label
+        value: ${{ jobs.pick.outputs.macos }}
 
 permissions:
   actions: read
@@ -22,6 +29,8 @@ jobs:
     timeout-minutes: 5
     outputs:
       runner: ${{ steps.pick.outputs.runner }}
+      linux: ${{ steps.pick.outputs.linux }}
+      macos: ${{ steps.pick.outputs.macos }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,4 +39,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FORCE_RUNNER: ${{ vars.WINDOWS_RUNNER }}
-        run: node scripts/pick-runner.mjs
+          FORCE_LINUX_RUNNER: ${{ vars.LINUX_RUNNER }}
+          FORCE_MACOS_RUNNER: ${{ vars.MACOS_RUNNER }}
+        run: node scripts/pick-runner.mjs all

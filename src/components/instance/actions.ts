@@ -78,9 +78,9 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
     nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: tab ?? "content" } });
 
   /** `world`: per Quick Play direkt in diese Welt (Ordnername unter saves/) */
-  const launch = async (i: Instance, world?: string | null) => {
+  const launch = async (i: Instance, world?: string | null, server?: string | null) => {
     try {
-      await api.instanceLaunch(i.id, null, world ?? null);
+      await api.instanceLaunch(i.id, null, world ?? null, server ?? null);
       const s = queryClient.getQueryData<Settings>(qk.settings);
       if (s?.open_log_on_launch) open(i, "logs");
     } catch (e) {
@@ -128,4 +128,14 @@ export function supportsQuickPlay(mc: string): boolean {
   if (m) return Number(m[1]) > 23 || (Number(m[1]) === 23 && Number(m[2]) >= 14);
   m = /^(\d+)\./.exec(mc);
   return !!m && Number(m[1]) >= 2;
+}
+
+/** Desktop-/Startmenü-Verknüpfung, die die Instanz direkt startet. */
+export async function createShortcut(i: Instance, location: "desktop" | "start_menu") {
+  try {
+    const path = await api.shortcutCreate(i.id, location);
+    toast.success(t("inst.shortcut.created"), path);
+  } catch (e) {
+    toast.error(e, t("inst.shortcut.failed"));
+  }
 }

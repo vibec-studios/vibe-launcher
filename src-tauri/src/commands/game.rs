@@ -42,7 +42,13 @@ pub async fn instance_install(state: State<'_, AppState>, id: String, force: Opt
 
 /// Instanz starten (installiert bei Bedarf). Gibt Task-ID der Vorbereitung zurück.
 #[tauri::command]
-pub async fn instance_launch(state: State<'_, AppState>, id: String, account_id: Option<String>, world: Option<String>) -> AppResult<String> {
+pub async fn instance_launch(
+    state: State<'_, AppState>,
+    id: String,
+    account_id: Option<String>,
+    world: Option<String>,
+    server: Option<String>,
+) -> AppResult<String> {
     let inst = state.instances.get(&id)?;
     // Quick Play: nur ein Ordnername unter saves/, nichts anderes
     let world = world.filter(|w| !w.trim().is_empty());
@@ -51,16 +57,22 @@ pub async fn instance_launch(state: State<'_, AppState>, id: String, account_id:
             return Err(AppError::Invalid("Ungültiger Weltname".into()));
         }
     }
+    // Direkt auf einen Server: Adresse streng prüfen
+    let server = server.filter(|s| !s.trim().is_empty());
+    if let Some(s) = &server {
+        crate::platform::servers::parse_address(s)?;
+    }
     // Ohne Account gar nicht erst installieren/laden – sofort verständlich melden.
     let dev_offline = cfg!(debug_assertions) && std::env::var_os("VIBE_DEV_OFFLINE_ACCOUNT").is_some();
     if state.auth.list().is_empty() && !dev_offline {
         return Err(AppError::NotConfigured("Kein Account – bitte unter Accounts mit Microsoft anmelden".into()));
     }
     state.game.begin(&id)?;
+    crate::platform::on_launch(&state, &id, world.clone(), server.clone());
     let st = state.inner().clone();
     let iid = id.clone();
     let task_id = state.tasks.spawn("launch", format!("{} wird gestartet", inst.name), Some(id.clone()), move |task| async move {
-        let r = minecraft::launch::launch(&st, &iid, account_id, world, &task).await;
+        let r = minecraft::launch::launch(&st, &iid, account_id, world, server, &task).await;
         if let Err(e) = &r {
             st.game.fail(&iid, e);
         }

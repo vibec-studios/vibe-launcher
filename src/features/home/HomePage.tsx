@@ -3,11 +3,12 @@
 // „Direkt in die Welt“ (Quick Play), darunter die neuesten Screenshots.
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, FolderOpen, Globe2, HardDriveDownload, PackageOpen, Play, Plus, RefreshCw } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEvent } from "@/lib/events";
+import { ChevronRight, FolderOpen, Globe2, HardDriveDownload, PackageOpen, Play, Plus, RefreshCw, Server } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useAccounts, useGameStore, useInstances, useTaskStore } from "@/lib/queries";
-import type { Instance, World } from "@/lib/types";
+import type { Instance, RecentServer, World } from "@/lib/types";
 import { formatDuration, formatRelative, imageSrc, instanceAccent, loaderNames } from "@/lib/format";
 import { Button, ContextMenu, Skeleton, Tooltip, cn } from "@/components/ui";
 import { Logo3D } from "@/components/Logo3D";
@@ -21,6 +22,8 @@ import { useRunPhase } from "@/components/instance/status";
 import { openImport } from "@/features/import/ImportDialog";
 import { ShotThumb, openShot, useScreenshots } from "@/features/screenshots/shots";
 import { useT } from "@/i18n";
+import { PingBars, usePing } from "@/components/instance/motd";
+import { useWeekPlaytime } from "@/features/stats/StatsPage";
 
 const SLOTS = 9;
 // Hotbar-Optik wie im Spiel: dunkle, eingelassene Slots, ausgewählter Slot mit hellem Rahmen
@@ -318,6 +321,65 @@ function SelectedPanel({ instance: i }: { instance: Instance }) {
 
 // ------------------------------------------------------------------ Screenshots
 
+function RecentServerCard({ s, instance }: { s: RecentServer; instance: Instance }) {
+  const t = useT();
+  const { launch } = useInstanceActions();
+  const { phase } = useRunPhase(instance.id);
+  const ping = usePing(s.address);
+  const st = ping.data;
+  return (
+    <div className="flex min-w-0 items-center gap-3 border border-line bg-surface p-2.5">
+      <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden border border-line bg-surface2">
+        {st?.favicon ? <img src={st.favicon} alt="" className="h-full w-full [image-rendering:pixelated]" /> : <Server size={18} className="text-dim" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate font-mono text-[13px] font-semibold text-white">{s.address}</span>
+          <PingBars status={st} />
+        </div>
+        <div className="truncate text-[12px] text-muted">
+          {st?.online && st.players_online != null
+            ? `${st.players_online}/${st.players_max} ${t("servers.players")} · `
+            : st && !st.online
+              ? `${t("servers.offline")} · `
+              : ""}
+          {instance.name} · {formatRelative(s.last_played)}
+        </div>
+      </div>
+      <Tooltip content={t("servers.join_with", { name: instance.name })}>
+        <Button
+          size="sm"
+          variant="accent"
+          disabled={phase !== "idle"}
+          icon={<Play size={13} fill="currentColor" />}
+          onClick={() => launch(instance, null, s.address)}
+          style={accentVars(instanceAccent(instance.id, instance.accent))}
+        >
+          {t("servers.join")}
+        </Button>
+      </Tooltip>
+    </div>
+  );
+}
+
+function RecentServers() {
+  const t = useT();
+  const { data: instances = [] } = useInstances();
+  const q = useQuery({ queryKey: ["servers-recent"], queryFn: () => api.serversRecent(4), staleTime: 30_000 });
+  const rows = (q.data ?? []).map((s) => ({ s, i: instances.find((x) => x.id === s.instance_id) })).filter((r) => r.i);
+  if (!rows.length) return null;
+  return (
+    <section>
+      <SectionHead title={t("home.recent_servers")} />
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-2">
+        {rows.map(({ s, i }) => (
+          <RecentServerCard key={s.address} s={s} instance={i!} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function RecentShots() {
   const t = useT();
   const nav = useNavigate();
@@ -399,6 +461,15 @@ export function HomePage() {
   );
   const selected = hotbar.find((i) => i.id === selectedId) ?? hotbar[0];
   const totalTime = list.reduce((n, i) => n + i.play_time_secs, 0);
+  const week = useWeekPlaytime();
+  // Nach dem Spielen: Wochenzeit und zuletzt gespielte Server neu laden
+  const qc = useQueryClient();
+  useEvent("game://state", (s) => {
+    if (s.state === "stopped") {
+      qc.invalidateQueries({ queryKey: ["playtime"] });
+      qc.invalidateQueries({ queryKey: ["servers-recent"] });
+    }
+  });
 
   const select = useCallback((i: Instance) => {
     setSelectedId(i.id);
@@ -442,6 +513,10 @@ export function HomePage() {
               <p className="text-[13px] text-muted">
                 {t("home.summary", { n: list.length })}
                 {totalTime >= 60 && ` · ${t("inst.meta.played", { time: formatDuration(totalTime) })}`}
+                {" · "}
+                <Link to="/stats" className="text-muted underline decoration-line2 underline-offset-2 hover:text-white">
+                  {t("home.week", { time: week.data && week.data >= 60 ? formatDuration(week.data) : "0 min" })}
+                </Link>
               </p>
             )}
           </div>
@@ -474,6 +549,7 @@ export function HomePage() {
           </>
         )}
 
+        <RecentServers />
         <RecentShots />
       </div>
     </div>

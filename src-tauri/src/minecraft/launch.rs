@@ -257,7 +257,14 @@ pub fn build(state: &AppState, inst: &Instance, prep: &Prepared, acc: &LaunchAcc
 }
 
 /// Komplettablauf von `instance_launch` (innerhalb der Aufgabe).
-pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, world: Option<String>, task: &TaskHandle) -> AppResult<()> {
+pub async fn launch(
+    state: &AppState,
+    id: &str,
+    account_id: Option<String>,
+    world: Option<String>,
+    server: Option<String>,
+    task: &TaskHandle,
+) -> AppResult<()> {
     let gm = state.game.clone();
     let inst = state.instances.get(id)?;
     gm.launcher_line(id, LogLevel::Launcher, format!("Vibe Launcher {} – {} wird vorbereitet", env!("CARGO_PKG_VERSION"), inst.name));
@@ -282,6 +289,17 @@ pub async fn launch(state: &AppState, id: &str, account_id: Option<String>, worl
         skip_onboarding(&plan.cwd);
         plan.args.extend(["--quickPlaySingleplayer".to_string(), w.clone()]);
         plan.display.push_str(&format!(" --quickPlaySingleplayer \"{w}\""));
+    } else if let Some(s) = server {
+        // Direkt auf einen Server: Quick Play ab 1.20, davor die alten Argumente --server/--port
+        skip_onboarding(&plan.cwd);
+        let args = if crate::platform::servers::supports_quick_play(&inst.mc_version) {
+            vec!["--quickPlayMultiplayer".to_string(), s.clone()]
+        } else {
+            let (host, port) = crate::platform::servers::parse_address(&s)?;
+            vec!["--server".to_string(), host, "--port".to_string(), port.to_string()]
+        };
+        plan.display.push_str(&format!(" {}", args.join(" ")));
+        plan.args.extend(args);
     }
     let j = &prep.java;
     gm.launcher_line(

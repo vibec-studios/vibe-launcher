@@ -2,7 +2,7 @@
 // Tabs (Mods, Resourcepacks, Shader, Welten, Logs, Einstellungen), Crash-Banner.
 import { useEffect, useState } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, FileText, FolderOpen, MoreHorizontal, UploadCloud, X } from "lucide-react";
+import { AlertTriangle, FileText, FolderOpen, MoreHorizontal, Stethoscope, UploadCloud, X } from "lucide-react";
 import { useGameState, useInstance } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import type { InstanceTab } from "@/app/router";
@@ -17,6 +17,8 @@ import { InstanceContentTab } from "@/features/content/InstanceContentTab";
 import { LogsTab, showLogFile, uploadCrash } from "@/features/logs/LogsTab";
 import { useT } from "@/i18n";
 import { WorldsTab } from "./WorldsTab";
+import { ServersTab } from "./ServersTab";
+import { DiagnosisCard, DiagnosisDialog, useDiagnosis } from "@/features/logs/Diagnosis";
 import { InstanceSettingsTab } from "./InstanceSettingsTab";
 import { accentVars } from "@/components/instance/accent";
 
@@ -30,6 +32,10 @@ function CrashBanner({ instance }: { instance: Instance }) {
   const key = game?.crashed && game.state === "stopped" ? `${game.started_at}:${game.exit_code}` : null;
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [details, setDetails] = useState(false);
+  const crashReport = game?.crash_report ?? null;
+  const diag = useDiagnosis(instance.id, crashReport, game?.exit_code ?? null, !!key && dismissed !== key);
+  const top = diag.data?.[0];
   if (!key || dismissed === key) return null;
   return (
     <div className="shrink-0 border-b border-danger/30 bg-danger/[.08] animate-fade-in">
@@ -42,6 +48,10 @@ function CrashBanner({ instance }: { instance: Instance }) {
             {game?.crash_report && <span className="font-mono text-dim"> · {game.crash_report.split(/[\\/]/).pop()}</span>}
           </div>
         </div>
+        <Button size="sm" icon={<Stethoscope size={13} />} onClick={() => setDetails(true)}>
+          {t("diag.open")}
+          {diag.data && diag.data.length > 0 && <span className="text-[12px] text-muted">{diag.data.length}</span>}
+        </Button>
         <Button
           size="sm"
           icon={<FileText size={13} />}
@@ -69,6 +79,12 @@ function CrashBanner({ instance }: { instance: Instance }) {
           <X size={15} />
         </IconButton>
       </div>
+      {top && (
+        <div className={cn(wrap, "border-t border-danger/20 py-3")}>
+          <DiagnosisCard d={top} inst={instance} crashReport={crashReport} compact />
+        </div>
+      )}
+      <DiagnosisDialog inst={instance} crashReport={crashReport} exitCode={game?.exit_code ?? null} open={details} onOpenChange={setDetails} />
     </div>
   );
 }
@@ -193,6 +209,7 @@ export function InstancePage() {
               { value: "resourcepacks", label: t("inst.tab.resourcepacks") },
               { value: "shaders", label: t("inst.tab.shaders") },
               { value: "worlds", label: t("inst.tab.worlds") },
+              { value: "servers", label: t("inst.tab.servers") },
               { value: "logs", label: t("inst.tab.logs") },
               { value: "settings", label: t("inst.tab.settings") },
             ]}
@@ -207,6 +224,8 @@ export function InstancePage() {
           </div>
         ) : active === "worlds" ? (
           <WorldsTab instance={inst} />
+        ) : active === "servers" ? (
+          <ServersTab instance={inst} />
         ) : active === "logs" ? (
           <LogsTab instance={inst} />
         ) : (

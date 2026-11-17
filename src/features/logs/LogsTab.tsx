@@ -7,6 +7,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { create } from "zustand";
 import {
   ArrowDown,
+  Stethoscope,
   ChevronDown,
   ChevronUp,
   ClipboardCopy,
@@ -25,6 +26,7 @@ import type { Instance, LogFile, LogLine } from "@/lib/types";
 import { formatBytes, formatRelative } from "@/lib/format";
 import { Button, ContextItem, ContextMenu, ContextSeparator, ErrorState, IconButton, SearchInput, Select, Skeleton, Tooltip, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
+import { DiagnosisDialog } from "./Diagnosis";
 import { CATS, catOf, copyText, formatLine, formatLines, levelTag, matchLogFile, parseLog, uploadToMclogs, type LevelCat } from "./logText";
 
 // ------------------------------------------------------------------ Gewählte Quelle je Instanz
@@ -348,6 +350,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
   const liveLines = useGameStore((s) => s.logs[id] ?? EMPTY);
   const requested = useLogSource((s) => s.src[id] ?? LIVE);
   const [wrap, setWrapState] = useState<boolean>(() => loadPref("vl.logs.wrap", false));
+  const [diagOpen, setDiagOpen] = useState(false);
   const [cats, setCatsState] = useState<LevelCat[]>(() => loadPref("vl.logs.cats", CATS));
   const [query, setQuery] = useState("");
   const [curSeq, setCurSeq] = useState<number | null>(null);
@@ -518,6 +521,9 @@ export function LogsTab({ instance }: { instance: Instance }) {
               </>
             )}
           </div>
+          <Button size="sm" icon={<Stethoscope size={13} />} onClick={() => setDiagOpen(true)}>
+            {t("diag.open")}
+          </Button>
           <Tooltip content={t("logs.wrap")}>
             <IconButton label={t("logs.wrap")} size="sm" active={wrap} onClick={() => setWrap(!wrap)}>
               <WrapText size={15} />
@@ -615,6 +621,13 @@ export function LogsTab({ instance }: { instance: Instance }) {
           emptyText={emptyText}
         />
       )}
+      <DiagnosisDialog
+        inst={instance}
+        crashReport={game?.crash_report ?? null}
+        exitCode={game?.state === "stopped" ? (game.exit_code ?? null) : null}
+        open={diagOpen}
+        onOpenChange={setDiagOpen}
+      />
     </div>
   );
 }

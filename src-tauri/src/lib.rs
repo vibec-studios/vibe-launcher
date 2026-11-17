@@ -10,6 +10,7 @@ pub mod instance;
 pub mod minecraft;
 pub mod net;
 pub mod paths;
+pub mod platform;
 pub mod settings;
 pub mod state;
 pub mod tasks;
@@ -42,7 +43,13 @@ pub fn run() {
     // Nur eine Launcher-Instanz – außer bei Test-Datenordnern (VIBE_LAUNCHER_HOME), damit mehrere
     // Testläufe parallel möglich sind.
     if std::env::var_os("VIBE_LAUNCHER_HOME").is_none() {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            // `--launch <id>` aus Verknüpfungen; Deep-Links kommen über das Deep-Link-Plugin
+            let acts: Vec<_> = platform::links::parse_args(argv.into_iter().skip(1))
+                .into_iter()
+                .filter(|a| matches!(a, platform::links::AppAction::Launch { .. }))
+                .collect();
+            platform::push_actions(app, acts);
             if let Some(w) = app.get_webview_window("main") {
                 let _ = w.unminimize();
                 let _ = w.show();
@@ -55,6 +62,7 @@ pub fn run() {
         builder = devlive::register(builder);
     }
     builder
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -69,6 +77,22 @@ pub fn run() {
             }
             tracing::info!("Vibe Launcher {} – Daten: {:?}", env!("CARGO_PKG_VERSION"), state.paths.root);
             app.manage(state);
+            platform::init(app.handle());
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                // Schema `vibelauncher://` beim Nutzer registrieren (Installer macht das ebenfalls);
+                // nicht in Testläufen, damit Test-Builds keine Registrierung überschreiben.
+                #[cfg(any(windows, target_os = "linux"))]
+                if !cfg!(debug_assertions) && std::env::var_os("VIBE_LAUNCHER_HOME").is_none() {
+                    if let Err(e) = app.deep_link().register_all() {
+                        tracing::warn!("Deep-Link-Registrierung fehlgeschlagen: {e}");
+                    }
+                }
+                let h = app.handle().clone();
+                app.deep_link().on_open_url(move |ev| {
+                    platform::handle_urls(&h, ev.urls().iter().map(|u| u.to_string()).collect());
+                });
+            }
             #[cfg(debug_assertions)]
             devlive::start(app.handle());
             // Fallback: Fenster spätestens nach 3 s zeigen, falls das Frontend hängt
@@ -180,6 +204,20 @@ pub fn run() {
             commands::content::store_add,
             commands::content::store_remove,
             commands::content::store_set_enabled,
+            // plattform (Frontend A)
+            commands::platform::crash_analyze,
+            commands::platform::servers_list,
+            commands::platform::servers_save,
+            commands::platform::server_ping,
+            commands::platform::servers_recent,
+            commands::platform::playtime_sessions,
+            commands::platform::optsync_get,
+            commands::platform::optsync_set_instance,
+            commands::platform::optsync_capture,
+            commands::platform::optsync_apply_all,
+            commands::platform::shortcut_create,
+            commands::platform::app_actions_take,
+            commands::platform::discord_available,
         ])
         .run(tauri::generate_context!())
         .expect("Fehler beim Starten des Launchers");

@@ -20,6 +20,8 @@ import {
   RefreshCw,
   Store,
   Sparkles,
+  Cloud,
+  RefreshCcw,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useSettings, useSystemInfo, useTask, waitForTask } from "@/lib/queries";
@@ -46,17 +48,21 @@ import { JavaPathField, MemoryField, SaveIndicator, useAutoSave, useJavaList } f
 import { Logo3D } from "@/components/Logo3D";
 import { checkForUpdate } from "@/app/UpdateNotice";
 import { StoresCard } from "./StoresCard";
+import { VibeCard } from "./VibeCard";
+import { MasterOptSync } from "@/components/instance/OptSync";
 import { useLang, useT } from "@/i18n";
 
-type SectionId = "general" | "game" | "content" | "java" | "downloads" | "integrations" | "stores" | "appearance" | "launcher";
+type SectionId = "general" | "game" | "sync" | "content" | "java" | "downloads" | "integrations" | "stores" | "vibe" | "appearance" | "launcher";
 const SECTIONS: { id: SectionId; icon: ReactNode }[] = [
   { id: "general", icon: <Languages size={15} /> },
   { id: "game", icon: <Gamepad2 size={15} /> },
+  { id: "sync", icon: <RefreshCcw size={15} /> },
   { id: "content", icon: <PackageCheck size={15} /> },
   { id: "java", icon: <Coffee size={15} /> },
   { id: "downloads", icon: <Download size={15} /> },
   { id: "integrations", icon: <Plug size={15} /> },
   { id: "stores", icon: <Store size={15} /> },
+  { id: "vibe", icon: <Cloud size={15} /> },
   { id: "appearance", icon: <Sparkles size={15} /> },
   { id: "launcher", icon: <Info size={15} /> },
 ];
@@ -330,6 +336,10 @@ export function SettingsPage() {
               </SettingRow>
             </SettingsCard>
 
+            <SettingsCard id="set-sync" title={t("settings.section.sync")}>
+              <MasterOptSync />
+            </SettingsCard>
+
             <SettingsCard id="set-content" title={t("settings.section.content")}>
               <SettingRow title={t("settings.auto_update")} description={t("settings.auto_update.desc")}>
                 <Switch checked={s.auto_update_content} onChange={(v) => update({ auto_update_content: v })} label={t("settings.auto_update")} />
@@ -460,6 +470,8 @@ export function SettingsPage() {
 
             <StoresCard id="set-stores" />
 
+            <VibeCard id="set-vibe" settings={s} update={update} />
+
             <SettingsCard id="set-appearance" title={t("settings.section.appearance")}>
               <SettingRow title={t("settings.reduce_motion")} description={t("settings.reduce_motion.desc")}>
                 <Switch
@@ -496,7 +508,10 @@ export function SettingsPage() {
                   </a>
                 </div>
               </div>
-              <SettingRow title={t("settings.channel")} description={s.update_channel === "dev" ? t("settings.channel.dev.desc") : t("settings.channel.release.desc")}>
+              <SettingRow
+                title={t("settings.channel")}
+                description={s.update_channel === "dev" ? t("settings.channel.dev.desc") : t("settings.channel.release.desc")}
+              >
                 <Segmented
                   value={s.update_channel}
                   onChange={(update_channel) => update({ update_channel })}

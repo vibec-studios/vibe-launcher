@@ -17,6 +17,9 @@ import {
   ExternalLink,
   RotateCcw,
   Plus,
+  Link as LinkIcon,
+  Monitor,
+  LayoutList,
 } from "lucide-react";
 import {
   ContextItem,
@@ -35,6 +38,7 @@ import type { Instance } from "@/lib/types";
 import { useT } from "@/i18n";
 import {
   FOLDERS,
+  createShortcut,
   killInstance,
   openExport,
   openFolder,
@@ -106,6 +110,14 @@ function MenuBody({ instance: i, kit, onPage, onDeleted }: { instance: Instance;
       <Item icon={<Upload size={14} />} onSelect={() => openExport(i)}>
         {t("inst.export")}
       </Item>
+      <Sub icon={<LinkIcon size={14} />} label={t("inst.shortcut")}>
+        <Item icon={<Monitor size={14} />} onSelect={() => createShortcut(i, "desktop")}>
+          {t("inst.shortcut.desktop")}
+        </Item>
+        <Item icon={<LayoutList size={14} />} onSelect={() => createShortcut(i, "start_menu")}>
+          {t("inst.shortcut.start_menu")}
+        </Item>
+      </Sub>
       <Sep />
       <Sub icon={<ImageIcon size={14} />} label={t("inst.icon")}>
         <Item icon={<ImageIcon size={14} />} onSelect={() => setIcon(i)}>

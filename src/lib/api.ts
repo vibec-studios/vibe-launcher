@@ -79,8 +79,9 @@ export const api = {
   loaderVersions: (loader: T.LoaderKind, mcVersion: string) => call<T.LoaderVersion[]>("loader_versions", { loader, mcVersion }),
   instanceInstall: (id: string, force = false) => call<string>("instance_install", { id, force }),
   /** `world`: Ordnername unter saves/ – startet per Quick Play direkt in diese Welt (ab Minecraft 1.20). */
-  instanceLaunch: (id: string, accountId?: string | null, world?: string | null) =>
-    call<string>("instance_launch", { id, accountId: accountId ?? null, world: world ?? null }),
+  /** `server`: Adresse (host[:port]) – direkt auf diesen Server (Quick Play ab 1.20, sonst --server/--port). */
+  instanceLaunch: (id: string, accountId?: string | null, world?: string | null, server?: string | null) =>
+    call<string>("instance_launch", { id, accountId: accountId ?? null, world: world ?? null, server: server ?? null }),
   instanceKill: (id: string) => call<void>("instance_kill", { id }),
   gameStates: () => call<T.GameState[]>("game_states"),
   instanceLogSession: (id: string) => call<T.LogLine[]>("instance_log_session", { id }),
@@ -138,4 +139,21 @@ export const api = {
   screenshotDelete: (path: string) => call<void>("screenshot_delete", { path }),
   screenshotCopy: (path: string) => call<void>("screenshot_copy", { path }),
   screenshotOpenFolder: (path: string) => call<void>("screenshot_open_folder", { path }),
+
+  // ---------------------------------------------------------------- Plattform (Crash-Analyse, Server, Statistik …)
+  crashAnalyze: (instanceId: string, crashReport?: string | null, exitCode?: number | null) =>
+    call<T.Diagnosis[]>("crash_analyze", { instanceId, crashReport: crashReport ?? null, exitCode: exitCode ?? null }),
+  serversList: (instanceId: string) => call<T.ServerEntry[]>("servers_list", { instanceId }),
+  serversSave: (instanceId: string, servers: T.ServerEntry[]) => call<void>("servers_save", { instanceId, servers }),
+  serverPing: (address: string) => call<T.ServerStatus>("server_ping", { address }),
+  serversRecent: (limit?: number) => call<T.RecentServer[]>("servers_recent", { limit: limit ?? null }),
+  playtimeSessions: (since?: number | null) => call<T.PlaySession[]>("playtime_sessions", { since: since ?? null }),
+  optsyncGet: () => call<T.OptSyncInfo>("optsync_get"),
+  optsyncSetInstance: (instanceId: string, enabled: boolean, categories: T.OptSyncCategory[]) =>
+    call<T.OptSyncInfo>("optsync_set_instance", { instanceId, enabled, categories }),
+  optsyncCapture: (instanceId: string, categories: T.OptSyncCategory[]) => call<T.OptSyncInfo>("optsync_capture", { instanceId, categories }),
+  optsyncApplyAll: () => call<number>("optsync_apply_all"),
+  shortcutCreate: (instanceId: string, location: "desktop" | "start_menu") => call<string>("shortcut_create", { instanceId, location }),
+  appActionsTake: () => call<T.AppAction[]>("app_actions_take"),
+  discordAvailable: () => call<boolean>("discord_available"),
 };

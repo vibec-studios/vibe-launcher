@@ -146,6 +146,7 @@ function usePageTitle(): ReactNode {
     );
   if (path === "/accounts") return t("nav.accounts");
   if (path === "/settings") return t("nav.settings");
+  if (path === "/stats") return t("stats.title");
   if (path === "/skins") return t("nav.skins");
   if (path === "/screenshots") return t("nav.screenshots");
   return null;

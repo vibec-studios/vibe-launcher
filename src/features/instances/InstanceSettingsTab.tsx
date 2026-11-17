@@ -15,6 +15,8 @@ import { repairInstance, resetIcon, setIcon, useInstanceActions, installInstance
 import { useRunPhase } from "@/components/instance/status";
 import { useInstances } from "@/lib/queries";
 import { useT } from "@/i18n";
+import { InstanceOptSync } from "@/components/instance/OptSync";
+import { createShortcut } from "@/components/instance/actions";
 import { AccentPicker, GroupInput } from "./NewInstanceDialog";
 
 const apply = (base: Instance, p: InstancePatch): Instance => ({ ...base, ...p }) as Instance;
@@ -235,6 +237,21 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
                 </SettingRow>
               </SettingsCard>
               <VersionCard instance={instance} />
+              <SettingsCard title={t("optsync.card")}>
+                <InstanceOptSync instance={instance} />
+              </SettingsCard>
+              <SettingsCard title={t("inst.shortcut")}>
+                <SettingRow title={t("inst.shortcut")} description={t("inst.shortcut.desc")}>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => createShortcut(instance, "desktop")}>
+                      {t("inst.shortcut.desktop")}
+                    </Button>
+                    <Button size="sm" onClick={() => createShortcut(instance, "start_menu")}>
+                      {t("inst.shortcut.start_menu")}
+                    </Button>
+                  </div>
+                </SettingRow>
+              </SettingsCard>
             </div>
 
             <div className="flex flex-col gap-5">

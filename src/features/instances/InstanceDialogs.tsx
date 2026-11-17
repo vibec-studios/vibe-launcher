@@ -7,6 +7,7 @@ import { Button, Dialog } from "@/components/ui";
 import { ExportDialog } from "@/features/export/ExportDialog";
 import { useT } from "@/i18n";
 import { GroupInput, NewInstanceDialog } from "./NewInstanceDialog";
+import { ActionHost } from "@/components/instance/ActionHost";
 
 function GroupDialog() {
   const t = useT();
@@ -57,6 +58,7 @@ export function InstanceDialogs() {
     <>
       <NewInstanceDialog open={newOpen} onOpenChange={(o) => useInstanceDialogs.setState({ newOpen: o })} />
       <GroupDialog />
+      <ActionHost />
       {exportFor && <ExportDialog instance={exportFor} open onOpenChange={(o) => !o && useInstanceDialogs.setState({ exportFor: null })} />}
     </>
   );

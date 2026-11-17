@@ -532,3 +532,85 @@ export interface VibeServices {
   hosting: boolean;
   sharing: boolean;
 }
+
+// ------------------------------------------------------------------ Plattform
+
+export type DiagnosisAction =
+  | { kind: "disable_mod"; file: string }
+  | { kind: "install_dependency"; mod_id: string; name: string | null }
+  | { kind: "set_java"; major: number }
+  | { kind: "increase_ram"; suggest_mb: number }
+  | { kind: "update_drivers" }
+  | { kind: "upload" };
+
+export interface Diagnosis {
+  /** missing_dependency | wrong_minecraft | mixin | java_version | out_of_memory | heap_reserve | duplicate_mod |
+   *  graphics | suspected_mod | exit_code */
+  id: string;
+  confidence: number;
+  culprit: { mod_id: string | null; name: string | null; file: string | null } | null;
+  params: Record<string, string>;
+  actions: DiagnosisAction[];
+  evidence: string | null;
+}
+
+export interface ServerEntry {
+  name: string;
+  /** host[:port] */
+  ip: string;
+  /** Base64-PNG (ohne data:-Präfix) */
+  icon: string | null;
+  accept_textures: boolean | null;
+  hidden: boolean;
+}
+
+export interface ServerStatus {
+  online: boolean;
+  /** MOTD mit §-Farbcodes (§#rrggbb für Hex-Farben) */
+  motd: string;
+  players_online: number | null;
+  players_max: number | null;
+  players_sample: string[];
+  version: string | null;
+  protocol: number | null;
+  /** data:image/png;base64,… */
+  favicon: string | null;
+  latency_ms: number | null;
+  error: string | null;
+}
+
+export interface RecentServer {
+  address: string;
+  instance_id: string;
+  last_played: number;
+  play_time_secs: number;
+}
+
+export interface PlaySession {
+  instance_id: string;
+  start: number;
+  end: number;
+  world?: string | null;
+  server?: string | null;
+}
+
+export type OptSyncCategory = "controls" | "sound" | "video" | "language" | "accessibility";
+
+export interface OptSyncInfo {
+  config: {
+    master: Record<string, string>;
+    source: string | null;
+    updated_at: number | null;
+    instances: Record<string, { enabled: boolean; categories: OptSyncCategory[] }>;
+  };
+  categories: OptSyncCategory[];
+  counts: Partial<Record<OptSyncCategory, number>>;
+}
+
+/** Aktion von außen (Kommandozeile `--launch`, Deep-Link `vibelauncher://…`) – Frontend fragt immer nach. */
+export type AppAction =
+  | { kind: "install"; source: string; project_id: string; version: string | null }
+  | { kind: "pack"; code: string }
+  | { kind: "launch"; instance_id: string }
+  | { kind: "join"; address: string; instance_id: string | null }
+  | { kind: "invite"; id: string };

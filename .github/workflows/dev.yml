@@ -1,14 +1,20 @@
 name: Dev-Build
 
-# Jeder Commit auf main -> neuer Dev-Build im Vorab-Release "dev".
+# Jeder Commit auf main -> neuer Dev-Build (Windows, Linux, macOS) im Vorab-Release "dev".
 # Launcher im Update-Kanal "Dev" laden ihn über
 #   https://github.com/<repo>/releases/download/dev/latest.json
 # Version: <nächster Patch>-dev.<Laufnummer>, z. B. 1.0.1-dev.42 (immer neuer als der vorige Dev-Build).
+# Manuell (auch auf anderen Branches) startbar; veröffentlicht dann nur mit publish=true.
 on:
   push:
     branches: [main]
     paths-ignore: ["**.md", "docs/**", ".github/workflows/ci.yml", ".github/workflows/release.yml"]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Ergebnis als Vorab-Release "dev" veröffentlichen
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -16,55 +22,106 @@ permissions:
 
 # Neuerer Commit bricht einen laufenden Dev-Build ab – nur der neueste zählt
 concurrency:
-  group: dev-build
+  group: dev-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   runner:
     uses: ./.github/workflows/pick-runner.yml
 
-  dev:
+  build:
     needs: runner
-    name: Windows Dev-Build
-    runs-on: ${{ needs.runner.outputs.runner }}
+    name: Dev-Build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            bundles: nsis
+            args: ""
+            targets: ""
+          - platform: linux
+            bundles: appimage,deb
+            args: ""
+            targets: ""
+          - platform: macos
+            bundles: app,dmg
+            args: --target universal-apple-darwin
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+    runs-on: ${{ matrix.platform == 'windows' && needs.runner.outputs.runner || (matrix.platform == 'linux' && needs.runner.outputs.linux || needs.runner.outputs.macos) }}
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/setup
         with:
-          cache-key: dev
+          cache-key: dev-${{ matrix.platform }}
+          rust-targets: ${{ matrix.targets }}
 
       - name: Version setzen
         id: ver
         shell: bash
         run: node scripts/set-version.mjs dev ${{ github.run_number }}
 
-      - name: Build (NSIS, signiert)
+      - name: Build (${{ matrix.bundles }}, signiert)
         shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           VIBE_MSA_CLIENT_ID: ${{ secrets.VIBE_MSA_CLIENT_ID }}
+          VIBE_DISCORD_CLIENT_ID: ${{ vars.VIBE_DISCORD_CLIENT_ID }}
           # Dev-Builds suchen standardmäßig im Dev-Kanal nach Updates
           VIBE_UPDATE_CHANNEL: dev
           # Schneller bauen als Releases: Thin-LTO + parallele Codegen-Units statt Fat-LTO auf einem Kern
           CARGO_PROFILE_RELEASE_LTO: thin
           CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
-        run: pnpm tauri build --bundles nsis
+        run: pnpm tauri build --bundles ${{ matrix.bundles }} ${{ matrix.args }}
 
-      - name: Release-Dateien + latest.json
-        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.platform }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            src-tauri/target/**/release/bundle/nsis/*-setup.exe*
+            src-tauri/target/**/release/bundle/appimage/*.AppImage*
+            src-tauri/target/**/release/bundle/deb/*.deb
+            src-tauri/target/**/release/bundle/dmg/*.dmg
+            src-tauri/target/**/release/bundle/macos/*.app.tar.gz*
+
+  publish:
+    needs: build
+    if: github.event_name == 'push' || inputs.publish
+    name: Vorab-Release "dev"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Version setzen
+        id: ver
+        run: node scripts/set-version.mjs dev ${{ github.run_number }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bundle-*
+          path: artifacts
+
+      - name: Release-Dateien + latest.json (alle Plattformen)
         env:
           MSG: ${{ github.event.head_commit.message }}
         run: |
           first_line="$(printf '%s' "$MSG" | head -n1)"
-          node scripts/prepare-release.mjs --tag dev --version "${{ steps.ver.outputs.version }}" \
+          node scripts/prepare-release.mjs --tag dev --version "${{ steps.ver.outputs.version }}" --from artifacts \
+            --require windows,linux,macos \
             --notes "Dev-Build ${{ steps.ver.outputs.version }} (${GITHUB_SHA::7}): ${first_line}"
 
       - name: Vorab-Release "dev" ersetzen
-        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MSG: ${{ github.event.head_commit.message }}

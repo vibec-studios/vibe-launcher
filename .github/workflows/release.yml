@@ -3,7 +3,8 @@ name: Release
 # Neues Release (Kanal "Release"):
 #   1. Version in package.json + src-tauri/Cargo.toml erhöhen (node scripts/set-version.mjs X.Y.Z), committen
 #   2. Tag vX.Y.Z pushen
-# Ergebnis: veröffentlichtes GitHub-Release mit Installer, .sig und latest.json.
+# Ergebnis: veröffentlichtes GitHub-Release mit Installern für Windows (NSIS), Linux (AppImage, .deb) und
+# macOS (dmg, universal), .sig-Dateien und einer gemeinsamen latest.json für den Updater.
 # Launcher im Kanal "Release" laden es über .../releases/latest/download/latest.json
 on:
   push:
@@ -18,14 +19,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  runner:
-    uses: ./.github/workflows/pick-runner.yml
-
-  release:
-    needs: runner
-    name: Windows-Release
-    runs-on: ${{ needs.runner.outputs.runner }}
-    timeout-minutes: 90
+  check:
+    name: Tag & Secrets prüfen
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,35 +48,95 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           VIBE_MSA_CLIENT_ID: ${{ secrets.VIBE_MSA_CLIENT_ID }}
+          VIBE_DISCORD_CLIENT_ID: ${{ vars.VIBE_DISCORD_CLIENT_ID }}
         run: |
           [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] || { echo "::error::Secret TAURI_SIGNING_PRIVATE_KEY fehlt"; exit 1; }
           [ -n "$CURSEFORGE_API_KEY" ] || echo "::warning::CURSEFORGE_API_KEY fehlt – CurseForge ist im Build deaktiviert"
           [ -n "$VIBE_MSA_CLIENT_ID" ] || echo "::warning::VIBE_MSA_CLIENT_ID fehlt – Microsoft-Login ist im Build deaktiviert"
+          [ -n "$VIBE_DISCORD_CLIENT_ID" ] || echo "::warning::Repo-Variable VIBE_DISCORD_CLIENT_ID fehlt – Discord-Status ist im Build deaktiviert"
+
+  runner:
+    uses: ./.github/workflows/pick-runner.yml
+
+  build:
+    needs: [check, runner]
+    name: Release ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            bundles: nsis
+            args: ""
+            targets: ""
+          - platform: linux
+            bundles: appimage,deb
+            args: ""
+            targets: ""
+          - platform: macos
+            bundles: app,dmg
+            args: --target universal-apple-darwin
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+    runs-on: ${{ matrix.platform == 'windows' && needs.runner.outputs.runner || (matrix.platform == 'linux' && needs.runner.outputs.linux || needs.runner.outputs.macos) }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/setup
         with:
-          cache-key: release
+          cache-key: release-${{ matrix.platform }}
+          rust-targets: ${{ matrix.targets }}
 
-      - name: Build (NSIS, signiert)
+      - name: Build (${{ matrix.bundles }}, signiert)
         shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           VIBE_MSA_CLIENT_ID: ${{ secrets.VIBE_MSA_CLIENT_ID }}
+          VIBE_DISCORD_CLIENT_ID: ${{ vars.VIBE_DISCORD_CLIENT_ID }}
           VIBE_UPDATE_CHANNEL: release
-        run: pnpm tauri build --bundles nsis
+        run: pnpm tauri build --bundles ${{ matrix.bundles }} ${{ matrix.args }}
 
-      - name: Release-Dateien + latest.json
-        shell: bash
-        run: node scripts/prepare-release.mjs --tag "$GITHUB_REF_NAME" --version "${{ steps.ver.outputs.version }}" --notes "Vibe Launcher ${{ steps.ver.outputs.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.platform }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            src-tauri/target/**/release/bundle/nsis/*-setup.exe*
+            src-tauri/target/**/release/bundle/appimage/*.AppImage*
+            src-tauri/target/**/release/bundle/deb/*.deb
+            src-tauri/target/**/release/bundle/dmg/*.dmg
+            src-tauri/target/**/release/bundle/macos/*.app.tar.gz*
+
+  publish:
+    needs: [check, build]
+    name: GitHub-Release veröffentlichen
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bundle-*
+          path: artifacts
+
+      - name: Release-Dateien + latest.json (alle Plattformen)
+        run: |
+          node scripts/prepare-release.mjs --tag "$GITHUB_REF_NAME" --version "${{ needs.check.outputs.version }}" --from artifacts \
+            --require windows,linux,macos --notes "Vibe Launcher ${{ needs.check.outputs.version }}"
 
       - name: GitHub-Release veröffentlichen
-        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "$GITHUB_REF_NAME" release-files/* \
-            --title "Vibe Launcher ${{ steps.ver.outputs.version }}" \
+            --title "Vibe Launcher ${{ needs.check.outputs.version }}" \
             --generate-notes \
             --latest

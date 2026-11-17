@@ -67,6 +67,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
 | Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
+| Plattform | crash_analyze, servers_list, servers_save, server_ping, servers_recent, playtime_sessions, optsync_get, optsync_set_instance, optsync_capture, optsync_apply_all, shortcut_create, app_actions_take, discord_available (`commands/platform.rs`, Logik in `platform/`, OWNER Frontend-Agent A) |
 
 ### Wichtige Abläufe
 
@@ -146,6 +147,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   Hintergrundprüfung aller Instanzen und liefert die zuletzt bekannten Zahlen (Badge „N Updates“ in der Bibliothek).
 - **Start** (`instance_launch`): installiert bei Bedarf, holt Zugangsdaten über `state.auth.launch_account(...)`,
   startet den Prozess, sendet `game://state` + `game://log`.
+  Optional `server` (host[:port]): direkt auf einen Server (`--quickPlayMultiplayer` ab 1.20, sonst `--server/--port`).
   Optional `world` (Ordnername unter `saves/`): startet per Quick Play (`--quickPlaySingleplayer`, ab MC 1.20)
   direkt in diese Welt – Frontend blendet die Option für ältere Versionen aus.
 - **Screenshots**: `screenshots_list(instance_id?)` liefert `Screenshot[]` (alle Instanzen, neueste zuerst);
@@ -232,3 +234,22 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   klicken oder Commands direkt aufrufen: `page.evaluate(() => window.__TAURI_INTERNALS__.invoke("game_versions", {}))`.
   Beenden: `taskkill //F //PID <pid>` (nicht alle vibe-launcher.exe – andere Testläufe laufen evtl. parallel).
 - `VIBE_LAUNCHER_HOME` gesetzt => Single-Instance-Sperre ist aus (Testmodus).
+
+## Plattform-Funktionen (Frontend-Agent A)
+
+- **Crash-Analyse** `crash_analyze(instance_id, crash_report?, exit_code?) -> Diagnosis[]`: regelbasiert über Crash-Report,
+  `logs/latest.log` und Sitzungslog (fehlende Abhängigkeit, falsche MC-/Java-Version, Mixin, OOM, doppelte Mods, Grafik,
+  verdächtige Mods, Exit-Codes). Aktionen (`DiagnosisAction`) führt das Frontend mit den vorhandenen Commands aus.
+- **Server-Liste** `servers.dat` (unkomprimiertes NBT, unbekannte Felder bleiben erhalten); `server_ping` per Server-List-Ping
+  (MOTD mit §-Codes, `§#rrggbb` für Hex-Farben). Während das Spiel läuft, ist `servers_save` gesperrt.
+- **Spielzeit**: jede Sitzung landet in `<daten>/sessions.jsonl` (`{instance_id,start,end,world?,server?}`); Quelle ist das
+  Event `game://state` (Backend-Listener). `servers_recent` leitet „zuletzt gespielte Server“ daraus ab.
+- **Optionen-Sync**: `<daten>/options-sync.json` (Master-Profil + je Instanz an/aus und Kategorien `controls|sound|video|language|accessibility`).
+  Vor jedem Start (`instance_launch`) in `options.txt` geschrieben, nach dem Beenden zurückgeholt. Nur bekannte Schlüssel.
+- **Discord Rich Presence**: Build-Env `VIBE_DISCORD_CLIENT_ID` (Repo-Variable); ohne ID aus. Respektiert `settings.discord_rpc`.
+- **Externe Aktionen**: Kommandozeile `--launch <id>` (Verknüpfungen, Single-Instance reicht argv weiter) und Deep-Links
+  `vibelauncher://install/<source>/<id>[?version=]`, `pack/<code>`, `launch/<id>`, `join/<adresse>[?instance=]`, `invite/<id>`.
+  Backend prüft und reiht `AppAction`s ein, Event `app://actions` (ohne Payload) -> Frontend holt mit `app_actions_take` ab
+  und fragt **immer** nach, bevor etwas passiert.
+- **Vibe-Dienste im Frontend**: `useVibe()` aus `src/lib/vibe.ts` – jedes Vibe-UI-Element blendet sich aus, wenn der
+  passende Schalter aus ist.

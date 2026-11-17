@@ -1,9 +1,13 @@
 name: Setup
-description: Node/pnpm, Rust und alle Caches (pnpm-Store, Cargo, Tauri-Bundler-Tools) einrichten
+description: Node/pnpm, Rust, Systempakete (Linux) und alle Caches (pnpm-Store, Cargo, Tauri-Bundler-Tools) einrichten
 inputs:
   cache-key:
-    description: Cargo-Cache-Schlüssel (getrennt nach Profil, z. B. "release" oder "debug")
+    description: Cargo-Cache-Schlüssel (getrennt nach Profil/OS, z. B. "release-linux" oder "debug")
     required: true
+  rust-targets:
+    description: Zusätzliche Rust-Targets (z. B. "aarch64-apple-darwin,x86_64-apple-darwin" für macOS universal)
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
@@ -17,6 +21,18 @@ runs:
         cache: pnpm
 
     - uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ inputs.rust-targets }}
+
+    # Tauri-Abhängigkeiten unter Linux (WebKitGTK 4.1, AppIndicator, rsvg) + Werkzeuge für AppImage/.deb
+    - name: Linux-Pakete
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev \
+          build-essential curl wget file patchelf
 
     # target/ + ~/.cargo (Registry, Git) – nur main/Tags speichern, Branches lesen nur
     - uses: Swatinem/rust-cache@v2
@@ -29,8 +45,17 @@ runs:
 
     # NSIS + Signier-Tools, die die Tauri-CLI beim ersten Bundle herunterlädt
     - uses: actions/cache@v4
+      if: runner.os == 'Windows'
       with:
         path: ~\AppData\Local\tauri
+        key: tauri-bundler-tools-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: tauri-bundler-tools-${{ runner.os }}-
+
+    # linuxdeploy/AppImage-Werkzeuge
+    - uses: actions/cache@v4
+      if: runner.os == 'Linux'
+      with:
+        path: ~/.cache/tauri
         key: tauri-bundler-tools-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: tauri-bundler-tools-${{ runner.os }}-
 
