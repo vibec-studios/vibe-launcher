@@ -90,7 +90,6 @@ pub fn run() {
             commands::core::open_data_dir,
             // auth
             commands::auth::accounts_list,
-            commands::auth::account_offline_add,
             commands::auth::account_remove,
             commands::auth::account_set_active,
             commands::auth::account_refresh,

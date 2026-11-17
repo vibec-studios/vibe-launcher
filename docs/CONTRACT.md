@@ -62,7 +62,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Bereich | Commands |
 |---|---|
 | Kern | instances_list, instance_get, instance_create, instance_update, instance_delete, instance_duplicate, instance_set_icon, instance_open_folder, settings_get, settings_set, tasks_list, task_cancel, tasks_clear, system_info, open_path, open_data_dir |
-| Auth | accounts_list, account_offline_add, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
+| Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
 | Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss |
 
@@ -75,6 +75,12 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 - **CurseForge-Dateien ohne Drittanbieter-Freigabe** landen in `content_missing` (Frontend zeigt Banner mit Links).
 - **Start** (`instance_launch`): installiert bei Bedarf, holt Zugangsdaten über `state.auth.launch_account(...)`,
   startet den Prozess, sendet `game://state` + `game://log`.
+- **Accounts**: nur Microsoft (`AccountKind = "microsoft"`, keine Offline-Accounts). Login: `auth_msa_begin` -> Code
+  anzeigen -> `auth_msa_wait` (liefert den Account) bzw. `auth_msa_cancel`. Tokens liegen im Windows-Schlüsselbund,
+  `accounts.json` enthält keine Geheimnisse. `launch_account` erneuert den Minecraft-Token automatisch (< 5 min Rest);
+  schlägt das wegen der Anmeldung fehl, wird `needs_relogin = true` gesetzt.
+  Nur Debug-Builds (automatisierte Tests): `VIBE_DEV_OFFLINE_ACCOUNT=<Name>` -> ohne aktiven Account startet das Spiel
+  mit einem Offline-Profil (nicht in UI/accounts.json, im Release wegkompiliert).
 
 ## Events (Backend -> Frontend)
 

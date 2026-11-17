@@ -42,7 +42,6 @@ export const api = {
 
   // ---------------------------------------------------------------- Accounts
   accountsList: () => call<T.Account[]>("accounts_list"),
-  accountOfflineAdd: (username: string) => call<T.Account>("account_offline_add", { username }),
   accountRemove: (id: string) => call<void>("account_remove", { id }),
   accountSetActive: (id: string) => call<void>("account_set_active", { id }),
   accountRefresh: (id: string) => call<T.Account>("account_refresh", { id }),
