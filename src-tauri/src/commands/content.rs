@@ -168,3 +168,34 @@ pub async fn content_missing_dismiss(state: State<'_, AppState>, instance_id: St
     state.instances.get(&instance_id)?;
     missing::dismiss(&state.paths, &instance_id)
 }
+
+/// Andere Launcher an den Standardorten (Modrinth App, Prism, CurseForge, ATLauncher) mit ihren Instanzen.
+#[tauri::command]
+pub async fn launchers_detect(state: State<'_, AppState>) -> AppResult<Vec<ExternalLauncher>> {
+    external::detect(&state).await
+}
+
+/// Frei gewählten Ordner analysieren (Launcher-Ordner, Instanzen-Ordner, einzelne Instanz oder Spielordner).
+#[tauri::command]
+pub async fn launcher_scan_dir(state: State<'_, AppState>, path: String) -> AppResult<ExternalLauncher> {
+    external::scan_dir(&state, path).await
+}
+
+/// Instanz aus einem anderen Launcher kopieren (Original bleibt unverändert). Gibt Task-ID zurück.
+/// `mc_version`/`loader` überschreiben erkannte bzw. geschätzte Werte.
+#[tauri::command]
+pub async fn import_external(
+    state: State<'_, AppState>,
+    source: LauncherKind,
+    source_path: String,
+    name: Option<String>,
+    mc_version: Option<String>,
+    loader: Option<crate::instance::Loader>,
+) -> AppResult<String> {
+    if !std::path::Path::new(&source_path).is_dir() {
+        return Err(AppError::NotFound(source_path));
+    }
+    let st = state.inner().clone();
+    let title = std::path::Path::new(&source_path).file_name().map(|n| format!("{} übernehmen", n.to_string_lossy())).unwrap_or_else(|| "Instanz übernehmen".into());
+    Ok(state.tasks.spawn("import", title, None, move |task| external::run_import(st, task, source, source_path, name, mc_version, loader)))
+}

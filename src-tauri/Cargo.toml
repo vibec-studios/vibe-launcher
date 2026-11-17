@@ -51,6 +51,7 @@ md-5 = "0.10"
 urlencoding = "2"
 bytes = "1"
 semver = "1"
+rusqlite = { version = "0.31", features = ["bundled"] }
 
 [profile.dev.package."*"]
 opt-level = 2
