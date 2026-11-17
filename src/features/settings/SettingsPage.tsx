@@ -15,6 +15,7 @@ import {
   Globe,
   Info,
   Languages,
+  LifeBuoy,
   PackageCheck,
   Plug,
   RefreshCw,
@@ -52,12 +53,13 @@ import { VibeCard } from "./VibeCard";
 import { MasterOptSync } from "@/components/instance/OptSync";
 import { useLang, useT } from "@/i18n";
 
-type SectionId = "general" | "game" | "sync" | "content" | "java" | "downloads" | "integrations" | "stores" | "vibe" | "appearance" | "launcher";
+type SectionId = "general" | "game" | "sync" | "content" | "backups" | "java" | "downloads" | "integrations" | "stores" | "vibe" | "appearance" | "launcher";
 const SECTIONS: { id: SectionId; icon: ReactNode }[] = [
   { id: "general", icon: <Languages size={15} /> },
   { id: "game", icon: <Gamepad2 size={15} /> },
   { id: "sync", icon: <RefreshCcw size={15} /> },
   { id: "content", icon: <PackageCheck size={15} /> },
+  { id: "backups", icon: <LifeBuoy size={15} /> },
   { id: "java", icon: <Coffee size={15} /> },
   { id: "downloads", icon: <Download size={15} /> },
   { id: "integrations", icon: <Plug size={15} /> },
@@ -343,6 +345,36 @@ export function SettingsPage() {
             <SettingsCard id="set-content" title={t("settings.section.content")}>
               <SettingRow title={t("settings.auto_update")} description={t("settings.auto_update.desc")}>
                 <Switch checked={s.auto_update_content} onChange={(v) => update({ auto_update_content: v })} label={t("settings.auto_update")} />
+              </SettingRow>
+            </SettingsCard>
+
+            <SettingsCard id="set-backups" title={t("settings.section.backups")}>
+              <SettingRow title={t("settings.backups.snapshot_keep")} description={t("settings.backups.snapshot_keep.desc")}>
+                <NumberInput
+                  className="w-[110px]"
+                  value={s.snapshot_keep}
+                  min={1}
+                  max={100}
+                  onChange={(v) => v !== null && update({ snapshot_keep: v })}
+                  aria-label={t("settings.backups.snapshot_keep")}
+                />
+              </SettingRow>
+              <SettingRow title={t("settings.backups.world_on_launch")} description={t("settings.backups.world_on_launch.desc")}>
+                <Switch
+                  checked={s.world_backup_on_launch}
+                  onChange={(world_backup_on_launch) => update({ world_backup_on_launch })}
+                  label={t("settings.backups.world_on_launch")}
+                />
+              </SettingRow>
+              <SettingRow title={t("settings.backups.world_keep")} description={t("settings.backups.world_keep.desc")}>
+                <NumberInput
+                  className="w-[110px]"
+                  value={s.world_backups_keep}
+                  min={1}
+                  max={100}
+                  onChange={(v) => v !== null && update({ world_backups_keep: v })}
+                  aria-label={t("settings.backups.world_keep")}
+                />
               </SettingRow>
             </SettingsCard>
 

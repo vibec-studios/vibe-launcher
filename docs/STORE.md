@@ -34,6 +34,8 @@ Standard-Store: **Vibe Craft Studios** – `https://vibec-studios.github.io/data
       "gallery": [{ "url": "https://…/1.png", "title": "Optional", "description": "Optional" }],
       "links": { "website": "…", "source": "…", "issues": "…", "wiki": "…", "discord": "…" },
       "license": "MIT",
+      "client_side": "required",     // optional: required | optional | unsupported (wie Modrinth)
+      "server_side": "optional",
       "downloads": 1234,             // optional
       "published": "2026-01-01T00:00:00Z",
       "updated": "2026-11-01T00:00:00Z",

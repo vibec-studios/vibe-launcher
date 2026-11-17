@@ -115,6 +115,12 @@ export interface Settings {
   /** Mods/Packs/Shader vor jedem Start automatisch aktualisieren (je Instanz überschreibbar) */
   auto_update_content: boolean;
   stores: StoreConfig[];
+  /** Aufbewahrte automatische Snapshots je Instanz */
+  snapshot_keep: number;
+  /** Vor jedem Spielstart geänderte Welten sichern */
+  world_backup_on_launch: boolean;
+  /** Aufbewahrte automatische Backups je Welt */
+  world_backups_keep: number;
 }
 
 export interface StoreConfig {
@@ -414,6 +420,8 @@ export interface ContentItem {
   modified: number;
   /** Version fixiert (kein Auto-Update, nicht bei „Alle aktualisieren“) */
   pinned: boolean;
+  /** Client/Server-Einordnung */
+  side: Side;
 }
 
 export interface ContentUpdate {
@@ -445,6 +453,13 @@ export interface ImportPreview {
   file_count: number;
   icon: string | null;
   author: string | null;
+  /** Herunterzuladende Dateien mit Client/Server-Einordnung */
+  files: ImportFile[];
+}
+
+export interface ImportFile {
+  path: string;
+  side: Side;
 }
 
 export interface ExportOptions {
@@ -773,4 +788,168 @@ export interface ServerBackup {
   world: string;
   size: number;
   created: number;
+}
+
+// ------------------------------------------------------------------ Inhalte: Seiten, Abhängigkeiten, Sets, Performance, Modpack-Updates
+
+/** client = nur Client, both = Client & Server, server = nur Server */
+export type Side = "client" | "both" | "server" | "unknown";
+
+export interface SideInfo {
+  file_name: string;
+  kind: ContentKind;
+  side: Side;
+  enabled: boolean;
+  /** z. B. "mods/sodium.jar" */
+  rel_path: string;
+}
+
+export type DepIssueKind = "missing_dependency" | "version_mismatch" | "incompatible" | "duplicate" | "wrong_loader" | "wrong_minecraft";
+
+export type DepFix =
+  | { action: "install"; source: Source; project_id: string; title: string }
+  | { action: "remove"; file_names: string[] }
+  | { action: "disable"; file_name: string };
+
+export interface DepIssue {
+  kind: DepIssueKind;
+  severity: "error" | "warning";
+  file_name: string;
+  mod_name: string;
+  target: string | null;
+  message: string;
+  fixes: DepFix[];
+}
+
+export interface ModSet {
+  id: string;
+  name: string;
+  created: number;
+  enabled_count: number;
+  total_count: number;
+}
+
+export interface ModSets {
+  active: string | null;
+  /** aktuelle Auswahl weicht vom aktiven Set ab */
+  active_modified: boolean;
+  sets: ModSet[];
+}
+
+export interface PerfCandidate {
+  project_id: string;
+  slug: string;
+  title: string;
+  description: string;
+  icon_url: string | null;
+  version_number: string | null;
+  available: boolean;
+  installed: boolean;
+  recommended: boolean;
+  note: string | null;
+}
+
+export interface ModpackUpdate {
+  source: Source;
+  project_id: string;
+  current_version: string | null;
+  current_version_id: string | null;
+  latest: ProjectVersion;
+}
+
+export interface ModpackPreviewFile {
+  path: string;
+  name: string;
+  change: "added" | "updated" | "removed";
+  old_path: string | null;
+  side: Side;
+}
+
+export interface ModpackPreviewOverride {
+  path: string;
+  /** conflict = vom Nutzer geändert, seine Version bleibt */
+  status: "new" | "update" | "conflict" | "remove";
+}
+
+export interface ModpackPreview {
+  current_version: string | null;
+  target: ProjectVersion;
+  mc_from: string;
+  mc_to: string;
+  loader_from: Loader;
+  loader_to: Loader;
+  files: ModpackPreviewFile[];
+  unchanged: number;
+  overrides: ModpackPreviewOverride[];
+  user_files: number;
+  missing: MissingDownload[];
+  /** ältere Installation ohne gespeicherten Stand */
+  legacy: boolean;
+}
+
+// ------------------------------------------------------------------ Backups (Snapshots + Welt-Backups)
+
+/** Snapshot einer Instanz (Mods, Configs, Packs, Optionen – keine Welten). */
+export interface SnapshotInfo {
+  id: string;
+  name: string;
+  created: number;
+  /** Automatisch angelegt (z. B. „Vor Wiederherstellung“) – zählt zur Grenze `snapshot_keep` */
+  auto: boolean;
+  file_count: number;
+  size: number;
+}
+
+/** ZIP-Backup einer Welt. `id` = "<weltordner>/<zeitstempel>" */
+export interface WorldBackup {
+  id: string;
+  folder: string;
+  world_name: string;
+  created: number;
+  size: number;
+  /** Automatisch (vor Spielstart / vor Wiederherstellung) – zählt zur Grenze `world_backups_keep` */
+  auto: boolean;
+}
+
+// ------------------------------------------------------------------ Konfigurations-Editor
+
+export interface ConfigEntry {
+  /** Relativ zum Spielordner, mit "/" getrennt (z. B. "config/sodium-options.json") */
+  path: string;
+  is_dir: boolean;
+  size: number;
+  /** ms seit 1970 */
+  modified: number;
+  has_backup: boolean;
+  /** Keine Text-Endung -> nicht bearbeitbar */
+  binary: boolean;
+}
+
+export type ConfigLanguage = "json" | "json5" | "toml" | "properties" | "yaml" | "ini" | "javascript" | "text";
+
+export interface ConfigFile {
+  path: string;
+  /** Leer, wenn readonly wegen Größe/Binärdatei */
+  content: string;
+  size: number;
+  modified: number;
+  has_backup: boolean;
+  language: ConfigLanguage;
+  readonly: boolean;
+  readonly_reason: "too_large" | "binary" | "encoding" | null;
+}
+
+export interface ConfigValidationError {
+  /** 1-basiert */
+  line: number;
+  /** 1-basiert */
+  column: number;
+  message: string;
+}
+
+export interface ConfigSearchHit {
+  path: string;
+  /** 1-basiert */
+  line: number;
+  text: string;
 }

@@ -126,6 +126,22 @@ export const api = {
   storeAdd: (url: string) => call<T.StoreInfo>("store_add", { url }),
   storeRemove: (id: string) => call<void>("store_remove", { id }),
   storeSetEnabled: (id: string, enabled: boolean) => call<void>("store_set_enabled", { id, enabled }),
+  modpackCheck: (instanceId: string) => call<T.ModpackUpdate | null>("modpack_check", { instanceId }),
+  modpackUpdatePreview: (instanceId: string, versionId?: string | null) =>
+    call<T.ModpackPreview>("modpack_update_preview", { instanceId, versionId: versionId ?? null }),
+  /** Gibt Task-ID zurück (vorher automatischer Snapshot). */
+  modpackUpdate: (instanceId: string, versionId?: string | null) => call<string>("modpack_update", { instanceId, versionId: versionId ?? null }),
+  contentCheckDeps: (instanceId: string) => call<T.DepIssue[]>("content_check_deps", { instanceId }),
+  contentSides: (instanceId: string) => call<T.SideInfo[]>("content_sides", { instanceId }),
+  modsetsList: (instanceId: string) => call<T.ModSets>("modsets_list", { instanceId }),
+  modsetCreate: (instanceId: string, name: string) => call<T.ModSets>("modset_create", { instanceId, name }),
+  modsetApply: (instanceId: string, setId: string) => call<T.ModSets>("modset_apply", { instanceId, setId }),
+  modsetSave: (instanceId: string, setId: string) => call<T.ModSets>("modset_save", { instanceId, setId }),
+  modsetRename: (instanceId: string, setId: string, name: string) => call<T.ModSets>("modset_rename", { instanceId, setId, name }),
+  modsetDelete: (instanceId: string, setId: string) => call<T.ModSets>("modset_delete", { instanceId, setId }),
+  perfPreview: (instanceId: string) => call<T.PerfCandidate[]>("perf_preview", { instanceId }),
+  /** Gibt Task-ID zurück (vorher Snapshot). */
+  perfInstall: (instanceId: string, projectIds: string[]) => call<string>("perf_install", { instanceId, projectIds }),
   launchersDetect: () => call<T.ExternalLauncher[]>("launchers_detect"),
   launcherScanDir: (path: string) => call<T.ExternalLauncher>("launcher_scan_dir", { path }),
   /** Gibt Task-ID zurück; mcVersion/loader überschreiben erkannte Werte. */
@@ -203,4 +219,33 @@ export const api = {
   shortcutCreate: (instanceId: string, location: "desktop" | "start_menu") => call<string>("shortcut_create", { instanceId, location }),
   appActionsTake: () => call<T.AppAction[]>("app_actions_take"),
   discordAvailable: () => call<boolean>("discord_available"),
+  // ---------------------------------------------------------------- Backups (Snapshots + Welt-Backups)
+  snapshotsList: (instanceId: string) => call<T.SnapshotInfo[]>("snapshots_list", { instanceId }),
+  /** Gibt Task-ID zurück */
+  snapshotCreate: (instanceId: string, name?: string | null) => call<string>("snapshot_create", { instanceId, name: name ?? null }),
+  /** Gibt Task-ID zurück; legt vorher automatisch „Vor Wiederherstellung“ an */
+  snapshotRestore: (instanceId: string, snapshotId: string) => call<string>("snapshot_restore", { instanceId, snapshotId }),
+  snapshotDelete: (instanceId: string, snapshotId: string) => call<void>("snapshot_delete", { instanceId, snapshotId }),
+  worldBackupsList: (instanceId: string) => call<T.WorldBackup[]>("world_backups_list", { instanceId }),
+  /** Gibt Task-ID zurück */
+  worldBackupCreate: (instanceId: string, folder: string) => call<string>("world_backup_create", { instanceId, folder }),
+  /** Gibt Task-ID zurück; vorhandene Welt wird vorher gesichert */
+  worldBackupRestore: (instanceId: string, backupId: string) => call<string>("world_backup_restore", { instanceId, backupId }),
+  worldBackupDelete: (instanceId: string, backupId: string) => call<void>("world_backup_delete", { instanceId, backupId }),
+  /** Gibt Task-ID zurück (Task gehört zur Ziel-Instanz) */
+  worldCopy: (instanceId: string, folder: string, targetInstanceId: string) => call<string>("world_copy", { instanceId, folder, targetInstanceId }),
+  /** Gibt Task-ID zurück */
+  worldImportZip: (instanceId: string, path: string) => call<string>("world_import_zip", { instanceId, path }),
+  backupsOpenFolder: (instanceId: string, kind: "worlds" | "snapshots") => call<void>("backups_open_folder", { instanceId, kind }),
+  // ---------------------------------------------------------------- Konfigurations-Editor
+  /** config/, defaultconfigs/ (rekursiv) und options*.txt einer Instanz als flache Liste */
+  configTree: (instanceId: string) => call<T.ConfigEntry[]>("config_tree", { instanceId }),
+  configRead: (instanceId: string, path: string) => call<T.ConfigFile>("config_read", { instanceId, path }),
+  /** Sichert die alte Fassung (max. 10 je Datei) und schreibt atomar */
+  configWrite: (instanceId: string, path: string, content: string) => call<T.ConfigFile>("config_write", { instanceId, path, content }),
+  /** Letzte Sicherung zurückspielen (aktuelle Fassung wird selbst gesichert -> rückgängig machbar) */
+  configRestore: (instanceId: string, path: string) => call<T.ConfigFile>("config_restore", { instanceId, path }),
+  configValidate: (path: string, content: string) => call<T.ConfigValidationError[]>("config_validate", { path, content }),
+  /** Volltextsuche in allen Konfigurationsdateien (max. 200 Treffer) */
+  configSearch: (instanceId: string, query: string) => call<T.ConfigSearchHit[]>("config_search", { instanceId, query }),
 };

@@ -16,8 +16,8 @@ import { ServersPage } from "@/features/servers/ServersPage";
 import { ServerPage } from "@/features/servers/ServerPage";
 import type { ProjectType, Source } from "@/lib/types";
 
-export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "servers" | "logs" | "settings";
-const instanceTabs: InstanceTab[] = ["content", "resourcepacks", "shaders", "worlds", "servers", "logs", "settings"];
+export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "servers" | "backups" | "logs" | "configs" | "settings";
+const instanceTabs: InstanceTab[] = ["content", "resourcepacks", "shaders", "worlds", "servers", "backups", "logs", "configs", "settings"];
 export type ServerTab = "console" | "settings" | "players" | "worlds" | "connection";
 const serverTabs: ServerTab[] = ["console", "settings", "players", "worlds", "connection"];
 const projectTypes: ProjectType[] = ["mod", "modpack", "resourcepack", "shader", "datapack"];

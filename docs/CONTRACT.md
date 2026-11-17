@@ -65,9 +65,10 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
 | Skins | skins_profile, skin_upload_file, skin_apply_library, skin_set_variant, skin_reset, cape_set, skin_library_list, skin_library_add_file, skin_library_add_current, skin_library_import_player, skin_library_rename, skin_library_set_variant, skin_library_remove, skin_library_export, skin_library_reveal |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
-| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled |
+| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, perf_preview, perf_install, config_tree, config_read, config_write, config_restore, config_validate, config_search |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
 | Plattform | crash_analyze, instance_servers_list, instance_servers_save, server_ping, servers_recent, playtime_sessions, optsync_get, optsync_set_instance, optsync_capture, optsync_apply_all, shortcut_create, app_actions_take, discord_available (`commands/platform.rs`, Logik in `platform/`, OWNER Frontend-Agent A) |
+| Backups | snapshots_list, snapshot_create, snapshot_restore, snapshot_delete, world_backups_list, world_backup_create, world_backup_restore, world_backup_delete, world_copy, world_import_zip, backups_open_folder (`commands/backups.rs`) |
 
 ### Wichtige Abläufe
 
@@ -133,6 +134,28 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 - Commands: `stores_list() -> StoreInfo[]` (lädt aktivierte Stores, liefert Name/Icon/Projektanzahl/Fehler),
   `store_add(url)` (laden + prüfen; ID/Name/Icon aus der Datei), `store_remove(id)`, `store_set_enabled(id, enabled)`.
 
+### Konfigurations-Editor (Tab „Configs“)
+
+- Backend `content/configs.rs` + `commands/configs.rs`, Frontend `features/configs/` (CodeMirror 6, nur per
+  dynamischem `import()` geladen – nicht im Haupt-Bundle), Texte in `i18n/configs.ts`.
+- Pfade sind **relativ zum Spielordner** mit `/`. Erlaubt: `config/**`, `defaultconfigs/**`, `options.txt`,
+  `optionsof.txt`, `optionsshaders.txt` (nicht `servers.dat`). Abgelehnt: `..`, absolute Pfade, Laufwerksbuchstaben,
+  Symlinks und alles, was kanonisch außerhalb der Wurzel landet.
+- `config_tree(instanceId) -> ConfigEntry[]` (flach, Ordner + Dateien; `binary = true` für Endungen außerhalb von
+  json, json5, toml, properties, cfg, conf, txt, yaml, yml, ini, snbt, js, zs, mcmeta -> nicht bearbeitbar).
+- `config_read(instanceId, path) -> ConfigFile` (`language`: json|json5|toml|properties|yaml|ini|javascript|text).
+  `readonly` + `readonly_reason`: `too_large` (> 2 MB, kein Inhalt), `binary` (kein Inhalt), `encoding` (kein UTF-8,
+  Inhalt nur zur Ansicht). UTF-8-BOM wird beim Lesen entfernt und beim Schreiben beibehalten, ebenso CRLF.
+- `config_write(instanceId, path, content) -> ConfigFile`: sichert die alte Fassung nach
+  `instances/<id>/config-backups/<pfad>/<ms>-<nr>` (höchstens 10 je Datei, älteste fliegt), schreibt atomar
+  (tmp + rename). Gleicher Inhalt -> keine neue Sicherung. Nicht-UTF-8-Dateien werden abgelehnt.
+- `config_restore(instanceId, path) -> ConfigFile`: spielt die neueste Sicherung zurück; die aktuelle Fassung wird
+  vorher selbst gesichert (erneutes Zurücksetzen = rückgängig).
+- `config_validate(path, content) -> ValidationError[] {line, column, message}` (1-basiert): JSON (Kommentare
+  erlaubt), JSON5 (Kommentare + abschließende Kommas; JSON5-Erweiterungen werden nicht als Fehler gemeldet), TOML.
+  Andere Formate: nie Fehler.
+- `config_search(instanceId, query) -> {path, line, text}[]`: ohne Groß-/Kleinschreibung, höchstens 200 Treffer.
+
 ### Auto-Update von Inhalten und fixierte Versionen
 
 - `Settings.auto_update_content` (Standard aus) und `Instance.auto_update_content: bool | null` (null = global;
@@ -145,6 +168,39 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   „Alle aktualisieren“ geändert.
 - `content_update_counts() -> Record<instanceId, number>`: startet bei Bedarf (höchstens alle 30 min) eine
   Hintergrundprüfung aller Instanzen und liefert die zuletzt bekannten Zahlen (Badge „N Updates“ in der Bibliothek).
+  Ein verfügbares Modpack-Update zählt als +1.
+
+### Modpack-Updates
+
+- Beim Import/`modpack_install` wird der Installationsstand in `instances/<id>/pack.json` gespeichert (Quelle,
+  Projekt/Version, Pack-Dateien mit SHA-1/Projekt, SHA-1 aller Overrides).
+- `modpack_check(instanceId) -> ModpackUpdate | null` (Modrinth, CurseForge, Stores; ältere Instanzen ohne
+  pack.json über `instance.source`). `modpack_update_preview(instanceId, versionId?) -> ModpackPreview`
+  (hinzugefügt/aktualisiert/entfernt mit Seite, Overrides `new|update|conflict|remove`, MC-/Loader-Wechsel,
+  eigene Inhalte, fehlende CF-Dateien). `modpack_update(instanceId, versionId?) -> taskId`: automatischer Snapshot,
+  Pack-Dateien tauschen (Deaktiviert-Status bleibt), eigene Inhalte bleiben, Overrides nur überschreiben, wenn
+  unverändert seit der Installation (sonst Nutzer-Version behalten), MC/Loader mitziehen (`install_state` wird
+  zurückgesetzt – Frontend ruft danach `instanceInstall`).
+
+### Abhängigkeits-Check, Seiten, Mod-Sets, Performance
+
+- `content_check_deps(instanceId) -> DepIssue[]` (`missing_dependency | version_mismatch | incompatible |
+  duplicate | wrong_loader | wrong_minecraft`) aus fabric.mod.json/quilt.mod.json (`depends/breaks`, Semver-Ausdrücke)
+  und mods.toml/neoforge.mods.toml (`[[dependencies]]`, Maven-Bereiche); eingebettete JARs zählen als vorhanden.
+  `fixes`: `install` (Modrinth-Projekt), `remove`, `disable`. Vor dem Start schreibt der Launch-Hook Probleme als
+  Warnung ins Spiel-Log (Start geht weiter).
+- `Side = "client" | "both" | "server" | "unknown"`; `ContentItem.side`, `ImportPreview.files[].side`,
+  `content_sides(instanceId) -> SideInfo[]`. Quellen: Modrinth `client_side/server_side` (per Projekt/Hash),
+  mrpack `env`, CurseForge-Tags „Client/Server“, Store `client_side/server_side`, `environment` aus fabric.mod.json.
+  Resourcepacks/Shader = client, Datapacks = server.
+  **Rust-API für andere Module:** `content::sides::classify(&AppState, instance_id) -> AppResult<Vec<SideInfo>>`
+  mit `SideInfo { file_name, kind, side, enabled, rel_path }` (ordnet unbekannte Dateien vorher per Hash zu und lädt
+  fehlende Modrinth-Angaben nach) – z. B. für „Server aus Profil erstellen“: `side == Client` weglassen.
+- Mod-Sets (`instances/<id>/modsets.json`): `modsets_list`, `modset_create(name)` (aus aktuellem Zustand, wird aktiv),
+  `modset_apply(setId)` (aktiviert/deaktiviert per `.disabled`; unbekannte neue Dateien bleiben), `modset_save`,
+  `modset_rename`, `modset_delete`. `ModSets.active_modified` = aktuelle Auswahl weicht vom aktiven Set ab.
+- `perf_preview(instanceId) -> PerfCandidate[]` (Modrinth-Optimierungsmods je Loader, nur kompatible Versionen,
+  ein Renderer-Ersatz) und `perf_install(instanceId, projectIds) -> taskId` (vorher Snapshot).
 - **Start** (`instance_launch`): installiert bei Bedarf, holt Zugangsdaten über `state.auth.launch_account(...)`,
   startet den Prozess, sendet `game://state` + `game://log`.
   Optional `server` (host[:port]): direkt auf einen Server (`--quickPlayMultiplayer` ab 1.20, sonst `--server/--port`).
@@ -165,6 +221,40 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   (Cache unter `cache/textures/`). Skin-Änderungen aktualisieren `Account.skin_url` (-> `accounts://changed`,
   `PlayerHead` zeigt eigene Accounts direkt aus der Textur). Bibliothek: `skins/<id>.png` + `skins.json` im Datenordner
   (Duplikate per SHA-1 erkannt). Nur PNG 64×64 / 64×32. `accountId = null` -> aktiver Account.
+
+### Backups (Snapshots + Welt-Backups)
+
+- **Snapshots** (`content/snapshots.rs`): sichern `mods/ resourcepacks/ shaderpacks/ datapacks/ config/ defaultconfigs/
+  kubejs/`, `options.txt`, `optionsof.txt`, `optionsshaders.txt` (Spielordner) und `content.json`, `pack.json`,
+  `modsets.json` (Instanzordner) – keine Welten/Logs/Screenshots. Objekte nach SHA-1 unter
+  `backups/objects/<ab>/<sha1>` (dedupliziert), Manifeste `backups/snapshots/<instanz>/<id>.json`
+  (`files/meta: {rel_path, sha1, size}[]` + `dirs`). `.jar`/`.zip` (auch `.disabled`) per Hardlink (Fallback Kopie),
+  alles andere kopiert. Löschen räumt nicht mehr referenzierte Objekte auf. Wiederherstellen legt vorher den
+  automatischen Snapshot „Vor Wiederherstellung“ an, bringt die Ordner exakt auf den Snapshot-Stand (entfernt
+  zusätzliche Dateien/Ordner) und sendet `content://changed`; verweigert, solange die Instanz läuft.
+  Rust-API (Vertrag, z. B. für automatische Snapshots vor Updates):
+  ```rust
+  content::snapshots::create(state, instance_id, name, auto, progress: Option<&SubProgress>) -> AppResult<SnapshotInfo>
+  content::snapshots::restore(state, instance_id, snapshot_id, progress) -> AppResult<()>
+  content::snapshots::list(state, instance_id) -> AppResult<Vec<SnapshotInfo>>   // neueste zuerst
+  content::snapshots::delete(state, instance_id, snapshot_id) -> AppResult<()>
+  ```
+  `SnapshotInfo { id, name, created, auto, file_count, size }`; leerer Name -> „Snapshot vom <Datum>“.
+  `auto = true` zählt zur Grenze `Settings.snapshot_keep` (Standard 10 je Instanz, nur automatische).
+- **Welt-Backups** (`content/worldbackup.rs`): ZIP `backups/worlds/<instanz>/<ordner>/<zeitstempel>.zip` (Wurzel
+  `<ordner>/`, ohne `session.lock`) + Sidecar `.json` (Name, Zeit, Größe, `auto`, Fingerabdruck aus
+  Pfad/Größe/mtime). `WorldBackup { id: "<ordner>/<zeitstempel>", folder, world_name, created, size, auto }`.
+  `world_backup_restore` sichert eine vorhandene Welt vorher (auto) und ersetzt sie dann; `world_copy` und
+  `world_import_zip` (level.dat in der Wurzel oder eine Ebene tiefer, Zip-Slip-sicher) wählen einen freien
+  Ordnernamen („Welt (2)“). Alle langen Operationen sind Tasks (`kind: "backup"`), streamen in `spawn_blocking`,
+  melden Fortschritt nach Bytes und sind abbrechbar. Danach `content://changed`.
+- **Vor dem Start**: `content::worldbackup::before_launch(state, id, task)` (in `minecraft::launch` nach dem
+  Auto-Update): bei `Settings.world_backup_on_launch` (Standard aus) werden alle seit dem letzten Backup geänderten
+  Welten gesichert (Stufe „Welten werden gesichert …“), danach gilt `Settings.world_backups_keep` (Standard 5 je
+  Welt, nur automatische). Scheitert nie – Probleme stehen im Spiel-Log.
+- Frontend: Instanz-Tab „Backups“ (`features/backups/BackupsTab.tsx`), Welt-Aktionen im Welten-Tab
+  (`features/backups/worldActions.tsx`), Karte „Backups“ in den Einstellungen. Query-Keys
+  `["content", id, "snapshots"]` / `["worlds", id, "backups"]` werden über `content://changed` mit aktualisiert.
 
 ## Events (Backend -> Frontend)
 

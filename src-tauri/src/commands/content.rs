@@ -233,3 +233,92 @@ pub async fn store_remove(state: State<'_, AppState>, id: String) -> AppResult<(
 pub async fn store_set_enabled(state: State<'_, AppState>, id: String, enabled: bool) -> AppResult<()> {
     store::set_enabled(&state, &id, enabled)
 }
+
+// ---------------------------------------------------------------- Modpack-Updates
+
+/// Neuere Version des Modpacks dieser Instanz (oder `null`).
+#[tauri::command]
+pub async fn modpack_check(state: State<'_, AppState>, instance_id: String) -> AppResult<Option<modpack::ModpackUpdate>> {
+    modpack::check(&state, &instance_id).await
+}
+
+/// Änderungen eines Modpack-Updates (Dateien, Overrides, Version/Loader). `version_id = None` -> neueste.
+#[tauri::command]
+pub async fn modpack_update_preview(state: State<'_, AppState>, instance_id: String, version_id: Option<String>) -> AppResult<modpack::ModpackPreview> {
+    modpack::preview(&state, &instance_id, version_id).await
+}
+
+/// Modpack aktualisieren (vorher automatischer Snapshot). Gibt Task-ID zurück.
+#[tauri::command]
+pub async fn modpack_update(state: State<'_, AppState>, instance_id: String, version_id: Option<String>) -> AppResult<String> {
+    let inst = state.instances.get(&instance_id)?;
+    let st = state.inner().clone();
+    let iid = instance_id.clone();
+    Ok(state.tasks.spawn("update", format!("{} aktualisieren", inst.name), Some(instance_id), move |task| modpack::run_update(st, task, iid, version_id)))
+}
+
+// ---------------------------------------------------------------- Abhängigkeiten, Seiten
+
+/// Abhängigkeits-Check der Mods (fehlend, Versionen, Konflikte, Loader, Duplikate) mit Lösungsvorschlägen.
+#[tauri::command]
+pub async fn content_check_deps(state: State<'_, AppState>, instance_id: String) -> AppResult<Vec<deps::DepIssue>> {
+    deps::check(&state, &instance_id, true).await
+}
+
+/// Client/Server-Einordnung aller Inhalte (lädt fehlende Angaben nach).
+#[tauri::command]
+pub async fn content_sides(state: State<'_, AppState>, instance_id: String) -> AppResult<Vec<sides::SideInfo>> {
+    sides::classify(&state, &instance_id).await
+}
+
+// ---------------------------------------------------------------- Mod-Sets
+
+#[tauri::command]
+pub async fn modsets_list(state: State<'_, AppState>, instance_id: String) -> AppResult<modsets::ModSets> {
+    modsets::list(&state, &instance_id).await
+}
+
+/// Neues Set aus dem aktuellen Zustand (wird aktiv).
+#[tauri::command]
+pub async fn modset_create(state: State<'_, AppState>, instance_id: String, name: String) -> AppResult<modsets::ModSets> {
+    modsets::create(&state, &instance_id, &name).await
+}
+
+/// Set anwenden (aktiviert/deaktiviert Inhalte).
+#[tauri::command]
+pub async fn modset_apply(state: State<'_, AppState>, instance_id: String, set_id: String) -> AppResult<modsets::ModSets> {
+    modsets::apply(&state, &instance_id, &set_id).await
+}
+
+/// Aktuellen Zustand in ein Set übernehmen.
+#[tauri::command]
+pub async fn modset_save(state: State<'_, AppState>, instance_id: String, set_id: String) -> AppResult<modsets::ModSets> {
+    modsets::overwrite(&state, &instance_id, &set_id).await
+}
+
+#[tauri::command]
+pub async fn modset_rename(state: State<'_, AppState>, instance_id: String, set_id: String, name: String) -> AppResult<modsets::ModSets> {
+    modsets::rename(&state, &instance_id, &set_id, &name).await
+}
+
+#[tauri::command]
+pub async fn modset_delete(state: State<'_, AppState>, instance_id: String, set_id: String) -> AppResult<modsets::ModSets> {
+    modsets::delete(&state, &instance_id, &set_id).await
+}
+
+// ---------------------------------------------------------------- Performance
+
+/// Passende Performance-Mods (Modrinth) für Loader/Version der Instanz.
+#[tauri::command]
+pub async fn perf_preview(state: State<'_, AppState>, instance_id: String) -> AppResult<Vec<perf::PerfCandidate>> {
+    perf::preview(&state, &instance_id).await
+}
+
+/// Ausgewählte Performance-Mods installieren (vorher Snapshot). Gibt Task-ID zurück.
+#[tauri::command]
+pub async fn perf_install(state: State<'_, AppState>, instance_id: String, project_ids: Vec<String>) -> AppResult<String> {
+    state.instances.get(&instance_id)?;
+    let st = state.inner().clone();
+    let iid = instance_id.clone();
+    Ok(state.tasks.spawn("content", "Performance-Mods installieren", Some(instance_id), move |task| perf::run_install(st, task, iid, project_ids)))
+}

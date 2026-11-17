@@ -19,7 +19,10 @@ import { useT } from "@/i18n";
 import { WorldsTab } from "./WorldsTab";
 import { ServersTab } from "./ServersTab";
 import { DiagnosisCard, DiagnosisDialog, useDiagnosis } from "@/features/logs/Diagnosis";
+import { ActiveModSet } from "@/features/content/ModSetsMenu";
 import { InstanceSettingsTab } from "./InstanceSettingsTab";
+import { BackupsTab } from "@/features/backups/BackupsTab";
+import { ConfigsTab } from "@/features/configs/ConfigsTab";
 import { accentVars } from "@/components/instance/accent";
 
 const route = getRouteApi("/instances/$id");
@@ -101,7 +104,7 @@ function HeaderSkeleton() {
         <Skeleton className="h-10 w-[136px]" />
       </div>
       <div className={cn(wrap, "flex h-11 items-center gap-6")}>
-        {Array.from({ length: 6 }, (_, i) => (
+        {Array.from({ length: 7 }, (_, i) => (
           <Skeleton key={i} className="h-3.5 w-16" />
         ))}
       </div>
@@ -129,6 +132,9 @@ function MetaLine({ instance: i }: { instance: Instance }) {
         </span>
       ))}
       <StatusHintInline instance={i} />
+      <span className="flex items-center gap-2 whitespace-nowrap before:text-dim before:content-['·'] empty:hidden">
+        <ActiveModSet instanceId={i.id} />
+      </span>
     </div>
   );
 }
@@ -210,7 +216,9 @@ export function InstancePage() {
               { value: "shaders", label: t("inst.tab.shaders") },
               { value: "worlds", label: t("inst.tab.worlds") },
               { value: "servers", label: t("inst.tab.servers") },
+              { value: "backups", label: t("inst.tab.backups") },
               { value: "logs", label: t("inst.tab.logs") },
+              { value: "configs", label: t("inst.tab.configs") },
               { value: "settings", label: t("inst.tab.settings") },
             ]}
           />
@@ -226,8 +234,12 @@ export function InstancePage() {
           <WorldsTab instance={inst} />
         ) : active === "servers" ? (
           <ServersTab instance={inst} />
+        ) : active === "backups" ? (
+          <BackupsTab instance={inst} />
         ) : active === "logs" ? (
           <LogsTab instance={inst} />
+        ) : active === "configs" ? (
+          <ConfigsTab instance={inst} />
         ) : (
           <InstanceSettingsTab instance={inst} />
         )}

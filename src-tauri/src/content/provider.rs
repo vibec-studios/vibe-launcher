@@ -12,6 +12,8 @@ pub struct Brief {
     pub icon_url: Option<String>,
     pub project_type: ProjectType,
     pub page_url: String,
+    /// Client/Server, falls bekannt
+    pub side: Option<Side>,
 }
 
 pub async fn search(state: &AppState, q: &SearchQuery) -> AppResult<SearchResult> {
@@ -43,12 +45,13 @@ pub async fn brief(state: &AppState, source: Source, id: &str) -> AppResult<Brie
         Source::Modrinth => {
             let p = mr::raw_project(state, id).await?;
             let hit = mr::project_to_hit(&p, String::new());
-            Ok(Brief { page_url: mr::page_url(hit.project_type, &p.slug), id: p.id, title: p.title, icon_url: hit.icon_url, project_type: hit.project_type })
+            let side = Some(super::sides::from_sides(p.client_side.as_deref(), p.server_side.as_deref()));
+            Ok(Brief { page_url: mr::page_url(hit.project_type, &p.slug), id: p.id, title: p.title, icon_url: hit.icon_url, project_type: hit.project_type, side })
         }
         Source::Curseforge => {
             let m = cf::raw_mod(state, id).await?;
             let hit = cf::mod_to_hit(&m);
-            Ok(Brief { page_url: cf::page_url(&m), id: hit.id, title: hit.title, icon_url: hit.icon_url, project_type: hit.project_type })
+            Ok(Brief { page_url: cf::page_url(&m), id: hit.id, title: hit.title, icon_url: hit.icon_url, project_type: hit.project_type, side: None })
         }
         Source::Store(k) => super::store::brief(state, k, id).await,
     }

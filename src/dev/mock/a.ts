@@ -324,6 +324,7 @@ function mods(id: string): ContentItem[] {
   return Array.from({ length: n }, (_, i) => ({
     file_name: `mod-${i}.jar`,
     pinned: false,
+    side: "unknown",
     kind: "mod",
     enabled: true,
     name: `Mod ${i}`,

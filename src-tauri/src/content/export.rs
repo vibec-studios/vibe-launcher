@@ -373,6 +373,7 @@ mod tests {
                 size: None,
                 date: None,
                 release_type: None,
+                side: None,
             },
         );
         idx.local.insert("mods/a.jar".into(), index::LocalMeta { sha1: Some("AA".into()), ..Default::default() });

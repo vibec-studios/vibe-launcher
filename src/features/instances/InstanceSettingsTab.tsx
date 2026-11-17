@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ImageIcon, Plus, RotateCcw, Trash2, Wrench, X } from "lucide-react";
 import { api } from "@/lib/api";
-import { useSettings, useSystemInfo } from "@/lib/queries";
+import { qk, useSettings, useSystemInfo } from "@/lib/queries";
+import { useQuery } from "@tanstack/react-query";
 import type { Instance, InstancePatch, JavaOptions, WindowOptions } from "@/lib/types";
 import { instanceAccent, loaderNames } from "@/lib/format";
 import { Button, IconButton, Input, NumberInput, Select, SettingRow, SettingsCard, Switch, Textarea, Tooltip, confirm, toast } from "@/components/ui";
@@ -20,6 +21,19 @@ import { createShortcut } from "@/components/instance/actions";
 import { AccentPicker, GroupInput } from "./NewInstanceDialog";
 
 const apply = (base: Instance, p: InstancePatch): Instance => ({ ...base, ...p }) as Instance;
+
+/** JVM-Flag-Vorlagen (Content-Agent). */
+const JVM_PRESETS: Record<"g1" | "zgc" | "low", string> = {
+  g1: "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1",
+  zgc: "-XX:+UseZGC -XX:+ZGenerational -XX:+AlwaysPreTouch -XX:+DisableExplicitGC",
+  low: "-XX:+UseG1GC -XX:MaxGCPauseMillis=50 -XX:+UseStringDeduplication -XX:+DisableExplicitGC",
+};
+
+/** RAM-Empfehlung (MB) nach Mod-Anzahl, höchstens die Hälfte des Systemspeichers. */
+function recommendRam(mods: number, totalMb: number): number {
+  const gb = mods === 0 ? 2 : mods <= 30 ? 3 : mods <= 80 ? 4 : mods <= 150 ? 6 : mods <= 250 ? 8 : 10;
+  return Math.max(2048, Math.min(gb * 1024, Math.floor(totalMb / 2 / 512) * 512));
+}
 
 function VersionCard({ instance: i }: { instance: Instance }) {
   const t = useT();
@@ -154,6 +168,8 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
   const java = (p: Partial<JavaOptions>, delay = 0) => update({ java: { ...d.java, ...p } }, delay);
   const win = (p: Partial<WindowOptions>, delay = 0) => update({ window: { ...d.window, ...p } }, delay);
   const ramOverride = d.java.max_memory_mb !== null || d.java.min_memory_mb !== null;
+  const modsQ = useQuery({ queryKey: qk.content(instance.id, "mod"), queryFn: () => api.contentList(instance.id, "mod"), staleTime: 60_000 });
+  const modCount = modsQ.data?.filter((m) => m.enabled).length ?? null;
   const winOverride = d.window.width !== null || d.window.height !== null || d.window.fullscreen !== null;
   const total = sys?.total_memory_mb ?? 8192;
   const running = phase === "running" || phase === "preparing";
@@ -262,9 +278,26 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
                 <SettingRow
                   title={t("isettings.ram")}
                   description={
-                    ramOverride
-                      ? t("isettings.ram.custom")
-                      : t("isettings.ram.global", { min: settings?.min_memory_mb ?? 0, max: settings?.max_memory_mb ?? 0 })
+                    <>
+                      {ramOverride
+                        ? t("isettings.ram.custom")
+                        : t("isettings.ram.global", { min: settings?.min_memory_mb ?? 0, max: settings?.max_memory_mb ?? 0 })}
+                      {modCount !== null && (
+                        <span className="mt-1 flex items-center gap-2 text-text">
+                          {t("ram.recommend", { n: modCount, gb: recommendRam(modCount, sys?.total_memory_mb ?? 8192) / 1024 })}
+                          {(d.java.max_memory_mb ?? settings?.max_memory_mb) !== recommendRam(modCount, sys?.total_memory_mb ?? 8192) && (
+                            <button
+                              className="text-[12.5px] font-semibold text-accent hover:underline"
+                              onClick={() =>
+                                java({ min_memory_mb: d.java.min_memory_mb ?? 1024, max_memory_mb: recommendRam(modCount, sys?.total_memory_mb ?? 8192) })
+                              }
+                            >
+                              {t("ram.apply")}
+                            </button>
+                          )}
+                        </span>
+                      )}
+                    </>
                   }
                 >
                   <Switch
@@ -290,6 +323,19 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
                   </div>
                 )}
                 <SettingRow title={t("isettings.jvm")} description={t("isettings.jvm.desc")} stacked>
+                  <div className="mb-2 w-[260px]">
+                  <Select<"none" | "g1" | "zgc" | "low">
+                    size="sm"
+                    placeholder={t("jvm.presets")}
+                    value={
+                      !d.java.jvm_args
+                        ? "none"
+                        : ((Object.entries(JVM_PRESETS).find(([, v]) => v === d.java.jvm_args)?.[0] as "g1" | "zgc" | "low" | undefined) ?? null)
+                    }
+                    onChange={(v) => java({ jvm_args: v === "none" ? null : JVM_PRESETS[v] })}
+                    options={(["none", "g1", "zgc", "low"] as const).map((v) => ({ value: v, label: t(`jvm.preset.${v}`) }))}
+                  />
+                  </div>
                   <Input
                     className="font-mono text-[12px]"
                     value={d.java.jvm_args ?? ""}

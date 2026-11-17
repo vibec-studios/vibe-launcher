@@ -69,7 +69,7 @@ fn list_raw(dir: &Path, kind: ContentKind) -> Vec<RawEntry> {
 }
 
 fn meta_valid(m: &LocalMeta, r: &RawEntry) -> bool {
-    m.is_dir == r.is_dir && m.mtime == r.mtime && (r.is_dir || m.size == r.size)
+    m.meta_version == super::index::META_VERSION && m.is_dir == r.is_dir && m.mtime == r.mtime && (r.is_dir || m.size == r.size)
 }
 
 pub fn icons_dir(state: &AppState) -> PathBuf {
@@ -200,6 +200,7 @@ pub fn to_item(s: &Scanned, idx: &ContentIndex, kind: ContentKind, icons: &Path)
         version_id: entry.map(|e| e.version_id.clone()),
         size: s.size,
         modified: s.modified,
+        side: super::sides::item_side(kind, entry, &s.meta),
         pinned: idx.pinned.contains(&s.key),
     }
 }
@@ -230,7 +231,7 @@ pub fn pending(scanned: &[Scanned], idx: &ContentIndex, cf_available: bool) -> (
     let mut enrich = Vec::new();
     for s in scanned {
         if let Some(e) = idx.files.get(&s.key) {
-            if e.title.is_none() {
+            if e.title.is_none() || (e.source == Source::Modrinth && e.side.is_none()) {
                 enrich.push(s.key.clone());
             }
             continue;
@@ -262,6 +263,7 @@ fn entry_from_mr(v: &mr::MrVersion, sha1: &str, project: Option<&mr::MrProject>)
         size: file.map(|f| f.size),
         date: Some(v.date_published.clone()),
         release_type: Some(v.version_type.clone()),
+        side: project.map(|p| super::sides::from_sides(p.client_side.as_deref(), p.server_side.as_deref())),
     }
 }
 
@@ -280,6 +282,7 @@ fn entry_from_cf(f: &cf::CfFile, sha1: Option<String>, m: Option<&cf::CfMod>) ->
         size: Some(f.file_length),
         date: Some(f.file_date.clone()),
         release_type: Some(v.release_type),
+        side: super::sides::from_cf_versions(&f.game_versions),
     }
 }
 
@@ -347,6 +350,7 @@ pub async fn identify(state: &AppState, instance_id: &str, pending: Vec<Pending>
                             size: Some(h.size),
                             date: Some(h.version.date.clone()),
                             release_type: Some(h.version.release_type.clone()),
+                            side: h.side,
                         },
                     );
                 }
@@ -356,7 +360,7 @@ pub async fn identify(state: &AppState, instance_id: &str, pending: Vec<Pending>
 
     // Titel/Icons für bekannte Einträge ohne Titel nachladen
     let idx_now = ContentIndex::load(&state.paths, instance_id);
-    let mut enriched: HashMap<String, (String, Option<String>)> = HashMap::new();
+    let mut enriched: HashMap<String, (String, Option<String>, Option<Side>)> = HashMap::new();
     let mr_ids: Vec<String> = enrich
         .iter()
         .filter_map(|k| idx_now.files.get(k))
@@ -367,7 +371,8 @@ pub async fn identify(state: &AppState, instance_id: &str, pending: Vec<Pending>
         .collect();
     if !mr_ids.is_empty() {
         for p in mr::raw_projects(state, &mr_ids).await.unwrap_or_default() {
-            enriched.insert(format!("mr:{}", p.id), (p.title.clone(), p.icon_url.clone().filter(|u| !u.is_empty())));
+            let side = super::sides::from_sides(p.client_side.as_deref(), p.server_side.as_deref());
+            enriched.insert(format!("mr:{}", p.id), (p.title.clone(), p.icon_url.clone().filter(|u| !u.is_empty()), Some(side)));
         }
     }
     let cf_ids: Vec<u64> = enrich
@@ -380,7 +385,7 @@ pub async fn identify(state: &AppState, instance_id: &str, pending: Vec<Pending>
         .collect();
     if !cf_ids.is_empty() && cf::available(state) {
         for m in cf::raw_mods(state, &cf_ids).await.unwrap_or_default() {
-            enriched.insert(format!("cf:{}", m.id), (m.name.clone(), cf::mod_to_hit(&m).icon_url));
+            enriched.insert(format!("cf:{}", m.id), (m.name.clone(), cf::mod_to_hit(&m).icon_url, None));
         }
     }
 
@@ -409,8 +414,11 @@ pub async fn identify(state: &AppState, instance_id: &str, pending: Vec<Pending>
                 Source::Curseforge => format!("cf:{}", e.project_id),
                 Source::Store(_) => continue,
             };
-            if let Some((title, icon)) = enriched.get(&tag) {
+            if let Some((title, icon, side)) = enriched.get(&tag) {
                 e.title = Some(title.clone());
+                if e.side.is_none() {
+                    e.side = *side;
+                }
                 if e.icon_url.is_none() {
                     e.icon_url = icon.clone();
                 }

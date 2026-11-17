@@ -7,7 +7,12 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { Check, FilePlus2, FolderOpen, PackagePlus, Plus, Power, PowerOff, RefreshCw, SearchX, Trash2, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type MouseEvent } from "react";
 import { create } from "zustand";
-import { Button, EmptyState, ErrorState, IconButton, SearchInput, Spinner, Tooltip, confirm, cn, toast } from "@/components/ui";
+import { Button, EmptyState, ErrorState, IconButton, SearchInput, Select, Spinner, Tooltip, confirm, cn, toast } from "@/components/ui";
+import { SIDE_FILTERS, sideMatches, type SideFilter } from "@/components/content/sides";
+import { DepsBanner } from "./DepsBanner";
+import { ModSetsMenu } from "./ModSetsMenu";
+import { ModpackUpdateBanner } from "./ModpackUpdate";
+import { PerfButton } from "./PerfDialog";
 import { useT, t as tt } from "@/i18n";
 import { api, errorMessage, isCancelled } from "@/lib/api";
 import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
@@ -66,6 +71,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
   // ---------------------------------------------------------------- Suche / Filter
   const [text, setText] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [sideFilter, setSideFilter] = useState<SideFilter>("all");
   const all = q.data ?? [];
   const sorted = useMemo(() => [...all].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })), [all]);
   const counts = useMemo(() => {
@@ -79,10 +85,11 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
       if (filter === "enabled" && !c.enabled) return false;
       if (filter === "disabled" && c.enabled) return false;
       if (filter === "updates" && !updates.has(contentKey(c.file_name))) return false;
+      if (!sideMatches(sideFilter, c.side)) return false;
       if (!needle) return true;
       return c.name.toLowerCase().includes(needle) || c.file_name.toLowerCase().includes(needle) || c.authors.some((a) => a.toLowerCase().includes(needle));
     });
-  }, [sorted, text, filter, updates]);
+  }, [sorted, text, filter, updates, sideFilter]);
 
   // ---------------------------------------------------------------- Auswahl
   const [selection, setSelection] = useState<Set<string>>(() => new Set());
@@ -355,7 +362,19 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
             )}
           </div>
         )}
+        {!empty && kind === "mod" && (
+          <div className="w-[150px] shrink-0">
+            <Select<SideFilter>
+              size="sm"
+              value={sideFilter}
+              onChange={setSideFilter}
+              options={SIDE_FILTERS.map((f) => ({ value: f, label: t(`side.filter.${f}`) }))}
+            />
+          </div>
+        )}
         <div className="flex-1" />
+        {kind === "mod" && <ModSetsMenu instanceId={id} />}
+        {kind === "mod" && <PerfButton instance={instance} />}
         <Tooltip content={t(`content.add_files.${kind}`)}>
           <IconButton label={t(`content.add_files.${kind}`)} size="sm" onClick={addFiles}>
             <FilePlus2 size={15} />
@@ -372,6 +391,8 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
       </div>
 
       <MissingBanner instanceId={id} kind={kind} />
+      {kind === "mod" && <ModpackUpdateBanner instance={instance} />}
+      {kind === "mod" && !empty && <DepsBanner instanceId={id} />}
 
       {/* Tabellenkopf bzw. Auswahlleiste (gleiche Höhe -> kein Springen) */}
       {!empty && (

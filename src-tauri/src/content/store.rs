@@ -83,6 +83,9 @@ pub struct StoreProject {
     pub downloads: Option<u64>,
     pub published: Option<String>,
     pub updated: Option<String>,
+    /// "required" | "optional" | "unsupported" (wie Modrinth)
+    pub client_side: Option<String>,
+    pub server_side: Option<String>,
     pub versions: Vec<StoreVersion>,
 }
 
@@ -354,6 +357,14 @@ pub fn convert_version(key: StoreKey, p: &StoreProject, v: &StoreVersion) -> Pro
     }
 }
 
+/// Client/Server laut Store-Angabe.
+pub fn project_side(p: &StoreProject) -> Option<Side> {
+    if p.client_side.is_none() && p.server_side.is_none() {
+        return None;
+    }
+    Some(super::sides::from_sides(p.client_side.as_deref(), p.server_side.as_deref()))
+}
+
 fn find<'a>(file: &'a StoreFile, id: &str) -> AppResult<&'a StoreProject> {
     file.projects
         .iter()
@@ -472,6 +483,7 @@ pub async fn brief(state: &AppState, key: StoreKey, id: &str) -> AppResult<Brief
         icon_url: p.icon.clone().filter(|i| !i.is_empty()),
         project_type: ptype(p),
         page_url: p.links.website.clone().or_else(|| file.homepage.clone()).unwrap_or_default(),
+        side: project_side(p),
     })
 }
 
@@ -499,6 +511,7 @@ pub struct HashMatch {
     pub version: ProjectVersion,
     pub url: String,
     pub size: u64,
+    pub side: Option<Side>,
 }
 
 /// sha1/sha256 -> Datei in einem aktivierten Store.
@@ -517,7 +530,15 @@ pub async fn by_hash(state: &AppState, hashes: &[(String, Option<String>)]) -> H
                         if (hit1 || hit256) && !out.contains_key(sha1) {
                             out.insert(
                                 sha1.clone(),
-                                HashMatch { key, title: p.title.clone(), icon: p.icon.clone(), version: convert_version(key, p, v), url: f.url.clone(), size: f.size },
+                                HashMatch {
+                                    key,
+                                    title: p.title.clone(),
+                                    icon: p.icon.clone(),
+                                    version: convert_version(key, p, v),
+                                    url: f.url.clone(),
+                                    size: f.size,
+                                    side: project_side(p),
+                                },
                             );
                         }
                     }

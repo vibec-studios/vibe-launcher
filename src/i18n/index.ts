@@ -13,12 +13,15 @@ import skins from "./skins";
 import stores from "./stores";
 import platform from "./platform";
 import servers from "./servers";
+import contenttools from "./contenttools";
+import backups from "./backups";
+import configs from "./configs";
 
 export type Lang = "de" | "en";
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, configs];
 const dicts: Record<Lang, Dict> = { de: {}, en: {} };
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);

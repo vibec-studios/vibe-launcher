@@ -62,6 +62,9 @@ let settings: Settings = {
   open_log_on_launch: false,
   reduce_motion: false,
   auto_update_content: false,
+  snapshot_keep: 10,
+  world_backup_on_launch: false,
+  world_backups_keep: 5,
   stores: [{ id: "vibe-craft-studios", name: "Vibe Craft Studios", url: "https://vibec-studios.github.io/data/store.json", enabled: true, icon: null }],
 };
 

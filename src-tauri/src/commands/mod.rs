@@ -6,3 +6,5 @@ pub mod server;
 pub mod skins;
 pub mod platform;
 pub mod screenshots;
+pub mod backups;
+pub mod configs;

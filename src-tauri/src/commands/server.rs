@@ -70,7 +70,22 @@ pub async fn server_create(state: State<'_, AppState>, req: ServerCreate) -> App
 pub async fn server_mod_candidates(state: State<'_, AppState>, instance_id: String) -> AppResult<Vec<ServerModCandidate>> {
     state.instances.get(&instance_id)?;
     let dir = state.paths.game_dir(&instance_id).join("mods");
-    Ok(tokio::task::spawn_blocking(move || server::sides::candidates(&dir)).await?)
+    let mut list = tokio::task::spawn_blocking(move || server::sides::candidates(&dir)).await?;
+    // Genauere Einordnung aus den Inhalts-Metadaten (Modrinth client_side/server_side, mrpack env, Stores)
+    if let Ok(infos) = crate::content::sides::classify(&state, &instance_id).await {
+        for m in list.iter_mut() {
+            let Some(info) = infos.iter().find(|i| i.kind == crate::content::ContentKind::Mod && i.file_name == m.file_name) else { continue };
+            let side = match info.side {
+                crate::content::Side::Client => server::sides::ModSide::Client,
+                crate::content::Side::Both => server::sides::ModSide::Both,
+                crate::content::Side::Server => server::sides::ModSide::Server,
+                _ => continue,
+            };
+            m.side = side;
+            m.server_ok = m.enabled && side != server::sides::ModSide::Client;
+        }
+    }
+    Ok(list)
 }
 
 #[tauri::command]

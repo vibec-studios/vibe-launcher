@@ -37,6 +37,9 @@ pub struct IndexEntry {
     pub date: Option<String>,
     #[serde(default)]
     pub release_type: Option<String>,
+    /// Client/Server-Einordnung (Modrinth client_side/server_side, mrpack env, Store)
+    #[serde(default)]
+    pub side: Option<super::Side>,
 }
 
 /// Aus der Datei gelesene Metadaten (Cache).
@@ -57,7 +60,30 @@ pub struct LocalMeta {
     pub authors: Vec<String>,
     /// Dateiname unter `cache/icons/`
     pub icon: Option<String>,
+    /// Version des Metadaten-Formats (ältere Einträge werden neu gelesen)
+    pub meta_version: u32,
+    /// Loader der Mod-Datei: fabric | quilt | forge | neoforge
+    pub loader: Option<String>,
+    /// Abhängigkeiten/Konflikte aus den Metadaten
+    pub deps: Vec<MetaDep>,
+    /// Zusätzlich bereitgestellte Mod-IDs (provides, eingebettete JARs)
+    pub provides: Vec<String>,
+    /// fabric.mod.json `environment`: "client" | "server" | "*"
+    pub environment: Option<String>,
 }
+
+/// Abhängigkeit aus den Mod-Metadaten.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(default)]
+pub struct MetaDep {
+    pub id: String,
+    /// Versionsbedingung (Fabric-Semver-Ausdruck oder Maven-Bereich)
+    pub range: Option<String>,
+    /// "required" | "optional" | "breaks"
+    pub kind: String,
+}
+
+pub const META_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
