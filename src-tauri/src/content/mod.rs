@@ -5,9 +5,27 @@
 //! OWNER: Content-Agent. Öffentliche Typen/Signaturen sind Teil des Vertrags (docs/CONTRACT.md).
 use crate::instance::{Loader, LoaderKind};
 use crate::paths::Paths;
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use tauri::AppHandle;
+
+pub mod curseforge;
+pub mod export;
+pub mod http;
+pub mod import;
+pub mod index;
+pub mod install;
+pub mod local;
+pub mod meta;
+pub mod missing;
+pub mod modrinth;
+pub mod murmur;
+pub mod nbt;
+pub mod provider;
+pub mod worlds;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]
@@ -36,6 +54,8 @@ pub enum ContentKind {
     Resourcepack,
     /// shaderpacks/
     Shader,
+    /// datapacks/ im Spielordner (siehe docs/CONTRACT.md: global, nicht je Welt)
+    Datapack,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -130,6 +150,9 @@ pub struct VersionFile {
     pub size: u64,
     pub sha1: Option<String>,
     pub primary: bool,
+    /// SHA-512 (nur Modrinth), für mrpack-Export
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sha512: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -277,15 +300,80 @@ pub struct MissingDownload {
     pub kind: ContentKind,
 }
 
+impl ContentKind {
+    pub const ALL: [ContentKind; 4] = [ContentKind::Mod, ContentKind::Resourcepack, ContentKind::Shader, ContentKind::Datapack];
+
+    /// Ordner im Spielordner.
+    pub fn folder(&self) -> &'static str {
+        match self {
+            ContentKind::Mod => "mods",
+            ContentKind::Resourcepack => "resourcepacks",
+            ContentKind::Shader => "shaderpacks",
+            ContentKind::Datapack => "datapacks",
+        }
+    }
+
+    pub fn from_folder(folder: &str) -> Option<ContentKind> {
+        ContentKind::ALL.into_iter().find(|k| k.folder() == folder)
+    }
+}
+
+const CACHE_TTL: Duration = Duration::from_secs(10 * 60);
+const CACHE_MAX: usize = 600;
+
+/// Laufzeit-Zustand des Content-Moduls: kurzlebiger API-Cache, Sperren je Instanz für `content.json`,
+/// laufende Hash-Zuordnungen.
 pub struct ContentState {
-    #[allow(dead_code)]
-    paths: Paths,
-    #[allow(dead_code)]
-    app: AppHandle,
+    /// Datenordner (Kopie aus `AppState`, für Hintergrundarbeit ohne AppState)
+    pub paths: Paths,
+    pub(crate) app: AppHandle,
+    cache: Mutex<HashMap<String, (Instant, bytes::Bytes)>>,
+    locks: Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
+    /// Instanzen, für die gerade eine Hash-Zuordnung im Hintergrund läuft
+    pub(crate) identifying: Mutex<HashSet<String>>,
+    /// Letzter fehlgeschlagener Zuordnungsversuch je Instanz (Netzwerk) – nicht sofort wiederholen
+    pub(crate) identify_backoff: Mutex<HashMap<String, Instant>>,
 }
 
 impl ContentState {
     pub fn new(paths: Paths, app: AppHandle) -> Arc<Self> {
-        Arc::new(ContentState { paths, app })
+        Arc::new(ContentState {
+            paths,
+            app,
+            cache: Mutex::new(HashMap::new()),
+            locks: Mutex::new(HashMap::new()),
+            identifying: Mutex::new(HashSet::new()),
+            identify_backoff: Mutex::new(HashMap::new()),
+        })
+    }
+
+    pub(crate) fn cache_get(&self, key: &str) -> Option<bytes::Bytes> {
+        let map = self.cache.lock();
+        map.get(key).filter(|(t, _)| t.elapsed() < CACHE_TTL).map(|(_, b)| b.clone())
+    }
+
+    pub(crate) fn cache_put(&self, key: String, value: bytes::Bytes) {
+        let mut map = self.cache.lock();
+        if map.len() >= CACHE_MAX {
+            map.retain(|_, (t, _)| t.elapsed() < CACHE_TTL);
+            if map.len() >= CACHE_MAX {
+                let mut v: Vec<(String, Instant)> = map.iter().map(|(k, (t, _))| (k.clone(), *t)).collect();
+                v.sort_by_key(|(_, t)| *t);
+                for (k, _) in v.into_iter().take(CACHE_MAX / 2) {
+                    map.remove(&k);
+                }
+            }
+        }
+        map.insert(key, (Instant::now(), value));
+    }
+
+    /// Sperre für Lese-Ändere-Schreibe-Zyklen an `content.json` einer Instanz.
+    pub(crate) fn lock(&self, instance_id: &str) -> Arc<tokio::sync::Mutex<()>> {
+        self.locks.lock().entry(instance_id.to_string()).or_default().clone()
+    }
+
+    pub(crate) fn emit_changed(&self, instance_id: &str) {
+        crate::events::emit(&self.app, crate::events::CONTENT_CHANGED, &serde_json::json!({ "instance_id": instance_id }));
     }
 }
+

@@ -5,147 +5,166 @@ use crate::instance::LoaderKind;
 use crate::state::AppState;
 use tauri::State;
 
-fn todo<T>() -> AppResult<T> {
-    Err(AppError::msg("noch nicht implementiert"))
-}
-
 /// Ist CurseForge nutzbar (API-Key vorhanden)?
 #[tauri::command]
 pub async fn curseforge_available(state: State<'_, AppState>) -> AppResult<bool> {
-    Ok(state.settings().curseforge_key().is_some())
+    Ok(curseforge::available(&state))
 }
 
 #[tauri::command]
-pub async fn content_search(_state: State<'_, AppState>, _query: SearchQuery) -> AppResult<SearchResult> {
-    todo()
+pub async fn content_search(state: State<'_, AppState>, query: SearchQuery) -> AppResult<SearchResult> {
+    provider::search(&state, &query).await
 }
 
 #[tauri::command]
-pub async fn content_categories(_state: State<'_, AppState>, _source: Source, _project_type: ProjectType) -> AppResult<Vec<Category>> {
-    todo()
+pub async fn content_categories(state: State<'_, AppState>, source: Source, project_type: ProjectType) -> AppResult<Vec<Category>> {
+    provider::categories(&state, source, project_type).await
 }
 
 #[tauri::command]
-pub async fn content_project(_state: State<'_, AppState>, _source: Source, _id: String) -> AppResult<ProjectDetails> {
-    todo()
+pub async fn content_project(state: State<'_, AppState>, source: Source, id: String) -> AppResult<ProjectDetails> {
+    provider::project(&state, source, &id).await
 }
 
+/// Versionen eines Projekts, neueste zuerst. Filter: Minecraft-Version und Loader (passend zum Projekttyp:
+/// Shader/Resourcepacks werden nicht nach Mod-Loader gefiltert, Fabric-Mods gelten auch für Quilt).
 #[tauri::command]
 pub async fn content_versions(
-    _state: State<'_, AppState>,
-    _source: Source,
-    _id: String,
-    _game_version: Option<String>,
-    _loader: Option<LoaderKind>,
+    state: State<'_, AppState>,
+    source: Source,
+    id: String,
+    game_version: Option<String>,
+    loader: Option<LoaderKind>,
 ) -> AppResult<Vec<ProjectVersion>> {
-    todo()
+    let gv = game_version.filter(|v| !v.is_empty());
+    let (v, _, _) = provider::versions_for(&state, source, &id, gv.as_deref(), loader).await?;
+    Ok(v)
 }
 
-/// Projekt (Mod/Resourcepack/Shader) in eine Instanz installieren, inkl. Pflicht-Abhängigkeiten.
+/// Projekt (Mod/Resourcepack/Shader/Datapack) in eine Instanz installieren, inkl. Pflicht-Abhängigkeiten.
 /// `version_id = None` -> neueste passende Version. Gibt Task-ID zurück.
 #[tauri::command]
 pub async fn content_install(
-    _state: State<'_, AppState>,
-    _instance_id: String,
-    _source: Source,
-    _project_id: String,
-    _version_id: Option<String>,
+    state: State<'_, AppState>,
+    instance_id: String,
+    source: Source,
+    project_id: String,
+    version_id: Option<String>,
 ) -> AppResult<String> {
-    todo()
+    state.instances.get(&instance_id)?;
+    if source == Source::Curseforge {
+        curseforge::key(&state)?;
+    }
+    let st = state.inner().clone();
+    let iid = instance_id.clone();
+    Ok(state.tasks.spawn("content", "Inhalt installieren", Some(instance_id), move |task| {
+        install::run_install(st, task, iid, source, project_id, version_id)
+    }))
 }
 
 #[tauri::command]
-pub async fn content_list(_state: State<'_, AppState>, _instance_id: String, _kind: ContentKind) -> AppResult<Vec<ContentItem>> {
-    todo()
+pub async fn content_list(state: State<'_, AppState>, instance_id: String, kind: ContentKind) -> AppResult<Vec<ContentItem>> {
+    local::list(&state, &instance_id, kind).await
 }
 
 #[tauri::command]
 pub async fn content_set_enabled(
-    _state: State<'_, AppState>,
-    _instance_id: String,
-    _kind: ContentKind,
-    _file_name: String,
-    _enabled: bool,
+    state: State<'_, AppState>,
+    instance_id: String,
+    kind: ContentKind,
+    file_name: String,
+    enabled: bool,
 ) -> AppResult<ContentItem> {
-    todo()
+    local::set_enabled(&state, &instance_id, kind, &file_name, enabled).await
 }
 
 #[tauri::command]
-pub async fn content_remove(_state: State<'_, AppState>, _instance_id: String, _kind: ContentKind, _file_names: Vec<String>) -> AppResult<()> {
-    todo()
+pub async fn content_remove(state: State<'_, AppState>, instance_id: String, kind: ContentKind, file_names: Vec<String>) -> AppResult<()> {
+    local::remove(&state, &instance_id, kind, &file_names).await
 }
 
 /// Lokale Dateien (z. B. per Drag & Drop) in den passenden Ordner kopieren.
 #[tauri::command]
-pub async fn content_add_files(_state: State<'_, AppState>, _instance_id: String, _kind: ContentKind, _paths: Vec<String>) -> AppResult<Vec<ContentItem>> {
-    todo()
+pub async fn content_add_files(state: State<'_, AppState>, instance_id: String, kind: ContentKind, paths: Vec<String>) -> AppResult<Vec<ContentItem>> {
+    local::add_files(&state, &instance_id, kind, &paths).await
 }
 
 #[tauri::command]
-pub async fn content_check_updates(_state: State<'_, AppState>, _instance_id: String) -> AppResult<Vec<ContentUpdate>> {
-    todo()
+pub async fn content_check_updates(state: State<'_, AppState>, instance_id: String) -> AppResult<Vec<ContentUpdate>> {
+    install::check_updates(&state, &instance_id).await
 }
 
-/// Gibt Task-ID zurück.
+/// Gibt Task-ID zurück. Leere Liste = alle verfügbaren Updates.
 #[tauri::command]
-pub async fn content_update(_state: State<'_, AppState>, _instance_id: String, _file_names: Vec<String>) -> AppResult<String> {
-    todo()
-}
-
-#[tauri::command]
-pub async fn worlds_list(_state: State<'_, AppState>, _instance_id: String) -> AppResult<Vec<World>> {
-    todo()
+pub async fn content_update(state: State<'_, AppState>, instance_id: String, file_names: Vec<String>) -> AppResult<String> {
+    state.instances.get(&instance_id)?;
+    let st = state.inner().clone();
+    let iid = instance_id.clone();
+    Ok(state.tasks.spawn("content", "Inhalte aktualisieren", Some(instance_id), move |task| install::run_update(st, task, iid, file_names)))
 }
 
 #[tauri::command]
-pub async fn world_delete(_state: State<'_, AppState>, _instance_id: String, _folder: String) -> AppResult<()> {
-    todo()
+pub async fn worlds_list(state: State<'_, AppState>, instance_id: String) -> AppResult<Vec<World>> {
+    worlds::list(&state, &instance_id).await
+}
+
+#[tauri::command]
+pub async fn world_delete(state: State<'_, AppState>, instance_id: String, folder: String) -> AppResult<()> {
+    worlds::delete(&state, &instance_id, &folder).await
 }
 
 /// Modpack von Modrinth/CurseForge als neue Instanz installieren. Gibt Task-ID zurück.
 #[tauri::command]
-pub async fn modpack_install(
-    _state: State<'_, AppState>,
-    _source: Source,
-    _project_id: String,
-    _version_id: Option<String>,
-) -> AppResult<String> {
-    todo()
+pub async fn modpack_install(state: State<'_, AppState>, source: Source, project_id: String, version_id: Option<String>) -> AppResult<String> {
+    if source == Source::Curseforge {
+        curseforge::key(&state)?;
+    }
+    let st = state.inner().clone();
+    Ok(state.tasks.spawn("import", "Modpack installieren", None, move |task| import::run_modpack_install(st, task, source, project_id, version_id)))
 }
 
 /// Datei (.mrpack, CurseForge-.zip, .vlpack, Prism/MultiMC-.zip) analysieren.
 #[tauri::command]
-pub async fn import_preview(_state: State<'_, AppState>, _path: String) -> AppResult<ImportPreview> {
-    todo()
+pub async fn import_preview(_state: State<'_, AppState>, path: String) -> AppResult<ImportPreview> {
+    import::preview(&path).await
 }
 
 /// Datei als neue Instanz importieren. Gibt Task-ID zurück.
 #[tauri::command]
-pub async fn import_pack(_state: State<'_, AppState>, _path: String, _name: Option<String>) -> AppResult<String> {
-    todo()
+pub async fn import_pack(state: State<'_, AppState>, path: String, name: Option<String>) -> AppResult<String> {
+    if !std::path::Path::new(&path).is_file() {
+        return Err(AppError::NotFound(path));
+    }
+    let st = state.inner().clone();
+    let title = std::path::Path::new(&path).file_name().map(|n| format!("{} importieren", n.to_string_lossy())).unwrap_or_else(|| "Importieren".into());
+    Ok(state.tasks.spawn("import", title, None, move |task| import::run_import_task(st, task, path, name)))
 }
 
 /// Dateien/Ordner im Spielordner, die für einen Export infrage kommen.
 #[tauri::command]
-pub async fn export_entries(_state: State<'_, AppState>, _instance_id: String) -> AppResult<Vec<ExportEntry>> {
-    todo()
+pub async fn export_entries(state: State<'_, AppState>, instance_id: String) -> AppResult<Vec<ExportEntry>> {
+    export::entries(&state, &instance_id).await
 }
 
 /// Instanz exportieren. Gibt Task-ID zurück.
 #[tauri::command]
-pub async fn export_instance(_state: State<'_, AppState>, _instance_id: String, _options: ExportOptions) -> AppResult<String> {
-    todo()
+pub async fn export_instance(state: State<'_, AppState>, instance_id: String, options: ExportOptions) -> AppResult<String> {
+    let inst = state.instances.get(&instance_id)?;
+    let st = state.inner().clone();
+    let iid = instance_id.clone();
+    Ok(state.tasks.spawn("export", format!("{} exportieren", inst.name), Some(instance_id), move |task| export::run_export(st, task, iid, options)))
 }
 
 /// Dateien, die manuell heruntergeladen werden müssen (z. B. nach CurseForge-Import).
 /// Bereits vorhandene Dateien (vom Nutzer in den Ordner gelegt) werden nicht mehr gelistet.
 #[tauri::command]
-pub async fn content_missing(_state: State<'_, AppState>, _instance_id: String) -> AppResult<Vec<MissingDownload>> {
-    Ok(vec![])
+pub async fn content_missing(state: State<'_, AppState>, instance_id: String) -> AppResult<Vec<MissingDownload>> {
+    missing::list(&state, &instance_id).await
 }
 
 /// Liste der fehlenden Downloads verwerfen.
 #[tauri::command]
-pub async fn content_missing_dismiss(_state: State<'_, AppState>, _instance_id: String) -> AppResult<()> {
-    Ok(())
+pub async fn content_missing_dismiss(state: State<'_, AppState>, instance_id: String) -> AppResult<()> {
+    state.instances.get(&instance_id)?;
+    missing::dismiss(&state.paths, &instance_id)
 }

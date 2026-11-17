@@ -1,0 +1,70 @@
+{
+  "data": [
+    {
+      "id": 4712000,
+      "gameId": 432,
+      "modId": 238222,
+      "isAvailable": true,
+      "displayName": "jei-1.20.1-beta",
+      "fileName": "jei-1.20.1-beta.jar",
+      "releaseType": 2,
+      "fileStatus": 4,
+      "hashes": [ { "value": "ffffffffffffffffffffffffffffffffffffffff", "algo": 1 } ],
+      "fileDate": "2023-01-01T00:00:00Z",
+      "fileLength": 100,
+      "downloadCount": 10,
+      "downloadUrl": null,
+      "gameVersions": [ "Forge", "1.20.1" ],
+      "dependencies": [],
+      "isServerPack": false,
+      "fileFingerprint": 1
+    },
+    {
+      "id": 4712866,
+      "gameId": 432,
+      "modId": 238222,
+      "isAvailable": true,
+      "displayName": "jei-1.20.1-forge-15.2.0.27",
+      "fileName": "jei-1.20.1-forge-15.2.0.27.jar",
+      "releaseType": 1,
+      "fileStatus": 4,
+      "hashes": [
+        { "value": "0123456789ABCDEF0123456789ABCDEF01234567", "algo": 1 },
+        { "value": "d41d8cd98f00b204e9800998ecf8427e", "algo": 2 }
+      ],
+      "fileDate": "2023-09-11T20:31:39.087Z",
+      "fileLength": 1291637,
+      "downloadCount": 9001,
+      "downloadUrl": "https://edge.forgecdn.net/files/4712/866/jei-1.20.1-forge-15.2.0.27.jar",
+      "gameVersions": [ "1.20.1", "Forge", "Client", "Server" ],
+      "sortableGameVersions": [ { "gameVersionName": "1.20.1", "gameVersionPadded": "0000000001.0000000020.0000000001", "gameVersion": "1.20.1", "gameVersionReleaseDate": "2023-06-12T00:00:00Z", "gameVersionTypeId": 75125 } ],
+      "dependencies": [
+        { "modId": 306612, "relationType": 3 },
+        { "modId": 111111, "relationType": 2 },
+        { "modId": 222222, "relationType": 5 }
+      ],
+      "alternateFileId": 0,
+      "isServerPack": false,
+      "fileFingerprint": 3089143260,
+      "modules": [ { "name": "META-INF", "fingerprint": 1 } ]
+    },
+    {
+      "id": 4700000,
+      "gameId": 432,
+      "modId": 238222,
+      "isAvailable": true,
+      "displayName": "jei-1.20.1-fabric",
+      "fileName": "jei-1.20.1-fabric.jar",
+      "releaseType": 1,
+      "hashes": [],
+      "fileDate": "2022-01-01T00:00:00Z",
+      "fileLength": 100,
+      "downloadCount": 10,
+      "downloadUrl": "https://edge.forgecdn.net/files/4700/0/jei-1.20.1-fabric.jar",
+      "gameVersions": [ "Fabric", "1.20.1" ],
+      "dependencies": [],
+      "fileFingerprint": 2
+    }
+  ],
+  "pagination": { "index": 0, "pageSize": 50, "resultCount": 3, "totalCount": 3 }
+}

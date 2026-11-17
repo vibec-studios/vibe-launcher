@@ -1,0 +1,53 @@
+{
+  "data": [
+    {
+      "id": 238222,
+      "gameId": 432,
+      "name": "Just Enough Items (JEI)",
+      "slug": "jei",
+      "links": {
+        "websiteUrl": "https://www.curseforge.com/minecraft/mc-mods/jei",
+        "wikiUrl": "",
+        "issuesUrl": "https://github.com/mezz/JustEnoughItems/issues?q=is%3Aissue",
+        "sourceUrl": "https://github.com/mezz/JustEnoughItems"
+      },
+      "summary": "View Items and Recipes",
+      "status": 4,
+      "downloadCount": 300000000,
+      "isFeatured": false,
+      "primaryCategoryId": 421,
+      "categories": [
+        { "id": 421, "gameId": 432, "name": "API and Library", "slug": "library-api", "url": "https://www.curseforge.com/minecraft/mc-mods/library-api", "iconUrl": "https://media.forgecdn.net/avatars/6/36/635351496947765531.png", "dateModified": "2014-05-23T03:21:44.06Z", "isClass": false, "classId": 6, "parentCategoryId": 6 }
+      ],
+      "classId": 6,
+      "authors": [ { "id": 32358, "name": "mezz", "url": "https://www.curseforge.com/members/17072262-mezz?username=mezz" } ],
+      "logo": {
+        "id": 29069,
+        "modId": 238222,
+        "title": "635838945588716414.jpeg",
+        "description": "",
+        "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/29/69/64/64/635838945588716414.jpeg",
+        "url": "https://media.forgecdn.net/avatars/29/69/635838945588716414.jpeg"
+      },
+      "screenshots": [
+        { "id": 1, "modId": 238222, "title": "Recipes", "description": "", "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1/1.png", "url": "https://media.forgecdn.net/attachments/1/1.png" }
+      ],
+      "mainFileId": 4712866,
+      "latestFiles": [],
+      "latestFilesIndexes": [
+        { "gameVersion": "1.20.1", "fileId": 4712866, "filename": "jei-1.20.1-forge-15.2.0.27.jar", "releaseType": 1, "gameVersionTypeId": 75125, "modLoader": 1 },
+        { "gameVersion": "1.20.1", "fileId": 4712867, "filename": "jei-1.20.1-neoforge-15.2.0.27.jar", "releaseType": 1, "gameVersionTypeId": 75125, "modLoader": 6 },
+        { "gameVersion": "1.19.2", "fileId": 4712000, "filename": "jei-1.19.2-fabric-11.6.0.1015.jar", "releaseType": 1, "gameVersionTypeId": 73407, "modLoader": 4 },
+        { "gameVersion": "1.19.2", "fileId": 4712001, "filename": "jei-1.19.2-forge-11.6.0.1015.jar", "releaseType": 1, "gameVersionTypeId": 73407 }
+      ],
+      "dateCreated": "2015-11-23T06:10:59.587Z",
+      "dateModified": "2024-03-01T10:00:00.000Z",
+      "dateReleased": "2024-03-01T09:59:00.000Z",
+      "allowModDistribution": true,
+      "gamePopularityRank": 3,
+      "isAvailable": true,
+      "thumbsUpCount": 42
+    }
+  ],
+  "pagination": { "index": 0, "pageSize": 20, "resultCount": 1, "totalCount": 12345 }
+}

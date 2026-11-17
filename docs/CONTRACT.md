@@ -73,6 +73,29 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   Das Spiel selbst (Vanilla/Loader/Java) wird **nicht** im Import installiert – das passiert über
   `instance_install` (Frontend ruft es nach erfolgreichem Import auf) bzw. automatisch beim ersten Start.
 - **CurseForge-Dateien ohne Drittanbieter-Freigabe** landen in `content_missing` (Frontend zeigt Banner mit Links).
+  Vorher wird geprüft, ob Modrinth dieselbe Datei (gleicher SHA-1) anbietet – dann wird sie von dort geladen.
+  Liegt eine fehlende Datei mit gleichem Namen (und passendem SHA-1) im System-Download-Ordner, übernimmt
+  `content_missing` sie automatisch in die Instanz.
+
+### Inhalte (Content-Modul)
+
+- `ContentKind` = `mod` (`mods/`), `resourcepack` (`resourcepacks/`), `shader` (`shaderpacks/`),
+  `datapack` (`datapacks/` im Spielordner). Datapacks: Bietet ein Datapack-Projekt eine Mod-Variante für den
+  Loader der Instanz (z. B. Terralith für Fabric), wird diese nach `mods/` installiert (gilt für alle Welten).
+  Sonst landet die ZIP in `<spielordner>/datapacks/` – Vanilla lädt diesen Ordner **nicht** automatisch; der
+  Nutzer kopiert sie beim Erstellen einer Welt in `saves/<welt>/datapacks/` (bzw. Mods wie Global Packs /
+  Open Loader nutzen ihn). Für 1.0 bewusst so gelöst.
+- Versionsfilter: Mods nach Instanz-Loader (Quilt akzeptiert Fabric-Mods, NeoForge 1.20.1 akzeptiert
+  Forge-Mods), Shader/Resourcepacks unabhängig vom Loader (`iris`/`optifine`/`minecraft`).
+- `content_install` installiert Pflicht-Abhängigkeiten rekursiv (bereits installierte Projekte werden
+  übersprungen) und ersetzt ältere Dateien desselben Projekts; ein deaktivierter Mod bleibt nach Update deaktiviert.
+- `content_update` mit leerer `file_names`-Liste = alle verfügbaren Updates.
+- `content_list` liefert sofort; unbekannte Dateien werden im Hintergrund per Hash zugeordnet
+  (Modrinth SHA-1, CurseForge Murmur2-Fingerprint) und danach `content://changed` gesendet.
+- Metadaten je Instanz in `instances/<id>/content.json` (Herkunft, Metadaten-Cache nach Größe+mtime,
+  unbekannte Hashes), fehlende Downloads in `instances/<id>/missing.json`, Icons unter `cache/icons/`.
+- Eigenes Modpack-Format `.vlpack`: siehe `docs/VLPACK.md`.
+- Export als Prism/MultiMC wird nicht angeboten (Import schon).
 - **Start** (`instance_launch`): installiert bei Bedarf, holt Zugangsdaten über `state.auth.launch_account(...)`,
   startet den Prozess, sendet `game://state` + `game://log`.
 
