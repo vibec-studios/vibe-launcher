@@ -14,14 +14,14 @@ export function currentPath(): string {
 }
 
 export function contentKindOf(t: ProjectType): ContentKind | null {
-  return t === "mod" ? "mod" : t === "resourcepack" ? "resourcepack" : t === "shader" ? "shader" : null;
+  return t === "mod" ? "mod" : t === "resourcepack" ? "resourcepack" : t === "shader" ? "shader" : t === "datapack" ? "datapack" : null;
 }
 
 /** Unterordner im Spielordner je Inhaltsart. */
-export const kindFolder: Record<ContentKind, string> = { mod: "mods", resourcepack: "resourcepacks", shader: "shaderpacks" };
+export const kindFolder: Record<ContentKind, string> = { mod: "mods", resourcepack: "resourcepacks", shader: "shaderpacks", datapack: "datapacks" };
 
 /** Dateiendungen, die je Inhaltsart hinzugefügt werden können. */
-export const kindExtensions: Record<ContentKind, string[]> = { mod: ["jar"], resourcepack: ["zip"], shader: ["zip"] };
+export const kindExtensions: Record<ContentKind, string[]> = { mod: ["jar"], resourcepack: ["zip"], shader: ["zip"], datapack: ["zip"] };
 
 export const sourceNames: Record<Source, string> = { modrinth: "Modrinth", curseforge: "CurseForge" };
 

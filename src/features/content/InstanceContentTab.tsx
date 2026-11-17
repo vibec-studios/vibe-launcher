@@ -22,7 +22,7 @@ type Filter = "all" | "enabled" | "disabled" | "updates";
 /** Wurde für die Instanz schon nach Updates gesucht? (bleibt beim Tab-Wechsel erhalten) */
 const useUpdateChecks = create<{ checked: Record<string, boolean>; tasks: Record<string, string> }>(() => ({ checked: {}, tasks: {} }));
 
-const discoverType: Record<ContentKind, string> = { mod: "mod", resourcepack: "resourcepack", shader: "shader" };
+const discoverType: Record<ContentKind, string> = { mod: "mod", resourcepack: "resourcepack", shader: "shader", datapack: "datapack" };
 
 /** Dateien zu einer Instanz hinzufügen (Dialog, Drag & Drop, globale Ablage). */
 export async function addContentFiles(instanceId: string, kind: ContentKind, paths: string[]) {
