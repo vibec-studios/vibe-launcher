@@ -128,7 +128,8 @@ impl Settings {
             .clone()
             .filter(|k| !k.trim().is_empty())
             .or_else(|| option_env!("CURSEFORGE_API_KEY").map(str::to_string))
-            .filter(|k| !k.trim().is_empty())
+            .map(|k| k.trim().to_string())
+            .filter(|k| !k.is_empty())
     }
 
     /// Effektive Azure-Client-ID: Einstellung > Build-Zeit (`VIBE_MSA_CLIENT_ID`).
@@ -137,6 +138,7 @@ impl Settings {
             .clone()
             .filter(|k| !k.trim().is_empty())
             .or_else(|| option_env!("VIBE_MSA_CLIENT_ID").map(str::to_string))
-            .filter(|k| !k.trim().is_empty())
+            .map(|k| k.trim().to_string())
+            .filter(|k| !k.is_empty())
     }
 }
