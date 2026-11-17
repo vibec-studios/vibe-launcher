@@ -12,6 +12,11 @@
 @import "@fontsource/silkscreen/400.css";
 @import "@fontsource/silkscreen/700.css";
 
+/* Akzent pro Container überschreibbar (style={{"--accent": …}}) – daher inline statt aufgelöst */
+@theme inline {
+  --color-accent: var(--accent);
+}
+
 @theme {
   --color-bg: #000;
   --color-surface: #0b0b0e;
@@ -24,7 +29,6 @@
   --color-dim: #6b6b75;
   --color-brand: #8b6cff;
   --color-brand2: #3fe0c5;
-  --color-accent: var(--accent);
   --color-danger: #ff5470;
   --color-warn: #ffb547;
   --color-ok: #3fe0c5;
@@ -98,8 +102,10 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 
 ::selection { background: var(--accent); color: #000; }
 
-:focus { outline: none; }
-:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+@layer base {
+  :focus { outline: none; }
+  :focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+}
 
 /* Scrollbereiche: schlanke, eckige Scrollbars, kein Smooth-Scroll, kein Überscroll-Weiterreichen */
 .scroll {

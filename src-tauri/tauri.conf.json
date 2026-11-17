@@ -32,13 +32,22 @@
       "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data: blob: https:; media-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost https:; font-src 'self' data:; frame-src https://www.youtube.com https://www.youtube-nocookie.com",
       "assetProtocol": {
         "enable": true,
-        "scope": ["$APPDATA/**", "$DATA/**", "$DATA/VibeLauncher/**"]
-      }
+        "scope": [
+          "$APPDATA/**",
+          "$DATA/**",
+          "$DATA/VibeLauncher/**"
+        ]
+      },
+      "dangerousDisableAssetCspModification": [
+        "style-src"
+      ]
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "publisher": "Vibe Craft Studios",
     "copyright": "© Vibe Craft Studios",
     "category": "Game",
@@ -53,10 +62,15 @@
       "icons/icon.ico"
     ],
     "windows": {
-      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
       "nsis": {
         "installMode": "currentUser",
-        "languages": ["German", "English"],
+        "languages": [
+          "German",
+          "English"
+        ],
         "displayLanguageSelector": false
       }
     }
@@ -64,8 +78,12 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdBNDUyOERBOTQzMkUwNUIKUldSYjRES1UyaWhGZXFIMUxaY3FRcUt1dzBtMUxRdDkrWFdaM0lBQUN5L1VCUnRSbGFiZDFYTGYK",
-      "endpoints": ["https://github.com/vibec-studios/vibe-launcher/releases/latest/download/latest.json"],
-      "windows": { "installMode": "passive" }
+      "endpoints": [
+        "https://github.com/vibec-studios/vibe-launcher/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

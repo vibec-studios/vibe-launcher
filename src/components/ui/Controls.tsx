@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { cn } from "./cn";
 import { Button } from "./Button";
+import { t } from "@/i18n";
 
 export function Switch({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label?: string }) {
   return (
@@ -121,7 +122,7 @@ export function ErrorState({ error, onRetry, className }: { error: unknown; onRe
       <p className="selectable max-w-[520px] text-[13px] text-muted">{msg}</p>
       {onRetry && (
         <Button size="sm" onClick={onRetry}>
-          Erneut versuchen
+          {t("common.retry")}
         </Button>
       )}
     </div>
