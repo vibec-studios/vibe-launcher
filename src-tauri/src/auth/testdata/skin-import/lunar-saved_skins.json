@@ -1,0 +1,22 @@
+{
+  "http://textures.minecraft.net/texture/1a4af718455d4aab528e7a61f86fa25e6a369d1768dcb13f7df319a713eb810b": {
+    "type": "classic",
+    "name": "Steve"
+  },
+  "http://textures.minecraft.net/texture/3b60a1f6d562f52aaebbf1434f1de147933a3affe0e764fa49ea057536623cd3": {
+    "type": "slim",
+    "name": "Alex"
+  },
+  "http://textures.minecraft.net/texture/eaa1a619960ac6860cb5c9b6d3c88745d6ef6403009af5ba0d0838b87b12df04": {
+    "type": "slim",
+    "name": "Mein Slim",
+    "favoriteIndex": 0
+  },
+  "http://textures.minecraft.net/texture/709be0b8f619b5f832a6649ca66f129b0c140deff14601f169fd1e9c143b35f2": {
+    "type": "CLASSIC"
+  },
+  "https://evil.example/texture/abc": {
+    "type": "classic",
+    "name": "fremd"
+  }
+}

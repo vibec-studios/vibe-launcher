@@ -6,6 +6,7 @@
 //! Minecraft-Access-Token liegen als JSON im OS-Schlüsselbund (siehe [`secrets`]).
 pub mod msa;
 pub mod secrets;
+pub mod skin_import;
 pub mod skins;
 
 use crate::error::{AppError, AppResult};

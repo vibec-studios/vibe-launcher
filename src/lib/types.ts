@@ -263,8 +263,10 @@ export interface LibrarySkin {
   variant: SkinVariant;
   file: string;
   added_at: number;
-  /** "file" | "account:<name>" | "player:<name>" */
+  /** "file" | "account:<name>" | "player:<name>" | "import:<launcher>" */
   source: string | null;
+  /** Zugeordnetes Mojang-Cape (UUID), z. B. aus der Modrinth App */
+  cape_id?: string | null;
   data_url: string;
 }
 
