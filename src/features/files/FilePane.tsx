@@ -139,7 +139,7 @@ function InfoCard({ file, actions }: { file: FileContent; actions: FileActions }
           <FileIcon entry={entry} size={26} />
         </div>
         <div className="min-w-0 max-w-full">
-          <div className="truncate font-mono text-[14px] font-medium text-white" title={file.path}>
+          <div className="truncate font-mono text-[14px] font-medium text-text" title={file.path}>
             {baseName(file.path)}
           </div>
           <div className="mt-1 text-[12.5px] text-muted">{t(`files.readonly.${file.readonly_reason ?? "binary"}`)}</div>
@@ -229,7 +229,7 @@ export function FilePane(p: FilePaneProps) {
         <FileIcon entry={entry} size={18} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="selectable truncate font-mono text-[13px] font-medium text-white" title={file.path}>
+            <span className="selectable truncate font-mono text-[13px] font-medium text-text" title={file.path}>
               {file.path}
             </span>
             {p.dirty && <Tag color="#ffb547">{t("files.dirty")}</Tag>}

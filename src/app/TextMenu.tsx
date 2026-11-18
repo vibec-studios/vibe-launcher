@@ -136,7 +136,7 @@ export function TextMenuHost() {
           key={it.label}
           role="menuitem"
           disabled={it.disabled}
-          className={cn(menuStyles.item, "w-full hover:bg-white/[.06] hover:shadow-[inset_2px_0_0_var(--accent)] disabled:pointer-events-none disabled:opacity-40")}
+          className={cn(menuStyles.item, "w-full hover:bg-white/[.07] disabled:pointer-events-none disabled:opacity-40")}
           onMouseDown={(e) => e.preventDefault()}
           onClick={async () => {
             close();

@@ -1,39 +1,43 @@
-// Welten einer Instanz (saves/). Rechtsklick: Ordner öffnen, Backup erstellen, in andere Instanz kopieren, Löschen.
+// Welten einer Instanz (saves/) als ruhige Liste. Beim Hover: direkt in die Welt starten; ⋯ bzw. Rechtsklick: Ordner
+// öffnen, Backup erstellen, in andere Instanz kopieren, Löschen. Werkzeuge in der gemeinsamen Zeile (PageTools).
 import { memo, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, Copy, FileArchive, FolderOpen, Globe2, Trash2 } from "lucide-react";
+import { Archive, Copy, FileArchive, FolderOpen, Globe2, MoreHorizontal, Play, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
 import type { Instance, World } from "@/lib/types";
 import { formatBytes, formatRelative, imageSrc } from "@/lib/format";
 import {
-  Button,
   ContextItem,
   ContextLabel,
   ContextMenu,
   ContextSeparator,
+  DropdownItem,
+  DropdownMenu,
+  DropdownSeparator,
   EmptyState,
   ErrorState,
   IconButton,
   SearchInput,
   Skeleton,
   Tag,
-  Tooltip,
   confirm,
   toast,
+  type MenuItemProps,
 } from "@/components/ui";
 import { PixelBlock } from "@/components/instance/InstanceIcon";
 import { useT } from "@/i18n";
 import { CopyWorldDialog, backupWorld, importWorldZip } from "@/features/backups/worldActions";
+import { supportsQuickPlay, useInstanceActions } from "@/components/instance/actions";
+import { useRunPhase } from "@/components/instance/status";
+import { PageTools } from "./toolbar";
 
 const MODES = ["survival", "creative", "adventure", "spectator", "hardcore"];
-const wrap = "w-full px-6";
-
 function WorldIcon({ world }: { world: World }) {
   const [failed, setFailed] = useState(false);
   const src = imageSrc(world.icon);
   return (
-    <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden border border-line bg-surface2">
+    <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-ctl bg-surface2">
       {src && !failed ? (
         <img
           src={src}
@@ -45,13 +49,14 @@ function WorldIcon({ world }: { world: World }) {
           className="h-full w-full object-cover [image-rendering:pixelated]"
         />
       ) : (
-        <PixelBlock color="#5fbf4a" size={30} />
+        <PixelBlock color="#5fbf4a" size={24} />
       )}
     </div>
   );
 }
 
-const WorldRow = memo(function WorldRow({ instance, world, onCopy }: { instance: Instance; world: World; onCopy: (w: World) => void }) {
+/** Aktionen einer Welt – dieselben Einträge im ⋯-Menü und im Rechtsklick-Menü. */
+function WorldMenu({ instance, world, onCopy, Item, Sep }: { instance: Instance; world: World; onCopy: (w: World) => void; Item: (p: MenuItemProps) => React.ReactNode; Sep: () => React.ReactNode }) {
   const t = useT();
   const openDir = () => api.instanceOpenFolder(instance.id, `saves/${world.folder}`).catch((e) => toast.error(e));
   const del = async () => {
@@ -69,63 +74,78 @@ const WorldRow = memo(function WorldRow({ instance, world, onCopy }: { instance:
       toast.error(e, t("worlds.delete_failed"));
     }
   };
+  return (
+    <>
+      <Item icon={<FolderOpen size={14} />} onSelect={openDir}>
+        {t("common.open_folder")}
+      </Item>
+      <Item icon={<Archive size={14} />} onSelect={() => backupWorld(instance, world)}>
+        {t("worlds.backup")}
+      </Item>
+      <Item icon={<Copy size={14} />} onSelect={() => onCopy(world)}>
+        {t("worlds.copy")}
+      </Item>
+      <Sep />
+      <Item icon={<Trash2 size={14} />} danger onSelect={() => void del()}>
+        {t("common.delete")}
+      </Item>
+    </>
+  );
+}
+
+const WorldRow = memo(function WorldRow({ instance, world, onCopy }: { instance: Instance; world: World; onCopy: (w: World) => void }) {
+  const t = useT();
+  const { launch } = useInstanceActions();
+  const { phase } = useRunPhase(instance.id);
+  const quick = supportsQuickPlay(instance.mc_version);
+  const openDir = () => api.instanceOpenFolder(instance.id, `saves/${world.folder}`).catch((e) => toast.error(e));
   const gm = world.game_mode?.toLowerCase() ?? null;
   const mode = gm ? (MODES.includes(gm) ? t(`worlds.mode.${gm}`) : world.game_mode) : null;
+  const meta = [mode, world.last_played ? formatRelative(world.last_played) : null, formatBytes(world.size)].filter(Boolean).join(" · ");
   return (
     <ContextMenu
       content={
         <>
           <ContextLabel>{world.name}</ContextLabel>
-          <ContextItem icon={<FolderOpen size={14} />} onSelect={openDir}>
-            {t("common.open_folder")}
-          </ContextItem>
-          <ContextItem icon={<Archive size={14} />} onSelect={() => backupWorld(instance, world)}>
-            {t("worlds.backup")}
-          </ContextItem>
-          <ContextItem icon={<Copy size={14} />} onSelect={() => onCopy(world)}>
-            {t("worlds.copy")}
-          </ContextItem>
-          <ContextSeparator />
-          <ContextItem icon={<Trash2 size={14} />} danger onSelect={del}>
-            {t("common.delete")}
-          </ContextItem>
+          <WorldMenu instance={instance} world={world} onCopy={onCopy} Item={ContextItem} Sep={ContextSeparator} />
         </>
       }
     >
       <div
         onDoubleClick={openDir}
-        className="group flex items-center gap-4 border border-line bg-surface px-3.5 py-3 transition-[background-color,border-color,box-shadow] duration-150 hover:border-line2 hover:bg-surface2 hover:shadow-[inset_3px_0_0_var(--accent)] data-[state=open]:border-line2 data-[state=open]:bg-surface2 data-[state=open]:shadow-[inset_3px_0_0_var(--accent)]"
+        title={`saves/${world.folder}`}
+        className="group flex h-12 items-center gap-3 px-6 transition-colors duration-100 hover:bg-white/[.03] data-[state=open]:bg-white/[.04]"
       >
         <WorldIcon world={world} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-semibold text-white">{world.name}</div>
-          <div className="truncate font-mono text-[11px] text-dim">saves/{world.folder}</div>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[13.5px] font-semibold text-text">{world.name}</span>
+            {gm === "hardcore" && <Tag color="#ff5470">{mode}</Tag>}
+          </div>
+          <div className="truncate text-[12px] leading-tight text-dim">{meta}</div>
         </div>
-        {mode && <Tag color={gm === "hardcore" ? "#ff5470" : undefined}>{mode}</Tag>}
-        <div className="w-[120px] text-right text-[12px] text-muted">{world.last_played ? formatRelative(world.last_played) : "–"}</div>
-        <div className="w-[80px] text-right text-[12px] tabular-nums text-dim">{formatBytes(world.size)}</div>
-        <div className="flex w-[136px] justify-end gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-          <Tooltip content={t("worlds.backup")}>
-            <IconButton label={t("worlds.backup")} size="sm" className="border-transparent hover:border-line2" onClick={() => backupWorld(instance, world)}>
-              <Archive size={14} />
+        {quick && (
+          <IconButton
+            label={t("home.world_play", { name: world.name })}
+            tip
+            size="sm"
+            variant="ghost"
+            disabled={phase !== "idle"}
+            className="text-accent opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+            onClick={() => launch(instance, world.folder)}
+          >
+            <Play size={14} fill="currentColor" />
+          </IconButton>
+        )}
+        <DropdownMenu
+          trigger={
+            <IconButton label={t("common.more")} size="sm" variant="ghost" className="opacity-60 group-hover:opacity-100 data-[state=open]:opacity-100">
+              <MoreHorizontal size={15} />
             </IconButton>
-          </Tooltip>
-          <Tooltip content={t("worlds.copy")}>
-            <IconButton label={t("worlds.copy")} size="sm" className="border-transparent hover:border-line2" onClick={() => onCopy(world)}>
-              <Copy size={14} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip content={t("common.open_folder")}>
-            <IconButton label={t("common.open_folder")} size="sm" className="border-transparent hover:border-line2" onClick={openDir}>
-              <FolderOpen size={14} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip content={t("common.delete")}>
-            <IconButton label={t("common.delete")} size="sm" className="border-transparent text-danger hover:border-danger/50" onClick={del}>
-              <Trash2 size={14} />
-            </IconButton>
-          </Tooltip>
-        </div>
+          }
+        >
+          <WorldMenu instance={instance} world={world} onCopy={onCopy} Item={DropdownItem} Sep={DropdownSeparator} />
+        </DropdownMenu>
       </div>
     </ContextMenu>
   );
@@ -147,27 +167,26 @@ export function WorldsTab({ instance }: { instance: Instance }) {
 
   return (
     <div className="scroll h-full">
-      <div className={`${wrap} flex flex-col gap-4 py-6`}>
-        <div className="flex items-center gap-3">
-          <SearchInput value={query} onChange={setQuery} placeholder={t("worlds.search")} className="max-w-[320px] flex-1" />
-          <span className="text-[12px] text-dim">{q.data ? t("worlds.count", { n: q.data.length }) : ""}</span>
-          <div className="flex-1" />
-          <Button size="sm" icon={<FileArchive size={13} />} onClick={() => importWorldZip(instance)}>
-            {t("worlds.import")}
-          </Button>
-          <Button size="sm" icon={<FolderOpen size={13} />} onClick={() => api.instanceOpenFolder(instance.id, "saves").catch((e) => toast.error(e))}>
-            {t("worlds.open_saves")}
-          </Button>
-        </div>
+      <PageTools>
+        <SearchInput value={query} onChange={setQuery} placeholder={t("worlds.search")} className="w-[240px] min-w-[140px] shrink [&_input]:h-8" />
+        <div className="flex-1" />
+        <IconButton label={t("worlds.import")} tip variant="ghost" onClick={() => importWorldZip(instance)}>
+          <FileArchive size={16} />
+        </IconButton>
+        <IconButton label={t("worlds.open_saves")} tip variant="ghost" onClick={() => api.instanceOpenFolder(instance.id, "saves").catch((e) => toast.error(e))}>
+          <FolderOpen size={16} />
+        </IconButton>
+      </PageTools>
+      <div className="pb-6">
         {q.isError && !q.data ? (
           <ErrorState error={q.error} onRetry={() => q.refetch()} />
         ) : !q.data ? (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {Array.from({ length: 4 }, (_, i) => (
-              <div key={i} className="flex items-center gap-4 border border-line bg-surface px-3.5 py-3">
-                <Skeleton className="h-12 w-12" />
-                <div className="flex flex-1 flex-col gap-2">
-                  <Skeleton className="h-4 w-48" />
+              <div key={i} className="flex h-12 items-center gap-3 px-6">
+                <Skeleton className="h-9 w-9" />
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <Skeleton className="h-3.5 w-48" />
                   <Skeleton className="h-3 w-32" />
                 </div>
               </div>
@@ -178,7 +197,7 @@ export function WorldsTab({ instance }: { instance: Instance }) {
         ) : list.length === 0 ? (
           <EmptyState title={t("instances.no_match")} />
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {list.map((w) => (
               <WorldRow key={w.folder} instance={instance} world={w} onCopy={setCopying} />
             ))}

@@ -216,3 +216,40 @@ export const InstanceRow = memo(function InstanceRow({ instance: i, onOpen }: { 
     </ContextMenu>
   );
 });
+
+/** Kompakte Zeile der Bibliothek (Listenansicht): Icon, Name, Loader/Version, zuletzt gespielt, Spielzeit, Spielen. */
+export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOpen }: { instance: Instance; onOpen: (i: Instance) => void }) {
+  const t = useT();
+  const accent = instanceAccent(i.id, i.accent);
+  return (
+    <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={i.name}
+        onClick={() => onOpen(i)}
+        onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(i)}
+        style={accentVars(accent)}
+        className="group relative grid h-11 min-w-0 grid-cols-[32px_minmax(0,1fr)_36px] items-center gap-3 overflow-hidden rounded-ctl px-2 transition-colors duration-100 hover:bg-white/[.04] data-[state=open]:bg-white/[.04] @min-[640px]:grid-cols-[32px_minmax(0,1fr)_150px_36px] @min-[860px]:grid-cols-[32px_minmax(0,1fr)_150px_130px_90px_36px]"
+      >
+        <InstanceIcon icon={i.icon} accent={accent} size={32} />
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[13.5px] font-semibold text-text">{i.name}</span>
+            <span className="min-w-0 truncate text-[12px] empty:hidden">
+              <StatusHint instance={i} />
+            </span>
+          </div>
+          {i.source && <div className="truncate text-[11.5px] leading-tight text-dim">{i.source.name ?? t("inst.modpack")}</div>}
+        </div>
+        <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{loaderLine(i)}</span>
+        <span className="hidden truncate text-[12.5px] text-muted @min-[860px]:block">{i.last_played ? formatRelative(i.last_played) : t("inst.never_played")}</span>
+        <span className="hidden truncate text-right text-[12.5px] tabular-nums text-dim @min-[860px]:block">{i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : "–"}</span>
+        <span className="flex justify-end opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
+          <PlayButton instance={i} size="icon" subtle />
+        </span>
+        <CardProgress id={i.id} />
+      </div>
+    </ContextMenu>
+  );
+});

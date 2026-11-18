@@ -8,6 +8,7 @@ import {
   FolderOpen,
   ImagePlus,
   LogIn,
+  MoreHorizontal,
   Pencil,
   RotateCcw,
   RotateCw,
@@ -16,7 +17,6 @@ import {
   Sparkles,
   Trash2,
   UserRound,
-  Users,
   X,
 } from "lucide-react";
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -26,6 +26,10 @@ import {
   ContextMenu,
   ContextSeparator,
   Dialog,
+  DropdownItem,
+  DropdownMenu,
+  DropdownSeparator,
+  EmptyState,
   ErrorState,
   IconButton,
   Input,
@@ -217,38 +221,54 @@ export function SkinsPage() {
   };
 
   const canEdit = !!profile && !busy;
+  const libraryTab = !(tab === "mccapes" && mcEnabled && account);
 
   return (
-    <div ref={pageRef} className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center justify-between gap-4 px-6 pb-4 pt-5">
-        <div className="min-w-0">
-          <h1 className="display text-[22px]">{t("nav.skins")}</h1>
-          <p className="mt-0.5 text-[13px] text-muted">{t("skins.lead")}</p>
-        </div>
-        {accounts.length > 1 && (
-          <div className="flex items-center gap-2">
-            <Users size={15} className="text-dim" />
+    <div ref={pageRef} className="flex h-full min-h-0 flex-col bg-panel">
+      {/* Werkzeugleiste: Account links, Bibliothek-Aktionen rechts (Titel steht in der Titelleiste) */}
+      <div className="flex h-12 shrink-0 items-center gap-2 px-6">
+        {accounts.length > 1 ? (
+          <div className="w-[220px]">
             <Select
               size="sm"
-              className="w-[200px]"
+              variant="ghost"
               value={accountId}
               onChange={(v) => setChosen(v)}
-              options={accounts.map((a) => ({ value: a.id, label: a.username }))}
+              options={accounts.map((a) => ({
+                value: a.id,
+                label: (
+                  <span className="inline-flex items-center gap-2">
+                    <PlayerHead uuid={a.uuid} name={a.username} size={18} />
+                    {a.username}
+                  </span>
+                ),
+              }))}
             />
           </div>
+        ) : account ? (
+          <span className="flex items-center gap-2 px-1 text-[13px] font-semibold text-text">
+            <PlayerHead uuid={account.uuid} name={account.username} size={18} />
+            {account.username}
+          </span>
+        ) : null}
+        <div className="flex-1" />
+        {libraryTab && (
+          <>
+            <ImportByName />
+            <AddFileButton />
+          </>
         )}
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(340px,1fr)_minmax(360px,1.1fr)] gap-4 px-6 pb-6">
         {/* ------------------------------------------------------------ Viewer + aktueller Skin */}
-        <section className="flex min-h-0 flex-col border border-line bg-surface">
-          <div className="flex h-12 shrink-0 items-center gap-3 border-b border-line px-3">
-            {account ? <PlayerHead uuid={account.uuid} name={account.username} size={24} /> : <UserRound size={18} className="text-dim" />}
+        <section className="flex min-h-0 flex-col overflow-hidden rounded-card bg-surface">
+          <div className="flex h-12 shrink-0 items-center gap-2 pl-4 pr-2">
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[13.5px] font-semibold text-white">
+              <div className="truncate text-[13.5px] font-semibold text-text">
                 {preview?.skin ? t("skins.preview_of", { name: preview.skin.name }) : preview ? t("skins.preview") : (account?.username ?? t("skins.preview"))}
               </div>
-              <div className="truncate text-[12px] text-dim">{preview ? t("skins.preview") : account ? t("skins.current") : t("skins.no_account_title")}</div>
+              <div className="truncate text-caption text-dim">{preview ? t("skins.preview") : account ? t("skins.current") : t("skins.no_account_title")}</div>
             </div>
             <Segmented
               value={viewerVariant}
@@ -258,9 +278,34 @@ export function SkinsPage() {
                 { value: "slim", label: t("skins.slim"), disabled: !preview?.skin && !canEdit },
               ]}
             />
+            {account && (
+              <>
+                <IconButton label={t("skins.upload")} tip variant="ghost" size="sm" onClick={() => void uploadFile()} disabled={!canEdit}>
+                  {busy === "upload" ? <Spinner size={13} /> : <FileUp size={15} />}
+                </IconButton>
+                <DropdownMenu
+                  trigger={
+                    <IconButton label={t("common.more")} tip variant="ghost" size="sm">
+                      <MoreHorizontal size={16} />
+                    </IconButton>
+                  }
+                >
+                  <DropdownItem icon={<FileUp size={14} />} disabled={!canEdit} onSelect={() => void uploadFile()}>
+                    {t("skins.upload")}
+                  </DropdownItem>
+                  <DropdownItem icon={<Save size={14} />} disabled={!profile?.skin || !!busy} onSelect={() => void saveCurrent()}>
+                    {t("skins.save_current")}
+                  </DropdownItem>
+                  <DropdownSeparator />
+                  <DropdownItem icon={<RotateCcw size={14} />} danger disabled={!canEdit} onSelect={() => void resetSkin()}>
+                    {t("skins.reset")}
+                  </DropdownItem>
+                </DropdownMenu>
+              </>
+            )}
           </div>
 
-          <div className="relative min-h-0 flex-1 overflow-hidden bg-[radial-gradient(ellipse_at_50%_40%,rgba(139,108,255,.10),transparent_65%)]">
+          <div className="relative min-h-0 flex-1 overflow-hidden">
             {viewerSkin ? (
               <Suspense fallback={<CenterSpinner />}>
                 <SkinViewer3D
@@ -290,7 +335,7 @@ export function SkinsPage() {
               </div>
             )}
             {viewerSkin && (
-              <div className="absolute right-2 top-2 flex flex-col gap-1">
+              <div className="absolute left-3 top-2">
                 <Segmented
                   value={anim}
                   onChange={setAnim}
@@ -298,25 +343,22 @@ export function SkinsPage() {
                     { value: "idle", label: t("skins.anim_idle") },
                     { value: "walk", label: t("skins.anim_walk") },
                   ]}
-                  className="bg-black/50"
                 />
               </div>
             )}
             {viewerSkin && (
-              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between gap-2">
-                <span className="text-[11.5px] text-dim">{t("skins.drag_hint")}</span>
-                <Tooltip content={t("skins.rotate")}>
-                  <IconButton label={t("skins.rotate")} size="sm" active={rotate} onClick={() => setRotate((r) => !r)} className="bg-black/50">
-                    <RotateCw size={14} />
-                  </IconButton>
-                </Tooltip>
+              <div className="absolute bottom-2 left-3 right-2 flex items-center justify-between gap-2">
+                <span className="text-caption text-dim">{t("skins.drag_hint")}</span>
+                <IconButton label={t("skins.rotate")} tip tipSide="left" variant="ghost" size="sm" active={rotate} onClick={() => setRotate((r) => !r)}>
+                  <RotateCw size={14} />
+                </IconButton>
               </div>
             )}
           </div>
 
-          {preview ? (
-            <div className="flex shrink-0 items-center gap-2 border-t border-line bg-brand/10 px-3 py-2.5">
-              <span className="min-w-0 flex-1 truncate text-[12.5px] text-muted">
+          {preview && (
+            <div className="flex shrink-0 items-center gap-2 bg-surface2 px-4 py-2">
+              <span className="min-w-0 flex-1 truncate text-meta text-muted">
                 {account ? t("skins.apply_hint", { name: account.username }) : t("skins.no_account_title")}
               </span>
               <Button size="sm" variant="subtle" icon={<X size={14} />} onClick={() => setPreview(null)} disabled={!!busy}>
@@ -332,27 +374,12 @@ export function SkinsPage() {
                 </Button>
               )}
             </div>
-          ) : (
-            account && (
-              <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-line px-3 py-2.5">
-                <Button size="sm" icon={<FileUp size={14} />} onClick={() => void uploadFile()} disabled={!canEdit} loading={busy === "upload"}>
-                  {t("skins.upload")}
-                </Button>
-                <Button size="sm" icon={<Save size={14} />} onClick={() => void saveCurrent()} disabled={!profile?.skin || !!busy} loading={busy === "save"}>
-                  {t("skins.save_current")}
-                </Button>
-                <div className="flex-1" />
-                <Button size="sm" variant="subtle" icon={<RotateCcw size={14} />} onClick={() => void resetSkin()} disabled={!canEdit} loading={busy === "reset"}>
-                  {t("skins.reset")}
-                </Button>
-              </div>
-            )
           )}
 
           {account && !account.needs_relogin && (
-            <div className="flex shrink-0 flex-wrap gap-x-4 gap-y-3 border-t border-line px-3 pb-3 pt-2.5">
+            <div className="flex shrink-0 flex-wrap gap-x-6 gap-y-3 px-4 pb-4 pt-3">
               <div className="min-w-0">
-                <div className="mb-2 text-[12.5px] font-semibold text-muted">{t("skins.capes")}</div>
+                <div className="mb-2 text-section text-muted">{t("skins.capes")}</div>
                 {!profile ? (
                   <div className="flex gap-2">
                     {[0, 1, 2].map((i) => (
@@ -383,13 +410,13 @@ export function SkinsPage() {
                         }}
                       />
                     ))}
-                    {profile.capes.length === 0 && <span className="self-center text-[12.5px] text-dim">{t("skins.no_capes")}</span>}
+                    {profile.capes.length === 0 && <span className="self-center text-meta text-dim">{t("skins.no_capes")}</span>}
                   </div>
                 )}
               </div>
               {mcHas && (
-                <div className="min-w-0 border-l border-line pl-4">
-                  <div className="mb-2 flex items-baseline gap-1.5 text-[12.5px] font-semibold text-muted">
+                <div className="min-w-0">
+                  <div className="mb-2 flex items-baseline gap-1.5 text-section text-muted">
                     {t("mccapes.title")}
                     <span className="font-normal text-dim">· {t("mccapes.strip_hint")}</span>
                   </div>
@@ -409,74 +436,61 @@ export function SkinsPage() {
         </section>
 
         {/* ------------------------------------------------------------ Bibliothek */}
-        <section className={cn("flex min-h-0 flex-col border bg-surface transition-colors duration-150", dragOver ? "border-accent" : "border-line")}>
+        <section className={cn("relative flex min-h-0 flex-col rounded-card", dragOver && "outline outline-2 outline-accent")}>
           {mcEnabled && account ? (
             <Tabs
-              className="shrink-0 px-1.5 pr-3"
+              className="h-9! shrink-0 border-b-0"
               value={tab}
               onChange={setTab}
               items={[
                 { value: "library", label: t("skins.library"), badge: libraryQ.data?.length },
                 { value: "mccapes", label: t("mccapes.title"), icon: <Sparkles size={14} /> },
               ]}
-              right={tab === "library" ? <AddFileButton /> : undefined}
             />
           ) : (
-            <div className="flex h-12 shrink-0 items-center gap-3 border-b border-line px-3">
-              <div className="min-w-0 flex-1">
-                <span className="text-[13.5px] font-semibold text-white">{t("skins.library")}</span>
-                {libraryQ.data && <span className="ml-2 text-[12px] text-dim">{t("skins.library_count", { n: libraryQ.data.length })}</span>}
-              </div>
-              <AddFileButton />
+            <div className="flex h-9 shrink-0 items-center gap-2 px-1">
+              <span className="text-section text-text">{t("skins.library")}</span>
+              {libraryQ.data && <span className="text-meta text-dim">{t("skins.library_count", { n: libraryQ.data.length })}</span>}
             </div>
           )}
-          {tab === "mccapes" && mcEnabled && account ? (
+          {!libraryTab ? (
             <McCapesPanel profileQ={mcQ} frames={mcFrames} shown={mcShown} onShownChange={setMcShown} />
           ) : (
-            <>
-              <ImportByName />
-              <div className="scroll relative min-h-0 flex-1 p-3">
-                {libraryQ.isPending ? (
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2">
-                    {[0, 1, 2, 3, 4, 5].map((i) => (
-                      <Skeleton key={i} className="h-[158px]" />
-                    ))}
-                  </div>
-                ) : libraryQ.isError ? (
-                  <ErrorState error={libraryQ.error} onRetry={() => void libraryQ.refetch()} />
-                ) : libraryQ.data.length === 0 ? (
-                  <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-                    <Shirt size={26} className="text-dim" />
-                    <div className="text-[14px] font-semibold text-white">{t("skins.library_empty_title")}</div>
-                    <p className="max-w-[340px] text-[12.5px] text-muted">{t("skins.library_empty_text")}</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2">
-                    {libraryQ.data.map((s) => (
-                      <LibraryTile
-                        key={s.id}
-                        skin={s}
-                        selected={preview?.skin?.id === s.id}
-                        canApply={!!profile && !busy}
-                        onPreview={() => setPreview((p) => ({ capeId: p?.capeId, skin: s, variant: s.variant }))}
-                        onApply={() => {
-                          if (!accountId) return;
-                          void mutate("apply", () => api.skinApplyLibrary(accountId, s.id, null), tt("skins.applied"), tt("skins.error.apply")).then(
-                            (ok) => ok && setPreview(null),
-                          );
-                        }}
-                        onRename={() => setRenaming(s)}
-                      />
-                    ))}
-                  </div>
-                )}
-                {dragOver && (
-                  <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/70 text-[14px] font-semibold text-white">
-                    {t("skins.drop_here")}
-                  </div>
-                )}
-              </div>
-            </>
+            <div className="scroll relative min-h-0 flex-1 p-0.5 pt-2">
+              {libraryQ.isPending ? (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <Skeleton key={i} className="h-[158px]" />
+                  ))}
+                </div>
+              ) : libraryQ.isError ? (
+                <ErrorState error={libraryQ.error} onRetry={() => void libraryQ.refetch()} />
+              ) : libraryQ.data.length === 0 ? (
+                <EmptyState className="h-full" icon={<Shirt size={24} />} title={t("skins.library_empty_title")} text={t("skins.library_empty_text")} />
+              ) : (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2">
+                  {libraryQ.data.map((s) => (
+                    <LibraryTile
+                      key={s.id}
+                      skin={s}
+                      selected={preview?.skin?.id === s.id}
+                      canApply={!!profile && !busy}
+                      onPreview={() => setPreview((p) => ({ capeId: p?.capeId, skin: s, variant: s.variant }))}
+                      onApply={() => {
+                        if (!accountId) return;
+                        void mutate("apply", () => api.skinApplyLibrary(accountId, s.id, null), tt("skins.applied"), tt("skins.error.apply")).then(
+                          (ok) => ok && setPreview(null),
+                        );
+                      }}
+                      onRename={() => setRenaming(s)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {dragOver && (
+            <div className="pointer-events-none absolute inset-0 grid place-items-center rounded-card bg-overlay/90 text-[14px] font-semibold text-text">{t("skins.drop_here")}</div>
           )}
         </section>
       </div>
@@ -492,6 +506,7 @@ function AddFileButton() {
   return (
     <Button
       size="sm"
+      variant="ghost"
       icon={<ImagePlus size={14} />}
       onClick={async () => {
         const sel = await openDialog({ multiple: true, filters: [{ name: "PNG", extensions: ["png"] }] });
@@ -513,13 +528,13 @@ function McTile({ profile, frames, selected, onClick }: { profile: McProfile; fr
         onClick={onClick}
         aria-pressed={selected}
         className={cn(
-          "relative grid h-[76px] w-[58px] place-items-center border bg-surface2 transition-colors duration-150",
-          selected ? "border-accent bg-accent/10" : "border-dashed border-line2 hover:border-line2 hover:bg-surface3",
+          "relative grid h-[76px] w-[58px] place-items-center rounded-ctl transition-colors duration-150",
+          selected ? "bg-surface3 outline outline-2 outline-accent" : "bg-surface2 hover:bg-surface3",
         )}
       >
         {profile.cape ? <McCapeThumb frames={frames} scale={4} /> : <Sparkles size={18} className="text-dim" />}
         {profile.cape && profile.glint && (
-          <span className="absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center bg-[#7b4dff] text-white">
+          <span className="absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center rounded-pill bg-[#7b4dff] text-text">
             <Sparkles size={10} strokeWidth={2.5} />
           </span>
         )}
@@ -540,11 +555,9 @@ function NoAccount({ onLogin, relogin }: { onLogin: () => void; relogin?: boolea
   const t = useT();
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
-      <span className="grid h-12 w-12 place-items-center bg-surface3 text-muted">
-        <UserRound size={22} />
-      </span>
+      <UserRound size={24} className="text-dim" />
       <div>
-        <div className="text-[15px] font-semibold text-white">{t("skins.no_account_title")}</div>
+        <div className="text-[15px] font-semibold text-text">{t("skins.no_account_title")}</div>
         <p className="mt-1 max-w-[360px] text-[13px] text-muted">{relogin ? t("skins.relogin_text") : t("skins.no_account_text")}</p>
       </div>
       <Button variant="primary" icon={<LogIn size={15} />} onClick={onLogin}>
@@ -564,8 +577,8 @@ function CapeTile({ cape, label, selected, active, onClick }: { cape?: Cape; lab
         onClick={onClick}
         aria-pressed={selected}
         className={cn(
-          "relative grid h-[76px] w-[58px] place-items-center border bg-surface2 transition-colors duration-150",
-          selected ? "border-accent bg-accent/10" : "border-line hover:border-line2 hover:bg-surface3",
+          "relative grid h-[76px] w-[58px] place-items-center rounded-ctl transition-colors duration-150",
+          selected ? "bg-surface3 outline outline-2 outline-accent" : "bg-surface2 hover:bg-surface3",
         )}
       >
         {cape ? (
@@ -578,7 +591,7 @@ function CapeTile({ cape, label, selected, active, onClick }: { cape?: Cape; lab
           <X size={18} className="text-dim" />
         )}
         {active && (
-          <span className="absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center bg-brand text-white">
+          <span className="absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center rounded-pill bg-accent text-[var(--on-accent)]">
             <Check size={10} strokeWidth={3} />
           </span>
         )}
@@ -661,20 +674,21 @@ const LibraryTile = memo(function LibraryTile({
         type="button"
         onClick={onPreview}
         onDoubleClick={() => canApply && onApply()}
+        aria-pressed={selected}
         className={cn(
-          "group flex flex-col items-stretch border text-left transition-colors duration-150 data-[state=open]:border-line2",
-          selected ? "border-accent bg-accent/10" : "border-line bg-surface2 hover:border-line2 hover:bg-surface3",
+          "group flex flex-col items-stretch overflow-hidden rounded-card text-left transition-colors duration-150",
+          selected ? "bg-surface3 outline outline-2 outline-accent" : "bg-surface hover:bg-surface2 data-[state=open]:bg-surface2",
         )}
       >
-        <div className="grid h-[118px] place-items-center bg-black/20">
+        <div className="grid h-[118px] place-items-center">
           {img ? (
             <img src={img} alt="" draggable={false} loading="lazy" decoding="async" className="h-[104px] w-[52px] [image-rendering:pixelated]" />
           ) : (
             <Skeleton className="h-[104px] w-[52px]" />
           )}
         </div>
-        <div className="flex min-w-0 flex-col gap-0.5 border-t border-line px-2 py-1.5">
-          <span className="truncate text-[12.5px] font-semibold text-white" title={s.name}>
+        <div className="flex min-w-0 flex-col gap-0.5 px-2 pb-2 pt-1">
+          <span className="truncate text-[12.5px] font-semibold text-text" title={s.name}>
             {s.name}
           </span>
           <span className="truncate text-[11.5px] text-dim">
@@ -708,23 +722,23 @@ function ImportByName() {
   };
   return (
     <form
-      className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-2.5"
+      className="flex shrink-0 items-center gap-1"
       onSubmit={(e) => {
         e.preventDefault();
         void run();
       }}
     >
       <Input
-        className="h-8 flex-1 text-[13px]"
+        className="h-8 w-[230px] text-[13px]"
         value={name}
         maxLength={16}
         onChange={(e) => setName(e.target.value)}
         placeholder={t("skins.import_placeholder")}
         aria-label={t("skins.import_player")}
       />
-      <Button size="sm" type="submit" disabled={!valid} loading={busy} icon={<Download size={14} />}>
-        {t("skins.import")}
-      </Button>
+      <IconButton label={t("skins.import")} tip variant="ghost" size="sm" type="submit" disabled={!valid || busy}>
+        {busy ? <Spinner size={13} /> : <Download size={15} />}
+      </IconButton>
     </form>
   );
 }

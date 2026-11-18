@@ -1,10 +1,10 @@
-// OWNER: Frontend-Agent A. Instanzseite: Kopfzeile (InstanceHeader) mit vier Bereichen (Inhalte, Welten, Logs,
-// Einstellungen) und Hinweiszeile, Unterseiten-Leiste, Crash-Banner.
+// OWNER: Frontend-Agent A. Instanzseite: kompakte Kopfzeile, Bereiche + Hinweis-Symbole in einer Zeile, darunter eine
+// Werkzeugzeile (Unterseiten links, Werkzeuge der Unterseite per PageTools rechts), Crash-Banner.
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { create } from "zustand";
-import { AlertTriangle, FileText, Plus, Stethoscope, UploadCloud, X } from "lucide-react";
+import { AlertTriangle, FileText, Stethoscope, UploadCloud, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useGameState, useInstance } from "@/lib/queries";
 import type { ContentKind, Instance } from "@/lib/types";
@@ -23,7 +23,8 @@ import { InstanceFilesTab } from "@/features/files";
 import { accentVars } from "@/components/instance/accent";
 import { HeaderSkeleton, InstanceHeader } from "./InstanceHeader";
 import { InstanceNotices } from "./InstanceNotices";
-import { VibeyClientSlot } from "@/features/cosmetics/VibeyClientSlot";
+import { VibeyClientBadge } from "@/features/cosmetics/VibeyClientSlot";
+import { ToolbarSlot } from "./toolbar";
 
 const route = getRouteApi("/instances/$id");
 const wrap = "w-full px-6";
@@ -45,7 +46,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
       <div className={cn(wrap, "flex items-center gap-3 py-2.5")}>
         <AlertTriangle size={18} className="shrink-0 text-danger" />
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-semibold text-white">{t("inst.crash.title")}</div>
+          <div className="text-[13px] font-semibold text-text">{t("inst.crash.title")}</div>
           <div className="truncate text-[12px] text-muted">
             {game?.exit_code != null ? t("inst.crash.code", { code: game.exit_code }) : t("inst.crash.text")}
             {game?.crash_report && <span className="font-mono text-dim"> · {game.crash_report.split(/[\\/]/).pop()}</span>}
@@ -117,38 +118,32 @@ interface SubItem {
   count?: number;
 }
 
-/** Unterseiten als leise Segment-Leiste (zweite Ebene, deutlich schwächer als die Bereichs-Tabs). */
-function SubNav({ items, value, onChange, right }: { items: SubItem[]; value: InstanceTab; onChange: (v: InstanceTab) => void; right?: React.ReactNode }) {
+/** Unterseiten als kompakter Segment-Umschalter (links in der Werkzeugzeile). */
+function SubNav({ items, value, onChange }: { items: SubItem[]; value: InstanceTab; onChange: (v: InstanceTab) => void }) {
   const t = useT();
   return (
-    <div className={cn(wrap, "flex h-12 shrink-0 items-center gap-1 pt-1")}>
-      <div className="flex min-w-0 items-center gap-0.5 rounded-ctl bg-field p-0.5" role="tablist" aria-label={t("ipage.sub.label")}>
-        {items.map((it) => {
-          const active = it.value === value;
-          return (
-            <button
-              key={it.value}
-              role="tab"
-              aria-selected={active}
-              onClick={() => onChange(it.value)}
-              className={cn(
-                "flex h-7 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-2.5 text-[13px] font-semibold transition-colors duration-100",
-                active ? "bg-surface3 text-text" : "text-muted hover:text-text",
-              )}
-            >
-              {it.label}
-              {it.count !== undefined && <span className={cn("text-[12px] font-medium tabular-nums", active ? "text-muted" : "text-dim")}>{it.count}</span>}
-            </button>
-          );
-        })}
-      </div>
-      <div className="flex-1" />
-      {right}
+    <div className="flex shrink-0 items-center gap-0.5 rounded-ctl bg-field p-0.5" role="tablist" aria-label={t("ipage.sub.label")}>
+      {items.map((it) => {
+        const active = it.value === value;
+        return (
+          <button
+            key={it.value}
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(it.value)}
+            className={cn(
+              "flex h-7 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-2.5 text-[12.5px] font-semibold whitespace-nowrap transition-colors duration-100",
+              active ? "bg-surface3 text-text" : "text-muted hover:text-text",
+            )}
+          >
+            {it.label}
+            {it.count !== undefined && <span className={cn("text-[11.5px] font-medium tabular-nums", active ? "text-muted" : "text-dim")}>{it.count}</span>}
+          </button>
+        );
+      })}
     </div>
   );
 }
-
-const discoverType: Partial<Record<InstanceTab, string>> = { content: "mod", resourcepacks: "resourcepack", shaders: "shader" };
 
 /** Unterseiten des aktiven Bereichs (mit Anzahl, sobald bekannt). */
 function useSubItems(id: string, vanilla: boolean, area: Area): SubItem[] {
@@ -202,7 +197,6 @@ export function InstancePage() {
 function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
   const t = useT();
   const navTab = route.useNavigate();
-  const nav = useNavigate();
   const vanilla = inst.loader.kind === "vanilla";
   const active: InstanceTab = vanilla && tab === "content" ? "resourcepacks" : tab;
   const area = areaOf[active];
@@ -219,17 +213,20 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
 
   const accent = instanceAccent(inst.id, inst.accent);
   const kind: ContentKind = active === "content" ? "mod" : active === "resourcepacks" ? "resourcepack" : "shader";
+  // Werkzeugzeile: Unterseiten links, Werkzeuge der Unterseite (PageTools) rechts – eine Zeile statt zwei
+  const [slot, setSlot] = useState<HTMLDivElement | null>(null);
 
   return (
     <div className="flex h-full flex-col" style={accentVars(accent)}>
       <InstanceHeader
         instance={inst}
         accent={accent}
+        badge={<VibeyClientBadge instance={inst} label={t("ipage.vibey_active")} onClick={() => setTab("settings")} />}
         tabs={
           <Tabs<Area>
             value={area}
             onChange={openArea}
-            className="-mx-3 h-10! gap-1 border-b-0"
+            className="-mx-3 h-10! gap-0.5 border-b-0"
             items={[
               { value: "content", label: t("ipage.tab.content") },
               { value: "worlds", label: t("ipage.tab.worlds") },
@@ -241,47 +238,29 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
         notices={<InstanceNotices instance={inst} tab={active} />}
       />
       <CrashBanner instance={inst} />
-      {subItems.length > 0 && (
-        <SubNav
-          items={subItems}
-          value={active}
-          onChange={setTab}
-          right={
-            area === "content" ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                icon={<Plus size={15} className="text-accent" />}
-                onClick={() => nav({ to: "/discover", search: { instance: inst.id, type: discoverType[active] as never } })}
-              >
-                {t("content.add")}
-              </Button>
-            ) : undefined
-          }
-        />
-      )}
-      <div className="relative min-h-0 flex-1">
-        {area === "content" ? (
-          <div className="flex h-full min-h-0 flex-col">
-            {kind === "mod" && <VibeyClientSlot instance={inst} className="mx-6 mt-1 shrink-0" />}
-            <div className="relative min-h-0 flex-1">
-              <InstanceContentTab key={active} instance={inst} kind={kind} />
-            </div>
-          </div>
-        ) : active === "worlds" ? (
-          <WorldsTab instance={inst} />
-        ) : active === "servers" ? (
-          <ServersTab instance={inst} />
-        ) : active === "backups" ? (
-          <BackupsTab instance={inst} />
-        ) : active === "logs" ? (
-          <LogsTab instance={inst} />
-        ) : active === "files" ? (
-          <InstanceFilesTab instance={inst} />
-        ) : (
-          <InstanceSettingsTab instance={inst} />
-        )}
+      <div className={cn(wrap, "flex h-12 shrink-0 items-center gap-2")}>
+        {subItems.length > 0 && <SubNav items={subItems} value={active} onChange={setTab} />}
+        <div ref={setSlot} className="flex min-w-0 flex-1 items-center gap-1" />
       </div>
+      <ToolbarSlot.Provider value={slot}>
+        <div className="relative min-h-0 flex-1">
+          {area === "content" ? (
+            <InstanceContentTab key={active} instance={inst} kind={kind} />
+          ) : active === "worlds" ? (
+            <WorldsTab instance={inst} />
+          ) : active === "servers" ? (
+            <ServersTab instance={inst} />
+          ) : active === "backups" ? (
+            <BackupsTab instance={inst} />
+          ) : active === "logs" ? (
+            <LogsTab instance={inst} />
+          ) : active === "files" ? (
+            <InstanceFilesTab instance={inst} />
+          ) : (
+            <InstanceSettingsTab instance={inst} />
+          )}
+        </div>
+      </ToolbarSlot.Provider>
     </div>
   );
 }

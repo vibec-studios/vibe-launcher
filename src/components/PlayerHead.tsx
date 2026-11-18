@@ -13,7 +13,7 @@ export function PlayerHead({ uuid, name, size = 24 }: { uuid: string; name: stri
   if (!src || failed === src) {
     return (
       <span
-        className="grid shrink-0 place-items-center bg-brand font-display text-white"
+        className="grid shrink-0 place-items-center bg-brand font-display text-[var(--ui-on-accent)]"
         style={{ width: size, height: size, fontSize: Math.max(8, size * 0.5) }}
         aria-hidden
       >

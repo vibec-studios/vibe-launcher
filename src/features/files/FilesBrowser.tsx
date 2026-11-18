@@ -32,6 +32,7 @@ import type { CodeEditorHandle } from "./CodeEditor";
 import { CHECKED, FilePane } from "./FilePane";
 import { FileTree, RootMenu, buildRows, targetDir, type FileActions, type FileTreeHandle } from "./FileTree";
 import { FileIcon, ancestors, baseName, copyText, dirName, fkeys, isInside } from "./util";
+import { PageTools } from "@/features/instances/toolbar";
 
 export interface QuickItem {
   path: string;
@@ -68,7 +69,7 @@ function Highlight({ text, q }: { text: string; q: string }) {
     }
     if (j > i) out.push(text.slice(i, j));
     out.push(
-      <mark key={n++} className="bg-warn/25 text-white">
+      <mark key={n++} className="bg-warn/25 text-text">
         {text.slice(j, j + q.length)}
       </mark>,
     );
@@ -106,7 +107,7 @@ function FindResults({ scope, query, selected, onPick }: { scope: FileScope; que
           key={e.path}
           onClick={() => onPick(e)}
           title={e.path}
-          className={cn("flex h-8 w-full items-center gap-2 px-3 text-left text-[13px]", selected === e.path ? "bg-surface3 text-white" : "hover:bg-white/[.04]")}
+          className={cn("flex h-8 w-full items-center gap-2 px-3 text-left text-[13px]", selected === e.path ? "bg-surface3 text-text" : "hover:bg-white/[.04]")}
         >
           <FileIcon entry={e} />
           <span className="shrink-0 truncate text-text">
@@ -152,7 +153,7 @@ function SearchResults({ scope, query, onOpen }: { scope: FileScope; query: stri
       </div>
       {groups.map(([path, hits]) => (
         <div key={path} className="mb-1">
-          <div className="flex items-center gap-1.5 px-3 py-1 text-[12px] font-semibold text-white" title={path}>
+          <div className="flex items-center gap-1.5 px-3 py-1 text-[12px] font-semibold text-text" title={path}>
             <FileText size={12} className="shrink-0 text-dim" />
             <span className="truncate">{path}</span>
           </div>
@@ -716,18 +717,18 @@ export function FilesBrowser({ scope, running, runningText, quick, initialExpand
     <div ref={rootEl} className="relative flex h-full min-h-0 flex-col">
       {/* ------------------------------------------------------------ Häufig */}
       {(quickQ.data?.length ?? 0) > 0 && (
-        <div className="flex h-11 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-line px-4 [scrollbar-width:none]">
-          <span className="mr-1.5 shrink-0 font-mono text-[10px] uppercase tracking-[.14em] text-dim">{t("files.quick")}</span>
+        <PageTools>
+        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none]" aria-label={t("files.quick")}>
           {quickQ.data!.map(({ item, entry }) => (
             <button
               key={item.path}
               onClick={() => (entry.is_dir ? revealInTree(entry.path, true) : void openFile(entry.path, null, true))}
               title={entry.path}
               className={cn(
-                "flex h-7 shrink-0 items-center gap-1.5 border px-2.5 text-[12.5px] font-medium transition-colors duration-100",
+                "flex h-7 shrink-0 items-center gap-1.5 rounded-ctl px-2 text-[12.5px] font-medium transition-colors duration-100",
                 (entry.is_dir ? selected === entry.path : openPath === entry.path)
-                  ? "border-accent/60 bg-accent/10 text-white"
-                  : "border-line2 text-muted hover:border-white/25 hover:text-white",
+                  ? "bg-surface3 text-text"
+                  : "text-muted hover:bg-white/[.06] hover:text-text",
               )}
             >
               <FileIcon entry={entry} size={13} />
@@ -735,10 +736,11 @@ export function FilesBrowser({ scope, running, runningText, quick, initialExpand
             </button>
           ))}
         </div>
+        </PageTools>
       )}
       <div className="flex min-h-0 flex-1">
         {/* ------------------------------------------------------------ Baum */}
-        <aside className="flex w-[380px] shrink-0 flex-col border-r border-line">
+        <aside className="flex w-[340px] shrink-0 flex-col border-r border-line max-[1100px]:w-[290px]">
           <div ref={searchBox} className="flex shrink-0 flex-col gap-2 border-b border-line p-3">
             <div className="flex items-center gap-1">
               <Segmented
@@ -869,7 +871,7 @@ export function FilesBrowser({ scope, running, runningText, quick, initialExpand
 
       {dragPos && (
         <div className="pointer-events-none absolute inset-0 z-10 border-2 border-dashed border-accent/70 bg-black/20">
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 border border-accent/60 bg-[#07070a] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_12px_30px_rgba(0,0,0,.6)]">
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-card bg-overlay px-4 py-2 text-[13px] font-semibold text-text shadow-e2">
             <Upload size={15} className="text-accent" />
             {t("files.drop_into", { name: dropDir ? `${dropDir}/` : t("files.root") })}
           </div>

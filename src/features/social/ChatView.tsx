@@ -1,10 +1,11 @@
-// Ein Chat: Kopf, virtualisierter Verlauf (ältere Seiten beim Hochscrollen), Gelesen-Status, Tippen, Eingabe.
+// Ein Chat: kompakter Kopf, virtualisierter Verlauf mit ruhigen Blasen (ältere Seiten beim Hochscrollen),
+// Gelesen-Status, Tippen, Eingabe.
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { copyText as writeText } from "@/components/content/util";
-import { Clipboard, Ellipsis, LogOut, Mail, Pencil, Send, Trash2, UserPlus, Users } from "lucide-react";
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Button, ContextItem, ContextMenu, ContextSeparator, DropdownItem, DropdownMenu, DropdownSeparator, ErrorState, IconButton, Skeleton, Spinner, Textarea, Tooltip, cn, toast } from "@/components/ui";
+import { Clipboard, LogOut, Mail, MoreHorizontal, Pencil, Send, Trash2, UserPlus, Users } from "lucide-react";
+import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Button, ContextItem, ContextMenu, ContextSeparator, DropdownItem, DropdownMenu, DropdownSeparator, ErrorState, IconButton, Skeleton, Spinner, Textarea, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import type { Chat, Message } from "@/lib/vibe-sdk";
 import { Avatar } from "./FriendsList";
@@ -63,31 +64,35 @@ function ChatHeader({ chat, meId }: { chat: Chat; meId: string | undefined }) {
   const ptext = usePresenceText();
   const isOwner = chat.ownerId === meId;
   return (
-    <div className="flex h-14 shrink-0 items-center gap-3 border-b border-line px-4">
+    <div className="flex h-12 shrink-0 items-center gap-2.5 border-b border-line pl-4 pr-3">
       {partner ? (
-        <Avatar user={partner} size={32} presence={presence} />
+        <Avatar user={partner} size={28} presence={presence} />
       ) : (
-        <span className="grid h-8 w-8 place-items-center border border-line2 bg-surface2 text-muted">
-          <Users size={15} />
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-card bg-surface2 text-muted">
+          <Users size={14} />
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] font-semibold text-white">{chatTitle(chat, meId)}</div>
-        <div className="truncate text-[11px] text-dim">
+        <div className="truncate text-[13.5px] font-semibold leading-tight text-text">{chatTitle(chat, meId)}</div>
+        <div className="truncate text-caption text-dim">
           {partner ? (presence === undefined ? t("social.chat.not_friend") : ptext(presence)) : t("social.chat.members", { n: chat.members.length })}
         </div>
       </div>
-      <Tooltip content={t("social.chat.invite")}>
-        <IconButton label={t("social.chat.invite")} size="sm" onClick={() => openInviteFriends(partner ? { userIds: [partner.id] } : { chatId: chat.id })}>
-          <Mail size={15} />
-        </IconButton>
-      </Tooltip>
+      <IconButton
+        label={t("social.chat.invite")}
+        tip
+        variant="ghost"
+        size="sm"
+        onClick={() => openInviteFriends(partner ? { userIds: [partner.id] } : { chatId: chat.id })}
+      >
+        <Mail size={15} />
+      </IconButton>
       {chat.type === "group" && (
         <DropdownMenu
           align="end"
           trigger={
-            <IconButton label={t("social.chat.more")} size="sm">
-              <Ellipsis size={15} />
+            <IconButton label={t("social.chat.more")} tip variant="ghost" size="sm">
+              <MoreHorizontal size={16} />
             </IconButton>
           }
         >
@@ -226,11 +231,11 @@ function Messages({ chat, meId }: { chat: Chat; meId: string | undefined }) {
     return (
       <div className="flex min-h-0 flex-1 flex-col justify-end gap-3 p-4">
         {[60, 40, 70, 30].map((w, i) => (
-          <div key={i} className="flex items-start gap-3">
-            <Skeleton className="h-8 w-8" />
+          <div key={i} className="flex items-start gap-2.5">
+            <Skeleton className="h-7 w-7" />
             <div className="flex flex-col gap-1.5">
               <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-4" style={{ width: `${w * 4}px` }} />
+              <Skeleton className="h-7 rounded-card" style={{ width: `${w * 4}px` }} />
             </div>
           </div>
         ))}
@@ -251,10 +256,8 @@ function Messages({ chat, meId }: { chat: Chat; meId: string | undefined }) {
                   {q.isFetchingNextPage ? <Spinner size={12} /> : q.hasNextPage ? "" : t("social.chat.start")}
                 </div>
               ) : r.kind === "day" ? (
-                <div className="flex items-center gap-3 px-4 py-2">
-                  <span className="h-px flex-1 bg-line" />
-                  <span className="font-mono text-[10px] uppercase tracking-[.12em] text-dim">{r.label}</span>
-                  <span className="h-px flex-1 bg-line" />
+                <div className="flex justify-center px-4 pb-1 pt-4">
+                  <span className="text-caption font-semibold text-dim">{r.label}</span>
                 </div>
               ) : (
                 <MessageRow
@@ -276,6 +279,36 @@ function Messages({ chat, meId }: { chat: Chat; meId: string | undefined }) {
   );
 }
 
+interface MsgAction {
+  key: string;
+  icon: ReactNode;
+  label: string;
+  danger?: boolean;
+  disabled?: boolean;
+  sep?: boolean;
+  onSelect: () => void;
+}
+
+/** Gleiche Einträge für Rechtsklick und das ⋯ neben der Blase. */
+function MsgItems({ actions, kind }: { actions: MsgAction[]; kind: "context" | "dropdown" }) {
+  const Item = kind === "context" ? ContextItem : DropdownItem;
+  const Sep = kind === "context" ? ContextSeparator : DropdownSeparator;
+  return (
+    <>
+      {actions.map((a) => (
+        <Fragment key={a.key}>
+          {a.sep && <Sep />}
+          <Item icon={a.icon} danger={a.danger} disabled={a.disabled} onSelect={a.onSelect}>
+            {a.label}
+          </Item>
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+/** Nachricht als ruhige Blase: eigene rechts (surface3), andere links mit Kopf (surface2). Zeit beim Hover (title),
+ *  Aktionen per Rechtsklick und über das ⋯ neben der Blase. */
 const MessageRow = memo(function MessageRow({
   m,
   head,
@@ -300,54 +333,76 @@ const MessageRow = memo(function MessageRow({
   if (m.kind === "system") return <SystemLine m={m} />;
   if (m.kind === "invite") return <InviteCardRow m={m} mine={mine} author={author} />;
 
-  const menu = (
-    <>
-      <ContextItem icon={<Clipboard size={14} />} disabled={m.deleted} onSelect={() => writeText(m.content).then(() => toast.success(t("social.copied")))}>
-        {t("social.msg.copy")}
-      </ContextItem>
-      {mine && !m.deleted && !pending && (
-        <ContextItem icon={<Pencil size={14} />} onSelect={() => setEditing(m.id)}>
-          {t("social.msg.edit")}
-        </ContextItem>
-      )}
-      {(mine || canModerate) && !m.deleted && !pending && (
-        <>
-          <ContextSeparator />
-          <ContextItem
-            icon={<Trash2 size={14} />}
-            danger
-            onSelect={() => requireClient().chats.delete(m.chatId, m.id).catch((e) => toast.error(errText(e)))}
-          >
-            {t("social.msg.delete")}
-          </ContextItem>
-        </>
-      )}
-    </>
-  );
+  const actions: MsgAction[] = [
+    {
+      key: "copy",
+      icon: <Clipboard size={14} />,
+      label: t("social.msg.copy"),
+      disabled: m.deleted,
+      onSelect: () => void writeText(m.content).then(() => toast.success(t("social.copied"))),
+    },
+  ];
+  if (mine && !m.deleted && !pending) actions.push({ key: "edit", icon: <Pencil size={14} />, label: t("social.msg.edit"), onSelect: () => setEditing(m.id) });
+  if ((mine || canModerate) && !m.deleted && !pending)
+    actions.push({
+      key: "delete",
+      sep: true,
+      danger: true,
+      icon: <Trash2 size={14} />,
+      label: t("social.msg.delete"),
+      onSelect: () => void requireClient().chats.delete(m.chatId, m.id).catch((e) => toast.error(errText(e))),
+    });
 
   return (
-    <ContextMenu content={menu}>
-      <div className={cn("group flex gap-3 px-4 hover:bg-white/[.02]", head ? "pt-2.5" : "pt-0.5", pending && "opacity-55")}>
-        <div className="w-8 shrink-0">{head && author && <Avatar user={author} size={32} />}</div>
-        <div className="min-w-0 flex-1 pb-0.5">
+    <ContextMenu content={<MsgItems actions={actions} kind="context" />}>
+      <div className={cn("group flex gap-2.5 px-4", mine && "flex-row-reverse", head ? "pt-3" : "pt-0.5", pending && "opacity-55")}>
+        {!mine && <div className="w-7 shrink-0">{head && author && <Avatar user={author} size={28} />}</div>}
+        <div className={cn("flex min-w-0 flex-col", mine ? "items-end" : "items-start", editing ? "w-full max-w-[640px]" : "max-w-[min(640px,78%)]")}>
           {head && (
-            <div className="flex items-baseline gap-2">
-              <span className={cn("text-[13px] font-semibold", mine ? "text-brand" : "text-white")}>{author?.name ?? t("social.msg.unknown")}</span>
-              <span className="font-mono text-[10px] text-dim">{timeOf(m.createdAt)}</span>
+            <div className={cn("mb-1 flex items-baseline gap-2 px-1", mine && "flex-row-reverse")}>
+              {!mine && <span className="text-[12.5px] font-semibold text-text">{author?.name ?? t("social.msg.unknown")}</span>}
+              <span className="text-caption tabular-nums text-dim">{timeOf(m.createdAt)}</span>
             </div>
           )}
           {editing ? (
             <EditBox m={m} done={() => setEditing(null)} />
-          ) : m.deleted ? (
-            <p className="text-[13px] italic text-dim">{t("social.chat.deleted")}</p>
           ) : (
-            <p className="selectable whitespace-pre-wrap break-words text-[13px] leading-[1.45] text-text">
-              {m.content}
-              {m.editedAt && <span className="ml-1.5 text-[10px] text-dim">{t("social.msg.edited")}</span>}
-            </p>
+            <div className={cn("flex min-w-0 max-w-full items-center gap-1", mine && "flex-row-reverse")}>
+              {m.deleted ? (
+                <p className="px-1 py-1 text-[13px] italic text-dim">{t("social.chat.deleted")}</p>
+              ) : (
+                <p
+                  title={timeOf(m.createdAt)}
+                  className={cn(
+                    "selectable min-w-0 whitespace-pre-wrap break-words rounded-card px-3 py-1.5 text-[13px] leading-[1.45] text-text",
+                    mine ? "bg-surface3" : "bg-surface2",
+                  )}
+                >
+                  {m.content}
+                  {m.editedAt && <span className="ml-1.5 text-[10px] text-dim">{t("social.msg.edited")}</span>}
+                </p>
+              )}
+              {!m.deleted && (
+              <DropdownMenu
+                align={mine ? "end" : "start"}
+                trigger={
+                  <IconButton
+                    label={t("social.chat.more")}
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+                  >
+                    <MoreHorizontal size={14} />
+                  </IconButton>
+                }
+              >
+                <MsgItems actions={actions} kind="dropdown" />
+              </DropdownMenu>
+              )}
+            </div>
           )}
           {read && (
-            <div className="mt-0.5 font-mono text-[10px] text-dim animate-fade-in">
+            <div className="mt-0.5 px-1 text-caption text-dim animate-fade-in">
               {read.dm ? (read.all ? t("social.msg.read") : t("social.msg.sent")) : read.n ? t("social.msg.read_by", { n: read.n }) : t("social.msg.sent")}
             </div>
           )}
@@ -374,7 +429,7 @@ function EditBox({ m, done }: { m: Message; done: () => void }) {
     }
   };
   return (
-    <div className="mt-1">
+    <div className="w-full">
       <Textarea
         autoFocus
         value={text}
@@ -388,7 +443,7 @@ function EditBox({ m, done }: { m: Message; done: () => void }) {
         }}
         className="text-[13px]"
       />
-      <div className="mt-1 flex items-center gap-2 text-[11px] text-dim">
+      <div className="mt-1 flex items-center gap-2 px-1 text-[11px] text-dim">
         {busy && <Spinner size={10} />}
         {t("social.msg.edit_hint")}
       </div>
@@ -405,7 +460,7 @@ function SystemLine({ m }: { m: Message }) {
   const text = !s
     ? m.content
     : t(`social.sys.${s.event}`, { actor: name(s.actorId), target: name(s.targetId), name: s.name ?? "" });
-  return <div className="px-4 py-1.5 text-center text-[11px] text-dim">{text} · {timeOf(m.createdAt)}</div>;
+  return <div className="px-4 py-2 text-center text-caption text-dim">{text} · {timeOf(m.createdAt)}</div>;
 }
 
 function InviteCardRow({ m, mine, author }: { m: Message; mine: boolean; author: { id: string; name: string } | undefined }) {
@@ -413,11 +468,11 @@ function InviteCardRow({ m, mine, author }: { m: Message; mine: boolean; author:
   const inv = m.invite;
   const expired = inv ? Date.parse(inv.expiresAt) < Date.now() : true;
   return (
-    <div className="flex gap-3 px-4 pt-2.5">
-      <div className="w-8 shrink-0">{author && <Avatar user={author} size={32} />}</div>
-      <div className="min-w-0 max-w-[420px] flex-1 border border-line2 bg-surface2 p-3">
-        <div className="eyebrow">{t(`social.invite.kind.${inv?.kind ?? "server"}`)}</div>
-        <div className="mt-1 truncate text-[14px] font-semibold text-white">{inv?.title ?? "—"}</div>
+    <div className={cn("flex gap-2.5 px-4 pt-3", mine && "flex-row-reverse")}>
+      {!mine && <div className="w-7 shrink-0">{author && <Avatar user={author} size={28} />}</div>}
+      <div className="min-w-0 max-w-[400px] flex-1 rounded-card bg-surface2 p-3">
+        <div className="text-caption font-semibold text-muted">{t(`social.invite.kind.${inv?.kind ?? "server"}`)}</div>
+        <div className="mt-0.5 truncate text-[14px] font-semibold text-text">{inv?.title ?? "—"}</div>
         {inv?.subtitle && <div className="truncate text-[12px] text-muted">{inv.subtitle}</div>}
         {m.content && <p className="mt-1.5 whitespace-pre-wrap break-words text-[12px] text-text">{m.content}</p>}
         <div className="mt-2.5 flex items-center gap-2">
@@ -426,7 +481,7 @@ function InviteCardRow({ m, mine, author }: { m: Message; mine: boolean; author:
               {t("social.invite.accept")}
             </Button>
           )}
-          <span className="font-mono text-[10px] text-dim">
+          <span className="text-caption text-dim">
             {expired ? t("social.invite.expired") : t("social.invite.until", { time: timeOf(inv!.expiresAt) })}
           </span>
         </div>
@@ -440,7 +495,7 @@ function TypingLine({ chat }: { chat: Chat }) {
   const ids = useTypingUsers(chat.id);
   const names = ids.map((id) => chat.members.find((m) => m.user.id === id)?.user.name).filter(Boolean) as string[];
   return (
-    <div className="h-5 shrink-0 px-4 text-[11px] text-brand">
+    <div className="h-5 shrink-0 px-4 pt-1 text-caption text-brand">
       {names.length > 0 && (
         <span className="animate-fade-in">
           {names.length === 1 ? t("social.chat.typing_one", { name: names[0] }) : t("social.chat.typing_many", { n: names.length })}
@@ -472,7 +527,7 @@ function Composer({ chatId, placeholder }: { chatId: string; placeholder: string
   };
   const rows = Math.min(6, Math.max(1, text.split("\n").length));
   return (
-    <div className="shrink-0 border-t border-line p-3">
+    <div className="shrink-0 px-4 pb-4">
       <div className="flex items-end gap-2">
         <Textarea
           ref={ref}
@@ -493,11 +548,20 @@ function Composer({ chatId, placeholder }: { chatId: string; placeholder: string
           }}
           className="max-h-40 min-h-[38px] resize-none py-2 text-[13px]"
         />
-        <IconButton label={t("social.chat.send")} onClick={send} disabled={!text.trim() || !chatOn} className="h-[38px] w-[38px]">
+        <IconButton
+          label={t("social.chat.send")}
+          tip
+          tipSide="top"
+          variant={text.trim() && chatOn ? "accent" : "filled"}
+          onClick={send}
+          disabled={!text.trim() || !chatOn}
+          className="h-[38px] w-[38px]"
+        >
           <Send size={15} />
         </IconButton>
       </div>
-      {text.length > max - 200 && <div className="mt-1 text-right font-mono text-[10px] text-dim">{text.length}/{max}</div>}
+      {text.length > max - 200 && <div className="mt-1 text-right text-caption tabular-nums text-dim">{text.length}/{max}</div>}
+
     </div>
   );
 }

@@ -50,15 +50,15 @@ function InstallBody({ a, onDone }: { a: Extract<AppAction, { kind: "install" }>
         <p className="text-[13px] text-danger">{t("action.install.not_found", { id: a.project_id })}</p>
       ) : !q.data ? (
         <div className="flex items-center gap-3">
-          <Skeleton className="h-12 w-12" />
+          <Skeleton className="h-12 w-12 rounded-card" />
           <Skeleton className="h-5 w-48" />
         </div>
       ) : (
         <div className="flex items-center gap-3">
           <ProjectIcon src={q.data.icon_url} size={48} />
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-semibold text-white">{q.data.title}</div>
-            <div className="truncate text-[12px] text-muted">
+            <div className="truncate text-[15px] font-semibold text-text">{q.data.title}</div>
+            <div className="truncate text-meta text-muted">
               {q.data.author} · {a.source === "curseforge" ? "CurseForge" : "Modrinth"}
             </div>
           </div>
@@ -114,8 +114,8 @@ function InstanceLine({ i }: { i: Instance }) {
     <div className="flex items-center gap-3">
       <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={44} />
       <div className="min-w-0">
-        <div className="truncate text-[15px] font-semibold text-white">{i.name}</div>
-        <div className="truncate text-[12px] text-muted">
+        <div className="truncate text-[15px] font-semibold text-text">{i.name}</div>
+        <div className="truncate text-meta text-muted">
           {i.loader.kind} · Minecraft {i.mc_version}
         </div>
       </div>
@@ -162,8 +162,8 @@ function ActionDialog({ a, onDone }: { a: AppAction; onDone: () => void }) {
         }}
       >
         <div className="flex flex-col gap-4">
-          <div className="border border-line bg-black/30 p-3">
-            <div className="flex items-center gap-2 font-mono text-[13px] text-white">
+          <div className="rounded-card bg-surface px-3 py-2.5">
+            <div className="flex items-center gap-2 text-[13px] font-medium text-text">
               <Link2 size={14} className="text-dim" />
               {a.address}
             </div>
@@ -204,7 +204,7 @@ function VibeAction({ a, onDone }: { a: Extract<AppAction, { kind: "pack" | "inv
         <ShieldAlert size={18} className="mt-0.5 shrink-0 text-warn" />
         <div>
           <p>{t("action.vibe_off")}</p>
-          <p className="mt-1 font-mono text-[12px] text-dim">{a.kind === "pack" ? a.code : a.id}</p>
+          <p className="selectable mt-1 text-meta text-dim">{a.kind === "pack" ? a.code : a.id}</p>
           <Button
             size="sm"
             className="mt-3"

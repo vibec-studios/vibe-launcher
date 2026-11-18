@@ -122,7 +122,7 @@ function SettingsBody() {
 
   return (
     <>
-      <aside className="flex w-[232px] shrink-0 flex-col bg-black/25 max-[880px]:w-[60px]">
+      <aside className="flex w-[232px] shrink-0 flex-col bg-bg max-[880px]:w-[60px]">
         <div className="flex h-[64px] shrink-0 items-center px-5 max-[880px]:justify-center max-[880px]:px-0">
           <D.Title className="text-title text-text max-[880px]:sr-only">{t("nav.settings")}</D.Title>
           <span className="hidden text-muted max-[880px]:block">
@@ -206,12 +206,11 @@ function LoadingCards() {
   return (
     <>
       {Array.from({ length: 2 }, (_, i) => (
-        <div key={i} className="border border-line bg-surface">
-          <div className="border-b border-line px-4 py-4">
-            <Skeleton className="h-3 w-24" />
-          </div>
+        <div key={i} className="flex flex-col gap-2">
+          <Skeleton className="mx-1 h-3 w-24" />
+          <div className="rounded-card bg-surface">
           {Array.from({ length: 3 }, (_, j) => (
-            <div key={j} className="flex items-center gap-6 px-4 py-4">
+            <div key={j} className="flex items-center gap-6 px-4 py-3">
               <div className="flex flex-1 flex-col gap-2">
                 <Skeleton className="h-4 w-40" />
                 <Skeleton className="h-3 w-72" />
@@ -219,6 +218,7 @@ function LoadingCards() {
               <Skeleton className="h-8 w-32" />
             </div>
           ))}
+          </div>
         </div>
       ))}
     </>
@@ -302,19 +302,17 @@ function JavaTab({ s, update }: TabProps) {
       <SettingsCard
         title={t("settings.section.java")}
         right={
-          <Tooltip content={t("settings.java.rescan")}>
-            <IconButton label={t("settings.java.rescan")} size="sm" className="border-transparent hover:border-line2" onClick={() => java.refetch()}>
-              <RefreshCw size={14} className={cn(java.isFetching && "animate-spin")} />
-            </IconButton>
-          </Tooltip>
+          <IconButton label={t("settings.java.rescan")} tip variant="ghost" size="sm" onClick={() => java.refetch()}>
+            <RefreshCw size={14} className={cn(java.isFetching && "animate-spin")} />
+          </IconButton>
         }
       >
         <SettingRow title={t("settings.auto_java")} description={t("settings.auto_java.desc")}>
           <Switch checked={s.auto_java} onChange={(auto_java) => update({ auto_java })} label={t("settings.auto_java")} />
         </SettingRow>
         <div className="border-t border-line">
-          <div className="px-4 pb-2 pt-4">
-            <div className="text-[14px] font-medium text-white">{t("settings.java.found")}</div>
+          <div className="px-4 pb-1 pt-3">
+            <div className="text-[13.5px] font-medium text-text">{t("settings.java.found")}</div>
           </div>
           {java.isLoading ? (
             <div className="flex flex-col gap-2 px-4 pb-4">
@@ -326,7 +324,7 @@ function JavaTab({ s, update }: TabProps) {
           ) : !java.data?.length ? (
             <p className="px-4 pb-4 text-[13px] text-dim">{t("settings.java.none")}</p>
           ) : (
-            <div className="mx-4 mb-4 border border-line bg-black/40">
+            <div className="flex flex-col px-2 pb-2">
               {java.data
                 .slice()
                 .sort((a, b) => b.major - a.major)
@@ -347,7 +345,7 @@ function JavaTab({ s, update }: TabProps) {
           <div className="flex flex-col gap-3">
             {JAVA_MAJORS.map((m) => (
               <div key={m} className="grid grid-cols-[72px_minmax(0,1fr)] items-start gap-4">
-                <span className="mt-2.5 font-mono text-[12px] text-muted">Java {m}</span>
+                <span className="mt-2.5 text-meta text-muted">Java {m}</span>
                 <JavaPathField
                   value={s.java_overrides[String(m)] ?? null}
                   filterMajor={m}
@@ -524,7 +522,7 @@ function UpdatesTab({ s, update }: TabProps) {
     }
   };
   return (
-    <SettingsCard title={t("settings.section.updates")} right={sys.data && <span className="font-mono text-[12px] text-dim">v{sys.data.version}</span>}>
+    <SettingsCard title={t("settings.section.updates")} right={sys.data && <span className="text-caption font-semibold tabular-nums text-dim">v{sys.data.version}</span>}>
       <SettingRow title={t("settings.channel")} description={s.update_channel === "dev" ? t("settings.channel.dev.desc") : t("settings.channel.release.desc")}>
         <Segmented
           value={s.update_channel}
@@ -552,12 +550,12 @@ function AboutTab() {
   const sys = useSystemInfo();
   return (
     <>
-      <section className="flex items-center gap-6 border border-line bg-surface px-6 py-6">
-        <Logo3D size={72} speed={0} hoverSpin float={false} interactive={false} />
+      <section className="flex items-center gap-5 px-1 py-2">
+        <Logo3D size={64} speed={0} hoverSpin float={false} interactive={false} />
         <div className="min-w-0 flex-1">
-          <div className="brand text-[22px] text-white">Vibe Launcher</div>
-          <div className="mt-1 font-mono text-[12px] text-muted">{sys.data ? `v${sys.data.version} · ${sys.data.os} ${sys.data.arch}` : <Spinner size={12} />}</div>
-          <div className="mt-2 text-[13px] text-dim">{t("settings.about")}</div>
+          <div className="text-title text-text">Vibe Launcher</div>
+          <div className="mt-0.5 text-meta tabular-nums text-muted">{sys.data ? `v${sys.data.version} · ${sys.data.os} ${sys.data.arch}` : <Spinner size={12} />}</div>
+          <div className="mt-1.5 text-meta text-dim">{t("settings.about")}</div>
         </div>
       </section>
       <SettingsCard title={t("settings.section.links")}>
@@ -570,13 +568,16 @@ function AboutTab() {
 
 function LinkRow({ href, icon, title, text }: { href: string; icon: ReactNode; title: string; text: string }) {
   return (
-    <a href={href} className="group flex items-center gap-3 px-4 py-3.5 transition-colors duration-100 hover:bg-white/[.03] [&+&]:border-t [&+&]:border-line">
-      <span className="grid h-8 w-8 place-items-center border border-line2 bg-surface2 text-muted group-hover:text-white">{icon}</span>
+    <a
+      href={href}
+      className="group flex items-center gap-3 px-4 py-3 transition-colors duration-100 first:rounded-t-card last:rounded-b-card hover:bg-white/[.03] [&+&]:border-t [&+&]:border-line"
+    >
+      <span className="text-dim group-hover:text-text">{icon}</span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-medium text-text">{title}</span>
-        <span className="block truncate text-[12.5px] text-muted">{text}</span>
+        <span className="block text-[13.5px] font-medium text-text">{title}</span>
+        <span className="block truncate text-meta text-muted">{text}</span>
       </span>
-      <ExternalLink size={13} className="text-dim group-hover:text-white" />
+      <ExternalLink size={13} className="text-dim group-hover:text-text" />
     </a>
   );
 }
@@ -612,7 +613,7 @@ function SecretInput({ value, onChange, placeholder }: { value: string; onChange
           <button
             type="button"
             aria-label={show ? t("settings.hide") : t("settings.show")}
-            className="grid h-6 w-6 place-items-center text-dim hover:text-white"
+            className="grid h-6 w-6 place-items-center rounded-ctl text-dim hover:bg-white/[.07] hover:text-text"
             onClick={() => setShow(!show)}
           >
             {show ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -632,7 +633,7 @@ function JavaDownload({ major, installed }: { major: number; installed: boolean 
   return (
     <Button
       size="sm"
-      variant="outline"
+      variant="ghost"
       icon={busy ? undefined : installed ? <Check size={13} className="text-ok" /> : <Download size={13} />}
       loading={busy}
       disabled={installed && !busy}
@@ -660,19 +661,19 @@ function JavaDownload({ major, installed }: { major: number; installed: boolean 
 function JavaRow({ j }: { j: JavaInstall }) {
   const t = useT();
   return (
-    <div className="flex items-center gap-4 px-4 py-3 [&+&]:border-t [&+&]:border-line">
-      <div className="w-[44px] shrink-0 text-[18px] font-bold leading-none text-white">{j.major}</div>
+    <div className="flex items-center gap-4 rounded-ctl px-2 py-2 transition-colors duration-100 hover:bg-white/[.03]">
+      <div className="w-[36px] shrink-0 text-section tabular-nums text-text">{j.major}</div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 text-[13px] text-white">
+        <div className="flex items-center gap-2 text-[13px] text-text">
           {j.version}
           {j.vendor && <span className="text-muted">· {j.vendor}</span>}
         </div>
-        <div className="selectable truncate font-mono text-[11px] text-dim" title={j.path}>
+        <div className="selectable truncate text-caption text-dim" title={j.path}>
           {j.path}
         </div>
       </div>
       <Tag>{j.arch}</Tag>
-      {j.managed && <Tag color="#3fe0c5">{t("form.java.managed")}</Tag>}
+      {j.managed && <Tag className="bg-ok/12 text-ok">{t("form.java.managed")}</Tag>}
     </div>
   );
 }

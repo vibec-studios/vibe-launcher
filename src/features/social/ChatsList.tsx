@@ -1,4 +1,5 @@
-// Liste der Chats (DMs + Gruppen) mit letzter Nachricht, Ungelesen-Zähler und Tippen-Anzeige.
+// Liste der Chats (DMs + Gruppen): kompakte Zeilen mit letzter Nachricht, Ungelesen-Zähler und Tippen-Anzeige;
+// Aktionen (gelesen markieren, Gruppe verlassen) per Rechtsklick und im Chat-Kopf.
 import { CheckCheck, LogOut, Users } from "lucide-react";
 import { memo } from "react";
 import { ContextItem, ContextMenu, ContextSeparator, cn, toast } from "@/components/ui";
@@ -65,28 +66,30 @@ const ChatRow = memo(function ChatRow({ chat, active }: { chat: Chat; active: bo
     >
       <button
         onClick={() => openSocial(chat.id)}
+        aria-current={active ? "page" : undefined}
         className={cn(
-          "relative flex h-14 w-full items-center gap-2.5 px-3 text-left transition-colors duration-100",
-          active ? "bg-surface3" : "hover:bg-white/[.04]",
+          "mx-2 flex h-12 w-[calc(100%-16px)] items-center gap-2.5 rounded-ctl px-2 text-left transition-colors duration-100 data-[state=open]:bg-white/[.04]",
+          active ? "bg-white/[.07]" : "hover:bg-white/[.04]",
         )}
       >
-        {active && <span className="absolute bottom-2 left-0 top-2 w-[3px] bg-brand" />}
         {partner ? (
-          <Avatar user={partner} size={32} presence={presence} />
+          <Avatar user={partner} size={30} presence={presence} />
         ) : (
-          <span className="grid h-8 w-8 shrink-0 place-items-center border border-line2 bg-surface2 text-muted">
-            <Users size={15} />
+          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-card bg-surface2 text-muted">
+            <Users size={14} />
           </span>
         )}
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className={cn("min-w-0 flex-1 truncate text-[13px]", chat.unreadCount ? "font-bold text-white" : "font-semibold text-text")}>{chatTitle(chat, meId)}</span>
-            <span className="shrink-0 font-mono text-[10px] text-dim">{shortTime(last?.createdAt, lang)}</span>
+            <span className={cn("min-w-0 flex-1 truncate text-[13px] leading-tight text-text", chat.unreadCount ? "font-bold" : "font-semibold")}>
+              {chatTitle(chat, meId)}
+            </span>
+            <span className="shrink-0 text-caption tabular-nums text-dim">{shortTime(last?.createdAt, lang)}</span>
           </span>
           <span className="flex items-center gap-2">
-            <span className={cn("min-w-0 flex-1 truncate text-[12px]", typing.length ? "text-brand" : chat.unreadCount ? "text-text" : "text-dim")}>{preview}</span>
+            <span className={cn("min-w-0 flex-1 truncate text-[12px] leading-snug", typing.length ? "text-brand" : chat.unreadCount ? "text-muted" : "text-dim")}>{preview}</span>
             {chat.unreadCount > 0 && (
-              <span className="grid h-[18px] min-w-[18px] shrink-0 place-items-center bg-brand px-1 font-mono text-[10px] font-bold text-white">
+              <span className="grid h-4 min-w-4 shrink-0 place-items-center rounded-pill bg-brand px-1 text-[10px] font-semibold tabular-nums leading-none text-[var(--ui-on-accent)]">
                 {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
               </span>
             )}
@@ -101,7 +104,8 @@ export function ChatsList({ activeId }: { activeId: string | null }) {
   const t = useT();
   const chats = useChatsSorted();
   return (
-    <div className="scroll min-h-0 flex-1 py-1">
+    <div className="scroll flex min-h-0 flex-1 flex-col gap-px py-1">
+
       {chats.length === 0 ? (
         <p className="px-4 py-6 text-center text-[12px] text-dim">{t("social.chat.none")}</p>
       ) : (

@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Download, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Spinner, cn, toast } from "@/components/ui";
+import { IconButton, Spinner, cn, toast } from "@/components/ui";
 import { startContentInstall } from "@/components/content/install";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
@@ -48,25 +48,20 @@ export function DepsPanel({ instanceId }: { instanceId: string }) {
     <div>
       <div className="flex items-start gap-3 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1">
-          <div className="text-[13.5px] font-semibold text-white">
+          <div className="text-[13.5px] font-semibold text-text">
             {issues.length === 0 ? t("deps.fixed") : errors ? t("deps.title", { n: issues.length }) : t("deps.title_warn", { n: issues.length })}
           </div>
-          {errors > 0 && <div className="mt-0.5 text-[12.5px] text-muted">{t("deps.text")}</div>}
+          {errors > 0 && <div className="mt-0.5 text-meta text-muted">{t("deps.text")}</div>}
         </div>
-        <button
-          className="flex h-7 shrink-0 items-center gap-1.5 px-2 text-[12.5px] text-muted transition-colors hover:bg-white/[.06] hover:text-white"
-          onClick={() => void q.refetch()}
-          disabled={q.isFetching}
-        >
-          {q.isFetching ? <Spinner size={11} /> : <RefreshCw size={13} />}
-          {t("deps.recheck")}
-        </button>
+        <IconButton label={t("deps.recheck")} tip variant="ghost" size="sm" className="-mr-2 -mt-1" onClick={() => void q.refetch()} disabled={q.isFetching}>
+          {q.isFetching ? <Spinner size={12} /> : <RefreshCw size={14} />}
+        </IconButton>
       </div>
       <div className="scroll max-h-[320px]">
         {issues.map((i, n) => (
-          <div key={n} className="flex flex-col gap-2 border-b border-line/60 px-4 py-2.5 last:border-b-0">
+          <div key={n} className="flex flex-col gap-2 border-line px-4 py-2.5 [&+&]:border-t">
             <div className="flex items-start gap-2.5">
-              <span className={cn("mt-px w-[68px] shrink-0 text-[11.5px] font-semibold", i.severity === "error" ? "text-danger" : "text-warn")}>
+              <span className={cn("mt-px w-[68px] shrink-0 text-caption font-semibold", i.severity === "error" ? "text-danger" : "text-warn")}>
                 {t(`deps.kind.${i.kind}`)}
               </span>
               <span className="selectable min-w-0 flex-1 text-[13px] text-text">{i.message}</span>
@@ -81,8 +76,8 @@ export function DepsPanel({ instanceId }: { instanceId: string }) {
                       disabled={busy !== null}
                       onClick={() => void run(key, f)}
                       className={cn(
-                        "flex h-7 items-center gap-1.5 border px-2 text-[12.5px] font-medium transition-colors duration-100 disabled:opacity-50",
-                        k === 0 ? "border-line2 bg-surface2 text-white hover:bg-surface3" : "border-transparent text-muted hover:text-white",
+                        "flex h-7 items-center gap-1.5 rounded-ctl px-2 text-[12.5px] font-medium transition-colors duration-100 disabled:opacity-50",
+                        k === 0 ? "bg-surface2 text-text hover:bg-surface3" : "text-muted hover:bg-white/[.06] hover:text-text",
                       )}
                     >
                       {busy === key ? (

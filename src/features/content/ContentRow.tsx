@@ -9,9 +9,9 @@ import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { sourceName } from "@/components/content/util";
 import { SideTag } from "@/components/content/sides";
 
-export const ROW_H = 52;
+export const ROW_H = 46;
 /** Spalten: Auswahl | Name | Version | Aktionen */
-export const GRID = "grid grid-cols-[18px_minmax(0,1fr)_minmax(0,190px)_88px] items-center gap-3 px-6 @min-[820px]:grid-cols-[18px_minmax(0,1fr)_minmax(0,260px)_88px]";
+export const GRID = "grid grid-cols-[18px_minmax(0,1fr)_minmax(0,150px)_80px] items-center gap-3 px-6 @min-[820px]:grid-cols-[18px_minmax(0,1fr)_minmax(0,200px)_80px]";
 
 export interface RowActions {
   click: (key: string, e: MouseEvent) => void;
@@ -102,12 +102,15 @@ export const ContentRow = memo(function ContentRow({
   item,
   itemKey,
   selected,
+  selecting,
   update,
   actions,
 }: {
   item: ContentItem;
   itemKey: string;
   selected: boolean;
+  /** Irgendetwas ausgewählt -> Auswahlkästchen überall sichtbar */
+  selecting?: boolean;
   update: ContentUpdate | undefined;
   actions: RowActions;
 }) {
@@ -126,33 +129,36 @@ export const ContentRow = memo(function ContentRow({
         onContextMenu={() => actions.context(itemKey)}
         className={cn(
           GRID,
-          "h-full border-b border-line transition-colors duration-100",
+          "group h-full transition-colors duration-100",
           selected ? "bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]" : "hover:bg-white/[.03]",
         )}
       >
-        <SelectBox
-          state={selected ? "on" : "off"}
-          label={item.name}
-          onClick={(e) => {
-            e.stopPropagation();
-            actions.toggle(itemKey);
-          }}
-        />
+        {/* Auswahlkästchen erst bei Hover oder laufender Auswahl – sonst ruhige Zeile */}
+        <span className={cn("transition-opacity duration-100", selected || selecting ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100")}>
+          <SelectBox
+            state={selected ? "on" : "off"}
+            label={item.name}
+            onClick={(e) => {
+              e.stopPropagation();
+              actions.toggle(itemKey);
+            }}
+          />
+        </span>
         <div className={cn("flex min-w-0 items-center gap-3 transition-opacity duration-150", !item.enabled && "opacity-50")}>
-          <ProjectIcon src={item.icon} size={34} className={cn(!item.enabled && "grayscale")} />
+          <ProjectIcon src={item.icon} size={30} className={cn(!item.enabled && "grayscale")} />
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-2">
               <span className="truncate text-[13.5px] font-semibold text-text">{item.name}</span>
               {item.kind === "mod" && item.side !== "unknown" && <SideTag side={item.side} />}
             </div>
-            <div className="truncate text-[12px] text-dim">{sub}</div>
+            <div className="truncate text-[12px] leading-tight text-dim">{sub}</div>
           </div>
         </div>
         <div className={cn("min-w-0 transition-opacity duration-150", !item.enabled && "opacity-50")}>
           <div className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate text-[13px] text-text" title={item.version ?? ""}>
-              {item.version ?? "–"}
-            </span>
+            <Tooltip content={<span className="font-mono text-[12px]">{item.file_name}</span>}>
+              <span className="truncate text-[13px] text-muted">{item.version ?? "–"}</span>
+            </Tooltip>
             {item.pinned && (
               <Tooltip content={t("content.pinned")}>
                 <span className="shrink-0 text-muted" aria-label={t("content.pinned_short")}>
@@ -168,17 +174,14 @@ export const ContentRow = memo(function ContentRow({
               </Tooltip>
             )}
           </div>
-          <div className="truncate font-mono text-[11px] text-dim" title={item.file_name}>
-            {item.file_name}
-          </div>
         </div>
-        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
           <Switch checked={item.enabled} onChange={(v) => actions.setEnabled([item], v)} label={item.enabled ? t("content.menu.disable") : t("content.menu.enable")} />
           <DropdownMenu
             trigger={
               <button
                 aria-label={t("common.more")}
-                className="grid h-8 w-8 place-items-center rounded-ctl text-dim transition-colors duration-100 hover:bg-white/[.06] hover:text-text data-[state=open]:bg-white/[.06] data-[state=open]:text-text"
+                className="grid h-8 w-8 place-items-center rounded-ctl text-dim opacity-60 transition-[colors,opacity] group-hover:opacity-100 data-[state=open]:opacity-100 duration-100 hover:bg-white/[.06] hover:text-text data-[state=open]:bg-white/[.06] data-[state=open]:text-text"
               >
                 <MoreVertical size={16} />
               </button>
@@ -194,10 +197,10 @@ export const ContentRow = memo(function ContentRow({
 
 export function RowSkeleton() {
   return (
-    <div className={cn(GRID, "h-[52px] border-b border-line")}>
+    <div className={cn(GRID, "h-[46px]")}>
       <div className="skeleton h-[18px] w-[18px]" />
       <div className="flex items-center gap-3">
-        <div className="skeleton h-[34px] w-[34px] shrink-0" />
+        <div className="skeleton h-[30px] w-[30px] shrink-0" />
         <div className="flex flex-1 flex-col gap-1.5">
           <div className="skeleton h-3.5 w-2/5" />
           <div className="skeleton h-2.5 w-1/4" />

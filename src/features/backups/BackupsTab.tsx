@@ -2,7 +2,7 @@
 // Listen aktualisieren sich über `content://changed` (Query-Keys unter ["content", id] / ["worlds", id]).
 import { memo, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, FolderOpen, Globe2, History, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { FolderOpen, Globe2, History, MoreHorizontal, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useInstanceTasks } from "@/lib/queries";
 import type { Instance, SnapshotInfo, WorldBackup } from "@/lib/types";
@@ -11,12 +11,14 @@ import { useLang, useT } from "@/i18n";
 import {
   Button,
   Dialog,
+  DropdownItem,
+  DropdownMenu,
+  DropdownSeparator,
   EmptyState,
   ErrorState,
   Field,
   IconButton,
   Input,
-  SettingsCard,
   Skeleton,
   Tag,
   Tooltip,
@@ -24,8 +26,8 @@ import {
   toast,
 } from "@/components/ui";
 import { runBackupTask } from "./worldActions";
+import { PageTools } from "@/features/instances/toolbar";
 
-const wrap = "w-full px-6";
 export const backupKeys = {
   snapshots: (id: string) => ["content", id, "snapshots"] as const,
   worlds: (id: string) => ["worlds", id, "backups"] as const,
@@ -49,13 +51,12 @@ function AutoTag() {
 
 function RowSkeleton() {
   return (
-    <div className="flex items-center gap-4 px-4 py-3 [&+&]:border-t [&+&]:border-line">
-      <Skeleton className="h-8 w-8" />
+    <div className="flex h-12 items-center gap-3 px-6">
+      <Skeleton className="h-4 w-4" />
       <div className="flex flex-1 flex-col gap-2">
         <Skeleton className="h-4 w-48" />
         <Skeleton className="h-3 w-32" />
       </div>
-      <Skeleton className="h-7 w-24" />
     </div>
   );
 }
@@ -87,32 +88,38 @@ const SnapshotRow = memo(function SnapshotRow({ instance, snap, busy }: { instan
     }
   };
   return (
-    <div className="group flex items-center gap-4 px-4 py-3 transition-colors duration-150 hover:bg-surface2 [&+&]:border-t [&+&]:border-line">
-      <div className="grid h-8 w-8 shrink-0 place-items-center border border-line bg-surface2 text-muted">
-        <History size={15} />
-      </div>
+    <div className="group flex h-12 items-center gap-3 px-6 transition-colors duration-100 hover:bg-white/[.03]">
+      <History size={15} className="shrink-0 text-dim" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-[14px] font-semibold text-white" title={snap.name}>
+          <span className="truncate text-[13.5px] font-semibold text-text" title={snap.name}>
             {snap.name}
           </span>
           {snap.auto && <AutoTag />}
         </div>
-        <div className="truncate text-[12px] text-dim">
-          {dateTime(snap.created)} · {formatRelative(snap.created)}
+        <div className="truncate text-[12px] leading-tight text-dim">
+          {dateTime(snap.created)} · {formatRelative(snap.created)} · {t("backups.snapshot.files", { n: snap.file_count })} · {formatBytes(snap.size)}
         </div>
       </div>
-      <div className="w-[90px] text-right text-[12px] tabular-nums text-muted">{t("backups.snapshot.files", { n: snap.file_count })}</div>
-      <div className="w-[80px] text-right text-[12px] tabular-nums text-dim">{formatBytes(snap.size)}</div>
-      <div className="flex shrink-0 items-center gap-1">
-        <Button size="sm" variant="outline" icon={<RotateCcw size={13} />} disabled={busy} onClick={restore}>
-          {t("backups.snapshot.restore")}
-        </Button>
-        <Tooltip content={t("common.delete")}>
-          <IconButton label={t("common.delete")} size="sm" className="border-transparent text-danger hover:border-danger/50" disabled={busy} onClick={del}>
-            <Trash2 size={14} />
-          </IconButton>
-        </Tooltip>
+      <div className="flex shrink-0 items-center gap-0.5">
+        <IconButton label={t("backups.snapshot.restore")} tip size="sm" variant="ghost" disabled={busy} onClick={restore} className="opacity-60 group-hover:opacity-100">
+          <RotateCcw size={14} />
+        </IconButton>
+        <DropdownMenu
+          trigger={
+            <IconButton label={t("common.more")} size="sm" variant="ghost" className="opacity-60 group-hover:opacity-100 data-[state=open]:opacity-100">
+              <MoreHorizontal size={15} />
+            </IconButton>
+          }
+        >
+          <DropdownItem icon={<RotateCcw size={14} />} disabled={busy} onSelect={() => void restore()}>
+            {t("backups.snapshot.restore")}
+          </DropdownItem>
+          <DropdownSeparator />
+          <DropdownItem icon={<Trash2 size={14} />} danger disabled={busy} onSelect={() => void del()}>
+            {t("common.delete")}
+          </DropdownItem>
+        </DropdownMenu>
       </div>
     </div>
   );
@@ -145,22 +152,30 @@ const WorldBackupRow = memo(function WorldBackupRow({ instance, b, busy }: { ins
     }
   };
   return (
-    <div className="group flex items-center gap-4 py-2 pl-[60px] pr-4 transition-colors duration-150 hover:bg-surface2">
-      <Archive size={14} className="shrink-0 text-dim" />
+    <div className="group flex h-9 items-center gap-3 pl-[52px] pr-6 transition-colors duration-100 hover:bg-white/[.03]">
       <div className="min-w-0 flex-1 truncate text-[13px] text-text">
-        {dateTime(b.created)} <span className="text-dim">· {formatRelative(b.created)}</span>
+        {dateTime(b.created)} <span className="text-dim">· {formatRelative(b.created)} · {formatBytes(b.size)}</span>
       </div>
       {b.auto && <AutoTag />}
-      <div className="w-[80px] text-right text-[12px] tabular-nums text-dim">{formatBytes(b.size)}</div>
-      <div className="flex shrink-0 items-center gap-1">
-        <Button size="sm" variant="outline" icon={<RotateCcw size={13} />} disabled={busy} onClick={restore}>
-          {t("backups.snapshot.restore")}
-        </Button>
-        <Tooltip content={t("common.delete")}>
-          <IconButton label={t("common.delete")} size="sm" className="border-transparent text-danger hover:border-danger/50" disabled={busy} onClick={del}>
-            <Trash2 size={14} />
-          </IconButton>
-        </Tooltip>
+      <div className="flex shrink-0 items-center gap-0.5">
+        <IconButton label={t("backups.snapshot.restore")} tip size="sm" variant="ghost" disabled={busy} onClick={restore} className="opacity-60 group-hover:opacity-100">
+          <RotateCcw size={14} />
+        </IconButton>
+        <DropdownMenu
+          trigger={
+            <IconButton label={t("common.more")} size="sm" variant="ghost" className="opacity-60 group-hover:opacity-100 data-[state=open]:opacity-100">
+              <MoreHorizontal size={15} />
+            </IconButton>
+          }
+        >
+          <DropdownItem icon={<RotateCcw size={14} />} disabled={busy} onSelect={() => void restore()}>
+            {t("backups.snapshot.restore")}
+          </DropdownItem>
+          <DropdownSeparator />
+          <DropdownItem icon={<Trash2 size={14} />} danger disabled={busy} onSelect={() => void del()}>
+            {t("common.delete")}
+          </DropdownItem>
+        </DropdownMenu>
       </div>
     </div>
   );
@@ -229,28 +244,32 @@ export function BackupsTab({ instance }: { instance: Instance }) {
 
   return (
     <div className="scroll h-full">
-      <div className={`${wrap} flex flex-col gap-4 py-6`}>
-        <SettingsCard
-          title={t("backups.snapshots")}
-          right={
-            <div className="flex items-center gap-2">
-              <Tooltip content={t("backups.open_folder")}>
-                <IconButton
-                  label={t("backups.open_folder")}
-                  size="sm"
-                  className="border-transparent hover:border-line2"
-                  onClick={() => api.backupsOpenFolder(instance.id, "snapshots").catch((e) => toast.error(e))}
-                >
-                  <FolderOpen size={14} />
-                </IconButton>
-              </Tooltip>
-              <Button size="sm" variant="accent" icon={<Plus size={13} />} disabled={busy} onClick={() => setCreating(true)}>
-                {t("backups.snapshot.create")}
-              </Button>
-            </div>
+      <PageTools>
+        <div className="flex-1" />
+        <DropdownMenu
+          trigger={
+            <IconButton label={t("backups.open_folder")} tip variant="ghost" className="data-[state=open]:bg-white/[.07]">
+              <FolderOpen size={16} />
+            </IconButton>
           }
         >
-          <p className="border-b border-line px-4 py-2.5 text-[12.5px] text-muted">{t("backups.snapshots.desc")}</p>
+          <DropdownItem icon={<History size={14} />} onSelect={() => api.backupsOpenFolder(instance.id, "snapshots").catch((e) => toast.error(e))}>
+            {t("backups.snapshots")}
+          </DropdownItem>
+          <DropdownItem icon={<Globe2 size={14} />} onSelect={() => api.backupsOpenFolder(instance.id, "worlds").catch((e) => toast.error(e))}>
+            {t("backups.worlds")}
+          </DropdownItem>
+        </DropdownMenu>
+        <IconButton label={t("backups.snapshot.create")} tip variant="accent" disabled={busy} onClick={() => setCreating(true)}>
+          <Plus size={17} />
+        </IconButton>
+      </PageTools>
+      <div className="flex flex-col gap-6 pb-8 pt-1">
+        <section>
+          <div className="px-6 pb-1">
+            <h3 className="text-section text-text">{t("backups.snapshots")}</h3>
+            <p className="text-[12px] text-dim">{t("backups.snapshots.desc")}</p>
+          </div>
           {snaps.isError && !snaps.data ? (
             <ErrorState error={snaps.error} onRetry={() => snaps.refetch()} />
           ) : !snaps.data ? (
@@ -259,7 +278,7 @@ export function BackupsTab({ instance }: { instance: Instance }) {
               <RowSkeleton />
             </>
           ) : snaps.data.length === 0 ? (
-            <EmptyState className="py-10" icon={<History size={28} />} title={t("backups.snapshot.empty")} text={t("backups.snapshot.empty_text")} />
+            <EmptyState className="py-8" icon={<History size={26} />} title={t("backups.snapshot.empty")} text={t("backups.snapshot.empty_text")} />
           ) : (
             <div>
               {snaps.data.map((s) => (
@@ -267,24 +286,13 @@ export function BackupsTab({ instance }: { instance: Instance }) {
               ))}
             </div>
           )}
-        </SettingsCard>
+        </section>
 
-        <SettingsCard
-          title={t("backups.worlds")}
-          right={
-            <Tooltip content={t("backups.open_folder")}>
-              <IconButton
-                label={t("backups.open_folder")}
-                size="sm"
-                className="border-transparent hover:border-line2"
-                onClick={() => api.backupsOpenFolder(instance.id, "worlds").catch((e) => toast.error(e))}
-              >
-                <FolderOpen size={14} />
-              </IconButton>
-            </Tooltip>
-          }
-        >
-          <p className="border-b border-line px-4 py-2.5 text-[12.5px] text-muted">{t("backups.worlds.desc")}</p>
+        <section>
+          <div className="px-6 pb-1">
+            <h3 className="text-section text-text">{t("backups.worlds")}</h3>
+            <p className="text-[12px] text-dim">{t("backups.worlds.desc")}</p>
+          </div>
           {wb.isError && !wb.data ? (
             <ErrorState error={wb.error} onRetry={() => wb.refetch()} />
           ) : !wb.data ? (
@@ -293,20 +301,18 @@ export function BackupsTab({ instance }: { instance: Instance }) {
               <RowSkeleton />
             </>
           ) : groups.length === 0 ? (
-            <EmptyState className="py-10" icon={<Globe2 size={28} />} title={t("backups.worlds.empty")} text={t("backups.worlds.empty_text")} />
+            <EmptyState className="py-8" icon={<Globe2 size={26} />} title={t("backups.worlds.empty")} text={t("backups.worlds.empty_text")} />
           ) : (
             <div>
               {groups.map((g) => (
-                <div key={g.folder} className="pb-1.5 [&+&]:border-t [&+&]:border-line">
-                  <div className="flex items-center gap-4 px-4 pb-1 pt-3">
-                    <div className="grid h-8 w-8 shrink-0 place-items-center border border-line bg-surface2 text-[#5fbf4a]">
-                      <Globe2 size={15} />
-                    </div>
+                <div key={g.folder} className="pb-1">
+                  <div className="flex h-11 items-center gap-3 px-6">
+                    <Globe2 size={15} className="shrink-0 text-[#5fbf4a]" />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14px] font-semibold text-white">{g.name}</div>
-                      <div className="truncate font-mono text-[11px] text-dim">
-                        saves/{g.folder}
-                        {worlds.data && !existing.has(g.folder) && <span className="ml-2 font-sans text-warn">· {t("backups.world.missing")}</span>}
+                      <div className="truncate text-[13.5px] font-semibold text-text">{g.name}</div>
+                      <div className="truncate text-[12px] leading-tight text-dim">
+                        <span className="font-mono text-[11px]">saves/{g.folder}</span>
+                        {worlds.data && !existing.has(g.folder) && <span className="ml-2 text-warn">· {t("backups.world.missing")}</span>}
                       </div>
                     </div>
                     <span className="text-[12px] text-dim">
@@ -320,7 +326,7 @@ export function BackupsTab({ instance }: { instance: Instance }) {
               ))}
             </div>
           )}
-        </SettingsCard>
+        </section>
       </div>
       <CreateSnapshotDialog instance={instance} open={creating} onClose={() => setCreating(false)} />
     </div>

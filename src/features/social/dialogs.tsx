@@ -12,7 +12,7 @@ import { sqk, useInstances, useServers, useServerStore, waitForTask } from "@/li
 import type { Instance, LoaderKind, Server } from "@/lib/types";
 import { useVibe } from "@/lib/vibe";
 import type { HostSession, Invite, Pack, PackVisibility } from "@/lib/vibe-sdk";
-import { Button, Checkbox, Dialog, Field, Input, Segmented, Select, Skeleton, Spinner, Textarea, cn, toast } from "@/components/ui";
+import { Button, Checkbox, Dialog, Field, Input, Segmented, Select, Skeleton, Spinner, Textarea, toast } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { useInstanceActions } from "@/components/instance/actions";
 import { finishNewInstance } from "@/components/content/install";
@@ -183,7 +183,7 @@ function InviteFriendsDialog({ init, onClose }: { init: NonNullable<DialogState[
         {!vibe.hosting ? (
           <p className="text-[13px] text-muted">{t("social.invite.hosting_off")}</p>
         ) : hosted.length === 0 ? (
-          <div className="border border-line bg-black/30 p-3 text-[13px] text-muted">
+          <div className="rounded-card bg-surface p-3 text-[13px] text-muted">
             <p>{t("social.invite.no_server")}</p>
             <Button
               size="sm"
@@ -215,10 +215,10 @@ function InviteFriendsDialog({ init, onClose }: { init: NonNullable<DialogState[
         )}
         {!init.chatId && (
           <Field label={t("social.invite.friends")}>
-            <div className="scroll max-h-52 border border-line">
+            <div className="scroll max-h-52 rounded-card bg-surface py-1">
               {friends.length === 0 && <p className="p-3 text-[12px] text-dim">{t("social.friends.empty")}</p>}
               {friends.map((f) => (
-                <label key={f.user.id} className="flex h-10 cursor-pointer items-center gap-2.5 px-3 hover:bg-white/[.03]">
+                <label key={f.user.id} className="flex h-9 cursor-pointer items-center gap-2.5 px-3 transition-colors duration-100 hover:bg-white/[.04]">
                   <Checkbox
                     checked={picked.has(f.user.id)}
                     onChange={(on) => {
@@ -229,7 +229,7 @@ function InviteFriendsDialog({ init, onClose }: { init: NonNullable<DialogState[
                     }}
                   />
                   <Avatar user={f.user} size={22} presence={f.presence} />
-                  <span className="text-[13px] text-white">{f.user.name}</span>
+                  <span className="text-[13px] text-text">{f.user.name}</span>
                 </label>
               ))}
             </div>
@@ -424,10 +424,10 @@ function AcceptDialog({ req, onClose }: { req: AcceptReq; onClose: () => void })
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-3 border border-line bg-black/30 p-3">
+          <div className="flex items-center gap-3 rounded-card bg-surface p-3">
             <Avatar user={tgt.from} size={36} />
             <div className="min-w-0">
-              <div className="truncate text-[14px] font-semibold text-white">{tgt.title}</div>
+              <div className="truncate text-[14px] font-semibold text-text">{tgt.title}</div>
               <div className="truncate text-[12px] text-muted">
                 {t("social.accept.from", { name: tgt.from.name })}
                 {tgt.mcVersion ? ` · ${tgt.mcVersion}` : ""}
@@ -537,7 +537,7 @@ function ShareDialog({ instanceId, onClose }: { instanceId: string; onClose: () 
         <div className="flex flex-col gap-4">
           <p className="text-[13px] text-muted">{t("social.share.text")}</p>
           {existing && (
-            <label className="flex cursor-pointer items-center gap-2.5 border border-line bg-black/30 p-3 text-[13px]">
+            <label className="flex cursor-pointer items-center gap-2.5 rounded-card bg-surface p-3 text-[13px]">
               <Checkbox checked={newVersion} onChange={setNewVersion} />
               <span>
                 {t("social.share.as_version")} <span className="font-mono text-brand">{existing}</span>
@@ -595,7 +595,7 @@ function ShareResult({ pack }: { pack: Pack }) {
   const t = useT();
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
-      <div className="flex items-center gap-3 border border-ok/30 bg-ok/5 p-3 text-[13px] text-text">
+      <div className="flex items-center gap-3 rounded-card bg-ok/10 p-3 text-[13px] text-text">
         <Check size={16} className="text-ok" />
         {t("social.share.done", { name: pack.name })}
       </div>
@@ -671,7 +671,7 @@ export function PackImportDialog({ code, onClose }: { code: string; onClose: () 
           <div className="flex items-center gap-3">
             <PackIcon pack={p} size={48} />
             <div className="min-w-0">
-              <div className="truncate text-[15px] font-semibold text-white">{p.name}</div>
+              <div className="truncate text-[15px] font-semibold text-text">{p.name}</div>
               <div className="truncate text-[12px] text-muted">
                 {t("social.pack.by", { name: p.owner.name })} · {p.mcVersion} · {p.loader}
               </div>
@@ -697,9 +697,9 @@ export function PackIcon({ pack, size }: { pack: Pick<Pack, "iconUrl" | "name">;
   const [bad, setBad] = useState(false);
   const ok = pack.iconUrl && pack.iconUrl.startsWith("https://") && !bad;
   return ok ? (
-    <img src={pack.iconUrl!} alt="" width={size} height={size} loading="lazy" decoding="async" className="shrink-0 border border-line object-cover" style={{ width: size, height: size }} onError={() => setBad(true)} />
+    <img src={pack.iconUrl!} alt="" width={size} height={size} loading="lazy" decoding="async" className="shrink-0 rounded-card object-cover" style={{ width: size, height: size }} onError={() => setBad(true)} />
   ) : (
-    <span className="grid shrink-0 place-items-center border border-line2 bg-surface2 text-muted" style={{ width: size, height: size }}>
+    <span className="grid shrink-0 place-items-center rounded-card bg-surface2 text-muted" style={{ width: size, height: size }}>
       <PackageOpen size={size * 0.45} />
     </span>
   );
@@ -759,10 +759,10 @@ function GroupDialog({ chatId, onClose }: { chatId?: string; onClose: () => void
           </Field>
         )}
         <Field label={t("social.invite.friends")}>
-          <div className="scroll max-h-60 border border-line">
+          <div className="scroll max-h-60 rounded-card bg-surface py-1">
             {list.length === 0 && <p className="p-3 text-[12px] text-dim">{t("social.friends.empty")}</p>}
             {list.map((f) => (
-              <label key={f.user.id} className={cn("flex h-10 cursor-pointer items-center gap-2.5 px-3 hover:bg-white/[.03]")}>
+              <label key={f.user.id} className="flex h-9 cursor-pointer items-center gap-2.5 px-3 transition-colors duration-100 hover:bg-white/[.04]">
                 <Checkbox
                   checked={picked.has(f.user.id)}
                   onChange={(on) => {
@@ -773,10 +773,11 @@ function GroupDialog({ chatId, onClose }: { chatId?: string; onClose: () => void
                   }}
                 />
                 <Avatar user={f.user} size={22} presence={f.presence} />
-                <span className="text-[13px] text-white">{f.user.name}</span>
+                <span className="text-[13px] text-text">{f.user.name}</span>
               </label>
             ))}
           </div>
+
         </Field>
       </div>
     </Dialog>

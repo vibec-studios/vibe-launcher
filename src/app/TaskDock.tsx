@@ -1,17 +1,17 @@
 // Aufgaben-Anzeige in der Titelleiste (Downloads, Installationen, Importe) mit Popover-Liste.
 import * as Popover from "@radix-ui/react-popover";
-import { AlertTriangle, CheckCircle2, Download, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Download, ListX, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { useTaskStore, useTasks } from "@/lib/queries";
 import type { TaskInfo } from "@/lib/types";
-import { Progress, Spinner, Tooltip, cn, toast } from "@/components/ui";
+import { IconButton, Progress, Spinner, Tooltip, cn, toast } from "@/components/ui";
 import { useT, t as tt } from "@/i18n";
 
 function TaskRow({ task }: { task: TaskInfo }) {
   const t = useT();
   return (
-    <div className="flex flex-col gap-1.5 border-b border-line px-4 py-3 last:border-b-0">
+    <div className="flex flex-col gap-1.5 border-line px-4 py-2.5 [&+&]:border-t">
       <div className="flex items-center gap-2">
         <span className="shrink-0">
           {task.status === "running" ? (
@@ -26,13 +26,21 @@ function TaskRow({ task }: { task: TaskInfo }) {
         </span>
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{task.title}</span>
         {task.status === "running" && (
-          <button className="font-mono text-[10px] uppercase tracking-[.1em] text-dim hover:text-danger" onClick={() => api.taskCancel(task.id)}>
-            {t("tasks.cancel")}
-          </button>
+          <IconButton
+            label={t("tasks.cancel")}
+            tip
+            tipSide="left"
+            variant="ghost"
+            size="sm"
+            className="-my-1 -mr-2 h-7 w-7 hover:text-danger"
+            onClick={() => api.taskCancel(task.id)}
+          >
+            <X size={14} />
+          </IconButton>
         )}
       </div>
       {task.status === "running" && <Progress value={task.progress} />}
-      <div className={cn("selectable truncate text-[11px]", task.status === "failed" ? "text-danger" : "text-dim")} title={task.error ?? task.message ?? ""}>
+      <div className={cn("selectable truncate text-caption", task.status === "failed" ? "text-danger" : "text-dim")} title={task.error ?? task.message ?? ""}>
         {task.status === "failed"
           ? task.error
           : task.status === "cancelled"
@@ -40,7 +48,7 @@ function TaskRow({ task }: { task: TaskInfo }) {
             : task.status === "done"
               ? t("tasks.done")
               : (task.message ?? "")}
-        {task.status === "running" && task.progress !== null && <span className="float-right font-mono">{Math.round(task.progress * 100)}%</span>}
+        {task.status === "running" && task.progress !== null && <span className="float-right tabular-nums">{Math.round(task.progress * 100)}%</span>}
       </div>
     </div>
   );
@@ -96,18 +104,22 @@ export function TaskDock() {
           collisionPadding={8}
           className="z-[60] w-[380px] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
-          <div className="flex h-11 items-center justify-between border-b border-line px-4">
-            <span className="label">{t("tasks.title")}</span>
+          <div className="flex h-11 items-center justify-between border-b border-line pl-4 pr-2">
+            <span className="text-section text-text">{t("tasks.title")}</span>
             {tasks.some((x) => x.status !== "running") && (
-              <button
-                className="font-mono text-[10px] uppercase tracking-[.1em] text-dim hover:text-white"
+              <IconButton
+                label={t("tasks.clear")}
+                tip
+                tipSide="left"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   api.tasksClear().catch(() => {});
                   useTaskStore.getState().clearFinished();
                 }}
               >
-                {t("tasks.clear")}
-              </button>
+                <ListX size={15} />
+              </IconButton>
             )}
           </div>
           <div className="scroll max-h-[420px]">

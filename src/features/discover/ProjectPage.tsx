@@ -1,10 +1,10 @@
-// Projektseite im Stil der Modrinth App: kompakter Kopf (Icon, Titel, Kurzbeschreibung, Stats inline, Tags,
-// Installieren + Links-Menü), Tabs Beschreibung / Versionen / Galerie, rechts Infospalte (Kompatibilität, Links, Details).
+// Projektseite: kompakter Kopf (Icon, Titel, Kurzbeschreibung, eine Meta-Zeile, Installieren + ⋯-Menü),
+// klebende Tab-Leiste Beschreibung / Versionen / Galerie, rechts Infospalte (Kompatibilität, Kategorien, Links, Details).
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
-import { BookOpen, Bug, CalendarClock, Code2, Copy, Download, ExternalLink, FolderPlus, Globe, Heart, MessageCircle, MoreVertical } from "lucide-react";
+import { BookOpen, Bug, CalendarClock, Code2, Copy, Download, ExternalLink, FolderPlus, Globe, Heart, MessageCircle, MoreHorizontal } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
-import { Button, DropdownItem, DropdownMenu, DropdownSeparator, ErrorState, IconButton, Skeleton, Tabs, Tooltip, toast } from "@/components/ui";
+import { Button, DropdownItem, DropdownMenu, DropdownSeparator, ErrorState, IconButton, Skeleton, Tabs, Tag, Tooltip, toast } from "@/components/ui";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
@@ -39,9 +39,9 @@ export function ProjectPage() {
 
   return (
     <div className="scroll h-full">
-      <div className="mx-auto w-full max-w-[1180px] px-6 pb-12 pt-5">
+      <div className="mx-auto w-full max-w-[1180px] px-6 pb-12 pt-4">
         {q.isError ? (
-          <ErrorState error={q.error} onRetry={() => q.refetch()} className="border border-line bg-surface" />
+          <ErrorState error={q.error} onRetry={() => q.refetch()} className="rounded-card bg-surface" />
         ) : !p ? (
           <HeaderSkeleton />
         ) : (
@@ -49,7 +49,7 @@ export function ProjectPage() {
         )}
         {p && (
           <>
-            <div className="sticky top-0 z-10 mt-4 bg-panel">
+            <div className="sticky top-0 z-10 mt-3 bg-panel">
               <Tabs
                 value={tab}
                 onChange={setTab}
@@ -61,7 +61,7 @@ export function ProjectPage() {
                 ]}
               />
             </div>
-            <div className="flex items-start gap-6 pt-5">
+            <div className="flex items-start gap-8 pt-5">
               <div className="min-w-0 flex-1">
                 {tab === "description" && <Description p={p} />}
                 {tab === "gallery" && <Gallery p={p} />}
@@ -73,7 +73,7 @@ export function ProjectPage() {
         )}
         {!p && !q.isError && (
           <div className="mt-6 flex flex-col gap-3">
-            <Skeleton className="h-11" />
+            <Skeleton className="h-10" />
             <Skeleton className="h-4 w-4/5" />
             <Skeleton className="h-4 w-3/5" />
             <Skeleton className="h-4 w-2/3" />
@@ -130,56 +130,59 @@ function Header({ p, instanceId }: { p: ProjectDetails; instanceId?: string }) {
   const install = () => openInstall({ project: p, instanceId: isPack ? null : instanceId });
 
   return (
-    <div className="flex items-start gap-5 animate-fade-in">
-      <ProjectIcon src={p.icon_url} size={96} eager />
-      <div className="min-w-0 flex-1">
-        <h1 className="display truncate text-[24px]" title={p.title}>
-          {p.title}
-        </h1>
-        <p className="selectable mt-1 line-clamp-2 max-w-[720px] text-[14px] leading-relaxed text-muted">{p.description}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted">
-          <Tooltip content={p.downloads.toLocaleString()}>
-            <span className="flex items-center gap-1.5">
-              <Download size={14} className="text-dim" />
-              <b className="font-semibold text-text">{formatCount(p.downloads)}</b> {t("project.downloads_lc")}
+    <div className="flex items-center gap-4 animate-fade-in">
+      <ProjectIcon src={p.icon_url} size={64} eager />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h1 className="truncate text-title text-text" title={p.title}>
+            {p.title}
+          </h1>
+          <span className="shrink-0 truncate text-meta text-dim">{t("discover.by", { author: p.author })}</span>
+        </div>
+        <p className="selectable truncate text-[13px] text-muted" title={p.description}>
+          {p.description}
+        </p>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-meta text-dim">
+          <Tooltip content={t("discover.downloads_n", { n: p.downloads.toLocaleString() })}>
+            <span className="flex items-center gap-1">
+              <Download size={12} />
+              {formatCount(p.downloads)} {t("project.downloads_lc")}
             </span>
           </Tooltip>
           {p.source === "modrinth" && (
-            <span className="flex items-center gap-1.5">
-              <Heart size={14} className="text-dim" />
-              <b className="font-semibold text-text">{formatCount(p.follows)}</b> {t("project.follows_lc")}
+            <span className="flex items-center gap-1">
+              <Heart size={12} />
+              {formatCount(p.follows)} {t("project.follows_lc")}
             </span>
           )}
           {p.updated && (
             <Tooltip content={formatDate(p.updated)}>
-              <span className="flex items-center gap-1.5">
-                <CalendarClock size={14} className="text-dim" />
+              <span className="flex items-center gap-1">
+                <CalendarClock size={12} />
                 {t("project.updated_ago", { time: formatRelative(p.updated) })}
               </span>
             </Tooltip>
           )}
-          <span className="text-dim">{t("discover.by", { author: p.author })}</span>
-        </div>
-        <div className="mt-2.5 flex flex-wrap items-center gap-1">
-          {loaders.map((l) => (
-            <Pill key={l} className="text-text">
-              {prettyLoader(l)}
-            </Pill>
-          ))}
-          {range && <Pill className="font-mono text-[11.5px] text-text">{range}</Pill>}
-          {p.categories.map((c) => (
-            <Pill key={c}>{prettyCategory(c)}</Pill>
-          ))}
+          {(loaders.length > 0 || range) && (
+            <span className="flex items-center gap-1">
+              {loaders.map((l) => (
+                <Tag key={l} className="text-text">
+                  {prettyLoader(l)}
+                </Tag>
+              ))}
+              {range && <Tag className="text-text">{range}</Tag>}
+            </span>
+          )}
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5">
         <Button variant="primary" icon={isPack ? <FolderPlus size={15} /> : <Download size={15} />} onClick={install}>
           {isPack ? t("install.as_new_instance_short") : target ? t("project.install_into", { name: target.name }) : t("common.install")}
         </Button>
         <DropdownMenu
           trigger={
-            <IconButton label={t("common.more")}>
-              <MoreVertical size={16} />
+            <IconButton label={t("common.more")} tip variant="ghost">
+              <MoreHorizontal size={16} />
             </IconButton>
           }
         >
@@ -210,16 +213,12 @@ function Header({ p, instanceId }: { p: ProjectDetails; instanceId?: string }) {
 
 function HeaderSkeleton() {
   return (
-    <div className="flex items-start gap-5">
-      <Skeleton className="h-[96px] w-[96px] shrink-0" />
-      <div className="flex min-w-0 flex-1 flex-col gap-2.5 pt-1">
-        <Skeleton className="h-6 w-2/5" />
-        <Skeleton className="h-4 w-4/5" />
-        <Skeleton className="h-3.5 w-1/2" />
-        <div className="flex gap-1">
-          <Skeleton className="h-[22px] w-14" />
-          <Skeleton className="h-[22px] w-20" />
-        </div>
+    <div className="flex items-center gap-4">
+      <Skeleton className="h-[64px] w-[64px] shrink-0 rounded-card" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <Skeleton className="h-5 w-2/5" />
+        <Skeleton className="h-3.5 w-3/5" />
+        <Skeleton className="h-3 w-1/3" />
       </div>
       <Skeleton className="h-9 w-[132px] shrink-0" />
     </div>
@@ -228,8 +227,8 @@ function HeaderSkeleton() {
 
 function SideSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="border-b border-line py-4 first:pt-0 last:border-b-0">
-      <h3 className="mb-2.5 text-[14px] font-semibold text-white">{title}</h3>
+    <section className="flex flex-col gap-2">
+      <h3 className="text-[12.5px] font-semibold text-muted">{title}</h3>
       {children}
     </section>
   );
@@ -237,7 +236,7 @@ function SideSection({ title, children }: { title: string; children: ReactNode }
 
 function SideLink({ href, icon, children }: { href: string; icon: ReactNode; children: ReactNode }) {
   return (
-    <a href={href} className="flex h-8 items-center gap-2.5 px-1 text-[13px] text-muted transition-colors hover:bg-white/[.04] hover:text-white">
+    <a href={href} className="-mx-2 flex h-8 items-center gap-2.5 rounded-ctl px-2 text-[13px] text-muted transition-colors hover:bg-white/[.04] hover:text-text">
       <span className="text-dim">{icon}</span>
       <span className="flex-1 truncate">{children}</span>
       <ExternalLink size={12} className="text-dim" />
@@ -255,10 +254,10 @@ function InfoSidebar({ p }: { p: ProjectDetails }) {
   const shown = versions.slice(0, 12);
   const platforms = p.loaders.filter((x) => x !== "minecraft");
   return (
-    <aside className="w-[260px] shrink-0">
+    <aside className="flex w-[248px] shrink-0 flex-col gap-6">
       <SideSection title={t("project.side.compat")}>
         <div className="text-[12px] text-dim">Minecraft: Java Edition</div>
-        <div className="mt-1.5 flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1">
           {shown.map((v) => (
             <Pill key={v} className="font-mono text-[11.5px] text-text">
               {v}
@@ -269,8 +268,8 @@ function InfoSidebar({ p }: { p: ProjectDetails }) {
         </div>
         {platforms.length > 0 && (
           <>
-            <div className="mt-3 text-[12px] text-dim">{t("project.side.platforms")}</div>
-            <div className="mt-1.5 flex flex-wrap gap-1">
+            <div className="mt-1 text-[12px] text-dim">{t("project.side.platforms")}</div>
+            <div className="flex flex-wrap gap-1">
               {platforms.map((x) => (
                 <Pill key={x} className="text-text">
                   {prettyLoader(x)}
@@ -280,6 +279,15 @@ function InfoSidebar({ p }: { p: ProjectDetails }) {
           </>
         )}
       </SideSection>
+      {p.categories.length > 0 && (
+        <SideSection title={t("discover.filter.categories")}>
+          <div className="flex flex-wrap gap-1">
+            {p.categories.map((c) => (
+              <Pill key={c}>{prettyCategory(c)}</Pill>
+            ))}
+          </div>
+        </SideSection>
+      )}
       {(l.website || l.source || l.issues || l.wiki || l.discord) && (
         <SideSection title={t("project.side.links")}>
           <div className="flex flex-col">
@@ -359,7 +367,7 @@ function Gallery({ p }: { p: ProjectDetails }) {
           <button
             key={g.url}
             onClick={() => setIndex(i)}
-            className="group flex flex-col border border-line bg-surface text-left transition-colors duration-150 hover:border-line2"
+            className="group flex flex-col overflow-hidden rounded-card bg-surface text-left transition-colors duration-150 hover:bg-surface2"
           >
             <span className="relative block aspect-video w-full overflow-hidden bg-surface2">
               <img
@@ -368,11 +376,11 @@ function Gallery({ p }: { p: ProjectDetails }) {
                 loading="lazy"
                 decoding="async"
                 draggable={false}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-150 group-hover:scale-[1.02]"
+                className="absolute inset-0 h-full w-full object-cover"
               />
             </span>
-            <span className="flex h-[48px] flex-col justify-center px-3">
-              <span className="truncate text-[13px] font-medium text-white">{g.title || t("project.image", { n: i + 1 })}</span>
+            <span className="flex h-[44px] flex-col justify-center px-3">
+              <span className="truncate text-[13px] font-medium text-text">{g.title || t("project.image", { n: i + 1 })}</span>
               {g.description && <span className="truncate text-[12px] text-dim">{g.description}</span>}
             </span>
           </button>

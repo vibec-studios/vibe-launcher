@@ -13,8 +13,9 @@ import {
   ClipboardCopy,
   Copy,
   Eraser,
-  FileText,
   FolderOpen,
+  ListFilter,
+  MoreHorizontal,
   RefreshCw,
   TextSelect,
   UploadCloud,
@@ -24,7 +25,8 @@ import { api } from "@/lib/api";
 import { qk, useGameState, useGameStore } from "@/lib/queries";
 import type { Instance, LogFile, LogLine } from "@/lib/types";
 import { formatBytes, formatRelative } from "@/lib/format";
-import { Button, ContextItem, ContextMenu, ContextSeparator, ErrorState, IconButton, SearchInput, Select, Skeleton, Tooltip, cn, toast } from "@/components/ui";
+import { ContextItem, ContextMenu, ContextSeparator, DropdownCheckItem, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, ErrorState, IconButton, SearchInput, Select, Skeleton, Spinner, cn, toast } from "@/components/ui";
+import { PageTools } from "@/features/instances/toolbar";
 import { useT } from "@/i18n";
 import { DiagnosisDialog } from "./Diagnosis";
 import { CATS, catOf, copyText, formatLine, formatLines, levelTag, matchLogFile, parseLog, uploadToMclogs, type LevelCat } from "./logText";
@@ -305,7 +307,7 @@ export function LogViewer({
               if (el) el.scrollTop = 0;
             }
           }}
-          className={cn("scroll h-full bg-[#030305] py-2 outline-none", "focus-visible:shadow-[inset_0_0_0_1px_var(--accent)]")}
+          className={cn("scroll h-full bg-bg py-2 outline-none", "focus-visible:shadow-[inset_0_0_0_1px_var(--accent)]")}
         >
           {lines.length === 0 ? (
             <div className="grid h-full place-items-center px-6 text-center text-[13px] text-dim">{emptyText}</div>
@@ -329,7 +331,7 @@ export function LogViewer({
       {!follow && lines.length > 0 && (
         <button
           onClick={jumpDown}
-          className="absolute bottom-4 right-6 flex h-9 items-center gap-2 border border-line2 bg-surface3 px-3.5 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,.6)] transition-colors duration-150 animate-pop-in hover:bg-accent hover:text-[var(--on-accent)]"
+          className="absolute bottom-4 right-6 flex h-9 items-center gap-2 rounded-ctl bg-surface3 px-3.5 text-[13px] font-semibold text-text shadow-e2 transition-colors duration-150 animate-pop-in hover:bg-accent hover:text-[var(--on-accent)]"
         >
           <ArrowDown size={13} />
           {t("logs.jump_bottom")}
@@ -483,128 +485,121 @@ export function LogsTab({ instance }: { instance: Instance }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="shrink-0 border-b border-line bg-black">
-        <div className="flex h-14 items-center gap-2.5 px-6">
-          <div className="w-[250px] shrink-0">
-            <Select value={source} onChange={(v) => useLogSource.setState((s) => ({ src: { ...s.src, [id]: v } }))} options={sourceOptions} />
-          </div>
-          <div ref={searchRef} className="flex min-w-0 flex-1 items-center gap-1.5">
-            <SearchInput
-              value={query}
-              onChange={setQuery}
-              placeholder={t("logs.search")}
-              className="min-w-[140px] max-w-[300px] flex-1"
-              data-allow-find="1"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  go(e.shiftKey ? -1 : 1);
-                }
-                if (e.key === "Escape" && query) {
-                  e.preventDefault();
-                  setQuery("");
-                }
-              }}
-            />
-            {dq && (
-              <span className="min-w-[56px] shrink-0 text-center font-mono text-[11px] text-dim">
+      {/* Eine Werkzeugzeile: Quelle + Suche links; Stufen-Filter, Diagnose, Umbruch, Hochladen, Mehr rechts */}
+      <PageTools>
+        <div className="w-[210px] shrink-0 max-[1100px]:w-[170px]">
+          <Select
+            size="sm"
+            variant="ghost"
+            value={source}
+            onChange={(v) => useLogSource.setState((s) => ({ src: { ...s.src, [id]: v } }))}
+            options={sourceOptions}
+          />
+        </div>
+        <div ref={searchRef} className="flex min-w-0 flex-1 items-center gap-1">
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder={t("logs.search")}
+            className="w-[240px] min-w-[120px] shrink [&_input]:h-8"
+            data-allow-find="1"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                go(e.shiftKey ? -1 : 1);
+              }
+              if (e.key === "Escape" && query) {
+                e.preventDefault();
+                setQuery("");
+              }
+            }}
+          />
+          {dq && (
+            <>
+              <span className="min-w-[52px] shrink-0 text-center font-mono text-[11px] text-dim">
                 {matches.length ? `${curPos >= 0 ? curPos + 1 : "–"}/${matches.length.toLocaleString()}` : "0/0"}
               </span>
-            )}
-            {dq && (
-              <>
-                <IconButton label={t("logs.prev")} size="sm" disabled={!matches.length} onClick={() => go(-1)}>
-                  <ChevronUp size={15} />
-                </IconButton>
-                <IconButton label={t("logs.next")} size="sm" disabled={!matches.length} onClick={() => go(1)}>
-                  <ChevronDown size={15} />
-                </IconButton>
-              </>
-            )}
-          </div>
-          <Button size="sm" icon={<Stethoscope size={13} />} onClick={() => setDiagOpen(true)}>
-            {t("diag.open")}
-          </Button>
-          <Tooltip content={t("logs.wrap")}>
-            <IconButton label={t("logs.wrap")} size="sm" active={wrap} onClick={() => setWrap(!wrap)}>
-              <WrapText size={15} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip content={t("logs.copy_all")}>
-            <IconButton label={t("logs.copy_all")} size="sm" disabled={!lines.length} onClick={() => copyText(formatLines(lines))}>
-              <Copy size={14} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip content={t("common.open_folder")}>
-            <IconButton
-              label={t("common.open_folder")}
-              size="sm"
-              onClick={() => api.instanceOpenFolder(id, crash ? "crash-reports" : "logs").catch((e) => toast.error(e))}
-            >
-              <FolderOpen size={14} />
-            </IconButton>
-          </Tooltip>
-          {isFile ? (
-            <Tooltip content={t("logs.reload")}>
-              <IconButton label={t("logs.reload")} size="sm" onClick={() => file.refetch()}>
-                <RefreshCw size={14} className={cn(file.isFetching && "animate-spin")} />
+              <IconButton label={t("logs.prev")} size="sm" variant="ghost" disabled={!matches.length} onClick={() => go(-1)}>
+                <ChevronUp size={15} />
               </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip content={t("logs.clear")}>
-              <IconButton label={t("logs.clear")} size="sm" disabled={!liveLines.length} onClick={() => useGameStore.getState().setLogs(id, [])}>
-                <Eraser size={14} />
+              <IconButton label={t("logs.next")} size="sm" variant="ghost" disabled={!matches.length} onClick={() => go(1)}>
+                <ChevronDown size={15} />
               </IconButton>
-            </Tooltip>
+            </>
           )}
-          <Button size="sm" variant="outline" icon={<UploadCloud size={13} />} loading={uploading} disabled={!all.length} onClick={upload} className="ml-1">
-            {t("logs.upload")}
-          </Button>
-        </div>
-        <div className="flex h-10 items-center gap-1.5 border-t border-line px-6">
-          {CATS.map((c) => (
-            <button
-              key={c}
-              onClick={() => toggleCat(c)}
-              aria-pressed={cats.includes(c)}
-              className={cn(
-                "flex h-7 items-center gap-1.5 border px-2.5 text-[12px] font-medium transition-colors duration-100",
-                cats.includes(c) ? "border-line2 bg-white/[.04] text-white" : "border-transparent text-dim line-through decoration-dim/60 hover:text-muted",
-              )}
-            >
-              <span
-                className={cn(
-                  "h-1.5 w-1.5",
-                  c === "info" ? "bg-[#d6d6dc]" : c === "warn" ? "bg-warn" : c === "error" ? "bg-danger" : c === "debug" ? "bg-dim" : "bg-accent",
-                )}
-              />
-              {t(`logs.level.${c}`)}
-              <span className="text-dim">{counts[c].toLocaleString()}</span>
-            </button>
-          ))}
-          <div className="flex-1" />
-          <span className="flex items-center gap-2 text-[12px] text-dim">
+          <span className="ml-1 flex min-w-0 items-center gap-2 truncate text-[12px] text-dim">
             {!isFile && running && (
-              <span className="flex items-center gap-1.5 text-ok">
-                <span className="h-1.5 w-1.5 animate-pulse bg-ok" />
+              <span className="flex items-center gap-1.5 font-semibold text-ok">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-dot bg-ok" />
                 LIVE
               </span>
             )}
-            {isFile && fileInfo && (
-              <span className="flex items-center gap-1.5">
-                <FileText size={12} />
-                {formatRelative(fileInfo.modified)}
-              </span>
-            )}
-            <span>{t("logs.lines", { n: lines.length.toLocaleString() })}</span>
+            {isFile && fileInfo && <span className="truncate">{formatRelative(fileInfo.modified)}</span>}
+            <span className="truncate">{t("logs.lines", { n: lines.length.toLocaleString() })}</span>
           </span>
         </div>
-      </div>
+        <DropdownMenu
+          trigger={
+            <IconButton label={t("logs.levels")} tip variant="ghost" badge={CATS.length - cats.length || null} badgeTone="muted" className="data-[state=open]:bg-white/[.07]">
+              <ListFilter size={16} />
+            </IconButton>
+          }
+        >
+          <DropdownLabel>{t("logs.levels")}</DropdownLabel>
+          {CATS.map((c) => (
+            <DropdownCheckItem key={c} checked={cats.includes(c)} onCheckedChange={() => toggleCat(c)}>
+              <span className="flex w-full items-center gap-2">
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-dot",
+                    c === "info" ? "bg-text" : c === "warn" ? "bg-warn" : c === "error" ? "bg-danger" : c === "debug" ? "bg-dim" : "bg-accent",
+                  )}
+                />
+                <span className="flex-1">{t(`logs.level.${c}`)}</span>
+                <span className="tabular-nums text-dim">{counts[c].toLocaleString()}</span>
+              </span>
+            </DropdownCheckItem>
+          ))}
+        </DropdownMenu>
+        <IconButton label={t("diag.open")} tip variant="ghost" onClick={() => setDiagOpen(true)}>
+          <Stethoscope size={16} />
+        </IconButton>
+        <IconButton label={t("logs.wrap")} tip variant="ghost" active={wrap} onClick={() => setWrap(!wrap)}>
+          <WrapText size={16} />
+        </IconButton>
+        <IconButton label={t("logs.upload")} tip variant="ghost" disabled={!all.length || uploading} onClick={upload}>
+          {uploading ? <Spinner size={13} /> : <UploadCloud size={16} />}
+        </IconButton>
+        <DropdownMenu
+          trigger={
+            <IconButton label={t("common.more")} tip variant="ghost" className="data-[state=open]:bg-white/[.07]">
+              <MoreHorizontal size={16} />
+            </IconButton>
+          }
+        >
+          <DropdownItem icon={<Copy size={14} />} disabled={!lines.length} onSelect={() => copyText(formatLines(lines))}>
+            {t("logs.copy_all")}
+          </DropdownItem>
+          {isFile ? (
+            <DropdownItem icon={<RefreshCw size={14} />} onSelect={() => void file.refetch()}>
+              {t("logs.reload")}
+            </DropdownItem>
+          ) : (
+            <DropdownItem icon={<Eraser size={14} />} disabled={!liveLines.length} onSelect={() => useGameStore.getState().setLogs(id, [])}>
+              {t("logs.clear")}
+            </DropdownItem>
+          )}
+          <DropdownSeparator />
+          <DropdownItem icon={<FolderOpen size={14} />} onSelect={() => api.instanceOpenFolder(id, crash ? "crash-reports" : "logs").catch((e) => toast.error(e))}>
+            {t("common.open_folder")}
+          </DropdownItem>
+        </DropdownMenu>
+      </PageTools>
 
       {isFile && file.isError ? (
         <ErrorState error={file.error} onRetry={() => file.refetch()} className="flex-1" />
       ) : isFile && (file.isLoading || (!fileInfo && !files.data)) ? (
-        <div className="flex flex-1 flex-col gap-1.5 bg-[#030305] px-4 py-3">
+        <div className="flex flex-1 flex-col gap-1.5 bg-bg px-4 py-3">
           {Array.from({ length: 14 }, (_, i) => (
             <Skeleton key={i} className="h-3" style={{ width: `${30 + ((i * 37) % 60)}%` }} />
           ))}

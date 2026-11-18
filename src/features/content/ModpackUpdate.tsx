@@ -68,7 +68,7 @@ export function ModpackUpdateDialog({ instance, versionId, onClose }: { instance
       size="lg"
       footer={
         <>
-          <span className="mr-auto text-[12px] text-dim">{t("modpack.snapshot_hint")}</span>
+          <span className="mr-auto text-meta text-dim">{t("modpack.snapshot_hint")}</span>
           <Button variant="subtle" onClick={onClose}>
             {t("common.cancel")}
           </Button>
@@ -90,40 +90,40 @@ export function ModpackUpdateDialog({ instance, versionId, onClose }: { instance
       ) : p ? (
         <div className="flex flex-col gap-4">
           {versionChange && (
-            <div className="flex items-start gap-2.5 border border-warn/35 bg-warn/[.06] px-3.5 py-2.5 text-[13px]">
+            <div className="flex items-start gap-2.5 rounded-card bg-warn/[.08] px-3.5 py-2.5 text-[13px]">
               <AlertTriangle size={15} className="mt-0.5 shrink-0 text-warn" />
               <div>
-                {p.mc_from !== p.mc_to && <div className="font-semibold text-white">{t("modpack.mc_change", { from: p.mc_from, to: p.mc_to })}</div>}
+                {p.mc_from !== p.mc_to && <div className="font-semibold text-text">{t("modpack.mc_change", { from: p.mc_from, to: p.mc_to })}</div>}
                 {(p.loader_from.kind !== p.loader_to.kind || p.loader_from.version !== p.loader_to.version) && (
-                  <div className="font-semibold text-white">{t("modpack.loader_change", { from: formatLoader(p.loader_from), to: formatLoader(p.loader_to) })}</div>
+                  <div className="font-semibold text-text">{t("modpack.loader_change", { from: formatLoader(p.loader_from), to: formatLoader(p.loader_to) })}</div>
                 )}
                 <div className="text-muted">{t("modpack.reinstall_hint")}</div>
               </div>
             </div>
           )}
-          {p.legacy && <div className="text-[12.5px] text-muted">{t("modpack.legacy")}</div>}
+          {p.legacy && <div className="text-meta text-muted">{t("modpack.legacy")}</div>}
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-              <span className="text-[14px] font-semibold text-white">{t("modpack.files")}</span>
-              <span className="text-[12.5px] text-dim">{t("modpack.unchanged", { n: p.unchanged })}</span>
-              {p.user_files > 0 && <span className="text-[12.5px] text-dim">{t("modpack.user_files", { n: p.user_files })}</span>}
+              <span className="text-section text-text">{t("modpack.files")}</span>
+              <span className="text-meta text-dim">{t("modpack.unchanged", { n: p.unchanged })}</span>
+              {p.user_files > 0 && <span className="text-meta text-dim">{t("modpack.user_files", { n: p.user_files })}</span>}
               <div className="flex-1" />
               {p.files.length > 0 && <SideFilterBar value={side} onChange={setSide} counts={counts} />}
             </div>
             {p.files.length === 0 ? (
-              <div className="border border-line px-3 py-4 text-center text-[13px] text-muted">{t("modpack.no_changes")}</div>
+              <div className="rounded-card bg-surface px-3 py-4 text-center text-[13px] text-muted">{t("modpack.no_changes")}</div>
             ) : (
-              <div className="scroll max-h-[300px] border border-line">
+              <div className="scroll max-h-[300px] rounded-card bg-surface py-1">
                 {groups.map((g) =>
                   files
                     .filter((f) => f.change === g)
                     .map((f) => (
-                      <div key={`${g}-${f.path}`} className="flex items-center gap-2.5 border-b border-line/50 px-3 py-1.5 last:border-b-0">
+                      <div key={`${g}-${f.path}`} className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/[.03]">
                         {changeIcon[g]}
                         <span className={cn("w-[84px] shrink-0 text-[12px]", g === "removed" ? "text-danger" : g === "added" ? "text-ok" : "text-accent")}>{t(`modpack.${g}`)}</span>
                         <span className="min-w-0 flex-1 truncate text-[13px] text-text" title={f.old_path ? `${f.old_path} → ${f.path}` : f.path}>
                           {f.name}
-                          <span className="ml-2 text-[11.5px] text-dim">{f.path.split("/").pop()}</span>
+                          <span className="ml-2 text-caption text-dim">{f.path.split("/").pop()}</span>
                         </span>
                         <SideTag side={f.side} />
                       </div>
@@ -134,19 +134,19 @@ export function ModpackUpdateDialog({ instance, versionId, onClose }: { instance
           </div>
           {p.overrides.length > 0 && (
             <div>
-              <div className="mb-2 text-[14px] font-semibold text-white">{t("modpack.overrides")}</div>
-              <div className="scroll max-h-[180px] border border-line">
+              <div className="mb-2 text-section text-text">{t("modpack.overrides")}</div>
+              <div className="scroll max-h-[180px] rounded-card bg-surface py-1">
                 {p.overrides.map((o) => (
-                  <div key={o.path} className="flex items-center gap-2.5 border-b border-line/50 px-3 py-1.5 last:border-b-0">
+                  <div key={o.path} className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/[.03]">
                     <FileCog size={13} className={o.status === "conflict" ? "text-warn" : "text-dim"} />
-                    <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-text">{o.path}</span>
+                    <span className="min-w-0 flex-1 truncate text-meta text-text">{o.path}</span>
                     <span className={cn("shrink-0 text-[12px]", o.status === "conflict" ? "text-warn" : "text-muted")}>{t(`modpack.override.${o.status}`)}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
-          {p.missing.length > 0 && <div className="text-[12.5px] text-warn">{t("modpack.missing", { n: p.missing.length })}</div>}
+          {p.missing.length > 0 && <div className="text-meta text-warn">{t("modpack.missing", { n: p.missing.length })}</div>}
         </div>
       ) : null}
     </Dialog>

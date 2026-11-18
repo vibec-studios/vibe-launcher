@@ -98,8 +98,8 @@ export function UpdateButton() {
           className="z-[60] w-[360px] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           <div className="border-b border-line px-4 py-3">
-            <div className="text-[15px] font-semibold text-white">{tt("update.title", { version: info.version })}</div>
-            <div className="mt-0.5 text-[12px] text-muted">
+            <div className="text-section text-text">{tt("update.title", { version: info.version })}</div>
+            <div className="mt-0.5 text-meta text-muted">
               {tt("update.current", { version: info.current_version })} · {info.channel === "dev" ? tt("update.channel.dev") : tt("update.channel.release")}
             </div>
           </div>
@@ -108,7 +108,7 @@ export function UpdateButton() {
             {task && (running || failed) && (
               <>
                 {running && <Progress value={task.progress} />}
-                <div className={failed ? "text-[12px] text-danger" : "text-[12px] text-muted"}>{failed ? task.error : task.message}</div>
+                <div className={failed ? "text-meta text-danger" : "text-meta text-muted"}>{failed ? task.error : task.message}</div>
               </>
             )}
             <Button variant="primary" loading={running} disabled={running} onClick={installUpdate}>

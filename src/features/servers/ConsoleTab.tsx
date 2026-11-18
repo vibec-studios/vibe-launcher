@@ -1,11 +1,11 @@
 // Server-Konsole: virtualisierte Live-Ausgabe (gleicher Viewer wie das Spiel-Log), Suche,
 // Befehlseingabe mit Verlauf (Pfeil hoch/runter) und Schnellknöpfen.
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Copy, CornerDownLeft, Eraser, FolderOpen, Save, UploadCloud, Users, WrapText } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, CornerDownLeft, Eraser, FolderOpen, MoreHorizontal, Save, UploadCloud, Users, WrapText } from "lucide-react";
 import { api } from "@/lib/api";
 import { useServerStatus, useServerStore } from "@/lib/queries";
 import type { LogLine, Server } from "@/lib/types";
-import { Button, IconButton, SearchInput, Tooltip, cn, toast } from "@/components/ui";
+import { DropdownItem, DropdownMenu, DropdownSeparator, IconButton, SearchInput, Tooltip, cn, toast } from "@/components/ui";
 import { LogViewer } from "@/features/logs/LogsTab";
 import { copyText, formatLines, uploadToMclogs } from "@/features/logs/logText";
 import { useT } from "@/i18n";
@@ -140,8 +140,8 @@ export function ConsoleTab({ server }: { server: Server }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-black px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      <div className="flex h-12 shrink-0 items-center gap-2 px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-1">
           <SearchInput
             value={query}
             onChange={setQuery}
@@ -164,49 +164,48 @@ export function ConsoleTab({ server }: { server: Server }) {
               <span className="min-w-[56px] shrink-0 text-center font-mono text-[11px] text-dim">
                 {matches.length ? `${curPos >= 0 ? curPos + 1 : "–"}/${matches.length.toLocaleString()}` : "0/0"}
               </span>
-              <IconButton label={t("logs.prev")} size="sm" disabled={!matches.length} onClick={() => go(-1)}>
+              <IconButton label={t("logs.prev")} tip variant="ghost" size="sm" disabled={!matches.length} onClick={() => go(-1)}>
                 <ChevronUp size={15} />
               </IconButton>
-              <IconButton label={t("logs.next")} size="sm" disabled={!matches.length} onClick={() => go(1)}>
+              <IconButton label={t("logs.next")} tip variant="ghost" size="sm" disabled={!matches.length} onClick={() => go(1)}>
                 <ChevronDown size={15} />
               </IconButton>
             </>
           )}
         </div>
-        <span className="mr-1 flex items-center gap-2 text-[12px] text-dim">
+        <span className="mr-1 flex items-center gap-2 text-caption text-dim">
           {running && (
-            <span className="flex items-center gap-1.5 text-ok">
-              <span className="h-1.5 w-1.5 animate-pulse bg-ok" />
+            <span className="flex items-center gap-1.5 font-semibold text-ok">
+              <span className="h-1.5 w-1.5 rounded-dot bg-ok" />
               LIVE
             </span>
           )}
           {t("logs.lines", { n: lines.length.toLocaleString() })}
         </span>
-        <Tooltip content={t("logs.wrap")}>
-          <IconButton label={t("logs.wrap")} size="sm" active={wrap} onClick={() => setWrap(!wrap)}>
-            <WrapText size={15} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip content={t("logs.copy_all")}>
-          <IconButton label={t("logs.copy_all")} size="sm" disabled={!lines.length} onClick={() => copyText(formatLines(lines))}>
-            <Copy size={14} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip content={t("logs.clear")}>
-          <IconButton label={t("logs.clear")} size="sm" disabled={!lines.length} onClick={() => useServerStore.getState().setLogs(id, [])}>
-            <Eraser size={14} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip content={t("srv.console.logs_folder")}>
-          <IconButton label={t("srv.console.logs_folder")} size="sm" onClick={() => api.serverOpenFolder(id, "logs").catch((e) => toast.error(e))}>
-            <FolderOpen size={14} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip content={t("logs.upload")}>
-          <IconButton label={t("logs.upload")} size="sm" disabled={!lines.length} onClick={() => uploadToMclogs(formatLines(lines))}>
-            <UploadCloud size={14} />
-          </IconButton>
-        </Tooltip>
+        <IconButton label={t("logs.wrap")} tip variant="ghost" size="sm" active={wrap} onClick={() => setWrap(!wrap)}>
+          <WrapText size={15} />
+        </IconButton>
+        <IconButton label={t("logs.copy_all")} tip variant="ghost" size="sm" disabled={!lines.length} onClick={() => copyText(formatLines(lines))}>
+          <Copy size={14} />
+        </IconButton>
+        <IconButton label={t("logs.upload")} tip variant="ghost" size="sm" disabled={!lines.length} onClick={() => uploadToMclogs(formatLines(lines))}>
+          <UploadCloud size={15} />
+        </IconButton>
+        <DropdownMenu
+          trigger={
+            <IconButton label={t("srv.console.more")} tip variant="ghost" size="sm" className="data-[state=open]:bg-white/[.07] data-[state=open]:text-text">
+              <MoreHorizontal size={16} />
+            </IconButton>
+          }
+        >
+          <DropdownItem icon={<FolderOpen size={14} />} onSelect={() => api.serverOpenFolder(id, "logs").catch((e) => toast.error(e))}>
+            {t("srv.console.logs_folder")}
+          </DropdownItem>
+          <DropdownSeparator />
+          <DropdownItem icon={<Eraser size={14} />} disabled={!lines.length} onSelect={() => useServerStore.getState().setLogs(id, [])}>
+            {t("logs.clear")}
+          </DropdownItem>
+        </DropdownMenu>
       </div>
 
       <LogViewer
@@ -221,10 +220,10 @@ export function ConsoleTab({ server }: { server: Server }) {
         emptyText={emptyText}
       />
 
-      <div className="flex h-14 shrink-0 items-center gap-2 border-t border-line bg-black px-6">
+      <div className="flex h-14 shrink-0 items-center gap-1.5 px-6">
         <div
           className={cn(
-            "flex h-9 min-w-0 flex-1 items-center border border-line2 bg-surface transition-colors duration-150 focus-within:border-accent",
+            "flex h-9 min-w-0 flex-1 items-center rounded-ctl border border-transparent bg-field transition-colors duration-150 focus-within:border-accent/70",
             !canSend && "opacity-50",
           )}
         >
@@ -244,21 +243,23 @@ export function ConsoleTab({ server }: { server: Server }) {
             aria-label={t("srv.console.placeholder")}
             className="h-full min-w-0 flex-1 bg-transparent px-1 font-mono text-[13px] text-text outline-none placeholder:text-dim"
           />
-          <button
-            aria-label={t("srv.console.send")}
-            disabled={!canSend || !cmd.trim() || sending}
-            onClick={() => send(cmd)}
-            className="grid h-full w-9 place-items-center border-l border-line text-muted transition-colors duration-100 hover:bg-surface3 hover:text-white disabled:opacity-40"
-          >
-            <CornerDownLeft size={14} />
-          </button>
+          <Tooltip content={t("srv.console.send")}>
+            <button
+              aria-label={t("srv.console.send")}
+              disabled={!canSend || !cmd.trim() || sending}
+              onClick={() => send(cmd)}
+              className="mr-0.5 grid h-8 w-8 place-items-center rounded-ctl text-muted transition-colors duration-100 hover:bg-white/[.07] hover:text-text disabled:opacity-40"
+            >
+              <CornerDownLeft size={14} />
+            </button>
+          </Tooltip>
         </div>
-        <Button size="sm" icon={<Users size={13} />} disabled={!canSend} onClick={() => send("list")}>
-          list
-        </Button>
-        <Button size="sm" icon={<Save size={13} />} disabled={!canSend} onClick={() => send("save-all")}>
-          save-all
-        </Button>
+        <IconButton label="/list" tip variant="ghost" disabled={!canSend} onClick={() => send("list")}>
+          <Users size={15} />
+        </IconButton>
+        <IconButton label="/save-all" tip variant="ghost" disabled={!canSend} onClick={() => send("save-all")}>
+          <Save size={15} />
+        </IconButton>
       </div>
     </div>
   );

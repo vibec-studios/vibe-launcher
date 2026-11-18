@@ -3,23 +3,23 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowLeft, Check, Info, RotateCcw, SearchX, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Info, RotateCcw, SearchX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { EmptyState, ErrorState, Segmented, Select, SearchInput, Skeleton, Spinner, Tabs, Tooltip, cn } from "@/components/ui";
+import { Button, EmptyState, ErrorState, IconButton, Segmented, Select, SearchInput, Skeleton, Spinner, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
-import { formatLoader, instanceAccent } from "@/lib/format";
+import { formatLoader } from "@/lib/format";
 import { qk, useGameVersions, useInstances, useSettings, useSystemInfo } from "@/lib/queries";
 import type { LoaderKind, ProjectHit, ProjectType, SearchQuery, SortOrder, Source } from "@/lib/types";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { prettyCategory } from "@/components/content/Pill";
 import { compareMc, contentKindOf } from "@/components/content/util";
 import { CARD_H, ResultCard, ResultSkeleton } from "./ResultCard";
-import { scrollOffsets, useDiscoverFilters } from "./store";
+import { scrollOffsets, useDiscoverFilters, useFilterGroups } from "./store";
 
 const route = getRouteApi("/discover");
 const PAGE = 20;
-const GAP = 6;
+const GAP = 2;
 const ALL = "__all";
 const LOADERS: LoaderKind[] = ["fabric", "neoforge", "forge", "quilt"];
 const SORTS: SortOrder[] = ["relevance", "downloads", "follows", "newest", "updated"];
@@ -123,38 +123,66 @@ export function DiscoverPage() {
 
   const curseforgeBlocked = search.source === "curseforge" && !cfAvailable && !sys.isPending;
 
+  const sourceValue: Source = storeSource ?? (search.source === "curseforge" ? "curseforge" : "modrinth");
+
   return (
     <div className="flex h-full flex-col">
       {search.instance && <TargetBanner instanceId={search.instance} type={effectiveType} />}
       <div className="flex min-h-0 flex-1">
         <FilterSidebar type={effectiveType} source={source} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="shrink-0 px-5 pt-1">
-            <Tabs
-              value={effectiveType}
-              onChange={setType}
-              items={typeItems}
-              className="-mx-3 h-11 border-b-0"
-              right={
-                <div className="flex items-center gap-1.5">
-                  {!cfAvailable && !sys.isPending && (
-                    <Tooltip content={t("discover.cf_disabled")}>
-                      <Link to="/settings" search={{ tab: "downloads" }} aria-label={t("discover.cf_disabled")} className="grid h-8 w-8 place-items-center text-dim hover:text-white">
-                        <Info size={15} />
-                      </Link>
-                    </Tooltip>
-                  )}
-                  <Segmented
-                    value={storeSource ?? (search.source === "curseforge" ? "curseforge" : "modrinth")}
-                    onChange={(v: Source) => navigate({ search: (s) => ({ ...s, source: v === "modrinth" ? undefined : v }), replace: true })}
-                    items={[
+          {/* Eine Werkzeugleiste: Typ · Suche · Sortierung · Quelle */}
+          <div className="flex shrink-0 flex-wrap items-center gap-2 px-6 pt-3">
+            <Segmented value={effectiveType} onChange={setType} items={typeItems} />
+            <SearchInput
+              value={text}
+              onChange={setText}
+              placeholder={t(`discover.search.${effectiveType}`)}
+              className="min-w-[180px] flex-1"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Escape" && text) setText("");
+              }}
+            />
+            <Tooltip content={t("discover.sort")}>
+              <div className="w-[176px] shrink-0 max-[1100px]:w-[150px]">
+                <Select
+                  size="sm"
+                  variant="ghost"
+                  value={filters.sort}
+                  onChange={(v: SortOrder) => useDiscoverFilters.getState().set({ sort: v })}
+                  options={SORTS.map((s) => ({ value: s, label: t(`discover.sort.${s}`) }))}
+                />
+              </div>
+            </Tooltip>
+            <div className="flex shrink-0 items-center">
+              {!cfAvailable && !sys.isPending && (
+                <Tooltip content={t("discover.cf_disabled")}>
+                  <Link
+                    to="/settings"
+                    search={{ tab: "downloads" }}
+                    aria-label={t("discover.cf_disabled")}
+                    className="grid h-8 w-8 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text"
+                  >
+                    <Info size={15} />
+                  </Link>
+                </Tooltip>
+              )}
+              <Tooltip content={t("discover.source")}>
+                <div className="w-[150px]">
+                  <Select<Source>
+                    size="sm"
+                    variant="ghost"
+                    value={sourceValue}
+                    onChange={(v) => navigate({ search: (s) => ({ ...s, source: v === "modrinth" ? undefined : v }), replace: true })}
+                    options={[
                       { value: "modrinth", label: "Modrinth" },
                       { value: "curseforge", label: "CurseForge", disabled: !cfAvailable },
                       ...enabledStores.map((s) => ({
                         value: `store:${s.id}` as Source,
                         label: (
-                          <span className="flex items-center gap-1.5">
-                            {s.icon && <img src={s.icon} alt="" width={16} height={16} className="h-4 w-4 object-contain" />}
+                          <span className="inline-flex items-center gap-1.5">
+                            {s.icon && <img src={s.icon} alt="" width={14} height={14} className="h-3.5 w-3.5 object-contain" />}
                             {s.name}
                           </span>
                         ),
@@ -162,31 +190,12 @@ export function DiscoverPage() {
                     ]}
                   />
                 </div>
-              }
-            />
-            <div className="flex items-center gap-2.5 pt-2">
-              <SearchInput
-                value={text}
-                onChange={setText}
-                placeholder={t(`discover.search.${effectiveType}`)}
-                className="min-w-0 flex-1"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Escape" && text) setText("");
-                }}
-              />
-              <div className="w-[200px] shrink-0">
-                <Select
-                  value={filters.sort}
-                  onChange={(v: SortOrder) => useDiscoverFilters.getState().set({ sort: v })}
-                  options={SORTS.map((s) => ({ value: s, label: t(`discover.sort.${s}`) }))}
-                />
-              </div>
+              </Tooltip>
             </div>
-            <div className="flex h-8 items-center gap-2 text-[12.5px] text-dim">
-              {results.data && !curseforgeBlocked && <span>{t("discover.results", { n: total.toLocaleString() })}</span>}
-              {results.isFetching && !results.isFetchingNextPage && <Spinner size={11} className="text-accent" />}
-            </div>
+          </div>
+          <div className="flex h-8 shrink-0 items-center gap-2 px-6 text-meta text-dim">
+            {results.data && !curseforgeBlocked && <span>{t("discover.results", { n: total.toLocaleString() })}</span>}
+            {results.isFetching && !results.isFetchingNextPage && <Spinner size={11} className="text-brand" />}
           </div>
           {curseforgeBlocked ? (
             <EmptyState
@@ -194,7 +203,7 @@ export function DiscoverPage() {
               title={t("discover.cf_title")}
               text={t("discover.cf_text")}
               action={
-                <Link to="/settings" search={{ tab: "downloads" }} className="inline-flex h-8 items-center gap-2 border border-line bg-surface2 px-3 text-[13px] font-semibold text-text transition-colors hover:bg-surface3 hover:border-line2">
+                <Link to="/settings" search={{ tab: "downloads" }} className={ghostLinkCls}>
                   {t("discover.cf_settings")}
                 </Link>
               }
@@ -227,6 +236,10 @@ export function DiscoverPage() {
     </div>
   );
 }
+
+/** Link im Look eines Sekundär-Knopfs (ghost). */
+const ghostLinkCls =
+  "inline-flex h-8 items-center gap-1.5 rounded-ctl bg-surface2 px-3 text-[13px] font-semibold text-text transition-colors duration-150 hover:bg-surface3";
 
 function ResultList({
   keyStr,
@@ -292,28 +305,26 @@ function ResultList({
         text={t("discover.empty_text")}
         className="flex-1"
         action={
-          <button onClick={onReset} className="inline-flex h-8 items-center gap-2 border border-line bg-surface2 px-3 text-[13px] font-semibold text-text transition-colors hover:bg-surface3 hover:border-line2">
-            <RotateCcw size={13} />
+          <Button size="sm" variant="ghost" icon={<RotateCcw size={13} />} onClick={onReset}>
             {t("discover.reset")}
-          </button>
+          </Button>
         }
       />
     );
 
   return (
     <div ref={ref} className={cn("scroll min-h-0 flex-1 transition-opacity duration-150", placeholder && "opacity-60")}>
-      <div className="relative mx-5" style={{ height: v.getTotalSize() }}>
+      <div className="relative mx-4" style={{ height: v.getTotalSize() }}>
         {items.map((it) => {
           const hit = hits[it.index];
           return (
             <div key={hit ? hit.id : `s${it.index}`} className="absolute inset-x-0" style={{ top: it.start, height: CARD_H }}>
               {!hit && nextError ? (
-                <div className="flex h-full items-center justify-center gap-3 border border-dashed border-line2 text-[13px] text-muted">
+                <div className="flex h-full items-center justify-center gap-3 text-[13px] text-muted">
                   {t("discover.next_error")}
-                  <button onClick={fetchNext} className="inline-flex h-8 items-center gap-2 border border-line bg-surface2 px-3 text-[13px] font-semibold text-text transition-colors hover:bg-surface3 hover:border-line2">
-                    <RotateCcw size={13} />
+                  <Button size="sm" variant="ghost" icon={<RotateCcw size={13} />} onClick={fetchNext}>
                     {t("common.retry")}
-                  </button>
+                  </Button>
                 </div>
               ) : status === "pending" || !hit ? (
                 <ResultSkeleton />
@@ -333,17 +344,16 @@ function TargetBanner({ instanceId, type }: { instanceId: string; type: ProjectT
   const navigate = route.useNavigate();
   const { data: instances, isPending } = useInstances();
   const inst = instances?.find((i) => i.id === instanceId);
-  const accent = inst ? instanceAccent(inst.id, inst.accent) : "var(--color-brand)";
   return (
-    <div className="flex h-11 shrink-0 items-center gap-2.5 border-b border-line bg-surface px-4" style={{ boxShadow: `inset 3px 0 0 ${accent}` }}>
-      {inst ? <InstanceBadge instance={inst} size={22} /> : <Skeleton className="h-[22px] w-[22px]" />}
+    <div className="flex h-11 shrink-0 items-center gap-2.5 border-b border-line px-6">
+      {inst ? <InstanceBadge instance={inst} size={22} /> : <Skeleton className="h-[22px] w-[22px] rounded-ctl" />}
       <div className="min-w-0 flex-1 truncate text-[13px] text-muted">
         {isPending ? (
           t("common.loading")
         ) : inst ? (
           <>
-            {t("discover.target_prefix")} <b className="font-semibold text-white">{inst.name}</b>
-            <span className="ml-2 font-mono text-[11.5px] text-dim">{`${inst.mc_version} · ${formatLoader(inst.loader)}`}</span>
+            {t("discover.target_prefix")} <b className="font-semibold text-text">{inst.name}</b>
+            <span className="ml-2 text-meta text-dim">{`${inst.mc_version} · ${formatLoader(inst.loader)}`}</span>
           </>
         ) : (
           t("discover.target_missing")
@@ -354,53 +364,71 @@ function TargetBanner({ instanceId, type }: { instanceId: string; type: ProjectT
           to="/instances/$id"
           params={{ id: inst.id }}
           search={{ tab: instanceTabFor(type) }}
-          className="inline-flex h-7 items-center gap-1.5 border border-line bg-surface2 px-2.5 text-[12.5px] font-semibold text-text transition-colors hover:bg-surface3"
+          className="inline-flex h-8 items-center gap-1.5 rounded-ctl px-2.5 text-[13px] font-semibold text-muted transition-colors duration-150 hover:bg-white/[.06] hover:text-text"
         >
-          <ArrowLeft size={13} />
+          <ArrowLeft size={14} />
           {t("discover.back_to_instance")}
         </Link>
       )}
-      <Tooltip content={t("discover.target_clear")}>
-        <button
-          aria-label={t("discover.target_clear")}
-          className="grid h-7 w-7 place-items-center text-dim transition-colors hover:text-white"
-          onClick={() => navigate({ search: (s) => ({ ...s, instance: undefined }), replace: true })}
-        >
-          <X size={15} />
-        </button>
-      </Tooltip>
+      <IconButton
+        label={t("discover.target_clear")}
+        tip
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate({ search: (s) => ({ ...s, instance: undefined }), replace: true })}
+      >
+        <X size={15} />
+      </IconButton>
     </div>
   );
 }
 
-function FilterGroup({ title, children, right }: { title: string; children: React.ReactNode; right?: React.ReactNode }) {
+/** Einklappbare Filtergruppe ohne Rahmen: ruhige Überschrift, Inhalt darunter. */
+function FilterGroup({
+  id,
+  title,
+  children,
+  right,
+  count,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+  right?: React.ReactNode;
+  /** Anzahl aktiver Filter der Gruppe */
+  count?: number;
+}) {
+  const collapsed = useFilterGroups((s) => !!s.collapsed[id]);
+  const toggle = useFilterGroups((s) => s.toggle);
   return (
-    <div className="flex flex-col gap-2 border-b border-line px-4 py-3.5">
-      <div className="flex h-5 items-center justify-between">
-        <span className="text-[13px] font-semibold text-white">{title}</span>
-        {right}
+    <section className="flex flex-col gap-0.5 pb-3">
+      <div className="flex h-8 items-center gap-1">
+        <button aria-expanded={!collapsed} onClick={() => toggle(id)} className="group flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-ctl px-2 text-left">
+          <ChevronDown size={13} className={cn("shrink-0 text-dim transition-transform duration-150 group-hover:text-text", collapsed && "-rotate-90")} />
+          <span className="truncate text-[12.5px] font-semibold text-muted group-hover:text-text">{title}</span>
+          {!!count && <span className="text-caption text-dim">{count}</span>}
+        </button>
+        {!collapsed && right}
       </div>
-      {children}
-    </div>
+      {!collapsed && children}
+    </section>
   );
 }
 
-/** Auswahlzeile mit Kästchen (wie die Filterlisten der Modrinth App). */
-function CheckRow({ on, label, onClick }: { on: boolean; label: React.ReactNode; onClick: () => void }) {
+/** Kompakte Auswahlzeile ohne Kästchen: ausgewählt = hellere Schrift + Fläche + Haken rechts. */
+function CheckRow({ on, label, onClick, radio }: { on: boolean; label: React.ReactNode; onClick: () => void; radio?: boolean }) {
   return (
     <button
-      role="checkbox"
+      role={radio ? "radio" : "checkbox"}
       aria-checked={on}
       onClick={onClick}
       className={cn(
-        "flex h-7 w-full items-center gap-2.5 px-1 text-left text-[13px] transition-colors duration-100 hover:bg-white/[.04]",
-        on ? "text-white" : "text-muted hover:text-text",
+        "flex h-7 w-full shrink-0 items-center gap-2 rounded-ctl pl-[26px] pr-2 text-left text-[13px] transition-colors duration-100",
+        on ? "bg-white/[.06] text-text" : "text-muted hover:bg-white/[.04] hover:text-text",
       )}
     >
-      <span className={cn("grid h-4 w-4 shrink-0 place-items-center border transition-colors duration-100", on ? "border-brand bg-brand text-white" : "border-line2")}>
-        {on && <Check size={11} strokeWidth={3} />}
-      </span>
-      <span className="truncate">{label}</span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {on && <Check size={13} strokeWidth={2.5} className="shrink-0 text-brand" />}
     </button>
   );
 }
@@ -429,57 +457,62 @@ function FilterSidebar({ type, source }: { type: ProjectType; source: Source }) 
   const loaderApplies = type === "mod" || type === "modpack";
 
   return (
-    <aside className="scroll w-[232px] shrink-0 border-r border-line">
-      <FilterGroup
-        title={t("discover.filter.version")}
-        right={
-          active && (
-            <Tooltip content={t("discover.reset")}>
-              <button aria-label={t("discover.reset")} onClick={() => f.reset()} className="grid h-6 w-6 place-items-center text-dim transition-colors hover:text-white">
-                <RotateCcw size={13} />
-              </button>
-            </Tooltip>
-          )
-        }
-      >
-        <Select
-          size="sm"
-          value={f.version ?? ALL}
-          onChange={(v) => f.set({ version: v === ALL ? null : v })}
-          options={[{ value: ALL, label: t("discover.filter.all_versions") }, ...versions.map((v) => ({ value: v, label: v }))]}
-        />
+    <aside className="scroll flex w-[220px] shrink-0 flex-col px-3 pb-6 pt-3">
+      <div className="flex h-9 shrink-0 items-center gap-2 pl-2">
+        <span className="flex-1 text-section text-text">{t("discover.filters")}</span>
+        {active && (
+          <IconButton label={t("discover.reset")} tip variant="ghost" size="sm" onClick={() => f.reset()}>
+            <RotateCcw size={14} />
+          </IconButton>
+        )}
+      </div>
+      <FilterGroup id="version" title={t("discover.filter.version")} count={f.version ? 1 : 0}>
+        <div className="pl-[18px]">
+          <Select
+            size="sm"
+            variant="ghost"
+            value={f.version ?? ALL}
+            onChange={(v) => f.set({ version: v === ALL ? null : v })}
+            options={[{ value: ALL, label: t("discover.filter.all_versions") }, ...versions.map((v) => ({ value: v, label: v }))]}
+          />
+        </div>
       </FilterGroup>
       {loaderApplies && (
-        <FilterGroup title={t("discover.filter.loader")}>
-          <div className="flex flex-col">
+        <FilterGroup id="loader" title={t("discover.filter.loader")} count={f.loader ? 1 : 0}>
+          <div className="flex flex-col gap-px" role="radiogroup" aria-label={t("discover.filter.loader")}>
             {LOADERS.map((l) => (
-              <CheckRow key={l} on={f.loader === l} label={formatLoader({ kind: l, version: null })} onClick={() => f.set({ loader: f.loader === l ? null : l })} />
+              <CheckRow key={l} radio on={f.loader === l} label={formatLoader({ kind: l, version: null })} onClick={() => f.set({ loader: f.loader === l ? null : l })} />
             ))}
           </div>
         </FilterGroup>
       )}
       <FilterGroup
+        id="categories"
         title={t("discover.filter.categories")}
+        count={f.categories.length}
         right={
           f.categories.length > 0 && (
-            <button className="text-[12px] text-dim hover:text-white" onClick={() => f.set({ categories: [] })}>
+            <button
+              className="h-7 shrink-0 rounded-ctl px-2 text-caption font-medium text-dim transition-colors hover:bg-white/[.06] hover:text-text"
+              onClick={() => f.set({ categories: [] })}
+            >
               {t("discover.filter.clear")}
             </button>
           )
         }
       >
         {cats.isPending ? (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2 py-1 pl-[26px]">
             {[70, 90, 60, 84, 66, 78].map((w, i) => (
-              <Skeleton key={i} className="h-5" style={{ width: `${w}%` }} />
+              <Skeleton key={i} className="h-4" style={{ width: `${w}%` }} />
             ))}
           </div>
         ) : cats.isError ? (
-          <button className="text-left text-[12px] text-dim hover:text-white" onClick={() => cats.refetch()}>
+          <button className="pl-[26px] pr-2 text-left text-[12px] text-dim hover:text-text" onClick={() => cats.refetch()}>
             {t("discover.filter.cats_error")}
           </button>
         ) : (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-px">
             {(cats.data ?? []).map((c) => {
               const on = f.categories.includes(c.id);
               return (

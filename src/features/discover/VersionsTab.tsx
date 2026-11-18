@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Download, FolderPlus } from "lucide-react";
 import { memo, useMemo, useState } from "react";
-import { Button, EmptyState, ErrorState, Segmented, Select, Skeleton, cn } from "@/components/ui";
+import { Button, EmptyState, ErrorState, Segmented, Select, Skeleton, Tag, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { formatBytes, formatCount, formatDate, formatLoader } from "@/lib/format";
@@ -15,7 +15,7 @@ import { compareMc } from "@/components/content/util";
 
 const ALL = "__all";
 const STEP = 40;
-const typeColor: Record<ProjectVersion["release_type"], string> = { release: "#3fe0c5", beta: "#ffb547", alpha: "#ff5470" };
+const typeColor: Record<ProjectVersion["release_type"], string> = { release: "var(--color-ok)", beta: "var(--color-warn)", alpha: "var(--color-danger)" };
 const COLS = "grid-cols-[minmax(0,1fr)_110px_96px_84px_136px] @min-[900px]:grid-cols-[minmax(0,1fr)_140px_110px_88px_72px_148px]";
 
 export function VersionsTab({ project, instanceId }: { project: ProjectDetails; instanceId?: string }) {
@@ -56,10 +56,11 @@ export function VersionsTab({ project, instanceId }: { project: ProjectDetails; 
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-[180px]">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="w-[170px]">
         <Select
           size="sm"
+          variant="ghost"
           value={gvEff}
           onChange={(v) => (setGv(v), setLimit(STEP))}
           options={[{ value: ALL, label: t("discover.filter.all_versions") }, ...gameVersions.map((v) => ({ value: v, label: v }))]}
@@ -67,9 +68,10 @@ export function VersionsTab({ project, instanceId }: { project: ProjectDetails; 
         />
         </div>
         {loaders.length > 1 && (
-          <div className="w-[160px]">
+          <div className="w-[150px]">
           <Select
             size="sm"
+            variant="ghost"
             value={loaderEff}
             onChange={(v) => (setLoader(v), setLimit(STEP))}
             options={[
@@ -89,11 +91,11 @@ export function VersionsTab({ project, instanceId }: { project: ProjectDetails; 
             { value: "alpha", label: t("versions.type.alpha") },
           ]}
         />
-        <span className="ml-auto text-[12.5px] text-dim">{q.data && t("versions.count", { n: filtered.length })}</span>
+        <span className="ml-auto text-meta text-dim">{q.data && t("versions.count", { n: filtered.length })}</span>
       </div>
 
-      <div className="@container border border-line bg-surface">
-        <div className={cn("grid items-center gap-4 border-b border-line px-4 py-2.5", COLS)}>
+      <div className="@container">
+        <div className={cn("grid items-center gap-4 border-b border-line px-3 pb-2", COLS)}>
           <span className="label">{t("versions.col.name")}</span>
           <span className="label">{t("versions.col.game")}</span>
           <span className="label">{t("versions.col.loader")}</span>
@@ -103,7 +105,7 @@ export function VersionsTab({ project, instanceId }: { project: ProjectDetails; 
         </div>
         {q.isPending ? (
           Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className={cn("grid h-[60px] items-center gap-4 border-b border-line px-4 last:border-b-0", COLS)}>
+            <div key={i} className={cn("grid h-[56px] items-center gap-4 border-b border-line px-3 last:border-b-0", COLS)}>
               <Skeleton className="h-4 w-3/5" />
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-4 w-16" />
@@ -154,18 +156,16 @@ const VersionRow = memo(function VersionRow({
         aria-expanded={open}
         onClick={onToggle}
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onToggle())}
-        className={cn("grid h-[60px] cursor-pointer items-center gap-4 px-4 transition-colors duration-150 hover:bg-white/[.02]", COLS, open && "bg-white/[.02]")}
+        className={cn("grid h-[56px] cursor-pointer items-center gap-4 rounded-ctl px-3 transition-colors duration-150 hover:bg-white/[.03]", COLS, open && "bg-white/[.03]")}
       >
         <div className="flex min-w-0 items-center gap-3">
-          <span
-            className="grid h-6 w-6 shrink-0 place-items-center border text-[11px] font-bold uppercase"
-            style={{ color: typeColor[v.release_type], borderColor: `color-mix(in srgb, ${typeColor[v.release_type]} 45%, transparent)` }}
-            title={t(`versions.type.${v.release_type}`)}
-          >
-            {v.release_type[0]}
+          <span title={t(`versions.type.${v.release_type}`)} className="shrink-0">
+            <Tag color={typeColor[v.release_type]} className="min-w-5 justify-center font-bold">
+              {v.release_type[0]}
+            </Tag>
           </span>
           <div className="min-w-0">
-            <div className="truncate text-[13.5px] font-medium text-white">{v.name || v.version_number}</div>
+            <div className="truncate text-[13.5px] font-medium text-text">{v.name || v.version_number}</div>
             <div className="truncate font-mono text-[11px] text-dim">
               {v.version_number}
               {primary ? ` · ${formatBytes(primary.size)}` : ""}
@@ -199,7 +199,7 @@ const VersionRow = memo(function VersionRow({
         </div>
       </div>
       {open && (
-        <div className="border-t border-line bg-black/40 px-4 py-4 pl-[52px] animate-fade-in">
+        <div className="mx-3 mb-3 rounded-card bg-surface py-3.5 pl-8 pr-4 animate-fade-in">
           <div className="label mb-2">{t("versions.changelog")}</div>
           {v.changelog?.trim() ? (
             <RichText source={v.changelog} format={project.body_format === "html" && /<\w+/.test(v.changelog) ? "html" : "markdown"} compact />

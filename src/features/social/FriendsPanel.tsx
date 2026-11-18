@@ -18,22 +18,19 @@ export function FriendsPanel() {
   if (!vibe.social || !open) return null;
   return (
     <aside className="flex w-[260px] shrink-0 flex-col bg-bg animate-[pop-in_.14s_var(--ease-snap)]">
-      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-line pl-3 pr-1.5">
-        <Users size={14} className="text-muted" />
-        <span className="flex-1 text-[13px] font-semibold text-white">
-          {t("social.tab.friends")} <span className="font-mono text-[11px] text-dim">{online}</span>
+      <div className="flex h-11 shrink-0 items-center gap-1 border-b border-line pl-3.5 pr-1.5">
+        <span className="flex flex-1 items-baseline gap-1.5 text-section text-text">
+          {t("social.tab.friends")}
+          <span className="text-caption font-normal tabular-nums text-dim">{online}</span>
         </span>
-        <Tooltip content={t("social.open_page")}>
-          <IconButton label={t("social.open_page")} size="sm" className="border-transparent bg-transparent" onClick={() => nav({ to: "/social", search: {} })}>
-            <MessageSquare size={14} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip content={t("social.panel.close")}>
-          <IconButton label={t("social.panel.close")} size="sm" className="border-transparent bg-transparent" onClick={() => setPanelOpen(false)}>
-            <PanelRightClose size={15} />
-          </IconButton>
-        </Tooltip>
+        <IconButton label={t("social.open_page")} tip variant="ghost" size="sm" onClick={() => nav({ to: "/social", search: {} })}>
+          <MessageSquare size={15} />
+        </IconButton>
+        <IconButton label={t("social.panel.close")} tip variant="ghost" size="sm" onClick={() => setPanelOpen(false)}>
+          <PanelRightClose size={15} />
+        </IconButton>
       </div>
+
       <div className="flex min-h-0 flex-1 flex-col">
         <Gate compact>
           <FriendsTab compact />

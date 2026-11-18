@@ -37,12 +37,12 @@ export function CategoryChips({
             aria-pressed={on}
             onClick={() => onChange(on ? value.filter((x) => x !== c) : [...value, c])}
             className={cn(
-              "flex h-8 items-center gap-1.5 border px-2.5 text-[13px] font-medium transition-colors duration-100",
-              on ? "border-accent bg-accent/15 text-white" : "border-line2 text-muted hover:text-white",
+              "flex h-8 items-center gap-1.5 rounded-ctl px-2.5 text-[13px] font-medium transition-colors duration-100",
+              on ? "bg-accent/15 text-text hover:bg-accent/20" : "bg-white/[.05] text-muted hover:bg-white/[.08] hover:text-text",
             )}
           >
             {t(`optsync.cat.${c}`)}
-            {counts && <span className="text-[11px] text-dim">{counts[c] ?? 0}</span>}
+            {counts && <span className="text-caption tabular-nums text-dim">{counts[c] ?? 0}</span>}
           </button>
         );
       })}
@@ -70,10 +70,10 @@ export function InstanceOptSync({ instance }: { instance: Instance }) {
         <Switch checked={cur.enabled} onChange={(v) => set(v, cur.categories)} label={t("optsync.instance.title")} />
       </SettingRow>
       {cur.enabled && (
-        <div className="flex flex-col gap-3 border-t border-line px-4 py-3.5">
+        <div className="flex flex-col gap-3 border-t border-line px-4 py-3">
           <CategoryChips value={cur.categories} onChange={(c) => set(true, c)} />
           {masterEmpty ? (
-            <div className="flex items-center gap-3 text-[12.5px] text-muted">
+            <div className="flex items-center gap-3 text-meta text-muted">
               <span className="flex-1">{t("optsync.master_empty")}</span>
               <Button
                 size="sm"
@@ -91,7 +91,7 @@ export function InstanceOptSync({ instance }: { instance: Instance }) {
               </Button>
             </div>
           ) : (
-            <p className="text-[12.5px] text-dim">{t("optsync.instance.hint")}</p>
+            <p className="text-meta text-dim">{t("optsync.instance.hint")}</p>
           )}
         </div>
       )}

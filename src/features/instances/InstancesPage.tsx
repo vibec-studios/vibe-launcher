@@ -1,12 +1,12 @@
 // OWNER: Frontend-Agent A. Bibliothek: eine Werkzeugleiste (Filter, Suche, Sortierung, Gruppierung, Import, Neu)
 // über einem Raster rahmenloser Instanz-Kacheln. Der Seitentitel steht in der Titelleiste.
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
-import { ChevronDown, PackageOpen, Plus } from "lucide-react";
+import { ChevronDown, LayoutGrid, List, PackageOpen, Plus } from "lucide-react";
 import { useInstances } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { loaderNames } from "@/lib/format";
-import { Button, EmptyState, ErrorState, SearchInput, Select, cn } from "@/components/ui";
-import { InstanceCard, InstanceCardSkeleton } from "@/components/instance/InstanceCard";
+import { Button, EmptyState, ErrorState, IconButton, SearchInput, Select, cn } from "@/components/ui";
+import { InstanceCard, InstanceCardSkeleton, InstanceListRow } from "@/components/instance/InstanceCard";
 import { openNewInstance, useInstanceActions } from "@/components/instance/actions";
 import { Logo3D } from "@/components/Logo3D";
 import { openImport } from "@/features/import/ImportDialog";
@@ -17,6 +17,7 @@ const SORTS: SortKey[] = ["recent", "name", "created", "playtime"];
 type GroupKey = "group" | "loader" | "version" | "none";
 const GROUPS: GroupKey[] = ["group", "loader", "version", "none"];
 type FilterKey = "all" | "custom" | "modpacks";
+type ViewKey = "grid" | "list";
 const FILTERS: FilterKey[] = ["all", "custom", "modpacks"];
 
 function load<T>(key: string, fallback: T): T {
@@ -62,6 +63,7 @@ export function InstancesPage() {
   const [sort, setSortState] = useState<SortKey>(() => load("vl.inst.sort", "recent"));
   const [groupBy, setGroupByState] = useState<GroupKey>(() => load("vl.inst.groupby", "group"));
   const [collapsed, setCollapsed] = useState<string[]>(() => load("vl.inst.collapsed", []));
+  const [view, setViewState] = useState<ViewKey>(() => load("vl.inst.view", "grid"));
   const q = useDeferredValue(query.trim().toLowerCase());
 
   const persist =
@@ -73,6 +75,7 @@ export function InstancesPage() {
   const setFilter = persist("vl.inst.filter", setFilterState);
   const setSort = persist("vl.inst.sort", setSortState);
   const setGroupBy = persist("vl.inst.groupby", setGroupByState);
+  const setView = persist("vl.inst.view", setViewState);
   const toggle = (g: string) => {
     const next = collapsed.includes(g) ? collapsed.filter((x) => x !== g) : [...collapsed, g];
     setCollapsed(next);
@@ -153,6 +156,16 @@ export function InstancesPage() {
             </>
           )}
           <div className="flex-1" />
+          {total > 0 && (
+            <div className="flex items-center gap-0.5 rounded-ctl bg-field p-0.5" role="radiogroup" aria-label={t("instances.view")}>
+              <IconButton label={t("instances.view.grid")} tip size="sm" variant="ghost" active={view === "grid"} className="h-7 w-7" role="radio" aria-checked={view === "grid"} onClick={() => setView("grid")}>
+                <LayoutGrid size={14} />
+              </IconButton>
+              <IconButton label={t("instances.view.list")} tip size="sm" variant="ghost" active={view === "list"} className="h-7 w-7" role="radio" aria-checked={view === "list"} onClick={() => setView("list")}>
+                <List size={15} />
+              </IconButton>
+            </div>
+          )}
           <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={() => openImport()}>
             {t("home.action.import")}
           </Button>
@@ -202,13 +215,20 @@ export function InstancesPage() {
                       <span className="text-[12px] text-dim">{list.length}</span>
                     </button>
                   )}
-                  {!isCollapsed && (
-                    <div className={gridCls}>
-                      {list.map((i) => (
-                        <InstanceCard key={i.id} instance={i} onOpen={onOpen} />
-                      ))}
-                    </div>
-                  )}
+                  {!isCollapsed &&
+                    (view === "list" ? (
+                      <div className="@container -mx-2 flex flex-col">
+                        {list.map((i) => (
+                          <InstanceListRow key={i.id} instance={i} onOpen={onOpen} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={gridCls}>
+                        {list.map((i) => (
+                          <InstanceCard key={i.id} instance={i} onOpen={onOpen} />
+                        ))}
+                      </div>
+                    ))}
                 </section>
               );
             })}

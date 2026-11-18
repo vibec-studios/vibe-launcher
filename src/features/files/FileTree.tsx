@@ -155,7 +155,7 @@ const TreeRow = memo(function TreeRow({
         onContextMenu={() => onPick(row, "menu")}
         className={cn(
           "flex h-full w-full cursor-default select-none items-center gap-1.5 pr-3 text-left text-[13px] transition-colors duration-100",
-          selected ? "bg-surface3 text-white" : "text-text hover:bg-white/[.04]",
+          selected ? "bg-surface3 text-text" : "text-text hover:bg-white/[.04]",
           opened && "shadow-[inset_2px_0_0_var(--accent)]",
           e.kind === "binary" && !selected && "text-muted",
           dropTarget && "bg-accent/15 outline outline-1 -outline-offset-1 outline-accent",

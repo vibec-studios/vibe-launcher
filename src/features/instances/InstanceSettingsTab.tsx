@@ -15,6 +15,7 @@ import { JavaPathField, MemoryField, SaveIndicator, useAutoSave } from "@/compon
 import { repairInstance, resetIcon, setIcon, useInstanceActions, installInstance } from "@/components/instance/actions";
 import { useRunPhase } from "@/components/instance/status";
 import { useInstances } from "@/lib/queries";
+import { VibeyClientSlot } from "@/features/cosmetics/VibeyClientSlot";
 import { useT } from "@/i18n";
 import { InstanceOptSync } from "@/components/instance/OptSync";
 import { createShortcut } from "@/components/instance/actions";
@@ -176,11 +177,13 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
 
   return (
     <div className="relative h-full">
-      <div className="pointer-events-none absolute bottom-4 right-8 z-10 bg-black/80 px-2 py-1">
-        <SaveIndicator state={state} />
-      </div>
+      {state !== "idle" && (
+        <div className="pointer-events-none absolute bottom-4 right-8 z-10 rounded-ctl bg-overlay px-2 py-1 shadow-e2">
+          <SaveIndicator state={state} />
+        </div>
+      )}
       <div className="scroll h-full">
-        <div className="flex w-full flex-col gap-4 px-6 py-6">
+        <div className="flex w-full flex-col gap-4 px-6 pb-8 pt-1">
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-5">
             <div className="flex flex-col gap-5">
               <SettingsCard title={t("isettings.general")}>
@@ -213,7 +216,7 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
                   stacked
                   description={
                     d.accent ? (
-                      <button className="flex items-center gap-1.5 text-[12px] text-dim hover:text-white" onClick={() => update({ accent: null })}>
+                      <button className="flex items-center gap-1.5 text-[12px] text-dim hover:text-text" onClick={() => update({ accent: null })}>
                         <RotateCcw size={11} />
                         {t("isettings.accent.reset")}
                       </button>
@@ -252,6 +255,7 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
                   />
                 </SettingRow>
               </SettingsCard>
+              <VibeyClientSlot instance={instance} />
               <VersionCard instance={instance} />
               <SettingsCard title={t("optsync.card")}>
                 <InstanceOptSync instance={instance} />

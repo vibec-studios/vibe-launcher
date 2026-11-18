@@ -124,7 +124,7 @@ export function Chip({ children, active, onClick, className }: { children: React
 export function Tag({ children, className, color }: { children: ReactNode; className?: string; color?: string }) {
   return (
     <span
-      className={cn("inline-flex h-5 items-center gap-1 rounded-xs bg-white/[.06] px-1.5 font-mono text-[10px] uppercase tracking-[.06em] text-muted", className)}
+      className={cn("inline-flex h-5 items-center gap-1 rounded-xs bg-white/[.06] px-1.5 text-[11px] font-medium text-muted", className)}
       style={color ? { color, background: `color-mix(in srgb, ${color} 14%, transparent)` } : undefined}
     >
       {children}

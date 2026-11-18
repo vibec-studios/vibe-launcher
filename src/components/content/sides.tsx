@@ -53,8 +53,8 @@ export function SideFilterBar({ value, onChange, counts, className }: { value: S
             aria-checked={value === f}
             onClick={() => onChange(f)}
             className={cn(
-              "flex h-7 items-center gap-1.5 px-2 text-[12.5px] font-medium transition-colors duration-100",
-              value === f ? "bg-surface3 text-white" : "text-muted hover:bg-white/[.04] hover:text-white",
+              "flex h-7 items-center gap-1.5 rounded-ctl px-2 text-[12.5px] font-medium transition-colors duration-100",
+              value === f ? "bg-surface3 text-text" : "text-muted hover:bg-white/[.04] hover:text-text",
             )}
           >
             {t(`side.filter.${f}`)}

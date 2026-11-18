@@ -70,7 +70,7 @@ export function MsaDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
       size="md"
       footer={
         phase.k === "done" ? (
-          <Button variant="accent" onClick={() => onOpenChange(false)} autoFocus>
+          <Button variant="primary" onClick={() => onOpenChange(false)} autoFocus>
             {t("common.done")}
           </Button>
         ) : phase.k === "error" ? (
@@ -78,7 +78,7 @@ export function MsaDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
             <Button variant="subtle" onClick={close}>
               {t("common.close")}
             </Button>
-            <Button variant="accent" onClick={() => void run()} autoFocus>
+            <Button variant="primary" onClick={() => void run()} autoFocus>
               {t("common.retry")}
             </Button>
           </>
@@ -93,14 +93,14 @@ export function MsaDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
         <Skeleton className="h-[220px]" />
       ) : avail.data === false || avail.isError ? (
         <div className="flex flex-col items-center gap-3 px-4 py-6 text-center">
-          <KeyRound size={30} className="text-warn" />
-          <div className="text-[16px] font-semibold text-white">{t("accounts.msa.unavailable")}</div>
+          <KeyRound size={26} className="text-warn" />
+          <div className="text-[15px] font-semibold text-text">{t("accounts.msa.unavailable")}</div>
           <p className="max-w-[420px] text-[13px] text-muted">{t("accounts.msa.unavailable_text")}</p>
           <Link
             to="/settings"
             search={{ tab: "general" }}
             onClick={() => onOpenChange(false)}
-            className="mt-1 inline-flex h-9 items-center border border-line bg-surface2 px-4 text-[14px] font-semibold transition-colors hover:bg-surface3"
+            className="mt-1 inline-flex h-9 items-center rounded-ctl bg-surface2 px-4 text-[13.5px] font-semibold text-text transition-colors hover:bg-surface3"
           >
             {t("accounts.msa.to_settings")}
           </Link>
@@ -109,7 +109,7 @@ export function MsaDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
         <div className="flex flex-col items-center gap-4 py-6">
           <Skeleton className="h-[72px] w-[300px]" />
           <div className="flex items-center gap-2 text-[13px] text-muted">
-            <Spinner size={12} className="text-accent" />
+            <Spinner size={12} className="text-muted" />
             {t("accounts.msa.requesting")}
           </div>
         </div>
@@ -119,16 +119,16 @@ export function MsaDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
         <div className="flex flex-col items-center gap-3 py-6 text-center animate-fade-in">
           <div className="relative">
             <PlayerHead uuid={phase.account.uuid} name={phase.account.username} size={72} />
-            <CheckCircle2 size={22} className="absolute -bottom-2 -right-2 bg-[#07070a] text-ok" />
+            <CheckCircle2 size={22} className="absolute -bottom-2 -right-2 rounded-pill bg-overlay text-ok" />
           </div>
-          <div className="display mt-2 text-[20px]">{phase.account.username}</div>
+          <div className="mt-2 text-title text-text">{phase.account.username}</div>
           <p className="text-[13px] text-muted">{t("accounts.msa.success")}</p>
         </div>
       ) : (
-        <div className="flex items-start gap-3 border border-danger/30 bg-danger/[.06] px-4 py-3.5">
+        <div className="flex items-start gap-3 rounded-card bg-danger/10 px-4 py-3.5">
           <AlertTriangle size={18} className="mt-0.5 shrink-0 text-danger" />
           <div className="min-w-0">
-            <div className="text-[13px] font-semibold text-white">{t("accounts.msa.failed")}</div>
+            <div className="text-[13px] font-semibold text-text">{t("accounts.msa.failed")}</div>
             <div className="selectable mt-1 break-words text-[12.5px] text-muted">{phase.message}</div>
           </div>
         </div>
@@ -150,26 +150,20 @@ function CodeView({ code, started, copied, onCopy }: { code: DeviceCode; started
   return (
     <div className="flex flex-col items-center gap-5 py-2 animate-fade-in">
       <ol className="flex w-full flex-col gap-1.5 text-[13px] text-muted">
-        <li className="flex items-start">
-          <span className="mr-2.5 inline-grid h-5 w-5 shrink-0 place-items-center bg-white/[.08] text-[12px] font-semibold text-white">1</span>
-          {t("accounts.msa.step1")}
-        </li>
-        <li className="flex items-start">
-          <span className="mr-2.5 inline-grid h-5 w-5 shrink-0 place-items-center bg-white/[.08] text-[12px] font-semibold text-white">2</span>
-          {t("accounts.msa.step2")}
-        </li>
-        <li className="flex items-start">
-          <span className="mr-2.5 inline-grid h-5 w-5 shrink-0 place-items-center bg-white/[.08] text-[12px] font-semibold text-white">3</span>
-          {t("accounts.msa.step3")}
-        </li>
+        {(["step1", "step2", "step3"] as const).map((k, i) => (
+          <li key={k} className="flex items-start">
+            <span className="mr-2.5 inline-grid h-5 w-5 shrink-0 place-items-center rounded-xs bg-surface3 text-[12px] font-semibold text-text">{i + 1}</span>
+            {t(`accounts.msa.${k}`)}
+          </li>
+        ))}
       </ol>
       <button
         onClick={onCopy}
-        className="group relative flex w-full flex-col items-center gap-2.5 border border-line2 bg-black px-6 py-5 transition-colors duration-150 hover:border-white/40"
+        className="group relative flex w-full flex-col items-center gap-2.5 rounded-card bg-field px-6 py-5 transition-colors duration-150 hover:bg-white/[.07]"
         aria-label={t("common.copy")}
       >
-        <span className="selectable font-mono text-[40px] font-bold leading-none tracking-[.08em] text-white">{code.user_code}</span>
-        <span className="flex items-center gap-1.5 text-[12.5px] text-muted group-hover:text-white">
+        <span className="selectable font-mono text-[40px] font-bold leading-none tracking-[.08em] text-text">{code.user_code}</span>
+        <span className="flex items-center gap-1.5 text-[12.5px] text-muted group-hover:text-text">
           {copied ? <Check size={12} className="text-ok" /> : <Copy size={12} />}
           {copied ? t("accounts.msa.copied") : t("common.copy")}
         </span>
@@ -179,9 +173,10 @@ function CodeView({ code, started, copied, onCopy }: { code: DeviceCode; started
           {t("accounts.msa.open_browser")}
         </Button>
       </div>
-      <div className="flex w-full items-center justify-between gap-3 border-t border-line pt-4">
+      <div className="flex w-full items-center justify-between gap-3 pt-1">
         <span className="flex items-center gap-2 text-[12.5px] text-muted">
-          <Spinner size={12} className="text-accent" />
+          <Spinner size={12} className="text-muted" />
+
           {t("accounts.msa.waiting")}
         </span>
         <span className="font-mono text-[11px] text-dim">

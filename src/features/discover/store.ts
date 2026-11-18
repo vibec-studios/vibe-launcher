@@ -43,3 +43,9 @@ export const useDiscoverFilters = create<FilterStore>((set, get) => ({
 
 /** Scroll-Position je Suchanfrage (Schlüssel = JSON der Anfrage). */
 export const scrollOffsets = new Map<string, number>();
+
+/** Eingeklappte Filtergruppen der Seitenleiste (bleiben während der Sitzung erhalten). */
+export const useFilterGroups = create<{ collapsed: Record<string, boolean>; toggle: (id: string) => void }>((set) => ({
+  collapsed: {},
+  toggle: (id) => set((s) => ({ collapsed: { ...s.collapsed, [id]: !s.collapsed[id] } })),
+}));

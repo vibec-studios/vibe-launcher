@@ -349,18 +349,18 @@ function RecentServerCard({ s, instance }: { s: RecentServer; instance: Instance
           {instance.name} · {formatRelative(s.last_played)}
         </div>
       </div>
-      <Tooltip content={t("servers.join_with", { name: instance.name })}>
-        <Button
-          size="sm"
-          variant="accent"
-          disabled={phase !== "idle"}
-          icon={<Play size={13} fill="currentColor" />}
-          onClick={() => launch(instance, null, s.address)}
-          style={accentVars(instanceAccent(instance.id, instance.accent))}
-        >
-          {t("servers.join")}
-        </Button>
-      </Tooltip>
+      <IconButton
+        label={t("servers.join_with", { name: instance.name })}
+        tip
+        size="sm"
+        variant="ghost"
+        disabled={phase !== "idle"}
+        className="text-accent"
+        onClick={() => launch(instance, null, s.address)}
+        style={accentVars(instanceAccent(instance.id, instance.accent))}
+      >
+        <Play size={14} fill="currentColor" />
+      </IconButton>
     </div>
   );
 }

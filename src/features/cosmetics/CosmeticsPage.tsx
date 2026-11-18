@@ -6,9 +6,9 @@
 // Neue Items kommen ohne Update (catalog.updated → Katalog neu, Assets per SHA-256 nach).
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Check, CircleDot, Lock, PackagePlus, PenTool, Save, Search, Sparkles, Undo2, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, EmptyState, ErrorState, SearchInput, Spinner, Switch, Tooltip, cn, toast } from "@/components/ui";
+import { Check, CircleDot, ListFilter, Lock, PackagePlus, PenTool, Save, Search, Undo2, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Button, DropdownCheckItem, DropdownLabel, DropdownMenu, EmptyState, ErrorState, IconButton, SearchInput, Spinner, Tooltip, cn, toast } from "@/components/ui";
 import { installInstance } from "@/components/instance/actions";
 import { useLang, useT } from "@/i18n";
 import { queryClient, waitForTask } from "@/lib/queries";
@@ -52,33 +52,57 @@ export function CosmeticsPage() {
     }
   };
 
+  // Seitenaktionen (rechts in der Werkzeugleiste): Instanz anlegen (selten -> Symbol mit Tooltip), Creator
+  const actions = (
+    <>
+      <Tooltip
+        content={
+          <>
+            <div className="font-semibold">{t("cos.create")}</div>
+            <div className="text-muted">{t("cos.create.hint")}</div>
+          </>
+        }
+      >
+        <span className="inline-flex">
+          <IconButton label={t("cos.create")} variant="ghost" disabled={creating || access === "off" || access === "loading"} onClick={() => void createInstance()}>
+            {creating ? <Spinner size={14} /> : <PackagePlus size={16} />}
+          </IconButton>
+        </span>
+      </Tooltip>
+      <Button size="sm" variant="ghost" icon={<PenTool size={14} />} onClick={() => nav({ to: "/cosmetics/creator" })}>
+        {t("cos.creator")}
+      </Button>
+    </>
+  );
+
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <header className="flex shrink-0 items-center gap-4 border-b border-line bg-panel px-6 py-4">
-        <div className="grid h-11 w-11 shrink-0 place-items-center border border-brand/40 bg-brand/15 text-brand">
-          <Sparkles size={20} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="display text-[20px] leading-tight">{t("cos.title")}</h1>
-          <p className="mt-0.5 truncate text-[13px] text-muted">{t("cos.lead")}</p>
-        </div>
-        <Tooltip content={t("cos.create.hint")}>
-          <Button icon={<PackagePlus size={15} />} loading={creating} disabled={access === "off" || access === "loading"} onClick={() => void createInstance()}>
-            {t("cos.create")}
-          </Button>
-        </Tooltip>
-        <Button variant="primary" icon={<PenTool size={15} />} onClick={() => nav({ to: "/cosmetics/creator" })}>
-          {t("cos.creator")}
-        </Button>
-      </header>
-      {access === "loading" ? <AccessState access={access} /> : <Wardrobe access={access} />}
+    <div className="flex h-full min-h-0 flex-col bg-panel">
+      {access === "loading" ? (
+        <>
+          <Toolbar actions={actions} />
+          <AccessState access={access} />
+        </>
+      ) : (
+        <Wardrobe access={access} actions={actions} />
+      )}
+    </div>
+  );
+}
+
+/** Kompakte Werkzeugleiste: links Kategorien/Suche/Filter, rechts Aktionen. */
+function Toolbar({ children, actions }: { children?: ReactNode; actions: ReactNode }) {
+  return (
+    <div className="flex h-12 shrink-0 items-center gap-2 px-6">
+      {children}
+      <div className="flex-1" />
+      {actions}
     </div>
   );
 }
 
 type Filter = Category | "all";
 
-function Wardrobe({ access }: { access: Exclude<Access, "loading"> }) {
+function Wardrobe({ access, actions }: { access: Exclude<Access, "loading">; actions: ReactNode }) {
   const t = useT();
   const lang = useLang((s) => s.lang);
   const guest = isGuest(access);
@@ -171,11 +195,18 @@ function Wardrobe({ access }: { access: Exclude<Access, "loading"> }) {
   });
 
   // Vibe aus und noch nie geladen: keine Verbindung, kein Cache -> nur der Hinweis
-  if (catQ.isError && access === "off") return <AccessState access="off" />;
+  if (catQ.isError && access === "off")
+    return (
+      <>
+        <Toolbar actions={actions} />
+        <AccessState access="off" />
+      </>
+    );
   const banner = guest && <AccessBanner access={access} />;
   if (catQ.isError)
     return (
       <>
+        <Toolbar actions={actions} />
         {banner}
         <ErrorState error={catQ.error} onRetry={() => void catQ.refetch()} className="flex-1" />
       </>
@@ -183,6 +214,7 @@ function Wardrobe({ access }: { access: Exclude<Access, "loading"> }) {
   if (!catQ.data || (!guest && meQ.isLoading))
     return (
       <>
+        <Toolbar actions={actions} />
         {banner}
         <div className="grid flex-1 place-items-center">
           <Spinner size={20} className="text-brand" />
@@ -190,123 +222,137 @@ function Wardrobe({ access }: { access: Exclude<Access, "loading"> }) {
       </>
     );
 
+  const wheelButton = guest ? (
+    <Tooltip content={t("cos.guest.wheel_hint")}>
+      <span className="inline-flex">
+        <IconButton label={t("cos.wheel")} variant="ghost" disabled>
+          <CircleDot size={16} />
+        </IconButton>
+      </span>
+    </Tooltip>
+  ) : (
+    <IconButton label={t("cos.wheel")} tip variant="ghost" onClick={() => setWheel({ open: true, arm: null })}>
+      <CircleDot size={16} />
+    </IconButton>
+  );
+
   return (
     <>
-    {banner}
-    <div className="flex min-h-0 flex-1">
-      {/* Kategorien */}
-      <aside className="flex w-52 shrink-0 flex-col border-r border-line bg-black/40">
-        <div className="px-4 pb-2 pt-4 font-mono text-[11px] uppercase tracking-[.18em] text-dim">{t("cos.categories")}</div>
-        <nav className="scroll flex min-h-0 flex-1 flex-col">
+      <Toolbar
+        actions={
+          <>
+            {wheelButton}
+            {actions}
+          </>
+        }
+      >
+        {/* Kategorien als ruhige Segmente mit Anzahl (scrollt waagerecht, wenn es eng wird) */}
+        <div className="flex min-w-0 shrink gap-0.5 overflow-x-auto rounded-ctl bg-field p-0.5 [scrollbar-width:none]" role="tablist" aria-label={t("cos.categories")}>
           {(["all", ...CATEGORIES] as Filter[]).map((c) => (
             <button
               key={c}
+              role="tab"
+              aria-selected={filter === c}
               onClick={() => setFilter(c)}
               className={cn(
-                "flex h-10 items-center justify-between border-l-2 px-4 text-left text-[14px] transition-colors",
-                filter === c ? "border-brand bg-white/[.05] text-white" : "border-transparent text-muted hover:bg-white/[.03] hover:text-white",
+                "flex h-7 shrink-0 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-2.5 text-[13px] font-semibold transition-colors duration-100",
+                filter === c ? "bg-surface3 text-text" : "text-muted hover:text-text",
               )}
             >
-              <span>{t(`cos.cat.${c}`)}</span>
-              <span className={cn("font-mono text-[12px]", filter === c ? "text-brand" : "text-dim")}>{counts[c] ?? 0}</span>
+              {t(`cos.cat.${c}`)}
+              <span className="text-[12px] font-medium text-dim">{counts[c] ?? 0}</span>
             </button>
           ))}
-        </nav>
-        <div className="border-t border-line p-3">
-          {guest ? (
-            <Tooltip content={t("cos.guest.wheel_hint")}>
-              <span className="block">
-                <Button className="w-full" disabled icon={<CircleDot size={15} />}>
-                  {t("cos.wheel")}
-                </Button>
-              </span>
-            </Tooltip>
-          ) : (
-            <Button className="w-full" icon={<CircleDot size={15} />} onClick={() => setWheel({ open: true, arm: null })}>
-              {t("cos.wheel")}
-            </Button>
-          )}
         </div>
-      </aside>
-
-      {/* Raster */}
-      <section className="flex min-w-0 flex-1 flex-col">
-        <div className="flex shrink-0 items-center gap-3 border-b border-line px-5 py-3">
-          <SearchInput value={q} onChange={setQ} placeholder={t("cos.search")} className="max-w-sm flex-1" />
-          {!guest && (
-            <label className="flex items-center gap-2 text-[13px] text-muted">
-              <Switch checked={onlyOwned} onChange={setOnlyOwned} label={t("cos.only_owned")} />
+        <SearchInput value={q} onChange={setQ} placeholder={t("cos.search")} className="w-[220px] min-w-[150px] shrink-0" />
+        {!guest && (
+          <DropdownMenu
+            align="start"
+            trigger={
+              <IconButton label={t("cos.filter")} tip variant="ghost" badge={onlyOwned ? 1 : undefined}>
+                <ListFilter size={16} />
+              </IconButton>
+            }
+          >
+            <DropdownLabel>{t("cos.filter")}</DropdownLabel>
+            <DropdownCheckItem checked={onlyOwned} onCheckedChange={setOnlyOwned}>
               {t("cos.only_owned")}
-            </label>
-          )}
-          <div className="ml-auto font-mono text-[12px] text-dim">{t("cos.count", { n: shown.length })}</div>
-        </div>
-        <div className="scroll min-h-0 flex-1 p-5" onMouseLeave={() => setHover(null)}>
-          {shown.length === 0 ? (
-            <EmptyState icon={<Search size={20} />} title={t("cos.empty")} text={q ? t("cos.empty_search") : t("cos.empty_cat")} />
-          ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
-              {shown.map((i) => (
-                <ItemCard
-                  key={i.id}
-                  item={i}
-                  lang={lang}
-                  owned={owned.has(i.id)}
-                  equipped={equipped(i)}
-                  selected={selected === i.id}
-                  onHover={(h) => setHover(h ? i.id : null)}
-                  onClick={() => setSelected(selected === i.id ? null : i.id)}
-                  onDouble={() => toggle(i)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-        {dirty && (
-          <div className="flex shrink-0 items-center gap-3 border-t border-brand/40 bg-brand/[.09] px-5 py-2.5 animate-slide-up">
-            <span className="h-2 w-2 bg-brand" />
-            <span className="whitespace-nowrap text-[13px] font-semibold text-white">{t("cos.unsaved")}</span>
-            <span className="hidden min-w-0 truncate text-[12px] text-muted 2xl:block">{t("cos.unsaved_hint")}</span>
-            <div className="ml-auto flex gap-2">
-              <Button size="sm" variant="subtle" icon={<Undo2 size={14} />} onClick={() => setDraft(null)} disabled={save.isPending}>
-                {t("cos.discard")}
-              </Button>
-              <Button size="sm" variant="primary" icon={<Save size={14} />} loading={save.isPending} onClick={() => save.mutate()}>
-                {t("cos.save")}
-              </Button>
-            </div>
-          </div>
+            </DropdownCheckItem>
+          </DropdownMenu>
         )}
-      </section>
+        {(q.trim() || onlyOwned) && <span className="shrink-0 whitespace-nowrap text-meta text-dim">{t("cos.count", { n: shown.length })}</span>}
+      </Toolbar>
+      {banner}
+      <div className="flex min-h-0 flex-1 gap-4 px-6 pb-6">
+        {/* Raster */}
+        <section className="flex min-w-0 flex-1 flex-col">
+          <div className="scroll min-h-0 flex-1" onMouseLeave={() => setHover(null)}>
+            {shown.length === 0 ? (
+              <EmptyState icon={<Search size={20} />} title={t("cos.empty")} text={q ? t("cos.empty_search") : t("cos.empty_cat")} />
+            ) : (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 p-0.5">
+                {shown.map((i) => (
+                  <ItemCard
+                    key={i.id}
+                    item={i}
+                    lang={lang}
+                    owned={owned.has(i.id)}
+                    equipped={equipped(i)}
+                    selected={selected === i.id}
+                    onHover={(h) => setHover(h ? i.id : null)}
+                    onClick={() => setSelected(selected === i.id ? null : i.id)}
+                    onDouble={() => toggle(i)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          {dirty && (
+            <div className="mt-3 flex shrink-0 items-center gap-3 rounded-card bg-surface2 px-4 py-2 animate-slide-up">
+              <span className="h-2 w-2 shrink-0 rounded-dot bg-brand" />
+              <span className="whitespace-nowrap text-[13px] font-semibold text-text">{t("cos.unsaved")}</span>
+              <span className="hidden min-w-0 truncate text-meta text-muted 2xl:block">{t("cos.unsaved_hint")}</span>
+              <div className="ml-auto flex gap-2">
+                <Button size="sm" variant="subtle" icon={<Undo2 size={14} />} onClick={() => setDraft(null)} disabled={save.isPending}>
+                  {t("cos.discard")}
+                </Button>
+                <Button size="sm" variant="primary" icon={<Save size={14} />} loading={save.isPending} onClick={() => save.mutate()}>
+                  {t("cos.save")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </section>
 
-      {/* Vorschau + Details */}
-      <aside className="flex w-[400px] shrink-0 flex-col border-l border-line bg-[radial-gradient(120%_70%_at_50%_30%,rgba(139,108,255,.10),transparent_65%)] xl:w-[440px]">
-        <Viewer3D className="min-h-[300px] flex-1" bundles={bundles} emote={emoteBundle} focus={focus} focusKey={selected ?? ""} skin={skin} />
-        <Details
-          item={sel}
+        {/* Vorschau + Details */}
+        <aside className="flex w-[380px] shrink-0 flex-col overflow-hidden rounded-card bg-surface xl:w-[420px]">
+          <Viewer3D className="min-h-[300px] flex-1" bundles={bundles} emote={emoteBundle} focus={focus} focusKey={selected ?? ""} skin={skin} />
+          <Details
+            item={sel}
+            lang={lang}
+            owned={sel ? owned.has(sel.id) : false}
+            guest={guest}
+            equipped={sel ? equipped(sel) : false}
+            primary={!dirty}
+            onToggle={() => sel && toggle(sel)}
+            onClose={() => setSelected(null)}
+            loadout={loadout}
+            byId={byId}
+            onSelect={setSelected}
+          />
+        </aside>
+
+        <EmoteWheelDialog
+          open={wheel.open}
+          arm={wheel.arm}
+          onOpenChange={(o) => setWheel((w) => ({ ...w, open: o }))}
+          wheel={loadout.emoteWheel}
+          emotes={items.filter((i) => i.kind === "emote")}
+          owned={owned}
           lang={lang}
-          owned={sel ? owned.has(sel.id) : false}
-          guest={guest}
-          equipped={sel ? equipped(sel) : false}
-          onToggle={() => sel && toggle(sel)}
-          onClose={() => setSelected(null)}
-          loadout={loadout}
-          byId={byId}
-          onSelect={setSelected}
+          onApply={(w) => edit((l) => ({ ...l, emoteWheel: w }))}
         />
-      </aside>
-
-      <EmoteWheelDialog
-        open={wheel.open}
-        arm={wheel.arm}
-        onOpenChange={(o) => setWheel((w) => ({ ...w, open: o }))}
-        wheel={loadout.emoteWheel}
-        emotes={items.filter((i) => i.kind === "emote")}
-        owned={owned}
-        lang={lang}
-        onApply={(w) => edit((l) => ({ ...l, emoteWheel: w }))}
-      />
-    </div>
+      </div>
     </>
   );
 }
@@ -343,24 +389,25 @@ function ItemCard({
       }}
       onClick={onClick}
       onDoubleClick={onDouble}
+      aria-pressed={selected}
       className={cn(
-        "group relative flex flex-col border bg-surface text-left transition-[border-color,background-color,transform] duration-100",
-        selected ? "border-brand bg-brand/[.08] shadow-[0_0_0_1px_var(--color-brand)]" : "border-line hover:border-line2 hover:bg-surface2",
+        "group relative flex flex-col overflow-hidden rounded-card text-left transition-colors duration-100",
+        selected ? "bg-surface3 outline outline-2 outline-accent" : "bg-surface hover:bg-surface2",
       )}
     >
-      <ItemThumb item={item} className={cn("aspect-square w-full bg-black/50", !owned && "opacity-55 grayscale-[.6]")} />
+      <ItemThumb item={item} className={cn("aspect-square w-full", !owned && "opacity-55 grayscale-[.6]")} />
       {equipped && (
-        <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center bg-brand text-white" title={t("cos.equipped")}>
-          <Check size={14} strokeWidth={3} />
+        <span className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-pill bg-accent text-[var(--on-accent)]" title={t("cos.equipped")}>
+          <Check size={12} strokeWidth={3} />
         </span>
       )}
       {!owned && (
-        <span className="absolute left-2 top-2 flex h-6 items-center gap-1 border border-line2 bg-black/80 px-1.5 text-[11px] font-semibold text-muted" title={t("cos.locked_hint")}>
+        <span className="absolute left-2 top-2 flex h-5 items-center gap-1 rounded-xs bg-black/80 px-1.5 text-caption font-semibold text-muted" title={t("cos.locked_hint")}>
           <Lock size={11} /> {t("cos.locked")}
         </span>
       )}
-      <div className="border-t border-line px-2.5 py-2">
-        <div className="truncate text-[13px] font-semibold text-white">{itemName(item, lang)}</div>
+      <div className="px-2.5 pb-2 pt-1.5">
+        <div className="truncate text-[13px] font-semibold text-text">{itemName(item, lang)}</div>
         <div className="mt-0.5 flex items-center gap-1.5 text-[12px]">
           <RarityLabel rarity={item.rarity} />
           {item.creator && <span className="truncate text-dim">· {item.creator.name}</span>}
@@ -376,6 +423,7 @@ function Details({
   owned,
   guest,
   equipped,
+  primary,
   onToggle,
   onClose,
   loadout,
@@ -388,6 +436,8 @@ function Details({
   /** Ohne Vibe-Login: nur ansehen/anprobieren */
   guest: boolean;
   equipped: boolean;
+  /** Anlegen-Knopf farbig – nur wenn keine andere Hauptaktion (Speichern) sichtbar ist */
+  primary: boolean;
   onToggle: () => void;
   onClose: () => void;
   loadout: Loadout;
@@ -399,10 +449,10 @@ function Details({
     // Aktueller Look
     const worn = COSMETIC_SLOTS.map((s) => loadout.slots[s]).filter((id): id is string => !!id);
     return (
-      <div className="shrink-0 border-t border-line p-4">
+      <div className="shrink-0 px-4 pb-4 pt-3">
         <div className="mb-2.5 flex items-baseline justify-between">
-          <h3 className="display text-[15px] text-white">{t("cos.look")}</h3>
-          <span className="font-mono text-[12px] text-dim">{t("cos.look_count", { n: worn.length })}</span>
+          <h3 className="text-section text-text">{t("cos.look")}</h3>
+          <span className="text-meta text-dim">{t("cos.look_count", { n: worn.length })}</span>
         </div>
         {worn.length === 0 ? (
           <p className="text-[13px] text-muted">{guest ? t("cos.guest.look_empty") : t("cos.look_empty")}</p>
@@ -411,7 +461,7 @@ function Details({
             {worn.map((id) => {
               const i = byId.get(id);
               return (
-                <button key={id} onClick={() => onSelect(id)} className="flex h-8 items-center gap-1.5 border border-line bg-surface2 pl-1 pr-2.5 text-[12px] text-text hover:border-line2">
+                <button key={id} onClick={() => onSelect(id)} className="flex h-8 items-center gap-1.5 rounded-ctl bg-surface2 pl-1 pr-2.5 text-[12px] text-text hover:bg-surface3">
                   {i && <ItemThumb item={i} className="h-6 w-6" />}
                   {i ? itemName(i, lang) : id}
                 </button>
@@ -419,17 +469,17 @@ function Details({
             })}
           </div>
         )}
-        <p className="mt-3 text-[12px] leading-relaxed text-dim">{guest ? t("cos.guest.equip_hint") : t("cos.look_hint")}</p>
+        <p className="mt-3 text-meta leading-relaxed text-dim">{guest ? t("cos.guest.equip_hint") : t("cos.look_hint")}</p>
       </div>
     );
   }
   const desc = itemDesc(item, lang);
   const slotLabel = t(`cos.slot.${item.kind === "emote" ? "emote" : item.slot}`);
   return (
-    <div className="shrink-0 border-t border-line p-4 animate-fade-in">
+    <div className="shrink-0 px-4 pb-4 pt-3 animate-fade-in">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="display truncate text-[17px] text-white" title={itemName(item, lang)}>
+          <h3 className="truncate text-title text-text" title={itemName(item, lang)}>
             {itemName(item, lang)}
           </h3>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[13px]">
@@ -444,9 +494,9 @@ function Details({
             )}
           </div>
         </div>
-        <button aria-label={t("common.close")} onClick={onClose} className="-mr-1 grid h-7 w-7 place-items-center text-dim hover:text-white">
+        <IconButton label={t("common.close")} variant="ghost" size="sm" className="-mr-1.5 -mt-1" onClick={onClose}>
           <X size={16} />
-        </button>
+        </IconButton>
       </div>
       {desc && <p className="mt-2.5 line-clamp-3 text-[13px] leading-relaxed text-muted">{desc}</p>}
       <div className="mt-2 text-[12px] text-dim">
@@ -470,11 +520,11 @@ function Details({
             </span>
           </Tooltip>
         ) : item.kind === "emote" ? (
-          <Button className="flex-1" variant={equipped ? "ghost" : "primary"} icon={<CircleDot size={15} />} onClick={onToggle}>
+          <Button className="flex-1" variant={equipped || !primary ? "ghost" : "primary"} icon={<CircleDot size={15} />} onClick={onToggle}>
             {equipped ? t("cos.wheel_edit") : t("cos.wheel_add")}
           </Button>
         ) : (
-          <Button className="flex-1" variant={equipped ? "ghost" : "primary"} icon={equipped ? <X size={15} /> : <Check size={15} />} onClick={onToggle}>
+          <Button className="flex-1" variant={equipped || !primary ? "ghost" : "primary"} icon={equipped ? <X size={15} /> : <Check size={15} />} onClick={onToggle}>
             {equipped ? t("cos.unequip") : t("cos.equip")}
           </Button>
         )}

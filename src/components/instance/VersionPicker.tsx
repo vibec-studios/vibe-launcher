@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { qk, useGameVersions, useSettings } from "@/lib/queries";
 import type { LoaderKind, LoaderVersion, McVersion } from "@/lib/types";
 import { loaderColors, loaderNames } from "@/lib/format";
-import { ErrorState, Field, SearchInput, Segmented, Select, Skeleton, Switch, cn } from "@/components/ui";
+import { Button, ErrorState, Field, SearchInput, Segmented, Select, Skeleton, Switch, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 
 export const LOADERS: LoaderKind[] = ["vanilla", "fabric", "quilt", "forge", "neoforge"];
@@ -52,11 +52,14 @@ export function VersionPicker({
   value,
   onChange,
   listHeight = 300,
+  compact,
   render,
 }: {
   value: VersionValue;
   onChange: (v: VersionValue) => void;
   listHeight?: number;
+  /** Minecraft-Version als Auswahlfeld statt als Liste mit Suche (für kompakte Dialoge) */
+  compact?: boolean;
   /** Eigene Anordnung der drei Teile (Loader, Versionsliste, Loader-Version) */
   render?: (parts: { loader: ReactNode; list: ReactNode; loaderVersion: ReactNode }) => ReactNode;
 }) {
@@ -133,7 +136,7 @@ export function VersionPicker({
           value: l,
           label: (
             <span className="flex items-center gap-2">
-              <span className="h-2 w-2" style={{ background: loaderColors[l] }} />
+              <span className="h-2 w-2 rounded-dot" style={{ background: loaderColors[l] }} />
               {loaderNames[l]}
             </span>
           ),
@@ -143,17 +146,52 @@ export function VersionPicker({
     </div>
   );
 
-  const listNode = (
+  const versionError = versions.isError ? versions : supported.isError ? supported : null;
+  const compactNode = (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex h-[17px] items-center gap-3">
+        <span className="label flex-1">{t("newinst.version")}</span>
+        <label className="flex cursor-pointer items-center gap-2 text-caption font-semibold text-dim">
+          {t("newinst.snapshots")}
+          <Switch checked={snapshots} onChange={setSnapshots} label={t("newinst.snapshots")} />
+        </label>
+      </div>
+      {versionError ? (
+        <div className="flex h-9 items-center gap-2 text-meta text-danger">
+          <span className="min-w-0 flex-1 truncate">{String((versionError.error as { message?: string })?.message ?? versionError.error)}</span>
+          <Button size="sm" variant="subtle" onClick={() => versionError.refetch()}>
+            {t("common.retry")}
+          </Button>
+        </div>
+      ) : loading ? (
+        <Skeleton className="h-9" />
+      ) : (
+        <Select
+          value={value.mc}
+          onChange={(mc) => mc !== value.mc && onChange({ ...value, mc, loaderVersion: null })}
+          placeholder={t("newinst.no_versions")}
+          disabled={!list.length}
+          options={list.map((ver) => ({
+            value: ver.id,
+            label: ver.kind === "release" ? ver.id : `${ver.id} · ${kindLabel(ver.kind, t)}`,
+            hint: ver.release_time.slice(0, 10),
+          }))}
+        />
+      )}
+    </div>
+  );
+
+  const listNode = compact ? compactNode : (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-3">
         <span className="label flex-1">{t("newinst.version")}</span>
-        <label className="flex cursor-pointer items-center gap-2 text-[12px] text-muted">
+        <label className="flex cursor-pointer items-center gap-2 text-caption font-semibold text-dim">
           {t("newinst.snapshots")}
           <Switch checked={snapshots} onChange={setSnapshots} label={t("newinst.snapshots")} />
         </label>
       </div>
       <SearchInput value={query} onChange={setQuery} placeholder={t("newinst.version_search")} />
-      <div ref={scrollRef} className="scroll border border-line bg-black/40" style={{ height: listHeight }} role="listbox" aria-label={t("newinst.version")}>
+      <div ref={scrollRef} className="scroll rounded-card bg-surface" style={{ height: listHeight }} role="listbox" aria-label={t("newinst.version")}>
         {versions.isError ? (
           <ErrorState error={versions.error} onRetry={() => versions.refetch()} className="py-8" />
         ) : supported.isError ? (
@@ -180,14 +218,14 @@ export function VersionPicker({
                   onClick={() => ver.id !== value.mc && onChange({ ...value, mc: ver.id, loaderVersion: null })}
                   className={cn(
                     "absolute left-0 top-0 flex h-[34px] w-full items-center gap-3 px-3 text-left text-[13px] transition-colors duration-100",
-                    active ? "bg-accent/15 text-white shadow-[inset_2px_0_0_var(--accent)]" : "text-text hover:bg-white/[.04]",
+                    active ? "bg-white/[.07] text-text" : "text-text hover:bg-white/[.04]",
                   )}
                   style={{ transform: `translateY(${row.start}px)` }}
                 >
                   <span className="w-4 text-accent">{active && <Check size={14} />}</span>
-                  <span className="flex-1 font-mono">{ver.id}</span>
-                  {ver.kind !== "release" && <span className="text-[11px] font-medium text-warn">{kindLabel(ver.kind, t)}</span>}
-                  <span className="w-[84px] text-right text-[12px] tabular-nums text-dim">{ver.release_time.slice(0, 10)}</span>
+                  <span className="flex-1 tabular-nums">{ver.id}</span>
+                  {ver.kind !== "release" && <span className="text-caption font-medium text-warn">{kindLabel(ver.kind, t)}</span>}
+                  <span className="w-[84px] text-right text-caption tabular-nums text-dim">{ver.release_time.slice(0, 10)}</span>
                 </button>
               );
             })}
@@ -203,7 +241,7 @@ export function VersionPicker({
       error={loaderVersions.isError ? String((loaderVersions.error as { message?: string })?.message ?? loaderVersions.error) : undefined}
     >
       {value.mc && loaderVersions.isLoading ? (
-        <Skeleton className="h-10" />
+        <Skeleton className="h-9" />
       ) : (
         <Select
           value={value.loaderVersion}

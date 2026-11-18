@@ -2,7 +2,7 @@
 // Hinzufügen/Bearbeiten/Entfernen/Sortieren.
 import { memo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Copy, Pencil, Play, Plus, RefreshCw, Server, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Lock, MoreHorizontal, Pencil, Play, Plus, RefreshCw, Server, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Instance, ServerEntry } from "@/lib/types";
 import {
@@ -11,6 +11,9 @@ import {
   ContextMenu,
   ContextSeparator,
   Dialog,
+  DropdownItem,
+  DropdownMenu,
+  DropdownSeparator,
   EmptyState,
   ErrorState,
   Field,
@@ -19,23 +22,66 @@ import {
   Select,
   Skeleton,
   Tooltip,
-  cn,
   confirm,
   toast,
+  type MenuItemProps,
 } from "@/components/ui";
 import { useInstanceActions } from "@/components/instance/actions";
 import { useRunPhase } from "@/components/instance/status";
 import { Motd, PingBars, usePing } from "@/components/instance/motd";
 import { useT } from "@/i18n";
+import { PageTools } from "./toolbar";
 
 const key = (id: string) => ["servers", id] as const;
 
 function Favicon({ entry, ping }: { entry: ServerEntry; ping: string | null | undefined }) {
   const src = ping ?? (entry.icon ? `data:image/png;base64,${entry.icon}` : null);
   return (
-    <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden border border-line bg-surface2">
-      {src ? <img src={src} alt="" className="h-full w-full [image-rendering:pixelated]" /> : <Server size={20} className="text-dim" />}
+    <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-ctl bg-surface2">
+      {src ? <img src={src} alt="" className="h-full w-full [image-rendering:pixelated]" /> : <Server size={17} className="text-dim" />}
     </div>
+  );
+}
+
+interface RowMenuProps {
+  entry: ServerEntry;
+  index: number;
+  count: number;
+  locked: boolean;
+  join: () => void;
+  onEdit: (i: number) => void;
+  onMove: (i: number, d: -1 | 1) => void;
+  onRemove: (i: number) => void;
+  Item: (p: MenuItemProps) => React.ReactNode;
+  Sep: () => React.ReactNode;
+}
+
+/** Dieselben Einträge im ⋯-Menü und im Rechtsklick-Menü. */
+function RowMenu({ entry, index, count, locked, join, onEdit, onMove, onRemove, Item, Sep }: RowMenuProps) {
+  const t = useT();
+  return (
+    <>
+      <Item icon={<Play size={14} />} disabled={locked} onSelect={join}>
+        {t("servers.join")}
+      </Item>
+      <Item icon={<Pencil size={14} />} disabled={locked} onSelect={() => onEdit(index)}>
+        {t("servers.edit")}
+      </Item>
+      <Item icon={<Copy size={14} />} onSelect={() => navigator.clipboard?.writeText(entry.ip).then(() => toast.success(t("common.copied")))}>
+        {t("servers.copy_address")}
+      </Item>
+      <Sep />
+      <Item icon={<ArrowUp size={14} />} disabled={locked || index === 0} onSelect={() => onMove(index, -1)}>
+        {t("servers.up")}
+      </Item>
+      <Item icon={<ArrowDown size={14} />} disabled={locked || index === count - 1} onSelect={() => onMove(index, 1)}>
+        {t("servers.down")}
+      </Item>
+      <Sep />
+      <Item icon={<Trash2 size={14} />} danger disabled={locked} onSelect={() => onRemove(index)}>
+        {t("common.remove")}
+      </Item>
+    </>
   );
 }
 
@@ -63,68 +109,53 @@ const ServerRow = memo(function ServerRow({
   const ping = usePing(entry.ip);
   const s = ping.data;
   const join = () => launch(instance, null, entry.ip);
+  const menu = { entry, index, count, locked, join, onEdit, onMove, onRemove };
   return (
-    <ContextMenu
-      content={
-        <>
-          <ContextItem icon={<Play size={14} />} disabled={locked} onSelect={join}>
-            {t("servers.join")}
-          </ContextItem>
-          <ContextItem icon={<Pencil size={14} />} disabled={locked} onSelect={() => onEdit(index)}>
-            {t("servers.edit")}
-          </ContextItem>
-          <ContextItem icon={<Copy size={14} />} onSelect={() => navigator.clipboard?.writeText(entry.ip).then(() => toast.success(t("common.copied")))}>
-            {t("servers.copy_address")}
-          </ContextItem>
-          <ContextSeparator />
-          <ContextItem icon={<ArrowUp size={14} />} disabled={locked || index === 0} onSelect={() => onMove(index, -1)}>
-            {t("servers.up")}
-          </ContextItem>
-          <ContextItem icon={<ArrowDown size={14} />} disabled={locked || index === count - 1} onSelect={() => onMove(index, 1)}>
-            {t("servers.down")}
-          </ContextItem>
-          <ContextSeparator />
-          <ContextItem icon={<Trash2 size={14} />} danger disabled={locked} onSelect={() => onRemove(index)}>
-            {t("common.remove")}
-          </ContextItem>
-        </>
-      }
-    >
+    <ContextMenu content={<RowMenu {...menu} Item={ContextItem} Sep={ContextSeparator} />}>
       <div
         onDoubleClick={() => !locked && join()}
-        className="group flex items-center gap-3.5 border border-line bg-surface px-3 py-2.5 transition-colors duration-100 hover:border-line2 hover:bg-surface2 data-[state=open]:border-line2 data-[state=open]:bg-surface2"
+        className="group flex h-14 items-center gap-3 px-6 transition-colors duration-100 hover:bg-white/[.03] data-[state=open]:bg-white/[.04]"
       >
         <Favicon entry={entry} ping={s?.favicon} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-[14px] font-semibold text-white">{entry.name}</span>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[13.5px] font-semibold text-text">{entry.name}</span>
             <span className="truncate font-mono text-[11px] text-dim">{entry.ip}</span>
           </div>
           {ping.isLoading ? (
-            <Skeleton className="mt-1.5 h-3.5 w-64" />
+            <Skeleton className="mt-1 h-3 w-56" />
           ) : s?.online ? (
-            <Motd text={s.motd || "–"} className="mt-0.5 line-clamp-2" />
+            <Motd text={s.motd || "–"} className="line-clamp-1 text-[12px] leading-tight" />
           ) : (
-            <div className="mt-0.5 text-[12px] text-danger">{s?.error ?? t("servers.offline")}</div>
+            <div className="truncate text-[12px] leading-tight text-danger">{s?.error ?? t("servers.offline")}</div>
           )}
         </div>
-        <div className="flex w-[150px] shrink-0 flex-col items-end gap-1 text-[12px] text-muted">
-          <span className="flex items-center gap-1.5">
-            {s?.online && <span className="tabular-nums">{s.latency_ms} ms</span>}
-            <PingBars status={s} />
-          </span>
+        <div className="flex shrink-0 items-center gap-3 text-[12px] text-muted">
           {s?.online && s.players_online != null && (
             <Tooltip content={s.players_sample.length ? s.players_sample.join(", ") : null}>
               <span className="tabular-nums">
-                {s.players_online} / {s.players_max} {t("servers.players")}
+                {s.players_online}/{s.players_max}
               </span>
             </Tooltip>
           )}
-          {s?.version && <span className="max-w-full truncate font-mono text-[11px] text-dim">{s.version}</span>}
+          <Tooltip content={s?.online ? [`${s.latency_ms} ms`, s.version].filter(Boolean).join(" · ") : null}>
+            <span className="flex items-center">
+              <PingBars status={s} />
+            </span>
+          </Tooltip>
         </div>
-        <Button variant="accent" size="sm" icon={<Play size={13} fill="currentColor" />} disabled={locked} onClick={join} className="w-[104px]">
-          {t("servers.join")}
-        </Button>
+        <IconButton label={t("servers.join_with", { name: instance.name })} tip size="sm" variant="ghost" disabled={locked} className="text-accent" onClick={join}>
+          <Play size={14} fill="currentColor" />
+        </IconButton>
+        <DropdownMenu
+          trigger={
+            <IconButton label={t("common.more")} size="sm" variant="ghost" className="opacity-60 group-hover:opacity-100 data-[state=open]:opacity-100">
+              <MoreHorizontal size={15} />
+            </IconButton>
+          }
+        >
+          <RowMenu {...menu} Item={DropdownItem} Sep={DropdownSeparator} />
+        </DropdownMenu>
       </div>
     </ContextMenu>
   );
@@ -217,27 +248,34 @@ export function ServersTab({ instance }: { instance: Instance }) {
 
   return (
     <div className="scroll h-full">
-      <div className="flex w-full flex-col gap-3 px-6 py-6">
-        <div className="flex items-center gap-3">
-          <span className="text-[13px] text-muted">{q.data ? t("servers.count", { n: list.length }) : ""}</span>
-          {locked && <span className="text-[12px] text-warn">{t("servers.locked")}</span>}
-          <div className="flex-1" />
-          <Tooltip content={t("servers.refresh")}>
-            <IconButton label={t("servers.refresh")} size="sm" onClick={() => qc.invalidateQueries({ queryKey: ["server-ping"] })}>
-              <RefreshCw size={15} />
-            </IconButton>
+      <PageTools>
+        <span className="text-[12.5px] text-dim">{q.data ? t("servers.count", { n: list.length }) : ""}</span>
+        {locked && (
+          <Tooltip content={t("servers.locked")}>
+            <span className="grid h-8 w-8 place-items-center text-warn" aria-label={t("servers.locked")}>
+              <Lock size={14} />
+            </span>
           </Tooltip>
-          <Button size="sm" variant="accent" icon={<Plus size={14} />} disabled={locked} onClick={() => setEditing(-1)}>
-            {t("servers.add")}
-          </Button>
-        </div>
+        )}
+        <div className="flex-1" />
+        <IconButton label={t("servers.refresh")} tip variant="ghost" onClick={() => qc.invalidateQueries({ queryKey: ["server-ping"] })}>
+          <RefreshCw size={16} />
+        </IconButton>
+        <IconButton label={t("servers.add")} tip variant="accent" disabled={locked} onClick={() => setEditing(-1)}>
+          <Plus size={17} />
+        </IconButton>
+      </PageTools>
+      <div className="pb-6">
         {q.isError && !q.data ? (
           <ErrorState error={q.error} onRetry={() => q.refetch()} />
         ) : !q.data ? (
-          Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-[70px]" />)
+          <div className="flex flex-col gap-1 px-6">
+            {Array.from({ length: 3 }, (_, i) => (
+              <Skeleton key={i} className="h-12" />
+            ))}
+          </div>
         ) : list.length === 0 ? (
           <EmptyState
-            className="mt-6 border border-dashed border-line2 bg-surface"
             icon={<Server size={32} />}
             title={t("servers.empty.title")}
             text={t("servers.empty.text")}
@@ -248,7 +286,7 @@ export function ServersTab({ instance }: { instance: Instance }) {
             }
           />
         ) : (
-          <div className={cn("flex flex-col gap-2")}>
+          <div className="flex flex-col">
             {list.map((s, i) => (
               <ServerRow
                 key={`${s.ip}-${i}`}

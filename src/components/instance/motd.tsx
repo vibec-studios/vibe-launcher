@@ -129,7 +129,7 @@ export function ServerStatusLine({ address, className }: { address: string; clas
             {s.players_online}/{s.players_max}
           </span>
         )}
-        {s.version && <span className="truncate font-mono text-[11px] text-dim">{s.version}</span>}
+        {s.version && <span className="truncate text-caption text-dim">{s.version}</span>}
       </div>
     </div>
   );

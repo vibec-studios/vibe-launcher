@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import { Footprints, PersonStanding, RotateCcw, Rotate3d, Wind } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAccounts } from "@/lib/queries";
-import { Tooltip, cn } from "@/components/ui";
+import { IconButton, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { createWardrobeViewer, type Bundle, type Mode, type ViewSide, type WardrobeViewer } from "./vibey3d";
 
@@ -83,48 +83,40 @@ export const Viewer3D = forwardRef<Viewer3DHandle, Viewer3DProps>(function Viewe
     if (focus) viewer.current?.view(focus);
   }, [focus, focusKey]);
 
-  const btn = (active: boolean) =>
-    cn("grid h-8 w-8 place-items-center border transition-colors", active ? "border-brand/60 bg-brand/20 text-white" : "border-line bg-black/50 text-muted hover:text-white hover:border-line2");
   return (
     <div className={cn("relative min-h-0 overflow-hidden", className)}>
       <canvas ref={canvas} className="block h-full w-full cursor-grab touch-none active:cursor-grabbing" />
       {failed && <div className="absolute inset-0 grid place-items-center p-6 text-center text-[13px] text-muted">{t("cos.viewer.failed")}</div>}
       {controls && (
         <>
-          <div className="absolute left-3 top-3 flex gap-1">
+          <div className="absolute left-2 top-2 flex gap-0.5">
             {(["front", "side", "back"] as ViewSide[]).map((s) => (
-              <button key={s} onClick={() => viewer.current?.view(s)} className="h-8 border border-line bg-black/50 px-2.5 text-[12px] font-semibold text-muted transition-colors hover:border-line2 hover:text-white">
+              <button
+                key={s}
+                onClick={() => viewer.current?.view(s)}
+                className="h-8 rounded-ctl px-2.5 text-[12px] font-semibold text-muted transition-colors hover:bg-white/[.07] hover:text-text"
+              >
                 {t(`cos.view.${s}`)}
               </button>
             ))}
           </div>
-          <div className="absolute right-3 top-3 flex gap-1">
-            <Tooltip content={t("cos.mode.idle")}>
-              <button aria-label={t("cos.mode.idle")} className={btn(mode === "idle")} onClick={() => setMode("idle")}>
-                <PersonStanding size={15} />
-              </button>
-            </Tooltip>
-            <Tooltip content={t("cos.mode.walk")}>
-              <button aria-label={t("cos.mode.walk")} className={btn(mode === "walk")} onClick={() => setMode("walk")}>
-                <Footprints size={15} />
-              </button>
-            </Tooltip>
-            <Tooltip content={t("cos.mode.fly")}>
-              <button aria-label={t("cos.mode.fly")} className={btn(mode === "fly")} onClick={() => setMode("fly")}>
-                <Wind size={15} />
-              </button>
-            </Tooltip>
-            <span className="w-1" />
-            <Tooltip content={t("cos.view.auto")}>
-              <button aria-label={t("cos.view.auto")} className={btn(auto)} onClick={() => setAuto((a) => !a)}>
-                <Rotate3d size={15} />
-              </button>
-            </Tooltip>
-            <Tooltip content={t("cos.view.reset")}>
-              <button aria-label={t("cos.view.reset")} className={btn(false)} onClick={() => viewer.current?.reset()}>
-                <RotateCcw size={15} />
-              </button>
-            </Tooltip>
+          <div className="absolute right-2 top-2 flex gap-0.5">
+            <IconButton label={t("cos.mode.idle")} tip variant="ghost" size="sm" active={mode === "idle"} onClick={() => setMode("idle")}>
+              <PersonStanding size={15} />
+            </IconButton>
+            <IconButton label={t("cos.mode.walk")} tip variant="ghost" size="sm" active={mode === "walk"} onClick={() => setMode("walk")}>
+              <Footprints size={15} />
+            </IconButton>
+            <IconButton label={t("cos.mode.fly")} tip variant="ghost" size="sm" active={mode === "fly"} onClick={() => setMode("fly")}>
+              <Wind size={15} />
+            </IconButton>
+            <span className="w-1.5" />
+            <IconButton label={t("cos.view.auto")} tip variant="ghost" size="sm" active={auto} onClick={() => setAuto((a) => !a)}>
+              <Rotate3d size={15} />
+            </IconButton>
+            <IconButton label={t("cos.view.reset")} tip variant="ghost" size="sm" onClick={() => viewer.current?.reset()}>
+              <RotateCcw size={15} />
+            </IconButton>
           </div>
         </>
       )}

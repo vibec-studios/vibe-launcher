@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Check, FolderOpen, FolderSearch, Upload, X } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { create } from "zustand";
-import { Button, EmptyState, Input, Progress, SearchInput, Skeleton, Spinner, Tooltip, cn, toast } from "@/components/ui";
+import { Button, EmptyState, IconButton, Input, Progress, SearchInput, Skeleton, Spinner, cn, toast } from "@/components/ui";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { navigateTo } from "@/components/content/util";
 import { SelectBox } from "@/features/content/ContentRow";
@@ -187,13 +187,16 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
     body = (
       <div className="flex min-h-0 flex-col gap-3">
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2.5 text-[13px] text-muted hover:text-white" onClick={() => toggleMany(visible, !allVisibleSelected)}>
+          <button className="flex items-center gap-2.5 rounded-ctl text-[13px] text-muted hover:text-text" onClick={() => toggleMany(visible, !allVisibleSelected)}>
             <SelectBox state={allVisibleSelected ? "on" : someVisibleSelected ? "mixed" : "off"} onClick={() => {}} label={tr("ext.select_all")} />
             {tr("ext.select_all")}
           </button>
-          <span className="text-[12.5px] text-dim">{tr("ext.selected", { n: chosen.length, total: allInstances.length })}</span>
+          <span className="text-meta text-dim">{tr("ext.selected", { n: chosen.length, total: allInstances.length })}</span>
           <div className="flex-1" />
           {allInstances.length > 6 && <SearchInput value={query} onChange={setQuery} placeholder={tr("ext.search")} className="w-[220px]" />}
+          <IconButton label={tr("ext.choose_dir")} tip variant="ghost" disabled={scanning} onClick={chooseDir}>
+            {scanning ? <Spinner /> : <FolderOpen size={16} />}
+          </IconButton>
         </div>
         <div className="scroll -mx-1 flex max-h-[calc(100vh-430px)] min-h-[180px] flex-col gap-4 overflow-y-auto px-1">
           {launchers.map((l) => {
@@ -203,23 +206,28 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
             const groupSome = list.some((i) => selected[i.source_path]);
             return (
               <section key={`${l.id}|${l.path}`} className="flex flex-col">
-                <div className="flex items-center gap-2.5 border-b border-line pb-2">
+                <div className="flex items-center gap-2.5 px-2 pb-1.5">
                   <SelectBox state={groupOn ? "on" : groupSome ? "mixed" : "off"} onClick={() => toggleMany(list, !groupOn)} label={l.name} />
-                  <span className="text-[14px] font-semibold text-white">{l.name}</span>
-                  <span className="text-[12px] text-dim">{l.instances.length}</span>
-                  <span className="selectable min-w-0 flex-1 truncate text-right text-[11.5px] text-dim" title={l.path}>
+                  <span className="text-section text-text">{l.name}</span>
+                  <span className="text-meta tabular-nums text-dim">{l.instances.length}</span>
+                  <span className="selectable min-w-0 flex-1 truncate text-right text-caption text-dim" title={l.path}>
                     {l.path}
                   </span>
                   {extra.some((x) => x.path === l.path) && (
-                    <Tooltip content={tr("ext.remove_dir")}>
-                      <button aria-label={tr("ext.remove_dir")} className="grid h-6 w-6 place-items-center text-dim hover:text-white" onClick={() => setExtra((e) => e.filter((x) => x.path !== l.path))}>
-                        <X size={14} />
-                      </button>
-                    </Tooltip>
+                    <IconButton
+                      label={tr("ext.remove_dir")}
+                      tip
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6"
+                      onClick={() => setExtra((e) => e.filter((x) => x.path !== l.path))}
+                    >
+                      <X size={14} />
+                    </IconButton>
                   )}
                 </div>
                 {list.length === 0 ? (
-                  <div className="px-2 py-3 text-[12.5px] text-dim">{tr("ext.empty_group")}</div>
+                  <div className="px-2 py-3 text-meta text-dim">{tr("ext.empty_group")}</div>
                 ) : (
                   list.map((i) => (
                     <InstanceRow
@@ -268,7 +276,7 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
   ) : (
     <>
       {scanError && (
-        <span className="mr-auto flex min-w-0 items-center gap-1.5 text-[12.5px] text-danger" title={scanError}>
+        <span className="mr-auto flex min-w-0 items-center gap-1.5 text-meta text-danger" title={scanError}>
           <AlertTriangle size={14} className="shrink-0" />
           <span className="truncate">{tr("ext.scan_failed")}: {scanError}</span>
         </span>
@@ -276,11 +284,6 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
       <Button variant="subtle" onClick={onClose}>
         {tr("common.cancel")}
       </Button>
-      {allInstances.length > 0 && (
-        <Button variant="ghost" icon={scanning ? <Spinner /> : <FolderOpen size={14} />} onClick={chooseDir} disabled={scanning}>
-          {tr("ext.choose_dir")}
-        </Button>
-      )}
       <Button variant="primary" icon={<Upload size={14} />} disabled={chosen.length === 0} onClick={start}>
         {chosen.length === 0 ? tr("import.start") : chosen.length === 1 ? tr("ext.import_1") : tr("ext.import_n", { n: chosen.length })}
       </Button>
@@ -317,8 +320,8 @@ function InstanceRow({
       role="row"
       onClick={onToggle}
       className={cn(
-        "group flex cursor-default items-center gap-3 border-b border-line/60 px-2 py-2 transition-colors duration-100 hover:bg-white/[.03]",
-        selected && "bg-accent/[.06]",
+        "group flex cursor-default items-center gap-3 rounded-ctl px-2 py-2 transition-colors duration-100 hover:bg-white/[.03]",
+        selected && "bg-white/[.05] hover:bg-white/[.06]",
       )}
     >
       <SelectBox
@@ -332,10 +335,10 @@ function InstanceRow({
       <ProjectIcon src={inst.icon} size={36} />
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-[14px] font-semibold text-white">{inst.name}</span>
-          {inst.imported_as && <span className="shrink-0 border border-line2 px-1.5 py-px text-[11px] text-muted">{tr("ext.imported")}</span>}
+          <span className="truncate text-[13.5px] font-semibold text-text">{inst.name}</span>
+          {inst.imported_as && <span className="shrink-0 rounded-xs bg-white/[.06] px-1.5 py-px text-caption text-muted">{tr("ext.imported")}</span>}
         </div>
-        <div className="truncate text-[12px] text-dim">{sub.join(" · ")}</div>
+        <div className="truncate text-meta text-dim">{sub.join(" · ")}</div>
         {inst.warning && (
           <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-warn">
             <AlertTriangle size={12} className="shrink-0" />
@@ -358,7 +361,7 @@ function JobRow({ job }: { job: Job | undefined }) {
   if (!job) return null;
   const status = job.status;
   return (
-    <div className="flex flex-col gap-1.5 border-b border-line/60 px-1 py-2.5">
+    <div className="flex flex-col gap-1.5 border-line px-1 py-2.5 [&+&]:border-t">
       <div className="flex items-center gap-2.5">
         {status === "done" ? (
           <Check size={15} className="shrink-0 text-ok" />
@@ -367,9 +370,9 @@ function JobRow({ job }: { job: Job | undefined }) {
         ) : status === "running" ? (
           <Spinner />
         ) : (
-          <span className="h-[14px] w-[14px] shrink-0 border border-line2" />
+          <span className="h-[14px] w-[14px] shrink-0 rounded-dot bg-surface3" />
         )}
-        <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-white">{job.name}</span>
+        <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-text">{job.name}</span>
         <span className="shrink-0 text-[12px] text-dim">
           {tr(`ext.status.${status}`)}
           {status === "running" && task?.progress != null ? ` · ${Math.round(task.progress * 100)} %` : ""}

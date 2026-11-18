@@ -1,17 +1,18 @@
-// Serverliste: kompakte Zeilen mit Status, Spielern, Adresse und Start/Stopp; Rechtsklick-Menü.
-import { memo } from "react";
+// Serverliste: eine Werkzeugleiste (Suche, „Neuer Server“) über flachen Zeilen mit Status, Adresse und Start/Stopp;
+// alles Weitere im ⋯-Menü bzw. per Rechtsklick. Der Seitentitel steht in der Titelleiste.
+import { memo, useDeferredValue, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { MoreHorizontal, Plus, Server as ServerIconLucide, Users } from "lucide-react";
+import { MoreHorizontal, Plus, Server as ServerIconLucide } from "lucide-react";
 import { useServerStatus, useServers } from "@/lib/queries";
 import type { Server } from "@/lib/types";
 import { formatLoader } from "@/lib/format";
-import { Button, ContextMenu, DropdownMenu, EmptyState, ErrorState, IconButton, Progress, Skeleton, cn } from "@/components/ui";
+import { Button, ContextMenu, DropdownMenu, EmptyState, ErrorState, IconButton, Progress, SearchInput, Skeleton, cn } from "@/components/ui";
 import { accentVars } from "@/components/instance/accent";
 import { useT } from "@/i18n";
 import { openNewServer, serverAddress, useServerTask } from "./actions";
 import { AddressChip, ServerContextMenuContent, ServerDropdownContent, ServerIcon, ServerPowerButton, StatusLabel, serverAccent } from "./parts";
 
-const cols = "grid grid-cols-[minmax(0,1fr)_120px_70px_minmax(150px,230px)_auto] items-center gap-4";
+const cols = "grid grid-cols-[minmax(0,1fr)_130px_minmax(140px,220px)_auto] items-center gap-4";
 
 const ServerRow = memo(function ServerRow({ server: s }: { server: Server }) {
   const t = useT();
@@ -21,6 +22,8 @@ const ServerRow = memo(function ServerRow({ server: s }: { server: Server }) {
   const running = st?.state === "running";
   const address = serverAddress(s, st);
   const open = () => nav({ to: "/servers/$id", params: { id: s.id }, search: { tab: "console" } });
+  const meta = [formatLoader(s.loader), `Minecraft ${s.mc_version}`];
+  if (running) meta.push(t("srv.players_n", { n: st?.players.length ?? 0, max: st?.max_players ?? "–" }));
   return (
     <ContextMenu content={<ServerContextMenuContent server={s} />}>
       <div
@@ -31,31 +34,25 @@ const ServerRow = memo(function ServerRow({ server: s }: { server: Server }) {
         style={accentVars(serverAccent(s))}
         className={cn(
           cols,
-          "group relative cursor-pointer border border-line bg-surface px-3 py-2.5 outline-none transition-colors duration-100",
-          "hover:border-line2 hover:bg-surface2 focus-visible:border-accent",
+          "group relative cursor-pointer rounded-card px-3 py-2 outline-none transition-colors duration-100",
+          "hover:bg-white/[.03] focus-visible:bg-white/[.04] data-[state=open]:bg-white/[.04]",
         )}
       >
         <div className="flex min-w-0 items-center gap-3">
-          <ServerIcon server={s} size={40} />
+          <ServerIcon server={s} size={36} />
           <div className="min-w-0">
-            <div className="truncate text-[14px] font-semibold text-white">{s.name}</div>
-            <div className="truncate text-[12px] text-muted">
-              {formatLoader(s.loader)} · Minecraft {s.mc_version}
-            </div>
+            <div className="truncate text-[13.5px] font-semibold text-text">{s.name}</div>
+            <div className="truncate text-meta text-muted">{meta.join(" · ")}</div>
           </div>
         </div>
         <StatusLabel server={s} status={st} />
-        <span className={cn("flex items-center gap-1.5 text-[12px] tabular-nums", running ? "text-text" : "text-dim")}>
-          <Users size={13} className="text-dim" />
-          {running ? `${st?.players.length ?? 0}/${st?.max_players ?? "–"}` : "–"}
-        </span>
-        <AddressChip address={address} />
-        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-          <ServerPowerButton server={s} size="sm" className="w-[104px]" />
+        <AddressChip address={address} flat />
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <ServerPowerButton server={s} size="sm" quiet className="w-[104px]" />
           <DropdownMenu
             trigger={
-              <IconButton label={t("common.more")} size="sm" className="data-[state=open]:bg-surface3 data-[state=open]:text-white">
-                <MoreHorizontal size={15} />
+              <IconButton label={t("common.more")} tip variant="ghost" size="sm" className="data-[state=open]:bg-white/[.07] data-[state=open]:text-text">
+                <MoreHorizontal size={16} />
               </IconButton>
             }
           >
@@ -63,7 +60,7 @@ const ServerRow = memo(function ServerRow({ server: s }: { server: Server }) {
           </DropdownMenu>
         </div>
         {task && (
-          <div className="absolute inset-x-0 bottom-0">
+          <div className="absolute inset-x-3 bottom-0">
             <Progress value={task.progress} className="h-0.5" />
           </div>
         )}
@@ -74,18 +71,17 @@ const ServerRow = memo(function ServerRow({ server: s }: { server: Server }) {
 
 function RowSkeleton() {
   return (
-    <div className={cn(cols, "border border-line bg-surface px-3 py-2.5")}>
+    <div className={cn(cols, "px-3 py-2")}>
       <div className="flex items-center gap-3">
-        <Skeleton className="h-10 w-10" />
+        <Skeleton className="h-9 w-9" />
         <div className="flex flex-col gap-1.5">
           <Skeleton className="h-4 w-40" />
           <Skeleton className="h-3 w-56" />
         </div>
       </div>
       <Skeleton className="h-3 w-16" />
-      <Skeleton className="h-3 w-10" />
-      <Skeleton className="h-7 w-full" />
-      <Skeleton className="h-8 w-[138px]" />
+      <Skeleton className="h-3 w-32" />
+      <Skeleton className="h-8 w-[136px]" />
     </div>
   );
 }
@@ -93,34 +89,36 @@ function RowSkeleton() {
 export function ServersPage() {
   const t = useT();
   const { data, isLoading, isError, error, refetch } = useServers();
+  const [query, setQuery] = useState("");
+  const q = useDeferredValue(query.trim().toLowerCase());
   const list = data ?? [];
-  const sorted = [...list].sort((a, b) => (b.last_started ?? b.created_at) - (a.last_started ?? a.created_at));
+  const sorted = [...list]
+    .filter((s) => !q || s.name.toLowerCase().includes(q) || s.mc_version.includes(q) || s.loader.kind.includes(q))
+    .sort((a, b) => (b.last_started ?? b.created_at) - (a.last_started ?? a.created_at));
 
   return (
     <div className="scroll h-full">
-      <div className="flex flex-col gap-4 px-6 pb-10 pt-5">
-        <header className="flex items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="display truncate text-[22px]">{t("nav.servers")}</h1>
-            <p className="mt-0.5 text-[13px] text-muted">{t("srv.list.desc")}</p>
-          </div>
-          <Button variant="primary" icon={<Plus size={16} />} onClick={() => openNewServer()}>
+      <div className="flex flex-col gap-3 px-6 pb-10 pt-4">
+        <div className="flex items-center gap-2">
+          {list.length > 0 && <SearchInput value={query} onChange={setQuery} placeholder={t("srv.search")} className="w-[220px] min-w-[150px]" />}
+          <div className="flex-1" />
+          <Button size="sm" variant="primary" icon={<Plus size={15} />} onClick={() => openNewServer()}>
             {t("srv.new")}
           </Button>
-        </header>
+        </div>
 
         {isError && !data ? (
           <ErrorState error={error} onRetry={() => refetch()} />
         ) : isLoading && !data ? (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {Array.from({ length: 3 }, (_, i) => (
               <RowSkeleton key={i} />
             ))}
           </div>
         ) : list.length === 0 ? (
           <EmptyState
-            className="mt-6 border border-dashed border-line2 bg-surface py-14"
-            icon={<ServerIconLucide size={44} strokeWidth={1.4} />}
+            className="mt-4 rounded-panel bg-surface py-14"
+            icon={<ServerIconLucide size={40} strokeWidth={1.4} />}
             title={t("srv.empty.title")}
             text={t("srv.empty.text")}
             action={
@@ -129,8 +127,10 @@ export function ServersPage() {
               </Button>
             }
           />
+        ) : sorted.length === 0 ? (
+          <EmptyState title={t("srv.no_match", { q: query })} />
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="-mx-3 flex flex-col">
             {sorted.map((s) => (
               <ServerRow key={s.id} server={s} />
             ))}

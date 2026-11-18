@@ -27,7 +27,7 @@ export function ConnBanner({ conn }: { conn: Conn }) {
   const t = useT();
   if (conn !== "reconnecting" && conn !== "offline" && conn !== "connecting") return null;
   return (
-    <div className="flex shrink-0 items-center gap-2 border-b border-line bg-warn/10 px-4 py-1.5 text-[12px] text-warn animate-fade-in">
+    <div className="flex shrink-0 items-center gap-2 bg-warn/10 px-4 py-1.5 text-[12px] text-warn animate-fade-in">
       {conn === "offline" ? <WifiOff size={13} /> : <Spinner size={11} />}
       {conn === "offline" ? t("social.conn.offline_retry") : t("social.conn.reconnecting")}
     </div>
@@ -42,12 +42,14 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   const unlinked = useSocial((s) => s.unlinked);
   const [busy, setBusy] = useState(false);
   const box = cn("flex h-full flex-col items-center justify-center gap-3 px-6 text-center", compact ? "py-8" : "py-16");
-  const icon = (n: React.ReactNode) => <div className="grid h-12 w-12 place-items-center border border-line2 bg-surface2 text-muted">{n}</div>;
+  // Ruhig: Symbol ohne Kachel, kleine Überschrift, ein Satz, höchstens eine Aktion
+  const icon = (n: React.ReactNode) => <div className="text-dim">{n}</div>;
+  const title = "text-[15px] font-semibold text-text";
 
   if (conn === "connecting" || conn === "logging_in" || conn === "reconnecting") {
     return (
       <div className={box}>
-        <Spinner size={18} className="text-brand" />
+        <Spinner size={18} className="text-muted" />
         <p className="text-[13px] text-muted">{conn === "logging_in" ? t("social.conn.logging_in") : t("social.conn.connecting")}</p>
       </div>
     );
@@ -55,8 +57,8 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   if (conn === "offline") {
     return (
       <div className={box}>
-        {icon(<WifiOff size={20} />)}
-        <h3 className="display text-[15px] text-white">{t("social.conn.offline_title")}</h3>
+        {icon(<WifiOff size={22} />)}
+        <h3 className={title}>{t("social.conn.offline_title")}</h3>
         <p className="max-w-sm text-[13px] text-muted">{t("social.conn.offline_text")}</p>
       </div>
     );
@@ -64,8 +66,8 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   if (conn === "off") {
     return (
       <div className={box}>
-        {icon(<CloudOff size={20} />)}
-        <h3 className="display text-[15px] text-white">{t("social.conn.off_title")}</h3>
+        {icon(<CloudOff size={22} />)}
+        <h3 className={title}>{t("social.conn.off_title")}</h3>
         <p className="max-w-sm text-[13px] text-muted">{t("social.conn.off_text")}</p>
         <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => openSettings("vibe")}>
           {t("action.open_settings")}
@@ -76,10 +78,10 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   if (conn === "no_account") {
     return (
       <div className={box}>
-        {icon(<UserRound size={20} />)}
-        <h3 className="display text-[15px] text-white">{t("social.conn.no_account_title")}</h3>
+        {icon(<UserRound size={22} />)}
+        <h3 className={title}>{t("social.conn.no_account_title")}</h3>
         <p className="max-w-sm text-[13px] text-muted">{t("social.conn.no_account_text")}</p>
-        <Button size="sm" onClick={() => nav({ to: "/accounts" })}>
+        <Button size="sm" variant="primary" onClick={() => nav({ to: "/accounts" })}>
           {t("nav.accounts")}
         </Button>
       </div>
@@ -88,8 +90,9 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   // logged_out
   return (
     <div className={box}>
-      {icon(unlinked ? <Link2Off size={20} /> : <LogIn size={20} />)}
-      <h3 className="display text-[15px] text-white">
+      {icon(unlinked ? <Link2Off size={22} /> : <LogIn size={22} />)}
+      <h3 className={title}>
+
         {unlinked ? t("social.conn.unlinked_title") : error ? t("social.conn.failed_title") : t("social.conn.login_title")}
       </h3>
       <p className="max-w-sm text-[13px] text-muted">

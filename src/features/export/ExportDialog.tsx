@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { AlertTriangle, Check, CheckCircle2, ChevronRight, File, Folder, FolderOpen, Minus, PackageOpen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Dialog, Field, Input, Progress, Skeleton, Textarea, cn, toast } from "@/components/ui";
+import { Button, Dialog, Field, Input, Progress, Segmented, Skeleton, Textarea, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatBytes } from "@/lib/format";
@@ -218,29 +218,23 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
       }
     >
       <div className="flex flex-col gap-5">
-        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t("export.format")}>
-          {FORMATS.map((f) => {
-            const on = f.value === format;
-            return (
-              <button
-                key={f.value}
-                role="radio"
-                aria-checked={on}
-                disabled={running || done}
-                onClick={() => setFormat(f.value)}
-                className={cn(
-                  "flex flex-col items-start gap-1 border px-3.5 py-3 text-left transition-colors duration-150 disabled:opacity-60",
-                  on ? "border-brand bg-white/[.04]" : "border-line hover:border-line2",
-                )}
-              >
-                <span className="flex w-full items-center justify-between">
-                  <span className="text-[13.5px] font-semibold text-white">{t(`export.format.${f.value}`)}</span>
-                  <span className="font-mono text-[11px] text-dim">.{f.ext}</span>
+        <div className="flex flex-col gap-2" aria-label={t("export.format")}>
+          <Segmented<Fmt>
+            className="self-start"
+            value={format}
+            onChange={setFormat}
+            items={FORMATS.map((f) => ({
+              value: f.value,
+              disabled: running || done,
+              label: (
+                <span className="flex items-center gap-1.5">
+                  {t(`export.format.${f.value}`)}
+                  <span className="text-caption font-normal text-dim">.{f.ext}</span>
                 </span>
-                <span className="text-[12px] leading-snug text-muted">{t(`export.format_text.${f.value}`)}</span>
-              </button>
-            );
-          })}
+              ),
+            }))}
+          />
+          <p className="px-1 text-meta leading-snug text-muted">{t(`export.format_text.${format}`)}</p>
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)_140px] gap-3">
@@ -261,19 +255,19 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="label">{t("export.files")}</span>
-            <span className="font-mono text-[11px] text-dim">
+            <span className="text-caption tabular-nums text-dim">
               {entriesQ.data && t("export.selected", { n: sel.size, total: allLeaves.length, size: formatBytes(selSize) })}
             </span>
           </div>
           {entriesQ.isPending ? (
-            <div className="flex h-[248px] flex-col gap-1 border border-line p-2">
+            <div className="flex h-[248px] flex-col gap-1 rounded-card bg-surface p-2">
               {Array.from({ length: 7 }, (_, i) => (
                 <Skeleton key={i} className="h-7" style={{ width: `${90 - (i % 3) * 15}%` }} />
               ))}
             </div>
           ) : entriesQ.isError ? (
-            <div className="flex h-[120px] flex-col items-center justify-center gap-2 border border-line text-center">
-              <span className="text-[12.5px] text-danger">{errorMessage(entriesQ.error)}</span>
+            <div className="flex h-[120px] flex-col items-center justify-center gap-2 rounded-card bg-surface text-center">
+              <span className="text-meta text-danger">{errorMessage(entriesQ.error)}</span>
               <Button size="sm" onClick={() => entriesQ.refetch()}>
                 {t("common.retry")}
               </Button>
@@ -289,23 +283,23 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
               <>
                 <div className="flex justify-between">
                   <span className="label">{failed ? t("export.failed") : t("export.running")}</span>
-                  <span className="font-mono text-[11px] text-muted">{task.progress != null ? `${Math.round(task.progress * 100)} %` : ""}</span>
+                  <span className="text-caption tabular-nums text-muted">{task.progress != null ? `${Math.round(task.progress * 100)} %` : ""}</span>
                 </div>
                 <Progress value={task.progress} tone={failed ? "danger" : "accent"} />
                 <div className="selectable min-h-5 break-words text-[12px] text-dim">{failed ? task.error : task.message}</div>
               </>
             )}
             {done && (
-              <div className="flex items-center gap-3 border border-ok/30 bg-ok/[.06] px-4 py-3">
+              <div className="flex items-center gap-3 rounded-card bg-ok/[.08] px-4 py-3">
                 <CheckCircle2 size={18} className="shrink-0 text-ok" />
                 <div className="min-w-0">
-                  <div className="text-[13px] text-white">{t("export.done")}</div>
-                  <div className="selectable truncate font-mono text-[11px] text-dim">{dest}</div>
+                  <div className="text-[13px] text-text">{t("export.done")}</div>
+                  <div className="selectable truncate text-caption text-dim">{dest}</div>
                 </div>
               </div>
             )}
             {error && (
-              <div className="flex items-start gap-2 text-[12.5px] text-danger">
+              <div className="flex items-start gap-2 text-meta text-danger">
                 <AlertTriangle size={14} className="mt-0.5 shrink-0" />
                 <span className="selectable break-words">{error}</span>
               </div>
@@ -339,10 +333,10 @@ function FileTree({ tree, sel, setSel, disabled }: { tree: Node[]; sel: Set<stri
     setSel(next);
   };
 
-  if (!tree.length) return <div className="flex h-[80px] items-center justify-center border border-line text-[12.5px] text-dim">{t("export.no_files")}</div>;
+  if (!tree.length) return <div className="flex h-[80px] items-center justify-center rounded-card bg-surface text-meta text-dim">{t("export.no_files")}</div>;
 
   return (
-    <div ref={ref} className="scroll h-[248px] border border-line bg-black/30">
+    <div ref={ref} className="scroll h-[248px] rounded-card bg-surface py-1">
       <div className="relative" style={{ height: v.getTotalSize() }}>
         {v.getVirtualItems().map((it) => {
           const n = rows[it.index];
@@ -358,7 +352,7 @@ function FileTree({ tree, sel, setSel, disabled }: { tree: Node[]; sel: Set<stri
               {n.isDir && n.children.length > 0 ? (
                 <button
                   aria-label={isOpen ? t("export.collapse") : t("export.expand")}
-                  className="grid h-5 w-5 place-items-center text-dim hover:text-white"
+                  className="grid h-5 w-5 place-items-center rounded-xs text-dim hover:text-text"
                   onClick={() => {
                     const next = new Set(expanded);
                     if (isOpen) next.delete(n.path);
@@ -380,16 +374,16 @@ function FileTree({ tree, sel, setSel, disabled }: { tree: Node[]; sel: Set<stri
               >
                 <span
                   className={cn(
-                    "grid h-4 w-4 shrink-0 place-items-center border transition-colors duration-100",
-                    state === "off" ? "border-line2" : "border-brand bg-brand text-white",
+                    "grid h-4 w-4 shrink-0 place-items-center rounded-xs border transition-colors duration-100",
+                    state === "off" ? "border-white/20" : "border-brand bg-brand text-[var(--ui-on-accent)]",
                   )}
                 >
                   {state === "on" ? <Check size={11} strokeWidth={3} /> : state === "mixed" ? <Minus size={11} strokeWidth={3} /> : null}
                 </span>
                 {n.isDir ? <Folder size={14} className="shrink-0 text-muted" /> : <File size={14} className="shrink-0 text-dim" />}
-                <span className={cn("truncate", state === "off" ? "text-muted" : "text-white")}>{n.name}</span>
+                <span className={cn("truncate", state === "off" ? "text-muted" : "text-text")}>{n.name}</span>
               </button>
-              <span className="shrink-0 font-mono text-[11px] text-dim">{formatBytes(n.size)}</span>
+              <span className="shrink-0 text-caption tabular-nums text-dim">{formatBytes(n.size)}</span>
             </div>
           );
         })}

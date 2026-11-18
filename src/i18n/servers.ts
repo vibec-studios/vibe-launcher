@@ -1,6 +1,16 @@
 // Lokale Server (Liste, Detailseite, Dialoge).
 export default {
   de: {
+    "srv.search": "Server suchen",
+    "srv.no_match": "Kein Server passt zu „{q}“.",
+    "srv.notice.hide": "Ausblenden",
+    "srv.notice.to_console": "Konsole zeigen",
+    "srv.players.search": "Name suchen",
+    "srv.players.no_match": "Keine Treffer.",
+    "srv.players.seg.ops": "OPs",
+    "srv.players.seg.banned": "Gebannt",
+    "srv.players.seg.banned_ips": "IP-Banns",
+    "srv.console.more": "Weitere Log-Aktionen",
     "srv.list.desc": "Eigene Minecraft-Server auf diesem PC – für dich und deine Freunde.",
     "srv.new": "Neuer Server",
     "srv.empty.title": "Noch keine Server",
@@ -243,6 +253,16 @@ export default {
     "srv.side.unknown.hint": "Einordnung unbekannt – im Zweifel mitnehmen.",
   },
   en: {
+    "srv.search": "Search servers",
+    "srv.no_match": "No server matches “{q}”.",
+    "srv.notice.hide": "Hide",
+    "srv.notice.to_console": "Show console",
+    "srv.players.search": "Search name",
+    "srv.players.no_match": "No matches.",
+    "srv.players.seg.ops": "OPs",
+    "srv.players.seg.banned": "Banned",
+    "srv.players.seg.banned_ips": "IP bans",
+    "srv.console.more": "More log actions",
     "srv.list.desc": "Your own Minecraft servers on this PC – for you and your friends.",
     "srv.new": "New server",
     "srv.empty.title": "No servers yet",

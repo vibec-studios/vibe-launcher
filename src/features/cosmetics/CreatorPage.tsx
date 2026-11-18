@@ -4,9 +4,30 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, Clock, Eye, FileUp, ImagePlus, Inbox, ShieldCheck, Trash2, Upload, Wrench, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, Clock, Eye, FileUp, ImagePlus, Inbox, MoreHorizontal, ShieldCheck, Trash2, Upload, Wrench, XCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Button, Dialog, EmptyState, ErrorState, Field, Input, Spinner, Tabs, Textarea, cn, confirm, toast } from "@/components/ui";
+import {
+  Button,
+  ContextItem,
+  ContextMenu,
+  ContextSeparator,
+  Dialog,
+  DropdownItem,
+  DropdownMenu,
+  DropdownSeparator,
+  EmptyState,
+  ErrorState,
+  Field,
+  IconButton,
+  Input,
+  Segmented,
+  Spinner,
+  Tabs,
+  Textarea,
+  cn,
+  confirm,
+  toast,
+} from "@/components/ui";
 import { formatRelative } from "@/lib/format";
 import { useLang, useT } from "@/i18n";
 import { capi, readPng, vapi } from "./api";
@@ -31,30 +52,24 @@ export function CreatorPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="shrink-0 border-b border-line bg-panel">
-        <div className="flex items-center gap-4 px-6 pb-2 pt-4">
-          <button aria-label={t("common.back")} onClick={() => nav({ to: "/cosmetics" })} className="grid h-9 w-9 place-items-center border border-line bg-surface2 text-muted hover:text-white">
-            <ArrowLeft size={16} />
-          </button>
-          <div className="min-w-0 flex-1">
-            <h1 className="display text-[20px] leading-tight">{t("cre.title")}</h1>
-            <p className="mt-0.5 truncate text-[13px] text-muted">{t("cre.lead")}</p>
-          </div>
-        </div>
-        <div className="px-6">
-          <Tabs<Tab>
-            value={tab}
-            onChange={setTab}
-            className="-mx-3 h-11! border-b-0"
-            items={[
-              { value: "tools", label: t("cre.tab.tools"), icon: <Wrench size={14} /> },
-              { value: "upload", label: t("cre.tab.upload"), icon: <Upload size={14} /> },
-              { value: "submissions", label: t("cre.tab.submissions"), icon: <Inbox size={14} />, badge: pending || undefined },
-            ]}
-          />
-        </div>
+      {/* Titel steht schon in der Titelleiste (Cosmetics › Creator): nur Zurück + Reiter */}
+      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line px-6">
+        <IconButton label={t("common.back")} tip variant="ghost" size="sm" onClick={() => nav({ to: "/cosmetics" })}>
+          <ArrowLeft size={16} />
+        </IconButton>
+        <Tabs<Tab>
+          value={tab}
+          onChange={setTab}
+          className="h-12! min-w-0 flex-1 border-b-0"
+          items={[
+            { value: "tools", label: t("cre.tab.tools"), icon: <Wrench size={14} /> },
+            { value: "upload", label: t("cre.tab.upload"), icon: <Upload size={14} /> },
+            { value: "submissions", label: t("cre.tab.submissions"), icon: <Inbox size={14} />, badge: pending || undefined },
+          ]}
+        />
+        <span className="hidden truncate text-meta text-dim xl:block">{t("cre.lead")}</span>
       </header>
-      <div className="scroll min-h-0 flex-1">
+      <div className="scroll min-h-0 flex-1 bg-panel">
         {tab === "tools" ? (
           <CreatorTools online={access === "ready" || access === "logged_out" || access === "no_account"} />
         ) : access !== "ready" ? (
@@ -169,30 +184,29 @@ function UploadTab({ pending, onDone }: { pending: number; onDone: () => void })
   return (
     <div className="mx-auto grid max-w-[1100px] grid-cols-[1fr_420px] gap-6 p-6">
       <div className="flex min-w-0 flex-col gap-4">
-        <div className="flex items-start gap-3 border border-brand/30 bg-brand/[.07] px-4 py-3 text-[13px] leading-relaxed text-muted">
-          <ShieldCheck size={17} className="mt-0.5 shrink-0 text-brand" />
+        <div className="flex items-start gap-3 rounded-card bg-surface px-4 py-3 text-[13px] leading-relaxed text-muted">
+          <ShieldCheck size={16} className="mt-0.5 shrink-0 text-brand" />
           <div>
-            <span className="font-semibold text-white">{t("cre.up.review_title")}</span> {t("cre.up.review_text", { n: MAX_OPEN })}
+            <span className="font-semibold text-text">{t("cre.up.review_title")}</span> {t("cre.up.review_text", { n: MAX_OPEN })}
           </div>
         </div>
 
         <button
           onClick={() => void pick()}
-          className={cn(
-            "flex items-center gap-4 border border-dashed px-5 py-5 text-left transition-colors",
-            file ? "border-line2 bg-surface" : "border-brand/50 bg-brand/[.04] hover:border-brand hover:bg-brand/[.08]",
-          )}
+          className="flex items-center gap-4 rounded-card bg-surface px-4 py-4 text-left transition-colors hover:bg-surface2"
         >
-          <span className="grid h-11 w-11 shrink-0 place-items-center border border-line2 bg-surface2 text-brand">{loading ? <Spinner size={16} /> : <FileUp size={20} />}</span>
+          <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-ctl bg-surface2", file ? "text-muted" : "text-brand")}>
+            {loading ? <Spinner size={16} /> : <FileUp size={18} />}
+          </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[14px] font-semibold text-white">{file ? file.path.split(/[\\/]/).pop() : t("cre.up.pick")}</span>
+            <span className="block text-[14px] font-semibold text-text">{file ? file.path.split(/[\\/]/).pop() : t("cre.up.pick")}</span>
             <span className="block truncate text-[12px] text-dim">{file ? (file.check.json?.id as string) ?? file.path : t("cre.up.pick_hint")}</span>
           </span>
-          <span className="text-[12px] font-semibold text-brand">{file ? t("cre.up.change") : t("cre.up.choose")}</span>
+          <span className="text-[12px] font-semibold text-muted">{file ? t("cre.up.change") : t("cre.up.choose")}</span>
         </button>
 
         {file && !file.check.ok && (
-          <div className="border border-danger/40 bg-danger/[.07] px-4 py-3 text-[13px]">
+          <div className="rounded-card bg-danger/[.07] px-4 py-3 text-[13px]">
             <div className="mb-1.5 flex items-center gap-2 font-semibold text-danger">
               <AlertTriangle size={15} /> {t("cre.up.invalid")}
             </div>
@@ -204,7 +218,7 @@ function UploadTab({ pending, onDone }: { pending: number; onDone: () => void })
           </div>
         )}
         {file && file.check.warnings.length > 0 && (
-          <ul className="border border-warn/30 bg-warn/[.06] px-4 py-2.5 text-[12px] text-warn">
+          <ul className="rounded-card bg-warn/[.06] px-4 py-2.5 text-[12px] text-warn">
             {file.check.warnings.map((w) => (
               <li key={w}>{w}</li>
             ))}
@@ -220,7 +234,7 @@ function UploadTab({ pending, onDone }: { pending: number; onDone: () => void })
 
         <Field label={t("cre.up.thumb")}>
           <div className="flex items-center gap-3">
-            <div className="grid h-[72px] w-[72px] shrink-0 place-items-center border border-line bg-black/40">
+            <div className="grid h-[72px] w-[72px] shrink-0 place-items-center overflow-hidden rounded-card bg-surface">
               {thumbMode === "file" && thumb ? (
                 <img src={thumb} alt="" className="h-full w-full object-contain" />
               ) : thumbMode === "auto" && autoThumb ? (
@@ -231,34 +245,36 @@ function UploadTab({ pending, onDone }: { pending: number; onDone: () => void })
                 <span className="text-[11px] text-dim">—</span>
               )}
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {(["auto", "view", "file", "none"] as ThumbMode[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => (m === "file" ? void pickThumb() : setThumbMode(m))}
-                  className={cn("h-8 border px-3 text-[12px] font-semibold transition-colors", thumbMode === m ? "border-brand bg-brand/15 text-white" : "border-line bg-surface2 text-muted hover:text-white")}
-                >
-                  {m === "file" && <ImagePlus size={12} className="mr-1.5 inline" />}
-                  {t(`cre.up.thumb_${m}`)}
-                </button>
-              ))}
-            </div>
+            {/* „Datei“ öffnet bei jedem Klick den Dateidialog (auch wenn schon gewählt) */}
+            <Segmented<ThumbMode>
+              value={thumbMode}
+              onChange={(m) => (m === "file" ? void pickThumb() : setThumbMode(m))}
+              items={(["auto", "view", "file", "none"] as ThumbMode[]).map((m) => ({
+                value: m,
+                label: (
+                  <span className="inline-flex items-center gap-1.5">
+                    {m === "file" && <ImagePlus size={12} />}
+                    {t(`cre.up.thumb_${m}`)}
+                  </span>
+                ),
+              }))}
+            />
           </div>
           <p className="mt-1.5 text-[12px] text-dim">{t("cre.up.thumb_hint")}</p>
         </Field>
 
-        <div className="flex items-center gap-3 border-t border-line pt-4">
+        <div className="flex items-center gap-3 pt-2">
           {full && <span className="text-[12px] text-warn">{t("cre.up.full", { n: MAX_OPEN })}</span>}
           <span className="ml-auto" />
-          <Button variant="primary" size="lg" icon={<Upload size={16} />} disabled={!canSend} loading={submit.isPending} onClick={() => submit.mutate()}>
+          <Button variant="primary" icon={<Upload size={15} />} disabled={!canSend} loading={submit.isPending} onClick={() => submit.mutate()}>
             {t("cre.up.send")}
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-col border border-line bg-[radial-gradient(120%_70%_at_50%_30%,rgba(139,108,255,.10),transparent_65%)]">
-        <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-          <span className="font-mono text-[11px] uppercase tracking-[.16em] text-dim">{t("cre.up.preview")}</span>
+      <div className="flex flex-col self-start overflow-hidden rounded-card bg-surface">
+        <div className="flex h-10 items-center justify-between px-4">
+          <span className="text-section text-muted">{t("cre.up.preview")}</span>
           {b && <span className="text-[12px] text-muted">{t(`cos.slot.${emote ? "emote" : slot}`)}</span>}
         </div>
         {b ? (
@@ -275,8 +291,8 @@ function UploadTab({ pending, onDone }: { pending: number; onDone: () => void })
           <div className="grid min-h-[440px] flex-1 place-items-center px-8 text-center text-[13px] text-dim">{t("cre.up.preview_empty")}</div>
         )}
         {b && (
-          <div className="border-t border-line px-4 py-3 text-[12px] text-muted">
-            <span className="font-semibold text-white">{itemName(b.json, lang)}</span> · <span className="font-mono">{b.json.id}</span>
+          <div className="px-4 py-3 text-[12px] text-muted">
+            <span className="font-semibold text-text">{itemName(b.json, lang)}</span> · <span className="font-mono">{b.json.id}</span>
           </div>
         )}
       </div>
@@ -303,10 +319,10 @@ async function fitPng(src: string, size: number): Promise<string> {
 // ------------------------------------------------------------------ Meine Einreichungen
 
 const STATUS: Record<Submission["status"], { icon: typeof Clock; cls: string }> = {
-  pending: { icon: Clock, cls: "border-warn/40 bg-warn/10 text-warn" },
-  approved: { icon: CheckCircle2, cls: "border-ok/40 bg-ok/10 text-ok" },
-  rejected: { icon: XCircle, cls: "border-danger/40 bg-danger/10 text-danger" },
-  withdrawn: { icon: Trash2, cls: "border-line2 bg-white/5 text-dim" },
+  pending: { icon: Clock, cls: "bg-warn/10 text-warn" },
+  approved: { icon: CheckCircle2, cls: "bg-ok/10 text-ok" },
+  rejected: { icon: XCircle, cls: "bg-danger/10 text-danger" },
+  withdrawn: { icon: Trash2, cls: "bg-white/5 text-dim" },
 };
 
 function SubmissionsTab() {
@@ -337,24 +353,41 @@ function SubmissionsTab() {
   const pending = q.data.filter((s) => s.status === "pending").length;
   return (
     <div className="mx-auto max-w-[980px] p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <h2 className="display text-[15px] text-white">{t("cre.sub.title")}</h2>
-        <span className="font-mono text-[12px] text-dim">{t("cre.sub.open", { n: pending, max: MAX_OPEN })}</span>
+      <div className="mb-3 flex items-center gap-3">
+        <h2 className="text-section text-text">{t("cre.sub.title")}</h2>
+        <span className="text-meta text-dim">{t("cre.sub.open", { n: pending, max: MAX_OPEN })}</span>
         <span className="ml-auto text-[12px] text-dim">{t("cre.sub.live")}</span>
       </div>
       {q.data.length === 0 ? (
         <EmptyState icon={<Inbox size={20} />} title={t("cre.sub.empty")} text={t("cre.sub.empty_text")} />
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col overflow-hidden rounded-card bg-surface">
           {q.data.map((s) => {
             const st = STATUS[s.status] ?? STATUS.pending;
             const Icon = st.icon;
+            const canWithdraw = s.status === "pending";
+            const menu = (
+              <>
+                <ContextItem icon={<Eye size={14} />} onSelect={() => setPreview(s)}>
+                  {t("cre.sub.preview")}
+                </ContextItem>
+                {canWithdraw && (
+                  <>
+                    <ContextSeparator />
+                    <ContextItem icon={<Trash2 size={14} />} danger onSelect={() => void withdraw(s)}>
+                      {t("cre.sub.withdraw")}
+                    </ContextItem>
+                  </>
+                )}
+              </>
+            );
             return (
-              <div key={s.id} className="flex items-center gap-4 border border-line bg-surface p-3">
+              <ContextMenu key={s.id} content={menu}>
+              <div className="flex items-center gap-4 border-b border-line px-3 py-2.5 transition-colors last:border-b-0 hover:bg-white/[.03] data-[state=open]:bg-white/[.03]">
                 <SubmissionThumb s={s} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-[14px] font-semibold text-white">{s.name}</span>
+                    <span className="truncate text-[14px] font-semibold text-text">{s.name}</span>
                     <span className="text-[12px] text-dim">· {t(`cre.sub.kind.${s.kind}`)}</span>
                   </div>
                   {s.description && <div className="mt-0.5 truncate text-[12px] text-muted">{s.description}</div>}
@@ -363,25 +396,36 @@ function SubmissionsTab() {
                     {s.reviewedAt && <> · {t("cre.sub.reviewed", { when: formatRelative(s.reviewedAt) })}</>}
                   </div>
                   {s.status === "rejected" && s.reason && (
-                    <div className="mt-1.5 border-l-2 border-danger/60 bg-danger/[.06] px-2 py-1 text-[12px] text-text">
+                    <div className="mt-1.5 rounded-ctl bg-danger/[.07] px-2 py-1 text-[12px] text-text">
                       <span className="font-semibold text-danger">{t("cre.sub.reason")}:</span> {s.reason}
                     </div>
                   )}
                 </div>
-                <span className={cn("flex h-7 shrink-0 items-center gap-1.5 border px-2.5 text-[12px] font-semibold", st.cls)}>
+                <span className={cn("flex h-6 shrink-0 items-center gap-1.5 rounded-pill px-2.5 text-[12px] font-semibold", st.cls)}>
                   <Icon size={13} /> {t(`cre.sub.status.${s.status}`)}
                 </span>
-                <div className="flex shrink-0 gap-1.5">
-                  <Button size="sm" variant="subtle" icon={<Eye size={14} />} onClick={() => setPreview(s)}>
-                    {t("cre.sub.preview")}
-                  </Button>
-                  {s.status === "pending" && (
-                    <Button size="sm" variant="danger" icon={<Trash2 size={14} />} onClick={() => void withdraw(s)}>
+                <div className="flex shrink-0 gap-0.5">
+                  <IconButton label={t("cre.sub.preview")} tip variant="ghost" size="sm" onClick={() => setPreview(s)}>
+                    <Eye size={15} />
+                  </IconButton>
+                  <DropdownMenu
+                    trigger={
+                      <IconButton label={t("common.more")} tip variant="ghost" size="sm">
+                        <MoreHorizontal size={16} />
+                      </IconButton>
+                    }
+                  >
+                    <DropdownItem icon={<Eye size={14} />} onSelect={() => setPreview(s)}>
+                      {t("cre.sub.preview")}
+                    </DropdownItem>
+                    <DropdownSeparator />
+                    <DropdownItem icon={<Trash2 size={14} />} danger disabled={!canWithdraw} onSelect={() => void withdraw(s)}>
                       {t("cre.sub.withdraw")}
-                    </Button>
-                  )}
+                    </DropdownItem>
+                  </DropdownMenu>
                 </div>
               </div>
+              </ContextMenu>
             );
           })}
         </div>
@@ -407,7 +451,7 @@ function SubmissionThumb({ s }: { s: Submission }) {
     },
   });
   return (
-    <div className="grid h-16 w-16 shrink-0 place-items-center border border-line bg-black/40 text-dim">
+    <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-ctl bg-surface2 text-dim">
       {q.data ? <img src={q.data} alt="" className="h-full w-full object-contain" /> : q.isError ? <ImagePlus size={18} /> : <Spinner size={13} />}
     </div>
   );
@@ -431,7 +475,7 @@ function SubmissionPreview({ s, onClose }: { s: Submission | null; onClose: () =
   const emote = b?.json.kind === "emote";
   return (
     <Dialog open={!!s} onOpenChange={(o) => !o && (onClose(), setState(null))} size="lg" title={s?.name ?? ""} description={t("cre.sub.preview_hint")}>
-      <div className="h-[460px] border border-line bg-[radial-gradient(120%_70%_at_50%_30%,rgba(139,108,255,.10),transparent_65%)]">
+      <div className="h-[460px] overflow-hidden rounded-card bg-surface">
         {b ? (
           <Viewer3D className="h-full" bundles={emote ? [] : [b]} emote={emote ? b : null} focus={["cape", "wings", "back"].includes(b.json.cosmetic?.slot ?? "") ? "back" : "front"} focusKey={s?.id} skin={skin} />
         ) : state?.err ? (

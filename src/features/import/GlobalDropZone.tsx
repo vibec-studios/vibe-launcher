@@ -87,8 +87,8 @@ export function GlobalDropZone() {
       <ImportDialog />
       <InstallDialogHost />
       {showOverlay && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 top-[48px] z-[90] flex items-center justify-center bg-black/80 animate-fade-in">
-          <div className="absolute inset-4 border-2 border-dashed border-accent/70" />
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 top-[48px] z-[90] flex items-center justify-center bg-bg/85 animate-fade-in">
+          <div className="absolute inset-4 rounded-panel border-2 border-dashed border-accent/60" />
           <div className="relative flex max-w-[440px] flex-col items-center gap-3 text-center">
             {hint.kind === "pack" ? (
               <FileArchive size={36} className="text-accent" />
@@ -97,7 +97,7 @@ export function GlobalDropZone() {
             ) : (
               <Info size={36} className="text-muted" />
             )}
-            <div className="text-[20px] font-bold text-white">
+            <div className="text-title text-text">
               {hint.kind === "pack"
                 ? t("drop.import")
                 : hint.kind === "jar"

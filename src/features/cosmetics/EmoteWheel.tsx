@@ -67,7 +67,7 @@ export function EmoteWheelDialog({
             {t("cos.wheel.clear")}
           </Button>
           <span className="flex-1" />
-          <Button onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
           <Button
             variant="primary"
             onClick={() => {
@@ -83,8 +83,8 @@ export function EmoteWheelDialog({
       <div className="flex gap-6">
         {/* Rad */}
         <div className="relative shrink-0" style={{ width: R * 2 + 96, height: R * 2 + 96 }}>
-          <div className="absolute inset-[48px] rounded-full border border-line2 bg-[radial-gradient(circle,rgba(139,108,255,.14),transparent_70%)]" />
-          <div className="absolute left-1/2 top-1/2 grid h-24 w-24 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-line bg-black/70 px-2 text-center text-[11px] leading-snug text-muted">
+          <div className="absolute inset-[48px] rounded-full bg-surface" />
+          <div className="absolute left-1/2 top-1/2 grid h-24 w-24 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-surface2 px-2 text-center text-[11px] leading-snug text-muted">
             {armedItem ? t("cos.wheel.place", { name: itemName(armedItem, lang) }) : t("cos.wheel.key")}
           </div>
           {slots.map((id, i) => {
@@ -103,9 +103,9 @@ export function EmoteWheelDialog({
                     setActive(i);
                   }}
                   className={cn(
-                    "relative flex h-[84px] w-[84px] flex-col items-center justify-center border bg-surface transition-colors",
-                    active === i ? "border-brand bg-brand/[.12] shadow-[0_0_0_1px_var(--color-brand)]" : "border-line hover:border-line2",
-                    armed && "border-dashed border-brand/70",
+                    "relative flex h-[84px] w-[84px] flex-col items-center justify-center rounded-card transition-colors",
+                    active === i ? "bg-surface3 outline outline-2 outline-accent" : "bg-surface2 hover:bg-surface3",
+                    armed && active !== i && "outline outline-1 outline-dashed outline-accent/70",
                   )}
                   title={item ? itemName(item, lang) : t("cos.wheel.empty")}
                 >
@@ -125,7 +125,7 @@ export function EmoteWheelDialog({
                   <button
                     aria-label={t("cos.wheel.remove")}
                     onClick={() => assign(i, null)}
-                    className="absolute -right-2 -top-2 grid h-5 w-5 place-items-center border border-line2 bg-black text-muted hover:text-white"
+                    className="absolute -right-2 -top-2 grid h-5 w-5 place-items-center rounded-pill bg-surface3 text-muted hover:text-text"
                   >
                     <X size={11} />
                   </button>
@@ -153,15 +153,15 @@ export function EmoteWheelDialog({
                     if (next >= 0) setActive(next);
                   }}
                   className={cn(
-                    "relative flex flex-col border bg-surface text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45",
-                    used >= 0 ? "border-brand/50" : "border-line hover:border-line2",
+                    "relative flex flex-col overflow-hidden rounded-card text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45",
+                    used >= 0 ? "bg-surface3" : "bg-surface2 hover:bg-surface3",
                   )}
                 >
-                  <ItemThumb item={e} className="aspect-square w-full bg-black/40" />
-                  <span className="truncate border-t border-line px-1.5 py-1 text-[11px] text-text">{itemName(e, lang)}</span>
-                  {used >= 0 && <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center bg-brand px-1 font-mono text-[10px] text-white">{used + 1}</span>}
+                  <ItemThumb item={e} className="aspect-square w-full" />
+                  <span className="truncate px-1.5 pb-1 text-[11px] text-text">{itemName(e, lang)}</span>
+                  {used >= 0 && <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-pill bg-accent px-1 text-[10px] font-semibold text-[var(--on-accent)]">{used + 1}</span>}
                   {!mine && (
-                    <span className="absolute left-1 top-1 grid h-5 w-5 place-items-center bg-black/80 text-muted">
+                    <span className="absolute left-1 top-1 grid h-5 w-5 place-items-center rounded-xs bg-black/80 text-muted">
                       <Lock size={10} />
                     </span>
                   )}
