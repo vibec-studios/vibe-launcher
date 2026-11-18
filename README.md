@@ -149,15 +149,15 @@ draft release created by GitHub Actions. See [docs/RELEASE.md](docs/RELEASE.md).
 
 **Code:** [Apache License 2.0](LICENSE). Forken, ändern und weitergeben ist erlaubt.
 
-**Nicht** von der Code-Lizenz erfasst:
+**Nicht** von der Code-Lizenz erfasst (gilt für alle Repos von Vibe Craft Studios,
+[LICENSING.md](https://github.com/vibec-studios/.github/blob/main/LICENSING.md)):
 
 - **Namen und Logos** („Vibe“, „Vibey“, „Vibe Craft Studios“, die Robbe): Forks brauchen einen eigenen Namen und
-  eigene Logos und dürfen nicht unter unseren Namen vermarktet werden – [TRADEMARKS.md](TRADEMARKS.md).
+  eigene Logos – [TRADEMARKS.md](https://github.com/vibec-studios/.github/blob/main/TRADEMARKS.md).
 - **Grafiken und Modelle** (Branding, Icons, Robbe, Cosmetics): alle Rechte vorbehalten –
-  [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
-- **Vibe-Dienste** (Backend `vibe.henny.dev`, Relay `vibey.henny.dev`): nur für offizielle Builds; Forks müssen
-  eigene Dienste nutzen – [SERVICES.md](SERVICES.md).
+  [ASSETS-POLICY.md](https://github.com/vibec-studios/.github/blob/main/ASSETS-POLICY.md); Pfade in [NOTICE](NOTICE).
+- **Vibe-Dienste** (Backend `vibe.henny.dev`, Relay `vibey.henny.dev`): nur für offizielle Builds –
+  [SERVICES.md](https://github.com/vibec-studios/.github/blob/main/SERVICES.md).
 
 *English:* the code is Apache-2.0. Our names and logos, the seal, artwork and models, and the Vibe online services are
-not included: forks must use their own name, artwork and backend. See TRADEMARKS.md, ASSETS-LICENSE.md and
-SERVICES.md.
+not included: forks must use their own name, artwork and backend. See the linked policies.

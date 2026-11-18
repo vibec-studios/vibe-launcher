@@ -30,7 +30,7 @@ pub enum Feature {
 }
 
 /// Offizielles Backend von Vibe Craft Studios. Nutzer können keine eigene Adresse einstellen.
-/// Nur für offizielle Builds von Vibe Craft Studios. Forks müssen eigene Dienste verwenden (siehe SERVICES.md).
+/// Nur für offizielle Builds von Vibe Craft Studios. Forks müssen eigene Dienste verwenden (github.com/vibec-studios/.github/blob/main/SERVICES.md).
 pub const DEFAULT_API_URL: &str = "https://vibe.henny.dev";
 
 /// Basis-URL des Backends: immer [`DEFAULT_API_URL`]. Nur Debug-Builds dürfen sie für die lokale Entwicklung per
