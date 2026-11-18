@@ -221,6 +221,10 @@ pub async fn mojang_join(state: &AppState, server_id: &str) -> AppResult<JoinRes
     // Debug-Offline-Profil: kein echter Token, das lokale Test-Backend (AUTH_DEV_BYPASS) prüft nicht
     #[cfg(debug_assertions)]
     if la.user_type == "legacy" {
+        // Nie gegen das echte Backend: dort gibt es keinen Dev-Bypass
+        if debug_override("VIBE_API_URL").is_none() {
+            return Err(AppError::Auth("Das Offline-Testprofil kann sich nur an einem lokalen Test-Backend (VIBE_API_URL) anmelden.".into()));
+        }
         return Ok(JoinResult { name, uuid });
     }
     let send = |token: String| {
