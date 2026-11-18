@@ -38,8 +38,43 @@ Wer etwas ändert, passt diese Datei an und sagt es den anderen.
 - `GET /api/v1/client/releases` – Liste (neueste zuerst), gleiche Form ohne `changelog`-Kürzung.
   Antwort `{ releases: [...] }`, optional `?channel=` und `?limit=` (≤ 100); zurückgezogene fehlen.
 - `GET /api/v1/client/files/:sha256/:file` – Datei (mit `ETag`, `Content-Length`, `immutable`-Cache).
-- Veröffentlichen (CI des privaten vibey-client-Repos): `POST /internal/client/v1/releases`,
-  `Authorization: Bearer <CLIENT_PUBLISH_TOKEN>`, multipart: `manifest` (JSON wie oben ohne url/sha256/size) + alle
+- *(Backend, Stand 2026-11-18 – Standardweg:)* **Das Backend holt neue Releases selbst von GitHub.** Cloudflare
+  (Bot Fight Mode, Free-Plan) fordert GitHub-Runner bei `/internal/client/*` heraus, ein Push aus der CI geht deshalb
+  nicht. Stattdessen fragt das Backend alle ~10 min (±20 % Zufall) `GET https://api.github.com/repos/vibec-studios/vibey-client/releases`
+  ab – bedingt mit `If-None-Match`/ETag (304 zählt kaum gegen das Limit von 60/h ohne Token). Regeln:
+  - Importiert wird jedes **Nicht-Entwurf**-Release, dessen Version noch nicht im Backend ist und das ein Asset
+    **`vibey-manifest.json`** hat (Altlast: `manifest.json` wird auch akzeptiert). Das Manifest hat die Form des
+    Publish-Manifests **plus `sha256` und `size` je Datei und beim Blockbench-Plugin**:
+    ```json
+    { "version": "0.3.0", "channel": "release", "changelog": "Markdown",
+      "files": [ { "loader": "fabric", "mcVersions": ["1.21.4"], "file": "vibey-client-fabric-1.21.4-0.3.0.jar",
+                   "requires": [ { "modrinth": "P7dR8mSH", "name": "Fabric API" } ], "sha256": "…", "size": 14945225 } ],
+      "blockbench": { "version": "0.3.0", "file": "vibey.js", "sha256": "…", "size": 134204 } }
+    ```
+    Jede Datei muss als Asset gleichen Namens am Release hängen. Ohne `sha256` (Altlast 0.2.0) vertraut das Backend
+    den geladenen Bytes und speichert den berechneten Hash; den GitHub-Asset-`digest` prüft es zusätzlich, wenn da.
+  - **Kanal:** GitHub-`prerelease` → `beta`, sonst `release`. Das GitHub-Flag gewinnt über `channel` im Manifest
+    (Abweichung wird geloggt). **Changelog:** `changelog` aus dem Manifest, wenn leer der Release-Text.
+    `publishedAt` = `published_at` des GitHub-Releases.
+  - Tag `v<version>` muss zur Manifest-Version passen. Jede Abweichung bei Größe/sha256, fehlende Assets, ungültiges
+    Manifest oder Limits (wie beim Publish: 48 Dateien, je 64 MB, zusammen 768 MB) → **das ganze Release wird
+    abgelehnt** (keine Teil-Releases, neu gespeicherte Dateien werden wieder entfernt). Ein abgelehntes Release
+    versucht der automatische Abgleich erst wieder, wenn es sich auf GitHub ändert (z. B. Asset ersetzt); Netz- oder
+    Serverfehler werden beim nächsten Lauf wiederholt.
+  - Idempotent: vorhandene Versionen werden übersprungen (auch manuell veröffentlichte wie 0.2.0), **zurückgezogene
+    werden nie erneut importiert**. Auf GitHub gelöschte Releases bleiben im Backend (zurückziehen im Admin-UI).
+  - Ergebnis identisch zum Publish-Weg (`latest`/`releases`/`files` unverändert), Audit `client.import`.
+  - Das Repo ist noch privat: ohne Lese-Token antwortet GitHub `404` – das Backend loggt das einmal und versucht es
+    leise weiter; sobald das Repo öffentlich ist, läuft der Import von selbst. Optional `GITHUB_RELEASES_TOKEN`
+    (fine-grained, nur Lesen) – dann über die API-Asset-URL mit `Accept: application/octet-stream`.
+  - Admin-UI „Client“: **„Jetzt von GitHub importieren“** (Rolle admin; ohne ETag, abgelehnte Releases werden neu
+    versucht) mit Ergebnis (importiert/übersprungen/Fehler) und Stand der letzten automatischen Prüfung.
+    Admin-API `POST /admin/api/client/github-import` (wartet ≤ 45 s, sonst `done: false` und Stand per
+    `GET /admin/api/client/github-import`).
+  - Für die vibey-client-CI heißt das: Release auf GitHub mit allen Jars, `vibey.js` und `vibey-manifest.json`
+    (mit `sha256`/`size`) anlegen; `prerelease` setzen für Betas. Kein Push ans Backend nötig.
+- Veröffentlichen von Hand (manueller Weg, bleibt bestehen): `POST /internal/client/v1/releases`,
+  `Authorization: Bearer <CLIENT_PUBLISH_TOKEN>`, multipart: `manifest` (JSON wie oben ohne url; `sha256`/`size` optional, werden geprüft) + alle
   Jars + `vibey.js`. Gleiche Version zweimal = 409. Admin-UI: Seite „Client“ mit Releases, Kanal ändern,
   zurückziehen.
   *(Backend, ergänzt – wichtig für die CI:)* Vor `vibe.henny.dev` liegt **Cloudflare mit 100 MB pro Anfrage**; ein
