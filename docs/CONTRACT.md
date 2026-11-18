@@ -65,7 +65,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
 | Skins | skins_profile, skin_upload_file, skin_apply_library, skin_set_variant, skin_reset, cape_set, skin_library_list, skin_library_add_file, skin_library_add_current, skin_library_import_player, skin_library_rename, skin_library_set_variant, skin_library_remove, skin_library_export, skin_library_reveal |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
-| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, perf_preview, perf_install, config_tree, config_read, config_write, config_restore, config_validate, config_search |
+| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, perf_preview, perf_install, files_list, files_stat, files_find, files_search, files_read, files_write, files_restore, files_validate, files_image, files_create, files_rename, files_duplicate, files_delete, files_import, files_abs_path, files_reveal |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
 | Plattform | crash_analyze, instance_servers_list, instance_servers_save, server_ping, servers_recent, playtime_sessions, optsync_get, optsync_set_instance, optsync_capture, optsync_apply_all, shortcut_create, app_actions_take, discord_available (`commands/platform.rs`, Logik in `platform/`, OWNER Frontend-Agent A) |
 | Backups | snapshots_list, snapshot_create, snapshot_restore, snapshot_delete, world_backups_list, world_backup_create, world_backup_restore, world_backup_delete, world_copy, world_import_zip, backups_open_folder (`commands/backups.rs`) |
@@ -135,27 +135,31 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 - Commands: `stores_list() -> StoreInfo[]` (lädt aktivierte Stores, liefert Name/Icon/Projektanzahl/Fehler),
   `store_add(url)` (laden + prüfen; ID/Name/Icon aus der Datei), `store_remove(id)`, `store_set_enabled(id, enabled)`.
 
-### Konfigurations-Editor (Tab „Configs“)
+### Datei-Bereich (Instanz: Einstellungen → „Dateien“, Server: Tab „Dateien“)
 
-- Backend `content/configs.rs` + `commands/configs.rs`, Frontend `features/configs/` (CodeMirror 6, nur per
-  dynamischem `import()` geladen – nicht im Haupt-Bundle), Texte in `i18n/configs.ts`.
-- Pfade sind **relativ zum Spielordner** mit `/`. Erlaubt: `config/**`, `defaultconfigs/**`, `options.txt`,
-  `optionsof.txt`, `optionsshaders.txt` (nicht `servers.dat`). Abgelehnt: `..`, absolute Pfade, Laufwerksbuchstaben,
-  Symlinks und alles, was kanonisch außerhalb der Wurzel landet.
-- `config_tree(instanceId) -> ConfigEntry[]` (flach, Ordner + Dateien; `binary = true` für Endungen außerhalb von
-  json, json5, toml, properties, cfg, conf, txt, yaml, yml, ini, snbt, js, zs, mcmeta -> nicht bearbeitbar).
-- `config_read(instanceId, path) -> ConfigFile` (`language`: json|json5|toml|properties|yaml|ini|javascript|text).
-  `readonly` + `readonly_reason`: `too_large` (> 2 MB, kein Inhalt), `binary` (kein Inhalt), `encoding` (kein UTF-8,
-  Inhalt nur zur Ansicht). UTF-8-BOM wird beim Lesen entfernt und beim Schreiben beibehalten, ebenso CRLF.
-- `config_write(instanceId, path, content) -> ConfigFile`: sichert die alte Fassung nach
-  `instances/<id>/config-backups/<pfad>/<ms>-<nr>` (höchstens 10 je Datei, älteste fliegt), schreibt atomar
-  (tmp + rename). Gleicher Inhalt -> keine neue Sicherung. Nicht-UTF-8-Dateien werden abgelehnt.
-- `config_restore(instanceId, path) -> ConfigFile`: spielt die neueste Sicherung zurück; die aktuelle Fassung wird
-  vorher selbst gesichert (erneutes Zurücksetzen = rückgängig).
-- `config_validate(path, content) -> ValidationError[] {line, column, message}` (1-basiert): JSON (Kommentare
-  erlaubt), JSON5 (Kommentare + abschließende Kommas; JSON5-Erweiterungen werden nicht als Fehler gemeldet), TOML.
-  Andere Formate: nie Fehler.
-- `config_search(instanceId, query) -> {path, line, text}[]`: ohne Groß-/Kleinschreibung, höchstens 200 Treffer.
+- Ersetzt den früheren Config-Editor (`?tab=configs` leitet auf `?tab=files` weiter). Backend `files/`
+  (`sandbox.rs`, `ops.rs`, `validate.rs`) + `commands/files.rs`, Frontend `features/files/` (CodeMirror 6 nur per
+  dynamischem `import()`), Texte in `i18n/files.ts`.
+- Bereich `scope`: `{ kind: "instance", id }` (Wurzel `instances/<id>/minecraft`) oder `{ kind: "server", id }`
+  (Wurzel `servers/<id>`; `vibe-server.json`, `.vibe-pid`, `.vibe-backups` sind verborgen und gesperrt).
+- Pfade sind **relativ zur Wurzel** mit `/` (leer = Wurzel, nur wo erlaubt). Die Sandbox lehnt ab: `..`, absolute
+  Pfade, Laufwerksbuchstaben/UNC, `:` (auch NTFS-Datenströme), Steuerzeichen, unter Windows Namen mit Punkt/Leerzeichen
+  am Ende und reservierte Gerätenamen; jeder Bestandteil darf kein Symlink/Junction (Reparse-Point) sein, und der
+  kanonische Pfad (bzw. der des Elternordners) muss innerhalb der kanonischen Wurzel liegen.
+- Lesen: `files_list(scope, dir) -> FileEntry[]` (direkte Einträge, Ordner zuerst; `kind` dir|text|image|binary nach
+  Endung, unbekannte Endungen per Inhaltsprüfung), `files_stat`, `files_find(scope, query)` (Namenssuche, max. 500),
+  `files_search(scope, query, dir?)` (Volltext in Textdateien ≤ 1 MB, max. 200 Treffer, max. 96 MB gelesen),
+  `files_read(scope, path) -> FileContent` (`readonly_reason`: `too_large` (> 2 MB, Logs > 8 MB), `binary`, `image`,
+  `encoding` (kein UTF-8), `log` (`*.log`, `logs/**`, `crash-reports/**` nur Ansicht)), `files_image` (data-URL ≤ 16 MB).
+- Schreiben: `files_write` sichert die alte Fassung (Instanz: `instances/<id>/config-backups/<pfad>/<ms>-<nr>`, Server:
+  `servers/<id>/.vibe-backups/files/…`; höchstens 10 je Datei, leere Ausgangsdatei ohne Sicherung) und schreibt atomar;
+  BOM und CRLF bleiben erhalten. `files_restore` spielt die neueste Sicherung zurück (rückgängig machbar).
+  `files_validate(path, content)`: JSON (Kommentare erlaubt), JSON5, TOML.
+- Aktionen: `files_create(scope, dir, name, isDir)`, `files_rename(scope, path, newName)` (bleibt im Ordner, nimmt
+  Sicherungen mit), `files_duplicate` („name (Kopie).ext“), `files_delete(scope, paths, permanent)` (Papierkorb über
+  `trash`; klappt das nicht, wird nichts gelöscht und `trash_error` gesetzt – das Frontend fragt dann nach
+  `permanent = true`), `files_import(scope, dir, sources)` (absolute Quellpfade, keine Überschreibung: „name (2).ext“),
+  `files_abs_path`, `files_reveal` (Explorer, Datei markiert).
 
 ### Auto-Update von Inhalten und fixierte Versionen
 

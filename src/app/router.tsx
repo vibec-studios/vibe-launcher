@@ -17,10 +17,12 @@ import { ServerPage } from "@/features/servers/ServerPage";
 import { SocialPage } from "@/features/social/SocialPage";
 import type { ProjectType, Source } from "@/lib/types";
 
-export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "servers" | "backups" | "logs" | "configs" | "settings";
-const instanceTabs: InstanceTab[] = ["content", "resourcepacks", "shaders", "worlds", "servers", "backups", "logs", "configs", "settings"];
-export type ServerTab = "console" | "settings" | "players" | "worlds" | "connection";
-const serverTabs: ServerTab[] = ["console", "settings", "players", "worlds", "connection"];
+export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "servers" | "backups" | "logs" | "files" | "settings";
+const instanceTabs: InstanceTab[] = ["content", "resourcepacks", "shaders", "worlds", "servers", "backups", "logs", "files", "settings"];
+/** Frühere Tab-Werte (alte Deep-Links) -> heutiger Tab */
+const instanceTabAliases: Record<string, InstanceTab> = { configs: "files" };
+export type ServerTab = "console" | "settings" | "players" | "worlds" | "files" | "connection";
+const serverTabs: ServerTab[] = ["console", "settings", "players", "worlds", "files", "connection"];
 const projectTypes: ProjectType[] = ["mod", "modpack", "resourcepack", "shader", "datapack"];
 
 export interface DiscoverSearch {
@@ -46,7 +48,11 @@ const instanceRoute = createRoute({
   path: "/instances/$id",
   component: InstancePage,
   validateSearch: (s: Record<string, unknown>): { tab: InstanceTab } => ({
-    tab: instanceTabs.includes(s.tab as InstanceTab) ? (s.tab as InstanceTab) : "content",
+    tab: instanceTabs.includes(s.tab as InstanceTab)
+      ? (s.tab as InstanceTab)
+      : typeof s.tab === "string" && instanceTabAliases[s.tab]
+        ? instanceTabAliases[s.tab]
+        : "content",
   }),
 });
 

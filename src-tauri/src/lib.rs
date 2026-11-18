@@ -6,6 +6,7 @@ mod devlive;
 pub mod content;
 pub mod error;
 pub mod events;
+pub mod files;
 pub mod instance;
 pub mod minecraft;
 pub mod minecraftcapes;
@@ -302,13 +303,23 @@ pub fn run() {
             commands::backups::world_copy,
             commands::backups::world_import_zip,
             commands::backups::backups_open_folder,
-            // configs
-            commands::configs::config_tree,
-            commands::configs::config_read,
-            commands::configs::config_write,
-            commands::configs::config_restore,
-            commands::configs::config_validate,
-            commands::configs::config_search,
+            // files (Instanz- und Serverordner)
+            commands::files::files_list,
+            commands::files::files_stat,
+            commands::files::files_find,
+            commands::files::files_search,
+            commands::files::files_read,
+            commands::files::files_write,
+            commands::files::files_restore,
+            commands::files::files_validate,
+            commands::files::files_image,
+            commands::files::files_create,
+            commands::files::files_rename,
+            commands::files::files_duplicate,
+            commands::files::files_delete,
+            commands::files::files_import,
+            commands::files::files_abs_path,
+            commands::files::files_reveal,
             // Vibe-Dienste
             commands::vibe::vibe_status,
             commands::vibe::vibe_tokens_get,

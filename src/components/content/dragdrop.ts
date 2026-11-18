@@ -8,7 +8,8 @@ export interface DropTarget {
   el: HTMLElement;
   /** Nimmt das Ziel diese Dateien an? */
   accepts: (paths: string[]) => boolean;
-  onDrop: (paths: string[]) => void;
+  /** `pos`: Zeigerposition beim Ablegen (CSS-Pixel), z. B. um den Zielordner unter dem Zeiger zu finden */
+  onDrop: (paths: string[], pos: { x: number; y: number }) => void;
 }
 
 interface DragState {
@@ -16,9 +17,11 @@ interface DragState {
   paths: string[] | null;
   /** ID des Ziels unter dem Zeiger */
   over: string | null;
+  /** Zeigerposition (CSS-Pixel), solange ein Ziel darunter liegt */
+  pos: { x: number; y: number } | null;
 }
 
-export const useDragState = create<DragState>(() => ({ paths: null, over: null }));
+export const useDragState = create<DragState>(() => ({ paths: null, over: null, pos: null }));
 
 const targets = new Map<string, DropTarget>();
 
