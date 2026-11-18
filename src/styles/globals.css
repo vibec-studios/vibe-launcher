@@ -410,7 +410,8 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
    Drei Stufen: reduziert (data-reduce-motion / System), normal (Standard, dezent), mehr (data-motion="more").
    Alles zentral hier – Seiten brauchen nichts zu tun:
      .vl-page        Seitenwechsel (Shell, je Route neu gemountet), abschaltbar über data-nav="off"
-     Raster/Listen   Kacheln in Rastern (grid-cols-*) und [role=list] blenden gestaffelt ein
+     Raster          Kachel-Raster (grid-cols-[repeat(auto-…)]) und .vl-stagger blenden gestaffelt ein –
+                     bewusst nicht Tabellen-/Listenzeilen (deren Zellen und virtualisierte Zeilen sollen ruhig bleiben)
      .vl-card        Kachel hebt sich beim Hover minimal, Bild zoomt (.vl-zoom)
      Knöpfe/Schalter Druck-Feedback, federnde Schalter, Häkchen-Pop, weiche Fortschrittsbalken
      Dialoge/Menüs   Ein- und Ausblenden (Radix wartet auf das Ende der Ausblend-Animation)
@@ -443,19 +444,19 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
     /* Seitenwechsel: Einblenden + leichtes Aufsteigen */
     &[data-nav="on"] .vl-page { animation: vl-page-rise 0.26s var(--ease-out); }
 
-    /* Gestaffeltes Einblenden von Kacheln und Listen (nur die ersten 12 verzögert) */
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > * { animation: vl-item-in 0.32s var(--ease-out) backwards; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(2) { animation-delay: 25ms; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(3) { animation-delay: 50ms; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(4) { animation-delay: 75ms; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(5) { animation-delay: 100ms; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(6) { animation-delay: 125ms; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(7) { animation-delay: 150ms; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(8) { animation-delay: 175ms; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(9) { animation-delay: 200ms; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(10) { animation-delay: 225ms; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(11) { animation-delay: 250ms; }
-    & .vl-page :is([class*="grid-cols-"], [role="list"]) > :nth-child(n + 12) { animation-delay: 275ms; }
+    /* Gestaffeltes Einblenden von Kacheln (nur die ersten 12 verzögert) */
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > * { animation: vl-item-in 0.32s var(--ease-out) backwards; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(2) { animation-delay: 25ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(3) { animation-delay: 50ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(4) { animation-delay: 75ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(5) { animation-delay: 100ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(6) { animation-delay: 125ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(7) { animation-delay: 150ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(8) { animation-delay: 175ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(9) { animation-delay: 200ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(10) { animation-delay: 225ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(11) { animation-delay: 250ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(n + 12) { animation-delay: 275ms; }
     /* Einstellungskarten (SettingsCard) gestaffelt */
     & .vl-settings > section { animation: vl-item-in 0.3s var(--ease-out) backwards; }
     & .vl-settings > section:nth-child(2) { animation-delay: 40ms; }
@@ -493,7 +494,8 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 /* ------------------------------------------------------------------ Winter-Details */
 
 /* Frost: feine Pixel-Eiskristalle in den oberen Dialogecken + hauchdünne eisige Oberkante */
-:root[data-frost="on"] :is([role="dialog"], [role="alertdialog"])::after {
+/* nur modale Dialoge (.fixed) – Popovers haben ebenfalls role="dialog" */
+:root[data-frost="on"] :is([role="dialog"], [role="alertdialog"]).fixed::after {
   content: "";
   position: absolute;
   inset: 0;
