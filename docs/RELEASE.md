@@ -36,6 +36,20 @@ git push origin main v1.1.0
 Der Workflow „Release“ baut, signiert und veröffentlicht das GitHub-Release (mit `latest.json`). Ab dann bieten alle
 Launcher im Release-Kanal das Update an.
 
+## Plattformen (Repo-Variable `BUILD_PLATFORMS`)
+
+Release- und Dev-Builds bauen standardmäßig **nur Windows**. macOS und Linux sind pausiert, aber vollständig
+vorbereitet. Wieder einschalten ohne Code-Änderung:
+
+```bash
+gh variable set BUILD_PLATFORMS -R vibec-studios/vibe-launcher --body "windows,linux,macos"   # alle
+gh variable set BUILD_PLATFORMS -R vibec-studios/vibe-launcher --body "windows,linux"         # nur Linux dazu
+gh variable delete BUILD_PLATFORMS -R vibec-studios/vibe-launcher                             # zurück auf nur Windows
+```
+
+`latest.json` enthält nur die gebauten Plattformen. Bereits installierte macOS-/Linux-Launcher bekommen in der Pause
+keine Updates und erhalten das nächste, sobald die Plattform wieder gebaut wird.
+
 ## Runner (kostet nie etwas)
 
 Jeder Workflow fragt zuerst `.github/workflows/pick-runner.yml` (läuft auf dem kostenlosen `ubuntu-latest`):
