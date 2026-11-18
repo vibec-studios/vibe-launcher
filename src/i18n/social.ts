@@ -145,6 +145,7 @@ export default {
     "social.toast.request": "{name} möchte dein Freund sein",
     "social.toast.invite": "{name} lädt dich ein",
     "social.toast.message": "Neue Nachricht",
+    "social.toast.many": "{count} neue Benachrichtigungen",
 
     // Einladungen
     "social.invites.title": "Einladungen · {n}",
@@ -458,6 +459,7 @@ export default {
     "social.toast.request": "{name} wants to be your friend",
     "social.toast.invite": "{name} invited you",
     "social.toast.message": "New message",
+    "social.toast.many": "{count} new notifications",
 
     "social.invites.title": "Invites · {n}",
     "social.invite.title": "Invite friends",
