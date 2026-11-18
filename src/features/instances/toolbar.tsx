@@ -8,6 +8,6 @@ export const ToolbarSlot = createContext<HTMLElement | null | undefined>(undefin
 
 export function PageTools({ children }: { children: ReactNode }) {
   const el = useContext(ToolbarSlot);
-  if (el === undefined) return <div className="flex h-12 shrink-0 items-center gap-2 px-6">{children}</div>;
+  if (el === undefined) return <div className="flex h-14 shrink-0 items-center gap-2 px-6 pt-2">{children}</div>;
   return el ? createPortal(children, el) : null;
 }

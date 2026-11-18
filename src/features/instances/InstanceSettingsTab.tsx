@@ -183,7 +183,7 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
         </div>
       )}
       <div className="scroll h-full">
-        <div className="flex w-full flex-col gap-4 px-6 pb-8 pt-1">
+        <div className="flex w-full flex-col gap-4 px-6 pb-8 pt-5">
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-5">
             <div className="flex flex-col gap-5">
               <SettingsCard title={t("isettings.general")}>

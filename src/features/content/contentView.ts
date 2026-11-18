@@ -3,7 +3,7 @@
 import { create } from "zustand";
 
 export type ContentFilter = "all" | "enabled" | "disabled" | "updates";
-export type ContentSort = "name" | "recent" | "size";
+export type ContentSort = "name" | "version" | "recent" | "size";
 
 interface ContentView {
   /** Wurde für die Instanz schon nach Updates gesucht? */

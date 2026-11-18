@@ -1,9 +1,9 @@
-// Kompakte Kopfzeile der Instanzseite: kleines Icon, Name, eine knappe Metazeile, Spielen + ein Menü; darunter
-// Bereichs-Tabs und Hinweis-Symbole in einer Zeile.
+// Kopfblock der Instanzseite (Aufbau wie die Modrinth App): großes Icon, Name, Meta-Zeile mit Symbolen; rechts Spielen,
+// Einstellungen (Zahnrad) und das Mehr-Menü. Darunter die Tab-Leiste und die Hinweise mit Text.
 // Seltene Aktionen (Ordner, Duplizieren, Export, Teilen, Verknüpfung, Icon, Farbe, Gruppe, Reparieren, Löschen)
 // liegen gesammelt im „Mehr“-Menü.
-import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { MoreHorizontal } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Box, Clock, MoreHorizontal, Package, Settings, Timer } from "lucide-react";
 import type { ReactNode } from "react";
 import { DropdownMenu, IconButton, Skeleton, Tooltip, cn } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
@@ -16,9 +16,17 @@ import { formatDuration, formatRelative, loaderNames } from "@/lib/format";
 import type { Instance } from "@/lib/types";
 
 export const pageX = "px-6";
-const route = getRouteApi("/instances/$id");
 
-/** Knappe Metazeile in einer Zeile: „Fabric 0.16.9 · Minecraft 1.21.4 · 10 h · vor 1 Std. · Modpack 1.4.2“ (ausführlich im Tooltip). */
+function Meta({ icon, children, title }: { icon: ReactNode; children: ReactNode; title?: string }) {
+  return (
+    <span className="flex min-w-0 items-center gap-1.5 whitespace-nowrap" title={title}>
+      <span className="shrink-0 text-dim">{icon}</span>
+      <span className="truncate">{children}</span>
+    </span>
+  );
+}
+
+/** Meta-Zeile mit Symbolen: Loader + Version · Spielzeit · zuletzt gespielt · Modpack · Status. */
 function MetaLine({ instance: i }: { instance: Instance }) {
   const t = useT();
   const src = i.source;
@@ -29,27 +37,19 @@ function MetaLine({ instance: i }: { instance: Instance }) {
       ? t("ipage.meta.modpack", { version: packVersion }).trim()
       : t("ipage.meta.modpack_named", { name: src.name, version: packVersion }).trim()
     : null;
-  const parts = [
-    loader,
-    `Minecraft ${i.mc_version}`,
-    i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : null,
-    i.last_played ? formatRelative(i.last_played) : t("inst.never_played"),
-    pack,
-  ].filter(Boolean);
-  const full = [
-    `${loader} · Minecraft ${i.mc_version}`,
-    i.play_time_secs >= 60 ? t("inst.meta.played", { time: formatDuration(i.play_time_secs) }) : null,
-    i.last_played ? t("inst.meta.last", { when: formatRelative(i.last_played) }) : null,
-    pack,
-  ]
-    .filter(Boolean)
-    .join(" · ");
   return (
-    <div className="flex min-w-0 items-center gap-2 text-[12px] leading-tight text-muted">
-      <span className="truncate" title={full}>
-        {parts.join(" · ")}
-      </span>
-      <span className="flex shrink-0 items-center whitespace-nowrap empty:hidden">
+    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-muted">
+      <Meta icon={<Box size={15} />}>
+        {loader} · Minecraft {i.mc_version}
+      </Meta>
+      {i.play_time_secs >= 60 && <Meta icon={<Timer size={15} />}>{t("inst.meta.played", { time: formatDuration(i.play_time_secs) })}</Meta>}
+      <Meta icon={<Clock size={15} />}>{i.last_played ? t("inst.meta.last", { when: formatRelative(i.last_played) }) : t("inst.never_played")}</Meta>
+      {pack && (
+        <Meta icon={<Package size={15} />} title={src?.name ?? undefined}>
+          {pack}
+        </Meta>
+      )}
+      <span className="flex items-center whitespace-nowrap empty:hidden">
         <StatusHint instance={i} />
       </span>
     </div>
@@ -62,72 +62,76 @@ export function InstanceHeader({
   tabs,
   notices,
   badge,
+  settingsActive,
+  onSettings,
 }: {
   instance: Instance;
   accent: string;
   tabs: ReactNode;
   notices?: ReactNode;
-  /** Kleine Statussymbole neben dem Spielen-Knopf (z. B. Vibey Client aktiv) */
+  /** Kleine Statussymbole neben dem Namen (z. B. Vibey Client aktiv) */
   badge?: ReactNode;
+  settingsActive?: boolean;
+  onSettings: () => void;
 }) {
   const t = useT();
   const nav = useNavigate();
-  const navTab = route.useNavigate();
   return (
-    <header className="shrink-0 border-b border-line">
-      <div className={cn(pageX, "flex items-center gap-3 pb-1.5 pt-3")}>
+    <header className="shrink-0">
+      {/* Kopfblock: großes Icon, Name, Meta-Zeile; rechts Spielen, Einstellungen, Mehr */}
+      <div className={cn(pageX, "flex items-center gap-5 pb-4 pt-6")}>
         <Tooltip content={t("inst.icon.choose")}>
           <button onClick={() => setIcon(instance)} className="shrink-0" aria-label={t("inst.icon.choose")}>
-            <InstanceIcon icon={instance.icon} accent={accent} size={40} />
+            <InstanceIcon icon={instance.icon} accent={accent} size={72} />
           </button>
         </Tooltip>
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <h1 className="truncate text-[18px] font-bold leading-tight tracking-[-0.01em] text-text" title={instance.name}>
-            {instance.name}
-          </h1>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="truncate text-[26px] font-bold leading-tight tracking-[-0.015em] text-text" title={instance.name}>
+              {instance.name}
+            </h1>
+            {badge}
+          </div>
           <MetaLine instance={instance} />
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {badge}
-          <PlayButton instance={instance} size="md" />
+        <div className="flex shrink-0 items-center gap-2">
+          <PlayButton instance={instance} size="lg" />
+          <IconButton label={t("ipage.settings")} tip active={settingsActive} className={cn("h-11 w-11", settingsActive && "text-accent")} onClick={onSettings}>
+            <Settings size={19} />
+          </IconButton>
           <DropdownMenu
             trigger={
-              <IconButton label={t("common.more")} tip className="h-10 w-10 data-[state=open]:bg-surface3 data-[state=open]:text-text">
-                <MoreHorizontal size={18} />
+              <IconButton label={t("common.more")} tip className="h-11 w-11 data-[state=open]:bg-surface3 data-[state=open]:text-text">
+                <MoreHorizontal size={19} />
               </IconButton>
             }
           >
-            <InstanceDropdownContent
-              instance={instance}
-              onDeleted={() => nav({ to: "/instances" })}
-              onEdit={() => navTab({ search: { tab: "settings" }, replace: true })}
-            />
+            <InstanceDropdownContent instance={instance} onDeleted={() => nav({ to: "/instances" })} onEdit={onSettings} />
           </DropdownMenu>
         </div>
       </div>
-      <div className={cn(pageX, "flex h-10 items-center gap-4")}>
-        <div className="shrink-0">{tabs}</div>
-        {/* Hinweise als Symbole mit Zahl (Text im Tooltip, Details per Klick) */}
-        <div className="flex min-w-0 flex-1 justify-end">{notices}</div>
-      </div>
+      {/* Tab-Leiste mit klarer Trennung zum Inhalt; darunter Hinweise mit Text */}
+      <div className={cn(pageX, "border-b border-line")}>{tabs}</div>
+      {notices}
     </header>
   );
 }
 
 export function HeaderSkeleton() {
   return (
-    <header className="shrink-0 border-b border-line">
-      <div className={cn(pageX, "flex items-center gap-3 pb-1.5 pt-3")}>
-        <Skeleton className="h-10 w-10" />
-        <div className="flex flex-1 flex-col gap-1.5">
-          <Skeleton className="h-5 w-56" />
-          <Skeleton className="h-3 w-80" />
+    <header className="shrink-0">
+      <div className={cn(pageX, "flex items-center gap-5 pb-4 pt-6")}>
+        <Skeleton className="h-[72px] w-[72px]" />
+        <div className="flex flex-1 flex-col gap-2.5">
+          <Skeleton className="h-7 w-64" />
+          <Skeleton className="h-4 w-96" />
         </div>
-        <Skeleton className="h-10 w-[136px]" />
-        <Skeleton className="h-10 w-10" />
+        <Skeleton className="h-11 w-[168px]" />
+        <Skeleton className="h-11 w-11" />
+        <Skeleton className="h-11 w-11" />
       </div>
-      <div className={cn(pageX, "flex h-10 items-center gap-6")}>
-        {Array.from({ length: 4 }, (_, i) => (
+      <div className={cn(pageX, "flex h-11 items-center gap-6 border-b border-line")}>
+        {Array.from({ length: 5 }, (_, i) => (
           <Skeleton key={i} className="h-3.5 w-16" />
         ))}
       </div>

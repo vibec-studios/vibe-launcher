@@ -1,16 +1,49 @@
-// OWNER: Frontend-Agent B. Wird von InstancePage (Agent A) für den Bereich Inhalte (Mods/Resourcepacks/Shader) eingebunden.
-// Virtualisierte Liste (300+ Einträge flüssig). Werkzeuge (Suche, ein Filter-Menü für Status/Seite/Sortierung, Updates,
-// Mod-Sets, Mehr-Menü, Hinzufügen) erscheinen per PageTools in der gemeinsamen Zeile der Instanzseite. Mehrfachauswahl mit
-// Sammelaktionsleiste (nur bei Auswahl), Kontextmenü, optimistisches Aktivieren, Updates, Dateien
-// hinzufügen (Menü + Drag & Drop). Hinweise (Modpack-Update, Abhängigkeiten, manuelle Downloads) zeigt die
-// Hinweiszeile der Instanzseite.
-import { useQuery } from "@tanstack/react-query";
+// OWNER: Frontend-Agent B. Inhalte einer Instanz – aufgebaut wie die Modrinth App:
+//   1. Suche über alles + „Dateien hinzufügen“ + Hauptknopf „Inhalte hinzufügen“
+//   2. Sortierung, Filter-Chips (Alle / Mods / Resourcepacks / Shader · Updates / Aktiv / Deaktiviert), Seite (Mods),
+//      rechts „Alle aktualisieren“, Mod-Sets und das Werkzeuge-Menü (Updates prüfen, Performance-Mods, Ordner)
+//   3. Tabelle mit Spaltenköpfen (Auswahl, Name, Version, Aktionen) – Klick auf Name/Version sortiert –, virtualisiert
+//      für 300+ Einträge. Mehrfachauswahl mit schwebender Sammelaktionsleiste, Kontextmenü, optimistisches Aktivieren,
+//      Drag & Drop (.jar -> Mods, .zip -> Resourcepacks bzw. Shader im Shader-Filter).
+// Hinweise (Modpack-Update, Abhängigkeiten, manuelle Downloads) zeigt die Hinweiszeile der Instanzseite.
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { FilePlus2, FolderOpen, Gauge, ListFilter, MoreHorizontal, PackagePlus, Plus, Power, PowerOff, RefreshCw, SearchX, Trash2, Upload, X } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type MouseEvent } from "react";
-import { Button, DropdownCheckItem, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, EmptyState, ErrorState, IconButton, SearchInput, Spinner, confirm, cn, toast } from "@/components/ui";
-import { PageTools } from "@/features/instances/toolbar";
+import {
+  ArrowDownUp,
+  ChevronDown,
+  ChevronUp,
+  FilePlus2,
+  FolderOpen,
+  Gauge,
+  PackagePlus,
+  Plus,
+  Power,
+  PowerOff,
+  RefreshCw,
+  SearchX,
+  SlidersHorizontal,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import {
+  Button,
+  DropdownCheckItem,
+  DropdownItem,
+  DropdownLabel,
+  DropdownMenu,
+  DropdownSeparator,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  SearchInput,
+  Spinner,
+  confirm,
+  cn,
+  toast,
+} from "@/components/ui";
 import { SIDE_FILTERS, sideMatches, type SideFilter } from "@/components/content/sides";
 import { ModSetsMenu } from "./ModSetsMenu";
 import { PerfDialog } from "./PerfDialog";
@@ -21,12 +54,17 @@ import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
 import type { ContentItem, ContentKind, ContentUpdate, Instance } from "@/lib/types";
 import { registerDropTarget, useDragState } from "@/components/content/dragdrop";
 import { contentKey, fileExt, kindExtensions, kindFolder } from "@/components/content/util";
-import { ContentRow, ROW_H, RowSkeleton, SelectBox, type RowActions } from "./ContentRow";
+import { ContentRow, GRID, ROW_H, RowSkeleton, SelectBox, type RowActions } from "./ContentRow";
 
-const FILTERS: ContentFilter[] = ["all", "enabled", "disabled", "updates"];
-const SORTS: ContentSort[] = ["name", "recent", "size"];
+export type TypeFilter = "all" | ContentKind;
+const STATUS: ContentFilter[] = ["updates", "enabled", "disabled"];
+const SORTS: ContentSort[] = ["name", "version", "recent", "size"];
 
 const discoverType: Record<ContentKind, string> = { mod: "mod", resourcepack: "resourcepack", shader: "shader", datapack: "datapack" };
+
+/** Eindeutiger Schlüssel über alle Arten (gleiche Dateinamen in mods/ und resourcepacks/ sind möglich). */
+const itemKey = (kind: ContentKind, file: string) => `${kind}:${contentKey(file)}`;
+const keyOf = (c: Pick<ContentItem, "kind" | "file_name">) => itemKey(c.kind, c.file_name);
 
 /** Dateien zu einer Instanz hinzufügen (Dialog, Drag & Drop, globale Ablage). */
 export async function addContentFiles(instanceId: string, kind: ContentKind, paths: string[]) {
@@ -40,12 +78,20 @@ export async function addContentFiles(instanceId: string, kind: ContentKind, pat
   }
 }
 
-export function InstanceContentTab({ instance, kind }: { instance: Instance; kind: ContentKind }) {
+export function InstanceContentTab({ instance, initialType = "all" }: { instance: Instance; initialType?: TypeFilter }) {
   const t = useT();
   const navigate = useNavigate();
   const id = instance.id;
-  const listKey = qk.content(id, kind);
-  const q = useQuery({ queryKey: listKey, queryFn: () => api.contentList(id, kind), staleTime: 60_000 });
+  const vanilla = instance.loader.kind === "vanilla";
+  const kinds = useMemo<ContentKind[]>(() => (vanilla ? ["resourcepack", "shader"] : ["mod", "resourcepack", "shader"]), [vanilla]);
+
+  // ---------------------------------------------------------------- Daten (alle Arten)
+  const lists = useQueries({
+    queries: kinds.map((k) => ({ queryKey: qk.content(id, k), queryFn: () => api.contentList(id, k), staleTime: 60_000 })),
+  });
+  const pending = lists.some((l) => l.isPending);
+  const failed = lists.find((l) => l.isError && !l.data);
+  const all = useMemo(() => lists.flatMap((l) => l.data ?? []), [lists]);
 
   // ---------------------------------------------------------------- Updates
   const checked = useContentView((s) => !!s.checked[id]);
@@ -59,52 +105,86 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
   });
   const updates = useMemo(() => {
     const m = new Map<string, ContentUpdate>();
-    for (const u of updatesQ.data ?? []) if (u.kind === kind) m.set(contentKey(u.file_name), u);
+    for (const u of updatesQ.data ?? []) m.set(itemKey(u.kind, u.file_name), u);
     return m;
-  }, [updatesQ.data, kind]);
+  }, [updatesQ.data]);
   const checkUpdates = async () => {
     markUpdatesChecked(id);
     try {
       const res = await queryClient.fetchQuery({ queryKey: qk.contentUpdates(id), queryFn: () => api.contentCheckUpdates(id), staleTime: 0 });
-      if (!res.some((u) => u.kind === kind)) toast.success(tt("content.no_updates"));
+      if (!res.length) toast.success(tt("content.no_updates"));
       else setContentFilter(id, "updates");
     } catch (e) {
       toast.error(e);
     }
   };
 
-  // ---------------------------------------------------------------- Suche / Filter
+  // ---------------------------------------------------------------- Suche / Filter / Sortierung
   const [text, setText] = useState("");
+  const [type, setType] = useState<TypeFilter>(() => (initialType !== "all" && !kinds.includes(initialType) ? "all" : initialType));
+  useEffect(() => setType(initialType !== "all" && !kinds.includes(initialType) ? "all" : initialType), [initialType, kinds]);
   const storedFilter = useContentView((s) => s.filter[id] ?? "all");
   // „Updates“ erst, wenn Update-Daten da sind (eigene Prüfung oder bereits geladen, z. B. von der Startseite)
   const known = checked || !!updatesQ.data;
-  const filter: ContentFilter = storedFilter === "updates" && !known ? "all" : storedFilter;
-  const setFilter = (f: ContentFilter) => setContentFilter(id, f);
+  const status: ContentFilter = storedFilter === "updates" && !known ? "all" : storedFilter;
+  const setStatus = (f: ContentFilter) => setContentFilter(id, f);
   const sort = useContentView((s) => s.sort);
+  const [desc, setDesc] = useState(false);
   const [sideFilter, setSideFilter] = useState<SideFilter>("all");
+  // Der Seiten-Filter gilt nur für Mods und erscheint nur im Mods-Filter
+  useEffect(() => {
+    if (type !== "mod") setSideFilter("all");
+  }, [type]);
   const [perfOpen, setPerfOpen] = useState(false);
-  const all = q.data ?? [];
+
   const sorted = useMemo(() => {
     const byName = (a: ContentItem, b: ContentItem) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
-    const cmp = sort === "recent" ? (a: ContentItem, b: ContentItem) => b.modified - a.modified || byName(a, b) : sort === "size" ? (a: ContentItem, b: ContentItem) => b.size - a.size || byName(a, b) : byName;
-    return [...all].sort(cmp);
-  }, [all, sort]);
+    const cmp =
+      sort === "recent"
+        ? (a: ContentItem, b: ContentItem) => b.modified - a.modified || byName(a, b)
+        : sort === "size"
+          ? (a: ContentItem, b: ContentItem) => b.size - a.size || byName(a, b)
+          : sort === "version"
+            ? (a: ContentItem, b: ContentItem) => (a.version ?? "").localeCompare(b.version ?? "", undefined, { numeric: true }) || byName(a, b)
+            : byName;
+    const list = [...all].sort(cmp);
+    return desc ? list.reverse() : list;
+  }, [all, sort, desc]);
+  const typed = useMemo(() => (type === "all" ? sorted : sorted.filter((c) => c.kind === type)), [sorted, type]);
   const counts = useMemo(() => {
+    const byKind: Record<string, number> = {};
+    for (const c of all) byKind[c.kind] = (byKind[c.kind] ?? 0) + 1;
     let on = 0;
-    for (const c of all) if (c.enabled) on++;
-    return { all: all.length, enabled: on, disabled: all.length - on, updates: all.filter((c) => updates.has(contentKey(c.file_name))).length };
-  }, [all, updates]);
+    for (const c of typed) if (c.enabled) on++;
+    return {
+      all: all.length,
+      kind: byKind,
+      enabled: on,
+      disabled: typed.length - on,
+      updates: typed.filter((c) => updates.has(keyOf(c))).length,
+      updatesAll: all.filter((c) => updates.has(keyOf(c))).length,
+    };
+  }, [all, typed, updates]);
   const visible = useMemo(() => {
     const needle = text.trim().toLowerCase();
-    return sorted.filter((c) => {
-      if (filter === "enabled" && !c.enabled) return false;
-      if (filter === "disabled" && c.enabled) return false;
-      if (filter === "updates" && !updates.has(contentKey(c.file_name))) return false;
-      if (!sideMatches(sideFilter, c.side)) return false;
+    return typed.filter((c) => {
+      if (status === "enabled" && !c.enabled) return false;
+      if (status === "disabled" && c.enabled) return false;
+      if (status === "updates" && !updates.has(keyOf(c))) return false;
+      if (c.kind === "mod" && !sideMatches(sideFilter, c.side)) return false;
       if (!needle) return true;
       return c.name.toLowerCase().includes(needle) || c.file_name.toLowerCase().includes(needle) || c.authors.some((a) => a.toLowerCase().includes(needle));
     });
-  }, [sorted, text, filter, updates, sideFilter]);
+  }, [typed, text, status, updates, sideFilter]);
+
+  /** Spaltenkopf: gleicher Schlüssel -> Richtung umkehren, sonst aufsteigend sortieren. */
+  const sortBy = (s: ContentSort) => {
+    if (s === sort) setDesc((d) => !d);
+    else {
+      setContentSort(s);
+      setDesc(false);
+    }
+  };
 
   // ---------------------------------------------------------------- Auswahl
   const [selection, setSelection] = useState<Set<string>>(() => new Set());
@@ -112,7 +192,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
   // Auswahl auf vorhandene Einträge beschränken
   useEffect(() => {
     if (!selection.size) return;
-    const keys = new Set(all.map((c) => contentKey(c.file_name)));
+    const keys = new Set(all.map(keyOf));
     let changed = false;
     const next = new Set<string>();
     for (const k of selection) (keys.has(k) ? next.add(k) : (changed = true));
@@ -124,57 +204,58 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
 
   const byKeys = (keys: Iterable<string>) => {
     const set = new Set(keys);
-    return state.current.all.filter((c) => set.has(contentKey(c.file_name)));
+    return state.current.all.filter((c) => set.has(keyOf(c)));
   };
 
-  // ---------------------------------------------------------------- Aktionen
+  // ---------------------------------------------------------------- Aktionen (je Eintrag nach Art)
   const setEnabled = useCallback(
     async (items: ContentItem[], enabled: boolean) => {
       const targets = items.filter((i) => i.enabled !== enabled);
       if (!targets.length) return;
-      const keys = new Set(targets.map((i) => contentKey(i.file_name)));
-      await queryClient.cancelQueries({ queryKey: listKey });
-      queryClient.setQueryData<ContentItem[]>(listKey, (l) => l?.map((c) => (keys.has(contentKey(c.file_name)) ? { ...c, enabled } : c)));
-      let failed = 0;
+      const keys = new Set(targets.map(keyOf));
+      for (const k of new Set(targets.map((i) => i.kind))) {
+        await queryClient.cancelQueries({ queryKey: qk.content(id, k) });
+        queryClient.setQueryData<ContentItem[]>(qk.content(id, k), (l) => l?.map((c) => (keys.has(keyOf(c)) ? { ...c, enabled } : c)));
+      }
+      let failedN = 0;
       let lastErr: unknown;
       for (let i = 0; i < targets.length; i += 8) {
         await Promise.all(
           targets.slice(i, i + 8).map((it) =>
             api
-              .contentSetEnabled(id, kind, it.file_name, enabled)
-              .then((r) => queryClient.setQueryData<ContentItem[]>(listKey, (l) => l?.map((c) => (contentKey(c.file_name) === contentKey(it.file_name) ? r : c))))
+              .contentSetEnabled(id, it.kind, it.file_name, enabled)
+              .then((r) => queryClient.setQueryData<ContentItem[]>(qk.content(id, it.kind), (l) => l?.map((c) => (keyOf(c) === keyOf(it) ? r : c))))
               .catch((e) => {
-                failed++;
+                failedN++;
                 lastErr = e;
               }),
           ),
         );
       }
-      if (failed) {
-        toast.error(lastErr, tt("content.toggle_failed", { n: failed }));
-        queryClient.invalidateQueries({ queryKey: listKey });
+      if (failedN) {
+        toast.error(lastErr, tt("content.toggle_failed", { n: failedN }));
+        queryClient.invalidateQueries({ queryKey: ["content", id] });
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [id, kind],
+    [id],
   );
 
   const setPinned = useCallback(
     async (items: ContentItem[], pinned: boolean) => {
       const targets = items.filter((i) => i.pinned !== pinned);
       if (!targets.length) return;
-      const keys = new Set(targets.map((i) => contentKey(i.file_name)));
-      queryClient.setQueryData<ContentItem[]>(listKey, (l) => l?.map((c) => (keys.has(contentKey(c.file_name)) ? { ...c, pinned } : c)));
+      const keys = new Set(targets.map(keyOf));
+      for (const k of new Set(targets.map((i) => i.kind)))
+        queryClient.setQueryData<ContentItem[]>(qk.content(id, k), (l) => l?.map((c) => (keys.has(keyOf(c)) ? { ...c, pinned } : c)));
       try {
-        for (const it of targets) await api.contentSetPinned(id, kind, it.file_name, pinned);
+        for (const it of targets) await api.contentSetPinned(id, it.kind, it.file_name, pinned);
       } catch (e) {
         toast.error(e);
       }
-      queryClient.invalidateQueries({ queryKey: listKey });
+      queryClient.invalidateQueries({ queryKey: ["content", id] });
       queryClient.invalidateQueries({ queryKey: qk.contentUpdates(id) });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [id, kind],
+    [id],
   );
 
   const remove = useCallback(
@@ -187,19 +268,23 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
         danger: true,
       });
       if (!ok) return;
-      const files = items.map((i) => i.file_name);
-      const keys = new Set(files.map(contentKey));
-      queryClient.setQueryData<ContentItem[]>(listKey, (l) => l?.filter((c) => !keys.has(contentKey(c.file_name))));
+      const keys = new Set(items.map(keyOf));
       setSelection((s) => new Set([...s].filter((k) => !keys.has(k))));
-      try {
-        await api.contentRemove(id, kind, files);
-      } catch (e) {
-        toast.error(e, tt("content.remove_failed"));
+      for (const k of new Set(items.map((i) => i.kind))) {
+        queryClient.setQueryData<ContentItem[]>(qk.content(id, k), (l) => l?.filter((c) => !keys.has(keyOf(c))));
+        try {
+          await api.contentRemove(
+            id,
+            k,
+            items.filter((i) => i.kind === k).map((i) => i.file_name),
+          );
+        } catch (e) {
+          toast.error(e, tt("content.remove_failed"));
+        }
       }
-      queryClient.invalidateQueries({ queryKey: listKey });
+      queryClient.invalidateQueries({ queryKey: ["content", id] });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [id, kind],
+    [id],
   );
 
   const update = useCallback(
@@ -225,11 +310,14 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
     [id],
   );
 
-  const openFolder = useCallback(() => {
-    api.instanceOpenFolder(id, kindFolder[kind]).catch((e) => toast.error(e));
-  }, [id, kind]);
+  const openFolder = useCallback(
+    (kind: ContentKind) => {
+      api.instanceOpenFolder(id, kindFolder[kind]).catch((e) => toast.error(e));
+    },
+    [id],
+  );
 
-  const addFiles = async () => {
+  const addFiles = async (kind: ContentKind) => {
     try {
       const { open } = await import("@tauri-apps/plugin-dialog");
       const res = await open({
@@ -249,12 +337,12 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
       click: (key: string, e: MouseEvent) => {
         const { visible: vis, selection: sel } = state.current;
         if (e.shiftKey && anchor.current) {
-          const a = vis.findIndex((c) => contentKey(c.file_name) === anchor.current);
-          const b = vis.findIndex((c) => contentKey(c.file_name) === key);
+          const a = vis.findIndex((c) => keyOf(c) === anchor.current);
+          const b = vis.findIndex((c) => keyOf(c) === key);
           if (a !== -1 && b !== -1) {
             const [lo, hi] = a < b ? [a, b] : [b, a];
             const next = e.ctrlKey || e.metaKey ? new Set(sel) : new Set<string>();
-            for (let i = lo; i <= hi; i++) next.add(contentKey(vis[i].file_name));
+            for (let i = lo; i <= hi; i++) next.add(keyOf(vis[i]));
             setSelection(next);
             return;
           }
@@ -293,7 +381,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
       openProject: (item) =>
         item.source && item.project_id && navigate({ to: "/project/$source/$id", params: { source: item.source, id: item.project_id }, search: { instance: id } }),
       openFolder,
-      hasUpdate: (item) => state.current.updates.has(contentKey(item.file_name)),
+      hasUpdate: (item) => state.current.updates.has(keyOf(item)),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [setEnabled, setPinned, update, remove, openFolder, navigate, id],
@@ -304,7 +392,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === "a") {
       e.preventDefault();
-      setSelection(new Set(visible.map((c) => contentKey(c.file_name))));
+      setSelection(new Set(visible.map(keyOf)));
     } else if (e.key === "Escape" && selection.size) {
       setSelection(new Set());
     } else if (e.key === "Delete" && selection.size) {
@@ -314,251 +402,393 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
   };
 
   // ---------------------------------------------------------------- Drag & Drop auf die Liste
+  const zipKind: ContentKind = type === "shader" ? "shader" : "resourcepack";
+  const dropKinds = useMemo<ContentKind[]>(() => (type === "all" ? (vanilla ? ["resourcepack"] : ["mod", "resourcepack"]) : [type]), [type, vanilla]);
   const dropId = useId();
   const dropRef = useRef<HTMLDivElement>(null);
   const over = useDragState((s) => s.over === dropId);
   useEffect(() => {
     const el = dropRef.current;
     if (!el) return;
+    const kindFor = (p: string): ContentKind | null => {
+      const ext = fileExt(p);
+      if (ext === "jar") return dropKinds.includes("mod") ? "mod" : null;
+      if (ext === "zip") return dropKinds.includes(zipKind) || type === "all" ? zipKind : null;
+      return null;
+    };
     return registerDropTarget({
       id: dropId,
       el,
-      accepts: (paths) => paths.some((p) => kindExtensions[kind].includes(fileExt(p))),
-      onDrop: (paths) => void addContentFiles(id, kind, paths.filter((p) => kindExtensions[kind].includes(fileExt(p)))),
+      accepts: (paths) => paths.some((p) => kindFor(p) !== null),
+      onDrop: (paths) => {
+        for (const k of ["mod", "resourcepack", "shader"] as ContentKind[]) {
+          const mine = paths.filter((p) => kindFor(p) === k);
+          if (mine.length) void addContentFiles(id, k, mine);
+        }
+      },
     });
-  }, [dropId, id, kind]);
+  }, [dropId, id, dropKinds, zipKind, type]);
 
   // ---------------------------------------------------------------- Liste
   const scrollRef = useRef<HTMLDivElement>(null);
   const v = useVirtualizer({
-    count: q.isPending ? 0 : visible.length,
+    count: pending ? 0 : visible.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_H,
     overscan: 10,
   });
 
   const selItems = selection.size ? byKeys(selection) : [];
-  const selUpdates = selItems.filter((c) => updates.has(contentKey(c.file_name)));
+  const selUpdates = selItems.filter((c) => updates.has(keyOf(c)));
   const updatesRunning = updTask?.status === "running";
-  const empty = q.isSuccess && all.length === 0;
+  const empty = !pending && all.length === 0;
+  const addKind: ContentKind = type === "all" ? (vanilla ? "resourcepack" : "mod") : type;
+  const toDiscover = () => navigate({ to: "/discover", search: { instance: id, type: discoverType[addKind] as never } });
 
-  const toDiscover = () => navigate({ to: "/discover", search: { instance: id, type: discoverType[kind] as never } });
-
-  const activeFilters = (filter !== "all" ? 1 : 0) + (sideFilter !== "all" ? 1 : 0);
-  const allVisibleSelected = visible.length > 0 && visible.every((c) => selection.has(contentKey(c.file_name)));
+  const allVisibleSelected = visible.length > 0 && visible.every((c) => selection.has(keyOf(c)));
   const headState: "on" | "off" | "mixed" = selection.size === 0 ? "off" : allVisibleSelected ? "on" : "mixed";
+  const total = type === "all" ? counts.all : (counts.kind[type] ?? 0);
+  const activeFilters = (status !== "all" ? 1 : 0) + (sideFilter !== "all" ? 1 : 0);
+
+  const addFilesMenu = (
+    <>
+      {kinds.map((k) => (
+        <DropdownItem key={k} icon={<FilePlus2 size={14} />} onSelect={() => void addFiles(k)}>
+          {t(`content.add_files.${k}`)} …
+        </DropdownItem>
+      ))}
+    </>
+  );
 
   return (
-    <div className="@container flex h-full min-h-0 flex-col outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
-      {/* Werkzeuge in der gemeinsamen Zeile der Instanzseite: Suche links, Filter/Updates/Sets/Mehr/Hinzufügen als Symbole rechts */}
-      <PageTools>
-        {!empty && <SearchInput value={text} onChange={setText} placeholder={t(`content.search.${kind}`)} className="w-[240px] min-w-[140px] shrink [&_input]:h-8" />}
-        <div className="min-w-0 flex-1" />
-        {!empty && (
-          <DropdownMenu
-            trigger={
-              <IconButton label={t("ipage.filter")} tip variant="ghost" badge={activeFilters || null} className="data-[state=open]:bg-white/[.07]">
-                <ListFilter size={16} />
-              </IconButton>
-            }
-          >
-            <DropdownLabel>{t("ipage.filter.status")}</DropdownLabel>
-            {FILTERS.filter((f) => f !== "updates" || known).map((f) => (
-              <DropdownCheckItem key={f} checked={filter === f} onCheckedChange={() => setFilter(f)}>
-                <span className="flex w-full items-center justify-between gap-4">
-                  {t(`content.filter.${f}`)}
-                  <span className={cn("tabular-nums", f === "updates" && counts.updates ? "text-accent" : "text-dim")}>{q.isSuccess ? counts[f] : ""}</span>
-                </span>
-              </DropdownCheckItem>
-            ))}
-            {kind === "mod" && (
-              <>
-                <DropdownSeparator />
-                <DropdownLabel>{t("side.filter")}</DropdownLabel>
-                {SIDE_FILTERS.map((f) => (
-                  <DropdownCheckItem key={f} checked={sideFilter === f} onCheckedChange={() => setSideFilter(f)}>
-                    {t(`side.filter.${f}`)}
-                  </DropdownCheckItem>
-                ))}
-              </>
-            )}
-            <DropdownSeparator />
-            <DropdownLabel>{t("ipage.sort")}</DropdownLabel>
-            {SORTS.map((v) => (
-              <DropdownCheckItem key={v} checked={sort === v} onCheckedChange={() => setContentSort(v)}>
-                {t(`ipage.sort.${v}`)}
-              </DropdownCheckItem>
-            ))}
-            {activeFilters > 0 && (
-              <>
-                <DropdownSeparator />
-                <DropdownItem
-                  icon={<X size={14} />}
-                  onSelect={() => {
-                    setFilter("all");
-                    setSideFilter("all");
-                  }}
-                >
-                  {t("ipage.filter.reset")}
-                </DropdownItem>
-              </>
-            )}
-          </DropdownMenu>
-        )}
-        {counts.updates > 0 && (
-          <IconButton
-            label={t("content.update_all", { n: counts.updates })}
-            tip
-            variant="ghost"
-            badge={updatesRunning ? null : counts.updates}
-            disabled={updatesRunning}
-            onClick={() => update(all.filter((c) => updates.has(contentKey(c.file_name))))}
-          >
-            {updatesRunning ? <Spinner size={13} className="text-accent" /> : <RefreshCw size={16} />}
-          </IconButton>
-        )}
-        {kind === "mod" && !empty && <ModSetsMenu instanceId={id} />}
+    <div className="@container flex h-full min-h-0 flex-col gap-3 px-6 pb-4 pt-4 outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
+      {/* 1. Suche + Hinzufügen */}
+      <div className="flex shrink-0 items-center gap-2">
+        <SearchInput
+          value={text}
+          onChange={setText}
+          placeholder={t("ipage.ct.search", { n: total })}
+          className="min-w-[160px] flex-1"
+        />
         <DropdownMenu
           trigger={
-            <IconButton label={t("common.more")} tip variant="ghost" className="data-[state=open]:bg-white/[.07]">
-              <MoreHorizontal size={16} />
-            </IconButton>
+            <Button variant="ghost" icon={<FilePlus2 size={15} />} className="data-[state=open]:bg-surface3">
+              <span className="hidden @min-[760px]:inline">{t("content.add_files_short")}</span>
+              <ChevronDown size={14} className="text-dim" />
+            </Button>
           }
         >
-          <DropdownItem icon={<RefreshCw size={14} />} disabled={updatesQ.isFetching} onSelect={() => void checkUpdates()}>
-            {t("content.check_updates")}
-          </DropdownItem>
-          {kind === "mod" && instance.loader.kind !== "vanilla" && (
-            <DropdownItem icon={<Gauge size={14} />} onSelect={() => setPerfOpen(true)}>
-              {t("perf.title")} …
-            </DropdownItem>
-          )}
-          <DropdownSeparator />
-          <DropdownItem icon={<FilePlus2 size={14} />} onSelect={() => void addFiles()}>
-            {t(`content.add_files.${kind}`)} …
-          </DropdownItem>
-          <DropdownItem icon={<FolderOpen size={14} />} onSelect={openFolder}>
-            {t("common.open_folder")}
-          </DropdownItem>
+          {addFilesMenu}
         </DropdownMenu>
-        <IconButton label={t("content.add")} tip variant="accent" onClick={toDiscover}>
-          <Plus size={17} />
-        </IconButton>
-      </PageTools>
-      {perfOpen && <PerfDialog instance={instance} onClose={() => setPerfOpen(false)} />}
+        <Button variant="accent" icon={<Plus size={16} />} onClick={toDiscover}>
+          {t("content.add")}
+        </Button>
+      </div>
 
-      {/* Massenaktionen: erscheinen erst bei Auswahl (ersetzt den Tabellenkopf) */}
-      {selection.size > 0 && (
-        <div className="flex h-10 shrink-0 items-center gap-0.5 border-b border-line bg-surface px-6 animate-fade-in">
-          <span className="mr-2.5 grid w-[18px] place-items-center">
-            <SelectBox
-              state={headState}
-              label={t("common.select_all")}
-              onClick={() => setSelection(headState === "on" ? new Set() : new Set(visible.map((c) => contentKey(c.file_name))))}
-            />
-          </span>
-          <span className="mr-2 text-[13px] font-semibold text-text">{t("content.selected", { n: selection.size })}</span>
-          <BarButton icon={<Power size={14} />} onClick={() => setEnabled(selItems, true)} disabled={!selItems.some((c) => !c.enabled)}>
-            {t("content.menu.enable")}
-          </BarButton>
-          <BarButton icon={<PowerOff size={14} />} onClick={() => setEnabled(selItems, false)} disabled={!selItems.some((c) => c.enabled)}>
-            {t("content.menu.disable")}
-          </BarButton>
-          <BarButton icon={<RefreshCw size={14} />} onClick={() => update(selUpdates)} disabled={!selUpdates.length || updatesRunning}>
-            {t("common.update")}
-            {selUpdates.length > 0 && ` (${selUpdates.length})`}
-          </BarButton>
-          <BarButton icon={<Trash2 size={14} />} onClick={() => remove(selItems)} danger>
-            {t("common.remove")}
-          </BarButton>
-          <div className="flex-1" />
-          {updatesRunning && (
-            <span className="mr-2 flex items-center gap-1.5 text-[12px] text-muted">
-              <Spinner size={11} className="text-accent" />
-              {updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : ""}
-            </span>
-          )}
-          <IconButton label={t("content.clear_selection")} tip variant="ghost" size="sm" onClick={() => setSelection(new Set())}>
-            <X size={14} />
-          </IconButton>
-        </div>
-      )}
-      {/* Liste */}
-      <div ref={dropRef} className="relative min-h-0 flex-1">
-        {q.isError && !q.data ? (
-          <ErrorState error={q.error} onRetry={() => q.refetch()} />
-        ) : q.isPending ? (
-          <div className="h-full overflow-hidden">
-            {Array.from({ length: 10 }, (_, i) => (
-              <RowSkeleton key={i} />
+      {/* 2. Sortierung, Filter-Chips, Aktionen */}
+      {!empty && (
+        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
+          <DropdownMenu
+            align="start"
+            trigger={
+              <button className="flex h-8 items-center gap-1.5 rounded-ctl px-2 text-[13px] font-semibold text-muted transition-colors hover:bg-white/[.06] hover:text-text data-[state=open]:bg-white/[.06]">
+                <ArrowDownUp size={14} />
+                {t(`ipage.sort.${sort}`)}
+                {desc && <ChevronDown size={13} />}
+              </button>
+            }
+          >
+            <DropdownLabel>{t("ipage.sort")}</DropdownLabel>
+            {SORTS.map((s) => (
+              <DropdownCheckItem
+                key={s}
+                checked={sort === s}
+                onCheckedChange={() => {
+                  setContentSort(s);
+                  setDesc(false);
+                }}
+              >
+                {t(`ipage.sort.${s}`)}
+              </DropdownCheckItem>
+            ))}
+            <DropdownSeparator />
+            <DropdownCheckItem checked={desc} onCheckedChange={setDesc}>
+              {t("ipage.ct.desc")}
+            </DropdownCheckItem>
+          </DropdownMenu>
+          <span className="h-5 w-px bg-line2" />
+          <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label={t("ipage.ct.type")}>
+            <FilterChip active={type === "all"} onClick={() => setType("all")} count={counts.all}>
+              {t("ipage.ct.type.all")}
+            </FilterChip>
+            {kinds.map((k) => (
+              <FilterChip key={k} active={type === k} onClick={() => setType(k)} count={counts.kind[k] ?? 0}>
+                {t(`content.kind.${k}`)}
+              </FilterChip>
             ))}
           </div>
+          <span className="h-5 w-px bg-line2" />
+          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t("ipage.filter.status")}>
+            {STATUS.filter((f) => f !== "updates" || known).map((f) => (
+              <FilterChip
+                key={f}
+                active={status === f}
+                tone={f === "updates" ? "accent" : undefined}
+                onClick={() => setStatus(status === f ? "all" : f)}
+                count={q(counts, f)}
+              >
+                {f === "updates" ? t("ipage.ct.updates") : t(`content.filter.${f}`)}
+              </FilterChip>
+            ))}
+          </div>
+          {type === "mod" && (
+            <DropdownMenu
+              align="start"
+              trigger={
+                <button
+                  className={cn(
+                    "flex h-8 items-center gap-1 rounded-ctl px-2 text-[13px] font-semibold transition-colors hover:bg-white/[.06] data-[state=open]:bg-white/[.06]",
+                    sideFilter !== "all" ? "text-text" : "text-muted hover:text-text",
+                  )}
+                >
+                  {t(`side.filter.${sideFilter}`)}
+                  <ChevronDown size={13} className="text-dim" />
+                </button>
+              }
+            >
+              <DropdownLabel>{t("side.filter")}</DropdownLabel>
+              {SIDE_FILTERS.map((f) => (
+                <DropdownCheckItem key={f} checked={sideFilter === f} onCheckedChange={() => setSideFilter(f)}>
+                  {t(`side.filter.${f}`)}
+                </DropdownCheckItem>
+              ))}
+            </DropdownMenu>
+          )}
+          {activeFilters > 0 && (
+            <button
+              onClick={() => {
+                setStatus("all");
+                setSideFilter("all");
+              }}
+              className="flex h-8 items-center gap-1 rounded-ctl px-2 text-[12.5px] font-medium text-dim hover:bg-white/[.06] hover:text-text"
+            >
+              <X size={13} />
+              {t("ipage.filter.reset")}
+            </button>
+          )}
+          <div className="flex-1" />
+          {counts.updatesAll > 0 && (
+            <Button
+              size="sm"
+              variant="subtle"
+              className="text-accent hover:bg-accent hover:text-[var(--on-accent)]"
+              icon={updatesRunning ? <Spinner size={12} /> : <RefreshCw size={14} />}
+              disabled={updatesRunning}
+              onClick={() => update(all.filter((c) => updates.has(keyOf(c))))}
+            >
+              {updatesRunning && updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : t("ipage.ct.update_all", { n: counts.updatesAll })}
+            </Button>
+          )}
+          {!vanilla && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1000px]:inline" />}
+          <DropdownMenu
+            trigger={
+              <Button size="sm" variant="subtle" icon={<SlidersHorizontal size={14} />} title={t("ipage.tools")} className="data-[state=open]:bg-white/[.07] data-[state=open]:text-text">
+                <span className="hidden @min-[1000px]:inline">{t("ipage.tools")}</span>
+              </Button>
+            }
+          >
+            <DropdownItem icon={<RefreshCw size={14} />} disabled={updatesQ.isFetching} onSelect={() => void checkUpdates()}>
+              {t("content.check_updates")}
+            </DropdownItem>
+            {!vanilla && (
+              <DropdownItem icon={<Gauge size={14} />} onSelect={() => setPerfOpen(true)}>
+                {t("perf.title")} …
+              </DropdownItem>
+            )}
+            <DropdownSeparator />
+            {addFilesMenu}
+            <DropdownSeparator />
+            {kinds.map((k) => (
+              <DropdownItem key={k} icon={<FolderOpen size={14} />} onSelect={() => openFolder(k)}>
+                {t("ipage.ct.open_folder", { folder: kindFolder[k] })}
+              </DropdownItem>
+            ))}
+          </DropdownMenu>
+        </div>
+      )}
+      {perfOpen && <PerfDialog instance={instance} onClose={() => setPerfOpen(false)} />}
+
+      {/* 3. Tabelle */}
+      <div ref={dropRef} className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-panel">
+        {failed ? (
+          <ErrorState error={failed.error} onRetry={() => lists.forEach((l) => l.refetch())} />
         ) : empty ? (
           <EmptyState
             icon={<PackagePlus size={30} />}
-            title={t(`content.empty.${kind}`)}
-            text={t(`content.empty_text.${kind}`)}
+            title={t("ipage.ct.empty")}
+            text={t(vanilla ? "content.empty_text.resourcepack" : "content.empty_text.mod")}
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button variant="accent" icon={<Plus size={15} />} onClick={toDiscover}>
                   {t("content.add")}
                 </Button>
-                <Button variant="ghost" icon={<FilePlus2 size={15} />} onClick={addFiles}>
-                  {t("content.add_files_short")}
-                </Button>
-                {kind === "mod" && (
+                <DropdownMenu
+                  trigger={
+                    <Button variant="ghost" icon={<FilePlus2 size={15} />}>
+                      {t("content.add_files_short")}
+                    </Button>
+                  }
+                >
+                  {addFilesMenu}
+                </DropdownMenu>
+                {!vanilla && (
                   <Button variant="ghost" icon={<Gauge size={15} />} onClick={() => setPerfOpen(true)}>
                     {t("perf.title")}
                   </Button>
                 )}
-                <Button variant="subtle" icon={<FolderOpen size={15} />} onClick={openFolder}>
+                <Button variant="subtle" icon={<FolderOpen size={15} />} onClick={() => openFolder(addKind)}>
                   {t("common.open_folder")}
                 </Button>
               </div>
             }
           />
-        ) : visible.length === 0 ? (
-          <EmptyState
-            icon={<SearchX size={28} />}
-            title={t("content.no_match")}
-            text={t("content.no_match_text")}
-            action={
-              <Button
-                size="sm"
-                onClick={() => {
-                  setText("");
-                  setFilter("all");
-                  setSideFilter("all");
-                }}
-              >
-                {t("ipage.filter.reset")}
-              </Button>
-            }
-          />
         ) : (
-          <div ref={scrollRef} className="scroll h-full" role="grid" aria-multiselectable>
-            <div className="relative" style={{ height: v.getTotalSize() }}>
-              {v.getVirtualItems().map((it) => {
-                const item = visible[it.index];
-                const key = contentKey(item.file_name);
-                return (
-                  <div key={key} className="absolute inset-x-0" style={{ top: it.start, height: ROW_H }}>
-                    <ContentRow item={item} itemKey={key} selected={selection.has(key)} selecting={selection.size > 0} update={updates.get(key)} actions={actions} />
-                  </div>
-                );
-              })}
+          <>
+            {/* Spaltenköpfe */}
+            <div role="rowgroup" className={cn(GRID, "h-11 shrink-0 overflow-y-hidden bg-surface text-[12.5px] font-semibold text-muted [scrollbar-gutter:stable]")}>
+              <SelectBox
+                state={headState}
+                label={t("common.select_all")}
+                onClick={() => setSelection(headState === "off" ? new Set(visible.map(keyOf)) : new Set())}
+              />
+              <ColumnHead active={sort === "name"} desc={desc} onClick={() => sortBy("name")}>
+                {t("content.col.name")}
+              </ColumnHead>
+              <ColumnHead active={sort === "version"} desc={desc} onClick={() => sortBy("version")}>
+                {t("content.col.version")}
+              </ColumnHead>
+              <span className="text-right">{t("ipage.ct.col.actions")}</span>
+            </div>
+
+            {pending ? (
+              <div className="min-h-0 flex-1 overflow-hidden">
+                {Array.from({ length: 10 }, (_, i) => (
+                  <RowSkeleton key={i} />
+                ))}
+              </div>
+            ) : visible.length === 0 ? (
+              <EmptyState
+                className="border-t border-line"
+                icon={<SearchX size={28} />}
+                title={t("content.no_match")}
+                text={t("content.no_match_text")}
+                action={
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setText("");
+                      setStatus("all");
+                      setSideFilter("all");
+                      setType("all");
+                    }}
+                  >
+                    {t("ipage.filter.reset")}
+                  </Button>
+                }
+              />
+            ) : (
+              <div ref={scrollRef} className="scroll min-h-0 flex-1" role="grid" aria-multiselectable>
+                <div className="relative" style={{ height: v.getTotalSize() }}>
+                  {v.getVirtualItems().map((it) => {
+                    const item = visible[it.index];
+                    const key = keyOf(item);
+                    return (
+                      <div key={key} className="absolute inset-x-0" style={{ top: it.start, height: ROW_H }}>
+                        <ContentRow item={item} itemKey={key} selected={selection.has(key)} update={updates.get(key)} actions={actions} showKind={type === "all"} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Sammelaktionen: schwebende Leiste bei Auswahl */}
+        {selection.size > 0 && (
+          <div className="absolute inset-x-0 bottom-3 z-10 flex justify-center px-3">
+            <div className="flex items-center gap-0.5 rounded-card bg-overlay p-1 pl-3 shadow-e2 animate-slide-up">
+              <span className="mr-2 text-[13px] font-semibold text-text">{t("content.selected", { n: selection.size })}</span>
+              <BarButton icon={<Power size={14} />} onClick={() => setEnabled(selItems, true)} disabled={!selItems.some((c) => !c.enabled)}>
+                {t("content.menu.enable")}
+              </BarButton>
+              <BarButton icon={<PowerOff size={14} />} onClick={() => setEnabled(selItems, false)} disabled={!selItems.some((c) => c.enabled)}>
+                {t("content.menu.disable")}
+              </BarButton>
+              <BarButton icon={<RefreshCw size={14} />} onClick={() => update(selUpdates)} disabled={!selUpdates.length || updatesRunning}>
+                {t("common.update")}
+                {selUpdates.length > 0 && ` (${selUpdates.length})`}
+              </BarButton>
+              <BarButton icon={<Trash2 size={14} />} onClick={() => remove(selItems)} danger>
+                {t("common.remove")}
+              </BarButton>
+              <span className="mx-1 h-5 w-px bg-line2" />
+              <IconButton label={t("content.clear_selection")} tip variant="ghost" size="sm" onClick={() => setSelection(new Set())}>
+                <X size={14} />
+              </IconButton>
             </div>
           </div>
         )}
+
         {over && (
-          <div className="pointer-events-none absolute inset-2 z-10 flex flex-col items-center justify-center gap-2.5 border-2 border-dashed border-accent bg-black/80 animate-fade-in">
+          <div className="pointer-events-none absolute inset-2 z-20 flex flex-col items-center justify-center gap-2.5 border-2 border-dashed border-accent bg-black/80 animate-fade-in">
             <Upload size={26} className="text-accent" />
-            <div className="text-[16px] font-semibold text-white">{t(`content.drop.${kind}`)}</div>
-            <div className="text-[13px] text-muted">{instance.name}</div>
+            <div className="text-[16px] font-semibold text-text">{t("ipage.ct.drop")}</div>
+            <div className="text-[13px] text-muted">
+              {dropKinds.map((k) => t(`content.kind.${k === "resourcepack" || k === "shader" ? zipKind : k}`)).filter((x, i, a) => a.indexOf(x) === i).join(" · ")} · {instance.name}
+            </div>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+/** Zähler eines Status-Filters (für den Chip). */
+function q(c: { enabled: number; disabled: number; updates: number }, f: ContentFilter): number {
+  return f === "enabled" ? c.enabled : f === "disabled" ? c.disabled : f === "updates" ? c.updates : 0;
+}
+
+function FilterChip({ active, onClick, count, tone, children }: { active: boolean; onClick: () => void; count?: number; tone?: "accent"; children: ReactNode }) {
+  return (
+    <button
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      className={cn(
+        "flex h-8 items-center gap-1.5 rounded-pill px-2.5 text-[13px] font-semibold transition-colors duration-100 @min-[1000px]:px-3",
+        active ? (tone === "accent" ? "bg-accent text-[var(--on-accent)]" : "bg-surface3 text-text") : "bg-surface text-muted hover:bg-surface2 hover:text-text",
+      )}
+    >
+      {children}
+      {count !== undefined && (
+        <span className={cn("text-[12px] font-medium tabular-nums", active ? "opacity-70" : tone === "accent" && count ? "text-accent" : "text-dim")}>{count}</span>
+      )}
+    </button>
+  );
+}
+
+function ColumnHead({ active, desc, onClick, children }: { active: boolean; desc: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      role="columnheader"
+      aria-sort={active ? (desc ? "descending" : "ascending") : "none"}
+      onClick={onClick}
+      className={cn("flex min-w-0 items-center gap-1 justify-self-start text-left transition-colors hover:text-text", active && "text-text")}
+    >
+      {children}
+      {active && (desc ? <ChevronDown size={14} /> : <ChevronUp size={14} />)}
+    </button>
   );
 }
 
@@ -568,7 +798,7 @@ function BarButton({ icon, children, onClick, disabled, danger }: { icon: React.
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex h-7 items-center gap-1.5 rounded-ctl px-2 text-[13px] font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-35",
+        "flex h-8 items-center gap-1.5 rounded-ctl px-2.5 text-[13px] font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-35",
         danger ? "text-danger hover:bg-danger/10" : "text-text hover:bg-white/[.07]",
       )}
     >

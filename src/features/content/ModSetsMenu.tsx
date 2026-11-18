@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Check, Layers, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Button, Dialog, IconButton, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, Field, Input, confirm, toast } from "@/components/ui";
+import { Button, Dialog, cn, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, Field, Input, confirm, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { queryClient } from "@/lib/queries";
@@ -19,7 +19,7 @@ function setData(id: string, d: ModSets) {
   queryClient.invalidateQueries({ queryKey: ["content", id] });
 }
 
-export function ModSetsMenu({ instanceId }: { instanceId: string }) {
+export function ModSetsMenu({ instanceId, labelClassName }: { instanceId: string; labelClassName?: string }) {
   const t = useT();
   const { data } = useModSets(instanceId);
   const [dialog, setDialog] = useState<{ mode: "create" | "rename"; setId?: string; name: string } | null>(null);
@@ -50,18 +50,18 @@ export function ModSetsMenu({ instanceId }: { instanceId: string }) {
     <>
       <DropdownMenu
         trigger={
-          <IconButton
-            label={active ? `${t("modsets.button")}: ${active.name}${data?.active_modified ? " *" : ""}` : t("modsets.button")}
-            tip
-            variant="ghost"
-            active={!!active}
-            badge={active && data?.active_modified ? true : null}
-            badgeTone="warn"
-            disabled={busy}
-            className="data-[state=open]:bg-white/[.07]"
+          <Button
+            size="sm"
+            variant="subtle"
+            icon={<Layers size={14} />}
+            loading={busy}
+            title={active ? `${t("modsets.button")}: ${active.name}${data?.active_modified ? " *" : ""}` : t("modsets.button")}
+            className="data-[state=open]:bg-white/[.07] data-[state=open]:text-text"
           >
-            <Layers size={16} />
-          </IconButton>
+            <span className={cn("max-w-[140px] truncate", labelClassName)}>
+              {active ? `${active.name}${data?.active_modified ? " *" : ""}` : t("modsets.button")}
+            </span>
+          </Button>
         }
       >
         {data && data.sets.length > 0 ? (

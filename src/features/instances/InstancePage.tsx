@@ -1,17 +1,17 @@
-// OWNER: Frontend-Agent A. Instanzseite: kompakte Kopfzeile, Bereiche + Hinweis-Symbole in einer Zeile, darunter eine
-// Werkzeugzeile (Unterseiten links, Werkzeuge der Unterseite per PageTools rechts), Crash-Banner.
+// OWNER: Frontend-Agent A. Instanzseite im Aufbau der Modrinth App: Kopfblock (Icon, Name, Meta-Zeile, Spielen,
+// Einstellungen, Mehr), Tab-Leiste mit Hinweisen, Crash-Banner, darunter der aktive Bereich.
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { create } from "zustand";
-import { AlertTriangle, FileText, Stethoscope, UploadCloud, X } from "lucide-react";
+import { AlertTriangle, Archive, Settings as SettingsIcon, Boxes, FileText, FolderOpen, Globe2, SquareTerminal, Stethoscope, UploadCloud, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useGameState, useInstance } from "@/lib/queries";
-import type { ContentKind, Instance } from "@/lib/types";
+import type { Instance } from "@/lib/types";
 import type { InstanceTab } from "@/app/router";
 import { instanceAccent } from "@/lib/format";
 import { Button, ErrorState, IconButton, Tabs, cn } from "@/components/ui";
-import { InstanceContentTab } from "@/features/content/InstanceContentTab";
+import { InstanceContentTab, type TypeFilter } from "@/features/content/InstanceContentTab";
 import { LogsTab, showLogFile, uploadCrash } from "@/features/logs/LogsTab";
 import { useT } from "@/i18n";
 import { WorldsTab } from "./WorldsTab";
@@ -94,9 +94,10 @@ function CrashBanner({ instance }: { instance: Instance }) {
 }
 
 // ------------------------------------------------------------------ Bereiche
-// Vier Bereiche statt neun Tabs. Die URL behält die bisherigen Tab-Werte (Router und Deep-Links bleiben gültig);
-// Unterseiten erscheinen als zweite, leisere Leiste.
-type Area = "content" | "worlds" | "logs" | "settings";
+// Tabs wie in der Modrinth App: Inhalte, Welten, Logs, Dateien, Backups; Einstellungen über das Zahnrad im Kopf.
+// Die URL behält die bisherigen Tab-Werte (Deep-Links bleiben gültig): content/resourcepacks/shaders öffnen die
+// Inhalte (mit passendem Typ-Filter), worlds/servers die Welten.
+type Area = "content" | "worlds" | "logs" | "files" | "backups" | "settings";
 const areaOf: Record<InstanceTab, Area> = {
   content: "content",
   resourcepacks: "content",
@@ -104,9 +105,9 @@ const areaOf: Record<InstanceTab, Area> = {
   worlds: "worlds",
   servers: "worlds",
   logs: "logs",
+  files: "files",
+  backups: "backups",
   settings: "settings",
-  files: "settings",
-  backups: "settings",
 };
 
 /** Zuletzt geöffnete Unterseite je Bereich (bleibt beim Wechsel erhalten). */
@@ -118,7 +119,7 @@ interface SubItem {
   count?: number;
 }
 
-/** Unterseiten als kompakter Segment-Umschalter (links in der Werkzeugzeile). */
+/** Welten | Server als kompakter Segment-Umschalter links in der Werkzeugzeile. */
 function SubNav({ items, value, onChange }: { items: SubItem[]; value: InstanceTab; onChange: (v: InstanceTab) => void }) {
   const t = useT();
   return (
@@ -145,33 +146,14 @@ function SubNav({ items, value, onChange }: { items: SubItem[]; value: InstanceT
   );
 }
 
-/** Unterseiten des aktiven Bereichs (mit Anzahl, sobald bekannt). */
-function useSubItems(id: string, vanilla: boolean, area: Area): SubItem[] {
+function useWorldItems(id: string, enabled: boolean): SubItem[] {
   const t = useT();
-  const list = (kind: ContentKind, enabled: boolean) => ({ queryKey: qk.content(id, kind), queryFn: () => api.contentList(id, kind), staleTime: 60_000, enabled });
-  const mods = useQuery(list("mod", area === "content" && !vanilla));
-  const packs = useQuery(list("resourcepack", area === "content"));
-  const shaders = useQuery(list("shader", area === "content"));
-  const worlds = useQuery({ queryKey: qk.worlds(id), queryFn: () => api.worldsList(id), enabled: area === "worlds" });
-  const servers = useQuery({ queryKey: ["servers", id], queryFn: () => api.instanceServersList(id), enabled: area === "worlds" });
-  if (area === "content")
-    return [
-      ...(vanilla ? [] : [{ value: "content" as const, label: t("inst.tab.mods"), count: mods.data?.length }]),
-      { value: "resourcepacks", label: t("inst.tab.resourcepacks"), count: packs.data?.length },
-      { value: "shaders", label: t("inst.tab.shaders"), count: shaders.data?.length },
-    ];
-  if (area === "worlds")
-    return [
-      { value: "worlds", label: t("inst.tab.worlds"), count: worlds.data?.length },
-      { value: "servers", label: t("inst.tab.servers"), count: servers.data?.length },
-    ];
-  if (area === "settings")
-    return [
-      { value: "settings", label: t("ipage.sub.instance") },
-      { value: "files", label: t("inst.tab.files") },
-      { value: "backups", label: t("inst.tab.backups") },
-    ];
-  return [];
+  const worlds = useQuery({ queryKey: qk.worlds(id), queryFn: () => api.worldsList(id), enabled });
+  const servers = useQuery({ queryKey: ["servers", id], queryFn: () => api.instanceServersList(id), enabled });
+  return [
+    { value: "worlds", label: t("inst.tab.worlds"), count: worlds.data?.length },
+    { value: "servers", label: t("inst.tab.servers"), count: servers.data?.length },
+  ];
 }
 
 export function InstancePage() {
@@ -197,23 +179,22 @@ export function InstancePage() {
 function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
   const t = useT();
   const navTab = route.useNavigate();
-  const vanilla = inst.loader.kind === "vanilla";
-  const active: InstanceTab = vanilla && tab === "content" ? "resourcepacks" : tab;
+  const active: InstanceTab = tab;
   const area = areaOf[active];
-  const subItems = useSubItems(inst.id, vanilla, area);
+  const worldItems = useWorldItems(inst.id, area === "worlds");
   // Aktuelle Unterseite merken (auch wenn sie per Link geöffnet wurde)
   useEffect(() => useLastSub.setState({ [area]: active }), [area, active]);
   const setTab = (v: InstanceTab) => navTab({ search: { tab: v }, replace: true });
   const openArea = (a: Area) => {
     if (a === area) return;
     const last = useLastSub.getState()[a];
-    const first: Record<Area, InstanceTab> = { content: vanilla ? "resourcepacks" : "content", worlds: "worlds", logs: "logs", settings: "settings" };
-    setTab(last && !(vanilla && last === "content") ? last : first[a]);
+    const first: Record<Area, InstanceTab> = { content: "content", worlds: "worlds", logs: "logs", files: "files", backups: "backups", settings: "settings" };
+    setTab(last ?? first[a]);
   };
 
   const accent = instanceAccent(inst.id, inst.accent);
-  const kind: ContentKind = active === "content" ? "mod" : active === "resourcepacks" ? "resourcepack" : "shader";
-  // Werkzeugzeile: Unterseiten links, Werkzeuge der Unterseite (PageTools) rechts – eine Zeile statt zwei
+  const initialType: TypeFilter = active === "resourcepacks" ? "resourcepack" : active === "shaders" ? "shader" : "all";
+  // Werkzeugzeile der Welten: Welten|Server links, Werkzeuge der Unterseite (PageTools) rechts
   const [slot, setSlot] = useState<HTMLDivElement | null>(null);
 
   return (
@@ -221,47 +202,51 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
       <InstanceHeader
         instance={inst}
         accent={accent}
-        badge={<VibeyClientBadge instance={inst} label={t("ipage.vibey_active")} onClick={() => setTab("settings")} />}
+        settingsActive={area === "settings"}
+        onSettings={() => (area === "settings" ? openArea("content") : openArea("settings"))}
+        badge={<VibeyClientBadge instance={inst} label={t("ipage.vibey_active")} onClick={() => openArea("settings")} />}
         tabs={
-          <Tabs<Area>
+          <Tabs<Area | "">
             value={area}
-            onChange={openArea}
-            className="-mx-3 h-10! gap-0.5 border-b-0"
+            onChange={(a) => a && openArea(a)}
+            className="-mx-3 h-11! gap-1 border-b-0"
             items={[
-              { value: "content", label: t("ipage.tab.content") },
-              { value: "worlds", label: t("ipage.tab.worlds") },
-              { value: "logs", label: t("ipage.tab.logs") },
-              { value: "settings", label: t("ipage.tab.settings") },
+              { value: "content", label: t("ipage.tab.content"), icon: <Boxes size={15} /> },
+              { value: "worlds", label: t("ipage.tab.worlds"), icon: <Globe2 size={15} /> },
+              { value: "logs", label: t("ipage.tab.logs"), icon: <SquareTerminal size={15} /> },
+              { value: "files", label: t("inst.tab.files"), icon: <FolderOpen size={15} /> },
+              { value: "backups", label: t("inst.tab.backups"), icon: <Archive size={15} /> },
+              // Einstellungen öffnen sich über das Zahnrad; solange sie offen sind, stehen sie als aktiver Tab da
+              ...(area === "settings" ? [{ value: "settings" as const, label: t("ipage.tab.settings"), icon: <SettingsIcon size={15} /> }] : []),
             ]}
           />
         }
         notices={<InstanceNotices instance={inst} tab={active} />}
       />
       <CrashBanner instance={inst} />
-      <div className={cn(wrap, "flex h-12 shrink-0 items-center gap-2")}>
-        {subItems.length > 0 && <SubNav items={subItems} value={active} onChange={setTab} />}
-        <div ref={setSlot} className="flex min-w-0 flex-1 items-center gap-1" />
+      <div className="relative min-h-0 flex-1">
+        {area === "content" ? (
+          <InstanceContentTab instance={inst} initialType={initialType} />
+        ) : area === "worlds" ? (
+          <div className="flex h-full flex-col">
+            <div className={cn(wrap, "flex h-14 shrink-0 items-center gap-2 pt-2")}>
+              <SubNav items={worldItems} value={active} onChange={setTab} />
+              <div ref={setSlot} className="flex min-w-0 flex-1 items-center gap-1" />
+            </div>
+            <ToolbarSlot.Provider value={slot}>
+              <div className="relative min-h-0 flex-1">{active === "servers" ? <ServersTab instance={inst} /> : <WorldsTab instance={inst} />}</div>
+            </ToolbarSlot.Provider>
+          </div>
+        ) : area === "backups" ? (
+          <BackupsTab instance={inst} />
+        ) : area === "logs" ? (
+          <LogsTab instance={inst} />
+        ) : area === "files" ? (
+          <InstanceFilesTab instance={inst} />
+        ) : (
+          <InstanceSettingsTab instance={inst} />
+        )}
       </div>
-      <ToolbarSlot.Provider value={slot}>
-        <div className="relative min-h-0 flex-1">
-          {area === "content" ? (
-            <InstanceContentTab key={active} instance={inst} kind={kind} />
-          ) : active === "worlds" ? (
-            <WorldsTab instance={inst} />
-          ) : active === "servers" ? (
-            <ServersTab instance={inst} />
-          ) : active === "backups" ? (
-            <BackupsTab instance={inst} />
-          ) : active === "logs" ? (
-            <LogsTab instance={inst} />
-          ) : active === "files" ? (
-            <InstanceFilesTab instance={inst} />
-          ) : (
-            <InstanceSettingsTab instance={inst} />
-          )}
-        </div>
-      </ToolbarSlot.Provider>
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
 // Hinweiszeile der Instanzseite: bündelt Modpack-Update, Mod-Updates, Abhängigkeitsprobleme und manuelle Downloads
-// als Symbole mit Zahl rechts in der Bereichsleiste (Text im Tooltip, Details per Klick).
+// als gut lesbare Hinweise mit Symbol und Text unter der Tab-Leiste (wie die Hinweise der Modrinth App).
 import * as Popover from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
@@ -20,28 +20,31 @@ const route = getRouteApi("/instances/$id");
 type Tone = "accent" | "warn" | "danger";
 const toneIcon: Record<Tone, string> = { accent: "text-accent", warn: "text-warn", danger: "text-danger" };
 
-/** Hinweis als Symbol mit Zahl in der Tonfarbe; der ganze Text steht im Tooltip. */
-const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { icon: ReactNode; tone: Tone; count?: ReactNode; tip: ReactNode }>(function Chip(
-  { icon, tone, count, tip, className, ...rest },
+/** Gut lesbarer Hinweis: farbiges Symbol + Text auf ruhiger Fläche; Zusatzinfo im Tooltip, Details per Klick. */
+const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { icon: ReactNode; tone: Tone; tip?: ReactNode }>(function Chip(
+  { icon, tone, tip, className, children, ...rest },
   ref,
 ) {
-  return (
+  const btn = (
+    <button
+      ref={ref}
+      className={cn(
+        "flex h-8 shrink-0 items-center gap-2 rounded-ctl bg-surface px-3 text-[13px] font-medium text-text transition-colors duration-100",
+        "hover:bg-surface2 data-[state=open]:bg-surface2",
+        className,
+      )}
+      {...rest}
+    >
+      <span className={cn("flex shrink-0", toneIcon[tone])}>{icon}</span>
+      <span className="truncate">{children}</span>
+    </button>
+  );
+  return tip ? (
     <Tooltip content={tip} side="bottom">
-      <button
-        ref={ref}
-        aria-label={typeof tip === "string" ? tip : undefined}
-        className={cn(
-          "flex h-8 shrink-0 items-center gap-1 rounded-ctl px-2 text-[12.5px] font-semibold tabular-nums transition-colors duration-100",
-          "hover:bg-white/[.06] data-[state=open]:bg-white/[.07]",
-          toneIcon[tone],
-          className,
-        )}
-        {...rest}
-      >
-        {icon}
-        {count !== undefined && count !== null && <span>{count}</span>}
-      </button>
+      {btn}
     </Tooltip>
+  ) : (
+    btn
   );
 });
 
@@ -80,33 +83,26 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
   const checked = useContentView((s) => !!s.checked[id]);
   const updatesQ = useQuery({ queryKey: qk.contentUpdates(id), queryFn: () => api.contentCheckUpdates(id), enabled: checked, staleTime: 10 * 60_000 });
   const counts = useQuery({ queryKey: ["update-counts"], queryFn: api.contentUpdateCounts, staleTime: 60_000, refetchInterval: 120_000 });
-  // In der Mod-Liste zeigt die Werkzeugleiste mit geladenen Update-Daten selbst „N aktualisieren“ -> hier nicht doppelt
-  const updates = tab === "content" && updatesQ.data ? 0 : updatesQ.data ? updatesQ.data.length : (counts.data?.[id] ?? 0);
+  // In den Inhalten zeigt die Werkzeugleiste mit geladenen Update-Daten selbst „Alle aktualisieren“ -> hier nicht doppelt
+  const inContent = tab === "content" || tab === "resourcepacks" || tab === "shaders";
+  const updates = inContent && updatesQ.data ? 0 : updatesQ.data ? updatesQ.data.length : (counts.data?.[id] ?? 0);
 
   const depErrors = deps.filter((d) => d.severity === "error").length;
   const showUpdates = () => {
     markUpdatesChecked(id);
     setContentFilter(id, "updates");
-    nav({ search: { tab: vanilla ? "resourcepacks" : "content" }, replace: true });
+    nav({ search: { tab: "content" }, replace: true });
   };
 
   if (!pack && !updates && !deps.length && !missing.length) return null;
 
   return (
-    <div className="flex min-w-0 items-center gap-0.5 overflow-hidden" role="group" aria-label={t("ipage.notices")}>
+    <div className="flex flex-wrap items-center gap-2 px-6 pt-4" role="group" aria-label={t("ipage.notices")}>
       {pack && (
         <>
-          <Chip
-            tone="accent"
-            icon={<ArrowUpCircle size={16} />}
-            tip={
-              <>
-                <div className="font-semibold">{t("ipage.notice.modpack", { version: pack.latest.version_number })}</div>
-                <div className="text-[12px] opacity-80">{t("ipage.notice.modpack_hint")}</div>
-              </>
-            }
-            onClick={() => setPackOpen(true)}
-          />
+          <Chip tone="accent" icon={<ArrowUpCircle size={15} />} tip={t("ipage.notice.modpack_hint")} onClick={() => setPackOpen(true)}>
+            {t("ipage.notice.modpack", { version: pack.latest.version_number })}
+          </Chip>
           {packOpen && <ModpackUpdateDialog instance={instance} versionId={pack.latest.id} onClose={() => setPackOpen(false)} />}
         </>
       )}
@@ -114,20 +110,15 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
         <PopoverChip
           width={500}
           chip={
-            <Chip
-              tone={depErrors ? "danger" : "warn"}
-              icon={<AlertTriangle size={16} />}
-              count={deps.length}
-              tip={
-                depErrors
-                  ? deps.length === 1
-                    ? t("ipage.notice.deps_1")
-                    : t("ipage.notice.deps", { n: deps.length })
-                  : deps.length === 1
-                    ? t("ipage.notice.deps_warn_1")
-                    : t("ipage.notice.deps_warn", { n: deps.length })
-              }
-            />
+            <Chip tone={depErrors ? "danger" : "warn"} icon={<AlertTriangle size={15} />}>
+              {depErrors
+                ? deps.length === 1
+                  ? t("ipage.notice.deps_1")
+                  : t("ipage.notice.deps", { n: deps.length })
+                : deps.length === 1
+                  ? t("ipage.notice.deps_warn_1")
+                  : t("ipage.notice.deps_warn", { n: deps.length })}
+            </Chip>
           }
         >
           {() => <DepsPanel instanceId={id} />}
@@ -136,30 +127,18 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
       {missing.length > 0 && (
         <PopoverChip
           chip={
-            <Chip
-              tone="warn"
-              icon={<Download size={16} />}
-              count={missing.length}
-              tip={missing.length === 1 ? t("ipage.notice.missing_1") : t("ipage.notice.missing", { n: missing.length })}
-            />
+            <Chip tone="warn" icon={<Download size={15} />}>
+              {missing.length === 1 ? t("ipage.notice.missing_1") : t("ipage.notice.missing", { n: missing.length })}
+            </Chip>
           }
         >
           {(close) => <MissingPanel instanceId={id} onDismissed={close} />}
         </PopoverChip>
       )}
       {updates > 0 && (
-        <Chip
-          tone="accent"
-          icon={<RefreshCw size={15} />}
-          count={updates}
-          tip={
-            <>
-              <div className="font-semibold">{updates === 1 ? t("ipage.notice.updates_1") : t("ipage.notice.updates", { n: updates })}</div>
-              <div className="text-[12px] opacity-80">{t("ipage.notice.updates_hint")}</div>
-            </>
-          }
-          onClick={showUpdates}
-        />
+        <Chip tone="accent" icon={<RefreshCw size={14} />} tip={t("ipage.notice.updates_hint")} onClick={showUpdates}>
+          {updates === 1 ? t("ipage.notice.updates_1") : t("ipage.notice.updates", { n: updates })}
+        </Chip>
       )}
     </div>
   );
