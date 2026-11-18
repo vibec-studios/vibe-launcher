@@ -139,7 +139,8 @@ export function Skeleton({ className, style }: { className?: string; style?: Rea
 export function EmptyState({ icon, title, text, action, className }: { icon?: ReactNode; title: ReactNode; text?: ReactNode; action?: ReactNode; className?: string }) {
   return (
     <div className={cn("flex flex-col items-center justify-center gap-3 px-6 py-16 text-center", className)}>
-      {icon && <div className="mb-1 text-dim">{icon}</div>}
+      {/* .vl-empty-icon: im Winter-Theme sitzt ein kleines Pixel-Schneehäubchen auf dem Icon (globals.css) */}
+      {icon && <div className="vl-empty-icon mb-1 text-dim">{icon}</div>}
       <div className="display text-[16px]">{title}</div>
       {text && <p className="max-w-[420px] text-[13px] text-muted">{text}</p>}
       {action && <div className="mt-2">{action}</div>}

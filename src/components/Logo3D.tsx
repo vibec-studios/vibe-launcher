@@ -18,6 +18,8 @@ export interface Logo3DProps {
   hoverSpin?: boolean;
   /** Ohne Eisscholle, enger eingepasst – für kleine Größen (Leiste) */
   compact?: boolean;
+  /** Winter-Theme: Robbe mit Strickschal und etwas Schnee */
+  winter?: boolean;
 }
 
 /** Logo-Pose (wie die gerenderten Icons) */
@@ -30,7 +32,7 @@ function prefersStatic(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.reduceMotion === "true";
 }
 
-export function Logo3D({ size = 160, className, hoverSpin = true, compact = size < 48 }: Logo3DProps) {
+export function Logo3D({ size = 160, className, hoverSpin = true, compact = size < 48, winter = false }: Logo3DProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const reduce = useSettings().data?.reduce_motion ?? false;
@@ -46,7 +48,7 @@ export function Logo3D({ size = 160, className, hoverSpin = true, compact = size
     import("three")
       .then((THREE) => {
         if (disposed) return;
-        cleanup = setup(THREE, wrap, canvas, size, hoverSpin, compact, () => {
+        cleanup = setup(THREE, wrap, canvas, size, hoverSpin, compact, winter, () => {
           if (disposed) return;
           canvas.style.opacity = "1";
           setReady(true);
@@ -59,12 +61,12 @@ export function Logo3D({ size = 160, className, hoverSpin = true, compact = size
       canvas.remove();
       setReady(false);
     };
-  }, [size, hoverSpin, compact, reduce]);
+  }, [size, hoverSpin, compact, reduce, winter]);
 
   return (
     <div ref={wrapRef} className={cn("relative shrink-0", className)} style={{ width: size, height: size }} aria-hidden>
       <img
-        src={compact ? "/logo-seal.png" : "/logo.png"}
+        src={winter ? (compact ? "/logo-seal-winter.png" : "/logo-winter.png") : compact ? "/logo-seal.png" : "/logo.png"}
         alt=""
         draggable={false}
         className={cn("absolute inset-0 h-full w-full object-contain transition-opacity duration-150", ready && "opacity-0")}
@@ -73,7 +75,16 @@ export function Logo3D({ size = 160, className, hoverSpin = true, compact = size
   );
 }
 
-function setup(THREE: typeof THREE_NS, wrap: HTMLDivElement, canvas: HTMLCanvasElement, size: number, hoverSpin: boolean, compact: boolean, onFirstFrame: () => void): () => void {
+function setup(
+  THREE: typeof THREE_NS,
+  wrap: HTMLDivElement,
+  canvas: HTMLCanvasElement,
+  size: number,
+  hoverSpin: boolean,
+  compact: boolean,
+  winter: boolean,
+  onFirstFrame: () => void,
+): () => void {
   let renderer: THREE_NS.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" });
@@ -86,7 +97,7 @@ function setup(THREE: typeof THREE_NS, wrap: HTMLDivElement, canvas: HTMLCanvasE
 
   const scene = new THREE.Scene();
   addSealLights(THREE, scene);
-  const parts = buildSeal(THREE);
+  const parts = buildSeal(THREE, undefined, { winter });
   parts.group.scale.setScalar(1 / 16);
   parts.ice.visible = !compact;
   const pivot = new THREE.Group();

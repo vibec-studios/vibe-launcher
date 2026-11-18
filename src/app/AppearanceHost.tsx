@@ -1,8 +1,10 @@
-// Wendet die Darstellung (gespeichert oder Vorschau aus dem Einstellungs-Tab) an und zeichnet den Hintergrund.
+// Wendet die Darstellung (gespeichert oder Vorschau aus dem Einstellungs-Tab) an und zeichnet Hintergrund und
+// Theme-Extras (Winter: Schneefall).
 import { useEffect } from "react";
 import { useSettings } from "@/lib/queries";
-import { applyAppearance, normalizeAppearance, useAppearanceDraft } from "@/lib/appearance";
+import { applyAppearance, effectiveAppearance, normalizeAppearance, themeExtra, useAppearanceDraft } from "@/lib/appearance";
 import { Backdrop } from "./Backdrop";
+import { Snowfall } from "./Snowfall";
 
 export function AppearanceHost() {
   const saved = useSettings().data?.appearance;
@@ -14,5 +16,11 @@ export function AppearanceHost() {
     if (draft || saved) applyAppearance(a);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
-  return <Backdrop appearance={a} />;
+  const shown = effectiveAppearance(a);
+  return (
+    <>
+      <Backdrop appearance={shown} />
+      {themeExtra(shown, "snow") && <Snowfall amount={shown.effects.snow_amount} settle={shown.effects.snow_settle} />}
+    </>
+  );
 }

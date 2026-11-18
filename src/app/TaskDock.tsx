@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { useTaskStore, useTasks } from "@/lib/queries";
 import type { TaskInfo } from "@/lib/types";
-import { IconButton, Progress, Spinner, Tooltip, cn, toast } from "@/components/ui";
+import { AnimatedNumber, IconButton, Progress, Spinner, Tooltip, cn, toast } from "@/components/ui";
 import { useT, t as tt } from "@/i18n";
 
 function TaskRow({ task }: { task: TaskInfo }) {
@@ -48,7 +48,7 @@ function TaskRow({ task }: { task: TaskInfo }) {
             : task.status === "done"
               ? t("tasks.done")
               : (task.message ?? "")}
-        {task.status === "running" && task.progress !== null && <span className="float-right tabular-nums">{Math.round(task.progress * 100)}%</span>}
+        {task.status === "running" && task.progress !== null && <span className="float-right tabular-nums"><AnimatedNumber value={Math.round(task.progress * 100)} />%</span>}
       </div>
     </div>
   );

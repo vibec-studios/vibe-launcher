@@ -13,7 +13,7 @@ import { connect, unlink, useSocial } from "@/features/social/service";
 import { openSettings } from "@/features/settings/store";
 import { cn } from "@/components/ui";
 
-export function AccountChip() {
+export function AccountChip({ wide = false }: { wide?: boolean }) {
   const t = useT();
   const nav = useNavigate();
   const { data: accounts = [] } = useAccounts();
@@ -32,9 +32,13 @@ export function AccountChip() {
         trigger={
           <button
             aria-label={active ? active.username : t("nav.accounts")}
-            className="relative mt-1 grid h-10 w-10 place-items-center rounded-ctl bg-white/[.05] text-muted transition-colors duration-100 hover:bg-white/[.09] hover:text-text"
+            className={cn(
+              "relative mt-1 flex h-10 shrink-0 items-center rounded-ctl bg-white/[.05] text-muted transition-colors duration-100 hover:bg-white/[.09] hover:text-text",
+              wide ? "w-full gap-2.5 px-[5px] text-left" : "w-10 justify-center",
+            )}
           >
             {active ? <PlayerHead uuid={active.uuid} name={active.username} size={30} /> : <UserRound size={18} />}
+            {wide && <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text">{active ? active.username : t("nav.accounts")}</span>}
             {active?.needs_relogin && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-dot border-2 border-[var(--tone-frame)] bg-warn" />}
             {vibeOn && dot && <span className={cn("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-dot border-2 border-[var(--tone-frame)]", dot)} aria-hidden />}
           </button>

@@ -10,4 +10,5 @@ export * from "./Toast";
 export * from "./Confirm";
 export * from "./Spinner";
 export * from "./Settings";
+export * from "./Motion";
 export { cn } from "./cn";
