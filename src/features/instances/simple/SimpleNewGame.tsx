@@ -241,6 +241,7 @@ function summary(goal: NewGameGoal, plan: GamePlan, t: ReturnType<typeof useT>):
   if (plan.pack === "essential") lines.push(t("wiz.sum.essential"));
   if (goal === "friends" && !plan.pack) lines.push(t("wiz.sum.friends_plain"));
   if (plan.pack === "vibey") lines.push(t("wiz.sum.vibey"));
+  if (goal === "friends" && plan.pack === "vibey") lines.push(t("wiz.sum.friends_vibey"));
   if (goal === "mods") lines.push(t("wiz.sum.mods"));
   lines.push(t("wiz.sum.auto"));
   return lines;

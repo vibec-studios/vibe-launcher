@@ -8,6 +8,7 @@ import { forwardRef, useState, type ButtonHTMLAttributes, type ReactNode } from 
 import { Tooltip, cn } from "@/components/ui";
 import { DepsPanel, useDepIssues } from "@/features/content/DepsPanel";
 import { openAutofix } from "@/features/content/AutoFix";
+import { useSimple } from "@/lib/mode";
 import { MissingPanel, useMissingDownloads } from "@/features/content/MissingPanel";
 import { ModpackUpdateDialog, useModpackUpdate } from "@/features/content/ModpackUpdate";
 import { markUpdatesChecked, setContentFilter, useContentView } from "@/features/content/contentView";
@@ -108,6 +109,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
   const id = instance.id;
   const vanilla = instance.loader.kind === "vanilla";
   const [packOpen, setPackOpen] = useState(false);
+  const simple = useSimple();
 
   const pack = useModpackUpdate(instance).data;
   const deps = useDepIssues(id, !vanilla).data ?? [];
@@ -142,7 +144,13 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
           {packOpen && <ModpackUpdateDialog instance={instance} versionId={pack.latest.id} onClose={() => setPackOpen(false)} />}
         </>
       )}
-      {deps.length > 0 && (
+      {/* Simple: kein technisches Abhängigkeits-Panel; der Hinweis öffnet direkt „Probleme beheben“ (der Knopf im Kopf bleibt) */}
+      {deps.length > 0 && simple && (
+        <Chip tone={depErrors ? "danger" : "warn"} icon={<AlertTriangle size={15} />} tip={t("fix.button_hint")} onClick={() => openAutofix({ instanceId: id })}>
+          {depErrors ? (deps.length === 1 ? t("ipage.notice.deps_1") : t("ipage.notice.deps", { n: deps.length })) : deps.length === 1 ? t("ipage.notice.deps_warn_1") : t("ipage.notice.deps_warn", { n: deps.length })}
+        </Chip>
+      )}
+      {deps.length > 0 && !simple && (
         <PopoverChip
           width={500}
           chip={
@@ -160,7 +168,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
           {() => <DepsPanel instanceId={id} />}
         </PopoverChip>
       )}
-      {deps.length > 0 && (
+      {deps.length > 0 && !simple && (
         <Chip tone="accent" icon={<Wrench size={14} />} tip={t("fix.button_hint")} onClick={() => openAutofix({ instanceId: id })} className="text-accent">
           {t("fix.button")}
         </Chip>

@@ -93,7 +93,9 @@ export function usePlan(goal: NewGameGoal | null): GamePlan {
   const candidates = modded ? releases.filter((v) => fabricSet.has(v)) : releases;
   const newest = candidates[0] ?? null;
 
-  const packId = goal === "vibey" ? "vibey" : goal === "friends" ? "essential" : null;
+  // „Mit Freunden“: mit Vibe über den Vibey Client (Welt hosten übers Vibe-Relay), sonst Essential
+  const vibe = useVibe();
+  const packId = goal === "vibey" ? "vibey" : goal === "friends" ? (vibe.enabled ? "vibey" : "essential") : null;
   const packs = useQuery({
     queryKey: cpk.plan(newest ?? "", "fabric"),
     queryFn: () => api.clientPacksList({ mcVersion: newest!, loader: "fabric" }),
