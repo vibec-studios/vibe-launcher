@@ -106,7 +106,7 @@ function TileRow({ hits, pending, cols, ...c }: Common & { hits: ProjectHit[] | 
 function RankList({ hits, pending, ...c }: Common & { hits: ProjectHit[] | undefined; pending: boolean }) {
   const t = useT();
   return (
-    <ol className="grid grid-cols-1 gap-x-6 gap-y-0.5 min-[980px]:grid-cols-2">
+    <ol className="grid grid-cols-1 gap-x-6 gap-y-0.5 @min-[760px]:grid-cols-2">
       {pending || !hits
         ? Array.from({ length: 8 }, (_, i) => (
             <li key={i} className="flex h-[64px] items-center gap-3 px-2">
@@ -204,7 +204,7 @@ export function Browse({
 
   return (
     <div className="scroll min-h-0 flex-1">
-      <div ref={ref} className="mx-auto flex w-full max-w-[1320px] flex-col gap-9 px-6 pb-12 pt-2">
+      <div ref={ref} className="@container mx-auto flex w-full max-w-[1320px] flex-col gap-9 px-6 pb-12 pt-2">
         <section>
           <SectionHead
             title={t("discover.browse.trending")}

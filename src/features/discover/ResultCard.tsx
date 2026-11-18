@@ -14,12 +14,12 @@ import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { openInstall } from "@/components/content/InstallDialog";
 import { startContentInstall } from "@/components/content/install";
 import { compatibility, copyText, openExternal, projectWebUrl } from "@/components/content/util";
-import { CategoryIcon, categoryLabel } from "./categoryIcons";
+import { CategoryIcon, categoryLabel, fmtNum } from "./categoryIcons";
 import { InstallMenu } from "./InstallMenu";
 
 /** Höhe einer Listenzeile bzw. einer Kachel (fest, für die Virtualisierung). */
 export const ROW_H = 112;
-export const TILE_H = 286;
+export const TILE_H = 292;
 /** Mindestbreite einer Kachel im Raster */
 export const TILE_MIN_W = 250;
 
@@ -197,11 +197,11 @@ export const ResultRow = memo(function ResultRow({ hit, target, installed, insta
           </div>
         </div>
         <div className="flex w-[118px] shrink-0 flex-col items-end gap-1 text-[12.5px] text-muted max-[1100px]:hidden">
-          <Stat icon={<Download size={13} />} tip={t("discover.downloads_n", { n: hit.downloads.toLocaleString() })}>
+          <Stat icon={<Download size={13} />} tip={t("discover.downloads_n", { n: fmtNum(hit.downloads) })}>
             <span className="font-semibold text-text">{formatCount(hit.downloads)}</span>
           </Stat>
           {hit.source === "modrinth" && (
-            <Stat icon={<Heart size={13} />} tip={t("discover.follows_n", { n: hit.follows.toLocaleString() })}>
+            <Stat icon={<Heart size={13} />} tip={t("discover.follows_n", { n: fmtNum(hit.follows) })}>
               {formatCount(hit.follows)}
             </Stat>
           )}
@@ -297,11 +297,11 @@ export const ResultTile = memo(function ResultTile({ hit, target, installed, ins
             {!target || hit.project_type === "modpack" || (!installed && compatibility(hit, target).ok) ? <CategoryTags hit={hit} max={4} iconsOnly /> : null}
           </div>
           <div className="mt-auto flex items-center gap-3 pt-2 text-[12px] text-muted">
-            <Stat icon={<Download size={12} />} tip={t("discover.downloads_n", { n: hit.downloads.toLocaleString() })}>
+            <Stat icon={<Download size={12} />} tip={t("discover.downloads_n", { n: fmtNum(hit.downloads) })}>
               {formatCount(hit.downloads)}
             </Stat>
             {hit.source === "modrinth" && (
-              <Stat icon={<Heart size={12} />} tip={t("discover.follows_n", { n: hit.follows.toLocaleString() })}>
+              <Stat icon={<Heart size={12} />} tip={t("discover.follows_n", { n: fmtNum(hit.follows) })}>
                 {formatCount(hit.follows)}
               </Stat>
             )}

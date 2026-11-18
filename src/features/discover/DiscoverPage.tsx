@@ -15,7 +15,7 @@ import type { Instance, LoaderKind, ProjectHit, ProjectType, SearchQuery, SortOr
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { compareMc, contentKindOf } from "@/components/content/util";
 import { Browse } from "./Browse";
-import { CategoryIcon, categoryLabel } from "./categoryIcons";
+import { CategoryIcon, categoryLabel, fmtNum } from "./categoryIcons";
 import { ROW_H, ResultRow, ResultTile, RowSkeleton, TILE_H, TILE_MIN_W, TileSkeleton } from "./ResultCard";
 import { scrollOffsets, trendingSince, useDiscoverFilters, useDiscoverView, useFilterGroups, viewFor, type ViewMode } from "./store";
 
@@ -177,7 +177,7 @@ export function DiscoverPage() {
       <div className="flex min-h-0 flex-1">
         <FilterSidebar type={effectiveType} source={source} sourcePicker={sourcePicker} />
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* Eine Werkzeugleiste: Typ · Suche · Sortierung (Quelle in der Filterleiste) */}
+          {/* Eine Werkzeugleiste: Typ · Suche (Sortierung über den Ergebnissen, Quelle in der Filterleiste) */}
           <div className="flex shrink-0 flex-wrap items-center gap-2 px-6 pt-3">
             <Segmented value={effectiveType} onChange={setType} items={typeItems} />
             <SearchInput
@@ -190,17 +190,6 @@ export function DiscoverPage() {
                 if (e.key === "Escape" && text) setText("");
               }}
             />
-            <Tooltip content={t("discover.sort")}>
-              <div className="w-[176px] shrink-0 max-[1100px]:w-[150px]">
-                <Select
-                  size="sm"
-                  variant="ghost"
-                  value={filters.sort}
-                  onChange={(v: SortOrder) => useDiscoverFilters.getState().set({ sort: v, trending: false })}
-                  options={SORTS.map((s) => ({ value: s, label: t(`discover.sort.${s}`) }))}
-                />
-              </div>
-            </Tooltip>
           </div>
           {browsing ? (
             <div className="h-3 shrink-0" />
@@ -316,12 +305,23 @@ function ResultsBar({
           {t("discover.browse.back")}
         </button>
       )}
-      <span className="shrink-0 text-meta tabular-nums text-dim">{total != null ? t("discover.results", { n: total.toLocaleString() }) : ""}</span>
+      <span className="shrink-0 text-meta tabular-nums text-dim">{total != null ? t("discover.results", { n: fmtNum(total) }) : ""}</span>
       <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
         {f.trending && chip("trending", <Flame size={12} className="text-warn" />, t("discover.browse.trending"), () => f.set({ trending: false }))}
         {f.categories.map((c) => chip(c, <CategoryIcon id={c} size={12} className="text-dim" />, categoryLabel(c), () => f.set({ categories: f.categories.filter((x) => x !== c) })))}
         {fetching && <Spinner size={11} className="ml-1 text-brand" />}
       </div>
+      <Tooltip content={t("discover.sort")}>
+        <div className="w-[164px] shrink-0">
+          <Select
+            size="sm"
+            variant="ghost"
+            value={f.sort}
+            onChange={(v: SortOrder) => f.set({ sort: v, trending: false })}
+            options={SORTS.map((s) => ({ value: s, label: t(`discover.sort.${s}`) }))}
+          />
+        </div>
+      </Tooltip>
       <div className="flex shrink-0 items-center gap-0.5" role="radiogroup" aria-label={t("discover.view")}>
         {(["list", "grid"] as const).map((v) => (
           <Tooltip key={v} content={t(`discover.view.${v}`)}>

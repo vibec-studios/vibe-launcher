@@ -12,7 +12,7 @@ import { useT } from "@/i18n";
 import type { Chat, Message, PublicUser } from "@/lib/vibe-sdk";
 import { Avatar, startDm } from "./FriendsList";
 import { chatTitle, dmPartner, idGte, useTypingUsers } from "./hooks";
-import { ActivityIcon, isPlaying, usePresenceParts } from "./presence";
+import { ActivityIcon, isPlaying, loaderName, usePresenceParts } from "./presence";
 import { errText, markRead, requireClient, sendMessage, sendTyping, useSocial, vibeClient, vqk, type MessagesPage } from "./service";
 import { PackIcon, openAddMembers, openInviteAccept, openInviteFriends, openPackImport, openRenameGroup } from "./dialogs";
 import { SealArt } from "./Overview";
@@ -601,7 +601,7 @@ function InviteCardRow({ m, mine, author }: { m: Message; mine: boolean; author:
             <div className="min-w-0 flex-1">
               <div className="truncate text-[14.5px] font-bold leading-tight text-text">{p?.name ?? inv?.title ?? "—"}</div>
               <div className="mt-0.5 truncate text-[12px] text-muted">
-                {isPack && p ? [p.mcVersion, p.loader, p.latestVersion ? t("social.pack.files", { n: p.latestVersion.fileCount }) : null].filter(Boolean).join(" · ") : inv?.subtitle}
+                {isPack && p ? [p.mcVersion, loaderName(p.loader), p.latestVersion ? t("social.pack.files", { n: p.latestVersion.fileCount }) : null].filter(Boolean).join(" · ") : inv?.subtitle}
               </div>
             </div>
           </div>

@@ -170,3 +170,8 @@ export function categoryLabel(id: string): string {
   if (useLang.getState().lang === "de" && DE[id]) return DE[id];
   return prettyCategory(id);
 }
+
+/** Ganze Zahl mit Tausendertrennzeichen in der UI-Sprache. */
+export function fmtNum(n: number): string {
+  return n.toLocaleString(useLang.getState().lang === "en" ? "en-US" : "de-DE");
+}

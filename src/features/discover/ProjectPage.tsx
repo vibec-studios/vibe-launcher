@@ -16,7 +16,7 @@ import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { RichText } from "@/components/content/RichText";
 import { Pill, prettyLoader } from "@/components/content/Pill";
 import { compareMc, compatibility, contentKindOf, copyText, openExternal, sourceName, versionRange } from "@/components/content/util";
-import { CategoryIcon, categoryLabel } from "./categoryIcons";
+import { CategoryIcon, categoryLabel, fmtNum } from "./categoryIcons";
 import { InstallMenu } from "./InstallMenu";
 import { hitColor } from "./ResultCard";
 import { VersionsTab } from "./VersionsTab";
@@ -208,14 +208,14 @@ function Header({ p, target, banner, onBanner }: { p: ProjectDetails; target: In
         </div>
       </div>
       <div className={cn("mt-4 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-muted", showBanner && "px-5")}>
-        <Tooltip content={t("discover.downloads_n", { n: p.downloads.toLocaleString() })}>
+        <Tooltip content={t("discover.downloads_n", { n: fmtNum(p.downloads) })}>
           <span className="flex items-center gap-1.5">
             <Download size={14} className="text-dim" />
             <b className="font-semibold tabular-nums text-text">{formatCount(p.downloads)}</b> {t("project.downloads_lc")}
           </span>
         </Tooltip>
         {p.source === "modrinth" && (
-          <Tooltip content={t("discover.follows_n", { n: p.follows.toLocaleString() })}>
+          <Tooltip content={t("discover.follows_n", { n: fmtNum(p.follows) })}>
             <span className="flex items-center gap-1.5">
               <Heart size={14} className="text-dim" />
               <b className="font-semibold tabular-nums text-text">{formatCount(p.follows)}</b> {t("project.follows_lc")}
