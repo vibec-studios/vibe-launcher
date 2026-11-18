@@ -3,9 +3,10 @@
 // Query-Cache (Nachrichtenverlauf). Nichts hier blockiert den Rest des Launchers: Fehler/Offline setzen nur
 // `conn`/`error`, die UI zeigt dann einen freundlichen Zustand.
 //
-// Netzwerk gibt es nur, wenn `settings.vibe.enabled` an ist (zusätzlich in Rust gesperrt) – und erst nach dem
-// ersten bewussten „Mit Vibe verbinden“ des Nutzers; danach meldet der Launcher sich mit den gespeicherten
-// Tokens automatisch an.
+// Netzwerk gibt es nur, wenn `settings.vibe.enabled` an ist (zusätzlich in Rust gesperrt, Standard: an). Ist ein
+// Minecraft-Account angemeldet, verbindet der Launcher sich automatisch mit Vibe (Mojang-join, Tokens im
+// Schlüsselbund) – außer der Nutzer hat für diesen Account „Verknüpfung lösen“ gewählt (bis zum nächsten
+// bewussten „Verbinden“).
 import type { InfiniteData } from "@tanstack/react-query";
 import { getVersion } from "@tauri-apps/api/app";
 import { create } from "zustand";
@@ -53,6 +54,14 @@ interface SocialState {
   error: string | null;
   /** Account-Name, mit dem angemeldet wird */
   identity: string | null;
+  /** Schlüssel des Accounts (Account-ID) */
+  scope: string | null;
+  /** Für diesen Account kein automatisches Verbinden („Verknüpfung lösen“) */
+  unlinked: boolean;
+  /** Zuletzt automatisch (ohne Klick) verbunden – für den einmaligen Hinweis */
+  autoLinked: boolean;
+  /** Vibe-Tokens für diesen Account vorhanden (angemeldet, auch wenn das Gateway gerade getrennt ist) */
+  linked: boolean;
   me: Me | null;
   features: Record<string, boolean>;
   motd: string | null;
@@ -105,10 +114,34 @@ export const useSocial = create<SocialState>(() => ({
   conn: "off",
   error: null,
   identity: null,
+  scope: null,
+  unlinked: false,
+  autoLinked: false,
+  linked: false,
   activeChat: null,
   panelOpen: lsGet("vibe.panel") === "1",
   ...empty,
 }));
+
+// ------------------------------------------------------------------ Verknüpfung je Account
+
+const UNLINKED_KEY = "vibe.unlinked";
+
+function unlinkedScopes(): string[] {
+  try {
+    const v = JSON.parse(lsGet(UNLINKED_KEY) ?? "[]");
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function setUnlinked(scope: string, on: boolean) {
+  const list = unlinkedScopes().filter((x) => x !== scope);
+  if (on) list.push(scope);
+  lsSet(UNLINKED_KEY, JSON.stringify(list.slice(-50)));
+  if (get().scope === scope) set({ unlinked: on });
+}
 
 export function setPanelOpen(open: boolean) {
   lsSet("vibe.panel", open ? "1" : "0");
@@ -185,17 +218,28 @@ export async function configure(next: VibeConfig) {
       timeoutMs: 20_000,
       onAuthLost: ({ message }) => {
         stopGateway();
-        set({ conn: "logged_out", error: message, ...empty });
+        set({ conn: "logged_out", error: message, linked: false, ...empty });
+        // z. B. Refresh-Token abgelaufen -> einmal still neu anmelden
+        if (!get().unlinked && autoTries < MAX_AUTO_TRIES) setTimeout(() => void autoLogin(), 1000);
       },
     });
-    set({ identity: ident.name });
+    autoTries = 0;
+    clearRetry();
+    set({ identity: ident.name, scope: ident.scope, unlinked: unlinkedScopes().includes(ident.scope) });
   }
   const loggedIn = await client.isLoggedIn();
   if (seq !== cfgSeq) return;
   if (!loggedIn) {
-    if (get().conn !== "logging_in") set({ conn: "logged_out" });
+    if (get().conn === "logging_in") return;
+    // Automatisch verbinden (einmal je Account und Sitzung; Netzwerkfehler -> später erneut)
+    if (!get().unlinked && autoTries < MAX_AUTO_TRIES && !retryTimer) {
+      void autoLogin();
+      return;
+    }
+    if (!retryTimer) set({ conn: "logged_out", linked: false });
     return;
   }
+  set({ linked: true });
   if (gatewayWanted()) startGateway();
   else {
     stopGateway();
@@ -207,13 +251,90 @@ export async function configure(next: VibeConfig) {
 
 function teardown(conn: Conn) {
   stopGateway();
+  clearRetry();
   client = null;
   clientKey = "";
   queryClient.removeQueries({ queryKey: ["vibe"] });
-  set({ conn, error: null, ...empty, identity: conn === "off" ? null : get().identity });
+  const keep = conn !== "off" && conn !== "no_account";
+  set({ conn, error: null, ...empty, autoLinked: false, linked: false, identity: keep ? get().identity : null, scope: keep ? get().scope : null, unlinked: keep && get().unlinked });
 }
 
-/** Bewusste Anmeldung (erstes Mal oder nach Abmeldung). */
+// ------------------------------------------------------------------ Anmelden / Verknüpfung
+
+const MAX_AUTO_TRIES = 2;
+let autoTries = 0;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let retryDelay = 30_000;
+
+function clearRetry() {
+  if (retryTimer) clearTimeout(retryTimer);
+  retryTimer = null;
+  retryDelay = 30_000;
+}
+
+/** Automatische Anmeldung, sobald ein Microsoft-Account da ist (kein Klick nötig). */
+async function autoLogin() {
+  const c = client;
+  if (!c || get().unlinked || get().conn === "logging_in" || !cfg.enabled) return;
+  autoTries++;
+  try {
+    await login();
+    clearRetry();
+    if (c === client) set({ autoLinked: true });
+  } catch (e) {
+    if (c !== client) return;
+    // Server nicht erreichbar -> später still erneut versuchen (zählt nicht als Fehlversuch)
+    if (e instanceof VibeError && e.status === 0) {
+      autoTries--;
+      set({ conn: "offline", error: null });
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        void autoLogin();
+      }, retryDelay);
+      retryDelay = Math.min(retryDelay * 2, 5 * 60_000);
+    }
+  }
+}
+
+/** Bewusstes „Verbinden“ (z. B. nach „Verknüpfung lösen“): schaltet das automatische Verbinden wieder ein. */
+export async function connect() {
+  const scope = get().scope;
+  if (scope) setUnlinked(scope, false);
+  clearRetry();
+  autoTries = 0;
+  set({ autoLinked: false });
+  await login();
+}
+
+/** „Verknüpfung lösen“: am Backend abmelden, Tokens löschen, kein automatisches Verbinden mehr für diesen Account. */
+export async function unlink() {
+  const scope = get().scope;
+  if (scope) setUnlinked(scope, true);
+  clearRetry();
+  await logout();
+}
+
+/** „Vibe-Konto löschen“ (`DELETE /api/v1/me`), danach lokal wie „Verknüpfung lösen“. */
+export async function deleteAccount() {
+  const c = requireClient();
+  const scope = get().scope;
+  const was = get().unlinked;
+  // Vorher sperren: Das Backend schließt das Gateway (4010) evtl. noch vor der HTTP-Antwort
+  if (scope) setUnlinked(scope, true);
+  try {
+    await c.request<void>("DELETE", "/api/v1/me", { body: { confirm: true } });
+  } catch (e) {
+    if (scope) setUnlinked(scope, was);
+    throw e;
+  }
+  clearRetry();
+  stopGateway();
+  await Promise.resolve(tokens.set(null)).catch(() => {});
+  queryClient.removeQueries({ queryKey: ["vibe"] });
+  set({ conn: "logged_out", error: null, autoLinked: false, linked: false, ...empty });
+}
+
+/** Anmeldung über Mojang-join (automatisch oder per Klick). */
 export async function login() {
   const c = client;
   if (!c) throw new Error(t("social.err.not_connected"));
@@ -230,6 +351,7 @@ export async function login() {
         await api.vibeMojangJoin(serverId);
       },
     });
+    set({ linked: true });
     if (gatewayWanted()) startGateway();
     else set({ conn: "off" });
   } catch (e) {
@@ -247,7 +369,7 @@ export async function logout() {
     await Promise.resolve(tokens.set(null)).catch(() => {});
   }
   queryClient.removeQueries({ queryKey: ["vibe"] });
-  set({ conn: "logged_out", error: null, ...empty });
+  set({ conn: "logged_out", error: null, autoLinked: false, linked: false, ...empty });
 }
 
 export function errText(e: unknown): string {
@@ -296,7 +418,7 @@ function wireGateway(gw: VibeGateway) {
   });
   on("disconnected", ({ code, fatal }) => {
     if (code === 1006) failedAttempts++;
-    if (fatal && code === 4010) set({ conn: "logged_out", error: t("social.err.revoked"), ...empty });
+    if (fatal && code === 4010) set({ conn: "logged_out", error: t("social.err.revoked"), linked: false, ...empty });
   });
   on("ready", (d) => {
     const friends: Record<string, Friend> = {};

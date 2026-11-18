@@ -1,5 +1,5 @@
 // Verbindung: Wie Freunde den Server erreichen (lokal/LAN, Vibe-Relay, playit.gg), Tunnel-Status,
-// öffentliche Adresse, Claim-Link (playit), Relay-Adresse, Tunnel zurücksetzen.
+// öffentliche Adresse, Claim-Link (playit), Tunnel zurücksetzen. Der Relay ist immer der offizielle Vibey-Relay.
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -7,13 +7,12 @@ import { AlertTriangle, CheckCircle2, ExternalLink, Globe, Home, Info, Radio, Re
 import { api } from "@/lib/api";
 import { queryClient, sqk, useServerStatus, useSettings } from "@/lib/queries";
 import type { Server, ServerConnection, ServerPatch, TunnelStatus } from "@/lib/types";
-import { Button, Input, SettingRow, SettingsCard, Skeleton, Spinner, confirm, cn, toast } from "@/components/ui";
+import { Button, SettingRow, SettingsCard, Skeleton, Spinner, confirm, cn, toast } from "@/components/ui";
 import { SaveIndicator, useAutoSave } from "@/components/instance/forms";
 import { useT } from "@/i18n";
 import { HostingInvite } from "@/features/social/HostingInvite";
 import { AddressChip } from "./parts";
 
-const DEFAULT_RELAY = "vibey.henny.dev:25565";
 const applyServer = (base: Server, p: ServerPatch): Server => ({ ...base, ...p }) as Server;
 
 function Option({
@@ -153,7 +152,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                   disabled={!relayOk && d.connection !== "relay"}
                   extra={
                     !relayOk && (
-                      <Button size="sm" variant="subtle" icon={<SettingsIcon size={13} />} onClick={() => nav({ to: "/settings" })}>
+                      <Button size="sm" variant="subtle" icon={<SettingsIcon size={13} />} onClick={() => nav({ to: "/settings", search: { tab: "vibe" } })}>
                         {t("nav.settings")}
                       </Button>
                     )
@@ -174,19 +173,6 @@ export function ConnectionTab({ server }: { server: Server }) {
                 {t("srv.conn.only_running")}
               </div>
             </SettingsCard>
-
-            {d.connection === "relay" && (
-              <SettingsCard title={t("srv.conn.relay.settings")}>
-                <SettingRow title={t("srv.conn.relay.address")} description={t("srv.conn.relay.address.desc")} stacked>
-                  <Input
-                    className="font-mono text-[13px]"
-                    value={d.relay_address ?? ""}
-                    placeholder={DEFAULT_RELAY}
-                    onChange={(e) => update({ relay_address: e.target.value.trim() || null }, 800)}
-                  />
-                </SettingRow>
-              </SettingsCard>
-            )}
           </div>
 
           <div className="flex flex-col gap-5">

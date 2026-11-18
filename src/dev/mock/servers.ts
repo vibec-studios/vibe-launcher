@@ -35,7 +35,6 @@ function mkServer(id: string, name: string, extra: Partial<Server>): Server {
     auto_start: false,
     auto_restart: true,
     connection: "local",
-    relay_address: null,
     eula: true,
     install_state: "installed",
     created_at: now - 86400_000 * 6,
@@ -189,7 +188,7 @@ function startTunnel(id: string) {
     } else {
       const addr = relayAddr.get(id) ?? `vibey.henny.dev:${40000 + Math.floor(Math.random() * 9999)}`;
       relayAddr.set(id, addr);
-      setStatus(id, { tunnel: { kind: "relay", state: "online", address: s.relay_address ? s.relay_address.replace(/:\d+$/, "") + ":41237" : addr, claim_url: null, message: null } });
+      setStatus(id, { tunnel: { kind: "relay", state: "online", address: addr, claim_url: null, message: null } });
       log(id, `Relay verbunden: ${addr}`, "launcher");
     }
   }, 1400);

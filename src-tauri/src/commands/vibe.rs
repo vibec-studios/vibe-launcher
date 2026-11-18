@@ -10,7 +10,7 @@ use tauri::State;
 #[derive(Serialize)]
 pub struct VibeStatus {
     pub enabled: bool,
-    /// Effektive Backend-Adresse (Env `VIBE_API_URL` > Einstellung)
+    /// Backend-Adresse (immer das offizielle Backend; nur Debug-Builds: Env `VIBE_API_URL`)
     pub api_url: String,
     pub gateway_url: String,
     /// Minecraft-Account, mit dem angemeldet wird (None = keiner)

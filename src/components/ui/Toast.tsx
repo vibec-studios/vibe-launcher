@@ -33,7 +33,7 @@ const useToasts = create<ToastState>((set, get) => ({
 }));
 
 export const toast = {
-  info: (title: ReactNode, text?: ReactNode, action?: ToastItem["action"]) => useToasts.getState().push({ tone: "info", title, text, action }),
+  info: (title: ReactNode, text?: ReactNode, action?: ToastItem["action"], ms?: number) => useToasts.getState().push({ tone: "info", title, text, action }, ms),
   success: (title: ReactNode, text?: ReactNode, action?: ToastItem["action"]) => useToasts.getState().push({ tone: "success", title, text, action }),
   error: (titleOrError: unknown, text?: ReactNode) => {
     const isNode = typeof titleOrError === "string";

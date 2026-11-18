@@ -210,7 +210,7 @@ function VibeAction({ a, onDone }: { a: Extract<AppAction, { kind: "pack" | "inv
             className="mt-3"
             onClick={() => {
               onDone();
-              nav({ to: "/settings" });
+              nav({ to: "/settings", search: { tab: "vibe" } });
             }}
           >
             {t("action.open_settings")}

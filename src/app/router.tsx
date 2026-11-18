@@ -1,6 +1,6 @@
 // Routen (Hash-History, code-basiert). Seiten lesen Parameter über `getRouteApi("/pfad")`,
 // damit es keine Import-Zyklen gibt:   const route = getRouteApi("/instances/$id"); route.useSearch()
-import { createHashHistory, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { createHashHistory, createRootRoute, createRoute, createRouter, redirect } from "@tanstack/react-router";
 import { Shell } from "./Shell";
 import { HomePage } from "@/features/home/HomePage";
 import { InstancesPage } from "@/features/instances/InstancesPage";
@@ -8,7 +8,7 @@ import { InstancePage } from "@/features/instances/InstancePage";
 import { DiscoverPage } from "@/features/discover/DiscoverPage";
 import { ProjectPage } from "@/features/discover/ProjectPage";
 import { AccountsPage } from "@/features/accounts/AccountsPage";
-import { SettingsPage } from "@/features/settings/SettingsPage";
+import { isSettingsTab, openSettings, type SettingsTab } from "@/features/settings/store";
 import { SkinsPage } from "@/features/skins/SkinsPage";
 import { ScreenshotsPage } from "@/features/screenshots/ScreenshotsPage";
 import { StatsPage } from "@/features/stats/StatsPage";
@@ -73,7 +73,17 @@ const projectRoute = createRoute({
 });
 
 const accountsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/accounts", component: AccountsPage });
-const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/settings", component: SettingsPage });
+// Einstellungen sind ein Popup: `/settings?tab=…` öffnet es und bleibt auf der aktuellen Seite
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings",
+  validateSearch: (s: Record<string, unknown>): { tab?: SettingsTab } => ({ tab: isSettingsTab(s.tab) ? s.tab : undefined }),
+  beforeLoad: ({ search }) => {
+    openSettings(search.tab);
+    const prev = router.state.resolvedLocation;
+    throw redirect({ href: prev && prev.pathname !== "/settings" ? prev.href : "/", replace: true });
+  },
+});
 const skinsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/skins", component: SkinsPage });
 const statsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/stats", component: StatsPage });
 const screenshotsRoute = createRoute({

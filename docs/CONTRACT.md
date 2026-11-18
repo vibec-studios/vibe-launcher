@@ -310,7 +310,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   Weiterlaufende Server werden beim nächsten Start über `.vibe-pid` erkannt (`detached`: keine Konsole, Stopp = Beenden).
 - Verbindungen: `local` (localhost + LAN-IP), `relay` (nur wenn `settings.vibe.enabled && hosting`; Vibey-Relay-Protokoll
   mit `hello` + `slot` (≥ 1), `kind: "server"`, `client: "launcher"`; Account über `auth.launch_account`; Adresse
-  `relay_address` bzw. Env `VIBE_RELAY`, Standard `vibey.henny.dev:25565`), `playit` (offizieller `playitd`-Agent,
+  fest `vibey.henny.dev:25565` – keine eigene Relay-Adresse je Server; nur Debug-Builds: Env `VIBE_RELAY`), `playit` (offizieller `playitd`-Agent,
   SHA-256 aus der GitHub-API geprüft; Claim-Link -> `TunnelStatus.claim_url`, danach Adresse aus `/v1/agents/rundata`).
 - Mod-Einordnung (Client/Server) über `server::sides::classify` (Heuristik über fabric.mod.json/quilt.mod.json/mods.toml
   + Liste bekannter Client-Mods) – Einstiegspunkt für eine spätere Einordnung aus dem Content-Modul.
@@ -384,12 +384,17 @@ auf Importe; `types.ts` = öffentliche API-Typen aus `@vibe-craft/shared` als re
   `ws(s)://<host>/ws` der eingestellten Adresse). Grund: CSP der Webview, frei wählbare `api_url`, kein CORS – und
   **`settings.vibe.enabled = false` sperrt jede Verbindung in Rust** (Commands liefern `not_configured`, offene WebSockets
   werden beim Speichern der Einstellungen geschlossen).
-- **Adresse**: Env `VIBE_API_URL` (Laufzeit, z. B. lokale Testinstanz) > `settings.vibe.api_url` (Standard Build-Env
-  `VIBE_API_URL` bzw. `https://vibe.henny.dev`).
+- **Adresse**: fest `https://vibe.henny.dev` – Nutzer können keine eigene Backend-Adresse einstellen (eine alte
+  `settings.vibe.api_url` wird ignoriert). Nur Debug-Builds (`cfg(debug_assertions)`) lesen für die lokale Entwicklung
+  die Env `VIBE_API_URL` (z. B. `http://127.0.0.1:3917`).
 - **Login** (Mojang-hasJoined): SDK `auth.challenge` -> `vibe_mojang_join(serverId)` (Rust ruft
   `sessionserver.mojang.com/session/minecraft/join` mit dem Minecraft-Token des aktiven Accounts; bei 401/403 einmal
-  Refresh; das Token verlässt Rust nie) -> `auth.verify`. Der erste Login ist eine bewusste Nutzeraktion („Mit Vibe
-  verbinden“), danach verbindet der Launcher mit den gespeicherten Tokens automatisch.
+  Refresh; das Token verlässt Rust nie) -> `auth.verify`. **Automatisch**: Sobald ein Minecraft-Account angemeldet ist
+  (und `settings.vibe.enabled`, Standard an), meldet sich der Launcher ohne Klick an und zeigt beim allerersten Mal
+  einen Hinweis mit Link zu Einstellungen → „Vibe & Konto“. „Verknüpfung lösen“ = Logout am Backend + Tokens löschen +
+  kein automatisches Verbinden mehr für diesen Account (lokal `localStorage["vibe.unlinked"]`), bis der Nutzer wieder
+  „Verbinden“ klickt. „Vibe-Konto löschen“ = `DELETE /api/v1/me` `{confirm:true}` (Eingabe des Accountnamens zur
+  Bestätigung), danach wie „Verknüpfung lösen“.
 - **Tokens**: `vibe_tokens_get/set` (`StoredTokens` des SDK, camelCase) im Schlüsselbund unter `vibe:<account-id>` (gechunkt
   wie die MS-Tokens) zusammen mit der `api_url` – Tokens einer anderen Backend-Adresse werden nie herausgegeben. Refresh
   macht ausschließlich das SDK (rotierende Refresh-Tokens, Single-Flight). Nur Debug: ohne Account mit

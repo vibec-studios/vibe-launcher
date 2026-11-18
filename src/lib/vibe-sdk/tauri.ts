@@ -1,5 +1,5 @@
 // Tauri-Anbindung des SDK: HTTP und WebSocket laufen über Rust (vibe/mod.rs, vibe/ws.rs), Tokens liegen im
-// OS-Schlüsselbund. So greift die CSP der Webview nicht, jede `api_url` funktioniert, und der Hauptschalter
+// OS-Schlüsselbund. So greift die CSP der Webview nicht, es gibt kein CORS, und der Hauptschalter
 // in den Einstellungen sperrt jede Verbindung schon in Rust.
 import { listen } from "@tauri-apps/api/event";
 import { api } from "@/lib/api";

@@ -1,11 +1,12 @@
 // Freundliche Zustände, wenn (noch) keine Verbindung besteht: Dienste aus, kein Account, nicht angemeldet,
 // Backend nicht erreichbar. Blockiert nie den Rest des Launchers.
 import { useNavigate } from "@tanstack/react-router";
-import { CloudOff, LogIn, Settings as SettingsIcon, UserRound, WifiOff } from "lucide-react";
+import { CloudOff, Link2Off, LogIn, Settings as SettingsIcon, UserRound, WifiOff } from "lucide-react";
 import { useState } from "react";
 import { Button, Spinner, cn } from "@/components/ui";
 import { useT } from "@/i18n";
-import { login, useSocial, type Conn } from "./service";
+import { openSettings } from "@/features/settings/store";
+import { connect, useSocial, type Conn } from "./service";
 
 /** Zeigt `children`, sobald Daten da sind; sonst einen passenden Zustand. */
 export function Gate({ children, compact }: { children: React.ReactNode; compact?: boolean }) {
@@ -38,6 +39,7 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   const nav = useNavigate();
   const error = useSocial((s) => s.error);
   const identity = useSocial((s) => s.identity);
+  const unlinked = useSocial((s) => s.unlinked);
   const [busy, setBusy] = useState(false);
   const box = cn("flex h-full flex-col items-center justify-center gap-3 px-6 text-center", compact ? "py-8" : "py-16");
   const icon = (n: React.ReactNode) => <div className="grid h-12 w-12 place-items-center border border-line2 bg-surface2 text-muted">{n}</div>;
@@ -65,7 +67,7 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
         {icon(<CloudOff size={20} />)}
         <h3 className="display text-[15px] text-white">{t("social.conn.off_title")}</h3>
         <p className="max-w-sm text-[13px] text-muted">{t("social.conn.off_text")}</p>
-        <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => nav({ to: "/settings" })}>
+        <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => openSettings("vibe")}>
           {t("action.open_settings")}
         </Button>
       </div>
@@ -86,9 +88,13 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   // logged_out
   return (
     <div className={box}>
-      {icon(<LogIn size={20} />)}
-      <h3 className="display text-[15px] text-white">{t("social.conn.login_title")}</h3>
-      <p className="max-w-sm text-[13px] text-muted">{t("social.conn.login_text", { name: identity ?? "" })}</p>
+      {icon(unlinked ? <Link2Off size={20} /> : <LogIn size={20} />)}
+      <h3 className="display text-[15px] text-white">
+        {unlinked ? t("social.conn.unlinked_title") : error ? t("social.conn.failed_title") : t("social.conn.login_title")}
+      </h3>
+      <p className="max-w-sm text-[13px] text-muted">
+        {unlinked ? t("social.conn.unlinked_text", { name: identity ?? "" }) : t("social.conn.login_text", { name: identity ?? "" })}
+      </p>
       {error && <p className="max-w-sm text-[12px] text-danger">{error}</p>}
       <Button
         variant="primary"
@@ -97,11 +103,11 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
         icon={<LogIn size={14} />}
         onClick={async () => {
           setBusy(true);
-          await login().catch(() => {});
+          await connect().catch(() => {});
           setBusy(false);
         }}
       >
-        {t("social.conn.login")}
+        {unlinked ? t("vibe.account.connect") : error ? t("social.conn.retry") : t("social.conn.login")}
       </Button>
       {!compact && <p className="max-w-sm text-[11px] text-dim">{t("social.conn.login_hint")}</p>}
     </div>
