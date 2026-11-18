@@ -76,7 +76,7 @@ export function CreatorTools({ online }: { online: boolean }) {
         </header>
         <ol className="divide-y divide-line">
           <Step n={1} done={step1Done} title={t("cre.s1.title")} art={<ArtDownload />}>
-            <p>{s?.blockbench ? t("cre.s1.found", { path: s.blockbench }) : t("cre.s1.text")}</p>
+            <p className="[overflow-wrap:anywhere]">{s?.blockbench ? t("cre.s1.found", { path: s.blockbench }) : t("cre.s1.text")}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {s?.blockbench ? (
                 <Button size="sm" icon={<Play size={14} />} onClick={() => vapi.blockbenchOpen().catch((e) => toast.error(e))}>
