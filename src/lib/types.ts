@@ -964,6 +964,8 @@ export interface DepIssue {
   file_name: string;
   mod_name: string;
   target: string | null;
+  /** Datei des Gegenparts (Abhängigkeit mit falscher Version, Konfliktpartner) */
+  other_file?: string;
   message: string;
   fixes: DepFix[];
 }
@@ -1189,4 +1191,82 @@ export interface VibeShareOptions {
 export interface VibeShareLink {
   code: string;
   url: string | null;
+}
+
+// ---------------------------------------------------------------- Probleme beheben (Autofix)
+
+export type FixAction =
+  | { kind: "install"; source: Source; project_id: string; title: string }
+  | {
+      kind: "replace";
+      file_name: string;
+      source: Source;
+      project_id: string;
+      version_id: string;
+      title: string;
+      from_version: string | null;
+      to_version: string;
+      /** CurseForge-Datei für andere Launcher gesperrt: nur verlinkt */
+      manual: boolean;
+    }
+  | { kind: "enable"; file_name: string }
+  | { kind: "disable"; file_name: string }
+  /** path null: Java wird heruntergeladen */
+  | { kind: "set_java"; major: number; path: string | null }
+  | { kind: "set_ram"; mb: number };
+
+export type FixReason =
+  | "missing_dependency"
+  | "disabled_dependency"
+  | "version_mismatch"
+  | "incompatible"
+  | "known_conflict"
+  | "duplicate"
+  | "wrong_loader"
+  | "wrong_minecraft"
+  | "crash_suspect"
+  | "dep_not_found"
+  | "java_version"
+  | "out_of_memory";
+
+export interface FixStep {
+  id: string;
+  reason: FixReason;
+  name: string;
+  required_by: string[];
+  action: FixAction;
+  /** Alternative (Konflikt: die andere Mod deaktivieren) */
+  alt: FixAction | null;
+  alt_name: string | null;
+  /** Nur nach ausdrücklicher Rückfrage */
+  confirm: boolean;
+  selected: boolean;
+  from_crash: boolean;
+}
+
+export interface Unfixable {
+  reason: "loader_version" | "version_mismatch" | "no_version" | "dep_not_found" | "graphics" | "heap_reserve";
+  name: string;
+  detail: string | null;
+}
+
+export interface FixPlan {
+  steps: FixStep[];
+  unfixable: Unfixable[];
+  crash: boolean;
+}
+
+export interface FixReport {
+  created: number;
+  snapshot_id: string | null;
+  results: { action: FixAction; ok: boolean; error: string | null }[];
+  manual: MissingDownload[];
+  prev_java: JavaOptions | null;
+  undone: boolean;
+}
+
+export interface QuickCheck {
+  errors: number;
+  warnings: number;
+  crashed: boolean;
 }

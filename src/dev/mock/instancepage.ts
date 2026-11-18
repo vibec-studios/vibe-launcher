@@ -1,6 +1,6 @@
 // Mock: Werkzeuge der Instanzseite (Modpack-Update, Abhängigkeits-Check, Mod-Sets, Performance, Backups, Dateien,
 // Serverliste). Macht „survival“ zu einer realistisch gefüllten Modpack-Instanz. Nur für VITE_MOCK=1.
-import type { DepIssue, FileEntry, Instance, ModSets, PerfCandidate, ProjectVersion, ServerEntry, SnapshotInfo, WorldBackup } from "@/lib/types";
+import type { DepIssue, FileEntry, FixPlan, FixReport, Instance, ModSets, PerfCandidate, ProjectVersion, ServerEntry, SnapshotInfo, WorldBackup } from "@/lib/types";
 import { instances } from "./core";
 import { fakeTask, type Handlers } from "./util";
 
@@ -97,6 +97,20 @@ const perf: PerfCandidate[] = [
   { project_id: "ferrite", slug: "ferrite-core", title: "FerriteCore", description: "Weniger Speicherverbrauch", icon_url: null, version_number: "7.1.1", available: true, installed: false, recommended: true, note: null },
 ];
 
+const fixPlan: FixPlan = {
+  crash: false,
+  steps: [
+    { id: "s1", reason: "duplicate", name: "Sodium", required_by: [], action: { kind: "disable", file_name: "sodium-0.5.11.jar" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false },
+    { id: "s2", reason: "wrong_minecraft", name: "Xaero's Minimap", required_by: [], action: { kind: "replace", file_name: "xaerominimap-24.5.0-1.21.1.jar", source: "modrinth", project_id: "xaeros-minimap", version_id: "x2", title: "Xaero's Minimap", from_version: "24.5.0", to_version: "25.2.6", manual: false }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false },
+    { id: "s3", reason: "missing_dependency", name: "Porting Lib", required_by: ["Create", "Create Deco"], action: { kind: "install", source: "modrinth", project_id: "porting-lib", title: "Porting Lib" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false },
+    { id: "s4", reason: "disabled_dependency", name: "Cloth Config", required_by: ["Mod Menu"], action: { kind: "enable", file_name: "cloth-config-15.0.140.jar.disabled" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false },
+    { id: "s5", reason: "java_version", name: "Java 21", required_by: [], action: { kind: "set_java", major: 21, path: null }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: true },
+    { id: "s6", reason: "known_conflict", name: "OptiFabric", required_by: [], action: { kind: "disable", file_name: "optifabric-1.14.3.jar" }, alt: { kind: "disable", file_name: "sodium-0.6.0.jar" }, alt_name: "Sodium", confirm: true, selected: false, from_crash: false },
+  ],
+  unfixable: [{ reason: "loader_version", name: "Create", detail: "Create braucht Fabric >=0.16.10, installiert ist 0.16.9" }],
+};
+let fixReport: FixReport | null = null;
+
 const handlers: Handlers = {
   modpack_check: ({ instanceId }) =>
     instanceId === "survival" ? { source: "modrinth", project_id: "cobble-pack", current_version: "1.4.2", current_version_id: "v1", latest: version("1.5.0") } : null,
@@ -119,7 +133,26 @@ const handlers: Handlers = {
     legacy: false,
   }),
   modpack_update: ({ instanceId }) => fakeTask("modpack_update", "Modpack aktualisieren", instanceId as string, 2500),
-  content_check_deps: ({ instanceId }) => (instanceId === "survival" ? deps : []),
+  autofix_quick: ({ instanceId }) => ({ errors: instanceId === "survival" && !fixReport ? 3 : 0, warnings: 0, crashed: false }),
+  autofix_plan: ({ instanceId }) => (instanceId === "survival" && (!fixReport || fixReport.undone) ? fixPlan : { crash: false, steps: [], unfixable: [] }),
+  autofix_apply: ({ instanceId, actions }) =>
+    fakeTask("autofix", "Probleme beheben", instanceId as string, 2200, () => {
+      const list = actions as FixReport["results"][number]["action"][];
+      fixReport = {
+        created: Date.now(),
+        snapshot_id: "fix-1",
+        results: list.map((action, i) => ({ action, ok: i !== 3 || list.length < 4, error: i === 3 && list.length >= 4 ? "Java 21 konnte nicht heruntergeladen werden (offline)" : null })),
+        manual: [{ file_name: "better-end-4.0.jar", project_name: "Better End", page_url: "https://www.curseforge.com/minecraft/mc-mods/betterend/files/1", kind: "mod", version_number: "4.0.11", is_update: true }],
+        prev_java: null,
+        undone: false,
+      };
+    }),
+  autofix_last: () => fixReport,
+  autofix_undo: ({ instanceId }) =>
+    fakeTask("autofix", "Rückgängig", instanceId as string, 1200, () => {
+      if (fixReport) fixReport = { ...fixReport, undone: true };
+    }),
+  content_check_deps: ({ instanceId }) => (instanceId === "survival" && (!fixReport || fixReport.undone) ? deps : []),
   content_sides: () => [],
   content_set_pinned: () => null,
   content_update_counts: () => ({ survival: 3 }),
