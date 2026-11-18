@@ -32,21 +32,12 @@ import type { CodeEditorHandle } from "./CodeEditor";
 import { CHECKED, FilePane } from "./FilePane";
 import { FileTree, RootMenu, buildRows, targetDir, type FileActions, type FileTreeHandle } from "./FileTree";
 import { FileIcon, ancestors, baseName, copyText, dirName, fkeys, isInside } from "./util";
-import { PageTools } from "@/features/instances/toolbar";
-
-export interface QuickItem {
-  path: string;
-  /** Anzeigename (Standard: Dateiname, Ordner mit „/“) */
-  label?: string;
-}
 
 export interface FilesBrowserProps {
   scope: FileScope;
   /** Spiel bzw. Server läuft gerade -> Warnung im Editor */
   running: boolean;
   runningText: string;
-  /** Schnelleinstiege; nur vorhandene werden gezeigt */
-  quick: QuickItem[];
   /** Beim ersten Öffnen aufgeklappte Ordner */
   initialExpanded?: string[];
 }
@@ -242,7 +233,7 @@ function NameDialogView({ state, onClose, onSubmit }: { state: NameDialog; onClo
 
 // ------------------------------------------------------------------ Hauptkomponente
 
-export function FilesBrowser({ scope, running, runningText, quick, initialExpanded = [] }: FilesBrowserProps) {
+export function FilesBrowser({ scope, running, runningText, initialExpanded = [] }: FilesBrowserProps) {
   const t = useT();
   const qc = useQueryClient();
   const tree = useRef<FileTreeHandle>(null);
@@ -699,45 +690,12 @@ export function FilesBrowser({ scope, running, runningText, quick, initialExpand
     return registerDropTarget({ id: dropId, el, accepts: (paths) => paths.length > 0, onDrop: (paths, pos) => void importRef.current(dropDirAt(pos), paths) });
   }, [dropId, dropDirAt]);
 
-  // ---------------------------------------------------------------- Häufig
-  const quickQ = useQuery({
-    queryKey: [...fkeys.quick(scope), quick.map((q) => q.path).join("|")],
-    queryFn: async () => {
-      const res = await Promise.allSettled(quick.map((q) => api.filesStat(scope, q.path)));
-      return res.flatMap((r, i) => (r.status === "fulfilled" ? [{ item: quick[i], entry: r.value }] : []));
-    },
-    staleTime: 30_000,
-  });
-
   const rootEntries = dirs.get("");
   const rootCount = rootEntries?.length ?? 0;
   const openEntry = openPath ? (entryByPath.get(openPath) ?? null) : null;
 
   return (
     <div ref={rootEl} className="relative flex h-full min-h-0 flex-col">
-      {/* ------------------------------------------------------------ Häufig */}
-      {(quickQ.data?.length ?? 0) > 0 && (
-        <PageTools>
-        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none]" aria-label={t("files.quick")}>
-          {quickQ.data!.map(({ item, entry }) => (
-            <button
-              key={item.path}
-              onClick={() => (entry.is_dir ? revealInTree(entry.path, true) : void openFile(entry.path, null, true))}
-              title={entry.path}
-              className={cn(
-                "flex h-7 shrink-0 items-center gap-1.5 rounded-ctl px-2 text-[12.5px] font-medium transition-colors duration-100",
-                (entry.is_dir ? selected === entry.path : openPath === entry.path)
-                  ? "bg-surface3 text-text"
-                  : "text-muted hover:bg-white/[.06] hover:text-text",
-              )}
-            >
-              <FileIcon entry={entry} size={13} />
-              {item.label ?? (entry.is_dir ? `${entry.path}/` : entry.path)}
-            </button>
-          ))}
-        </div>
-        </PageTools>
-      )}
       <div className="flex min-h-0 flex-1">
         {/* ------------------------------------------------------------ Baum */}
         <aside className="flex w-[340px] shrink-0 flex-col border-r border-line max-[1100px]:w-[290px]">

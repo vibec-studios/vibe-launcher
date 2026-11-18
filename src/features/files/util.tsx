@@ -46,7 +46,6 @@ export const fkeys = {
   dir: (s: FileScope, dir: string) => ["files", scopeKey(s), "dir", dir] as const,
   find: (s: FileScope, q: string) => ["files", scopeKey(s), "find", q] as const,
   search: (s: FileScope, q: string) => ["files", scopeKey(s), "search", q] as const,
-  quick: (s: FileScope) => ["files", scopeKey(s), "quick"] as const,
 };
 
 /** Text, den der Launcher als „nur lesend“ öffnet (wie `files::is_log` in Rust). */
