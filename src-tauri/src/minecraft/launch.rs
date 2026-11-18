@@ -217,7 +217,9 @@ pub fn build(state: &AppState, inst: &Instance, prep: &Prepared, acc: &LaunchAcc
     args.push(r.main_class.clone());
     args.extend(game);
 
-    let (program, args) = match settings.wrapper_command.as_deref().map(split_args).filter(|w| !w.is_empty()) {
+    // Wrapper der Instanz ersetzt den globalen
+    let wrapper = inst.hooks.wrapper.as_deref().filter(|w| !w.trim().is_empty()).or(settings.wrapper_command.as_deref());
+    let (program, args) = match wrapper.map(split_args).filter(|w| !w.is_empty()) {
         Some(mut w) => {
             let prog = PathBuf::from(w.remove(0));
             let mut a = w;
@@ -312,6 +314,11 @@ pub async fn launch(
     );
     gm.launcher_line(id, LogLevel::Launcher, format!("Version: {} · Spielordner: {}", prep.resolved.id, plan.cwd.display()));
     gm.launcher_line(id, LogLevel::Launcher, format!("Startbefehl: {}", plan.display));
+    if let Some(cmd) = inst.hooks.pre_launch.as_deref().filter(|c| !c.trim().is_empty()) {
+        task.stage("Pre-Launch-Befehl läuft …", Some(0.95));
+        super::hooks::run(state, &inst, "Pre-Launch", cmd, Some(&prep.java.path)).await?;
+        task.check()?;
+    }
     task.stage("Spiel wird gestartet …", Some(0.97));
 
     tokio::fs::create_dir_all(&plan.cwd).await?;

@@ -670,6 +670,7 @@ pub async fn run_import(state: AppState, task: TaskHandle, f: Found, source_path
         loader,
         java: Default::default(),
         window: Default::default(),
+        hooks: Default::default(),
         source: Some(PackSource { kind: PackSourceKind::Local, project_id: None, version_id: None, name: Some("NoRisk Client".into()), version_name: None }),
         install_state: InstallState::NotInstalled,
         version_id: None,

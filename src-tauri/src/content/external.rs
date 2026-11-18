@@ -821,6 +821,7 @@ pub async fn run_import(
         loader,
         java: Default::default(),
         window: Default::default(),
+        hooks: Default::default(),
         source: Some(f.pack.clone().unwrap_or(PackSource {
             kind: match kind {
                 LauncherKind::Modrinth => PackSourceKind::Modrinth,

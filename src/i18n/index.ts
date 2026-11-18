@@ -23,12 +23,13 @@ import minecraftcapes from "./minecraftcapes";
 import appearance from "./appearance";
 import home from "./home";
 import manual from "./manual";
+import clientpacks from "./clientpacks";
 
 export type Lang = "de" | "en";
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks];
 const dicts: Record<Lang, Dict> = { de: {}, en: {} };
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);
