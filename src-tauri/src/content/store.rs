@@ -300,6 +300,7 @@ fn hit(key: StoreKey, file: &StoreFile, p: &StoreProject) -> ProjectHit {
         banner_url: None,
         color: None,
         created: None,
+        manual_download: false,
     }
 }
 
@@ -340,6 +341,7 @@ pub fn convert_version(key: StoreKey, p: &StoreProject, v: &StoreVersion) -> Pro
                 sha1: f.sha1.clone().map(|s| s.to_ascii_lowercase()),
                 primary: f.primary.unwrap_or(i == 0),
                 sha512: f.sha512.clone(),
+                fingerprint: None,
             })
             .collect(),
         dependencies: v

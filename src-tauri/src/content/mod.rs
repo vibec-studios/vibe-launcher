@@ -179,6 +179,10 @@ pub struct ProjectHit {
     /// ISO-8601, angelegt
     #[serde(default)]
     pub created: Option<String>,
+    /// CurseForge: Der Autor erlaubt keine Downloads über andere Launcher (`allowModDistribution == false`).
+    /// Dateien müssen auf curseforge.com geladen werden (siehe `content_manual_target`).
+    #[serde(default)]
+    pub manual_download: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -233,6 +237,9 @@ pub struct VersionFile {
     /// SHA-512 (nur Modrinth), für mrpack-Export
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sha512: Option<String>,
+    /// CurseForge-Fingerprint (MurmurHash2), zum Wiedererkennen manuell geladener Dateien
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fingerprint: Option<u32>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -320,6 +327,13 @@ pub struct ContentUpdate {
     pub project_id: String,
     pub current_version: Option<String>,
     pub new_version: ProjectVersion,
+    /// Neue Datei darf nicht automatisch geladen werden (CurseForge, Autor sperrt Fremd-Downloads, kein
+    /// Modrinth-Spiegel) -> nur manuell über `page_url`; „Alle aktualisieren“ überspringt sie.
+    #[serde(default)]
+    pub manual: bool,
+    /// Dateiseite der neuen Version (bei `manual`)
+    #[serde(default)]
+    pub page_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -400,6 +414,48 @@ pub struct MissingDownload {
     /// Seite, auf der der Nutzer die Datei manuell herunterladen kann
     pub page_url: String,
     pub kind: ContentKind,
+    /// Versionsnummer der erwarteten Datei (falls bekannt)
+    #[serde(default)]
+    pub version_number: Option<String>,
+    /// Ersetzt beim Eintreffen eine ältere Version (manuelles Update)
+    #[serde(default)]
+    pub is_update: bool,
+}
+
+/// Ziel eines manuellen Downloads (für „Auf CurseForge herunterladen“).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ManualTarget {
+    /// Dateiseite der passenden Version auf curseforge.com
+    pub page_url: String,
+    pub file_name: String,
+    pub version_id: String,
+    pub version_number: String,
+    /// Doch automatisch ladbar (Datei freigegeben oder identisch auf Modrinth) -> normal installieren
+    pub downloadable: bool,
+}
+
+/// Manuell geladene Datei wurde im Download-Ordner gefunden und in die Instanz übernommen
+/// (Event `content://manual-arrived`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ManualArrived {
+    pub instance_id: String,
+    pub project_id: Option<String>,
+    pub project_name: String,
+    pub file_name: String,
+    pub kind: ContentKind,
+}
+
+/// Ergebnis von `content_missing_scan`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MissingScan {
+    /// Übernommene Dateien
+    pub found: Vec<MissingDownload>,
+    /// Noch fehlende Dateien
+    pub remaining: Vec<MissingDownload>,
+    /// Durchsuchter Ordner (System-Downloads), falls vorhanden
+    pub folder: Option<String>,
+    /// Download-Ordner wird bis zu diesem Zeitpunkt (ms seit Epoch) weiter beobachtet
+    pub watching_until: Option<i64>,
 }
 
 /// Wo ein Inhalt gebraucht wird.
@@ -497,6 +553,10 @@ pub struct ContentState {
     pub(crate) stores: Mutex<HashMap<String, store::CacheEntry>>,
     /// Anzahl verfügbarer Updates je Instanz (Hintergrundprüfung nach dem Start)
     pub(crate) update_counts: Mutex<HashMap<String, u32>>,
+    /// Download-Ordner auf manuelle Downloads beobachten: Instanz -> Ende der Beobachtung
+    pub(crate) manual_watch: Mutex<HashMap<String, Instant>>,
+    /// Läuft die Beobachtungsschleife?
+    pub(crate) manual_watch_running: std::sync::atomic::AtomicBool,
 }
 
 impl ContentState {
@@ -510,6 +570,8 @@ impl ContentState {
             identify_backoff: Mutex::new(HashMap::new()),
             stores: Mutex::new(HashMap::new()),
             update_counts: Mutex::new(HashMap::new()),
+            manual_watch: Mutex::new(HashMap::new()),
+            manual_watch_running: std::sync::atomic::AtomicBool::new(false),
         })
     }
 

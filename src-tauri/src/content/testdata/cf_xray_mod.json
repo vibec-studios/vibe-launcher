@@ -1,0 +1,163 @@
+{
+ "data": {
+  "screenshots": [
+   {
+    "id": 1387335,
+    "modId": 226375,
+    "title": "Ores",
+    "description": "Ores.jpg",
+    "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1387/335/310/172/2025-04-16_18-51-57-jpg.jpg",
+    "url": "https://media.forgecdn.net/attachments/1387/335/2025-04-16_18-51-57-jpg.jpg"
+   },
+   {
+    "id": 18363,
+    "modId": 226375,
+    "title": "main",
+    "description": "",
+    "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/18/363/310/172/2015-01-13_20.png",
+    "url": "https://media.forgecdn.net/attachments/18/363/2015-01-13_20.png"
+   },
+   {
+    "id": 18364,
+    "modId": 226375,
+    "title": "fxn",
+    "description": "",
+    "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/18/364/310/172/2015-01-13_20.png",
+    "url": "https://media.forgecdn.net/attachments/18/364/2015-01-13_20.png"
+   }
+  ],
+  "id": 226375,
+  "gameId": 432,
+  "name": "Xray Ultimate",
+  "slug": "xray-ultimate-1-11-compatible",
+  "links": {
+   "websiteUrl": "https://www.curseforge.com/minecraft/texture-packs/xray-ultimate-1-11-compatible",
+   "wikiUrl": "",
+   "issuesUrl": "",
+   "sourceUrl": null
+  },
+  "summary": "Xray For java",
+  "status": 4,
+  "downloadCount": 82314467,
+  "favoriteCount": 24754,
+  "isFeatured": false,
+  "primaryCategoryId": 393,
+  "categories": [
+   {
+    "id": 405,
+    "gameId": 432,
+    "name": "Miscellaneous",
+    "slug": "miscellaneous",
+    "url": "https://www.curseforge.com/minecraft/texture-packs/miscellaneous",
+    "iconUrl": "https://media.forgecdn.net/avatars/6/59/635351501101869320.png",
+    "dateModified": "2020-06-30T17:54:39.157Z",
+    "isClass": false,
+    "classId": 12,
+    "parentCategoryId": 12
+   },
+   {
+    "id": 4465,
+    "gameId": 432,
+    "name": "Mod Support",
+    "slug": "mod-support",
+    "url": "https://www.curseforge.com/minecraft/texture-packs/mod-support",
+    "iconUrl": "https://media.forgecdn.net/avatars/6/623/635363922411546592.png",
+    "dateModified": "2020-06-30T17:54:39.16Z",
+    "isClass": false,
+    "classId": 12,
+    "parentCategoryId": 12
+   },
+   {
+    "id": 403,
+    "gameId": 432,
+    "name": "Traditional",
+    "slug": "traditional",
+    "url": "https://www.curseforge.com/minecraft/texture-packs/traditional",
+    "iconUrl": "https://media.forgecdn.net/avatars/6/57/635351500831419880.png",
+    "dateModified": "2020-06-30T17:54:39.14Z",
+    "isClass": false,
+    "classId": 12,
+    "parentCategoryId": 12
+   },
+   {
+    "id": 401,
+    "gameId": 432,
+    "name": "Modern",
+    "slug": "modern",
+    "url": "https://www.curseforge.com/minecraft/texture-packs/modern",
+    "iconUrl": "https://media.forgecdn.net/avatars/6/55/635351500520222907.png",
+    "dateModified": "2020-06-30T17:54:39.13Z",
+    "isClass": false,
+    "classId": 12,
+    "parentCategoryId": 12
+   },
+   {
+    "id": 393,
+    "gameId": 432,
+    "name": "16x",
+    "slug": "sixteen-x",
+    "url": "https://www.curseforge.com/minecraft/texture-packs/sixteen-x",
+    "iconUrl": "https://media.forgecdn.net/avatars/6/75/635351598555753321.png",
+    "dateModified": "2020-06-30T17:54:39.077Z",
+    "isClass": false,
+    "classId": 12,
+    "parentCategoryId": 12
+   }
+  ],
+  "classId": 12,
+  "authors": [
+   {
+    "id": 3628293,
+    "name": "Filmjolk",
+    "url": "https://www.curseforge.com/members/filmjolk",
+    "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/filmjolk-profile_image-661ed9fc415f6411-150x150.png",
+    "userTierInfo": {
+     "tierLevel": 4,
+     "downloadsThreshold": 10000000
+    }
+   }
+  ],
+  "logo": {
+   "id": 824059,
+   "modId": 226375,
+   "title": "638208888555552105.png",
+   "description": "",
+   "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/824/59/256/256/638208888555552105.png",
+   "url": "https://media.forgecdn.net/avatars/824/59/638208888555552105.png"
+  },
+  "mainFileId": 9139602,
+  "dateCreated": "2014-12-22T15:22:26.087Z",
+  "dateModified": "2026-10-11T21:57:44.41Z",
+  "dateReleased": "2026-10-11T21:50:33.18Z",
+  "allowModDistribution": false,
+  "gamePopularityRank": 443,
+  "isAvailable": true,
+  "hasCommentsEnabled": false,
+  "licenseType": "All Rights Reserved",
+  "thumbsUpCount": 0,
+  "featuredProjectTag": 0,
+  "latestFilesIndexes": [
+   {
+    "gameVersion": "1.21",
+    "fileId": 9139602,
+    "filename": "Xray_Ultimate_26.X_v5.4.4.zip",
+    "releaseType": 1,
+    "gameVersionTypeId": 77784
+   },
+   {
+    "gameVersion": "1.21.4",
+    "fileId": 9139602,
+    "filename": "Xray_Ultimate_26.X_v5.4.4.zip",
+    "releaseType": 1,
+    "gameVersionTypeId": 77784
+   },
+   {
+    "gameVersion": "1.21.3",
+    "fileId": 9139602,
+    "filename": "Xray_Ultimate_26.X_v5.4.4.zip",
+    "releaseType": 1,
+    "gameVersionTypeId": 77784
+   }
+  ]
+ }
+}

@@ -153,6 +153,21 @@ impl CfFile {
     pub fn sha1(&self) -> Option<String> {
         self.hashes.iter().find(|h| h.algo == 1).map(|h| h.value.to_ascii_lowercase())
     }
+    /// Download über Drittanbieter gesperrt (keine `downloadUrl`)?
+    pub fn locked(&self) -> bool {
+        self.download_url.as_deref().is_none_or(str::is_empty)
+    }
+}
+
+/// Fingerprint als 32-Bit-Wert (CurseForge liefert ihn als Zahl; 0 = unbekannt).
+pub fn fingerprint32(fp: u64) -> Option<u32> {
+    (fp > 0 && fp <= u32::MAX as u64).then_some(fp as u32)
+}
+
+/// Erlaubt der Autor keine Downloads über andere Launcher? (`allowModDistribution == false`;
+/// `null` bei alten Projekten gilt als erlaubt – gesperrte Dateien erkennt man dann an `downloadUrl == null`.)
+pub fn manual_only(m: &CfMod) -> bool {
+    m.allow_mod_distribution == Some(false)
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -289,6 +304,7 @@ pub fn convert_file(f: &CfFile) -> ProjectVersion {
             sha1: f.sha1(),
             primary: true,
             sha512: None,
+            fingerprint: fingerprint32(f.file_fingerprint),
         }],
         dependencies: f
             .dependencies
@@ -341,6 +357,7 @@ pub fn mod_to_hit(m: &CfMod) -> ProjectHit {
         banner_url: m.screenshots.iter().find_map(|s| s.thumbnail_url.clone().or(s.url.clone()).filter(|u| !u.is_empty())),
         color: None,
         created: m.date_created.clone(),
+        manual_download: manual_only(m),
     }
 }
 
@@ -697,6 +714,35 @@ mod tests {
         assert!(p2.iter().all(|(k, _)| k != "modLoaderType" && k != "modLoaderTypes"));
         assert!(p2.iter().any(|(k, v)| k == "classId" && v == "6552"));
         assert!(p2.iter().any(|(k, v)| k == "sortField" && v == "2"));
+    }
+
+    #[test]
+    fn manual_download_detection() {
+        // Echte (gekürzte) API-Antwort: Xray Ultimate erlaubt keine Downloads über andere Launcher
+        let m: CfData<CfMod> = serde_json::from_str(include_str!("testdata/cf_xray_mod.json")).unwrap();
+        assert_eq!(m.data.id, 226375);
+        assert!(manual_only(&m.data));
+        let h = mod_to_hit(&m.data);
+        assert!(h.manual_download);
+        assert_eq!(h.project_type, ProjectType::Resourcepack);
+        assert_eq!(
+            file_page_url(&m.data, 9139602),
+            "https://www.curseforge.com/minecraft/texture-packs/xray-ultimate-1-11-compatible/files/9139602"
+        );
+        let files: CfPage<CfFile> = serde_json::from_str(include_str!("testdata/cf_xray_files.json")).unwrap();
+        assert!(files.data.iter().all(|f| f.locked()));
+        assert!(file_compatible(&files.data[0], Some("1.21.1"), None));
+
+        // JEI erlaubt Fremd-Downloads; fehlende Angabe (alte Projekte) gilt als erlaubt
+        let r: CfPage<CfMod> = serde_json::from_str(SEARCH).unwrap();
+        assert!(!mod_to_hit(&r.data[0]).manual_download);
+        let unknown = CfMod { allow_mod_distribution: None, ..Default::default() };
+        assert!(!manual_only(&unknown));
+        let locked = CfFile { download_url: Some(String::new()), ..Default::default() };
+        assert!(locked.locked());
+        assert_eq!(fingerprint32(0), None);
+        assert_eq!(fingerprint32(u32::MAX as u64 + 1), None);
+        assert_eq!(fingerprint32(201562264), Some(201562264));
     }
 
     #[test]

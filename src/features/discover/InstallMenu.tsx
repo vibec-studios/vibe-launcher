@@ -1,21 +1,24 @@
 // Installieren mit Instanzwahl: Knopf mit Ausklapp-Liste aller Instanzen (passende zuerst), je Instanz der Status
 // „Installiert“ / Fortschritt / „Nicht für …“. Im Ziel-Instanz-Modus installiert der Knopf direkt.
+// CurseForge-Projekte ohne Freigabe für andere Launcher: „Auf CurseForge herunterladen“ öffnet die Dateiseite der
+// passenden Version und merkt die Datei vor (Übernahme aus dem Download-Ordner); „Zur Instanz hinzufügen“ merkt nur vor.
 import * as Popover from "@radix-ui/react-popover";
 import { useQueries } from "@tanstack/react-query";
-import { Check, ChevronDown, Download, FolderPlus, ListFilter, Plus } from "lucide-react";
+import { Check, ChevronDown, Clock, Download, ExternalLink, FolderPlus, ListFilter, ListPlus, Plus } from "lucide-react";
 import { memo, useMemo, useState, type MouseEvent } from "react";
-import { Button, Progress, Spinner, Tooltip, cn, toast } from "@/components/ui";
+import { Button, DropdownItem, DropdownMenu, Progress, Spinner, Tooltip, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatLoader } from "@/lib/format";
 import { qk, useInstances, useTask } from "@/lib/queries";
 import type { Instance, ProjectHit } from "@/lib/types";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
+import { ManualBadge } from "@/components/content/ManualBadge";
 import { openInstall, type InstallProject } from "@/components/content/InstallDialog";
-import { installKey, packKey, startContentInstall, useInstallTasks } from "@/components/content/install";
+import { installKey, packKey, startContentInstall, startManualDownload, useExpected, useInstallTasks } from "@/components/content/install";
 import { compatibility, contentKindOf, navigateTo } from "@/components/content/util";
 
-type P = InstallProject & Pick<ProjectHit, "game_versions" | "loaders">;
+type P = InstallProject & Pick<ProjectHit, "game_versions" | "loaders" | "manual_download">;
 
 const stop = (e: MouseEvent) => e.stopPropagation();
 
@@ -44,6 +47,7 @@ export const InstallMenu = memo(function InstallMenu({
   const t = useT();
   const isPack = project.project_type === "modpack";
   const task = useInstallProgress(target && !isPack ? installKey(target.id, project) : packKey(project));
+  const manual = !!project.manual_download && !isPack;
 
   if (task && task.status === "running") {
     return (
@@ -81,6 +85,7 @@ export const InstallMenu = memo(function InstallMenu({
       );
     }
     const c = compatibility(project, target);
+    if (manual) return <ManualButton project={project} target={target} ok={c.ok} size={size} wide={wide} />;
     return (
       <Tooltip content={c.ok ? null : t("discover.maybe_incompatible")}>
         <Button
@@ -101,21 +106,90 @@ export const InstallMenu = memo(function InstallMenu({
   return <InstancePicker project={project} size={size} wide={wide} />;
 });
 
+/** Ziel-Instanz-Modus für manuelle Downloads: „Auf CurseForge herunterladen“ (+ „Zur Instanz hinzufügen“). */
+function ManualButton({ project, target, ok, size, wide }: { project: P; target: Instance; ok: boolean; size: "sm" | "md"; wide?: boolean }) {
+  const t = useT();
+  const [busy, setBusy] = useState(false);
+  const expected = useExpected(installKey(target.id, project));
+  const run = (open: boolean) => {
+    if (!ok) return openInstall({ project, instanceId: target.id });
+    setBusy(true);
+    startManualDownload(target.id, project, null, { open })
+      .catch(() => {})
+      .finally(() => setBusy(false));
+  };
+  const iconSize = size === "md" ? 15 : 13;
+  if (expected)
+    return (
+      <Tooltip content={<span className="block max-w-[260px] leading-snug">{t("manual.expected_tip")}</span>}>
+        <Button
+          size={size}
+          variant="ghost"
+          icon={<Clock size={iconSize} />}
+          loading={busy}
+          onClick={(e) => {
+            e.stopPropagation();
+            run(true);
+          }}
+        >
+          {t("manual.expected")}
+        </Button>
+      </Tooltip>
+    );
+  const main = (
+    <Tooltip content={<span className="block max-w-[260px] leading-snug">{ok ? t("manual.download_tip") : t("discover.maybe_incompatible")}</span>}>
+      <Button
+        size={size}
+        variant={ok ? (wide ? "primary" : "accent") : "ghost"}
+        icon={<ExternalLink size={iconSize} />}
+        loading={busy}
+        onClick={(e) => {
+          e.stopPropagation();
+          run(true);
+        }}
+      >
+        {wide ? t("manual.download") : t("manual.download_short")}
+      </Button>
+    </Tooltip>
+  );
+  if (!wide || !ok) return main;
+  return (
+    <div className="flex items-center gap-1" onClick={stop}>
+      {main}
+      <DropdownMenu
+        trigger={
+          <Button size={size} variant="subtle" className="px-2" aria-label={t("common.more")}>
+            <ChevronDown size={14} />
+          </Button>
+        }
+      >
+        <DropdownItem icon={<ListPlus size={14} />} onSelect={() => run(false)}>
+          <span className="flex flex-col py-0.5">
+            <span>{t("manual.add")}</span>
+            <span className="max-w-[240px] text-[11.5px] leading-snug text-dim">{t("manual.add_tip")}</span>
+          </span>
+        </DropdownItem>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 function InstancePicker({ project, size, wide }: { project: P; size: "sm" | "md"; wide?: boolean }) {
   const t = useT();
   const [open, setOpen] = useState(false);
+  const manual = !!project.manual_download;
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <Button
           size={size}
           variant={wide ? "primary" : "ghost"}
-          icon={<Download size={size === "md" ? 15 : 13} />}
+          icon={manual ? <ExternalLink size={size === "md" ? 15 : 13} /> : <Download size={size === "md" ? 15 : 13} />}
           onClick={stop}
           className={cn("pr-2", open && !wide && "bg-surface3")}
           aria-haspopup="dialog"
         >
-          {t("common.install")}
+          {manual ? (wide ? t("manual.download") : t("manual.download_short")) : t("common.install")}
           <ChevronDown size={13} className={cn("ml-0.5 opacity-70 transition-transform duration-150", open && "rotate-180")} />
         </Button>
       </Popover.Trigger>
@@ -158,6 +232,12 @@ function PickerList({ project, close }: { project: P; close: () => void }) {
 
   return (
     <div className="flex flex-col">
+      {project.manual_download && (
+        <div className="mx-1 mb-1 mt-1 flex gap-2 rounded-ctl bg-warn/[.08] px-2.5 py-2 text-[12px] leading-snug text-muted">
+          <ManualBadge iconOnly className="mt-px" />
+          <span>{t("manual.picker_note")}</span>
+        </div>
+      )}
       <div className="px-2.5 pb-1 pt-2 text-[11px] font-semibold text-dim">{t("discover.install_in")}</div>
       {isPending ? (
         <div className="grid h-16 place-items-center">
@@ -220,7 +300,9 @@ function PickerRow({
   const t = useT();
   const task = useInstallProgress(installKey(inst.id, project));
   const running = task?.status === "running";
-  const done = installed || task?.status === "done";
+  const manual = !!project.manual_download;
+  const expected = useExpected(installKey(inst.id, project));
+  const done = installed || (!manual && task?.status === "done");
   const note =
     reason === "vanilla"
       ? t("install.incompat.vanilla")
@@ -238,6 +320,10 @@ function PickerRow({
           openInstall({ project, instanceId: inst.id });
           return;
         }
+        if (manual) {
+          startManualDownload(inst.id, project, null).catch(() => {});
+          return;
+        }
         startContentInstall(inst.id, project, null).catch((e) => toast.error(t("install.failed", { name: project.title }), errorMessage(e)));
       }}
       className="group flex h-11 w-full items-center gap-2.5 rounded-ctl px-2 text-left outline-none transition-colors hover:bg-white/[.07] focus-visible:bg-white/[.07]"
@@ -249,7 +335,23 @@ function PickerRow({
         <span className={cn("block truncate text-[13px] font-medium leading-tight", ok ? "text-text" : "text-muted")}>{inst.name}</span>
         <span className="block truncate text-[11.5px] leading-tight text-dim">{note ?? `${inst.mc_version} · ${formatLoader(inst.loader)}`}</span>
       </span>
-      <span className="flex w-[78px] shrink-0 justify-end text-[12px]">
+      {manual && ok && !done && !running && (
+        <Tooltip content={<span className="block max-w-[240px] leading-snug">{t("manual.add_tip")}</span>}>
+          <span
+            role="button"
+            tabIndex={-1}
+            aria-label={t("manual.add")}
+            onClick={(e) => {
+              e.stopPropagation();
+              startManualDownload(inst.id, project, null, { open: false }).catch(() => {});
+            }}
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-ctl text-dim opacity-0 transition-opacity hover:bg-white/[.08] hover:text-text group-hover:opacity-100"
+          >
+            <ListPlus size={14} />
+          </span>
+        </Tooltip>
+      )}
+      <span className={cn("flex shrink-0 justify-end text-[12px]", manual ? "w-[96px]" : "w-[78px]")}>
         {running ? (
           <span className="flex w-full flex-col gap-1">
             <span className="text-right tabular-nums text-muted">{task?.progress != null ? `${Math.round(task.progress * 100)} %` : ""}</span>
@@ -262,10 +364,15 @@ function PickerRow({
           </span>
         ) : checking ? (
           <Spinner size={11} className="text-dim" />
+        ) : expected ? (
+          <span className="flex items-center gap-1 font-medium text-muted">
+            <Clock size={12} />
+            {t("manual.expected")}
+          </span>
         ) : (
           <span className={cn("flex items-center gap-1 font-semibold opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100", ok ? "text-text" : "text-muted")}>
-            {ok ? <Download size={13} /> : <ListFilter size={13} />}
-            {ok ? t("common.install") : t("discover.install_pick_version")}
+            {!ok ? <ListFilter size={13} /> : manual ? <ExternalLink size={13} /> : <Download size={13} />}
+            {!ok ? t("discover.install_pick_version") : manual ? t("manual.download_short") : t("common.install")}
           </span>
         )}
       </span>

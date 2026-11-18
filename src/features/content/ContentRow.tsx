@@ -1,6 +1,6 @@
 // Zeile der Inhalte-Tabelle (Aufbau wie die Modrinth App: Auswahl | Icon + Name + Autor/Quelle | Version + Datei |
 // Aktionen). memo + stabile Aktionen -> beim Umschalten/Auswählen rendert nur die betroffene Zeile neu.
-import { ArrowUpCircle, Check, ExternalLink, FolderOpen, Lock, LockOpen, MoreVertical, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowUpCircle, ArrowUpRight, Check, ExternalLink, FolderOpen, Lock, LockOpen, MoreVertical, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react";
 import { memo, type MouseEvent } from "react";
 import { ContextItem, ContextMenu, ContextSeparator, DropdownItem, DropdownMenu, DropdownSeparator, Switch, Tag, Tooltip, cn, type MenuItemProps } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -8,6 +8,7 @@ import type { ContentItem, ContentKind, ContentUpdate } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { sourceName } from "@/components/content/util";
 import { SideTag } from "@/components/content/sides";
+import { ManualBadge } from "@/components/content/ManualBadge";
 
 export const ROW_H = 60;
 /** Spalten: Auswahl | Name | Version | Aktionen (gleich für Kopf und Zeilen) */
@@ -24,10 +25,14 @@ export interface RowActions {
   /** Version fixieren/lösen */
   setPinned: (items: ContentItem[], pinned: boolean) => void;
   update: (items: ContentItem[]) => void;
+  /** Gesperrter CurseForge-Download: Dateiseite der neuen Version öffnen und Datei erwarten */
+  manualUpdate: (item: ContentItem) => void;
   remove: (items: ContentItem[]) => void;
   openProject: (item: ContentItem) => void;
   openFolder: (kind: ContentKind) => void;
   hasUpdate: (item: ContentItem) => boolean;
+  /** Update nur manuell möglich (CurseForge ohne Freigabe für andere Launcher) */
+  isManualUpdate: (item: ContentItem) => boolean;
 }
 
 function RowMenu({ itemKey, actions, Item, Sep }: { itemKey: string; actions: RowActions; Item: (p: MenuItemProps) => React.ReactNode; Sep: () => React.ReactNode }) {
@@ -37,7 +42,8 @@ function RowMenu({ itemKey, actions, Item, Sep }: { itemKey: string; actions: Ro
   const one = n === 1 ? items[0] : null;
   const anyOn = items.some((i) => i.enabled);
   const anyOff = items.some((i) => !i.enabled);
-  const upd = items.filter(actions.hasUpdate);
+  const upd = items.filter((i) => actions.hasUpdate(i) && !actions.isManualUpdate(i));
+  const manualUpd = one && actions.isManualUpdate(one) ? one : null;
   return (
     <>
       {anyOff && (
@@ -53,6 +59,11 @@ function RowMenu({ itemKey, actions, Item, Sep }: { itemKey: string; actions: Ro
       {upd.length > 0 && (
         <Item icon={<RefreshCw size={14} />} onSelect={() => actions.update(upd)}>
           {upd.length > 1 ? t("content.menu.update_n", { n: upd.length }) : t("common.update")}
+        </Item>
+      )}
+      {manualUpd && (
+        <Item icon={<ArrowUpRight size={14} />} onSelect={() => actions.manualUpdate(manualUpd)}>
+          {t("manual.update")}
         </Item>
       )}
       {items.every((i) => i.pinned) ? (
@@ -104,6 +115,7 @@ export const ContentRow = memo(function ContentRow({
   itemKey,
   selected,
   update,
+  manual,
   actions,
   showKind,
 }: {
@@ -111,6 +123,8 @@ export const ContentRow = memo(function ContentRow({
   itemKey: string;
   selected: boolean;
   update: ContentUpdate | undefined;
+  /** Aus einem CurseForge-Projekt ohne Freigabe für andere Launcher */
+  manual?: boolean;
   actions: RowActions;
   /** Art (Mod/Resourcepack/Shader) zeigen – in der gemischten Ansicht „Alle“ */
   showKind?: boolean;
@@ -146,6 +160,7 @@ export const ContentRow = memo(function ContentRow({
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-2">
               <span className="truncate text-[14px] font-semibold text-text">{item.name}</span>
+              {manual && <ManualBadge iconOnly tip={t("manual.content_tip")} />}
               {item.kind === "mod" && item.side !== "unknown" && <SideTag side={item.side} />}
               {showKind && item.kind !== "mod" && <Tag className="shrink-0">{t(`content.kind1.${item.kind}`)}</Tag>}
             </div>
@@ -168,12 +183,40 @@ export const ContentRow = memo(function ContentRow({
               </Tooltip>
             )}
           </div>
-          <div className="truncate text-[12px] leading-5 text-dim" title={item.file_name}>
-            {item.file_name}
-          </div>
+          {update?.manual && !item.pinned ? (
+            <Tooltip content={<span className="block max-w-[260px] leading-snug">{t("manual.update_tip", { version: update.new_version.version_number })}</span>}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  actions.manualUpdate(item);
+                }}
+                onDoubleClick={(e) => e.stopPropagation()}
+                className="flex max-w-full items-center gap-1 truncate text-left text-[12px] font-semibold leading-5 text-accent hover:underline"
+                title={item.file_name}
+              >
+                <span className="truncate">{t("manual.update_to", { version: update.new_version.version_number })}</span>
+                <ExternalLink size={11} className="shrink-0" />
+              </button>
+            </Tooltip>
+          ) : (
+            <div className="truncate text-[12px] leading-5 text-dim" title={item.file_name}>
+              {item.file_name}
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-          {update && !item.pinned && (
+          {update?.manual && !item.pinned && (
+            <Tooltip content={<span className="block max-w-[260px] leading-snug">{t("manual.update_tip", { version: update.new_version.version_number })}</span>}>
+              <button
+                aria-label={t("manual.update")}
+                onClick={() => actions.manualUpdate(item)}
+                className="grid h-8 w-8 place-items-center rounded-ctl text-accent transition-colors duration-100 hover:bg-accent hover:text-[var(--on-accent)]"
+              >
+                <ArrowUpRight size={17} />
+              </button>
+            </Tooltip>
+          )}
+          {update && !update.manual && !item.pinned && (
             <Tooltip content={t("content.update_to", { version: update.new_version.version_number })}>
               <button
                 aria-label={t("common.update")}

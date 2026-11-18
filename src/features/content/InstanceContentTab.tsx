@@ -55,6 +55,7 @@ import type { ContentItem, ContentKind, ContentUpdate, Instance } from "@/lib/ty
 import { registerDropTarget, useDragState } from "@/components/content/dragdrop";
 import { contentKey, fileExt, kindExtensions, kindFolder } from "@/components/content/util";
 import { ContentRow, GRID, ROW_H, RowSkeleton, SelectBox, type RowActions } from "./ContentRow";
+import { startManualDownload } from "@/components/content/install";
 
 export type TypeFilter = "all" | ContentKind;
 const STATUS: ContentFilter[] = ["updates", "enabled", "disabled"];
@@ -108,6 +109,9 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
     for (const u of updatesQ.data ?? []) m.set(itemKey(u.kind, u.file_name), u);
     return m;
   }, [updatesQ.data]);
+  // CurseForge-Projekte ohne Freigabe für andere Launcher (Markierung in der Tabelle)
+  const manualQ = useQuery({ queryKey: ["content", id, "manual-projects"], queryFn: () => api.contentManualProjects(id), staleTime: 30 * 60_000, retry: 0 });
+  const manualProjects = useMemo(() => new Set(manualQ.data ?? []), [manualQ.data]);
   const checkUpdates = async () => {
     markUpdatesChecked(id);
     try {
@@ -288,8 +292,18 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
   );
 
   const update = useCallback(
-    async (items: ContentItem[]) => {
-      if (!items.length) return;
+    async (all: ContentItem[]) => {
+      if (!all.length) return;
+      // Gesperrte CurseForge-Downloads nie automatisch – überspringen und danach nennen
+      const isManual = (i: ContentItem) => !!state.current.updates.get(keyOf(i))?.manual;
+      const items = all.filter((i) => !isManual(i));
+      const manualN = all.length - items.length;
+      const skipped = manualN ? (manualN === 1 ? tt("manual.updates_skipped_1") : tt("manual.updates_skipped", { n: manualN })) : null;
+      const showManual = { label: tt("manual.show"), onClick: () => setContentFilter(id, "updates") };
+      if (!items.length) {
+        toast.info(skipped, tt("manual.updates_skipped_text"), showManual, 8000);
+        return;
+      }
       try {
         const taskId = await api.contentUpdate(
           id,
@@ -298,7 +312,8 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
         setUpdateTask(id, taskId);
         waitForTask(taskId)
           .then(() => {
-            toast.success(tt("content.updated", { n: items.length }));
+            if (skipped) toast.success(tt("content.updated", { n: items.length }), skipped, showManual);
+            else toast.success(tt("content.updated", { n: items.length }));
             queryClient.invalidateQueries({ queryKey: ["content", id] });
             queryClient.invalidateQueries({ queryKey: qk.contentUpdates(id) });
           })
@@ -377,11 +392,17 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
       setEnabled: (items, v) => void setEnabled(items, v),
       setPinned: (items, v) => void setPinned(items, v),
       update: (items) => void update(items),
+      manualUpdate: (item) => {
+        const u = state.current.updates.get(keyOf(item));
+        if (!u) return;
+        startManualDownload(id, { source: u.source, id: u.project_id, title: item.name }, u.new_version.id).catch(() => {});
+      },
       remove: (items) => void remove(items),
       openProject: (item) =>
         item.source && item.project_id && navigate({ to: "/project/$source/$id", params: { source: item.source, id: item.project_id }, search: { instance: id } }),
       openFolder,
       hasUpdate: (item) => state.current.updates.has(keyOf(item)),
+      isManualUpdate: (item) => !!state.current.updates.get(keyOf(item))?.manual,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [setEnabled, setPinned, update, remove, openFolder, navigate, id],
@@ -704,7 +725,15 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                     const key = keyOf(item);
                     return (
                       <div key={key} className="absolute inset-x-0" style={{ top: it.start, height: ROW_H }}>
-                        <ContentRow item={item} itemKey={key} selected={selection.has(key)} update={updates.get(key)} actions={actions} showKind={type === "all"} />
+                        <ContentRow
+                          item={item}
+                          itemKey={key}
+                          selected={selection.has(key)}
+                          update={updates.get(key)}
+                          manual={item.source === "curseforge" && !!item.project_id && (manualProjects.has(item.project_id) || !!updates.get(key)?.manual)}
+                          actions={actions}
+                          showKind={type === "all"}
+                        />
                       </div>
                     );
                   })}

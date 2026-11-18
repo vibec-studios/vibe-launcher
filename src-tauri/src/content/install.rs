@@ -176,17 +176,42 @@ pub async fn apply(state: &AppState, inst: &Instance, planned: Vec<Planned>, sub
                 !path.exists() && path.with_file_name(format!("{}.disabled", path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default())).exists()
             });
         let file_name = crate::paths::sanitize_file_name(&p.file.filename);
+        let entry = IndexEntry {
+            source: p.source,
+            project_id: p.brief.id.clone(),
+            version_id: p.version.id.clone(),
+            sha1: p.file.sha1.clone(),
+            sha512: p.file.sha512.clone(),
+            title: Some(p.brief.title.clone()),
+            icon_url: p.brief.icon_url.clone(),
+            version_number: Some(p.version.version_number.clone()),
+            url: p.file.url.clone(),
+            size: Some(p.file.size),
+            date: Some(p.version.date.clone()),
+            release_type: Some(p.version.release_type.clone()),
+            side: p.side,
+        };
         let Some(url) = p.file.url.clone() else {
-            let page = if p.source == Source::Curseforge {
-                format!("{}/files/{}", p.brief.page_url.trim_end_matches('/'), p.version.id)
-            } else {
-                p.brief.page_url.clone()
-            };
+            // Gesperrt: als „erwartet“ vormerken; trifft die Datei ein (Download-Ordner), wird sie mit diesem
+            // Index-Eintrag übernommen und ersetzt eine ältere Version
+            let key = index::key(folder, &file_name);
+            let replaces: Vec<String> = old_keys.into_iter().filter(|k| *k != key).collect();
             missing_list.push(MissingEntry {
-                info: MissingDownload { file_name: file_name.clone(), project_name: p.brief.title.clone(), page_url: page, kind: p.kind },
+                info: MissingDownload {
+                    file_name: file_name.clone(),
+                    project_name: p.brief.title.clone(),
+                    page_url: manual_page(p),
+                    kind: p.kind,
+                    version_number: Some(p.version.version_number.clone()),
+                    is_update: !replaces.is_empty(),
+                },
                 sha1: p.file.sha1.clone(),
                 project_id: Some(p.brief.id.clone()),
                 file_id: Some(p.version.id.clone()),
+                size: Some(p.file.size).filter(|s| *s > 0),
+                fingerprint: p.file.fingerprint,
+                index: Some(entry),
+                replaces,
             });
             continue;
         };
@@ -194,25 +219,7 @@ pub async fn apply(state: &AppState, inst: &Instance, planned: Vec<Planned>, sub
         let path = game_dir.join(folder).join(&on_disk);
         items.push(DownloadItem::new(url.clone(), path).sha1(p.file.sha1.clone()).size(Some(p.file.size).filter(|s| *s > 0)));
         let key = index::key(folder, &file_name);
-        entries.push((
-            key,
-            IndexEntry {
-                source: p.source,
-                project_id: p.brief.id.clone(),
-                version_id: p.version.id.clone(),
-                sha1: p.file.sha1.clone(),
-                sha512: p.file.sha512.clone(),
-                title: Some(p.brief.title.clone()),
-                icon_url: p.brief.icon_url.clone(),
-                version_number: Some(p.version.version_number.clone()),
-                url: Some(url),
-                size: Some(p.file.size),
-                date: Some(p.version.date.clone()),
-                release_type: Some(p.version.release_type.clone()),
-                side: p.side,
-            },
-            old_keys,
-        ));
+        entries.push((key, entry, old_keys));
     }
 
     state.net.download_all(items, Some(sub)).await?;
@@ -238,12 +245,22 @@ pub async fn apply(state: &AppState, inst: &Instance, planned: Vec<Planned>, sub
         idx.files.insert(key, entry);
     }
     idx.save(&state.paths, &inst.id)?;
-    drop(_g);
     let out: Vec<MissingDownload> = missing_list.iter().map(|m| m.info.clone()).collect();
+    // Unter derselben Sperre wie `missing::scan` (Beobachtung des Download-Ordners), damit nichts verloren geht
     missing::add(&state.paths, &inst.id, missing_list)?;
+    drop(_g);
     state.content.update_counts.lock().remove(&inst.id);
     state.content.emit_changed(&inst.id);
     Ok(out)
+}
+
+/// Dateiseite für einen manuellen Download (CurseForge: genaue Datei, sonst Projektseite).
+fn manual_page(p: &Planned) -> String {
+    if p.source == Source::Curseforge {
+        format!("{}/files/{}", p.brief.page_url.trim_end_matches('/'), p.version.id)
+    } else {
+        p.brief.page_url.clone()
+    }
 }
 
 async fn refresh_all(state: &AppState, inst_id: &str) -> AppResult<(Vec<(ContentKind, local::Scanned)>, ContentIndex)> {
@@ -268,6 +285,20 @@ fn finish_message(task: &TaskHandle, warnings: &[String], missing: &[MissingDown
 
 /// Task-Körper von `content_install`.
 pub async fn run_install(state: AppState, task: TaskHandle, instance_id: String, source: Source, project_id: String, version_id: Option<String>) -> AppResult<()> {
+    run_install_with(state, task, instance_id, source, project_id, version_id, false).await
+}
+
+/// Wie `run_install`. `expect_manual`: Der Nutzer lädt die (gesperrte) Hauptdatei selbst auf CurseForge
+/// herunter -> kein Fehler, die Datei wird erwartet und der Download-Ordner beobachtet.
+pub async fn run_install_with(
+    state: AppState,
+    task: TaskHandle,
+    instance_id: String,
+    source: Source,
+    project_id: String,
+    version_id: Option<String>,
+    expect_manual: bool,
+) -> AppResult<()> {
     let inst = state.instances.get(&instance_id)?;
     if source == Source::Curseforge {
         cf::key(&state)?;
@@ -291,9 +322,20 @@ pub async fn run_install(state: AppState, task: TaskHandle, instance_id: String,
     for w in &warnings {
         tracing::warn!("content_install {instance_id}: {w}");
     }
+    if !missing.is_empty() {
+        missing::watch(&state, &instance_id, missing::WATCH_FOR);
+    }
+    if root_locked && expect_manual {
+        let mut msg = format!("{root_title}: Datei wird erwartet – Vibe übernimmt sie aus deinem Download-Ordner");
+        if n > 0 {
+            msg.push_str(&format!(" ({n} Abhängigkeit(en) installiert)"));
+        }
+        task.message(msg);
+        return Ok(());
+    }
     if root_locked {
         return Err(AppError::msg(format!(
-            "Der Autor von {root_title} erlaubt keine Downloads über andere Launcher. Bitte lade die Datei manuell herunter (siehe Hinweis bei der Instanz)."
+            "Der Autor von {root_title} erlaubt keine Downloads über andere Launcher. Lade die Datei auf CurseForge herunter – Vibe übernimmt sie dann automatisch aus deinem Download-Ordner (siehe Hinweis bei der Instanz)."
         )));
     }
     finish_message(&task, &warnings, &missing, n);
@@ -351,6 +393,8 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
                 project_id: e.project_id.clone(),
                 current_version: e.version_number.clone().or(s.meta.version.clone()),
                 new_version: mr::convert_version(nv.clone()),
+                manual: false,
+                page_url: None,
             });
         }
     }
@@ -371,6 +415,7 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
                 if nv.id == e.version_id || e.date.as_deref().is_some_and(|d| nv.date.as_str() <= d) {
                     return None;
                 }
+                let manual = nv.files.first().is_some_and(|f| f.url.is_none());
                 Some(ContentUpdate {
                     file_name: s.file_name.clone(),
                     kind,
@@ -378,13 +423,17 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
                     project_id: e.project_id.clone(),
                     current_version: e.version_number.clone().or(s.meta.version.clone()),
                     new_version: nv,
+                    manual,
+                    page_url: None,
                 })
             }
         }))
         .buffer_unordered(6)
         .collect()
         .await;
-        out.extend(results.into_iter().flatten());
+        let mut cf_updates: Vec<ContentUpdate> = results.into_iter().flatten().collect();
+        mark_manual(state, &mut cf_updates).await;
+        out.extend(cf_updates);
     }
 
     // Eigene Stores: neueste kompatible Version je Projekt
@@ -414,6 +463,8 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
             project_id: e.project_id.clone(),
             current_version: e.version_number.clone().or(s.meta.version.clone()),
             new_version: nv,
+            manual: false,
+            page_url: None,
         });
     }
     // Fixierte Inhalte nie anbieten
@@ -425,14 +476,50 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
     Ok(out)
 }
 
+/// Gesperrte CurseForge-Updates: Gibt es die Datei identisch auf Modrinth, wird automatisch aktualisiert;
+/// sonst bleibt das Update manuell und bekommt den Link zur Dateiseite.
+async fn mark_manual(state: &AppState, updates: &mut [ContentUpdate]) {
+    if !updates.iter().any(|u| u.manual) {
+        return;
+    }
+    let sha1s: Vec<String> = updates.iter().filter(|u| u.manual).filter_map(|u| u.new_version.files.first()?.sha1.clone()).collect();
+    let mirrors = mr::mirrors(state, &sha1s).await;
+    let ids: Vec<u64> = updates.iter().filter(|u| u.manual).filter_map(|u| u.project_id.parse().ok()).collect::<HashSet<_>>().into_iter().collect();
+    let mods: Vec<cf::CfMod> = cf::raw_mods(state, &ids).await.unwrap_or_default();
+    for u in updates.iter_mut().filter(|u| u.manual) {
+        let mirrored = u.new_version.files.first().and_then(|f| f.sha1.as_ref()).is_some_and(|h| mirrors.contains_key(&h.to_ascii_lowercase()));
+        if mirrored {
+            u.manual = false;
+            continue;
+        }
+        let file_id: u64 = u.new_version.id.parse().unwrap_or(0);
+        u.page_url = Some(match mods.iter().find(|m| m.id.to_string() == u.project_id) {
+            Some(m) => cf::file_page_url(m, file_id),
+            None => format!("https://www.curseforge.com/projects/{}", u.project_id),
+        });
+    }
+}
+
+/// Hinweis zu übersprungenen manuellen Updates.
+pub fn manual_skipped_text(n: usize) -> Option<String> {
+    match n {
+        0 => None,
+        1 => Some("1 Update musst du manuell laden".into()),
+        n => Some(format!("{n} Updates musst du manuell laden")),
+    }
+}
+
 /// Task-Körper von `content_update`.
 pub async fn run_update(state: AppState, task: TaskHandle, instance_id: String, file_names: Vec<String>) -> AppResult<()> {
     let inst = state.instances.get(&instance_id)?;
     task.stage("Suche Updates …", None);
     let updates = check_updates(&state, &instance_id).await?;
-    let selected: Vec<&ContentUpdate> = updates.iter().filter(|u| file_names.is_empty() || file_names.contains(&u.file_name)).collect();
+    let wanted: Vec<&ContentUpdate> = updates.iter().filter(|u| file_names.is_empty() || file_names.contains(&u.file_name)).collect();
+    // Gesperrte Downloads nie automatisch – nur zählen und am Ende nennen
+    let skipped = wanted.iter().filter(|u| u.manual).count();
+    let selected: Vec<&ContentUpdate> = wanted.into_iter().filter(|u| !u.manual).collect();
     if selected.is_empty() {
-        task.message("Alles aktuell");
+        task.message(manual_skipped_text(skipped).unwrap_or_else(|| "Alles aktuell".into()));
         return Ok(());
     }
     task.check()?;
@@ -445,5 +532,57 @@ pub async fn run_update(state: AppState, task: TaskHandle, instance_id: String, 
     task.stage(format!("Lade {n} Datei(en) …"), Some(0.1));
     let missing = apply(&state, &inst, planned, &task.sub(0.1, 1.0)).await?;
     finish_message(&task, &warnings, &missing, n);
+    if let Some(m) = manual_skipped_text(skipped) {
+        task.message(format!("{n} Datei(en) aktualisiert – {m}"));
+    }
     Ok(())
+}
+
+// ------------------------------------------------------------------ Manuelle Downloads
+
+/// Datei, die „Auf CurseForge herunterladen“ öffnet: passende (bzw. gewählte) Version für die Instanz.
+/// `downloadable`: doch automatisch ladbar (freigegeben oder identisch auf Modrinth).
+pub async fn manual_target(state: &AppState, instance_id: &str, source: Source, project_id: &str, version_id: Option<&str>) -> AppResult<ManualTarget> {
+    let inst = state.instances.get(instance_id)?;
+    let brief = provider::brief(state, source, project_id).await?;
+    let version = match version_id {
+        Some(v) => provider::version(state, source, &brief.id, v).await?,
+        None => best_version(state, &inst, source, &brief.id)
+            .await?
+            .ok_or_else(|| AppError::NotFound(format!("keine passende Version von {} für {}", brief.title, loader_label(&inst))))?,
+    };
+    let file = primary_file(&version).ok_or_else(|| AppError::msg(format!("{}: Version {} enthält keine Datei", brief.title, version.version_number)))?;
+    let mut downloadable = file.url.is_some();
+    if !downloadable {
+        if let Some(h) = &file.sha1 {
+            downloadable = mr::mirrors(state, std::slice::from_ref(h)).await.contains_key(&h.to_ascii_lowercase());
+        }
+    }
+    let kind = provider::target_kind(brief.project_type, &version, inst.loader.kind, &inst.mc_version);
+    let side = brief.side;
+    let p = Planned { brief, source, kind, version, file, side };
+    Ok(ManualTarget {
+        page_url: manual_page(&p),
+        file_name: crate::paths::sanitize_file_name(&p.file.filename),
+        version_id: p.version.id.clone(),
+        version_number: p.version.version_number.clone(),
+        downloadable,
+    })
+}
+
+/// CurseForge-Projekte der Instanz, deren Autor keine Downloads über andere Launcher erlaubt (Projekt-IDs).
+pub async fn manual_projects(state: &AppState, instance_id: &str) -> AppResult<Vec<String>> {
+    state.instances.get(instance_id)?;
+    if !cf::available(state) {
+        return Ok(vec![]);
+    }
+    let idx = ContentIndex::load(&state.paths, instance_id);
+    let mut ids: Vec<u64> = idx.files.values().filter(|e| e.source == Source::Curseforge).filter_map(|e| e.project_id.parse().ok()).collect();
+    ids.sort_unstable();
+    ids.dedup();
+    if ids.is_empty() {
+        return Ok(vec![]);
+    }
+    let mods = cf::raw_mods(state, &ids).await?;
+    Ok(mods.iter().filter(|m| cf::manual_only(m)).map(|m| m.id.to_string()).collect())
 }

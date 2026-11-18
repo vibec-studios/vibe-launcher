@@ -2,21 +2,22 @@
 // vorausgewählt), Fortschritt im Dialog. Modpacks: Version wählen -> als neue Instanz installieren.
 // Öffnen von überall: `openInstall({ project, instanceId?, versionId? })`. Host sitzt in GlobalDropZone.
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Check, CheckCircle2, FolderPlus, PackagePlus } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle2, ExternalLink, FolderPlus, ListPlus, PackagePlus } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { create } from "zustand";
-import { Button, Dialog, Progress, Select, Skeleton, Switch, Tag, cn } from "@/components/ui";
+import { Button, Dialog, Progress, Select, Skeleton, Switch, Tag, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatLoader, formatRelative } from "@/lib/format";
 import { qk, useInstances, useTask } from "@/lib/queries";
 import type { Instance, ProjectHit, ProjectVersion } from "@/lib/types";
 import { InstanceBadge } from "./InstanceBadge";
-import { startContentInstall, startModpackInstall } from "./install";
+import { startContentInstall, startManualDownload, startModpackInstall } from "./install";
+import { ManualBadge } from "./ManualBadge";
 import { ProjectIcon } from "./ProjectIcon";
 import { compatibility, contentKindOf, loaderFilterFor, navigateTo, type Compat } from "./util";
 
-export type InstallProject = Pick<ProjectHit, "source" | "id" | "slug" | "title" | "icon_url" | "project_type" | "loaders" | "game_versions" | "author">;
+export type InstallProject = Pick<ProjectHit, "source" | "id" | "slug" | "title" | "icon_url" | "project_type" | "loaders" | "game_versions" | "author" | "manual_download">;
 
 interface InstallTarget {
   project: InstallProject;
@@ -49,7 +50,14 @@ export function InstallDialogHost() {
   );
 }
 
-type Phase = { k: "select" } | { k: "running"; taskId: string } | { k: "done"; instanceId: string } | { k: "error"; message: string };
+type Phase =
+  | { k: "select" }
+  | { k: "running"; taskId: string }
+  | { k: "done"; instanceId: string }
+  | { k: "error"; message: string };
+
+/** Wie der letzte Start lief (manuell: Dateiseite geöffnet bzw. nur vorgemerkt) – für den Abschlusstext. */
+const useManualMode = create<{ mode: "open" | "add" | null }>(() => ({ mode: null }));
 
 function reasonText(t: ReturnType<typeof useT>, c: Compat, inst: Instance) {
   if (c.ok) return null;
@@ -91,12 +99,7 @@ function InstallDialog({ target, open, onOpenChange }: { target: InstallTarget; 
           <ContentSelect target={target} onStart={(id) => setPhase({ k: "running", taskId: id })} onError={(m) => setPhase({ k: "error", message: m })} />
         ))}
       {phase.k === "running" && <Running taskId={phase.taskId} isPack={isPack} onDone={(iid) => (isPack ? onOpenChange(false) : setPhase({ k: "done", instanceId: iid }))} onFail={(m) => setPhase({ k: "error", message: m })} />}
-      {phase.k === "done" && (
-        <div className="mt-5 flex items-center gap-3 rounded-card bg-ok/[.08] px-4 py-3 animate-fade-in">
-          <CheckCircle2 size={18} className="shrink-0 text-ok" />
-          <div className="text-[13px]">{t("install.done_inline", { name: project.title })}</div>
-        </div>
-      )}
+      {phase.k === "done" && <DoneNote name={project.title} manual={!!project.manual_download && !isPack} />}
       {phase.k === "error" && (
         <div className="mt-5 flex items-start gap-3 rounded-card bg-danger/[.08] px-4 py-3 animate-fade-in">
           <AlertTriangle size={18} className="mt-0.5 shrink-0 text-danger" />
@@ -110,9 +113,30 @@ function InstallDialog({ target, open, onOpenChange }: { target: InstallTarget; 
   );
 }
 
+function DoneNote({ name, manual }: { name: string; manual: boolean }) {
+  const t = useT();
+  const mode = useManualMode((s) => s.mode);
+  const text = manual && mode === "open" ? t("manual.done_inline", { name }) : manual && mode === "add" ? t("manual.added_inline", { name }) : t("install.done_inline", { name });
+  return (
+    <div className="mt-5 flex items-center gap-3 rounded-card bg-ok/[.08] px-4 py-3 animate-fade-in">
+      <CheckCircle2 size={18} className="shrink-0 text-ok" />
+      <div className="text-[13px]">{text}</div>
+    </div>
+  );
+}
+
 // Die Auswahl-Komponenten legen ihren "Start"-Knopf über ein Portal-Ziel in den Footer – einfacher:
 // Footer liest den aktuellen Start-Handler aus diesem kleinen Store.
-const useStartAction = create<{ run: (() => void) | null; disabled: boolean; busy: boolean; label: string }>(() => ({
+const useStartAction = create<{
+  run: (() => void) | null;
+  disabled: boolean;
+  busy: boolean;
+  label: string;
+  /** Manueller Download: Haupt-Knopf öffnet CurseForge */
+  manual?: boolean;
+  /** Zweiter Knopf (manuell: „Zur Instanz hinzufügen“) */
+  alt?: { label: string; run: () => void } | null;
+}>(() => ({
   run: null,
   disabled: true,
   busy: false,
@@ -128,7 +152,20 @@ function Footer({ phase, setPhase, isPack, onClose }: { phase: Phase; setPhase: 
         <Button variant="subtle" onClick={onClose}>
           {t("common.cancel")}
         </Button>
-        <Button variant="primary" disabled={start.disabled} loading={start.busy} onClick={() => start.run?.()} icon={isPack ? <FolderPlus size={14} /> : <PackagePlus size={14} />}>
+        {start.alt && (
+          <Tooltip content={<span className="block max-w-[260px] leading-snug">{t("manual.add_tip")}</span>}>
+            <Button variant="ghost" disabled={start.disabled || start.busy} onClick={() => start.alt?.run()} icon={<ListPlus size={14} />}>
+              {start.alt.label}
+            </Button>
+          </Tooltip>
+        )}
+        <Button
+          variant="primary"
+          disabled={start.disabled}
+          loading={start.busy}
+          onClick={() => start.run?.()}
+          icon={isPack ? <FolderPlus size={14} /> : start.manual ? <ExternalLink size={14} /> : <PackagePlus size={14} />}
+        >
           {start.label}
         </Button>
       </>
@@ -241,21 +278,35 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
   const installed = !!installedQ.data?.some((c) => c.project_id === project.id);
 
   const [busy, setBusy] = useState(false);
+  const manual = !!project.manual_download;
   useEffect(() => {
+    const go = (mode: "open" | "add") => {
+      if (!selected || !versionId) return;
+      setBusy(true);
+      useManualMode.setState({ mode });
+      startManualDownload(selected.inst.id, project, versionId, { silent: true, open: mode === "open" })
+        .then(onStart)
+        .catch((e) => onError(errorMessage(e)))
+        .finally(() => setBusy(false));
+    };
     useStartAction.setState({
-      label: installed ? t("install.reinstall") : t("common.install"),
+      label: manual ? t("manual.download") : installed ? t("install.reinstall") : t("common.install"),
       disabled: !selected || !versionId || versionsQ.isFetching,
       busy,
+      manual,
+      alt: manual ? { label: t("manual.add"), run: () => go("add") } : null,
       run: () => {
         if (!selected || !versionId) return;
+        if (manual) return go("open");
         setBusy(true);
+        useManualMode.setState({ mode: null });
         startContentInstall(selected.inst.id, project, versionId, { silent: true })
           .then(onStart)
           .catch((e) => onError(errorMessage(e)))
           .finally(() => setBusy(false));
       },
     });
-  }, [selected, versionId, versionsQ.isFetching, busy, installed, project, onStart, onError, t]);
+  }, [selected, versionId, versionsQ.isFetching, busy, installed, manual, project, onStart, onError, t]);
 
   if (instancesQ.isPending) {
     return (
@@ -281,6 +332,15 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
 
   return (
     <div className="mt-5 flex flex-col gap-5">
+      {manual && (
+        <div className="flex items-start gap-2.5 rounded-card bg-warn/[.08] px-3.5 py-3">
+          <ManualBadge iconOnly className="mt-px" />
+          <div className="min-w-0 text-[12.5px] leading-snug">
+            <div className="font-semibold text-text">{t("manual.badge")}</div>
+            <div className="mt-0.5 text-muted">{t("manual.tip")}</div>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col gap-2">
         <span className="label">{t("install.instance")}</span>
         <div className="scroll -mx-2 flex max-h-[232px] flex-col gap-px px-2" role="radiogroup" aria-label={t("install.instance")}>

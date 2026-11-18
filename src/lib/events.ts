@@ -1,7 +1,7 @@
 // Backend-Events (siehe src-tauri/src/events.rs).
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useRef } from "react";
-import type { Account, GameState, Instance, LogLine, Server, ServerStatus, Settings, TaskInfo, VibeWsEvent } from "./types";
+import type { Account, GameState, Instance, LogLine, ManualArrived, Server, ServerStatus, Settings, TaskInfo, VibeWsEvent } from "./types";
 
 export interface EventMap {
   "task://update": TaskInfo;
@@ -10,6 +10,8 @@ export interface EventMap {
   "game://state": GameState;
   "game://log": { instance_id: string; lines: LogLine[] };
   "content://changed": { instance_id: string };
+  /** Manuell geladene Datei aus dem Download-Ordner übernommen */
+  "content://manual-arrived": ManualArrived;
   "accounts://changed": Account[];
   "settings://changed": Settings;
   /** Skin-Bibliothek oder Skin/Cape eines Accounts geändert */

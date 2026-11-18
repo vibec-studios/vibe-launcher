@@ -101,8 +101,15 @@ export const api = {
   contentProject: (source: T.Source, id: string) => call<T.ProjectDetails>("content_project", { source, id }),
   contentVersions: (source: T.Source, id: string, gameVersion?: string | null, loader?: T.LoaderKind | null) =>
     call<T.ProjectVersion[]>("content_versions", { source, id, gameVersion: gameVersion ?? null, loader: loader ?? null }),
-  contentInstall: (instanceId: string, source: T.Source, projectId: string, versionId?: string | null) =>
-    call<string>("content_install", { instanceId, source, projectId, versionId: versionId ?? null }),
+  contentInstall: (instanceId: string, source: T.Source, projectId: string, versionId?: string | null, expectManual = false) =>
+    call<string>("content_install", { instanceId, source, projectId, versionId: versionId ?? null, expectManual }),
+  /** Ziel für „Auf CurseForge herunterladen“ (passende Version der Instanz) */
+  contentManualTarget: (instanceId: string, source: T.Source, projectId: string, versionId?: string | null) =>
+    call<T.ManualTarget>("content_manual_target", { instanceId, source, projectId, versionId: versionId ?? null }),
+  /** CurseForge-Projekte der Instanz ohne Freigabe für andere Launcher */
+  contentManualProjects: (instanceId: string) => call<string[]>("content_manual_projects", { instanceId }),
+  contentMissingScan: (instanceId: string) => call<T.MissingScan>("content_missing_scan", { instanceId }),
+  contentMissingWatch: (instanceId: string) => call<number | null>("content_missing_watch", { instanceId }),
   contentList: (instanceId: string, kind: T.ContentKind) => call<T.ContentItem[]>("content_list", { instanceId, kind }),
   contentSetEnabled: (instanceId: string, kind: T.ContentKind, fileName: string, enabled: boolean) =>
     call<T.ContentItem>("content_set_enabled", { instanceId, kind, fileName, enabled }),

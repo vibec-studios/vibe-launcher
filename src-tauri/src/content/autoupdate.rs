@@ -28,7 +28,8 @@ pub fn enabled_for(settings: &Settings, inst: &Instance) -> bool {
 
 /// Updates (ohne fixierte Inhalte) einspielen. Gibt die aktualisierten Dateien zurück.
 async fn apply_all(state: &AppState, inst: &Instance, task: &TaskHandle) -> AppResult<Vec<ContentUpdate>> {
-    let updates = install::check_updates(state, &inst.id).await?;
+    // Gesperrte CurseForge-Downloads nie automatisch (Nutzer lädt sie selbst)
+    let updates: Vec<ContentUpdate> = install::check_updates(state, &inst.id).await?.into_iter().filter(|u| !u.manual).collect();
     if updates.is_empty() {
         return Ok(vec![]);
     }
