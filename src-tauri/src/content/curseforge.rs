@@ -338,6 +338,9 @@ pub fn mod_to_hit(m: &CfMod) -> ProjectHit {
         updated: m.date_modified.clone(),
         game_versions: gv,
         loaders,
+        banner_url: m.screenshots.iter().find_map(|s| s.thumbnail_url.clone().or(s.url.clone()).filter(|u| !u.is_empty())),
+        color: None,
+        created: m.date_created.clone(),
     }
 }
 
@@ -679,6 +682,7 @@ mod tests {
             sort: SortOrder::Relevance,
             offset: 20,
             limit: 100,
+            created_after: None,
         };
         let p = search_params(&q);
         let get = |k: &str| p.iter().find(|(a, _)| a == k).map(|(_, v)| v.clone());

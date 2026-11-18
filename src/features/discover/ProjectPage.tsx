@@ -1,21 +1,24 @@
-// Projektseite: kompakter Kopf (Icon, Titel, Kurzbeschreibung, eine Meta-Zeile, Installieren + ⋯-Menü),
-// klebende Tab-Leiste Beschreibung / Versionen / Galerie, rechts Infospalte (Kompatibilität, Kategorien, Links, Details).
-import { useQuery } from "@tanstack/react-query";
-import { getRouteApi } from "@tanstack/react-router";
-import { BookOpen, Bug, CalendarClock, Code2, Copy, Download, ExternalLink, FolderPlus, Globe, Heart, MessageCircle, MoreHorizontal } from "lucide-react";
+// Projektseite: großer Kopf (Galerie-Banner, Icon, Titel, Kennzahlen, Installieren mit Instanzwahl, Links),
+// klebende Tab-Leiste Beschreibung / Versionen / Galerie, rechts Infospalte (Passt zur Instanz, Kompatibilität,
+// Abhängigkeiten, Kategorien, Links, Details).
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { AlertTriangle, BookOpen, Bug, CalendarClock, Check, Code2, Copy, Download, ExternalLink, Globe, Heart, Images, MessageCircle, MoreHorizontal, Scale } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
-import { Button, DropdownItem, DropdownMenu, DropdownSeparator, ErrorState, IconButton, Skeleton, Tabs, Tag, Tooltip, toast } from "@/components/ui";
+import { DropdownItem, DropdownMenu, DropdownSeparator, ErrorState, IconButton, Skeleton, Tabs, Tooltip, cn, toast } from "@/components/ui";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
-import { formatCount, formatDate, formatRelative } from "@/lib/format";
+import { formatCount, formatDate, formatLoader, formatRelative } from "@/lib/format";
 import { qk, useInstances } from "@/lib/queries";
-import type { ProjectDetails, Source } from "@/lib/types";
+import type { Dependency, Instance, ProjectDetails, Source } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { RichText } from "@/components/content/RichText";
-import { openInstall } from "@/components/content/InstallDialog";
-import { Pill, prettyCategory, prettyLoader } from "@/components/content/Pill";
-import { compareMc, copyText, openExternal, sourceName, versionRange } from "@/components/content/util";
+import { Pill, prettyLoader } from "@/components/content/Pill";
+import { compareMc, compatibility, contentKindOf, copyText, openExternal, sourceName, versionRange } from "@/components/content/util";
+import { CategoryIcon, categoryLabel } from "./categoryIcons";
+import { InstallMenu } from "./InstallMenu";
+import { hitColor } from "./ResultCard";
 import { VersionsTab } from "./VersionsTab";
 
 const route = getRouteApi("/project/$source/$id");
@@ -35,7 +38,11 @@ export function ProjectPage() {
     placeholderData: undefined,
   });
   const [tab, setTab] = useState<Tab>("description");
+  const [lightbox, setLightbox] = useState<number | null>(null);
   const p = q.data;
+  const { data: instances } = useInstances();
+  const target = search.instance ? (instances?.find((i) => i.id === search.instance) ?? null) : null;
+  const images = useMemo(() => (p ? [...p.gallery].sort((a, b) => Number(b.featured) - Number(a.featured)) : []), [p]);
 
   return (
     <div className="scroll h-full">
@@ -45,11 +52,11 @@ export function ProjectPage() {
         ) : !p ? (
           <HeaderSkeleton />
         ) : (
-          <Header p={p} instanceId={search.instance} />
+          <Header p={p} target={target} banner={images[0]?.url ?? null} onBanner={() => setLightbox(0)} />
         )}
         {p && (
           <>
-            <div className="sticky top-0 z-10 mt-3 bg-panel">
+            <div className="sticky top-0 z-10 mt-4 bg-panel">
               <Tabs
                 value={tab}
                 onChange={setTab}
@@ -61,22 +68,38 @@ export function ProjectPage() {
                 ]}
               />
             </div>
-            <div className="flex items-start gap-8 pt-5">
+            <div className="flex items-start gap-10 pt-6">
               <div className="min-w-0 flex-1">
                 {tab === "description" && <Description p={p} />}
-                {tab === "gallery" && <Gallery p={p} />}
+                {tab === "gallery" && <Gallery images={images} onOpen={setLightbox} />}
                 {tab === "versions" && <VersionsTab project={p} instanceId={search.instance} />}
               </div>
-              {tab !== "versions" && <InfoSidebar p={p} />}
+              {tab !== "versions" && <InfoSidebar p={p} target={target} />}
             </div>
+            <Lightbox
+              images={images}
+              index={lightbox}
+              onIndexChange={setLightbox}
+              onClose={() => setLightbox(null)}
+              labels={{ prev: t("project.prev"), next: t("project.next"), close: t("common.close") }}
+            />
           </>
         )}
         {!p && !q.isError && (
-          <div className="mt-6 flex flex-col gap-3">
-            <Skeleton className="h-10" />
-            <Skeleton className="h-4 w-4/5" />
-            <Skeleton className="h-4 w-3/5" />
-            <Skeleton className="h-4 w-2/3" />
+          <div className="mt-8 flex gap-10">
+            <div className="flex flex-1 flex-col gap-3">
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-11/12" />
+              <Skeleton className="h-4 w-4/5" />
+              <Skeleton className="mt-3 h-48 w-full rounded-card" />
+            </div>
+            <div className="flex w-[264px] shrink-0 flex-col gap-3 max-[980px]:hidden">
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-16" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-24" />
+            </div>
           </div>
         )}
       </div>
@@ -84,128 +107,139 @@ export function ProjectPage() {
   );
 }
 
-function LinkItems({ p, Item }: { p: ProjectDetails; Item: typeof DropdownItem }) {
-  const t = useT();
+function linkList(p: ProjectDetails, t: ReturnType<typeof useT>) {
   const l = p.links;
-  const open = (u: string) => void openExternal(u);
-  return (
-    <>
-      {l.website && (
-        <Item icon={<Globe size={14} />} onSelect={() => open(l.website!)}>
-          {t("project.link.website")}
-        </Item>
-      )}
-      {l.source && (
-        <Item icon={<Code2 size={14} />} onSelect={() => open(l.source!)}>
-          {t("project.link.source")}
-        </Item>
-      )}
-      {l.issues && (
-        <Item icon={<Bug size={14} />} onSelect={() => open(l.issues!)}>
-          {t("project.link.issues")}
-        </Item>
-      )}
-      {l.wiki && (
-        <Item icon={<BookOpen size={14} />} onSelect={() => open(l.wiki!)}>
-          {t("project.link.wiki")}
-        </Item>
-      )}
-      {l.discord && (
-        <Item icon={<MessageCircle size={14} />} onSelect={() => open(l.discord!)}>
-          Discord
-        </Item>
-      )}
-    </>
-  );
+  return [
+    l.website && { key: "website", href: l.website, icon: <Globe size={15} />, label: t("project.link.website") },
+    l.source && { key: "source", href: l.source, icon: <Code2 size={15} />, label: t("project.link.source") },
+    l.issues && { key: "issues", href: l.issues, icon: <Bug size={15} />, label: t("project.link.issues") },
+    l.wiki && { key: "wiki", href: l.wiki, icon: <BookOpen size={15} />, label: t("project.link.wiki") },
+    l.discord && { key: "discord", href: l.discord, icon: <MessageCircle size={15} />, label: "Discord" },
+  ].filter(Boolean) as { key: string; href: string; icon: ReactNode; label: string }[];
 }
 
-function Header({ p, instanceId }: { p: ProjectDetails; instanceId?: string }) {
+function Header({ p, target, banner, onBanner }: { p: ProjectDetails; target: Instance | null; banner: string | null; onBanner: () => void }) {
   const t = useT();
-  const { data: instances } = useInstances();
-  const target = instanceId ? instances?.find((i) => i.id === instanceId) : undefined;
-  const isPack = p.project_type === "modpack";
+  const [bannerFailed, setBannerFailed] = useState(false);
   const loaders = p.loaders.filter((l) => ["fabric", "forge", "neoforge", "quilt"].includes(l));
   const range = versionRange(p.game_versions);
-  const hasLinks = !!(p.links.website || p.links.source || p.links.issues || p.links.wiki || p.links.discord);
-  const install = () => openInstall({ project: p, instanceId: isPack ? null : instanceId });
+  const links = linkList(p, t);
+  const color = hitColor(p);
+  const showBanner = !!banner && !bannerFailed;
 
   return (
-    <div className="flex items-center gap-4 animate-fade-in">
-      <ProjectIcon src={p.icon_url} size={64} eager />
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex min-w-0 items-baseline gap-2">
-          <h1 className="truncate text-title text-text" title={p.title}>
-            {p.title}
-          </h1>
-          <span className="shrink-0 truncate text-meta text-dim">{t("discover.by", { author: p.author })}</span>
-        </div>
-        <p className="selectable truncate text-[13px] text-muted" title={p.description}>
-          {p.description}
-        </p>
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-meta text-dim">
-          <Tooltip content={t("discover.downloads_n", { n: p.downloads.toLocaleString() })}>
-            <span className="flex items-center gap-1">
-              <Download size={12} />
-              {formatCount(p.downloads)} {t("project.downloads_lc")}
-            </span>
-          </Tooltip>
-          {p.source === "modrinth" && (
-            <span className="flex items-center gap-1">
-              <Heart size={12} />
-              {formatCount(p.follows)} {t("project.follows_lc")}
-            </span>
-          )}
-          {p.updated && (
-            <Tooltip content={formatDate(p.updated)}>
-              <span className="flex items-center gap-1">
-                <CalendarClock size={12} />
-                {t("project.updated_ago", { time: formatRelative(p.updated) })}
-              </span>
-            </Tooltip>
-          )}
-          {(loaders.length > 0 || range) && (
-            <span className="flex items-center gap-1">
-              {loaders.map((l) => (
-                <Tag key={l} className="text-text">
-                  {prettyLoader(l)}
-                </Tag>
-              ))}
-              {range && <Tag className="text-text">{range}</Tag>}
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-1.5">
-        <Button variant="primary" icon={isPack ? <FolderPlus size={15} /> : <Download size={15} />} onClick={install}>
-          {isPack ? t("install.as_new_instance_short") : target ? t("project.install_into", { name: target.name }) : t("common.install")}
-        </Button>
-        <DropdownMenu
-          trigger={
-            <IconButton label={t("common.more")} tip variant="ghost">
-              <MoreHorizontal size={16} />
-            </IconButton>
-          }
+    <div className="animate-fade-in">
+      {showBanner ? (
+        <button
+          onClick={onBanner}
+          aria-label={t("project.tab.gallery")}
+          className="group relative block h-[220px] w-full overflow-hidden rounded-card bg-surface2 max-[1100px]:h-[180px]"
         >
-          {hasLinks && (
-            <>
-              <LinkItems p={p} Item={DropdownItem} />
-              <DropdownSeparator />
-            </>
+          <img
+            src={banner!}
+            alt=""
+            draggable={false}
+            onError={() => setBannerFailed(true)}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-[var(--ease-snap)] group-hover:scale-[1.015]"
+          />
+          {p.gallery.length > 1 && (
+            <span className="absolute bottom-3 right-3 inline-flex h-7 items-center gap-1.5 rounded-ctl bg-black/70 px-2.5 text-[12px] font-semibold text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+              <Images size={13} />
+              {t("project.gallery_more", { n: p.gallery.length })}
+            </span>
           )}
-          <DropdownItem icon={<ExternalLink size={14} />} onSelect={() => void openExternal(p.page_url)}>
-            {t("project.open_on", { source: sourceName(p.source) })}
-          </DropdownItem>
-          <DropdownItem
-            icon={<Copy size={14} />}
-            onSelect={() =>
-              copyText(p.page_url)
-                .then(() => toast.success(t("common.copied"), p.page_url))
-                .catch((e) => toast.error(e))
+        </button>
+      ) : (
+        color && <div className="h-1.5 w-full rounded-pill" style={{ backgroundColor: color }} />
+      )}
+      <div className={cn("flex items-end gap-5", showBanner ? "-mt-10 px-5" : "mt-4")}>
+        <span className={cn("shrink-0 rounded-card", showBanner && "bg-panel p-1")}>
+          <ProjectIcon src={p.icon_url} size={104} eager />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1 pb-1">
+          <div className="flex min-w-0 items-baseline gap-2.5">
+            <h1 className="selectable truncate text-[26px] font-bold leading-tight tracking-[-0.02em] text-text" title={p.title}>
+              {p.title}
+            </h1>
+            {p.author && <span className="shrink-0 truncate text-[13px] text-dim">{t("discover.by", { author: p.author })}</span>}
+          </div>
+          <p className="selectable line-clamp-2 max-w-[760px] text-[14px] leading-snug text-muted" title={p.description}>
+            {p.description}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5 pb-1.5">
+          <InstallMenu project={p} target={target && p.project_type !== "modpack" ? target : null} size="md" wide />
+          {links.slice(0, 3).map((l) => (
+            <IconButton key={l.key} label={l.label} tip variant="ghost" onClick={() => void openExternal(l.href)}>
+              {l.icon}
+            </IconButton>
+          ))}
+          <DropdownMenu
+            trigger={
+              <IconButton label={t("common.more")} tip variant="ghost">
+                <MoreHorizontal size={16} />
+              </IconButton>
             }
           >
-            {t("discover.menu.copy_link")}
-          </DropdownItem>
-        </DropdownMenu>
+            {links.length > 3 && (
+              <>
+                {links.slice(3).map((l) => (
+                  <DropdownItem key={l.key} icon={l.icon} onSelect={() => void openExternal(l.href)}>
+                    {l.label}
+                  </DropdownItem>
+                ))}
+                <DropdownSeparator />
+              </>
+            )}
+            <DropdownItem icon={<ExternalLink size={14} />} onSelect={() => void openExternal(p.page_url)}>
+              {t("project.open_on", { source: sourceName(p.source) })}
+            </DropdownItem>
+            <DropdownItem
+              icon={<Copy size={14} />}
+              onSelect={() =>
+                copyText(p.page_url)
+                  .then(() => toast.success(t("common.copied"), p.page_url))
+                  .catch((e) => toast.error(e))
+              }
+            >
+              {t("discover.menu.copy_link")}
+            </DropdownItem>
+          </DropdownMenu>
+        </div>
+      </div>
+      <div className={cn("mt-4 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-muted", showBanner && "px-5")}>
+        <Tooltip content={t("discover.downloads_n", { n: p.downloads.toLocaleString() })}>
+          <span className="flex items-center gap-1.5">
+            <Download size={14} className="text-dim" />
+            <b className="font-semibold tabular-nums text-text">{formatCount(p.downloads)}</b> {t("project.downloads_lc")}
+          </span>
+        </Tooltip>
+        {p.source === "modrinth" && (
+          <Tooltip content={t("discover.follows_n", { n: p.follows.toLocaleString() })}>
+            <span className="flex items-center gap-1.5">
+              <Heart size={14} className="text-dim" />
+              <b className="font-semibold tabular-nums text-text">{formatCount(p.follows)}</b> {t("project.follows_lc")}
+            </span>
+          </Tooltip>
+        )}
+        {p.updated && (
+          <Tooltip content={formatDate(p.updated)}>
+            <span className="flex items-center gap-1.5">
+              <CalendarClock size={14} className="text-dim" />
+              {t("project.updated_ago", { time: formatRelative(p.updated) })}
+            </span>
+          </Tooltip>
+        )}
+        {(loaders.length > 0 || range) && (
+          <span className="flex items-center gap-1.5">
+            {loaders.map((l) => (
+              <Pill key={l} className="text-text">
+                {prettyLoader(l)}
+              </Pill>
+            ))}
+            {range && <Pill className="font-mono text-[11.5px] text-text">{range}</Pill>}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -213,22 +247,34 @@ function Header({ p, instanceId }: { p: ProjectDetails; instanceId?: string }) {
 
 function HeaderSkeleton() {
   return (
-    <div className="flex items-center gap-4">
-      <Skeleton className="h-[64px] w-[64px] shrink-0 rounded-card" />
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <Skeleton className="h-5 w-2/5" />
-        <Skeleton className="h-3.5 w-3/5" />
-        <Skeleton className="h-3 w-1/3" />
+    <div>
+      <Skeleton className="h-[220px] w-full rounded-card max-[1100px]:h-[180px]" />
+      <div className="-mt-10 flex items-end gap-5 px-5">
+        <div className="rounded-card bg-panel p-1">
+          <Skeleton className="h-[104px] w-[104px] rounded-card" />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-2 pb-2">
+          <Skeleton className="h-7 w-2/5" />
+          <Skeleton className="h-4 w-3/5" />
+        </div>
+        <Skeleton className="mb-1.5 h-9 w-[150px] shrink-0" />
       </div>
-      <Skeleton className="h-9 w-[132px] shrink-0" />
+      <div className="mt-4 flex gap-5 px-5">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-36" />
+      </div>
     </div>
   );
 }
 
-function SideSection({ title, children }: { title: string; children: ReactNode }) {
+function SideSection({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
   return (
-    <section className="flex flex-col gap-2">
-      <h3 className="text-[12.5px] font-semibold text-muted">{title}</h3>
+    <section className="flex flex-col gap-2.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-[13px] font-semibold text-text">{title}</h3>
+        {right}
+      </div>
       {children}
     </section>
   );
@@ -236,17 +282,113 @@ function SideSection({ title, children }: { title: string; children: ReactNode }
 
 function SideLink({ href, icon, children }: { href: string; icon: ReactNode; children: ReactNode }) {
   return (
-    <a href={href} className="-mx-2 flex h-8 items-center gap-2.5 rounded-ctl px-2 text-[13px] text-muted transition-colors hover:bg-white/[.04] hover:text-text">
-      <span className="text-dim">{icon}</span>
+    <button
+      onClick={() => void openExternal(href)}
+      className="group -mx-2 flex h-8 items-center gap-2.5 rounded-ctl px-2 text-left text-[13px] text-muted transition-colors hover:bg-white/[.05] hover:text-text"
+    >
+      <span className="text-dim transition-colors group-hover:text-text">{icon}</span>
       <span className="flex-1 truncate">{children}</span>
-      <ExternalLink size={12} className="text-dim" />
-    </a>
+      <ExternalLink size={12} className="text-dim opacity-0 transition-opacity group-hover:opacity-100" />
+    </button>
   );
 }
 
-function InfoSidebar({ p }: { p: ProjectDetails }) {
+/** Passt das Projekt zur Ziel-Instanz? (oben in der Infospalte, nur im Ziel-Instanz-Modus) */
+function TargetFit({ p, target }: { p: ProjectDetails; target: Instance }) {
   const t = useT();
-  const l = p.links;
+  const kind = contentKindOf(p.project_type);
+  const installedQ = useQuery({
+    queryKey: qk.content(target.id, kind ?? "mod"),
+    queryFn: () => api.contentList(target.id, kind!),
+    enabled: !!kind,
+  });
+  if (p.project_type === "modpack") return null;
+  const installed = installedQ.data?.some((c) => c.project_id === p.id);
+  const c = compatibility(p, target);
+  return (
+    <div className={cn("flex items-start gap-2.5 rounded-card px-3.5 py-3", installed || c.ok ? "bg-ok/[.08]" : "bg-warn/[.08]")}>
+      {installed || c.ok ? <Check size={15} strokeWidth={2.5} className="mt-px shrink-0 text-ok" /> : <AlertTriangle size={15} className="mt-px shrink-0 text-warn" />}
+      <div className="min-w-0 text-[12.5px] leading-snug">
+        <div className="font-semibold text-text">
+          {installed ? t("discover.in_instance", { name: target.name }) : c.ok ? t("project.compat.ok", { name: target.name }) : t("project.compat.no", { name: target.name })}
+        </div>
+        <div className="text-muted">{`${target.mc_version} · ${formatLoader(target.loader)}`}</div>
+      </div>
+    </div>
+  );
+}
+
+const DEP_ORDER: Record<string, number> = { required: 0, optional: 1, incompatible: 2, embedded: 3 };
+
+/** Abhängigkeiten der neuesten (zur Ziel-Instanz passenden) Version, mit Icon und Namen. */
+function Dependencies({ p, target }: { p: ProjectDetails; target: Instance | null }) {
+  const t = useT();
+  const nav = useNavigate();
+  const vq = useQuery({
+    queryKey: qk.versions(p.source, p.id, null, null),
+    queryFn: () => api.contentVersions(p.source, p.id, null, null),
+    staleTime: 5 * 60_000,
+  });
+  const version = useMemo(() => {
+    const all = vq.data ?? [];
+    if (!target) return all[0];
+    return all.find((v) => v.game_versions.includes(target.mc_version) && (!v.loaders.length || v.loaders.includes(target.loader.kind))) ?? all[0];
+  }, [vq.data, target]);
+  const deps = useMemo(
+    () =>
+      (version?.dependencies ?? [])
+        .filter((d): d is Dependency & { project_id: string } => !!d.project_id && d.kind !== "embedded")
+        .filter((d, i, a) => a.findIndex((x) => x.project_id === d.project_id) === i)
+        .sort((a, b) => DEP_ORDER[a.kind] - DEP_ORDER[b.kind])
+        .slice(0, 8),
+    [version],
+  );
+  const projects = useQueries({
+    queries: deps.map((d) => ({
+      queryKey: qk.project(d.source ?? p.source, d.project_id),
+      queryFn: () => api.contentProject(d.source ?? p.source, d.project_id),
+      staleTime: 10 * 60_000,
+      retry: 0,
+    })),
+  });
+  if (vq.isPending)
+    return (
+      <SideSection title={t("project.deps")}>
+        <Skeleton className="h-10" />
+      </SideSection>
+    );
+  if (!deps.length) return null;
+  return (
+    <SideSection title={t("project.deps")}>
+      <div className="-mx-2 flex flex-col">
+        {deps.map((d, i) => {
+          const dp = projects[i]?.data;
+          const src = d.source ?? p.source;
+          return (
+            <button
+              key={d.project_id}
+              onClick={() => nav({ to: "/project/$source/$id", params: { source: src, id: d.project_id }, search: { instance: target?.id } })}
+              className="group flex h-11 items-center gap-2.5 rounded-ctl px-2 text-left transition-colors hover:bg-white/[.05]"
+            >
+              {dp ? <ProjectIcon src={dp.icon_url} size={28} /> : <Skeleton className="h-7 w-7 shrink-0" />}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-medium leading-tight text-text">{dp?.title ?? (projects[i]?.isError ? d.project_id : "…")}</span>
+                <span className={cn("block text-[11.5px] leading-tight", d.kind === "required" ? "text-muted" : d.kind === "incompatible" ? "text-danger" : "text-dim")}>
+                  {t(`project.deps.${d.kind}`)}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {version && <p className="text-[11.5px] text-dim">{t("project.deps.latest", { version: version.version_number })}</p>}
+    </SideSection>
+  );
+}
+
+function InfoSidebar({ p, target }: { p: ProjectDetails; target: Instance | null }) {
+  const t = useT();
+  const links = linkList(p, t);
   const versions = useMemo(() => {
     const rel = p.game_versions.filter((v) => /^\d+\.\d+(\.\d+)?$/.test(v)).sort((a, b) => compareMc(b, a));
     return rel.length ? rel : p.game_versions;
@@ -254,12 +396,13 @@ function InfoSidebar({ p }: { p: ProjectDetails }) {
   const shown = versions.slice(0, 12);
   const platforms = p.loaders.filter((x) => x !== "minecraft");
   return (
-    <aside className="flex w-[248px] shrink-0 flex-col gap-6">
+    <aside className="flex w-[264px] shrink-0 flex-col gap-7 max-[980px]:hidden">
+      {target && <TargetFit p={p} target={target} />}
       <SideSection title={t("project.side.compat")}>
         <div className="text-[12px] text-dim">Minecraft: Java Edition</div>
         <div className="flex flex-wrap gap-1">
           {shown.map((v) => (
-            <Pill key={v} className="font-mono text-[11.5px] text-text">
+            <Pill key={v} className={cn("font-mono text-[11.5px]", target?.mc_version === v ? "bg-ok/15 text-ok" : "text-text")}>
               {v}
             </Pill>
           ))}
@@ -279,49 +422,35 @@ function InfoSidebar({ p }: { p: ProjectDetails }) {
           </>
         )}
       </SideSection>
+      <Dependencies p={p} target={target} />
       {p.categories.length > 0 && (
         <SideSection title={t("discover.filter.categories")}>
           <div className="flex flex-wrap gap-1">
             {p.categories.map((c) => (
-              <Pill key={c}>{prettyCategory(c)}</Pill>
+              <Pill key={c} icon={<CategoryIcon id={c} size={12} className="text-dim" />}>
+                {categoryLabel(c)}
+              </Pill>
             ))}
           </div>
         </SideSection>
       )}
-      {(l.website || l.source || l.issues || l.wiki || l.discord) && (
+      {links.length > 0 && (
         <SideSection title={t("project.side.links")}>
           <div className="flex flex-col">
-            {l.website && (
-              <SideLink href={l.website} icon={<Globe size={14} />}>
-                {t("project.link.website")}
+            {links.map((l) => (
+              <SideLink key={l.key} href={l.href} icon={l.icon}>
+                {l.label}
               </SideLink>
-            )}
-            {l.source && (
-              <SideLink href={l.source} icon={<Code2 size={14} />}>
-                {t("project.link.source")}
-              </SideLink>
-            )}
-            {l.issues && (
-              <SideLink href={l.issues} icon={<Bug size={14} />}>
-                {t("project.link.issues")}
-              </SideLink>
-            )}
-            {l.wiki && (
-              <SideLink href={l.wiki} icon={<BookOpen size={14} />}>
-                {t("project.link.wiki")}
-              </SideLink>
-            )}
-            {l.discord && (
-              <SideLink href={l.discord} icon={<MessageCircle size={14} />}>
-                Discord
-              </SideLink>
-            )}
+            ))}
           </div>
         </SideSection>
       )}
       <SideSection title={t("project.side.details")}>
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13px]">
-          <dt className="text-dim">{t("project.license")}</dt>
+          <dt className="flex items-center gap-1.5 text-dim">
+            <Scale size={12} />
+            {t("project.license")}
+          </dt>
           <dd className="truncate text-text" title={p.license ?? ""}>
             {p.license ? p.license.replace(/^LicenseRef-/, "").replace(/-/g, " ") : "–"}
           </dd>
@@ -349,50 +478,39 @@ function Description({ p }: { p: ProjectDetails }) {
   const t = useT();
   if (!p.body.trim()) return <p className="text-[13px] text-dim">{t("project.no_description")}</p>;
   return (
-    <div className="max-w-[860px] animate-fade-in">
+    <div className="max-w-[780px] animate-fade-in">
       <RichText source={p.body} format={p.body_format} />
     </div>
   );
 }
 
-function Gallery({ p }: { p: ProjectDetails }) {
+function Gallery({ images, onOpen }: { images: ProjectDetails["gallery"]; onOpen: (i: number) => void }) {
   const t = useT();
-  const [index, setIndex] = useState<number | null>(null);
-  const images = useMemo(() => [...p.gallery].sort((a, b) => Number(b.featured) - Number(a.featured)), [p.gallery]);
   if (!images.length) return <p className="text-[13px] text-dim">{t("project.no_gallery")}</p>;
   return (
-    <>
-      <div className="grid grid-cols-2 gap-3 animate-fade-in xl:grid-cols-3">
-        {images.map((g, i) => (
-          <button
-            key={g.url}
-            onClick={() => setIndex(i)}
-            className="group flex flex-col overflow-hidden rounded-card bg-surface text-left transition-colors duration-150 hover:bg-surface2"
-          >
-            <span className="relative block aspect-video w-full overflow-hidden bg-surface2">
-              <img
-                src={g.url}
-                alt={g.title ?? ""}
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            </span>
-            <span className="flex h-[44px] flex-col justify-center px-3">
-              <span className="truncate text-[13px] font-medium text-text">{g.title || t("project.image", { n: i + 1 })}</span>
-              {g.description && <span className="truncate text-[12px] text-dim">{g.description}</span>}
-            </span>
-          </button>
-        ))}
-      </div>
-      <Lightbox
-        images={images}
-        index={index}
-        onIndexChange={setIndex}
-        onClose={() => setIndex(null)}
-        labels={{ prev: t("project.prev"), next: t("project.next"), close: t("common.close") }}
-      />
-    </>
+    <div className="grid grid-cols-2 gap-3 animate-fade-in xl:grid-cols-3">
+      {images.map((g, i) => (
+        <button
+          key={g.url}
+          onClick={() => onOpen(i)}
+          className="group flex flex-col overflow-hidden rounded-card bg-surface text-left transition-colors duration-150 hover:bg-surface2"
+        >
+          <span className="relative block aspect-video w-full overflow-hidden bg-surface2">
+            <img
+              src={g.url}
+              alt={g.title ?? ""}
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 ease-[var(--ease-snap)] group-hover:scale-[1.03]"
+            />
+          </span>
+          <span className="flex h-[44px] flex-col justify-center px-3">
+            <span className="truncate text-[13px] font-medium text-text">{g.title || t("project.image", { n: i + 1 })}</span>
+            {g.description && <span className="truncate text-[12px] text-dim">{g.description}</span>}
+          </span>
+        </button>
+      ))}
+    </div>
   );
 }

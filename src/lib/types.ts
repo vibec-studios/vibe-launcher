@@ -345,6 +345,8 @@ export interface SearchQuery {
   sort: SortOrder;
   offset: number;
   limit: number;
+  /** Nur Projekte, die nach diesem Zeitpunkt angelegt wurden (Unix-Sekunden, Modrinth) */
+  created_after?: number | null;
 }
 
 export interface ProjectHit {
@@ -362,6 +364,12 @@ export interface ProjectHit {
   updated: string | null;
   game_versions: string[];
   loaders: string[];
+  /** Vorschaubild (hervorgehobenes Galerie-Bild) */
+  banner_url?: string | null;
+  /** Markenfarbe (RGB als Zahl, Modrinth) */
+  color?: number | null;
+  /** ISO-8601, angelegt */
+  created?: string | null;
 }
 
 export interface SearchResult {
