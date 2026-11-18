@@ -1,7 +1,7 @@
 // Kleine Bausteine für Server: Status-Punkt, Icon, Adresse mit Kopieren, Start/Stopp-Knopf, Aktionsmenü.
 import type { ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Copy, FolderOpen, FolderTree, ImageIcon, Play, RotateCcw, RotateCw, Skull, Square, SquareTerminal, Trash2, Wrench } from "lucide-react";
+import { Copy, FolderOpen, FolderTree, Gamepad2, ImageIcon, Play, RotateCcw, RotateCw, Skull, Square, SquareTerminal, Trash2, Wrench } from "lucide-react";
 import {
   Button,
   ContextItem,
@@ -23,6 +23,7 @@ import type { Server, ServerRunState, ServerStatus } from "@/lib/types";
 import { useT } from "@/i18n";
 import {
   copyAddress,
+  joinServer,
   killServer,
   openServerFolder,
   removeServer,
@@ -56,7 +57,7 @@ export const stateText: Record<ServerRunState, string> = {
 
 export function StatusDot({ state, className }: { state: ServerRunState; className?: string }) {
   const pulse = state === "starting" || state === "stopping";
-  return <span className={cn("inline-block h-2 w-2 shrink-0", stateColor[state], pulse && "animate-pulse", className)} aria-hidden />;
+  return <span className={cn("inline-block h-2 w-2 shrink-0 rounded-dot", stateColor[state], pulse && "animate-pulse", className)} aria-hidden />;
 }
 
 /** „● Läuft“ – mit Installationsfortschritt, falls eine Aufgabe läuft. */
@@ -83,12 +84,27 @@ export function ServerIcon({ server, size = 40 }: { server: Server; size?: numbe
   return <InstanceIcon icon={server.icon} accent={serverAccent(server)} size={size} />;
 }
 
-/** Adresse in Mono mit Kopieren-Knopf. */
-export function AddressChip({ address, className, large }: { address: string; className?: string; large?: boolean }) {
+/** Adresse in Mono mit Kopieren-Knopf. `flat` = ohne Feld (Listenzeilen, Kopfzeile). */
+export function AddressChip({ address, className, large, flat }: { address: string; className?: string; large?: boolean; flat?: boolean }) {
   const t = useT();
   return (
-    <div className={cn("flex min-w-0 items-center border border-line bg-black/40", large ? "h-12" : "h-7", className)}>
-      <span className={cn("selectable min-w-0 flex-1 truncate px-2 font-mono text-text", large ? "px-4 text-[18px] text-white" : "text-[12px]")}>{address}</span>
+    <div
+      className={cn(
+        "flex min-w-0 items-center",
+        flat ? "h-7 gap-0.5" : "rounded-ctl bg-field",
+        !flat && (large ? "h-12 rounded-card" : "h-7"),
+        className,
+      )}
+    >
+      <span
+        className={cn(
+          "selectable min-w-0 truncate font-mono",
+          flat ? "text-[12px] text-muted" : "flex-1 px-2 text-text",
+          large ? "px-4 text-[18px]" : "text-[12px]",
+        )}
+      >
+        {address}
+      </span>
       <Tooltip content={t("common.copy")}>
         <button
           aria-label={t("common.copy")}
@@ -97,8 +113,8 @@ export function AddressChip({ address, className, large }: { address: string; cl
             copyAddress(address);
           }}
           className={cn(
-            "grid h-full shrink-0 place-items-center border-l border-line text-muted transition-colors duration-100 hover:bg-surface3 hover:text-white",
-            large ? "w-12" : "w-7",
+            "grid shrink-0 place-items-center rounded-ctl text-dim transition-colors duration-100 hover:bg-white/[.07] hover:text-text",
+            large ? "mr-1.5 h-9 w-9" : "h-7 w-7",
           )}
         >
           <Copy size={large ? 16 : 12} />
@@ -113,8 +129,9 @@ export function useAddress(server: Server) {
   return serverAddress(server, st);
 }
 
-/** Hauptknopf: Starten / Stoppen / Startet … / Installiert … */
-export function ServerPowerButton({ server, size = "md", className }: { server: Server; size?: ButtonSize; className?: string }) {
+/** Hauptknopf: Starten / Stoppen / Startet … / Installiert …
+ *  `quiet` = ohne Farbfläche (Listenzeilen – dort gibt es mehrere davon, nur eine Hauptaktion je Ansicht). */
+export function ServerPowerButton({ server, size = "md", className, quiet }: { server: Server; size?: ButtonSize; className?: string; quiet?: boolean }) {
   const t = useT();
   const st = useServerStatus(server.id);
   const task = useServerTask(server.id);
@@ -149,9 +166,9 @@ export function ServerPowerButton({ server, size = "md", className }: { server: 
   return (
     <Button
       size={size}
-      variant="accent"
+      variant={quiet ? "ghost" : "accent"}
       className={className}
-      icon={<Play size={13} fill="currentColor" />}
+      icon={<Play size={13} fill="currentColor" className={quiet ? "text-accent" : undefined} />}
       onClick={(e) => {
         e.stopPropagation();
         startServer(server);
@@ -201,6 +218,11 @@ function MenuBody({ server: s, kit, onPage, onDeleted }: { server: Server; kit: 
       ) : (
         <Item icon={<Play size={14} />} disabled={!!task} onSelect={() => startServer(s)}>
           {t("srv.start")}
+        </Item>
+      )}
+      {active && (
+        <Item icon={<Gamepad2 size={14} />} disabled={state !== "running"} onSelect={() => joinServer(s)}>
+          {t("srv.join")}
         </Item>
       )}
       {!onPage && (

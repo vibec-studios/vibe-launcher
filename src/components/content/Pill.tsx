@@ -4,7 +4,7 @@ import { cn } from "@/components/ui";
 
 export function Pill({ children, className, icon, title }: { children: ReactNode; className?: string; icon?: ReactNode; title?: string }) {
   return (
-    <span title={title} className={cn("inline-flex h-[22px] shrink-0 items-center gap-1 bg-white/[.06] px-2 text-[12px] font-medium text-muted", className)}>
+    <span title={title} className={cn("inline-flex h-[22px] shrink-0 items-center gap-1 rounded-xs bg-white/[.06] px-2 text-[12px] font-medium text-muted", className)}>
       {icon}
       {children}
     </span>

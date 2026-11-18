@@ -50,6 +50,9 @@ export default {
     "discover.menu.choose": "Version und Instanz wählen …",
     "discover.menu.browser": "Im Browser öffnen",
     "discover.menu.copy_link": "Link kopieren",
+    "discover.filters": "Filter",
+    "discover.source": "Quelle",
+    "discover.sort": "Sortieren nach",
 
     "install.title": "Installieren",
     "install.pack_title": "Modpack installieren",
@@ -292,6 +295,9 @@ export default {
     "discover.menu.choose": "Choose version and instance …",
     "discover.menu.browser": "Open in browser",
     "discover.menu.copy_link": "Copy link",
+    "discover.filters": "Filters",
+    "discover.source": "Source",
+    "discover.sort": "Sort by",
 
     "install.title": "Install",
     "install.pack_title": "Install modpack",

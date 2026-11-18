@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2, ExternalLink, Globe, Home, Info, Radio, RefreshCw, Settings as SettingsIcon, Wifi } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Globe, Home, Info, Radio, RefreshCw, Settings as SettingsIcon } from "lucide-react";
 import { api } from "@/lib/api";
 import { queryClient, sqk, useServerStatus, useSettings } from "@/lib/queries";
 import type { Server, ServerConnection, ServerPatch, TunnelStatus } from "@/lib/types";
@@ -44,16 +44,22 @@ function Option({
       onClick={() => !disabled && !active && onSelect(value)}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && !disabled && !active && onSelect(value)}
       className={cn(
-        "flex gap-3 border px-4 py-3.5 outline-none transition-colors duration-100 focus-visible:border-accent",
-        active ? "border-accent bg-accent/[.07]" : "border-line bg-surface",
-        disabled ? "cursor-not-allowed" : !active && "cursor-pointer hover:border-line2 hover:bg-surface2",
+        "flex gap-3 border-line px-4 py-3 outline-none transition-colors duration-100 first:rounded-t-card last:rounded-b-card [&+&]:border-t",
+        "focus-visible:bg-white/[.04]",
+        disabled ? "cursor-not-allowed" : !active && "cursor-pointer hover:bg-white/[.03]",
       )}
     >
-      <span className={cn("mt-0.5 grid h-4 w-4 shrink-0 place-items-center border", active ? "border-accent" : "border-line2", disabled && "opacity-40")}>
-        {active && <span className="h-2 w-2 bg-accent" />}
+      <span
+        className={cn(
+          "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-pill border-2",
+          active ? "border-accent" : "border-white/20",
+          disabled && "opacity-40",
+        )}
+      >
+        {active && <span className="h-1.5 w-1.5 rounded-pill bg-accent" />}
       </span>
       <div className={cn("min-w-0 flex-1", disabled && "opacity-50")}>
-        <div className="flex items-center gap-2 text-[14px] font-semibold text-white">
+        <div className={cn("flex items-center gap-2 text-[13.5px] font-semibold", active ? "text-text" : "text-text/90")}>
           <span className="text-muted">{icon}</span>
           {title}
         </div>
@@ -69,7 +75,7 @@ function TunnelLine({ tunnel, running }: { tunnel: TunnelStatus | null | undefin
   if (!running || !tunnel || tunnel.state === "stopped")
     return (
       <span className="flex items-center gap-2 text-[13px] text-dim">
-        <span className="h-2 w-2 bg-dim" />
+        <span className="h-2 w-2 rounded-dot bg-dim" />
         {t("srv.conn.tunnel.idle")}
       </span>
     );
@@ -127,14 +133,14 @@ export function ConnectionTab({ server }: { server: Server }) {
 
   return (
     <div className="relative h-full">
-      <div className="pointer-events-none absolute bottom-4 right-8 z-10 bg-black/80 px-2 py-1 empty:hidden">
+      <div className="pointer-events-none absolute bottom-4 right-8 z-10 rounded-ctl bg-overlay px-2 py-1 shadow-e2 empty:hidden">
         <SaveIndicator state={state} />
       </div>
       <div className="scroll h-full">
         <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-5 px-6 py-5">
           <div className="flex flex-col gap-5">
             <SettingsCard title={t("srv.conn.mode")}>
-              <div className="flex flex-col gap-2 p-4" role="radiogroup">
+              <div className="flex flex-col" role="radiogroup">
                 <Option
                   value="local"
                   current={d.connection}
@@ -168,11 +174,11 @@ export function ConnectionTab({ server }: { server: Server }) {
                   onSelect={(v) => update({ connection: v })}
                 />
               </div>
-              <div className="flex items-start gap-2 border-t border-line px-4 py-2.5 text-[12px] text-dim">
-                <Info size={13} className="mt-px shrink-0" />
-                {t("srv.conn.only_running")}
-              </div>
             </SettingsCard>
+            <p className="-mt-3 flex items-start gap-2 px-1 text-[12px] text-dim">
+              <Info size={13} className="mt-px shrink-0" />
+              {t("srv.conn.only_running")}
+            </p>
           </div>
 
           <div className="flex flex-col gap-5">
@@ -185,7 +191,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                       <HostingInvite serverId={server.id} relay={d.connection === "relay"} />
                     </>
                   ) : (
-                    <div className="grid h-12 place-items-center border border-dashed border-line2 text-[13px] text-dim">
+                    <div className="grid h-12 place-items-center rounded-card bg-surface2 text-[13px] text-dim">
                       {running ? t("srv.conn.waiting_address") : t("srv.conn.start_for_address")}
                     </div>
                   )
@@ -198,7 +204,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                 )}
 
                 {tunnel?.state === "claim" && tunnel.claim_url && (
-                  <div className="flex flex-col gap-3 border border-warn/30 bg-warn/[.06] px-4 py-3">
+                  <div className="flex flex-col gap-3 rounded-card bg-warn/[.08] px-4 py-3">
                     <div className="flex items-start gap-2 text-[13px] text-warn">
                       <AlertTriangle size={15} className="mt-0.5 shrink-0" />
                       <span>{t("srv.conn.claim.text")}</span>
@@ -207,7 +213,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                       href={tunnel.claim_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex h-9 items-center justify-center gap-2 self-start border border-transparent bg-accent px-4 text-[14px] font-semibold text-[var(--on-accent)] transition-[filter] duration-150 hover:brightness-110"
+                      className="inline-flex h-9 items-center justify-center gap-2 self-start rounded-ctl bg-accent px-4 text-[13.5px] font-semibold text-[var(--on-accent)] transition-[filter] duration-150 hover:brightness-110"
                     >
                       <ExternalLink size={14} />
                       {t("srv.conn.claim.button")}
@@ -224,7 +230,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                     <p className="min-w-0 flex-1 text-[12px] text-dim">
                       {d.connection === "relay" ? t("srv.conn.reset.relay.desc") : t("srv.conn.reset.playit.desc")}
                     </p>
-                    <Button size="sm" icon={<RefreshCw size={13} />} loading={resetting} onClick={reset}>
+                    <Button size="sm" variant="ghost" icon={<RefreshCw size={13} />} loading={resetting} onClick={reset}>
                       {d.connection === "relay" ? t("srv.conn.reset.relay") : t("srv.conn.reset.playit")}
                     </Button>
                   </div>
@@ -233,12 +239,7 @@ export function ConnectionTab({ server }: { server: Server }) {
             </SettingsCard>
 
             <SettingsCard
-              title={
-                <span className="flex items-center gap-2">
-                  <Wifi size={15} className="text-muted" />
-                  {t("srv.conn.local_addresses")}
-                </span>
-              }
+              title={t("srv.conn.local_addresses")}
             >
               <SettingRow title={t("srv.conn.this_pc")} description={t("srv.conn.this_pc.desc")}>
                 <AddressChip address={localAddr} className="w-[240px]" />

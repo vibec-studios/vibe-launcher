@@ -32,11 +32,11 @@ export function AccountChip() {
         trigger={
           <button
             aria-label={active ? active.username : t("nav.accounts")}
-            className="relative mt-1 grid h-10 w-10 place-items-center border border-line bg-surface2 text-muted transition-colors duration-100 hover:border-line2 hover:text-white"
+            className="relative mt-1 grid h-10 w-10 place-items-center rounded-ctl bg-white/[.05] text-muted transition-colors duration-100 hover:bg-white/[.09] hover:text-text"
           >
             {active ? <PlayerHead uuid={active.uuid} name={active.username} size={30} /> : <UserRound size={18} />}
-            {active?.needs_relogin && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 border-2 border-black bg-warn" />}
-            {vibeOn && dot && <span className={cn("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 border-2 border-black", dot)} aria-hidden />}
+            {active?.needs_relogin && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-dot border-2 border-[var(--tone-frame)] bg-warn" />}
+            {vibeOn && dot && <span className={cn("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-dot border-2 border-[var(--tone-frame)]", dot)} aria-hidden />}
           </button>
         }
       >

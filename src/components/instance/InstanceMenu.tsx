@@ -70,7 +70,7 @@ const dropdownKit: Kit = { Item: DropdownItem, Sub: DropdownSub, Sep: DropdownSe
 
 function Swatch({ color, active }: { color: string; active?: boolean }) {
   return (
-    <span className="grid h-3.5 w-3.5 place-items-center" style={{ background: color }}>
+    <span className="grid h-3.5 w-3.5 place-items-center rounded-xs" style={{ background: color }}>
       {active && <Check size={10} strokeWidth={3} color="#000" />}
     </span>
   );
@@ -110,7 +110,7 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
       <Sub icon={<FolderOpen size={14} />} label={t("common.open_folder")}>
         {FOLDERS.map((f) => (
           <Item key={f || "root"} icon={f ? <FolderTree size={14} /> : <FolderOpen size={14} />} onSelect={() => openFolder(i, f)}>
-            {f ? <span className="font-mono text-[12px]">{f}</span> : t("inst.folder.game")}
+            {f ? <span>{f}</span> : t("inst.folder.game")}
           </Item>
         ))}
       </Sub>
@@ -156,7 +156,7 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
             <Label>{t("inst.accent")}</Label>
             {accentPalette.map((c) => (
               <Item key={c} icon={<Swatch color={c} active={c === accent} />} onSelect={() => setAccent(i, c)}>
-                <span className="font-mono text-[12px] uppercase">{c}</span>
+                <span className="tabular-nums text-muted">{c}</span>
               </Item>
             ))}
             <Sep />

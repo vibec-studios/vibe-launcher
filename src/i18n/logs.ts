@@ -1,6 +1,7 @@
 // OWNER: Frontend-Agent A – Logs-Tab.
 export default {
   de: {
+    "logs.levels": "Stufen anzeigen",
     "logs.live": "Live-Konsole",
     "logs.session": "Sitzung",
     "logs.crash": "Crash",
@@ -30,6 +31,7 @@ export default {
     "logs.level.launcher": "Launcher",
   },
   en: {
+    "logs.levels": "Show levels",
     "logs.live": "Live console",
     "logs.session": "Session",
     "logs.crash": "Crash",

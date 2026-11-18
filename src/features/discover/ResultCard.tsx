@@ -1,20 +1,20 @@
 // Ergebnis-Karte der Entdecken-Seite. memo: Fortschritt abonniert nur der Installieren-Knopf der Karte.
 import { CalendarClock, Check, Copy, Download, ExternalLink, FolderPlus, Heart, PackagePlus, RefreshCw, SquareArrowOutUpRight } from "lucide-react";
 import { memo, type KeyboardEvent, type MouseEvent } from "react";
-import { Button, ContextItem, ContextLabel, ContextMenu, ContextSeparator, ContextSub, Progress, Tooltip, cn, toast } from "@/components/ui";
+import { Button, ContextItem, ContextLabel, ContextMenu, ContextSeparator, ContextSub, Progress, Tag, Tooltip, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { errorMessage } from "@/lib/api";
 import { formatCount, formatRelative } from "@/lib/format";
 import { useTask } from "@/lib/queries";
 import type { Instance, ProjectHit } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
-import { Pill, prettyCategory, prettyLoader } from "@/components/content/Pill";
+import { prettyCategory, prettyLoader } from "@/components/content/Pill";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { openInstall } from "@/components/content/InstallDialog";
 import { installKey, packKey, startContentInstall, useInstallTasks } from "@/components/content/install";
 import { compatibility, copyText, openExternal, projectWebUrl } from "@/components/content/util";
 
-export const CARD_H = 112;
+export const CARD_H = 84;
 
 export interface CardProps {
   hit: ProjectHit;
@@ -34,7 +34,7 @@ function InstallButton({ hit, target, installed }: { hit: ProjectHit; target: In
 
   if (task && task.status === "running") {
     return (
-      <div className="flex w-[124px] flex-col gap-1.5" onClick={stop}>
+      <div className="flex w-[112px] flex-col gap-1.5" onClick={stop}>
         <span className="flex items-center justify-between text-[12px] text-muted">
           {t("install.installing")}
           <span>{task.progress != null ? `${Math.round(task.progress * 100)}%` : ""}</span>
@@ -149,49 +149,53 @@ export const ResultCard = memo(function ResultCard({ hit, target, installed, ins
         onClick={open}
         onKeyDown={(e: KeyboardEvent) => e.key === "Enter" && open()}
         className={cn(
-          "group flex h-full items-center gap-4 border border-line bg-surface px-3.5 transition-[background-color,border-color] duration-100",
-          "hover:border-line2 hover:bg-surface2 data-[state=open]:border-line2 data-[state=open]:bg-surface2",
+          "group flex h-full cursor-pointer items-center gap-3.5 rounded-card px-2 transition-colors duration-100",
+          "hover:bg-white/[.04] data-[state=open]:bg-white/[.04] focus-visible:bg-white/[.04] focus-visible:outline-none",
         )}
       >
-        <ProjectIcon src={hit.icon_url} size={80} className="border-0" />
+        <ProjectIcon src={hit.icon_url} size={60} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex min-w-0 items-baseline gap-1.5">
-            <span className="truncate text-[16px] font-bold text-white">{hit.title}</span>
-            <span className="shrink-0 truncate text-[13px] text-dim">{t("discover.by", { author: hit.author })}</span>
+            <span className="truncate text-[14.5px] font-semibold text-text">{hit.title}</span>
+            <span className="shrink-0 truncate text-meta text-dim">{t("discover.by", { author: hit.author })}</span>
           </div>
-          <p className="line-clamp-2 text-[13px] leading-[1.45] text-muted">{hit.description}</p>
-          <div className="mt-0.5 flex min-w-0 items-center gap-1 overflow-hidden">
+          <p className="truncate text-[13px] text-muted" title={hit.description}>
+            {hit.description}
+          </p>
+          <div className="flex min-w-0 items-center gap-1 overflow-hidden">
             {loaders.map((l) => (
-              <Pill key={l} className="text-text">
+              <Tag key={l} className="shrink-0 text-text">
                 {prettyLoader(l)}
-              </Pill>
+              </Tag>
             ))}
-            {hit.categories.slice(0, 4).map((c) => (
-              <Pill key={c}>{prettyCategory(c)}</Pill>
+            {hit.categories.slice(0, 3).map((c) => (
+              <Tag key={c} className="shrink-0">
+                {prettyCategory(c)}
+              </Tag>
             ))}
+            <span className="ml-1.5 flex min-w-0 shrink-0 items-center gap-3 text-meta text-dim">
+              <Tooltip content={t("discover.downloads_n", { n: hit.downloads.toLocaleString() })}>
+                <span className="flex items-center gap-1">
+                  <Download size={12} />
+                  {formatCount(hit.downloads)}
+                </span>
+              </Tooltip>
+              {hit.source === "modrinth" && (
+                <span className="flex items-center gap-1">
+                  <Heart size={12} />
+                  {formatCount(hit.follows)}
+                </span>
+              )}
+              {hit.updated && (
+                <span className="flex items-center gap-1">
+                  <CalendarClock size={12} />
+                  {formatRelative(hit.updated)}
+                </span>
+              )}
+            </span>
           </div>
         </div>
-        <div className="flex h-full shrink-0 flex-col items-end justify-between py-3">
-          <div className="flex flex-col items-end gap-0.5 text-[12.5px] text-muted">
-            <Tooltip content={t("discover.downloads_n", { n: hit.downloads.toLocaleString() })}>
-              <span className="flex items-center gap-1.5">
-                <Download size={13} className="text-dim" />
-                <b className="font-semibold text-text">{formatCount(hit.downloads)}</b>
-              </span>
-            </Tooltip>
-            {hit.source === "modrinth" && (
-              <span className="flex items-center gap-1.5">
-                <Heart size={13} className="text-dim" />
-                {formatCount(hit.follows)}
-              </span>
-            )}
-            {hit.updated && (
-              <span className="flex items-center gap-1.5 text-dim">
-                <CalendarClock size={13} />
-                {formatRelative(hit.updated)}
-              </span>
-            )}
-          </div>
+        <div className="flex shrink-0 items-center pr-1">
           <InstallButton hit={hit} target={target} installed={installed} />
         </div>
       </div>
@@ -201,21 +205,18 @@ export const ResultCard = memo(function ResultCard({ hit, target, installed, ins
 
 export function ResultSkeleton() {
   return (
-    <div className="flex h-full items-center gap-4 border border-line bg-surface px-3.5">
-      <div className="skeleton h-[80px] w-[80px] shrink-0" />
+    <div className="flex h-full items-center gap-3.5 px-2">
+      <div className="skeleton h-[60px] w-[60px] shrink-0 rounded-card" />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="skeleton h-4 w-2/5" />
-        <div className="skeleton h-3 w-11/12" />
-        <div className="skeleton h-3 w-3/5" />
+        <div className="skeleton h-3 w-4/5" />
         <div className="flex gap-1">
-          <div className="skeleton h-[22px] w-14" />
-          <div className="skeleton h-[22px] w-16" />
+          <div className="skeleton h-5 w-14" />
+          <div className="skeleton h-5 w-16" />
+          <div className="skeleton h-5 w-24" />
         </div>
       </div>
-      <div className="flex h-full shrink-0 flex-col items-end justify-between py-3">
-        <div className="skeleton h-3 w-14" />
-        <div className="skeleton h-8 w-28" />
-      </div>
+      <div className="skeleton mr-1 h-8 w-28 shrink-0" />
     </div>
   );
 }

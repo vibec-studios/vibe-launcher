@@ -45,7 +45,7 @@ export function Lightbox({
   return (
     <D.Root open={open} onOpenChange={(o) => !o && onClose()}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-[75] bg-black/92 data-[state=open]:animate-fade-in" />
+        <D.Overlay className="fixed inset-0 z-[75] bg-bg/95 data-[state=open]:animate-fade-in" />
         <D.Content
           className="fixed inset-0 z-[76] flex flex-col outline-none data-[state=open]:animate-fade-in"
           onKeyDown={(e) => {
@@ -56,11 +56,11 @@ export function Lightbox({
         >
           <D.Title className="sr-only">{img?.title ?? "Bild"}</D.Title>
           <div className="flex h-14 shrink-0 items-center gap-4 px-5">
-            <span className="font-mono text-[12px] text-muted">
+            <span className="text-meta tabular-nums text-muted">
               {i + 1} / {images.length}
             </span>
-            <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-white">{img?.title}</span>
-            <D.Close aria-label={labels.close} className="grid h-9 w-9 place-items-center border border-line2 text-text transition-colors hover:border-white">
+            <span className="min-w-0 flex-1 truncate text-section text-text">{img?.title}</span>
+            <D.Close aria-label={labels.close} className="grid h-9 w-9 place-items-center rounded-ctl text-muted transition-colors hover:bg-white/[.07] hover:text-text">
               <X size={18} />
             </D.Close>
           </div>
@@ -82,14 +82,14 @@ export function Lightbox({
                 <button
                   aria-label={labels.prev}
                   onClick={() => go(-1)}
-                  className="absolute left-5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center border border-line2 bg-black/60 text-white transition-colors hover:border-white"
+                  className="absolute left-5 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-ctl bg-surface2 text-muted transition-colors hover:bg-surface3 hover:text-text"
                 >
                   <ChevronLeft size={22} />
                 </button>
                 <button
                   aria-label={labels.next}
                   onClick={() => go(1)}
-                  className="absolute right-5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center border border-line2 bg-black/60 text-white transition-colors hover:border-white"
+                  className="absolute right-5 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-ctl bg-surface2 text-muted transition-colors hover:bg-surface3 hover:text-text"
                 >
                   <ChevronRight size={22} />
                 </button>

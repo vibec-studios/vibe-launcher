@@ -96,9 +96,8 @@ export function StatsPage() {
 
   return (
     <div className="scroll h-full">
-      <div className="flex flex-col gap-5 px-6 pb-10 pt-5">
-        <header className="flex items-center gap-3">
-          <h1 className="display flex-1 text-[22px]">{t("stats.title")}</h1>
+      <div className="flex flex-col gap-3 px-6 pb-10 pt-4">
+        <div className="flex h-8 items-center gap-2">
           <Segmented<Range>
             value={range}
             onChange={setRange}
@@ -108,39 +107,39 @@ export function StatsPage() {
               { value: "year", label: t("stats.year") },
             ]}
           />
-        </header>
+        </div>
 
         {q.isError ? (
           <ErrorState error={q.error} onRetry={() => q.refetch()} />
         ) : !q.data ? (
           <>
-            <Skeleton className="h-[72px]" />
-            <Skeleton className="h-[240px]" />
+            <Skeleton className="h-[72px] rounded-card" />
+            <Skeleton className="h-[240px] rounded-card" />
           </>
         ) : (
           <>
-            <div className="grid grid-cols-3 border border-line bg-surface">
+            <div className="grid grid-cols-3 gap-2">
               {[
                 [t("stats.total"), fmt(data.total)],
                 [t("stats.sessions"), data.sessions.toString()],
                 [t("stats.top"), top ? (byId.get(top.id)?.name ?? top.id) : "–"],
               ].map(([k, v], n) => (
-                <div key={k} className={n ? "border-l border-line px-4 py-3" : "px-4 py-3"}>
-                  <div className="text-[12px] text-dim">{k}</div>
-                  <div className="truncate text-[20px] font-bold text-white">{v}</div>
+                <div key={k} className="min-w-0 rounded-card bg-surface px-4 py-3">
+                  <div className="text-meta text-muted">{k}</div>
+                  <div className={n === 2 ? "truncate text-title text-text" : "truncate text-title tabular-nums text-text"}>{v}</div>
                 </div>
               ))}
             </div>
 
-            <section className="border border-line bg-surface p-4">
-              <div className="mb-3 text-[14px] font-semibold text-white">{t(`stats.chart.${range}`)}</div>
+            <section className="rounded-card bg-surface p-4">
+              <div className="mb-3 text-section text-text">{t(`stats.chart.${range}`)}</div>
               <div className="flex gap-3">
                 <div className="flex h-[200px] w-10 flex-col justify-between text-right text-[11px] tabular-nums text-dim">
                   <span>{axisH} h</span>
                   <span>{axisH / 2} h</span>
                   <span>0</span>
                 </div>
-                <div className="relative flex h-[200px] flex-1 items-end gap-[2px] border-b border-l border-line">
+                <div className="relative flex h-[200px] flex-1 items-end gap-[2px] border-b border-line">
                   <div className="pointer-events-none absolute inset-x-0 top-0 border-t border-dashed border-line" />
                   <div className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-line" />
                   {data.bars.map((b) => (
@@ -151,7 +150,7 @@ export function StatsPage() {
                       <div className="group relative flex h-full flex-1 items-end">
                         <div className="absolute inset-0 group-hover:bg-white/[.03]" />
                         <div
-                          className="relative w-full bg-brand transition-[height] duration-150 group-hover:brightness-125"
+                          className="relative w-full rounded-t-xs bg-brand transition-[height,opacity] duration-150 group-hover:opacity-80"
                           style={{ height: `${(b.secs / (axisH * 3600)) * 100}%`, minHeight: b.secs > 0 ? 2 : 0 }}
                         />
                       </div>
@@ -168,8 +167,8 @@ export function StatsPage() {
               </div>
             </section>
 
-            <section className="border border-line bg-surface">
-              <div className="border-b border-line px-4 py-2.5 text-[14px] font-semibold text-white">{t("stats.per_instance")}</div>
+            <section className="rounded-card bg-surface">
+              <div className="px-4 pb-1 pt-3 text-section text-text">{t("stats.per_instance")}</div>
               {data.rows.length === 0 ? (
                 <EmptyState icon={<BarChart3 size={28} />} title={t("stats.empty.title")} text={t("stats.empty.text")} className="py-10" />
               ) : (
@@ -183,12 +182,12 @@ export function StatsPage() {
                           <td className="w-[260px] px-4 py-2">
                             <div className="flex items-center gap-2.5">
                               <InstanceIcon icon={inst?.icon} accent={accent} size={28} />
-                              <span className="truncate font-medium text-white">{inst?.name ?? r.id}</span>
+                              <span className="truncate font-medium text-text">{inst?.name ?? r.id}</span>
                             </div>
                           </td>
                           <td className="px-2 py-2">
-                            <div className="h-2 bg-white/[.06]">
-                              <div className="h-full" style={{ width: `${(r.secs / (data.rows[0].secs || 1)) * 100}%`, background: accent }} />
+                            <div className="h-1.5 overflow-hidden rounded-pill bg-white/[.06]">
+                              <div className="h-full rounded-pill" style={{ width: `${(r.secs / (data.rows[0].secs || 1)) * 100}%`, background: accent }} />
                             </div>
                           </td>
                           <td className="w-[110px] px-2 py-2 text-right tabular-nums text-text">{fmt(r.secs)}</td>

@@ -1,8 +1,22 @@
 // OWNER: Content-Agent. Einstellungen → Stores: Liste, URL hinzufügen, an/aus, entfernen.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Plus, Store, Trash2 } from "lucide-react";
+import { AlertTriangle, MoreHorizontal, Plus, Store, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Button, IconButton, Input, Skeleton, Spinner, Switch, SettingsCard, Tooltip, confirm, toast } from "@/components/ui";
+import {
+  Button,
+  ContextItem,
+  ContextMenu,
+  DropdownItem,
+  DropdownMenu,
+  IconButton,
+  Input,
+  Skeleton,
+  Spinner,
+  Switch,
+  SettingsCard,
+  confirm,
+  toast,
+} from "@/components/ui";
 import { openExternal } from "@/components/content/util";
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
@@ -61,26 +75,35 @@ export function StoresCard({ id }: { id: string }) {
       id={id}
       title={t("settings.section.stores")}
       right={
-        <button className="text-[12.5px] text-muted hover:text-white" onClick={() => void openExternal(STORE_DOCS)}>
+        <button className="rounded-ctl px-1 text-meta text-muted hover:text-text" onClick={() => void openExternal(STORE_DOCS)}>
           {t("stores.format_help")}
         </button>
       }
     >
-      <div className="px-4 pt-3.5 text-[12.5px] text-muted">{t("stores.desc")}</div>
-      <div className="flex flex-col px-4 py-2">
+      <div className="px-4 pt-3 text-meta text-muted">{t("stores.desc")}</div>
+      <div className="flex flex-col px-2 py-2">
         {stores.isPending
           ? Array.from({ length: 1 }, (_, i) => <Skeleton key={i} className="my-2 h-[46px]" />)
           : (stores.data ?? []).map((s) => (
-              <div key={s.id} className="flex items-center gap-3 border-b border-line py-2.5 last:border-b-0">
-                <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden border border-line bg-surface2 text-dim">
+              <ContextMenu
+                key={s.id}
+                disabled={s.builtin}
+                content={
+                  <ContextItem icon={<Trash2 size={14} />} danger onSelect={() => void remove(s)}>
+                    {t("stores.remove")}
+                  </ContextItem>
+                }
+              >
+              <div className="flex items-center gap-3 rounded-ctl px-2 py-2 transition-colors duration-100 hover:bg-white/[.03]">
+                <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-ctl bg-surface2 text-dim">
                   {s.icon ? <img src={s.icon} alt="" className="h-full w-full object-contain" /> : <Store size={16} />}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-[14px] font-semibold text-white">{s.name}</span>
-                    {s.builtin && <span className="border border-line2 px-1.5 py-px text-[11px] text-muted">{t("stores.builtin")}</span>}
+                    <span className="truncate text-[13.5px] font-semibold text-text">{s.name}</span>
+                    {s.builtin && <span className="rounded-xs bg-white/[.06] px-1.5 py-px text-caption text-muted">{t("stores.builtin")}</span>}
                   </div>
-                  <div className="flex min-w-0 items-center gap-1.5 text-[12px] text-dim">
+                  <div className="flex min-w-0 items-center gap-1.5 text-meta text-dim">
                     {s.error ? (
                       <span className="flex items-center gap-1 text-warn" title={s.error}>
                         <AlertTriangle size={12} /> {t("stores.error")}
@@ -97,17 +120,26 @@ export function StoresCard({ id }: { id: string }) {
                   </div>
                 </div>
                 <Switch checked={s.enabled} onChange={(v) => void toggle(s, v)} label={s.name} />
-                {!s.builtin && (
-                  <Tooltip content={t("stores.remove")}>
-                    <IconButton label={t("stores.remove")} onClick={() => void remove(s)}>
-                      <Trash2 size={15} />
-                    </IconButton>
-                  </Tooltip>
+                {s.builtin ? (
+                  <span className="w-8 shrink-0" />
+                ) : (
+                  <DropdownMenu
+                    trigger={
+                      <IconButton label={t("common.more")} tip variant="ghost" size="sm">
+                        <MoreHorizontal size={16} />
+                      </IconButton>
+                    }
+                  >
+                    <DropdownItem icon={<Trash2 size={14} />} danger onSelect={() => void remove(s)}>
+                      {t("stores.remove")}
+                    </DropdownItem>
+                  </DropdownMenu>
                 )}
               </div>
+              </ContextMenu>
             ))}
       </div>
-      <div className="flex flex-col gap-2 border-t border-line px-4 py-3.5">
+      <div className="flex flex-col gap-2 border-t border-line px-4 py-3">
         <div className="flex gap-2">
           <Input
             value={url}
@@ -121,7 +153,7 @@ export function StoresCard({ id }: { id: string }) {
             {t("stores.add")}
           </Button>
         </div>
-        {error && <div className="selectable text-[12.5px] text-danger">{error}</div>}
+        {error && <div className="selectable text-meta text-danger">{error}</div>}
       </div>
     </SettingsCard>
   );

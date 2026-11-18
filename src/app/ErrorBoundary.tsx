@@ -19,13 +19,13 @@ export class ErrorBoundary extends Component<{ children: ReactNode; compact?: bo
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-10 text-center">
         <AlertTriangle size={28} className="text-danger" />
-        <div className="display text-[18px]">{t("error.boundary.title")}</div>
+        <div className="text-title text-text">{t("error.boundary.title")}</div>
         <p className="text-[13px] text-muted">{t("error.boundary.text")}</p>
-        <pre className="selectable mt-2 max-h-40 max-w-[640px] overflow-auto border border-line bg-surface p-3 text-left font-mono text-[11px] text-dim">
+        <pre className="selectable mt-2 max-h-40 max-w-[640px] overflow-auto rounded-card bg-surface p-3 text-left font-mono text-[11px] text-dim">
           {String(this.state.error?.stack ?? this.state.error)}
         </pre>
         <button
-          className="mt-2 font-mono text-[11px] uppercase tracking-[.1em] text-accent"
+          className="mt-2 inline-flex h-8 items-center rounded-ctl bg-surface2 px-3 text-[13px] font-semibold text-text transition-colors hover:bg-surface3"
           onClick={() => this.setState({ error: null })}
         >
           {t("common.retry")}

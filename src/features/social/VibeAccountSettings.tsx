@@ -24,14 +24,14 @@ function StatusPill({ conn, unlinked }: { conn: Conn; unlinked: boolean }) {
   return (
     <span
       className={cn(
-        "inline-flex h-6 items-center gap-1.5 border px-2 font-mono text-[10.5px] font-semibold uppercase tracking-[.08em]",
-        tone === "ok" && "border-ok/40 bg-ok/10 text-ok",
-        tone === "warn" && "border-warn/40 bg-warn/10 text-warn",
-        tone === "danger" && "border-danger/40 bg-danger/10 text-danger",
-        tone === "dim" && "border-line2 bg-surface2 text-muted",
+        "inline-flex h-6 items-center gap-1.5 rounded-pill px-2 text-caption font-semibold",
+        tone === "ok" && "bg-ok/10 text-ok",
+        tone === "warn" && "bg-warn/10 text-warn",
+        tone === "danger" && "bg-danger/10 text-danger",
+        tone === "dim" && "bg-surface2 text-muted",
       )}
     >
-      {tone === "warn" ? <Spinner size={9} /> : <span className={cn("h-1.5 w-1.5", tone === "ok" ? "bg-ok" : tone === "danger" ? "bg-danger" : "bg-dim")} />}
+      {tone === "warn" ? <Spinner size={9} /> : <span className={cn("h-1.5 w-1.5 rounded-dot", tone === "ok" ? "bg-ok" : tone === "danger" ? "bg-danger" : "bg-dim")} />}
       {label}
     </span>
   );
@@ -79,19 +79,17 @@ export function VibeAccountCard() {
 
   return (
     <SettingsCard title={t("vibe.account.title")} right={<StatusPill conn={conn} unlinked={unlinked} />}>
-      <div className="flex items-center gap-4 px-4 py-4">
+      <div className="flex items-center gap-4 px-4 py-3.5">
         {name ? (
-          <span className="border border-line2 bg-black/40 p-1">
-            <PlayerHead uuid={me?.id ?? account?.uuid ?? ""} name={name} size={44} />
-          </span>
+          <PlayerHead uuid={me?.id ?? account?.uuid ?? ""} name={name} size={40} />
         ) : (
-          <span className="grid h-[54px] w-[54px] place-items-center border border-line2 bg-surface2 text-dim">
-            <UserRound size={22} />
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-surface2 text-dim">
+            <UserRound size={20} />
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <div className="label">{t("vibe.account.minecraft")}</div>
-          <div className="mt-0.5 truncate text-[16px] font-semibold text-white">{name ?? t("social.conn.no_account_title")}</div>
+          <div className="text-caption font-semibold text-dim">{t("vibe.account.minecraft")}</div>
+          <div className="truncate text-[15px] font-semibold leading-tight text-text">{name ?? t("social.conn.no_account_title")}</div>
           <div className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{subline}</div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -111,13 +109,13 @@ export function VibeAccountCard() {
               {t("vibe.account.connect")}
             </Button>
           ) : linked ? (
-            <Button size="sm" variant="outline" icon={<Link2Off size={14} />} loading={busy} onClick={() => run(unlink)}>
+            <Button size="sm" variant="ghost" icon={<Link2Off size={14} />} loading={busy} onClick={() => run(unlink)}>
               {t("vibe.account.unlink")}
             </Button>
           ) : null}
         </div>
       </div>
-      {error && conn === "logged_out" && <div className="border-t border-line bg-danger/5 px-4 py-2.5 text-[12.5px] text-danger">{error}</div>}
+      {error && conn === "logged_out" && <div className="border-t border-line px-4 py-2.5 text-[12.5px] text-danger">{error}</div>}
       <div className="border-t border-line px-4 py-2.5 text-[12px] leading-relaxed text-dim">{t("vibe.account.auto_hint")}</div>
     </SettingsCard>
   );
@@ -200,10 +198,11 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
         }}
       >
         <p className="text-[13px] leading-relaxed text-muted">{t("vibe.delete.text")}</p>
-        <ul className="flex flex-col gap-1 border border-danger/25 bg-danger/5 px-4 py-3 text-[12.5px] text-text">
+        <ul className="flex flex-col gap-1 rounded-card bg-danger/10 px-4 py-3 text-[12.5px] text-text">
           {(["friends", "chats", "packs", "devices"] as const).map((k) => (
             <li key={k} className="flex items-center gap-2">
-              <span className="h-1 w-1 shrink-0 bg-danger" />
+              <span className="h-1 w-1 shrink-0 rounded-dot bg-danger" />
+
               {t(`vibe.delete.item.${k}`)}
             </li>
           ))}

@@ -3,7 +3,7 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { ExternalLink, Info, RotateCw, Sparkles } from "lucide-react";
 import { memo, useState } from "react";
-import { Button, Skeleton, Spinner, Switch, Tag, Tooltip, cn, toast } from "@/components/ui";
+import { Button, IconButton, Skeleton, Spinner, Switch, Tag, Tooltip, cn, toast } from "@/components/ui";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { useT, t as tt } from "@/i18n";
 import { useEvent } from "@/lib/events";
@@ -70,11 +70,11 @@ export function McCapesPanel({
 
   return (
     <div className="scroll min-h-0 flex-1">
-      <div className="flex flex-col gap-4 p-4">
-        <p className="text-[12.5px] text-muted">{t("mccapes.lead")}</p>
+      <div className="flex flex-col gap-4 px-0.5 pb-1 pt-2">
+        <p className="px-1 text-meta text-muted">{t("mccapes.lead")}</p>
 
         {/* ------------------------------------------------------------ Cape des Accounts */}
-        <div className="border border-line bg-surface2">
+        <div className="overflow-hidden rounded-card bg-surface">
           {profileQ.isPending ? (
             <div className="flex gap-4 p-4">
               <Skeleton className="h-[96px] w-[60px]" />
@@ -93,19 +93,19 @@ export function McCapesPanel({
           ) : has ? (
             <div className="flex gap-4 p-4">
               <div className="flex shrink-0 items-start gap-2">
-                <div className="grid h-[112px] w-[76px] place-items-center bg-black/25">
+                <div className="grid h-[112px] w-[76px] place-items-center rounded-ctl bg-surface2">
                   {p.cape ? <McCapeThumb frames={frames} scale={6} /> : <EarsThumb src={p.ears!.data_url} size={48} />}
                 </div>
                 {p.cape && p.ears && (
                   <Tooltip content={t("mccapes.ears")}>
-                    <div className="grid h-[40px] w-[40px] place-items-center bg-black/25">
+                    <div className="grid h-[40px] w-[40px] place-items-center rounded-ctl bg-surface2">
                       <EarsThumb src={p.ears.data_url} size={30} />
                     </div>
                   </Tooltip>
                 )}
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <div className="text-[14px] font-semibold text-white">{p.cape ? t("mccapes.cape") : t("mccapes.ears_only")}</div>
+                <div className="text-[14px] font-semibold text-text">{p.cape ? t("mccapes.cape") : t("mccapes.ears_only")}</div>
                 <div className="flex flex-wrap gap-1">
                   {p.cape && <Tag>{p.cape.layout.frames > 1 ? t("mccapes.feature.animated", { n: p.cape.layout.frames }) : t("mccapes.feature.static")}</Tag>}
                   {p.cape && p.glint && (
@@ -126,24 +126,22 @@ export function McCapesPanel({
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 px-6 py-6 text-center">
-              <span className="grid h-10 w-10 place-items-center bg-surface3 text-muted">
-                <Sparkles size={18} />
-              </span>
-              <div className="text-[14px] font-semibold text-white">{t("mccapes.empty_title")}</div>
+              <Sparkles size={20} className="text-dim" />
+              <div className="text-[14px] font-semibold text-text">{t("mccapes.empty_title")}</div>
               <p className="max-w-[380px] text-[12.5px] text-muted">{t("mccapes.empty_text")}</p>
             </div>
           )}
-          <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-2.5">
-            <Button size="sm" variant={has ? "ghost" : "primary"} icon={<ExternalLink size={14} />} onClick={() => void openSite()}>
+          <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
+            <Button size="sm" variant="ghost" icon={<ExternalLink size={14} />} onClick={() => void openSite()}>
               {has ? t("mccapes.manage") : t("mccapes.open_site")}
             </Button>
-            <Button size="sm" variant="subtle" icon={<RotateCw size={14} />} onClick={() => void reload()} loading={profileQ.isFetching && !profileQ.isPending}>
-              {t("mccapes.reload")}
-            </Button>
+            <IconButton label={t("mccapes.reload")} tip variant="ghost" size="sm" disabled={profileQ.isFetching} onClick={() => void reload()}>
+              {profileQ.isFetching && !profileQ.isPending ? <Spinner size={13} /> : <RotateCw size={14} />}
+            </IconButton>
           </div>
         </div>
 
-        <div className="flex gap-2.5 border border-line bg-brand/[.06] px-3 py-2.5 text-[12.5px] text-muted">
+        <div className="flex gap-2.5 px-1 text-meta text-muted">
           <Info size={15} className="mt-px shrink-0 text-dim" />
           <div className="flex flex-col gap-1">
             <span className="text-text">{t("mccapes.only_mod")}</span>
@@ -186,8 +184,8 @@ function ModList() {
 
   return (
     <div className="flex flex-col">
-      <div className="mb-1 text-[13.5px] font-semibold text-white">{t("mccapes.mod")}</div>
-      <p className="mb-3 text-[12.5px] text-muted">{t("mccapes.mod_lead")}</p>
+      <div className="mb-1 px-1 text-section text-text">{t("mccapes.mod")}</div>
+      <p className="mb-2 px-1 text-meta text-muted">{t("mccapes.mod_lead")}</p>
       {instancesQ.isPending || statusQ.isPending ? (
         <div className="flex flex-col gap-1.5">
           {[0, 1, 2].map((i) => (
@@ -195,9 +193,9 @@ function ModList() {
           ))}
         </div>
       ) : instances.length === 0 ? (
-        <div className="border border-line bg-surface2 px-3 py-3 text-[12.5px] text-dim">{t("mccapes.no_instances")}</div>
+        <div className="rounded-card bg-surface px-3 py-3 text-meta text-dim">{t("mccapes.no_instances")}</div>
       ) : (
-        <div className="flex flex-col border border-line">
+        <div className="flex flex-col overflow-hidden rounded-card bg-surface">
           {instances.map((inst) => (
             <ModRow key={inst.id} inst={inst} status={byId.get(inst.id)} pending={!!pending[inst.id]} onToggle={(on) => void toggle(inst, on)} />
           ))}
@@ -245,10 +243,10 @@ const ModRow = memo(function ModRow({
             ? t("mccapes.will_install", { v: status.version_number })
             : null;
   return (
-    <div className={cn("flex items-center gap-3 border-b border-line px-3 py-2 last:border-b-0", unavailable && "opacity-55")}>
+    <div className={cn("flex items-center gap-3 border-b border-line px-3 py-2 transition-colors last:border-b-0 hover:bg-white/[.03]", unavailable && "opacity-55")}>
       <InstanceBadge instance={inst} size={32} />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[13px] font-semibold text-white" title={inst.name}>
+        <div className="truncate text-[13px] font-semibold text-text" title={inst.name}>
           {inst.name}
         </div>
         <div className="truncate text-[11.5px] text-dim">

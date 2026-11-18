@@ -15,11 +15,11 @@ export function HostingInvite({ serverId, relay }: { serverId: string; relay: bo
   const limits = useQuery({ queryKey: vqk.hostingLimits, queryFn: () => requireClient().hosting.limits(), enabled: ready && relay && vibe.hosting, staleTime: 30_000 });
   if (!vibe.social) return null;
   return (
-    <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3">
+    <div className="flex flex-wrap items-center gap-3 pt-3">
       <p className="min-w-0 flex-1 text-[12px] text-dim">
         {conn === "logged_out" ? t("social.hosting.login_hint") : t("social.hosting.invite_hint")}
         {limits.data && (
-          <span className="mt-0.5 block font-mono text-[11px]">
+          <span className="mt-0.5 block text-caption tabular-nums">
             {t("social.hosting.limits", { active: limits.data.active, max: limits.data.maxHosts })}
             {limits.data.maxPlayersPerHost ? ` · ${t("social.hosting.players", { n: limits.data.maxPlayersPerHost })}` : ""}
           </span>
@@ -30,7 +30,8 @@ export function HostingInvite({ serverId, relay }: { serverId: string; relay: bo
           {t("social.conn.login")}
         </Button>
       ) : (
-        <Button size="sm" variant="primary" icon={<Mail size={13} />} disabled={!ready} onClick={() => openInviteFriends({ serverId })}>
+        <Button size="sm" variant="ghost" icon={<Mail size={13} />}
+ disabled={!ready} onClick={() => openInviteFriends({ serverId })}>
           {t("social.invite.friends_button")}
         </Button>
       )}

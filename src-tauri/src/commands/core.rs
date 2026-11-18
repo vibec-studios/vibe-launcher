@@ -85,12 +85,59 @@ pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> App
     if !["de", "en"].contains(&s.language.as_str()) {
         s.language = "de".into();
     }
+    s.appearance.sanitize();
     s.save(&state.paths.settings_file())?;
     state.net.set_concurrency(s.concurrent_downloads as usize);
     *state.settings.write() = s.clone();
     crate::vibe::on_settings_changed(&state);
     events::emit(&state.app, events::SETTINGS_CHANGED, &s);
     Ok(s)
+}
+
+/// Eigenes Hintergrundbild/-video in `<daten>/backgrounds/` kopieren (dort deckt der Asset-Scope es ab).
+/// `slot`: "image" oder "video". Ältere Dateien desselben Slots werden entfernt. Gibt den neuen Pfad zurück.
+#[tauri::command]
+pub async fn appearance_import_background(state: State<'_, AppState>, path: String, slot: String) -> AppResult<String> {
+    const IMAGE: &[&str] = &["png", "jpg", "jpeg", "webp", "gif", "avif", "bmp"];
+    const VIDEO: &[&str] = &["mp4", "webm", "gif", "webp"];
+    const MAX_BYTES: u64 = 300 * 1024 * 1024;
+    let src = std::path::PathBuf::from(&path);
+    let ext = src
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .unwrap_or_default();
+    let allowed = match slot.as_str() {
+        "image" => IMAGE,
+        "video" => VIDEO,
+        _ => return Err(AppError::Invalid("Unbekannter Hintergrund-Slot".into())),
+    };
+    if !allowed.contains(&ext.as_str()) {
+        return Err(AppError::Invalid(format!("Dateityp .{ext} wird nicht unterstützt")));
+    }
+    let meta = std::fs::metadata(&src)?;
+    if !meta.is_file() {
+        return Err(AppError::Invalid("Keine Datei".into()));
+    }
+    if meta.len() > MAX_BYTES {
+        return Err(AppError::Invalid("Datei ist zu groß (max. 300 MB)".into()));
+    }
+    let dir = state.paths.root.join("backgrounds");
+    let target = dir.join(format!("{slot}-{}.{ext}", crate::util::now_ms()));
+    let prefix = format!("{slot}-");
+    tokio::task::spawn_blocking(move || -> AppResult<String> {
+        std::fs::create_dir_all(&dir)?;
+        if let Ok(rd) = std::fs::read_dir(&dir) {
+            for e in rd.flatten() {
+                if e.file_name().to_string_lossy().starts_with(&prefix) {
+                    let _ = std::fs::remove_file(e.path());
+                }
+            }
+        }
+        std::fs::copy(&src, &target)?;
+        Ok(target.to_string_lossy().into_owned())
+    })
+    .await?
 }
 
 // ---------------------------------------------------------------- Aufgaben

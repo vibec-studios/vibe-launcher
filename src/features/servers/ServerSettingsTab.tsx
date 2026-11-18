@@ -20,7 +20,6 @@ import {
   Slider,
   Switch,
   Textarea,
-  Tooltip,
   ErrorState,
   toast,
 } from "@/components/ui";
@@ -48,7 +47,7 @@ function ModelCards({ server }: { server: Server }) {
 
   return (
     <>
-      <div className="pointer-events-none absolute bottom-4 right-8 z-10 bg-black/80 px-2 py-1 empty:hidden">
+      <div className="pointer-events-none absolute bottom-4 right-8 z-10 rounded-ctl bg-overlay px-2 py-1 shadow-e2 empty:hidden">
         <SaveIndicator state={state} />
       </div>
       <SettingsCard title={t("srv.settings.general")}>
@@ -68,11 +67,9 @@ function ModelCards({ server }: { server: Server }) {
               {t("srv.icon.choose")}
             </Button>
             {server.icon && (
-              <Tooltip content={t("srv.icon.reset")}>
-                <IconButton label={t("srv.icon.reset")} size="sm" onClick={() => resetServerIcon(server)}>
-                  <RotateCcw size={13} />
-                </IconButton>
-              </Tooltip>
+              <IconButton label={t("srv.icon.reset")} tip variant="ghost" size="sm" onClick={() => resetServerIcon(server)}>
+                <RotateCcw size={13} />
+              </IconButton>
             )}
           </div>
         </SettingRow>
@@ -81,7 +78,7 @@ function ModelCards({ server }: { server: Server }) {
           stacked
           description={
             d.accent ? (
-              <button className="flex items-center gap-1.5 text-[12px] text-dim hover:text-white" onClick={() => update({ accent: null })}>
+              <button className="flex items-center gap-1.5 text-[12px] text-dim hover:text-text" onClick={() => update({ accent: null })}>
                 <RotateCcw size={11} />
                 {t("isettings.accent.reset")}
               </button>
@@ -158,7 +155,7 @@ function PropsForm({ server, values }: { server: Server; values: Props }) {
 
   return (
     <>
-      <div className="pointer-events-none absolute bottom-4 right-8 z-10 bg-black/80 px-2 py-1 empty:hidden">
+      <div className="pointer-events-none absolute bottom-4 right-8 z-10 rounded-ctl bg-overlay px-2 py-1 shadow-e2 empty:hidden">
         <SaveIndicator state={state} />
       </div>
       <SettingRow title={t("srv.prop.motd")} description={t("srv.prop.motd.desc")} stacked>
@@ -212,7 +209,7 @@ function PropsForm({ server, values }: { server: Server; values: Props }) {
         <Switch checked={online} onChange={(v) => set("online-mode", v)} label={t("srv.prop.online_mode")} />
       </SettingRow>
       {!online && (
-        <div className="mx-4 mb-3.5 flex items-start gap-3 border border-warn/30 bg-warn/[.06] px-4 py-3 text-[13px] text-warn">
+        <div className="mx-4 mb-3.5 flex items-start gap-3 rounded-card bg-warn/[.08] px-4 py-3 text-[13px] text-warn">
           <AlertTriangle size={16} className="mt-0.5 shrink-0" />
           <span>{t("srv.prop.online_mode.warn")}</span>
         </div>

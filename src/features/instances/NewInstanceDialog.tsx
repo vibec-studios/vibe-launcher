@@ -1,11 +1,11 @@
-// „Neue Instanz“-Dialog: Version + Loader links, Name/Icon/Akzent/Gruppe rechts.
+// „Neue Instanz“-Dialog (kompakt): Icon + Name, Loader, Minecraft-/Loader-Version als Auswahlfelder, Akzent + Gruppe.
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Check, ImageIcon, PackageOpen, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
 import { accentPalette, imageSrc, loaderNames } from "@/lib/format";
-import { Button, Dialog, Field, Input, Tooltip, cn, toast } from "@/components/ui";
+import { Button, Dialog, IconButton, Input, Tooltip, cn, toast } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { VersionPicker, type VersionValue } from "@/components/instance/VersionPicker";
 import { installInstance, pickImage } from "@/components/instance/actions";
@@ -29,10 +29,7 @@ export function AccentPicker({ value, onChange }: { value: string; onChange: (c:
           aria-checked={c === value}
           aria-label={c}
           onClick={() => onChange(c)}
-          className={cn(
-            "grid h-8 w-8 place-items-center border transition-transform duration-100 hover:-translate-y-px",
-            c === value ? "border-white" : "border-transparent",
-          )}
+          className={cn("grid h-7 w-7 place-items-center rounded-ctl transition-opacity duration-100", c === value ? "opacity-100" : "opacity-70 hover:opacity-100")}
           style={{ background: c }}
         >
           {c === value && <Check size={14} strokeWidth={3} color="#000" />}
@@ -55,8 +52,8 @@ export function GroupInput({ value, onChange, groups, autoFocus }: { value: stri
               type="button"
               onClick={() => onChange(g === value ? "" : g)}
               className={cn(
-                "h-6 border px-2 text-[12px] font-medium transition-colors",
-                g === value ? "border-accent bg-accent text-[var(--on-accent)]" : "border-line2 text-muted hover:border-accent hover:text-white",
+                "h-6 rounded-xs px-2 text-[12px] font-medium transition-colors",
+                g === value ? "bg-accent text-[var(--on-accent)]" : "bg-white/[.06] text-muted hover:bg-white/[.1] hover:text-text",
               )}
             >
               {g}
@@ -127,7 +124,7 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
       onOpenChange={onOpenChange}
       title={t("newinst.title")}
       description={t("newinst.desc")}
-      size="lg"
+      size="md"
       locked={busy}
       footer={
         <>
@@ -153,7 +150,7 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
     >
       {/* Kein <form>: Segment-Knöpfe ohne type wären sonst Submit-Knöpfe. Enter in Textfeldern erstellt. */}
       <div
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
         style={accentVars(accent)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
@@ -162,60 +159,68 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
           }
         }}
       >
+        <div className="flex items-end gap-3">
+          <Tooltip content={t("inst.icon.choose")}>
+            <button
+              type="button"
+              aria-label={t("inst.icon.choose")}
+              className="group relative shrink-0 overflow-hidden rounded-card"
+              onClick={async () => setIcon((await pickImage()) ?? icon)}
+            >
+              <InstanceIcon icon={icon ? imageSrc(icon) : null} accent={accent} size={56} />
+              <span className="absolute inset-0 grid place-items-center bg-black/60 text-text opacity-0 transition-opacity duration-100 group-hover:opacity-100">
+                <ImageIcon size={16} />
+              </span>
+            </button>
+          </Tooltip>
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span className="label">{t("newinst.name")}</span>
+            <div className="flex items-center gap-2">
+              <Input
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setNameTouched(true);
+                }}
+                placeholder={t("newinst.name_placeholder")}
+                maxLength={64}
+                aria-label={t("newinst.name")}
+                autoFocus
+              />
+              {icon && (
+                <IconButton label={t("inst.icon.reset")} tip variant="ghost" type="button" onClick={() => setIcon(null)}>
+                  <X size={15} />
+                </IconButton>
+              )}
+            </div>
+          </div>
+        </div>
+
         <VersionPicker
           value={ver}
           onChange={setVer}
-          listHeight={262}
+          compact
           render={({ loader, list, loaderVersion }) => (
             <>
               {loader}
-              <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-7">
+              <div className="grid grid-cols-2 gap-3">
                 {list}
-                <div className="flex flex-col gap-5">
-                  <Field label={t("newinst.name")}>
-                    <Input
-                      value={name}
-                      onChange={(e) => {
-                        setName(e.target.value);
-                        setNameTouched(true);
-                      }}
-                      placeholder={t("newinst.name_placeholder")}
-                      maxLength={64}
-                      autoFocus
-                    />
-                  </Field>
-                  {loaderVersion}
-                  <div className="flex flex-col gap-1.5">
-                    <span className="label">{t("inst.icon")}</span>
-                    <div className="flex items-center gap-3">
-                      <InstanceIcon icon={icon ? imageSrc(icon) : null} accent={accent} size={56} />
-                      <div className="flex flex-col gap-1.5">
-                        <Button size="sm" type="button" icon={<ImageIcon size={13} />} onClick={async () => setIcon((await pickImage()) ?? icon)}>
-                          {t("inst.icon.choose")}
-                        </Button>
-                        {icon && (
-                          <Tooltip content={icon}>
-                            <Button size="sm" variant="subtle" type="button" icon={<X size={13} />} onClick={() => setIcon(null)}>
-                              {t("inst.icon.reset")}
-                            </Button>
-                          </Tooltip>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="label">{t("inst.accent")}</span>
-                    <AccentPicker value={accent} onChange={setAccentState} />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="label">{t("inst.group")}</span>
-                    <GroupInput value={group} onChange={setGroup} groups={groups} />
-                  </div>
-                </div>
+                {loaderVersion || <div />}
               </div>
             </>
           )}
         />
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <span className="label">{t("inst.accent")}</span>
+            <AccentPicker value={accent} onChange={setAccentState} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="label">{t("inst.group")}</span>
+            <GroupInput value={group} onChange={setGroup} groups={groups} />
+          </div>
+        </div>
       </div>
     </Dialog>
   );

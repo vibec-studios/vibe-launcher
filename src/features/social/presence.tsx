@@ -13,7 +13,7 @@ const DOT: Record<string, string> = {
 export function PresenceDot({ presence, className }: { presence: Presence | null | undefined; className?: string }) {
   const s = presence?.status ?? "offline";
   const playing = s !== "offline" && (presence?.activity?.type === "playing" || presence?.activity?.type === "hosting");
-  return <span className={cn("inline-block h-2.5 w-2.5 shrink-0 border-2 border-black", playing ? "bg-brand" : DOT[s], className)} />;
+  return <span className={cn("inline-block h-2.5 w-2.5 shrink-0 rounded-dot border-2 border-bg", playing ? "bg-brand" : DOT[s], className)} />;
 }
 
 /** Kurzer Statustext: „Spielt Survival · 1.21.1“, „Im Launcher“, „Hostet …“, „Abwesend“, „Offline“. */

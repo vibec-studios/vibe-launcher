@@ -1,5 +1,5 @@
-// OWNER: Frontend-Agent A. Screenshots aller Instanzen: virtualisiertes Raster nach Datum gruppiert, Filter nach
-// Instanz, Lightbox, Kontextmenü (Kopieren, im Ordner zeigen, Löschen). Lädt nur Vorschaubilder.
+// OWNER: Frontend-Agent A. Screenshots aller Instanzen: Werkzeugleiste (Instanz-Filter, Ordner, Neu laden) über einem
+// virtualisierten, rahmenlosen Raster nach Datum gruppiert, Lightbox, Kontextmenü (Kopieren, im Ordner zeigen, Löschen). Lädt nur Vorschaubilder.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getRouteApi } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
 import type { Screenshot } from "@/lib/types";
 import { formatBytes, formatDate, imageSrc } from "@/lib/format";
-import { ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, Select, Skeleton, Tooltip, cn, confirm, toast } from "@/components/ui";
+import { ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, Select, Skeleton, cn, confirm, toast } from "@/components/ui";
 import { t as tt, useLang, useT } from "@/i18n";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { ShotThumb, useScreenshots, useShotFocus } from "./shots";
@@ -73,13 +73,14 @@ const Tile = memo(function Tile({
     >
       <button
         onClick={() => onOpen(shot)}
-        className="group relative min-w-0 flex-1 overflow-hidden border border-line text-left transition-colors duration-100 hover:border-line2 data-[state=open]:border-line2"
+        className="group relative min-w-0 flex-1 overflow-hidden rounded-card text-left outline-none focus-visible:outline-2 focus-visible:outline-accent"
         style={{ height }}
         aria-label={shot.file_name}
       >
         <ShotThumb path={shot.path} className="absolute inset-0" />
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/85 to-transparent px-2.5 pb-1.5 pt-6 text-[12px] opacity-0 transition-opacity duration-100 group-hover:opacity-100">
-          <span className="truncate font-medium text-white">{instanceName}</span>
+        <span className="pointer-events-none absolute inset-0 bg-white/0 transition-colors duration-100 group-hover:bg-white/[.04] group-data-[state=open]:bg-white/[.04]" />
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/60 px-2.5 py-1.5 text-[12px] opacity-0 transition-opacity duration-100 group-hover:opacity-100 group-data-[state=open]:opacity-100">
+          <span className="truncate font-medium text-text">{instanceName}</span>
           <span className="shrink-0 text-muted">{new Date(shot.taken_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
         </span>
       </button>
@@ -210,44 +211,45 @@ export function ScreenshotsPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex shrink-0 items-center gap-3 px-6 pb-3 pt-5">
-        <h1 className="display text-[22px]">{t("shots.title")}</h1>
-        {q.data && <span className="text-[13px] text-dim">{shots.length.toLocaleString()}</span>}
-        <div className="flex-1" />
-        <div className="w-[240px] [&_button]:h-9">
+      <div className="flex h-12 shrink-0 items-center gap-2 px-6 pt-1">
+        <div className="w-[240px]">
           <Select<string>
             size="sm"
+            variant="ghost"
             value={instance ?? ALL}
             onChange={(v) => nav({ search: { instance: v === ALL ? undefined : v }, replace: true })}
             options={filterOptions}
           />
         </div>
+        {q.data && <span className="text-meta tabular-nums text-dim">{shots.length.toLocaleString()}</span>}
+        <div className="flex-1" />
         {instance && (
-          <Tooltip content={t("common.open_folder")}>
-            <IconButton label={t("common.open_folder")} onClick={() => api.instanceOpenFolder(instance, "screenshots").catch((e) => toast.error(e))}>
-              <FolderOpen size={15} />
-            </IconButton>
-          </Tooltip>
-        )}
-        <Tooltip content={t("shots.reload")}>
-          <IconButton label={t("shots.reload")} onClick={() => q.refetch()}>
-            <RefreshCw size={15} className={cn(q.isFetching && "animate-spin")} />
+          <IconButton
+            label={t("common.open_folder")}
+            tip
+            variant="ghost"
+            onClick={() => api.instanceOpenFolder(instance, "screenshots").catch((e) => toast.error(e))}
+          >
+            <FolderOpen size={16} />
           </IconButton>
-        </Tooltip>
-      </header>
+        )}
+        <IconButton label={t("shots.reload")} tip variant="ghost" onClick={() => q.refetch()}>
+          <RefreshCw size={15} className={cn(q.isFetching && "animate-spin")} />
+        </IconButton>
+      </div>
 
       <div ref={scrollRef} className="scroll min-h-0 flex-1 px-6 pb-8">
         {q.isError && !q.data ? (
           <ErrorState error={q.error} onRetry={() => q.refetch()} />
         ) : !q.data ? (
-          <div className="grid gap-2 pt-11" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+          <div className="grid gap-2 pt-10" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
             {Array.from({ length: cols * 3 }, (_, n) => (
-              <Skeleton key={n} className="aspect-video" />
+              <Skeleton key={n} className="aspect-video rounded-card" />
             ))}
           </div>
         ) : shots.length === 0 ? (
           <EmptyState
-            className="mt-8 border border-dashed border-line2 bg-surface"
+            className="mt-4 rounded-panel bg-surface"
             icon={<Camera size={34} />}
             title={t("shots.empty.title")}
             text={t("shots.empty.text")}
@@ -260,7 +262,7 @@ export function ScreenshotsPage() {
                 <div key={vr.key} className="absolute left-0 top-0 w-full" style={{ transform: `translateY(${vr.start}px)`, height: vr.size }}>
                   {row.kind === "head" ? (
                     <div className="flex h-full items-end gap-2 pb-2.5">
-                      <span className="text-[14px] font-semibold text-white">{row.label}</span>
+                      <span className="text-section text-text">{row.label}</span>
                       <span className="text-[12px] text-dim">{row.count}</span>
                     </div>
                   ) : (

@@ -1,5 +1,5 @@
-// Instanz-Karten im Stil eines Desktop-Launchers: Raster-Karte (Bibliothek) und kompakte Zeile (Start).
-// Klick öffnet, Rechtsklick = Aktionsmenü, Spielen-Knopf erscheint beim Hover über dem Icon.
+// Instanz-Kacheln: Raster-Kachel (Bibliothek, rahmenlos – das Bild trägt) und kompakte Zeile.
+// Klick öffnet, Rechtsklick = Aktionsmenü, Spielen-Knopf erscheint beim Hover über dem Bild.
 import { memo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpCircle } from "lucide-react";
@@ -26,7 +26,7 @@ export function InstanceStatus({ instance: i, compact }: { instance: Instance; c
   if (phase === "running")
     return (
       <span className="inline-flex items-center gap-1.5 text-ok">
-        <span className="h-1.5 w-1.5 bg-ok" />
+        <span className="h-1.5 w-1.5 rounded-dot bg-ok" />
         {t("inst.status.running")}
       </span>
     );
@@ -61,8 +61,8 @@ function RunningBadge({ id }: { id: string }) {
   const { phase } = useRunPhase(id);
   if (phase !== "running") return null;
   return (
-    <span className="absolute left-2 top-2 inline-flex h-6 items-center gap-1.5 bg-black/80 px-2 text-[12px] font-medium text-ok">
-      <span className="h-1.5 w-1.5 bg-ok" />
+    <span className="absolute left-2 top-2 inline-flex h-6 items-center gap-1.5 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-ok">
+      <span className="h-1.5 w-1.5 rounded-dot bg-ok" />
       {t("inst.status.running")}
     </span>
   );
@@ -75,7 +75,7 @@ function UpdatesBadge({ id }: { id: string }) {
   const n = data?.[id] ?? 0;
   if (!n) return null;
   return (
-    <span className="absolute right-2 top-2 inline-flex h-6 items-center gap-1 bg-black/80 px-2 text-[12px] font-medium text-accent">
+    <span className="absolute right-2 top-2 inline-flex h-6 items-center gap-1 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-accent">
       <ArrowUpCircle size={12} />
       {n === 1 ? t("instances.updates_badge_1") : t("instances.updates_badge", { n })}
     </span>
@@ -99,11 +99,8 @@ function IconArea({ instance: i, accent }: { instance: Instance; accent: string 
       />
     );
   return (
-    <div
-      className="absolute inset-0 grid place-items-center"
-      style={{ background: `radial-gradient(70% 70% at 50% 40%, color-mix(in srgb, ${accent} 14%, #121217), #0e0e12)` }}
-    >
-      <PixelBlock color={accent} size={64} />
+    <div className="absolute inset-0 grid place-items-center bg-surface2">
+      <PixelBlock color={accent} size={60} />
     </div>
   );
 }
@@ -121,11 +118,11 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
         onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(i)}
         style={accentVars(accent)}
         className={cn(
-          "group relative flex min-w-0 flex-col border border-line bg-surface p-2 text-left transition-colors duration-100",
-          "hover:border-line2 hover:bg-surface2 data-[state=open]:border-line2 data-[state=open]:bg-surface2",
+          "group relative flex min-w-0 flex-col rounded-panel p-1.5 text-left transition-colors duration-100",
+          "hover:bg-white/[.04] data-[state=open]:bg-white/[.04]",
         )}
       >
-        <div className="relative aspect-[4/3] overflow-hidden border border-line">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-card bg-surface2">
           <IconArea instance={i} accent={accent} />
           <RunningBadge id={i.id} />
           <UpdatesBadge id={i.id} />
@@ -135,7 +132,7 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
           <CardProgress id={i.id} />
         </div>
         <div className="min-w-0 px-1 pb-0.5 pt-2">
-          <div className="truncate text-[14px] font-semibold text-white" title={i.name}>
+          <div className="truncate text-[13.5px] font-semibold text-text" title={i.name}>
             {i.name}
           </div>
           <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12px] text-muted">
@@ -164,8 +161,8 @@ function StatusDot({ instance: i }: { instance: Instance }) {
 
 export function InstanceCardSkeleton() {
   return (
-    <div className="flex flex-col border border-line bg-surface p-2">
-      <div className="skeleton aspect-[4/3]" />
+    <div className="flex flex-col p-1.5">
+      <div className="skeleton aspect-[4/3] rounded-card" />
       <div className="flex flex-col gap-1.5 px-1 pb-0.5 pt-2.5">
         <div className="skeleton h-4 w-3/4" />
         <div className="skeleton h-3 w-1/2" />
@@ -188,11 +185,11 @@ export const InstanceRow = memo(function InstanceRow({ instance: i, onOpen }: { 
         onClick={() => onOpen(i)}
         onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(i)}
         style={accentVars(accent)}
-        className="group relative flex min-w-0 items-center gap-3 border border-line bg-surface p-2 pr-2.5 transition-colors duration-100 hover:border-line2 hover:bg-surface2 data-[state=open]:border-line2 data-[state=open]:bg-surface2"
+        className="group relative flex min-w-0 items-center gap-3 overflow-hidden rounded-card bg-surface p-2 pr-2.5 transition-colors duration-100 hover:bg-surface2 data-[state=open]:bg-surface2"
       >
         <InstanceIcon icon={i.icon} accent={accent} size={48} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-semibold text-white">{i.name}</div>
+          <div className="truncate text-[14px] font-semibold text-text">{i.name}</div>
           <div className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] text-muted">
             <span className="truncate">{loaderLine(i)}</span>
             <span className="text-dim">·</span>
@@ -214,6 +211,43 @@ export const InstanceRow = memo(function InstanceRow({ instance: i, onOpen }: { 
           </div>
         </div>
         <PlayButton instance={i} size="icon" subtle />
+        <CardProgress id={i.id} />
+      </div>
+    </ContextMenu>
+  );
+});
+
+/** Kompakte Zeile der Bibliothek (Listenansicht): Icon, Name, Loader/Version, zuletzt gespielt, Spielzeit, Spielen. */
+export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOpen }: { instance: Instance; onOpen: (i: Instance) => void }) {
+  const t = useT();
+  const accent = instanceAccent(i.id, i.accent);
+  return (
+    <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={i.name}
+        onClick={() => onOpen(i)}
+        onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(i)}
+        style={accentVars(accent)}
+        className="group relative grid h-11 min-w-0 grid-cols-[32px_minmax(0,1fr)_36px] items-center gap-3 overflow-hidden rounded-ctl px-2 transition-colors duration-100 hover:bg-white/[.04] data-[state=open]:bg-white/[.04] @min-[640px]:grid-cols-[32px_minmax(0,1fr)_150px_36px] @min-[860px]:grid-cols-[32px_minmax(0,1fr)_150px_130px_90px_36px]"
+      >
+        <InstanceIcon icon={i.icon} accent={accent} size={32} />
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[13.5px] font-semibold text-text">{i.name}</span>
+            <span className="min-w-0 truncate text-[12px] empty:hidden">
+              <StatusHint instance={i} />
+            </span>
+          </div>
+          {i.source && <div className="truncate text-[11.5px] leading-tight text-dim">{i.source.name ?? t("inst.modpack")}</div>}
+        </div>
+        <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{loaderLine(i)}</span>
+        <span className="hidden truncate text-[12.5px] text-muted @min-[860px]:block">{i.last_played ? formatRelative(i.last_played) : t("inst.never_played")}</span>
+        <span className="hidden truncate text-right text-[12.5px] tabular-nums text-dim @min-[860px]:block">{i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : "–"}</span>
+        <span className="flex justify-end opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
+          <PlayButton instance={i} size="icon" subtle />
+        </span>
         <CardProgress id={i.id} />
       </div>
     </ContextMenu>

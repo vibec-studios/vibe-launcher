@@ -19,8 +19,8 @@ export const ProjectIcon = memo(function ProjectIcon({
   const url = imageSrc(src);
   return (
     <span
-      className={cn("relative grid shrink-0 place-items-center overflow-hidden border border-line bg-surface2 text-dim", className)}
-      style={{ width: size, height: size }}
+      className={cn("relative grid shrink-0 place-items-center overflow-hidden bg-surface2 text-dim", className)}
+      style={{ width: size, height: size, borderRadius: `calc(var(--r) * ${Math.max(0.75, Math.min(2.4, size / 36)).toFixed(2)})` }}
     >
       {url && !failed ? (
         <img

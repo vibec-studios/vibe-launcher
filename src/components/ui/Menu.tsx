@@ -6,15 +6,15 @@ import type { ReactNode } from "react";
 import { cn } from "./cn";
 
 const panel =
-  "z-[60] min-w-[200px] border border-line2 bg-[#07070a]/98 p-1 shadow-[0_16px_40px_rgba(0,0,0,.65)] " +
+  "z-[60] min-w-[200px] rounded-card bg-overlay p-1 shadow-e2 " +
   "data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)] outline-none";
 const item =
-  "relative flex h-8 cursor-pointer select-none items-center gap-2.5 px-2.5 text-[13px] text-text outline-none " +
-  "data-[highlighted]:bg-white/[.06] data-[highlighted]:shadow-[inset_2px_0_0_var(--accent)] " +
+  "relative flex h-8 cursor-pointer select-none items-center gap-2.5 rounded-ctl px-2.5 text-[13px] text-text outline-none " +
+  "data-[highlighted]:bg-white/[.07] " +
   "data-[disabled]:pointer-events-none data-[disabled]:opacity-40";
-const dangerItem = "text-danger data-[highlighted]:bg-danger/10 data-[highlighted]:shadow-[inset_2px_0_0_var(--color-danger)]";
-const sep = "my-1 h-px bg-line";
-const labelCls = "px-2.5 pb-1 pt-2 font-mono text-[10px] uppercase tracking-[.14em] text-dim";
+const dangerItem = "text-danger data-[highlighted]:bg-danger/12";
+const sep = "-mx-1 my-1 h-px bg-line";
+const labelCls = "px-2.5 pb-1 pt-2 text-[11px] font-semibold text-dim";
 
 export interface MenuItemProps {
   icon?: ReactNode;

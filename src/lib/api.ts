@@ -33,6 +33,8 @@ export const api = {
   // ---------------------------------------------------------------- Einstellungen / System / Aufgaben
   settingsGet: () => call<T.Settings>("settings_get"),
   settingsSet: (settings: T.Settings) => call<T.Settings>("settings_set", { settings }),
+  /** Hintergrund-Datei in den Datenordner kopieren; gibt den neuen Pfad zurück. */
+  appearanceImportBackground: (path: string, slot: "image" | "video") => call<string>("appearance_import_background", { path, slot }),
   systemInfo: () => call<T.SystemInfo>("system_info"),
   tasksList: () => call<T.TaskInfo[]>("tasks_list"),
   taskCancel: (id: string) => call<boolean>("task_cancel", { id }),

@@ -1,4 +1,4 @@
-// Freunde: Avatar mit Status, Zeilen für die Freunde-Seite (Hover-/Kontextaktionen) und das kompakte Panel,
+// Freunde: Avatar mit Status, kompakte Zeilen für die Freunde-Seite (eine sichtbare Aktion, Rest im ⋯-/Kontextmenü), das Panel,
 // Anfragen, Suche nach Spielernamen (für „Freund hinzufügen“) und Blockierungen.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { copyText as writeText } from "@/components/content/util";
@@ -16,7 +16,6 @@ import {
   SearchInput,
   Skeleton,
   Spinner,
-  Tooltip,
   cn,
   confirm,
   toast,
@@ -58,10 +57,11 @@ interface FriendAction {
   onSelect: () => void;
 }
 
-function friendActions(friend: Friend): FriendAction[] {
+function friendActions(friend: Friend, host?: HostSession): FriendAction[] {
   const t = tr;
   const u = friend.user;
   return [
+    ...(host ? [{ key: "join", icon: <Play size={14} />, label: t("social.accept.join"), onSelect: () => openInviteAccept({ host }) }] : []),
     { key: "msg", icon: <MessageSquare size={14} />, label: t("social.friend.message"), onSelect: () => void startDm(u.id) },
     { key: "invite", icon: <Send size={14} />, label: t("social.friend.invite"), onSelect: () => openInviteFriends({ userIds: [u.id] }) },
     { key: "copy", icon: <Clipboard size={14} />, label: t("social.friend.copy_name"), onSelect: () => void writeText(u.name).then(() => toast.success(t("social.copied"))) },
@@ -85,34 +85,26 @@ function friendActions(friend: Friend): FriendAction[] {
   ];
 }
 
-export function FriendMenuItems({ friend }: { friend: Friend }) {
+/** Gleiche Einträge als Kontext- oder Dropdown-Menü. */
+function ActionItems({ actions, kind }: { actions: FriendAction[]; kind: "context" | "dropdown" }) {
+  const Item = kind === "context" ? ContextItem : DropdownItem;
+  const Sep = kind === "context" ? ContextSeparator : DropdownSeparator;
   return (
     <>
-      {friendActions(friend).map((a) => (
+      {actions.map((a) => (
         <Fragment key={a.key}>
-          {a.sep && <ContextSeparator />}
-          <ContextItem icon={a.icon} danger={a.danger} onSelect={a.onSelect}>
+          {a.sep && <Sep />}
+          <Item icon={a.icon} danger={a.danger} onSelect={a.onSelect}>
             {a.label}
-          </ContextItem>
+          </Item>
         </Fragment>
       ))}
     </>
   );
 }
 
-function FriendDropdownItems({ friend }: { friend: Friend }) {
-  return (
-    <>
-      {friendActions(friend).map((a) => (
-        <Fragment key={a.key}>
-          {a.sep && <DropdownSeparator />}
-          <DropdownItem icon={a.icon} danger={a.danger} onSelect={a.onSelect}>
-            {a.label}
-          </DropdownItem>
-        </Fragment>
-      ))}
-    </>
-  );
+export function FriendMenuItems({ friend, host }: { friend: Friend; host?: HostSession }) {
+  return <ActionItems actions={friendActions(friend, host)} kind="context" />;
 }
 
 export async function blockUser(u: Pick<PublicUser, "id" | "name">) {
@@ -131,58 +123,61 @@ const isActive = (f: Friend) => f.presence.status !== "offline" && (f.presence.a
 
 // ------------------------------------------------------------------ Zeile auf der Freunde-Seite
 
-/** Große Zeile: Kopf mit Status, Name, was gespielt wird; Aktionen beim Hover, Rechtsklick-Menü. */
+/** Zeile: Kopf mit Status, Name, eine Statuszeile. Sichtbar höchstens „Beitreten“ (wenn gehostet) bzw. „Nachricht“
+ *  beim Hover; alles Weitere im ⋯-Menü und per Rechtsklick. Doppelklick öffnet den Chat. */
 export const FriendListRow = memo(function FriendListRow({ friend, host }: { friend: Friend; host?: HostSession }) {
   const t = useT();
   const ptext = usePresenceText();
   const offline = friend.presence.status === "offline";
   const active = isActive(friend);
+  const actions = friendActions(friend, host);
   return (
-    <ContextMenu content={<FriendMenuItems friend={friend} />}>
+    <ContextMenu content={<ActionItems actions={actions} kind="context" />}>
       <div
-        className={cn(
-          "group relative flex h-[60px] items-center gap-3.5 border-b border-line/60 px-4 transition-colors duration-100 last:border-b-0 hover:bg-white/[.035]",
-          offline && "text-muted",
-        )}
+        className="group flex h-12 items-center gap-3 rounded-ctl px-3 transition-colors duration-100 hover:bg-white/[.04] data-[state=open]:bg-white/[.04]"
         onDoubleClick={() => void startDm(friend.user.id)}
       >
-        <span className={cn(offline && "opacity-55 grayscale-[.6] transition-[opacity,filter] group-hover:opacity-100 group-hover:grayscale-0")}>
-          <Avatar user={friend.user} size={36} presence={friend.presence} />
+        <span className={cn(offline && "opacity-55 transition-opacity duration-100 group-hover:opacity-100")}>
+          <Avatar user={friend.user} size={30} presence={friend.presence} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <span className={cn("truncate text-[14px] font-semibold", offline ? "text-muted" : "text-white")}>{friend.user.name}</span>
-            {friend.user.statusText && <span className="min-w-0 truncate text-[12px] text-dim">„{friend.user.statusText}“</span>}
+          <div className={cn("truncate text-[13.5px] font-semibold leading-tight", offline ? "text-muted" : "text-text")}>{friend.user.name}</div>
+          <div className="truncate text-meta leading-tight">
+            <span className={active ? "text-brand" : offline ? "text-dim" : "text-muted"}>{ptext(friend.presence)}</span>
+            {friend.user.statusText && <span className="text-dim"> · „{friend.user.statusText}“</span>}
           </div>
-          <div className={cn("truncate text-[12.5px]", active ? "text-brand" : offline ? "text-dim" : "text-muted")}>{ptext(friend.presence)}</div>
         </div>
-        {host && (
-          <Button size="sm" variant="primary" icon={<Play size={13} />} onClick={() => openInviteAccept({ host })}>
+        {host ? (
+          <Button size="sm" variant="ghost" icon={<Play size={13} />} onClick={() => openInviteAccept({ host })}>
             {t("social.accept.join")}
           </Button>
-        )}
-        <div className="flex items-center gap-1 opacity-0 transition-opacity duration-100 focus-within:opacity-100 group-hover:opacity-100">
-          <Tooltip content={t("social.friend.message")}>
-            <IconButton label={t("social.friend.message")} size="sm" onClick={() => void startDm(friend.user.id)}>
-              <MessageSquare size={15} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip content={t("social.friend.invite")}>
-            <IconButton label={t("social.friend.invite")} size="sm" onClick={() => openInviteFriends({ userIds: [friend.user.id] })}>
-              <Send size={14} />
-            </IconButton>
-          </Tooltip>
-          <DropdownMenu
-            align="end"
-            trigger={
-              <IconButton label={t("social.chat.more")} size="sm">
-                <Ellipsis size={15} />
-              </IconButton>
-            }
+        ) : (
+          <IconButton
+            label={t("social.friend.message")}
+            tip
+            variant="ghost"
+            size="sm"
+            className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+            onClick={() => void startDm(friend.user.id)}
           >
-            <FriendDropdownItems friend={friend} />
-          </DropdownMenu>
-        </div>
+            <MessageSquare size={15} />
+          </IconButton>
+        )}
+        <DropdownMenu
+          align="end"
+          trigger={
+            <IconButton
+              label={t("social.chat.more")}
+              variant="ghost"
+              size="sm"
+              className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+            >
+              <Ellipsis size={15} />
+            </IconButton>
+          }
+        >
+          <ActionItems actions={actions} kind="dropdown" />
+        </DropdownMenu>
       </div>
     </ContextMenu>
   );
@@ -198,15 +193,15 @@ export const FriendRow = memo(function FriendRow({ friend, compact }: { friend: 
       <button
         onClick={() => void startDm(friend.user.id)}
         className={cn(
-          "group flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-100 hover:bg-white/[.04]",
-          compact ? "h-11" : "h-12",
+          "group mx-1.5 flex w-[calc(100%-12px)] items-center gap-2.5 rounded-ctl px-2 text-left transition-colors duration-100 hover:bg-white/[.04] data-[state=open]:bg-white/[.04]",
+          compact ? "h-10" : "h-11",
           offline && "opacity-60 hover:opacity-100",
         )}
       >
-        <Avatar user={friend.user} size={compact ? 26 : 30} presence={friend.presence} />
+        <Avatar user={friend.user} size={compact ? 26 : 28} presence={friend.presence} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px] font-semibold text-white">{friend.user.name}</span>
-          <span className={cn("block truncate text-[11px]", isActive(friend) ? "text-brand" : "text-dim")}>
+          <span className="block truncate text-[13px] font-semibold leading-tight text-text">{friend.user.name}</span>
+          <span className={cn("block truncate text-caption", isActive(friend) ? "text-brand" : "text-dim")}>
             {friend.user.statusText && offline ? friend.user.statusText : ptext(friend.presence)}
           </span>
         </span>
@@ -216,10 +211,11 @@ export const FriendRow = memo(function FriendRow({ friend, compact }: { friend: 
   );
 });
 
+/** Ruhige Gruppenüberschrift in Listen (Panel, Postfach). */
 export function GroupLabel({ children, right, className }: { children: ReactNode; right?: ReactNode; className?: string }) {
   return (
-    <div className={cn("flex h-8 items-center justify-between px-3 pt-2", className)}>
-      <span className="eyebrow">{children}</span>
+    <div className={cn("flex h-8 items-center justify-between px-3.5 pt-2", className)}>
+      <span className="text-caption font-semibold text-dim">{children}</span>
       {right}
     </div>
   );
@@ -243,7 +239,7 @@ export function FriendsTab({ compact }: { compact?: boolean }) {
         </>
       )}
       <GroupLabel>{t("social.friends.online", { n: online.length })}</GroupLabel>
-      {online.length === 0 && <p className="px-3 py-1.5 text-[12px] text-dim">{friends.length ? t("social.friends.none_online") : t("social.friends.empty")}</p>}
+      {online.length === 0 && <p className="px-3.5 py-1.5 text-[12px] text-dim">{friends.length ? t("social.friends.none_online") : t("social.friends.empty")}</p>}
       {online.map((f) => (
         <FriendRow key={f.user.id} friend={f} compact={compact} />
       ))}
@@ -261,10 +257,13 @@ export function FriendsTab({ compact }: { compact?: boolean }) {
 
 // ------------------------------------------------------------------ Anfragen
 
+/** Anfrage: sichtbar nur „Annehmen“ (eingehend) bzw. „Zurückziehen“ (ausgehend); Ablehnen und Blockieren im ⋯-Menü
+ *  und per Rechtsklick. */
 export function RequestRow({ r }: { r: FriendRequest }) {
   const t = useT();
   const [busy, setBusy] = useState(false);
   const user = r.direction === "incoming" ? r.from : r.to;
+  const incoming = r.direction === "incoming";
   const act = async (fn: () => Promise<unknown>) => {
     setBusy(true);
     try {
@@ -276,42 +275,48 @@ export function RequestRow({ r }: { r: FriendRequest }) {
       setBusy(false);
     }
   };
+  const accept = () => void act(() => requireClient().friends.accept(r.id));
+  const cancel = () => void act(() => requireClient().friends.cancel(r.id));
+  const actions: FriendAction[] = [
+    ...(incoming
+      ? [
+          { key: "accept", icon: <Check size={14} />, label: t("social.req.accept"), onSelect: accept },
+          { key: "decline", icon: <X size={14} />, label: t("social.req.decline"), onSelect: () => void act(() => requireClient().friends.decline(r.id)) },
+        ]
+      : [{ key: "cancel", icon: <X size={14} />, label: t("social.req.cancel"), onSelect: cancel }]),
+    { key: "block", sep: true, danger: true, icon: <Ban size={14} />, label: t("social.friend.block"), onSelect: () => void blockUser(user) },
+  ];
   return (
-    <ContextMenu
-      content={
-        <ContextItem icon={<Ban size={14} />} danger onSelect={() => blockUser(user)}>
-          {t("social.friend.block")}
-        </ContextItem>
-      }
-    >
-      <div className="flex h-12 items-center gap-2.5 px-3">
-        <Avatar user={user} size={28} />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px] font-semibold text-white">{user.name}</span>
-          <span className="block truncate text-[11px] text-dim">{r.direction === "incoming" ? t("social.req.incoming") : t("social.req.outgoing")}</span>
+    <ContextMenu content={<ActionItems actions={actions} kind="context" />}>
+      <div className="mx-1.5 flex h-11 items-center gap-1.5 rounded-ctl pl-2 transition-colors duration-100 hover:bg-white/[.04] data-[state=open]:bg-white/[.04]">
+        <Avatar user={user} size={26} />
+        <span className="ml-1 min-w-0 flex-1">
+          <span className="block truncate text-[13px] font-semibold leading-tight text-text">{user.name}</span>
+          <span className="block truncate text-caption text-dim">{incoming ? t("social.req.incoming") : t("social.req.outgoing")}</span>
         </span>
         {busy ? (
-          <Spinner size={12} />
-        ) : r.direction === "incoming" ? (
-          <>
-            <Tooltip content={t("social.req.accept")}>
-              <IconButton label={t("social.req.accept")} size="sm" onClick={() => act(() => requireClient().friends.accept(r.id))}>
-                <Check size={15} className="text-ok" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip content={t("social.req.decline")}>
-              <IconButton label={t("social.req.decline")} size="sm" onClick={() => act(() => requireClient().friends.decline(r.id))}>
-                <X size={15} />
-              </IconButton>
-            </Tooltip>
-          </>
+          <span className="grid h-8 w-8 place-items-center">
+            <Spinner size={12} />
+          </span>
+        ) : incoming ? (
+          <IconButton label={t("social.req.accept")} tip variant="ghost" size="sm" onClick={accept}>
+            <Check size={15} className="text-ok" />
+          </IconButton>
         ) : (
-          <Tooltip content={t("social.req.cancel")}>
-            <IconButton label={t("social.req.cancel")} size="sm" onClick={() => act(() => requireClient().friends.cancel(r.id))}>
-              <X size={15} />
-            </IconButton>
-          </Tooltip>
+          <IconButton label={t("social.req.cancel")} tip variant="ghost" size="sm" onClick={cancel}>
+            <X size={15} />
+          </IconButton>
         )}
+        <DropdownMenu
+          align="end"
+          trigger={
+            <IconButton label={t("social.chat.more")} variant="ghost" size="sm" disabled={busy}>
+              <Ellipsis size={15} />
+            </IconButton>
+          }
+        >
+          <ActionItems actions={actions} kind="dropdown" />
+        </DropdownMenu>
       </div>
     </ContextMenu>
   );
@@ -369,10 +374,9 @@ export function AddFriendSearch() {
       >
         <SearchInput value={q} onChange={setQ} placeholder={t("social.add.placeholder")} aria-label={t("social.add.placeholder")} autoFocus />
       </form>
-      <div className="min-h-[188px] border border-line bg-black/30">
+      <div className="min-h-[188px] rounded-card bg-surface">
         {dq.length < 2 ? (
           <div className="flex h-[188px] flex-col items-center justify-center gap-2 px-6 text-center">
-            <UserPlus size={20} className="text-dim" />
             <p className="max-w-[300px] text-[12.5px] text-muted">{t("social.add.hint")}</p>
           </div>
         ) : search.isLoading ? (
@@ -393,9 +397,9 @@ export function AddFriendSearch() {
               <button
                 onClick={() => void send({ name: q.trim() })}
                 disabled={!!busy}
-                className="flex h-11 w-full items-center gap-2.5 border-t border-line px-3 text-left text-[13px] text-muted transition-colors hover:bg-white/[.04] hover:text-white"
+                className="flex h-11 w-full items-center gap-2.5 px-3 text-left text-[13px] text-muted transition-colors hover:bg-white/[.04] hover:text-text"
               >
-                <span className="grid h-7 w-7 place-items-center border border-dashed border-line2 text-brand">{busy === q.trim() ? <Spinner size={12} /> : <Send size={13} />}</span>
+                <span className="grid h-7 w-7 place-items-center text-brand">{busy === q.trim() ? <Spinner size={12} /> : <Send size={14} />}</span>
                 {t("social.add.by_name", { name: q.trim() })}
               </button>
             )}
@@ -420,13 +424,13 @@ function SearchResult({ u, busy, onAdd }: { u: UserWithRelationship; busy: boole
   return (
     <div className="flex h-11 items-center gap-2.5 px-3">
       <Avatar user={u} size={28} />
-      <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-white">{u.name}</span>
+      <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-text">{u.name}</span>
       {canAdd ? (
-        <Button size="sm" variant={u.relationship === "incoming" ? "primary" : "outline"} icon={busy ? <Spinner size={12} /> : <UserPlus size={14} />} onClick={onAdd} disabled={busy}>
+        <Button size="sm" variant="ghost" icon={busy ? <Spinner size={12} /> : <UserPlus size={14} />} onClick={onAdd} disabled={busy}>
           {u.relationship === "incoming" ? t("social.req.accept") : t("social.add.send")}
         </Button>
       ) : (
-        <span className="font-mono text-[10px] uppercase tracking-[.1em] text-dim">{label[u.relationship]}</span>
+        <span className="text-caption text-dim">{label[u.relationship]}</span>
       )}
     </div>
   );
@@ -447,21 +451,21 @@ export function BlockedList() {
   if (q.isError) return <p className="text-[12.5px] text-danger">{errText(q.error)}</p>;
   if (!q.data?.length)
     return (
-      <div className="flex flex-col items-center gap-2 py-8 text-center">
-        <ShieldOff size={20} className="text-dim" />
+      <div className="py-8 text-center">
         <p className="text-[13px] text-muted">{t("social.blocked.none")}</p>
       </div>
     );
   return (
-    <div className="border border-line bg-black/30">
+    <div className="rounded-card bg-surface">
       {q.data.map((u) => (
-        <div key={u.id} className="flex h-12 items-center gap-2.5 px-3 [&+&]:border-t [&+&]:border-line">
+        <div key={u.id} className="flex h-12 items-center gap-2.5 border-line px-3 [&+&]:border-t">
           <Avatar user={u} size={28} />
           <span className="min-w-0 flex-1 truncate text-[13.5px] text-text">{u.name}</span>
           <Button
             size="sm"
-            variant="outline"
+            variant="ghost"
             icon={<ShieldOff size={13} />}
+
             onClick={async () => {
               try {
                 await requireClient().friends.unblock(u.id);

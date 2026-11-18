@@ -2,9 +2,10 @@ import { forwardRef, type InputHTMLAttributes, type ReactNode, type TextareaHTML
 import { Search, X } from "lucide-react";
 import { cn } from "./cn";
 
+// Gefülltes Feld ohne sichtbaren Rahmen; Fokus zeigt den Akzent.
 const base =
-  "w-full bg-surface border border-line2 text-text placeholder:text-dim px-3 outline-none transition-colors duration-150 " +
-  "hover:border-white/30 focus:border-accent disabled:opacity-50";
+  "w-full rounded-ctl bg-field border border-transparent text-text placeholder:text-dim px-3 outline-none transition-colors duration-150 " +
+  "hover:bg-white/[.07] focus:border-accent/70 focus:bg-white/[.06] disabled:opacity-50";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   leading?: ReactNode;
@@ -14,7 +15,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ className, leading, trailing, invalid, ...rest }, ref) {
   if (!leading && !trailing) {
-    return <input ref={ref} spellCheck={false} className={cn(base, "h-10 text-[14px]", invalid && "border-danger", className)} {...rest} />;
+    return <input ref={ref} spellCheck={false} className={cn(base, "h-9 text-[13.5px]", invalid && "border-danger", className)} {...rest} />;
   }
   return (
     <div className={cn("relative flex items-center", className)}>
@@ -22,7 +23,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ c
       <input
         ref={ref}
         spellCheck={false}
-        className={cn(base, "h-10 text-[14px]", leading && "pl-9", trailing && "pr-9", invalid && "border-danger")}
+        className={cn(base, "h-9 text-[13.5px]", leading && "pl-9", trailing && "pr-9", invalid && "border-danger")}
         {...rest}
       />
       {trailing && <span className="absolute right-2 flex items-center">{trailing}</span>}
@@ -31,7 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ c
 });
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea({ className, ...rest }, ref) {
-  return <textarea ref={ref} spellCheck={false} className={cn(base, "min-h-24 py-2 text-[14px] resize-none scroll", className)} {...rest} />;
+  return <textarea ref={ref} spellCheck={false} className={cn(base, "min-h-24 py-2 text-[13.5px] resize-none scroll", className)} {...rest} />;
 });
 
 export interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {
@@ -49,7 +50,7 @@ export function SearchInput({ value, onChange, className, ...rest }: SearchInput
       leading={<Search size={15} />}
       trailing={
         value ? (
-          <button type="button" aria-label="Leeren" className="grid h-6 w-6 place-items-center text-dim hover:text-white" onClick={() => onChange("")}>
+          <button type="button" aria-label="Leeren" className="grid h-6 w-6 place-items-center rounded-xs text-dim hover:text-text" onClick={() => onChange("")}>
             <X size={14} />
           </button>
         ) : null

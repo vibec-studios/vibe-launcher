@@ -7,7 +7,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Copy, Download, ExternalLink, FileCode2, FolderOpen, MousePointerClick, Play, RefreshCw, Wifi } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Button, Spinner, Tooltip, cn, toast } from "@/components/ui";
+import { Button, IconButton, Spinner, cn, toast } from "@/components/ui";
 import { copyText, openExternal } from "@/components/content/util";
 import { useT } from "@/i18n";
 import { vapi } from "./api";
@@ -64,20 +64,18 @@ export function CreatorTools({ online }: { online: boolean }) {
         />
       </div>
 
-      <section className="border border-line bg-surface">
-        <header className="flex items-center gap-3 border-b border-line px-5 py-3.5">
-          <h2 className="display text-[15px] text-white">{t("cre.setup")}</h2>
-          <span className="text-[12px] text-dim">{t("cre.setup_hint")}</span>
-          <Tooltip content={t("cre.refresh")}>
-            <button aria-label={t("cre.refresh")} className="ml-auto grid h-8 w-8 place-items-center text-dim hover:text-white" onClick={() => void bb.refetch()}>
-              {bb.isFetching ? <Spinner size={13} /> : <RefreshCw size={14} />}
-            </button>
-          </Tooltip>
+      <section className="flex flex-col gap-2">
+        <header className="flex items-center gap-3 px-1">
+          <h2 className="text-section text-text">{t("cre.setup")}</h2>
+          <span className="truncate text-meta text-dim">{t("cre.setup_hint")}</span>
+          <IconButton label={t("cre.refresh")} tip variant="ghost" size="sm" className="ml-auto" onClick={() => void bb.refetch()}>
+            {bb.isFetching ? <Spinner size={13} /> : <RefreshCw size={14} />}
+          </IconButton>
         </header>
-        <ol className="divide-y divide-line">
+        <ol className="divide-y divide-line overflow-hidden rounded-card bg-surface">
           <Step n={1} done={step1Done} title={t("cre.s1.title")} art={<ArtDownload />}>
             <p className="[overflow-wrap:anywhere]">{s?.blockbench ? t("cre.s1.found", { path: s.blockbench }) : t("cre.s1.text")}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {s?.blockbench ? (
                 <Button size="sm" icon={<Play size={14} />} onClick={() => vapi.blockbenchOpen().catch((e) => toast.error(e))}>
                   {t("cre.open_bb")}
@@ -93,26 +91,28 @@ export function CreatorTools({ online }: { online: boolean }) {
             <p>{t("cre.s2.text")}</p>
             {!online && <p className="mt-1.5 text-warn">{t("cre.s2.offline")}</p>}
             {s?.error && online && <p className="mt-1.5 text-danger">{s.error}</p>}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button size="sm" variant={step2Done ? "ghost" : "primary"} loading={busy} disabled={!online} icon={<Download size={14} />} onClick={() => void install()}>
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              {/* Nur eine farbige Hauptaktion: erst Blockbench holen, dann das Plugin */}
+              <Button size="sm" variant={step2Done || !step1Done ? "ghost" : "primary"} loading={busy} disabled={!online} icon={<Download size={14} />} onClick={() => void install()}>
                 {step2Done ? (s?.update_available ? t("cre.s2.update", { v: s.latest_version ?? "" }) : t("cre.s2.again")) : t("cre.s2.get")}
               </Button>
               {step2Done && (
                 <>
-                  <Button size="sm" icon={<FolderOpen size={14} />} onClick={() => vapi.blockbenchRevealPlugin().catch((e) => toast.error(e))}>
-                    {t("cre.reveal")}
-                  </Button>
-                  <Button
+                  <IconButton label={t("cre.reveal")} tip variant="ghost" size="sm" onClick={() => vapi.blockbenchRevealPlugin().catch((e) => toast.error(e))}>
+                    <FolderOpen size={15} />
+                  </IconButton>
+                  <IconButton
+                    label={t("cre.copy_path")}
+                    tip
+                    variant="ghost"
                     size="sm"
-                    variant="subtle"
-                    icon={<Copy size={14} />}
                     onClick={() => {
                       void copyText(s!.plugin_path);
                       toast.success(t("cre.copied"));
                     }}
                   >
-                    {t("cre.copy_path")}
-                  </Button>
+                    <Copy size={14} />
+                  </IconButton>
                 </>
               )}
             </div>
@@ -139,18 +139,19 @@ export function CreatorTools({ online }: { online: boolean }) {
         </ol>
       </section>
 
-      <section className="border border-line bg-surface">
-        <header className="flex items-center gap-3 border-b border-line px-5 py-3.5">
-          <Wifi size={16} className="text-brand2" />
-          <h2 className="display text-[15px] text-white">{t("cre.live.title")}</h2>
+      <section className="flex flex-col gap-2">
+        <header className="flex items-center gap-2 px-1">
+          <Wifi size={14} className="text-dim" />
+          <h2 className="text-section text-text">{t("cre.live.title")}</h2>
         </header>
+        <div className="overflow-hidden rounded-card bg-surface">
         <div className="grid grid-cols-[1fr_300px] gap-6 p-5 text-[13px] leading-relaxed text-muted">
           <div>
             <p>{t("cre.live.text")}</p>
             <ol className="mt-3 flex flex-col gap-2">
               {[1, 2, 3, 4].map((i) => (
                 <li key={i} className="flex gap-2.5">
-                  <span className="grid h-5 w-5 shrink-0 place-items-center bg-brand/20 font-mono text-[11px] text-brand">{i}</span>
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-pill bg-surface3 text-[11px] font-semibold text-muted">{i}</span>
                   <span>{t(`cre.live.s${i}`)}</span>
                 </li>
               ))}
@@ -160,30 +161,33 @@ export function CreatorTools({ online }: { online: boolean }) {
           <ArtLive />
         </div>
         <div className="border-t border-line px-5 py-4">
-          <div className="mb-2 font-mono text-[11px] uppercase tracking-[.16em] text-dim">{t("cre.live.instances")}</div>
+          <div className="mb-2 text-caption font-semibold text-dim">{t("cre.live.instances")}</div>
           {inst.data && inst.data.length === 0 && <p className="text-[13px] text-muted">{t("cre.live.none")}</p>}
-          <div className="flex flex-col gap-1.5">
+          <div className="-mx-2 flex flex-col">
             {inst.data?.map((i) => (
-              <div key={i.instance_id} className="flex items-center gap-3 border border-line bg-black/30 px-3 py-2">
+              <div key={i.instance_id} className="flex items-center gap-3 rounded-ctl px-2 py-1.5 transition-colors hover:bg-white/[.03]">
+                <span className={cn("h-2 w-2 shrink-0 rounded-dot", i.devlink ? "bg-ok" : "bg-surface3")} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-semibold text-white">{i.name}</div>
+                  <div className="truncate text-[13px] font-semibold text-text">{i.name}</div>
                   <div className="truncate font-mono text-[11px] text-dim">{i.game_dir}</div>
                 </div>
                 <span className={cn("text-[12px]", i.devlink ? "text-ok" : "text-dim")}>{i.devlink ? t("cre.live.devlink_on") : t("cre.live.devlink_off")}</span>
-                <Button
+                <IconButton
+                  label={t("cre.live.copy_dir")}
+                  tip
+                  variant="ghost"
                   size="sm"
-                  variant="subtle"
-                  icon={<Copy size={13} />}
                   onClick={() => {
                     void copyText(i.game_dir);
                     toast.success(t("cre.copied"));
                   }}
                 >
-                  {t("cre.live.copy_dir")}
-                </Button>
+                  <Copy size={14} />
+                </IconButton>
               </div>
             ))}
           </div>
+        </div>
         </div>
       </section>
     </div>
@@ -192,13 +196,13 @@ export function CreatorTools({ online }: { online: boolean }) {
 
 function StatusTile({ ok, label, value }: { ok: boolean; label: string; value: string }) {
   return (
-    <div className={cn("flex items-center gap-3 border px-4 py-3", ok ? "border-ok/30 bg-ok/[.06]" : "border-line bg-surface")}>
-      <span className={cn("grid h-8 w-8 shrink-0 place-items-center border", ok ? "border-ok/50 text-ok" : "border-line2 text-dim")}>
-        {ok ? <CheckCircle2 size={16} /> : <span className="h-1.5 w-1.5 bg-dim" />}
+    <div className="flex items-center gap-3 rounded-card bg-surface px-4 py-3">
+      <span className={cn("grid h-5 w-5 shrink-0 place-items-center", ok ? "text-ok" : "text-dim")}>
+        {ok ? <CheckCircle2 size={16} /> : <span className="h-2 w-2 rounded-dot bg-surface3" />}
       </span>
       <div className="min-w-0">
-        <div className="font-mono text-[10px] uppercase tracking-[.16em] text-dim">{label}</div>
-        <div className="truncate text-[14px] font-semibold text-white">{value}</div>
+        <div className="text-caption font-semibold text-dim">{label}</div>
+        <div className="truncate text-[14px] font-semibold text-text">{value}</div>
       </div>
     </div>
   );
@@ -207,11 +211,11 @@ function StatusTile({ ok, label, value }: { ok: boolean; label: string; value: s
 function Step({ n, done, title, art, children }: { n: number; done: boolean; title: string; art: ReactNode; children: ReactNode }) {
   return (
     <li className="grid grid-cols-[auto_1fr_260px] gap-5 px-5 py-5">
-      <span className={cn("grid h-8 w-8 place-items-center border font-mono text-[13px] font-bold", done ? "border-ok/50 bg-ok/10 text-ok" : "border-brand/50 bg-brand/15 text-brand")}>
+      <span className={cn("grid h-7 w-7 place-items-center rounded-pill text-[13px] font-bold", done ? "bg-ok/10 text-ok" : "bg-surface3 text-muted")}>
         {done ? <CheckCircle2 size={16} /> : n}
       </span>
       <div className="min-w-0 text-[13px] leading-relaxed text-muted">
-        <h3 className="mb-1.5 text-[14px] font-semibold text-white">{title}</h3>
+        <h3 className="mb-1.5 text-[14px] font-semibold text-text">{title}</h3>
         {children}
       </div>
       <div className="self-start">{art}</div>
@@ -219,13 +223,13 @@ function Step({ n, done, title, art, children }: { n: number; done: boolean; tit
   );
 }
 
-const Kbd = ({ children }: { children: ReactNode }) => <span className="border border-line2 bg-black/50 px-1.5 py-0.5 font-mono text-[11px] text-text">{children}</span>;
+const Kbd = ({ children }: { children: ReactNode }) => <span className="rounded-xs bg-surface3 px-1.5 py-0.5 font-mono text-[11px] text-text">{children}</span>;
 
 // ------------------------------------------------------------------ Illustrationen (schematisch, Blockbench-Look)
 
 function Frame({ children, title = "Blockbench" }: { children: ReactNode; title?: string }) {
   return (
-    <div className="overflow-hidden border border-line2 bg-[#1c1f26] shadow-[0_10px_30px_rgba(0,0,0,.45)]">
+    <div className="overflow-hidden rounded-card bg-[#1c1f26]">
       <div className="flex h-5 items-center gap-1.5 border-b border-black/40 bg-[#2a2e37] px-2">
         <span className="h-1.5 w-1.5 bg-[#3e8bff]" />
         <span className="font-sans text-[9px] font-semibold text-[#c8ccd6]">{title}</span>
@@ -255,15 +259,15 @@ function ArtDownload() {
 
 function ArtFile({ version }: { version: string | null }) {
   return (
-    <div className="flex h-[143px] items-center justify-center gap-3 border border-line2 bg-black/40">
-      <div className="relative grid h-[84px] w-[66px] place-items-center border border-line2 bg-surface2">
-        <span className="absolute right-0 top-0 h-3.5 w-3.5 border-b border-l border-line2 bg-[#0b0b0e]" />
+    <div className="flex h-[143px] items-center justify-center gap-3 rounded-card bg-surface2">
+      <div className="relative grid h-[84px] w-[66px] place-items-center rounded-xs bg-surface3">
+        <span className="absolute right-0 top-0 h-3.5 w-3.5 bg-surface2" />
         <FileCode2 size={26} className="text-warn" />
         <span className="absolute bottom-1.5 font-mono text-[10px] text-text">vibey.js</span>
       </div>
       <div className="flex flex-col gap-1 text-[11px]">
         <span className="font-mono text-dim">Vibe Launcher</span>
-        <span className="font-semibold text-white">{version ? `v${version}` : "—"}</span>
+        <span className="font-semibold text-text">{version ? `v${version}` : "—"}</span>
         <span className="text-ok">SHA-256 ✓</span>
       </div>
     </div>
@@ -277,11 +281,11 @@ function ArtDrag() {
         <span className="text-[10px] font-semibold text-[#9cc2ff]">Plugin laden</span>
       </div>
       <div className="absolute bottom-3 right-6 flex items-end gap-0.5">
-        <div className="relative grid h-11 w-9 rotate-[-8deg] place-items-center border border-line2 bg-surface2 shadow-lg">
+        <div className="relative grid h-11 w-9 rotate-[-8deg] place-items-center rounded-xs bg-surface3">
           <FileCode2 size={15} className="text-warn" />
           <span className="absolute bottom-0.5 font-mono text-[7px] text-text">vibey.js</span>
         </div>
-        <MousePointerClick size={16} className="-ml-2 mb-[-4px] text-white drop-shadow" />
+        <MousePointerClick size={16} className="-ml-2 mb-[-4px] text-text" />
       </div>
     </Frame>
   );
@@ -296,7 +300,7 @@ function ArtConfirm() {
         <span className="bg-[#8b6cff] px-1 font-semibold text-white">Vibey</span>
         <span>Help</span>
       </div>
-      <div className="absolute left-1/2 top-1/2 w-[170px] -translate-x-1/2 -translate-y-[40%] border border-black/50 bg-[#2a2e37] p-2.5 shadow-xl">
+      <div className="absolute left-1/2 top-1/2 w-[170px] -translate-x-1/2 -translate-y-[40%] rounded-ctl bg-[#2a2e37] p-2.5">
         <div className="text-[9px] leading-snug text-[#c8ccd6]">Plugin „vibey“ laden und ihm Zugriff auf deine Dateien erlauben?</div>
         <div className="mt-2 flex justify-end gap-1">
           <span className="bg-[#3e8bff] px-2 py-0.5 text-[9px] font-semibold text-white">OK</span>
@@ -311,20 +315,20 @@ function ArtLive() {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <div className="flex-1 border border-line2 bg-[#1c1f26] p-2">
+        <div className="flex-1 rounded-ctl bg-[#1c1f26] p-2">
           <div className="text-[9px] font-semibold text-[#9cc2ff]">Blockbench</div>
           <div className="mt-1 flex items-center gap-1 text-[9px] text-ok">
             <span className="h-1.5 w-1.5 bg-ok" /> Vibey: connected
           </div>
           <div className="mt-1.5 bg-[#8b6cff] px-1.5 py-0.5 text-center text-[9px] font-semibold text-white">Push</div>
         </div>
-        <div className="flex flex-col items-center text-brand2">
+        <div className="flex flex-col items-center text-muted">
           <span className="font-mono text-[9px]">127.0.0.1</span>
           <span className="text-[14px] leading-none">⇄</span>
         </div>
-        <div className="flex-1 border border-line2 bg-[#14121c] p-2">
-          <div className="text-[9px] font-semibold text-white">Minecraft</div>
-          <div className="mt-1 border-l-2 border-brand bg-black/50 px-1.5 py-1 text-[9px] text-text">Seal Hat updated</div>
+        <div className="flex-1 rounded-ctl bg-surface2 p-2">
+          <div className="text-[9px] font-semibold text-text">Minecraft</div>
+          <div className="mt-1 rounded-xs bg-surface3 px-1.5 py-1 text-[9px] text-text">Seal Hat updated</div>
           <div className="mt-1 text-[8px] text-warn">DEV</div>
         </div>
       </div>

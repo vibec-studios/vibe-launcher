@@ -47,7 +47,7 @@ function EulaDialog() {
     >
       <div className="flex flex-col gap-3 text-[13px] leading-relaxed text-muted">
         <p>{t("srv.eula.text")}</p>
-        <a href={EULA_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 self-start font-medium text-accent hover:brightness-125">
+        <a href={EULA_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 self-start rounded-xs font-medium text-accent hover:underline">
           <ExternalLink size={13} />
           {t("srv.eula.link")}
         </a>

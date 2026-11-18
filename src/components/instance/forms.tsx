@@ -6,7 +6,7 @@ import { Check, FolderSearch, Loader2, TestTube2 } from "lucide-react";
 import { api, errorMessage } from "@/lib/api";
 import { qk } from "@/lib/queries";
 import type { JavaInstall } from "@/lib/types";
-import { Button, Input, NumberInput, Select, Slider, Tooltip, cn, toast } from "@/components/ui";
+import { Button, IconButton, Input, NumberInput, Select, Slider, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
@@ -110,7 +110,7 @@ export function MemoryField({
       <span className="label">{label}</span>
       <div className="flex flex-col gap-1">
         <Slider value={value} min={lo} max={limit} step={256} onChange={(v) => set(v, 400)} disabled={disabled} />
-        <div className="flex justify-between text-[11px] tabular-nums text-dim">
+        <div className="flex justify-between text-caption tabular-nums text-dim">
           <span>{formatMb(lo)}</span>
           <span className="text-muted">{formatMb(value)}</span>
           <span>{formatMb(limit)}</span>
@@ -210,18 +210,19 @@ export function JavaPathField({
               if (e.target.value.trim()) onChange(e.target.value.trim(), 600);
             }}
           />
-          <Tooltip content={t("common.browse")}>
-            <Button
-              icon={<FolderSearch size={14} />}
-              onClick={async () => {
-                const p = await pickJava();
-                if (p) {
-                  setText(p);
-                  onChange(p);
-                }
-              }}
-            />
-          </Tooltip>
+          <IconButton
+            label={t("common.browse")}
+            tip
+            onClick={async () => {
+              const p = await pickJava();
+              if (p) {
+                setText(p);
+                onChange(p);
+              }
+            }}
+          >
+            <FolderSearch size={15} />
+          </IconButton>
           <Button icon={<TestTube2 size={14} />} loading={testing} disabled={!text.trim()} onClick={test}>
             {t("form.java.test")}
           </Button>

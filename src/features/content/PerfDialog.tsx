@@ -67,7 +67,7 @@ export function PerfDialog({ instance, onClose }: { instance: Instance; onClose:
       ) : !q.data?.length ? (
         <div className="py-8 text-center text-[13px] text-muted">{t("perf.none")}</div>
       ) : (
-        <div className="flex flex-col">
+        <div className="-mx-2 flex flex-col">
           {q.data.map((c) => {
             const disabled = c.installed || !c.available;
             const on = sel.has(c.project_id);
@@ -75,21 +75,21 @@ export function PerfDialog({ instance, onClose }: { instance: Instance; onClose:
               <div
                 key={c.project_id}
                 onClick={() => !disabled && setSel((s) => (s.has(c.project_id) ? (s.delete(c.project_id), new Set(s)) : new Set(s).add(c.project_id)))}
-                className={`flex items-center gap-3 border-b border-line/60 px-1 py-2.5 ${disabled ? "opacity-55" : "cursor-default hover:bg-white/[.03]"}`}
+                className={`flex items-center gap-3 rounded-ctl px-2 py-2 transition-colors duration-100 ${disabled ? "opacity-55" : "cursor-default hover:bg-white/[.03]"}`}
               >
                 {disabled ? <span className="w-[18px]" /> : <SelectBox state={on ? "on" : "off"} label={c.title} onClick={() => {}} />}
                 <ProjectIcon src={c.icon_url} size={34} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-[14px] font-semibold text-white">{c.title}</span>
-                    {c.version_number && <span className="truncate text-[12px] text-dim">{c.version_number}</span>}
+                    <span className="truncate text-[13.5px] font-semibold text-text">{c.title}</span>
+                    {c.version_number && <span className="truncate text-meta text-dim">{c.version_number}</span>}
                   </div>
-                  <div className="truncate text-[12px] text-muted">{c.note ?? c.description}</div>
+                  <div className="truncate text-meta text-muted">{c.note ?? c.description}</div>
                 </div>
                 {c.installed ? (
-                  <span className="shrink-0 text-[12px] text-ok">{t("perf.installed")}</span>
+                  <span className="shrink-0 text-meta text-ok">{t("perf.installed")}</span>
                 ) : !c.available ? (
-                  <span className="shrink-0 text-[12px] text-dim">{t("perf.unavailable")}</span>
+                  <span className="shrink-0 text-meta text-dim">{t("perf.unavailable")}</span>
                 ) : null}
               </div>
             );

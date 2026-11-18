@@ -50,6 +50,7 @@ import { MasterOptSync } from "@/components/instance/OptSync";
 import { useLang, useT } from "@/i18n";
 import { StoresCard } from "./StoresCard";
 import { VibeTab } from "./VibeCard";
+import { AppearanceTab } from "./AppearanceTab";
 import { SETTINGS_TABS, closeSettings, setSettingsTab, useSettingsDialog, type SettingsTab } from "./store";
 
 const ICONS: Record<SettingsTab, ReactNode> = {
@@ -81,7 +82,7 @@ export function SettingsDialog() {
   return (
     <D.Root open={open} onOpenChange={(o) => !o && closeSettings()}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-50 bg-black/70 data-[state=open]:animate-fade-in" />
+        <D.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
         <D.Content
           aria-describedby={undefined}
           // Kein Fokusrahmen auf dem ersten Tab beim Öffnen; Tastatur-Navigation startet im Dialog
@@ -93,8 +94,8 @@ export function SettingsDialog() {
           className={cn(
             "outline-none",
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2",
-            "h-[min(780px,calc(100vh-48px))] w-[min(1100px,calc(100vw-48px))]",
-            "border border-line2 bg-[#07070a] shadow-[0_24px_60px_rgba(0,0,0,.7)] data-[state=open]:animate-pop-in",
+            "h-[min(780px,calc(100vh-48px))] w-[min(1100px,calc(100vw-48px))] overflow-hidden",
+            "rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
         >
           <SettingsBody />
@@ -121,9 +122,9 @@ function SettingsBody() {
 
   return (
     <>
-      <aside className="flex w-[256px] shrink-0 flex-col border-r border-line bg-black/50 max-[880px]:w-[60px]">
-        <div className="flex h-[68px] shrink-0 items-center px-5 max-[880px]:justify-center max-[880px]:px-0">
-          <D.Title className="display text-[19px] max-[880px]:sr-only">{t("nav.settings")}</D.Title>
+      <aside className="flex w-[232px] shrink-0 flex-col bg-bg max-[880px]:w-[60px]">
+        <div className="flex h-[64px] shrink-0 items-center px-5 max-[880px]:justify-center max-[880px]:px-0">
+          <D.Title className="text-title text-text max-[880px]:sr-only">{t("nav.settings")}</D.Title>
           <span className="hidden text-muted max-[880px]:block">
             <SlidersHorizontal size={18} />
           </span>
@@ -139,13 +140,12 @@ function SettingsBody() {
                 aria-label={t(`settings.tab.${id}`)}
                 onClick={() => setSettingsTab(id)}
                 className={cn(
-                  "relative flex h-9 shrink-0 items-center gap-3 px-3 text-left text-[13.5px] font-medium transition-colors duration-100",
+                  "relative flex h-9 shrink-0 items-center gap-3 rounded-ctl px-3 text-left text-[13.5px] font-medium transition-colors duration-100",
                   "max-[880px]:h-10 max-[880px]:w-10 max-[880px]:justify-center max-[880px]:px-0",
-                  active ? "bg-surface3 text-white" : "text-muted hover:bg-surface2 hover:text-white",
+                  active ? "bg-white/[.08] text-text" : "text-muted hover:bg-white/[.05] hover:text-text",
                 )}
               >
-                {active && <span className="absolute bottom-1.5 left-0 top-1.5 w-[3px] bg-brand" />}
-                <span className={active ? "text-white" : "text-dim"}>{ICONS[id]}</span>
+                <span className={active ? "text-brand" : "text-dim"}>{ICONS[id]}</span>
                 <span className="truncate max-[880px]:hidden">{t(`settings.tab.${id}`)}</span>
               </button>
             );
@@ -162,17 +162,17 @@ function SettingsBody() {
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-[68px] shrink-0 items-center gap-4 border-b border-line pl-7 pr-4">
+        <header className="flex h-[64px] shrink-0 items-center gap-4 pl-7 pr-4">
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[17px] font-semibold text-white">{t(`settings.tab.${tab}`)}</h2>
+            <h2 className="truncate text-[16px] font-semibold text-text">{t(`settings.tab.${tab}`)}</h2>
             <p className="truncate text-[12.5px] text-muted">{t(`settings.tab.${tab}.desc`)}</p>
           </div>
-          <D.Close aria-label={t("common.close")} className="grid h-9 w-9 shrink-0 place-items-center text-dim transition-colors hover:bg-surface2 hover:text-white">
+          <D.Close aria-label={t("common.close")} className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text">
             <X size={18} />
           </D.Close>
         </header>
         <div key={tab} className="scroll min-h-0 flex-1">
-          <div className="flex flex-col gap-4 px-7 pb-10 pt-5 animate-fade-in">
+          <div className="flex flex-col gap-5 px-7 pb-10 pt-1 animate-fade-in">
             {!s ? <LoadingCards /> : <TabContent tab={tab} s={s} update={update} />}
           </div>
         </div>
@@ -206,12 +206,11 @@ function LoadingCards() {
   return (
     <>
       {Array.from({ length: 2 }, (_, i) => (
-        <div key={i} className="border border-line bg-surface">
-          <div className="border-b border-line px-4 py-4">
-            <Skeleton className="h-3 w-24" />
-          </div>
+        <div key={i} className="flex flex-col gap-2">
+          <Skeleton className="mx-1 h-3 w-24" />
+          <div className="rounded-card bg-surface">
           {Array.from({ length: 3 }, (_, j) => (
-            <div key={j} className="flex items-center gap-6 px-4 py-4">
+            <div key={j} className="flex items-center gap-6 px-4 py-3">
               <div className="flex flex-1 flex-col gap-2">
                 <Skeleton className="h-4 w-40" />
                 <Skeleton className="h-3 w-72" />
@@ -219,6 +218,7 @@ function LoadingCards() {
               <Skeleton className="h-8 w-32" />
             </div>
           ))}
+          </div>
         </div>
       ))}
     </>
@@ -278,27 +278,6 @@ function GeneralTab({ s, update }: TabProps) {
   );
 }
 
-function AppearanceTab({ s, update }: TabProps) {
-  const t = useT();
-  return (
-    <SettingsCard title={t("settings.section.appearance")}>
-      <SettingRow title={t("settings.reduce_motion")} description={t("settings.reduce_motion.desc")}>
-        <Switch
-          checked={s.reduce_motion}
-          onChange={(reduce_motion) => {
-            document.documentElement.dataset.reduceMotion = String(reduce_motion);
-            update({ reduce_motion });
-          }}
-          label={t("settings.reduce_motion")}
-        />
-      </SettingRow>
-      <SettingRow title={t("settings.minecraftcapes")} description={t("settings.minecraftcapes.desc")}>
-        <Switch checked={s.minecraftcapes} onChange={(minecraftcapes) => update({ minecraftcapes })} label={t("settings.minecraftcapes")} />
-      </SettingRow>
-    </SettingsCard>
-  );
-}
-
 function JavaTab({ s, update }: TabProps) {
   const t = useT();
   const sys = useSystemInfo();
@@ -323,19 +302,17 @@ function JavaTab({ s, update }: TabProps) {
       <SettingsCard
         title={t("settings.section.java")}
         right={
-          <Tooltip content={t("settings.java.rescan")}>
-            <IconButton label={t("settings.java.rescan")} size="sm" className="border-transparent hover:border-line2" onClick={() => java.refetch()}>
-              <RefreshCw size={14} className={cn(java.isFetching && "animate-spin")} />
-            </IconButton>
-          </Tooltip>
+          <IconButton label={t("settings.java.rescan")} tip variant="ghost" size="sm" onClick={() => java.refetch()}>
+            <RefreshCw size={14} className={cn(java.isFetching && "animate-spin")} />
+          </IconButton>
         }
       >
         <SettingRow title={t("settings.auto_java")} description={t("settings.auto_java.desc")}>
           <Switch checked={s.auto_java} onChange={(auto_java) => update({ auto_java })} label={t("settings.auto_java")} />
         </SettingRow>
         <div className="border-t border-line">
-          <div className="px-4 pb-2 pt-4">
-            <div className="text-[14px] font-medium text-white">{t("settings.java.found")}</div>
+          <div className="px-4 pb-1 pt-3">
+            <div className="text-[13.5px] font-medium text-text">{t("settings.java.found")}</div>
           </div>
           {java.isLoading ? (
             <div className="flex flex-col gap-2 px-4 pb-4">
@@ -347,7 +324,7 @@ function JavaTab({ s, update }: TabProps) {
           ) : !java.data?.length ? (
             <p className="px-4 pb-4 text-[13px] text-dim">{t("settings.java.none")}</p>
           ) : (
-            <div className="mx-4 mb-4 border border-line bg-black/40">
+            <div className="flex flex-col px-2 pb-2">
               {java.data
                 .slice()
                 .sort((a, b) => b.major - a.major)
@@ -368,7 +345,7 @@ function JavaTab({ s, update }: TabProps) {
           <div className="flex flex-col gap-3">
             {JAVA_MAJORS.map((m) => (
               <div key={m} className="grid grid-cols-[72px_minmax(0,1fr)] items-start gap-4">
-                <span className="mt-2.5 font-mono text-[12px] text-muted">Java {m}</span>
+                <span className="mt-2.5 text-meta text-muted">Java {m}</span>
                 <JavaPathField
                   value={s.java_overrides[String(m)] ?? null}
                   filterMajor={m}
@@ -545,7 +522,7 @@ function UpdatesTab({ s, update }: TabProps) {
     }
   };
   return (
-    <SettingsCard title={t("settings.section.updates")} right={sys.data && <span className="font-mono text-[12px] text-dim">v{sys.data.version}</span>}>
+    <SettingsCard title={t("settings.section.updates")} right={sys.data && <span className="text-caption font-semibold tabular-nums text-dim">v{sys.data.version}</span>}>
       <SettingRow title={t("settings.channel")} description={s.update_channel === "dev" ? t("settings.channel.dev.desc") : t("settings.channel.release.desc")}>
         <Segmented
           value={s.update_channel}
@@ -573,12 +550,12 @@ function AboutTab() {
   const sys = useSystemInfo();
   return (
     <>
-      <section className="flex items-center gap-6 border border-line bg-surface px-6 py-6">
-        <Logo3D size={72} speed={0} hoverSpin float={false} interactive={false} />
+      <section className="flex items-center gap-5 px-1 py-2">
+        <Logo3D size={64} speed={0} hoverSpin float={false} interactive={false} />
         <div className="min-w-0 flex-1">
-          <div className="brand text-[22px] text-white">Vibe Launcher</div>
-          <div className="mt-1 font-mono text-[12px] text-muted">{sys.data ? `v${sys.data.version} · ${sys.data.os} ${sys.data.arch}` : <Spinner size={12} />}</div>
-          <div className="mt-2 text-[13px] text-dim">{t("settings.about")}</div>
+          <div className="text-title text-text">Vibe Launcher</div>
+          <div className="mt-0.5 text-meta tabular-nums text-muted">{sys.data ? `v${sys.data.version} · ${sys.data.os} ${sys.data.arch}` : <Spinner size={12} />}</div>
+          <div className="mt-1.5 text-meta text-dim">{t("settings.about")}</div>
         </div>
       </section>
       <SettingsCard title={t("settings.section.links")}>
@@ -591,13 +568,16 @@ function AboutTab() {
 
 function LinkRow({ href, icon, title, text }: { href: string; icon: ReactNode; title: string; text: string }) {
   return (
-    <a href={href} className="group flex items-center gap-3 px-4 py-3.5 transition-colors duration-100 hover:bg-white/[.03] [&+&]:border-t [&+&]:border-line">
-      <span className="grid h-8 w-8 place-items-center border border-line2 bg-surface2 text-muted group-hover:text-white">{icon}</span>
+    <a
+      href={href}
+      className="group flex items-center gap-3 px-4 py-3 transition-colors duration-100 first:rounded-t-card last:rounded-b-card hover:bg-white/[.03] [&+&]:border-t [&+&]:border-line"
+    >
+      <span className="text-dim group-hover:text-text">{icon}</span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-medium text-text">{title}</span>
-        <span className="block truncate text-[12.5px] text-muted">{text}</span>
+        <span className="block text-[13.5px] font-medium text-text">{title}</span>
+        <span className="block truncate text-meta text-muted">{text}</span>
       </span>
-      <ExternalLink size={13} className="text-dim group-hover:text-white" />
+      <ExternalLink size={13} className="text-dim group-hover:text-text" />
     </a>
   );
 }
@@ -633,7 +613,7 @@ function SecretInput({ value, onChange, placeholder }: { value: string; onChange
           <button
             type="button"
             aria-label={show ? t("settings.hide") : t("settings.show")}
-            className="grid h-6 w-6 place-items-center text-dim hover:text-white"
+            className="grid h-6 w-6 place-items-center rounded-ctl text-dim hover:bg-white/[.07] hover:text-text"
             onClick={() => setShow(!show)}
           >
             {show ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -653,7 +633,7 @@ function JavaDownload({ major, installed }: { major: number; installed: boolean 
   return (
     <Button
       size="sm"
-      variant="outline"
+      variant="ghost"
       icon={busy ? undefined : installed ? <Check size={13} className="text-ok" /> : <Download size={13} />}
       loading={busy}
       disabled={installed && !busy}
@@ -681,19 +661,19 @@ function JavaDownload({ major, installed }: { major: number; installed: boolean 
 function JavaRow({ j }: { j: JavaInstall }) {
   const t = useT();
   return (
-    <div className="flex items-center gap-4 px-4 py-3 [&+&]:border-t [&+&]:border-line">
-      <div className="w-[44px] shrink-0 text-[18px] font-bold leading-none text-white">{j.major}</div>
+    <div className="flex items-center gap-4 rounded-ctl px-2 py-2 transition-colors duration-100 hover:bg-white/[.03]">
+      <div className="w-[36px] shrink-0 text-section tabular-nums text-text">{j.major}</div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 text-[13px] text-white">
+        <div className="flex items-center gap-2 text-[13px] text-text">
           {j.version}
           {j.vendor && <span className="text-muted">· {j.vendor}</span>}
         </div>
-        <div className="selectable truncate font-mono text-[11px] text-dim" title={j.path}>
+        <div className="selectable truncate text-caption text-dim" title={j.path}>
           {j.path}
         </div>
       </div>
       <Tag>{j.arch}</Tag>
-      {j.managed && <Tag color="#3fe0c5">{t("form.java.managed")}</Tag>}
+      {j.managed && <Tag className="bg-ok/12 text-ok">{t("form.java.managed")}</Tag>}
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { CloudOff, ImageOff, LogIn, Settings as SettingsIcon, UserRound } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Button, Spinner, cn } from "@/components/ui";
+import { Button, Skeleton, Spinner, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { login } from "@/features/social/service";
 import { RARITY_COLOR, loadBundle, useThumbnail, type Access } from "./data";
@@ -16,14 +16,14 @@ export function AccessState({ access, title }: { access: Access; title?: string 
   const nav = useNavigate();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const icon = (n: ReactNode) => <div className="grid h-14 w-14 place-items-center border border-line2 bg-surface2 text-muted">{n}</div>;
+  const icon = (n: ReactNode) => <div className="mb-1 text-dim">{n}</div>;
   let body: ReactNode;
   if (access === "loading") body = <Spinner size={18} className="text-brand" />;
   else if (access === "off")
     body = (
       <>
         {icon(<CloudOff size={22} />)}
-        <h3 className="display text-[16px] text-white">{t("cos.gate.off_title")}</h3>
+        <h3 className="text-title text-text">{t("cos.gate.off_title")}</h3>
         <p className="max-w-md text-[13px] leading-relaxed text-muted">{t("cos.gate.off_text")}</p>
         <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => nav({ to: "/settings", search: { tab: "vibe" } })}>
           {t("action.open_settings")}
@@ -34,7 +34,7 @@ export function AccessState({ access, title }: { access: Access; title?: string 
     body = (
       <>
         {icon(<UserRound size={22} />)}
-        <h3 className="display text-[16px] text-white">{t("cos.gate.account_title")}</h3>
+        <h3 className="text-title text-text">{t("cos.gate.account_title")}</h3>
         <p className="max-w-md text-[13px] leading-relaxed text-muted">{t("cos.gate.account_text")}</p>
         <Button size="sm" onClick={() => nav({ to: "/accounts" })}>
           {t("nav.accounts")}
@@ -45,7 +45,7 @@ export function AccessState({ access, title }: { access: Access; title?: string 
     body = (
       <>
         {icon(<LogIn size={22} />)}
-        <h3 className="display text-[16px] text-white">{t("cos.gate.login_title")}</h3>
+        <h3 className="text-title text-text">{t("cos.gate.login_title")}</h3>
         <p className="max-w-md text-[13px] leading-relaxed text-muted">{t("cos.gate.login_text")}</p>
         {err && <p className="max-w-md text-[12px] text-danger">{err}</p>}
         <Button
@@ -66,7 +66,7 @@ export function AccessState({ access, title }: { access: Access; title?: string 
     );
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-      {title && <div className="mb-2 font-mono text-[11px] uppercase tracking-[.18em] text-dim">{title}</div>}
+      {title && <div className="mb-2 text-caption font-semibold text-dim">{title}</div>}
       {body}
     </div>
   );
@@ -114,10 +114,10 @@ export function AccessBanner({ access }: { access: Access }) {
       </Button>
     );
   return (
-    <div className="flex shrink-0 items-center gap-3 border-b border-line bg-surface px-6 py-2.5">
-      <div className="grid h-8 w-8 shrink-0 place-items-center border border-line2 bg-surface2 text-muted">{v.icon}</div>
+    <div className="mx-6 mb-3 flex shrink-0 items-center gap-3 rounded-card bg-surface px-4 py-2">
+      <div className="shrink-0 text-muted">{v.icon}</div>
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-semibold text-white">{v.title}</div>
+        <div className="text-[13px] font-semibold text-text">{v.title}</div>
         <div className="text-[12px] leading-snug text-muted">
           {err ? <span className="text-danger">{err}</span> : v.text}
         </div>
@@ -155,16 +155,12 @@ export function ItemThumb({ item, className }: { item: Pick<CatalogItem, "thumbn
   const q = useThumbnail(item, vis);
   return (
     <div ref={ref} className={cn("relative grid place-items-center overflow-hidden", className)}>
-      <div
-        className="pointer-events-none absolute inset-0 opacity-60"
-        style={{ background: `radial-gradient(60% 55% at 50% 60%, ${RARITY_COLOR[item.rarity] ?? "#fff"}22, transparent 70%)` }}
-      />
       {q.data ? (
         <img src={q.data} alt="" draggable={false} className="relative h-full w-full object-contain [image-rendering:pixelated]" />
       ) : q.isError ? (
         <ImageOff size={20} className="text-dim" />
       ) : (
-        <div className="h-full w-full animate-shimmer bg-[linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent)] bg-[length:200%_100%]" />
+        <Skeleton className="h-full w-full" />
       )}
     </div>
   );

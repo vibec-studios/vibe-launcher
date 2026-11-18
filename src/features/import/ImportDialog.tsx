@@ -182,11 +182,11 @@ export function ImportDialog() {
       {!path ? (
         <button
           onClick={choose}
-          className="flex w-full flex-col items-center justify-center gap-3 border border-dashed border-line2 px-6 py-12 text-center transition-colors duration-150 hover:border-accent hover:bg-white/[.02]"
+          className="flex w-full flex-col items-center justify-center gap-2.5 rounded-card bg-surface px-6 py-12 text-center transition-colors duration-150 hover:bg-surface2"
         >
-          <FileArchive size={28} className="text-brand" />
-          <span className="text-[15px] font-semibold text-white">{t("import.drop_or_choose")}</span>
-          <span className="text-[12.5px] text-muted">{t("import.formats")}</span>
+          <FileArchive size={26} className="text-dim" />
+          <span className="text-section text-text">{t("import.drop_or_choose")}</span>
+          <span className="text-meta text-muted">{t("import.formats")}</span>
         </button>
       ) : preview.isPending ? (
         <div className="flex flex-col gap-4">
@@ -201,12 +201,12 @@ export function ImportDialog() {
           <Skeleton className="h-10" />
         </div>
       ) : preview.isError ? (
-        <div className="flex items-start gap-3 border border-danger/30 bg-danger/[.06] px-4 py-3.5">
+        <div className="flex items-start gap-3 rounded-card bg-danger/[.08] px-4 py-3">
           <AlertTriangle size={18} className="mt-0.5 shrink-0 text-danger" />
           <div className="min-w-0">
-            <div className="text-[13px] font-semibold text-white">{t("import.preview_failed")}</div>
+            <div className="text-[13px] font-semibold text-text">{t("import.preview_failed")}</div>
             <div className="selectable mt-1 break-words text-[12.5px] text-muted">{errorMessage(preview.error)}</div>
-            <div className="mt-1.5 truncate font-mono text-[11px] text-dim">{baseName(path)}</div>
+            <div className="mt-1.5 truncate text-caption text-dim">{baseName(path)}</div>
           </div>
         </div>
       ) : p ? (
@@ -214,14 +214,14 @@ export function ImportDialog() {
           <div className="flex items-center gap-4">
             <ProjectIcon src={p.icon} size={64} eager />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[16px] font-semibold text-white">{p.name}</div>
+              <div className="truncate text-[16px] font-semibold text-text">{p.name}</div>
               <div className="mt-0.5 truncate text-[12.5px] text-dim">
                 {[p.version_name, p.author && t("discover.by", { author: p.author })].filter(Boolean).join(" · ") || baseName(path)}
               </div>
             </div>
             <Pill>{formatNames[p.format] ?? p.format}</Pill>
           </div>
-          <div className="grid grid-cols-3 gap-px border border-line bg-line">
+          <div className="grid grid-cols-3 gap-2">
             <Fact label={t("discover.filter.version")} value={p.mc_version} />
             <Fact label={t("discover.filter.loader")} value={formatLoader(p.loader)} />
             <Fact label={t("import.files")} value={p.file_count.toLocaleString()} />
@@ -234,7 +234,7 @@ export function ImportDialog() {
             <div className="flex flex-col gap-2 animate-fade-in">
               <div className="flex justify-between">
                 <span className="label">{failed ? t("import.failed") : t("import.running")}</span>
-                <span className="font-mono text-[11px] text-muted">{task?.progress != null ? `${Math.round(task.progress * 100)} %` : ""}</span>
+                <span className="text-caption tabular-nums text-muted">{task?.progress != null ? `${Math.round(task.progress * 100)} %` : ""}</span>
               </div>
               <Progress value={task?.progress ?? null} tone={failed ? "danger" : "accent"} />
               <div className="selectable min-h-5 break-words text-[12px] text-dim">{failed ? (task?.error ?? t("tasks.cancelled")) : (task?.message ?? "")}</div>
@@ -254,9 +254,9 @@ export function ImportDialog() {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 bg-[#07070a] px-3.5 py-2.5">
-      <div className="label">{label}</div>
-      <div className="mt-0.5 truncate font-mono text-[13px] text-white">{value}</div>
+    <div className="min-w-0 rounded-card bg-surface px-3.5 py-2.5">
+      <div className="text-caption font-semibold text-dim">{label}</div>
+      <div className="mt-0.5 truncate text-[13px] tabular-nums text-text">{value}</div>
     </div>
   );
 }
@@ -269,8 +269,8 @@ function ImportFileList({ files }: { files: ImportFile[] }) {
   const counts = useMemo(() => countSides(files, (f) => f.side), [files]);
   const shown = files.filter((f) => sideMatches(side, f.side));
   return (
-    <div className="border border-line">
-      <button className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] font-medium text-text hover:bg-white/[.03]" onClick={() => setOpen((o) => !o)}>
+    <div className="rounded-card bg-surface">
+      <button className="flex w-full items-center gap-2 rounded-card px-3 py-2 text-left text-[13px] font-medium text-text hover:bg-white/[.03]" onClick={() => setOpen((o) => !o)}>
         {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         {t("modpack.files")}
         <span className="text-dim">{files.length}</span>
@@ -280,8 +280,8 @@ function ImportFileList({ files }: { files: ImportFile[] }) {
           <SideFilterBar value={side} onChange={setSide} counts={counts} className="px-2 py-1.5" />
           <div className="scroll max-h-[200px] border-t border-line">
             {shown.map((f) => (
-              <div key={f.path} className="flex items-center gap-2 border-b border-line/50 px-3 py-1.5 last:border-b-0">
-                <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-text">{f.path}</span>
+              <div key={f.path} className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/[.03]">
+                <span className="min-w-0 flex-1 truncate text-meta text-text">{f.path}</span>
                 <SideTag side={f.side} />
               </div>
             ))}

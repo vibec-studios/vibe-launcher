@@ -1,14 +1,16 @@
 // OWNER: Frontend-Agent B. Wird von InstancePage (Agent A) für den Bereich Inhalte (Mods/Resourcepacks/Shader) eingebunden.
-// Virtualisierte Liste (300+ Einträge flüssig), eine Werkzeugleiste (Suche, Status, Seite, Sortierung, Mod-Sets,
-// Werkzeuge-Menü), Mehrfachauswahl mit Sammelaktionen, Kontextmenü, optimistisches Aktivieren, Updates, Dateien
+// Virtualisierte Liste (300+ Einträge flüssig). Werkzeuge (Suche, ein Filter-Menü für Status/Seite/Sortierung, Updates,
+// Mod-Sets, Mehr-Menü, Hinzufügen) erscheinen per PageTools in der gemeinsamen Zeile der Instanzseite. Mehrfachauswahl mit
+// Sammelaktionsleiste (nur bei Auswahl), Kontextmenü, optimistisches Aktivieren, Updates, Dateien
 // hinzufügen (Menü + Drag & Drop). Hinweise (Modpack-Update, Abhängigkeiten, manuelle Downloads) zeigt die
 // Hinweiszeile der Instanzseite.
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { FilePlus2, FolderOpen, Gauge, PackagePlus, Plus, Power, PowerOff, RefreshCw, SearchX, SlidersHorizontal, Trash2, Upload, X } from "lucide-react";
+import { FilePlus2, FolderOpen, Gauge, ListFilter, MoreHorizontal, PackagePlus, Plus, Power, PowerOff, RefreshCw, SearchX, Trash2, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type MouseEvent } from "react";
-import { Button, DropdownItem, DropdownMenu, DropdownSeparator, EmptyState, ErrorState, SearchInput, Select, Spinner, Tooltip, confirm, cn, toast } from "@/components/ui";
+import { Button, DropdownCheckItem, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, EmptyState, ErrorState, IconButton, SearchInput, Spinner, confirm, cn, toast } from "@/components/ui";
+import { PageTools } from "@/features/instances/toolbar";
 import { SIDE_FILTERS, sideMatches, type SideFilter } from "@/components/content/sides";
 import { ModSetsMenu } from "./ModSetsMenu";
 import { PerfDialog } from "./PerfDialog";
@@ -19,7 +21,7 @@ import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
 import type { ContentItem, ContentKind, ContentUpdate, Instance } from "@/lib/types";
 import { registerDropTarget, useDragState } from "@/components/content/dragdrop";
 import { contentKey, fileExt, kindExtensions, kindFolder } from "@/components/content/util";
-import { ContentRow, GRID, ROW_H, RowSkeleton, SelectBox, type RowActions } from "./ContentRow";
+import { ContentRow, ROW_H, RowSkeleton, SelectBox, type RowActions } from "./ContentRow";
 
 const FILTERS: ContentFilter[] = ["all", "enabled", "disabled", "updates"];
 const SORTS: ContentSort[] = ["name", "recent", "size"];
@@ -342,135 +344,145 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
 
   const toDiscover = () => navigate({ to: "/discover", search: { instance: id, type: discoverType[kind] as never } });
 
+  const activeFilters = (filter !== "all" ? 1 : 0) + (sideFilter !== "all" ? 1 : 0);
   const allVisibleSelected = visible.length > 0 && visible.every((c) => selection.has(contentKey(c.file_name)));
   const headState: "on" | "off" | "mixed" = selection.size === 0 ? "off" : allVisibleSelected ? "on" : "mixed";
 
   return (
     <div className="@container flex h-full min-h-0 flex-col outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
-      {/* Werkzeugleiste: links Finden (Suche, Status, Seite, Sortierung), rechts Sets und seltene Werkzeuge */}
-      {!empty && (
-        <div className="flex h-14 shrink-0 items-center gap-2 px-6">
-          <SearchInput value={text} onChange={setText} placeholder={t(`content.search.${kind}`)} className="min-w-[120px] max-w-[260px] flex-1" />
-          <div className="w-[130px] shrink-0 @min-[1100px]:w-[150px]">
-            <Select<ContentFilter>
-              size="sm"
-              value={filter}
-              onChange={setFilter}
-              options={FILTERS.filter((f) => f !== "updates" || known).map((f) => ({
-                value: f,
-                label: (
-                  <span className="flex items-center gap-1.5">
-                    {t(`content.filter.${f}`)}
-                    <span className={cn("tabular-nums", f === "updates" && counts.updates ? "text-accent" : "text-dim")}>{q.isSuccess ? counts[f] : ""}</span>
-                  </span>
-                ),
-              }))}
-            />
-          </div>
-          {kind === "mod" && (
-            <div className="w-[130px] shrink-0 @min-[1100px]:w-[150px]">
-              <Select<SideFilter>
-                size="sm"
-                value={sideFilter}
-                onChange={setSideFilter}
-                options={SIDE_FILTERS.map((f) => ({ value: f, label: t(`side.filter.${f}`) }))}
-              />
-            </div>
-          )}
-          <div className="w-[130px] shrink-0 @min-[1100px]:w-[150px]">
-            <Select<ContentSort> size="sm" value={sort} onChange={setContentSort} options={SORTS.map((v) => ({ value: v, label: t(`ipage.sort.${v}`) }))} />
-          </div>
-          <div className="min-w-0 flex-1" />
-          {counts.updates > 0 && (
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={updatesRunning ? <Spinner size={12} /> : <RefreshCw size={14} className="text-accent" />}
-              disabled={updatesRunning}
-              onClick={() => update(all.filter((c) => updates.has(contentKey(c.file_name))))}
-              aria-label={t("content.update_all", { n: counts.updates })}
-              title={t("content.update_all", { n: counts.updates })}
-            >
-              <span className="hidden @min-[1100px]:inline">{t("ipage.update_n", { n: counts.updates })}</span>
-              <span className="tabular-nums @min-[1100px]:hidden">{counts.updates}</span>
-            </Button>
-          )}
-          {kind === "mod" && <ModSetsMenu instanceId={id} />}
+      {/* Werkzeuge in der gemeinsamen Zeile der Instanzseite: Suche links, Filter/Updates/Sets/Mehr/Hinzufügen als Symbole rechts */}
+      <PageTools>
+        {!empty && <SearchInput value={text} onChange={setText} placeholder={t(`content.search.${kind}`)} className="w-[240px] min-w-[140px] shrink [&_input]:h-8" />}
+        <div className="min-w-0 flex-1" />
+        {!empty && (
           <DropdownMenu
             trigger={
-              <Button size="sm" variant="ghost" icon={<SlidersHorizontal size={14} />} aria-label={t("ipage.tools")} title={t("ipage.tools")} className="data-[state=open]:bg-surface3">
-                <span className="hidden @min-[1100px]:inline">{t("ipage.tools")}</span>
-              </Button>
+              <IconButton label={t("ipage.filter")} tip variant="ghost" badge={activeFilters || null} className="data-[state=open]:bg-white/[.07]">
+                <ListFilter size={16} />
+              </IconButton>
             }
           >
-            <DropdownItem icon={<RefreshCw size={14} />} disabled={updatesQ.isFetching} onSelect={() => void checkUpdates()}>
-              {t("content.check_updates")}
-            </DropdownItem>
-            {kind === "mod" && instance.loader.kind !== "vanilla" && (
-              <DropdownItem icon={<Gauge size={14} />} onSelect={() => setPerfOpen(true)}>
-                {t("perf.title")} …
-              </DropdownItem>
+            <DropdownLabel>{t("ipage.filter.status")}</DropdownLabel>
+            {FILTERS.filter((f) => f !== "updates" || known).map((f) => (
+              <DropdownCheckItem key={f} checked={filter === f} onCheckedChange={() => setFilter(f)}>
+                <span className="flex w-full items-center justify-between gap-4">
+                  {t(`content.filter.${f}`)}
+                  <span className={cn("tabular-nums", f === "updates" && counts.updates ? "text-accent" : "text-dim")}>{q.isSuccess ? counts[f] : ""}</span>
+                </span>
+              </DropdownCheckItem>
+            ))}
+            {kind === "mod" && (
+              <>
+                <DropdownSeparator />
+                <DropdownLabel>{t("side.filter")}</DropdownLabel>
+                {SIDE_FILTERS.map((f) => (
+                  <DropdownCheckItem key={f} checked={sideFilter === f} onCheckedChange={() => setSideFilter(f)}>
+                    {t(`side.filter.${f}`)}
+                  </DropdownCheckItem>
+                ))}
+              </>
             )}
             <DropdownSeparator />
-            <DropdownItem icon={<FilePlus2 size={14} />} onSelect={() => void addFiles()}>
-              {t(`content.add_files.${kind}`)} …
-            </DropdownItem>
-            <DropdownItem icon={<FolderOpen size={14} />} onSelect={openFolder}>
-              {t("common.open_folder")}
-            </DropdownItem>
+            <DropdownLabel>{t("ipage.sort")}</DropdownLabel>
+            {SORTS.map((v) => (
+              <DropdownCheckItem key={v} checked={sort === v} onCheckedChange={() => setContentSort(v)}>
+                {t(`ipage.sort.${v}`)}
+              </DropdownCheckItem>
+            ))}
+            {activeFilters > 0 && (
+              <>
+                <DropdownSeparator />
+                <DropdownItem
+                  icon={<X size={14} />}
+                  onSelect={() => {
+                    setFilter("all");
+                    setSideFilter("all");
+                  }}
+                >
+                  {t("ipage.filter.reset")}
+                </DropdownItem>
+              </>
+            )}
           </DropdownMenu>
-        </div>
-      )}
+        )}
+        {counts.updates > 0 && (
+          <IconButton
+            label={t("content.update_all", { n: counts.updates })}
+            tip
+            variant="ghost"
+            badge={updatesRunning ? null : counts.updates}
+            disabled={updatesRunning}
+            onClick={() => update(all.filter((c) => updates.has(contentKey(c.file_name))))}
+          >
+            {updatesRunning ? <Spinner size={13} className="text-accent" /> : <RefreshCw size={16} />}
+          </IconButton>
+        )}
+        {kind === "mod" && !empty && <ModSetsMenu instanceId={id} />}
+        <DropdownMenu
+          trigger={
+            <IconButton label={t("common.more")} tip variant="ghost" className="data-[state=open]:bg-white/[.07]">
+              <MoreHorizontal size={16} />
+            </IconButton>
+          }
+        >
+          <DropdownItem icon={<RefreshCw size={14} />} disabled={updatesQ.isFetching} onSelect={() => void checkUpdates()}>
+            {t("content.check_updates")}
+          </DropdownItem>
+          {kind === "mod" && instance.loader.kind !== "vanilla" && (
+            <DropdownItem icon={<Gauge size={14} />} onSelect={() => setPerfOpen(true)}>
+              {t("perf.title")} …
+            </DropdownItem>
+          )}
+          <DropdownSeparator />
+          <DropdownItem icon={<FilePlus2 size={14} />} onSelect={() => void addFiles()}>
+            {t(`content.add_files.${kind}`)} …
+          </DropdownItem>
+          <DropdownItem icon={<FolderOpen size={14} />} onSelect={openFolder}>
+            {t("common.open_folder")}
+          </DropdownItem>
+        </DropdownMenu>
+        <IconButton label={t("content.add")} tip variant="accent" onClick={toDiscover}>
+          <Plus size={17} />
+        </IconButton>
+      </PageTools>
       {perfOpen && <PerfDialog instance={instance} onClose={() => setPerfOpen(false)} />}
 
-      {/* Tabellenkopf bzw. Auswahlleiste (gleiche Höhe -> kein Springen) */}
-      {!empty && (
-        <div className={cn(GRID, "h-10 shrink-0 border-y border-line bg-surface text-[12.5px] font-medium text-muted")}>
-          <SelectBox
-            state={headState}
-            label={t("common.select_all")}
-            onClick={() => setSelection(headState === "off" ? new Set(visible.map((c) => contentKey(c.file_name))) : new Set())}
-          />
-          {selection.size > 0 ? (
-            <div className="col-span-3 flex min-w-0 items-center gap-0.5 animate-fade-in">
-              <span className="mr-2 text-[13px] font-semibold text-white">{t("content.selected", { n: selection.size })}</span>
-              <BarButton icon={<Power size={14} />} onClick={() => setEnabled(selItems, true)} disabled={!selItems.some((c) => !c.enabled)}>
-                {t("content.menu.enable")}
-              </BarButton>
-              <BarButton icon={<PowerOff size={14} />} onClick={() => setEnabled(selItems, false)} disabled={!selItems.some((c) => c.enabled)}>
-                {t("content.menu.disable")}
-              </BarButton>
-              <BarButton icon={<RefreshCw size={14} />} onClick={() => update(selUpdates)} disabled={!selUpdates.length || updatesRunning}>
-                {t("common.update")}
-                {selUpdates.length > 0 && ` (${selUpdates.length})`}
-              </BarButton>
-              <BarButton icon={<Trash2 size={14} />} onClick={() => remove(selItems)} danger>
-                {t("common.remove")}
-              </BarButton>
-              <div className="flex-1" />
-              <Tooltip content={t("content.clear_selection")}>
-                <button aria-label={t("content.clear_selection")} className="grid h-7 w-7 place-items-center text-dim hover:text-white" onClick={() => setSelection(new Set())}>
-                  <X size={14} />
-                </button>
-              </Tooltip>
-            </div>
-          ) : (
-            <>
-              <span>{t("content.col.name")}</span>
-              <span>{t("content.col.version")}</span>
-              <div className="flex items-center justify-end">
-                {updatesRunning && (
-                  <span className="flex items-center gap-1.5 text-[12px] text-muted">
-                    <Spinner size={11} className="text-accent" />
-                    {updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : ""}
-                  </span>
-                )}
-              </div>
-            </>
+      {/* Massenaktionen: erscheinen erst bei Auswahl (ersetzt den Tabellenkopf) */}
+      {selection.size > 0 && (
+        <div className="flex h-10 shrink-0 items-center gap-0.5 border-b border-line bg-surface px-6 animate-fade-in">
+          <span className="mr-2.5 grid w-[18px] place-items-center">
+            <SelectBox
+              state={headState}
+              label={t("common.select_all")}
+              onClick={() => setSelection(headState === "on" ? new Set() : new Set(visible.map((c) => contentKey(c.file_name))))}
+            />
+          </span>
+          <span className="mr-2 text-[13px] font-semibold text-text">{t("content.selected", { n: selection.size })}</span>
+          <BarButton icon={<Power size={14} />} onClick={() => setEnabled(selItems, true)} disabled={!selItems.some((c) => !c.enabled)}>
+            {t("content.menu.enable")}
+          </BarButton>
+          <BarButton icon={<PowerOff size={14} />} onClick={() => setEnabled(selItems, false)} disabled={!selItems.some((c) => c.enabled)}>
+            {t("content.menu.disable")}
+          </BarButton>
+          <BarButton icon={<RefreshCw size={14} />} onClick={() => update(selUpdates)} disabled={!selUpdates.length || updatesRunning}>
+            {t("common.update")}
+            {selUpdates.length > 0 && ` (${selUpdates.length})`}
+          </BarButton>
+          <BarButton icon={<Trash2 size={14} />} onClick={() => remove(selItems)} danger>
+            {t("common.remove")}
+          </BarButton>
+          <div className="flex-1" />
+          {updatesRunning && (
+            <span className="mr-2 flex items-center gap-1.5 text-[12px] text-muted">
+              <Spinner size={11} className="text-accent" />
+              {updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : ""}
+            </span>
           )}
+          <IconButton label={t("content.clear_selection")} tip variant="ghost" size="sm" onClick={() => setSelection(new Set())}>
+            <X size={14} />
+          </IconButton>
         </div>
       )}
-
       {/* Liste */}
       <div ref={dropRef} className="relative min-h-0 flex-1">
         {q.isError && !q.data ? (
@@ -531,7 +543,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
                 const key = contentKey(item.file_name);
                 return (
                   <div key={key} className="absolute inset-x-0" style={{ top: it.start, height: ROW_H }}>
-                    <ContentRow item={item} itemKey={key} selected={selection.has(key)} update={updates.get(key)} actions={actions} />
+                    <ContentRow item={item} itemKey={key} selected={selection.has(key)} selecting={selection.size > 0} update={updates.get(key)} actions={actions} />
                   </div>
                 );
               })}
@@ -556,7 +568,7 @@ function BarButton({ icon, children, onClick, disabled, danger }: { icon: React.
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex h-7 items-center gap-1.5 px-2 text-[13px] font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-35",
+        "flex h-7 items-center gap-1.5 rounded-ctl px-2 text-[13px] font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-35",
         danger ? "text-danger hover:bg-danger/10" : "text-text hover:bg-white/[.07]",
       )}
     >

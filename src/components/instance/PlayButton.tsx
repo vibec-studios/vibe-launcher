@@ -38,14 +38,14 @@ export const PlayButton = memo(function PlayButton({
           }}
           onKeyDown={(e) => e.stopPropagation()}
           className={cn(
-            "grid h-9 w-9 shrink-0 place-items-center border transition-[filter,background-color,color] duration-100 active:translate-y-px",
+            "grid h-9 w-9 shrink-0 place-items-center rounded-ctl transition-[filter,background-color,color] duration-100 active:translate-y-px",
             phase === "running"
-              ? "border-danger/50 bg-black/80 text-danger hover:bg-danger hover:text-black"
+              ? "bg-black/80 text-danger hover:bg-danger hover:text-black"
               : phase === "idle"
                 ? subtle
-                  ? "border-line bg-surface3 text-muted group-hover:border-transparent group-hover:bg-accent group-hover:text-[var(--on-accent)]"
-                  : "border-transparent bg-accent text-[var(--on-accent)] hover:brightness-110"
-                : "border-line2 bg-black/80 text-accent",
+                  ? "bg-surface3 text-muted group-hover:bg-accent group-hover:text-[var(--on-accent)]"
+                  : "bg-accent text-[var(--on-accent)] hover:brightness-110"
+                : "bg-black/80 text-accent",
             className,
           )}
         >
@@ -61,7 +61,7 @@ export const PlayButton = memo(function PlayButton({
     const p = task?.progress ?? null;
     return (
       <div
-        className={cn("relative flex items-stretch overflow-hidden border border-line2 bg-surface2", h, size === "lg" ? "w-[240px]" : "w-[220px]", className)}
+        className={cn("relative flex items-stretch overflow-hidden rounded-ctl bg-surface2", h, size === "lg" ? "w-[240px]" : "w-[220px]", className)}
       >
         <div
           className="absolute inset-y-0 left-0 bg-accent/20 transition-[width] duration-150 ease-linear"
@@ -81,7 +81,7 @@ export const PlayButton = memo(function PlayButton({
           <Tooltip content={t("common.cancel")}>
             <button
               aria-label={t("common.cancel")}
-              className="relative grid w-9 shrink-0 place-items-center border-l border-line text-muted transition-colors hover:bg-white/5 hover:text-white"
+              className="relative grid w-9 shrink-0 place-items-center text-muted transition-colors hover:bg-white/5 hover:text-text"
               onClick={() => api.taskCancel(task.id).catch((e) => toast.error(e))}
             >
               <X size={15} />

@@ -26,6 +26,11 @@ export default {
 
     "ipage.menu.edit": "Icon, Farbe & Gruppe …",
     "ipage.tools": "Werkzeuge",
+    "ipage.vibey_active": "Vibey Client aktiv – Einstellungen öffnen",
+    "instances.view": "Ansicht",
+    "instances.view.grid": "Kacheln",
+    "instances.view.list": "Liste",
+    "ipage.filter": "Filtern und sortieren",
     "ipage.sort": "Sortierung",
     "ipage.sort.name": "Name A–Z",
     "ipage.sort.recent": "Zuletzt geändert",
@@ -60,6 +65,11 @@ export default {
 
     "ipage.menu.edit": "Icon, colour & group …",
     "ipage.tools": "Tools",
+    "ipage.vibey_active": "Vibey Client active – open settings",
+    "instances.view": "View",
+    "instances.view.grid": "Tiles",
+    "instances.view.list": "List",
+    "ipage.filter": "Filter and sort",
     "ipage.sort": "Sort",
     "ipage.sort.name": "Name A–Z",
     "ipage.sort.recent": "Recently changed",

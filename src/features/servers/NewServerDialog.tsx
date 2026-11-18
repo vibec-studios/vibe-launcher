@@ -68,29 +68,29 @@ function ModList({
         <span className="label flex-1">
           {t("srv.new.mods")} <span className="text-dim">{t("srv.new.mods_count", { n: selected.size, total: mods.length })}</span>
         </span>
-        <button type="button" className="text-[12px] text-muted hover:text-white" onClick={() => setSelected(new Set(mods.filter((m) => m.server_ok).map((m) => m.file_name)))}>
+        <button type="button" className="rounded-xs text-[12px] text-muted hover:text-text" onClick={() => setSelected(new Set(mods.filter((m) => m.server_ok).map((m) => m.file_name)))}>
           {t("srv.new.mods_suggested")}
         </button>
-        <button type="button" className="text-[12px] text-muted hover:text-white" onClick={() => setSelected(new Set(mods.map((m) => m.file_name)))}>
+        <button type="button" className="rounded-xs text-[12px] text-muted hover:text-text" onClick={() => setSelected(new Set(mods.map((m) => m.file_name)))}>
           {t("common.all")}
         </button>
-        <button type="button" className="text-[12px] text-muted hover:text-white" onClick={() => setSelected(new Set())}>
+        <button type="button" className="rounded-xs text-[12px] text-muted hover:text-text" onClick={() => setSelected(new Set())}>
           {t("common.none")}
         </button>
       </div>
       {clientCount > 0 && (
-        <div className="flex items-start gap-2 border border-warn/30 bg-warn/[.06] px-3 py-2 text-[12px] text-warn">
+        <div className="flex items-start gap-2 rounded-card bg-warn/[.08] px-3 py-2 text-[12px] text-warn">
           <Info size={13} className="mt-px shrink-0" />
           {t("srv.new.client_hint", { n: clientCount })}
         </div>
       )}
-      <div className="scroll h-[236px] border border-line bg-black/40">
+      <div className="scroll h-[236px] rounded-card bg-field">
         {mods.map((m) => {
           const on = selected.has(m.file_name);
           return (
             <label
               key={m.file_name}
-              className={cn("flex h-9 cursor-pointer items-center gap-3 border-b border-line/60 px-3 last:border-b-0 hover:bg-white/[.03]", !on && "opacity-70")}
+              className={cn("flex h-9 cursor-pointer items-center gap-3 px-3 hover:bg-white/[.04]", !on && "opacity-70")}
             >
               <Checkbox checked={on} onChange={(v) => toggle(m.file_name, v)} label={m.name ?? m.file_name} />
               <div className="min-w-0 flex-1">
@@ -354,10 +354,10 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
               {nameField}
             </div>
             {inst && (
-              <div className="flex items-center gap-3 border border-line bg-surface px-3 py-2.5">
+              <div className="flex items-center gap-3 rounded-card bg-surface px-3 py-2.5">
                 <InstanceIcon icon={inst.icon} accent={instanceAccent(inst.id, inst.accent)} size={36} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-semibold text-white">{inst.name}</div>
+                  <div className="truncate text-[13px] font-semibold text-text">{inst.name}</div>
                   <div className="text-[12px] text-muted">
                     {formatLoader(inst.loader)} · Minecraft {inst.mc_version}
                   </div>

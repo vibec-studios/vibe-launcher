@@ -52,7 +52,7 @@ export function ConfirmHost() {
           <Button variant="subtle" onClick={() => close(false)}>
             {opts?.cancelLabel ?? t("common.cancel")}
           </Button>
-          <Button variant={opts?.danger ? "danger" : "accent"} onClick={() => close(true)} autoFocus>
+          <Button variant={opts?.danger ? "danger" : "primary"} onClick={() => close(true)} autoFocus>
             {opts?.confirmLabel ?? t("common.confirm")}
           </Button>
         </>

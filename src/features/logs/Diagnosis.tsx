@@ -172,14 +172,14 @@ export function DiagnosisCard({ d, inst, crashReport, compact }: { d: Diagnosis;
     qc.invalidateQueries({ queryKey: qk.content(inst.id, "mod") });
   };
   return (
-    <div className={cn("flex flex-col gap-2", !compact && "border border-line bg-surface p-3.5")}>
+    <div className={cn("flex flex-col gap-2", !compact && "rounded-card bg-surface p-3.5")}>
       <div className="flex items-start gap-2.5">
         <FileWarning size={16} className="mt-0.5 shrink-0 text-warn" />
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] font-semibold text-white">{title}</div>
+          <div className="text-[14px] font-semibold text-text">{title}</div>
           <p className="mt-0.5 text-[13px] leading-relaxed text-muted">{text}</p>
           {d.culprit?.file && (
-            <div className="mt-1.5 inline-flex max-w-full items-center gap-1.5 border border-line bg-black/30 px-2 py-0.5 text-[12px]">
+            <div className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-xs bg-white/[.05] px-2 py-0.5 text-[12px]">
               <span className="text-dim">{t("diag.file")}</span>
               <span className="truncate font-mono text-text">{d.culprit.file}</span>
             </div>
@@ -226,7 +226,7 @@ export function DiagnosisDialog({
       ) : !q.data?.length ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <Stethoscope size={28} className="text-dim" />
-          <div className="text-[15px] font-semibold text-white">{t("diag.none.title")}</div>
+          <div className="text-[15px] font-semibold text-text">{t("diag.none.title")}</div>
           <p className="max-w-[440px] text-[13px] text-muted">{t("diag.none.text")}</p>
           <Button size="sm" className="mt-2" icon={<UploadCloud size={13} />} onClick={() => uploadCrash(inst.id, crashReport)}>
             {t("logs.upload")}

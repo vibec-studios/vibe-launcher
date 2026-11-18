@@ -1,5 +1,5 @@
 // Hinweiszeile der Instanzseite: bündelt Modpack-Update, Mod-Updates, Abhängigkeitsprobleme und manuelle Downloads
-// als ruhige, kleine Chips rechts in der Bereichsleiste (statt gestapelter Banner). Details öffnen sich per Klick.
+// als Symbole mit Zahl rechts in der Bereichsleiste (Text im Tooltip, Details per Klick).
 import * as Popover from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
@@ -20,26 +20,28 @@ const route = getRouteApi("/instances/$id");
 type Tone = "accent" | "warn" | "danger";
 const toneIcon: Record<Tone, string> = { accent: "text-accent", warn: "text-warn", danger: "text-danger" };
 
-/** Ruhiger Hinweis: farbiges Symbol, gedämpfter Text. Unter ~620 px Breite nur Symbol + Zahl (Text im Tooltip). */
-const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { icon: ReactNode; tone: Tone; short: ReactNode }>(function Chip(
-  { icon, tone, short, className, children, ...rest },
+/** Hinweis als Symbol mit Zahl in der Tonfarbe; der ganze Text steht im Tooltip. */
+const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { icon: ReactNode; tone: Tone; count?: ReactNode; tip: ReactNode }>(function Chip(
+  { icon, tone, count, tip, className, ...rest },
   ref,
 ) {
   return (
-    <button
-      ref={ref}
-      className={cn(
-        "flex h-8 shrink-0 items-center gap-1.5 px-2 text-[12.5px] font-medium transition-colors duration-100",
-        "hover:bg-white/[.05] hover:text-white data-[state=open]:bg-white/[.06] data-[state=open]:text-white",
-        tone === "danger" ? "text-text" : "text-muted",
-        className,
-      )}
-      {...rest}
-    >
-      <span className={toneIcon[tone]}>{icon}</span>
-      <span className="hidden @min-[620px]:inline">{children}</span>
-      <span className="tabular-nums @min-[620px]:hidden">{short}</span>
-    </button>
+    <Tooltip content={tip} side="bottom">
+      <button
+        ref={ref}
+        aria-label={typeof tip === "string" ? tip : undefined}
+        className={cn(
+          "flex h-8 shrink-0 items-center gap-1 rounded-ctl px-2 text-[12.5px] font-semibold tabular-nums transition-colors duration-100",
+          "hover:bg-white/[.06] data-[state=open]:bg-white/[.07]",
+          toneIcon[tone],
+          className,
+        )}
+        {...rest}
+      >
+        {icon}
+        {count !== undefined && count !== null && <span>{count}</span>}
+      </button>
+    </Tooltip>
   );
 });
 
@@ -54,7 +56,7 @@ function PopoverChip({ chip, children, width = 460 }: { chip: ReactNode; childre
           sideOffset={8}
           collisionPadding={12}
           style={{ width }}
-          className="z-[60] border border-line2 bg-[#07070a] shadow-[0_16px_40px_rgba(0,0,0,.65)] outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="z-[60] overflow-hidden rounded-card bg-overlay shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           {children(() => setOpen(false))}
         </Popover.Content>
@@ -94,11 +96,17 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
     <div className="flex min-w-0 items-center gap-0.5 overflow-hidden" role="group" aria-label={t("ipage.notices")}>
       {pack && (
         <>
-          <Tooltip content={t("ipage.notice.modpack_hint")}>
-            <Chip tone="accent" icon={<ArrowUpCircle size={14} />} short={pack.latest.version_number} onClick={() => setPackOpen(true)}>
-              {t("ipage.notice.modpack", { version: pack.latest.version_number })}
-            </Chip>
-          </Tooltip>
+          <Chip
+            tone="accent"
+            icon={<ArrowUpCircle size={16} />}
+            tip={
+              <>
+                <div className="font-semibold">{t("ipage.notice.modpack", { version: pack.latest.version_number })}</div>
+                <div className="text-[12px] opacity-80">{t("ipage.notice.modpack_hint")}</div>
+              </>
+            }
+            onClick={() => setPackOpen(true)}
+          />
           {packOpen && <ModpackUpdateDialog instance={instance} versionId={pack.latest.id} onClose={() => setPackOpen(false)} />}
         </>
       )}
@@ -106,15 +114,20 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
         <PopoverChip
           width={500}
           chip={
-            <Chip tone={depErrors ? "danger" : "warn"} icon={<AlertTriangle size={14} />} short={deps.length}>
-              {depErrors
-                ? deps.length === 1
-                  ? t("ipage.notice.deps_1")
-                  : t("ipage.notice.deps", { n: deps.length })
-                : deps.length === 1
-                  ? t("ipage.notice.deps_warn_1")
-                  : t("ipage.notice.deps_warn", { n: deps.length })}
-            </Chip>
+            <Chip
+              tone={depErrors ? "danger" : "warn"}
+              icon={<AlertTriangle size={16} />}
+              count={deps.length}
+              tip={
+                depErrors
+                  ? deps.length === 1
+                    ? t("ipage.notice.deps_1")
+                    : t("ipage.notice.deps", { n: deps.length })
+                  : deps.length === 1
+                    ? t("ipage.notice.deps_warn_1")
+                    : t("ipage.notice.deps_warn", { n: deps.length })
+              }
+            />
           }
         >
           {() => <DepsPanel instanceId={id} />}
@@ -123,20 +136,30 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
       {missing.length > 0 && (
         <PopoverChip
           chip={
-            <Chip tone="warn" icon={<Download size={14} />} short={missing.length}>
-              {missing.length === 1 ? t("ipage.notice.missing_1") : t("ipage.notice.missing", { n: missing.length })}
-            </Chip>
+            <Chip
+              tone="warn"
+              icon={<Download size={16} />}
+              count={missing.length}
+              tip={missing.length === 1 ? t("ipage.notice.missing_1") : t("ipage.notice.missing", { n: missing.length })}
+            />
           }
         >
           {(close) => <MissingPanel instanceId={id} onDismissed={close} />}
         </PopoverChip>
       )}
       {updates > 0 && (
-        <Tooltip content={t("ipage.notice.updates_hint")}>
-          <Chip tone="accent" icon={<RefreshCw size={13} />} short={updates} onClick={showUpdates}>
-            {updates === 1 ? t("ipage.notice.updates_1") : t("ipage.notice.updates", { n: updates })}
-          </Chip>
-        </Tooltip>
+        <Chip
+          tone="accent"
+          icon={<RefreshCw size={15} />}
+          count={updates}
+          tip={
+            <>
+              <div className="font-semibold">{updates === 1 ? t("ipage.notice.updates_1") : t("ipage.notice.updates", { n: updates })}</div>
+              <div className="text-[12px] opacity-80">{t("ipage.notice.updates_hint")}</div>
+            </>
+          }
+          onClick={showUpdates}
+        />
       )}
     </div>
   );

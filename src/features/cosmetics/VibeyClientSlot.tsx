@@ -1,12 +1,12 @@
 // Schalter „Vibey Client“ für eine Instanz (Fabric/NeoForge, unterstützte MC-Version laut Manifest).
-// Fertige Komponente für den Platzhalter `VibeyClientSlot` der Instanz-Seite:  <VibeyClientSlot instance={inst} />
+// Sitzt als kompakte Einstellungs-Gruppe unter Einstellungen › Instanz; `VibeyClientBadge` zeigt den aktiven Client im Kopf.
 // An: Jar aus /api/v1/client/latest laden (SHA-256 geprüft), in mods/ legen (vom Launcher verwaltet), Pflicht-
 // Abhängigkeiten (z. B. Fabric API) mitinstallieren; vor jedem Spielstart still aktualisieren. Aus: Jar entfernen.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ArrowUpCircle, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { Button, Spinner, Switch, Tooltip, cn, toast } from "@/components/ui";
+import { Button, SettingRow, SettingsCard, Spinner, Switch, Tooltip, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { useEvent } from "@/lib/events";
 import { isRunning, useGameState, waitForTask } from "@/lib/queries";
@@ -97,32 +97,55 @@ export function VibeyClientSlot({ instance, className }: { instance: Instance; c
 
   const canToggle = !!s && !busy && !running && (s.enabled || (!disabledReason && s.supported !== false));
   return (
-    <div className={cn("flex items-center gap-3.5 border border-brand/25 bg-[linear-gradient(90deg,rgba(139,108,255,.12),rgba(139,108,255,.03)_55%,transparent)] px-4 py-3", className)}>
-      <div className="grid h-10 w-10 shrink-0 place-items-center border border-brand/40 bg-brand/15 text-brand">
-        <Sparkles size={18} />
-      </div>
-      <div className="min-w-0 flex-1">
+    <SettingsCard title="Vibey Client" className={className}>
+      <SettingRow
+        title={
+          <span className="flex items-center gap-2">
+            <Sparkles size={14} className="text-brand" />
+            {t("vc.lead")}
+            {s?.enabled && s.present && <span className="rounded-pill bg-brand/15 px-1.5 text-[10.5px] font-semibold text-brand">{t("vc.managed")}</span>}
+          </span>
+        }
+        description={
+          <span className={cn("flex min-w-0 items-center gap-1.5", tone === "warn" ? "text-warn" : tone === "ok" ? "text-muted" : "text-dim")}>
+            {tone === "warn" && <AlertTriangle size={12} className="shrink-0" />}
+            {s?.update_available && <ArrowUpCircle size={12} className="shrink-0 text-brand" />}
+            <span className="truncate">{line}</span>
+          </span>
+        }
+      >
         <div className="flex items-center gap-2">
-          <span className="text-[14px] font-semibold text-white">Vibey Client</span>
-          {s?.enabled && s.present && <span className="border border-brand/40 bg-brand/15 px-1.5 text-[10px] font-semibold uppercase tracking-wider text-brand">{t("vc.managed")}</span>}
+          {s?.enabled && (
+            <Button size="sm" variant="subtle" onClick={() => nav({ to: "/cosmetics" })}>
+              {t("vc.wardrobe")}
+            </Button>
+          )}
+          {busy && <Spinner size={14} className="text-brand" />}
+          <Tooltip content={running ? t("vc.running") : (disabledReason ?? (s?.enabled ? t("vc.turn_off") : t("vc.turn_on")))}>
+            <span>
+              <Switch checked={!!s?.enabled} disabled={!canToggle} onChange={(v) => void set(v)} label="Vibey Client" />
+            </span>
+          </Tooltip>
         </div>
-        <div className={cn("mt-0.5 flex items-center gap-1.5 truncate text-[12px]", tone === "warn" ? "text-warn" : tone === "ok" ? "text-muted" : "text-dim")}>
-          {tone === "warn" && <AlertTriangle size={12} className="shrink-0" />}
-          {s?.update_available && <ArrowUpCircle size={12} className="shrink-0 text-brand" />}
-          <span className="truncate">{line}</span>
-        </div>
-      </div>
-      {s?.enabled && (
-        <Button size="sm" variant="subtle" onClick={() => nav({ to: "/cosmetics" })}>
-          {t("vc.wardrobe")}
-        </Button>
-      )}
-      {busy && <Spinner size={14} className="text-brand" />}
-      <Tooltip content={running ? t("vc.running") : (disabledReason ?? (s?.enabled ? t("vc.turn_off") : t("vc.turn_on")))}>
-        <span>
-          <Switch checked={!!s?.enabled} disabled={!canToggle} onChange={(v) => void set(v)} label="Vibey Client" />
-        </span>
-      </Tooltip>
-    </div>
+      </SettingRow>
+    </SettingsCard>
+  );
+}
+
+/** Kleines Symbol im Instanz-Kopf, solange der Vibey Client aktiv ist (Klick: zu den Einstellungen). */
+export function VibeyClientBadge({ instance, label, onClick }: { instance: Instance; label: string; onClick?: () => void }) {
+  const q = useQuery({
+    queryKey: cqk.status(instance.id),
+    queryFn: () => vapi.clientStatus(instance.id),
+    enabled: SUPPORTED.has(instance.loader.kind),
+    staleTime: 60_000,
+  });
+  if (!q.data?.enabled || !q.data.present) return null;
+  return (
+    <Tooltip content={label} side="bottom">
+      <button aria-label={label} onClick={onClick} className="grid h-8 w-8 place-items-center rounded-ctl text-brand hover:bg-white/[.06]">
+        <Sparkles size={15} />
+      </button>
+    </Tooltip>
   );
 }

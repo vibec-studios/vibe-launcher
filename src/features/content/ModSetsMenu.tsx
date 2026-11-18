@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Check, Layers, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Button, Dialog, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, Field, Input, confirm, toast } from "@/components/ui";
+import { Button, Dialog, IconButton, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, Field, Input, confirm, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { queryClient } from "@/lib/queries";
@@ -50,16 +50,18 @@ export function ModSetsMenu({ instanceId }: { instanceId: string }) {
     <>
       <DropdownMenu
         trigger={
-          <Button size="sm" variant="ghost" icon={<Layers size={14} />} loading={busy}>
-            {active ? (
-              <span className="max-w-[140px] truncate">
-                {active.name}
-                {data?.active_modified ? " *" : ""}
-              </span>
-            ) : (
-              t("modsets.button")
-            )}
-          </Button>
+          <IconButton
+            label={active ? `${t("modsets.button")}: ${active.name}${data?.active_modified ? " *" : ""}` : t("modsets.button")}
+            tip
+            variant="ghost"
+            active={!!active}
+            badge={active && data?.active_modified ? true : null}
+            badgeTone="warn"
+            disabled={busy}
+            className="data-[state=open]:bg-white/[.07]"
+          >
+            <Layers size={16} />
+          </IconButton>
         }
       >
         {data && data.sets.length > 0 ? (

@@ -22,7 +22,7 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
           <Switch checked={v.enabled} onChange={(enabled) => setVibe({ enabled })} label={t("vibe.enabled")} />
         </SettingRow>
         {!v.enabled && (
-          <div className="flex items-center gap-2.5 border-t border-line bg-black/30 px-4 py-3 text-[12.5px] text-muted">
+          <div className="flex items-center gap-2.5 border-t border-line px-4 py-3 text-meta text-muted">
             <CloudOff size={14} className="shrink-0 text-dim" />
             {t("vibe.off_hint")}
           </div>
