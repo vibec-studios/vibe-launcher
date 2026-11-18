@@ -123,6 +123,37 @@ export interface Settings {
   world_backups_keep: number;
   /** MinecraftCapes-Cape/Ohren anzeigen (aus = keine Anfragen an api.minecraftcapes.net) */
   minecraftcapes: boolean;
+  /** Darstellung (Akzent, Ton, Ecken, Dichte, Skalierung, Hintergrund) */
+  appearance: Appearance;
+}
+
+export type AppearanceTone = "dark" | "darker" | "oled";
+export type AppearanceRadius = "square" | "slight" | "round";
+export type AppearanceDensity = "compact" | "normal";
+export type BackgroundKind = "none" | "gradient" | "image" | "animated";
+export type BackgroundGradient = "accent" | "dusk" | "ocean" | "ember" | "forest";
+export type BackgroundAnimated = "aurora" | "particles" | "waves" | "blocks" | "custom";
+
+export interface Appearance {
+  accent: string;
+  tone: AppearanceTone;
+  radius: AppearanceRadius;
+  density: AppearanceDensity;
+  /** Prozent, 80–130 */
+  ui_scale: number;
+  background: {
+    kind: BackgroundKind;
+    gradient: BackgroundGradient;
+    animated: BackgroundAnimated;
+    /** Eigenes Bild (Pfad im Datenordner) */
+    image: string | null;
+    /** Eigenes Video/GIF/WebP (Pfad im Datenordner) */
+    video: string | null;
+    /** Abdunklung 0–90 % */
+    dim: number;
+    /** Unschärfe 0–40 px */
+    blur: number;
+  };
 }
 
 export interface StoreConfig {

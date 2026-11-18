@@ -1,5 +1,5 @@
-// OWNER: Frontend-Agent A. Bibliothek: Filter (Alle/Eigene/Modpacks), Suche, Sortierung, Gruppierung,
-// Raster kompakter Instanz-Karten.
+// OWNER: Frontend-Agent A. Bibliothek: eine Werkzeugleiste (Filter, Suche, Sortierung, Gruppierung, Import, Neu)
+// über einem Raster rahmenloser Instanz-Kacheln. Der Seitentitel steht in der Titelleiste.
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { ChevronDown, PackageOpen, Plus } from "lucide-react";
 import { useInstances } from "@/lib/queries";
@@ -50,8 +50,8 @@ function cmpVersion(a: string, b: string): number {
   return 0;
 }
 
-/** Raster: bei 1280 px Fensterbreite 5–6 Karten je Reihe. */
-export const gridCls = "grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3";
+/** Raster: bei 1280 px Fensterbreite 6 Kacheln je Reihe. */
+export const gridCls = "grid grid-cols-[repeat(auto-fill,minmax(164px,1fr))] gap-x-2 gap-y-2";
 
 export function InstancesPage() {
   const t = useT();
@@ -110,53 +110,56 @@ export function InstancesPage() {
 
   return (
     <div className="scroll h-full">
-      <div className="flex flex-col gap-4 px-6 pb-10 pt-5">
-        <header className="flex items-center gap-3">
-          <h1 className="display min-w-0 flex-1 truncate text-[22px]">{t("nav.instances")}</h1>
-          <Button icon={<PackageOpen size={15} />} onClick={() => openImport()}>
+      <div className="flex flex-col gap-4 px-6 pb-10 pt-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {total > 0 && (
+            <>
+              <div className="flex gap-0.5 rounded-ctl bg-field p-0.5" role="tablist">
+                {FILTERS.map((f) => (
+                  <button
+                    key={f}
+                    role="tab"
+                    aria-selected={filter === f}
+                    onClick={() => setFilter(f)}
+                    className={cn(
+                      "flex h-8 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-3 text-[13px] font-semibold transition-colors duration-100",
+                      filter === f ? "bg-surface3 text-text shadow-e1" : "text-muted hover:text-text",
+                    )}
+                  >
+                    {t(`instances.filter.${f}`)}
+                    <span className="text-[12px] font-medium text-dim">{counts[f]}</span>
+                  </button>
+                ))}
+              </div>
+              <SearchInput value={query} onChange={setQuery} placeholder={t("instances.search")} className="w-[220px] min-w-[150px]" />
+              <div className="w-[150px] max-[1100px]:w-[132px]">
+                <Select<SortKey>
+                  size="sm"
+                  variant="ghost"
+                  value={sort}
+                  onChange={setSort}
+                  options={SORTS.map((s) => ({ value: s, label: t(`instances.sort.${s}`) }))}
+                />
+              </div>
+              <div className="w-[150px] max-[1100px]:w-[132px]">
+                <Select<GroupKey>
+                  size="sm"
+                  variant="ghost"
+                  value={groupBy}
+                  onChange={setGroupBy}
+                  options={GROUPS.map((g) => ({ value: g, label: t(`instances.groupby.${g}`) }))}
+                />
+              </div>
+            </>
+          )}
+          <div className="flex-1" />
+          <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={() => openImport()}>
             {t("home.action.import")}
           </Button>
-          <Button variant="primary" icon={<Plus size={16} />} onClick={openNewInstance}>
+          <Button size="sm" variant="primary" icon={<Plus size={15} />} onClick={openNewInstance}>
             {t("inst.new")}
           </Button>
-        </header>
-
-        {total > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex border border-line bg-surface p-0.5" role="tablist">
-              {FILTERS.map((f) => (
-                <button
-                  key={f}
-                  role="tab"
-                  aria-selected={filter === f}
-                  onClick={() => setFilter(f)}
-                  className={cn(
-                    "flex h-[30px] items-center gap-1.5 px-3 text-[13px] font-semibold transition-colors duration-100",
-                    filter === f ? "bg-surface3 text-white" : "text-muted hover:text-white",
-                  )}
-                >
-                  {t(`instances.filter.${f}`)}
-                  <span className="text-[12px] font-medium text-dim">{counts[f]}</span>
-                </button>
-              ))}
-            </div>
-            <div className="w-[240px] min-w-[160px]">
-              <SearchInput value={query} onChange={setQuery} placeholder={t("instances.search")} className="[&_input]:h-9" />
-            </div>
-            <div className="flex-1" />
-            <div className="w-[168px] [&_button]:h-9">
-              <Select<SortKey> size="sm" value={sort} onChange={setSort} options={SORTS.map((s) => ({ value: s, label: t(`instances.sort.${s}`) }))} />
-            </div>
-            <div className="w-[168px] [&_button]:h-9">
-              <Select<GroupKey>
-                size="sm"
-                value={groupBy}
-                onChange={setGroupBy}
-                options={GROUPS.map((g) => ({ value: g, label: t(`instances.groupby.${g}`) }))}
-              />
-            </div>
-          </div>
-        )}
+        </div>
 
         {isError && !data ? (
           <ErrorState error={error} onRetry={() => refetch()} />
@@ -168,7 +171,7 @@ export function InstancesPage() {
           </div>
         ) : total === 0 ? (
           <EmptyState
-            className="mt-6 border border-dashed border-line2 bg-surface py-14"
+            className="mt-4 rounded-panel bg-surface py-14"
             icon={<Logo3D size={72} speed={0} hoverSpin float={false} interactive={false} />}
             title={t("instances.empty.title")}
             text={t("instances.empty.text")}
@@ -186,16 +189,16 @@ export function InstancesPage() {
         ) : shown === 0 ? (
           <EmptyState title={t("instances.no_match")} text={q ? t("instances.no_match.text", { q: query }) : undefined} />
         ) : (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">
             {groups.map(([g, list]) => {
               const key = `${groupBy}:${g}`;
               const isCollapsed = showHeaders && !q && collapsed.includes(key);
               return (
-                <section key={key} className="flex flex-col gap-2.5">
+                <section key={key} className="flex flex-col gap-1.5">
                   {showHeaders && (
-                    <button onClick={() => toggle(key)} aria-expanded={!isCollapsed} className="group flex items-center gap-2 text-left">
-                      <ChevronDown size={15} className={cn("text-dim transition-transform duration-150 group-hover:text-white", isCollapsed && "-rotate-90")} />
-                      <span className="text-[14px] font-semibold text-white">{g || t(`instances.ungrouped.${groupBy}`)}</span>
+                    <button onClick={() => toggle(key)} aria-expanded={!isCollapsed} className="group flex items-center gap-1.5 self-start px-0.5 text-left">
+                      <ChevronDown size={14} className={cn("text-dim transition-transform duration-150 group-hover:text-text", isCollapsed && "-rotate-90")} />
+                      <span className="text-[12.5px] font-semibold text-muted group-hover:text-text">{g || t(`instances.ungrouped.${groupBy}`)}</span>
                       <span className="text-[12px] text-dim">{list.length}</span>
                     </button>
                   )}

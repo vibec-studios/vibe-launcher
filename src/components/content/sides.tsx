@@ -25,11 +25,11 @@ export function SideTag({ side, className }: { side: Side; className?: string })
     <Tooltip content={t(`side.desc.${side}`)}>
       <span
         className={cn(
-          "inline-flex h-[18px] shrink-0 items-center gap-1 border px-1.5 text-[11px] font-medium",
-          side === "client" && "border-sky-400/30 text-sky-300",
-          side === "server" && "border-amber-400/30 text-amber-300",
-          side === "both" && "border-emerald-400/30 text-emerald-300",
-          side === "unknown" && "border-line2 text-dim",
+          "inline-flex h-[18px] shrink-0 items-center gap-1 rounded-xs px-1.5 text-[11px] font-medium",
+          side === "client" && "bg-sky-400/10 text-sky-300",
+          side === "server" && "bg-amber-400/10 text-amber-300",
+          side === "both" && "bg-emerald-400/10 text-emerald-300",
+          side === "unknown" && "bg-white/[.06] text-dim",
           className,
         )}
       >

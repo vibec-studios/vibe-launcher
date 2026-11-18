@@ -20,7 +20,7 @@ const route = getRouteApi("/instances/$id");
 function Meta({ icon, children, title }: { icon: ReactNode; children: ReactNode; title?: string }) {
   return (
     <span className="flex min-w-0 items-center gap-1.5 whitespace-nowrap" title={title}>
-      <span className="shrink-0 text-dim">{icon}</span>
+      <span className="shrink-0 text-dim [&_svg]:size-[13px]">{icon}</span>
       <span className="truncate">{children}</span>
     </span>
   );
@@ -41,7 +41,7 @@ function MetaLine({ instance: i }: { instance: Instance }) {
       : t("ipage.meta.modpack_named", { name: src.name, version: packVersion }).trim()
     : null;
   return (
-    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted">
+    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-0.5 text-meta text-muted">
       <Meta icon={<Box size={14} />}>
         {loader} · Minecraft {i.mc_version}
       </Meta>
@@ -63,15 +63,21 @@ export function InstanceHeader({ instance, accent, tabs, notices }: { instance: 
   const nav = useNavigate();
   const navTab = route.useNavigate();
   return (
-    <header className="shrink-0 border-b border-line bg-panel">
-      <div className={cn(pageX, "flex items-center gap-5 pb-4 pt-6")}>
+    <header className="relative shrink-0 border-b border-line">
+      {/* Akzent-Schimmer der Instanz statt Rahmen: gibt der Seite Identität */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{ background: `radial-gradient(55% 160% at 0% 0%, color-mix(in srgb, ${accent} 16%, transparent), transparent 70%)` }}
+      />
+      <div className={cn(pageX, "relative flex items-center gap-4 pb-3 pt-4")}>
         <Tooltip content={t("inst.icon.choose")}>
           <button onClick={() => setIcon(instance)} className="shrink-0" aria-label={t("inst.icon.choose")}>
-            <InstanceIcon icon={instance.icon} accent={accent} size={68} />
+            <InstanceIcon icon={instance.icon} accent={accent} size={56} className="shadow-e1" />
           </button>
         </Tooltip>
         <div className="min-w-0 flex-1">
-          <h1 className="display truncate text-[24px] leading-tight" title={instance.name}>
+          <h1 className="truncate text-hero text-text" title={instance.name}>
             {instance.name}
           </h1>
           <MetaLine instance={instance} />
@@ -80,7 +86,7 @@ export function InstanceHeader({ instance, accent, tabs, notices }: { instance: 
           <PlayButton instance={instance} size="lg" />
           <DropdownMenu
             trigger={
-              <IconButton label={t("common.more")} className="h-11 w-11 data-[state=open]:bg-surface3 data-[state=open]:text-white">
+              <IconButton label={t("common.more")} className="h-11 w-11 data-[state=open]:bg-surface3 data-[state=open]:text-text">
                 <MoreHorizontal size={18} />
               </IconButton>
             }
@@ -93,7 +99,7 @@ export function InstanceHeader({ instance, accent, tabs, notices }: { instance: 
           </DropdownMenu>
         </div>
       </div>
-      <div className={cn(pageX, "flex items-center gap-6")}>
+      <div className={cn(pageX, "relative flex items-center gap-6")}>
         <div className="shrink-0">{tabs}</div>
         {/* Hinweiszeile: ruhige Chips rechts neben den Bereichen, auf allen Unterseiten sichtbar */}
         <div className="@container flex min-w-0 flex-1 justify-end">{notices}</div>
@@ -104,9 +110,9 @@ export function InstanceHeader({ instance, accent, tabs, notices }: { instance: 
 
 export function HeaderSkeleton() {
   return (
-    <header className="shrink-0 border-b border-line bg-panel">
-      <div className={cn(pageX, "flex items-center gap-5 pb-4 pt-6")}>
-        <Skeleton className="h-[68px] w-[68px]" />
+    <header className="shrink-0 border-b border-line">
+      <div className={cn(pageX, "flex items-center gap-4 pb-3 pt-4")}>
+        <Skeleton className="h-[56px] w-[56px]" />
         <div className="flex flex-1 flex-col gap-2.5">
           <Skeleton className="h-6 w-64" />
           <Skeleton className="h-4 w-96" />
@@ -114,7 +120,7 @@ export function HeaderSkeleton() {
         <Skeleton className="h-11 w-[168px]" />
         <Skeleton className="h-11 w-11" />
       </div>
-      <div className={cn(pageX, "flex h-11 items-center gap-6")}>
+      <div className={cn(pageX, "flex h-10 items-center gap-6")}>
         {Array.from({ length: 4 }, (_, i) => (
           <Skeleton key={i} className="h-3.5 w-20" />
         ))}

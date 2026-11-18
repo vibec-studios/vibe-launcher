@@ -142,6 +142,7 @@ pub fn run() {
             commands::core::instance_open_folder,
             commands::core::settings_get,
             commands::core::settings_set,
+            commands::core::appearance_import_background,
             commands::core::tasks_list,
             commands::core::task_cancel,
             commands::core::tasks_clear,

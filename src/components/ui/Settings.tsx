@@ -1,4 +1,4 @@
-// Bausteine für Einstellungsseiten: Karte mit Überschrift, Zeile (Titel + Beschreibung + Steuerung),
+// Bausteine für Einstellungsseiten: Gruppe (Überschrift über einer Fläche), Zeile (Titel + Beschreibung + Steuerung),
 // Zahleneingabe mit Einheit.
 import { forwardRef, useEffect, useState, type ReactNode } from "react";
 import { cn } from "./cn";
@@ -8,12 +8,12 @@ export const SettingsCard = forwardRef<
   { title: ReactNode; right?: ReactNode; children: ReactNode; className?: string; danger?: boolean; id?: string }
 >(function SettingsCard({ title, right, children, className, danger, id }, ref) {
   return (
-    <section ref={ref} id={id} className={cn("border bg-surface", danger ? "border-danger/30" : "border-line", className)}>
-      <header className="flex min-h-11 items-center gap-3 border-b border-line px-4 py-2.5">
-        <h3 className={cn("flex-1 text-[14px] font-semibold", danger ? "text-danger" : "text-white")}>{title}</h3>
+    <section ref={ref} id={id} className={cn("flex flex-col gap-2", className)}>
+      <header className="flex min-h-7 items-center gap-3 px-1">
+        <h3 className={cn("flex-1 text-[12.5px] font-semibold", danger ? "text-danger" : "text-muted")}>{title}</h3>
         {right}
       </header>
-      <div>{children}</div>
+      <div className={cn("rounded-card bg-surface", danger && "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-danger)_30%,transparent)]")}>{children}</div>
     </section>
   );
 });
@@ -33,9 +33,9 @@ export function SettingRow({
   stacked?: boolean;
 }) {
   return (
-    <div className={cn("flex gap-x-8 gap-y-2.5 border-line px-4 py-3.5 [&+&]:border-t", stacked ? "flex-col" : "items-center", className)}>
+    <div className={cn("flex gap-x-8 gap-y-2.5 border-line px-4 py-3 [&+&]:border-t", stacked ? "flex-col" : "items-center", className)}>
       <div className="min-w-0 flex-1">
-        <div className="text-[14px] font-medium text-text">{title}</div>
+        <div className="text-[13.5px] font-medium text-text">{title}</div>
         {description && <div className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{description}</div>}
       </div>
       {children !== undefined && <div className={cn("min-w-0", stacked ? "w-full" : "shrink-0")}>{children}</div>}
@@ -107,8 +107,8 @@ export function NumberInput({
           }
         }}
         className={cn(
-          "h-10 w-full border border-line2 bg-surface px-3 font-mono text-[13px] text-text outline-none transition-colors duration-150 placeholder:text-dim",
-          "hover:border-white/30 focus:border-accent disabled:opacity-50",
+          "h-9 w-full rounded-ctl border border-transparent bg-field px-3 font-mono text-[13px] text-text outline-none transition-colors duration-150 placeholder:text-dim",
+          "hover:bg-white/[.07] focus:border-accent/70 disabled:opacity-50",
           unit && "pr-10",
         )}
       />

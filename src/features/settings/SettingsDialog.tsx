@@ -50,6 +50,7 @@ import { MasterOptSync } from "@/components/instance/OptSync";
 import { useLang, useT } from "@/i18n";
 import { StoresCard } from "./StoresCard";
 import { VibeTab } from "./VibeCard";
+import { AppearanceTab } from "./AppearanceTab";
 import { SETTINGS_TABS, closeSettings, setSettingsTab, useSettingsDialog, type SettingsTab } from "./store";
 
 const ICONS: Record<SettingsTab, ReactNode> = {
@@ -81,7 +82,7 @@ export function SettingsDialog() {
   return (
     <D.Root open={open} onOpenChange={(o) => !o && closeSettings()}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-50 bg-black/70 data-[state=open]:animate-fade-in" />
+        <D.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
         <D.Content
           aria-describedby={undefined}
           // Kein Fokusrahmen auf dem ersten Tab beim Öffnen; Tastatur-Navigation startet im Dialog
@@ -93,8 +94,8 @@ export function SettingsDialog() {
           className={cn(
             "outline-none",
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2",
-            "h-[min(780px,calc(100vh-48px))] w-[min(1100px,calc(100vw-48px))]",
-            "border border-line2 bg-[#07070a] shadow-[0_24px_60px_rgba(0,0,0,.7)] data-[state=open]:animate-pop-in",
+            "h-[min(780px,calc(100vh-48px))] w-[min(1100px,calc(100vw-48px))] overflow-hidden",
+            "glass rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
         >
           <SettingsBody />
@@ -121,9 +122,9 @@ function SettingsBody() {
 
   return (
     <>
-      <aside className="flex w-[256px] shrink-0 flex-col border-r border-line bg-black/50 max-[880px]:w-[60px]">
-        <div className="flex h-[68px] shrink-0 items-center px-5 max-[880px]:justify-center max-[880px]:px-0">
-          <D.Title className="display text-[19px] max-[880px]:sr-only">{t("nav.settings")}</D.Title>
+      <aside className="flex w-[232px] shrink-0 flex-col bg-black/25 max-[880px]:w-[60px]">
+        <div className="flex h-[64px] shrink-0 items-center px-5 max-[880px]:justify-center max-[880px]:px-0">
+          <D.Title className="text-title text-text max-[880px]:sr-only">{t("nav.settings")}</D.Title>
           <span className="hidden text-muted max-[880px]:block">
             <SlidersHorizontal size={18} />
           </span>
@@ -139,13 +140,12 @@ function SettingsBody() {
                 aria-label={t(`settings.tab.${id}`)}
                 onClick={() => setSettingsTab(id)}
                 className={cn(
-                  "relative flex h-9 shrink-0 items-center gap-3 px-3 text-left text-[13.5px] font-medium transition-colors duration-100",
+                  "relative flex h-9 shrink-0 items-center gap-3 rounded-ctl px-3 text-left text-[13.5px] font-medium transition-colors duration-100",
                   "max-[880px]:h-10 max-[880px]:w-10 max-[880px]:justify-center max-[880px]:px-0",
-                  active ? "bg-surface3 text-white" : "text-muted hover:bg-surface2 hover:text-white",
+                  active ? "bg-white/[.08] text-text" : "text-muted hover:bg-white/[.05] hover:text-text",
                 )}
               >
-                {active && <span className="absolute bottom-1.5 left-0 top-1.5 w-[3px] bg-brand" />}
-                <span className={active ? "text-white" : "text-dim"}>{ICONS[id]}</span>
+                <span className={active ? "text-brand" : "text-dim"}>{ICONS[id]}</span>
                 <span className="truncate max-[880px]:hidden">{t(`settings.tab.${id}`)}</span>
               </button>
             );
@@ -162,17 +162,17 @@ function SettingsBody() {
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-[68px] shrink-0 items-center gap-4 border-b border-line pl-7 pr-4">
+        <header className="flex h-[64px] shrink-0 items-center gap-4 pl-7 pr-4">
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[17px] font-semibold text-white">{t(`settings.tab.${tab}`)}</h2>
+            <h2 className="truncate text-[16px] font-semibold text-text">{t(`settings.tab.${tab}`)}</h2>
             <p className="truncate text-[12.5px] text-muted">{t(`settings.tab.${tab}.desc`)}</p>
           </div>
-          <D.Close aria-label={t("common.close")} className="grid h-9 w-9 shrink-0 place-items-center text-dim transition-colors hover:bg-surface2 hover:text-white">
+          <D.Close aria-label={t("common.close")} className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text">
             <X size={18} />
           </D.Close>
         </header>
         <div key={tab} className="scroll min-h-0 flex-1">
-          <div className="flex flex-col gap-4 px-7 pb-10 pt-5 animate-fade-in">
+          <div className="flex flex-col gap-5 px-7 pb-10 pt-1 animate-fade-in">
             {!s ? <LoadingCards /> : <TabContent tab={tab} s={s} update={update} />}
           </div>
         </div>
@@ -275,27 +275,6 @@ function GeneralTab({ s, update }: TabProps) {
         </SettingRow>
       </SettingsCard>
     </>
-  );
-}
-
-function AppearanceTab({ s, update }: TabProps) {
-  const t = useT();
-  return (
-    <SettingsCard title={t("settings.section.appearance")}>
-      <SettingRow title={t("settings.reduce_motion")} description={t("settings.reduce_motion.desc")}>
-        <Switch
-          checked={s.reduce_motion}
-          onChange={(reduce_motion) => {
-            document.documentElement.dataset.reduceMotion = String(reduce_motion);
-            update({ reduce_motion });
-          }}
-          label={t("settings.reduce_motion")}
-        />
-      </SettingRow>
-      <SettingRow title={t("settings.minecraftcapes")} description={t("settings.minecraftcapes.desc")}>
-        <Switch checked={s.minecraftcapes} onChange={(minecraftcapes) => update({ minecraftcapes })} label={t("settings.minecraftcapes")} />
-      </SettingRow>
-    </SettingsCard>
   );
 }
 

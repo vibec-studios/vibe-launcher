@@ -73,8 +73,8 @@ export function TaskDock() {
           <button
             aria-label={t("tasks.title")}
             className={cn(
-              "relative grid h-8 w-8 place-items-center border transition-colors duration-150",
-              running.length ? "border-accent/50 text-accent" : "border-transparent text-muted hover:border-line2 hover:text-white",
+              "relative grid h-8 w-8 place-items-center overflow-hidden rounded-ctl transition-colors duration-150",
+              running.length ? "bg-accent/12 text-accent" : "text-muted hover:bg-white/[.06] hover:text-text",
             )}
           >
             {running.length ? <Spinner size={13} /> : <Download size={16} />}
@@ -94,7 +94,7 @@ export function TaskDock() {
           align="end"
           sideOffset={8}
           collisionPadding={8}
-          className="z-[60] w-[380px] border border-line2 bg-[#07070a] shadow-[0_16px_40px_rgba(0,0,0,.65)] data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="glass z-[60] w-[380px] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           <div className="flex h-11 items-center justify-between border-b border-line px-4">
             <span className="label">{t("tasks.title")}</span>

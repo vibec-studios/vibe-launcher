@@ -66,6 +66,16 @@ let settings: Settings = {
   world_backup_on_launch: false,
   world_backups_keep: 5,
   minecraftcapes: true,
+  appearance: {
+    accent: "#8b6cff",
+    tone: "dark",
+    radius: "slight",
+    density: "normal",
+    ui_scale: 100,
+    background: { kind: "none", gradient: "accent", animated: "aurora", image: null, video: null, dim: 45, blur: 0 },
+    // Screenshots: Variante per window.__VL_MOCK_APPEARANCE (Playwright-Init-Skript)
+    ...((globalThis as { __VL_MOCK_APPEARANCE?: object }).__VL_MOCK_APPEARANCE ?? {}),
+  } as Settings["appearance"],
   stores: [{ id: "vibe-craft-studios", name: "Vibe Craft Studios", url: "https://vibec-studios.github.io/data/store.json", enabled: true, icon: null }],
 };
 
@@ -105,6 +115,7 @@ const handlers: Handlers = {
   instance_set_icon: ({ id }) => instances.get(id as string),
   instance_open_folder: () => null,
   settings_get: () => settings,
+  appearance_import_background: ({ path }) => path as string,
   settings_set: ({ settings: s }) => {
     settings = s as Settings;
     mockEmit("settings://changed", settings);

@@ -66,6 +66,101 @@ pub struct Settings {
     pub world_backups_keep: u32,
     /// MinecraftCapes-Cape/Ohren des eigenen Accounts anzeigen (aus = keine Anfragen an api.minecraftcapes.net)
     pub minecraftcapes: bool,
+    /// Darstellung: Akzentfarbe, Ton, Ecken, Dichte, Skalierung, Hintergrund
+    pub appearance: Appearance,
+}
+
+/// Darstellungs-Optionen des Launchers (wirken sofort, siehe `src/lib/appearance.ts`).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct Appearance {
+    /// Akzentfarbe als Hex ("#8b6cff")
+    pub accent: String,
+    /// Hintergrund-Ton: "dark" | "darker" | "oled"
+    pub tone: String,
+    /// Ecken: "square" | "slight" | "round"
+    pub radius: String,
+    /// Dichte: "compact" | "normal"
+    pub density: String,
+    /// UI-Skalierung in Prozent (80–130)
+    pub ui_scale: u32,
+    pub background: Background,
+}
+
+/// Fensterhintergrund hinter allen Flächen.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct Background {
+    /// "none" | "gradient" | "image" | "animated"
+    pub kind: String,
+    /// Verlauf-Vorlage (z. B. "accent", "dusk", "ocean", "ember")
+    pub gradient: String,
+    /// Animierte Vorlage ("aurora", "particles", "waves", "blocks") oder "custom" (eigene Datei)
+    pub animated: String,
+    /// Eigenes Bild (in `<daten>/backgrounds/` kopiert)
+    pub image: Option<String>,
+    /// Eigenes Video/GIF/WebP (in `<daten>/backgrounds/` kopiert)
+    pub video: Option<String>,
+    /// Abdunklung in Prozent (0–90)
+    pub dim: u32,
+    /// Unschärfe in Pixeln (0–40)
+    pub blur: u32,
+}
+
+impl Default for Appearance {
+    fn default() -> Self {
+        Appearance {
+            accent: "#8b6cff".into(),
+            tone: "dark".into(),
+            radius: "slight".into(),
+            density: "normal".into(),
+            ui_scale: 100,
+            background: Background::default(),
+        }
+    }
+}
+
+impl Default for Background {
+    fn default() -> Self {
+        Background {
+            kind: "none".into(),
+            gradient: "accent".into(),
+            animated: "aurora".into(),
+            image: None,
+            video: None,
+            dim: 45,
+            blur: 0,
+        }
+    }
+}
+
+impl Appearance {
+    /// Unbekannte Werte auf Standard zurücksetzen, Zahlen begrenzen.
+    pub fn sanitize(&mut self) {
+        let d = Appearance::default();
+        let pick = |v: &mut String, allowed: &[&str], def: &str| {
+            if !allowed.contains(&v.as_str()) {
+                *v = def.to_string();
+            }
+        };
+        let hex = self.accent.trim_start_matches('#');
+        if hex.len() != 6 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
+            self.accent = d.accent.clone();
+        } else {
+            self.accent = format!("#{}", hex.to_ascii_lowercase());
+        }
+        pick(&mut self.tone, &["dark", "darker", "oled"], &d.tone);
+        pick(&mut self.radius, &["square", "slight", "round"], &d.radius);
+        pick(&mut self.density, &["compact", "normal"], &d.density);
+        self.ui_scale = self.ui_scale.clamp(80, 130);
+        let b = &mut self.background;
+        let db = Background::default();
+        pick(&mut b.kind, &["none", "gradient", "image", "animated"], &db.kind);
+        pick(&mut b.gradient, &["accent", "dusk", "ocean", "ember", "forest"], &db.gradient);
+        pick(&mut b.animated, &["aurora", "particles", "waves", "blocks", "custom"], &db.animated);
+        b.dim = b.dim.min(90);
+        b.blur = b.blur.min(40);
+    }
 }
 
 /// Eintrag in der Store-Liste.
@@ -137,6 +232,7 @@ impl Default for Settings {
             world_backup_on_launch: false,
             world_backups_keep: 5,
             minecraftcapes: true,
+            appearance: Appearance::default(),
         }
     }
 }
@@ -203,5 +299,42 @@ impl Settings {
             .or_else(|| option_env!("VIBE_MSA_CLIENT_ID").map(str::to_string))
             .map(|k| k.trim().to_string())
             .filter(|k| !k.is_empty())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn old_settings_get_default_appearance() {
+        let s: Settings = serde_json::from_str(r#"{"language":"de","reduce_motion":true}"#).unwrap();
+        assert_eq!(s.appearance, Appearance::default());
+        assert!(s.reduce_motion);
+    }
+
+    #[test]
+    fn appearance_sanitize() {
+        let mut a = Appearance {
+            accent: "FF00AA".into(),
+            tone: "light".into(),
+            radius: "round".into(),
+            density: "dense".into(),
+            ui_scale: 400,
+            background: Background { kind: "video".into(), dim: 120, blur: 99, ..Background::default() },
+        };
+        a.sanitize();
+        assert_eq!(a.accent, "#ff00aa");
+        assert_eq!(a.tone, "dark");
+        assert_eq!(a.radius, "round");
+        assert_eq!(a.density, "normal");
+        assert_eq!(a.ui_scale, 130);
+        assert_eq!(a.background.kind, "none");
+        assert_eq!(a.background.dim, 90);
+        assert_eq!(a.background.blur, 40);
+
+        let mut bad = Appearance { accent: "#12345z".into(), ..Appearance::default() };
+        bad.sanitize();
+        assert_eq!(bad.accent, "#8b6cff");
     }
 }

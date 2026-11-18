@@ -5,12 +5,12 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEvent } from "@/lib/events";
-import { ChevronRight, FolderOpen, Globe2, HardDriveDownload, PackageOpen, Play, Plus, RefreshCw, Server } from "lucide-react";
+import { ChevronRight, Clock, FolderOpen, Globe2, HardDriveDownload, PackageOpen, Play, Plus, RefreshCw, Server } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useAccounts, useGameStore, useInstances, useTaskStore } from "@/lib/queries";
 import type { Instance, RecentServer, World } from "@/lib/types";
 import { formatDuration, formatRelative, imageSrc, instanceAccent, loaderNames } from "@/lib/format";
-import { Button, ContextMenu, Skeleton, Tooltip, cn } from "@/components/ui";
+import { Button, ContextMenu, IconButton, Skeleton, Tooltip, cn } from "@/components/ui";
 import { Logo3D } from "@/components/Logo3D";
 import { InstanceIcon, PixelBlock } from "@/components/instance/InstanceIcon";
 import { InstanceStatus } from "@/components/instance/InstanceCard";
@@ -51,8 +51,8 @@ function saveSel(id: string) {
 
 function SectionHead({ title, link }: { title: string; link?: ReactNode }) {
   return (
-    <div className="mb-2.5 flex items-center gap-3">
-      <h2 className="min-w-0 flex-1 truncate text-[15px] font-bold text-white">{title}</h2>
+    <div className="mb-2 flex items-center gap-3">
+      <h2 className="min-w-0 flex-1 truncate text-section text-text">{title}</h2>
       {link}
     </div>
   );
@@ -145,7 +145,7 @@ function Hotbar({
           return <div key={`e${n}`} className={cn(SLOT, "h-[72px] w-[72px] hover:bg-[#17171d]")} />;
         })}
       </div>
-      <p className="text-[12px] text-dim">{t("home.hotbar_hint")}</p>
+      <p className="text-caption text-dim">{t("home.hotbar_hint")}</p>
     </div>
   );
 }
@@ -164,9 +164,9 @@ function WorldButton({ world, instance, disabled }: { world: World; instance: In
       <button
         disabled={disabled}
         onClick={() => launch(instance, world.folder)}
-        className="group flex min-w-0 items-center gap-2.5 border border-line bg-black/30 p-1.5 pr-3 text-left transition-colors duration-100 hover:border-line2 hover:bg-surface2 disabled:pointer-events-none disabled:opacity-50"
+        className="group flex min-w-0 items-center gap-2.5 rounded-card bg-white/[.04] p-1.5 pr-3 text-left transition-colors duration-100 hover:bg-white/[.08] disabled:pointer-events-none disabled:opacity-50"
       >
-        <span className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden bg-surface2">
+        <span className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-ctl bg-surface2">
           {src && !failed ? (
             <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} className="h-full w-full object-cover [image-rendering:pixelated]" />
           ) : (
@@ -177,7 +177,7 @@ function WorldButton({ world, instance, disabled }: { world: World; instance: In
           </span>
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-[13px] font-semibold text-white">{world.name}</span>
+          <span className="block truncate text-[13px] font-semibold text-text">{world.name}</span>
           <span className="block truncate text-[12px] text-muted">
             {[mode, world.last_played ? formatRelative(world.last_played) : null].filter(Boolean).join(" · ")}
           </span>
@@ -203,9 +203,9 @@ function WorldsRow({ instance }: { instance: Instance }) {
   );
   if (!quick) return null;
   return (
-    <div className="flex items-center gap-3 border-t border-line px-4 py-3">
-      <span className="flex w-[150px] shrink-0 items-center gap-2 whitespace-nowrap text-[13px] font-semibold text-muted">
-        <Globe2 size={15} />
+    <div className="relative flex items-center gap-3 px-5 pb-4">
+      <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[12.5px] font-semibold text-muted">
+        <Globe2 size={14} />
         {t("home.worlds")}
       </span>
       {!q.data ? (
@@ -216,7 +216,7 @@ function WorldsRow({ instance }: { instance: Instance }) {
       ) : worlds.length === 0 ? (
         <span className="flex-1 text-[13px] text-dim">{t("home.no_worlds")}</span>
       ) : (
-        <div className="grid min-w-0 flex-1 grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2">
+        <div className="grid min-w-0 flex-1 grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2">
           {worlds.map((w) => (
             <WorldButton key={w.folder} world={w} instance={instance} disabled={phase !== "idle"} />
           ))}
@@ -225,7 +225,7 @@ function WorldsRow({ instance }: { instance: Instance }) {
       {q.data && q.data.length > worlds.length && (
         <button
           onClick={() => nav({ to: "/instances/$id", params: { id: instance.id }, search: { tab: "worlds" } })}
-          className="shrink-0 text-[13px] font-medium text-muted hover:text-white"
+          className="shrink-0 text-[12.5px] font-medium text-muted hover:text-text"
         >
           {t("home.all_worlds", { n: q.data.length })}
         </button>
@@ -234,12 +234,13 @@ function WorldsRow({ instance }: { instance: Instance }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: ReactNode }) {
+/** Kurzer Wert in der Statuszeile (Symbol + Text). */
+function Stat({ icon, children, title }: { icon: ReactNode; children: ReactNode; title?: string }) {
   return (
-    <div className="min-w-0">
-      <div className="text-[12px] text-dim">{label}</div>
-      <div className="truncate text-[14px] font-semibold text-text">{value}</div>
-    </div>
+    <span className="flex min-w-0 items-center gap-1.5 whitespace-nowrap" title={title}>
+      <span className="shrink-0 text-dim">{icon}</span>
+      <span className="truncate">{children}</span>
+    </span>
   );
 }
 
@@ -260,58 +261,67 @@ function SelectedPanel({ instance: i }: { instance: Instance }) {
   const nUpdates = updates.data?.length ?? 0;
   const open = (tab: "content" | "settings") => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab } });
 
+  const status =
+    phase === "idle" && nUpdates > 0 ? (
+      <button onClick={() => open("content")} className="inline-flex items-center gap-1.5 font-medium text-warn hover:underline">
+        <RefreshCw size={12} />
+        {t("home.updates", { n: nUpdates })}
+      </button>
+    ) : phase === "idle" && i.install_state === "installed" ? (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-1.5 w-1.5 rounded-dot bg-ok" />
+        {modded && mods.data ? t(mods.data.length === 1 ? "home.ready_mods_one" : "home.ready_mods", { n: mods.data.length }) : t("home.ready")}
+      </span>
+    ) : phase === "idle" && i.install_state === "not_installed" ? (
+      <span className="inline-flex items-center gap-1.5">
+        <HardDriveDownload size={12} />
+        {t("home.installs_on_start")}
+      </span>
+    ) : (
+      <InstanceStatus instance={i} />
+    );
+
+  // Bühne: die gewählte Instanz ist das Wichtigste der Seite – größte Schrift, Akzent-Schimmer, ein klarer Spielen-Knopf.
   return (
-    <section className="border border-line bg-surface" style={accentVars(accent)}>
-      <div className="flex items-center gap-5 p-4">
+    <section className="relative overflow-hidden rounded-panel bg-surface shadow-e1" style={accentVars(accent)}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `radial-gradient(70% 140% at 0% 0%, color-mix(in srgb, ${accent} 20%, transparent), transparent 65%), radial-gradient(40% 90% at 100% 100%, color-mix(in srgb, ${accent} 7%, transparent), transparent 70%)`,
+        }}
+      />
+      <div className="relative flex items-center gap-5 p-5">
         <button onClick={() => open("content")} aria-label={i.name} className="shrink-0">
-          <InstanceIcon icon={i.icon} accent={accent} size={88} />
+          <InstanceIcon icon={i.icon} accent={accent} size={84} className="shadow-e1" />
         </button>
         <div className="min-w-0 flex-1">
-          <button
-            onClick={() => open("content")}
-            className="block max-w-full truncate text-left text-[22px] font-bold leading-tight text-white hover:underline"
-          >
+          <button onClick={() => open("content")} className="block max-w-full truncate text-left text-hero text-text hover:underline">
             {i.name}
           </button>
-          <div className="mt-0.5 truncate text-[13px] text-muted">
+          <div className="mt-1 truncate text-meta text-muted">
             {i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]} ${i.loader.version ?? ""}`} · Minecraft {i.mc_version}
             {i.source && ` · ${i.source.name ?? t("inst.modpack")}`}
           </div>
-          <div className="mt-3 grid max-w-[700px] grid-cols-3 gap-4">
-            <Stat label={t("inst.play_time")} value={i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : "–"} />
-            <Stat label={t("inst.last_played")} value={i.last_played ? formatRelative(i.last_played) : t("inst.never_played")} />
-            <Stat
-              label={t("home.status")}
-              value={
-                phase === "idle" && nUpdates > 0 ? (
-                  <button onClick={() => open("content")} className="inline-flex items-center gap-1.5 text-warn hover:underline">
-                    <RefreshCw size={12} />
-                    {t("home.updates", { n: nUpdates })}
-                  </button>
-                ) : phase === "idle" && i.install_state === "installed" ? (
-                  <span className="text-text">{modded && mods.data ? t(mods.data.length === 1 ? "home.ready_mods_one" : "home.ready_mods", { n: mods.data.length }) : t("home.ready")}</span>
-                ) : phase === "idle" && i.install_state === "not_installed" ? (
-                  <span className="inline-flex items-center gap-1.5 text-muted">
-                    <HardDriveDownload size={12} />
-                    {t("home.installs_on_start")}
-                  </span>
-                ) : (
-                  <InstanceStatus instance={i} />
-                )
-              }
-            />
+          <div className="mt-2.5 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-meta text-muted">
+            <Stat icon={<Clock size={13} />} title={t("inst.play_time")}>
+              {i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : "–"}
+              <span className="text-dim"> · </span>
+              {i.last_played ? formatRelative(i.last_played) : t("inst.never_played")}
+            </Stat>
+            <span className="flex min-w-0 items-center text-text">{status}</span>
           </div>
         </div>
-        <div className="flex shrink-0 flex-col items-stretch gap-2">
-          <PlayButton instance={i} size="lg" className="w-[200px]" />
-          <div className="flex gap-2">
-            <Button size="sm" className="flex-1" onClick={() => open("content")}>
-              {t("inst.open")}
-            </Button>
-            <Tooltip content={t("common.open_folder")}>
-              <Button size="sm" icon={<FolderOpen size={14} />} aria-label={t("common.open_folder")} onClick={() => openFolder(i)} />
-            </Tooltip>
-          </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <PlayButton instance={i} size="lg" className="min-w-[176px]" />
+          <Button size="lg" variant="ghost" className="px-5" onClick={() => open("content")}>
+            {t("inst.open")}
+          </Button>
+          <Tooltip content={t("common.open_folder")}>
+            <IconButton label={t("common.open_folder")} className="h-11 w-11" onClick={() => openFolder(i)}>
+              <FolderOpen size={17} />
+            </IconButton>
+          </Tooltip>
         </div>
       </div>
       <WorldsRow instance={i} />
@@ -328,13 +338,13 @@ function RecentServerCard({ s, instance }: { s: RecentServer; instance: Instance
   const ping = usePing(s.address);
   const st = ping.data;
   return (
-    <div className="flex min-w-0 items-center gap-3 border border-line bg-surface p-2.5">
-      <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden border border-line bg-surface2">
+    <div className="flex min-w-0 items-center gap-3 rounded-card bg-surface p-2 pr-2.5 transition-colors duration-100 hover:bg-surface2">
+      <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-ctl bg-surface2">
         {st?.favicon ? <img src={st.favicon} alt="" className="h-full w-full [image-rendering:pixelated]" /> : <Server size={18} className="text-dim" />}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate font-mono text-[13px] font-semibold text-white">{s.address}</span>
+          <span className="truncate font-mono text-[13px] font-semibold text-text">{s.address}</span>
           <PingBars status={st} />
         </div>
         <div className="truncate text-[12px] text-muted">
@@ -371,7 +381,7 @@ function RecentServers() {
   return (
     <section>
       <SectionHead title={t("home.recent_servers")} />
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2">
         {rows.map(({ s, i }) => (
           <RecentServerCard key={s.address} s={s} instance={i!} />
         ))}
@@ -391,7 +401,7 @@ function RecentShots() {
       <SectionHead
         title={t("home.recent_shots")}
         link={
-          <Link to="/screenshots" className="group flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-muted hover:text-white">
+          <Link to="/screenshots" className="group flex shrink-0 items-center gap-0.5 text-[12.5px] font-medium text-muted hover:text-text">
             {t("home.all_shots")}
             <ChevronRight size={15} className="transition-transform duration-150 group-hover:translate-x-0.5" />
           </Link>
@@ -405,7 +415,7 @@ function RecentShots() {
               openShot(s.path);
               nav({ to: "/screenshots", search: {} });
             }}
-            className="group relative aspect-video overflow-hidden border border-line transition-colors hover:border-line2"
+            className="group relative aspect-video overflow-hidden rounded-card bg-surface transition-[filter,box-shadow] duration-150 hover:shadow-[0_0_0_2px_rgb(255_255_255/.25)] hover:brightness-110"
             title={`${s.file_name} · ${formatRelative(s.taken_at)}`}
           >
             <ShotThumb path={s.path} className="absolute inset-0" />
@@ -421,10 +431,10 @@ function RecentShots() {
 function EmptyStart() {
   const t = useT();
   return (
-    <section className="flex items-center gap-5 border border-line bg-surface p-5">
+    <section className="flex items-center gap-5 rounded-panel bg-surface p-5">
       <Logo3D size={88} />
       <div className="min-w-0 flex-1">
-        <div className="text-[16px] font-bold text-white">{t("home.empty.title")}</div>
+        <div className="text-title text-text">{t("home.empty.title")}</div>
         <p className="mt-1 max-w-[520px] text-[13px] text-muted">{t("home.empty.text")}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant="primary" icon={<Plus size={16} />} onClick={openNewInstance}>
@@ -504,17 +514,17 @@ export function HomePage() {
 
   return (
     <div className="scroll h-full">
-      <div className="flex flex-col gap-6 px-6 pb-10 pt-5">
+      <div className="mx-auto flex max-w-[1180px] flex-col gap-5 px-6 pb-10 pt-5">
         <header className="flex items-center gap-3">
-          <Logo3D size={40} />
+          <Logo3D size={34} />
           <div className="min-w-0 flex-1">
-            <h1 className="display truncate text-[20px]">{active ? t("home.welcome_name", { name: active.username }) : t("home.welcome")}</h1>
+            <h1 className="truncate text-title text-text">{active ? t("home.welcome_name", { name: active.username }) : t("home.welcome")}</h1>
             {list.length > 0 && (
-              <p className="text-[13px] text-muted">
+              <p className="text-meta text-muted">
                 {t("home.summary", { n: list.length })}
                 {totalTime >= 60 && ` · ${t("inst.meta.played", { time: formatDuration(totalTime) })}`}
                 {" · "}
-                <Link to="/stats" className="text-muted underline decoration-line2 underline-offset-2 hover:text-white">
+                <Link to="/stats" className="text-muted underline decoration-line2 underline-offset-2 hover:text-text">
                   {t("home.week", { time: week.data && week.data >= 60 ? formatDuration(week.data) : "0 min" })}
                 </Link>
               </p>
@@ -522,10 +532,10 @@ export function HomePage() {
           </div>
           {list.length > 0 && (
             <>
-              <Button icon={<PackageOpen size={15} />} onClick={() => openImport()}>
+              <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={() => openImport()}>
                 {t("home.action.import")}
               </Button>
-              <Button variant="primary" icon={<Plus size={16} />} onClick={openNewInstance}>
+              <Button size="sm" icon={<Plus size={15} />} onClick={openNewInstance}>
                 {t("inst.new")}
               </Button>
             </>
@@ -533,7 +543,7 @@ export function HomePage() {
         </header>
 
         {isLoading && !data ? (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5">
             <Skeleton className="h-[170px]" />
             <Skeleton className="mx-auto h-[82px] w-[680px]" />
           </div>

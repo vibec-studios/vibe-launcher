@@ -54,9 +54,7 @@ export function Toaster() {
         <div
           key={t.id}
           className={cn(
-            "pointer-events-auto flex gap-3 border border-line2 bg-[#07070a] px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,.6)] animate-slide-up",
-            "border-l-[3px]",
-            t.tone === "error" ? "border-l-danger" : t.tone === "success" ? "border-l-ok" : "border-l-accent",
+            "glass pointer-events-auto flex gap-3 rounded-card bg-overlay px-4 py-3 shadow-e2 animate-slide-up",
           )}
         >
           <span className="mt-0.5">
@@ -67,7 +65,7 @@ export function Toaster() {
             {t.text && <div className="selectable mt-0.5 break-words text-[12px] text-muted">{t.text}</div>}
             {t.action && (
               <button
-                className="mt-2 font-mono text-[11px] uppercase tracking-[.1em] text-accent hover:brightness-125"
+                className="mt-1.5 text-[12.5px] font-semibold text-accent hover:brightness-125"
                 onClick={() => {
                   t.action!.onClick();
                   dismiss(t.id);
@@ -77,7 +75,7 @@ export function Toaster() {
               </button>
             )}
           </div>
-          <button aria-label="Schließen" className="self-start text-dim hover:text-white" onClick={() => dismiss(t.id)}>
+          <button aria-label="Schließen" className="self-start text-dim hover:text-text" onClick={() => dismiss(t.id)}>
             <X size={14} />
           </button>
         </div>

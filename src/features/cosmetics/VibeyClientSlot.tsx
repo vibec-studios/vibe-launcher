@@ -97,16 +97,16 @@ export function VibeyClientSlot({ instance, className }: { instance: Instance; c
 
   const canToggle = !!s && !busy && !running && (s.enabled || (!disabledReason && s.supported !== false));
   return (
-    <div className={cn("flex items-center gap-3.5 border border-brand/25 bg-[linear-gradient(90deg,rgba(139,108,255,.12),rgba(139,108,255,.03)_55%,transparent)] px-4 py-3", className)}>
-      <div className="grid h-10 w-10 shrink-0 place-items-center border border-brand/40 bg-brand/15 text-brand">
-        <Sparkles size={18} />
+    <div className={cn("flex min-h-11 items-center gap-3 rounded-card bg-[linear-gradient(90deg,color-mix(in_srgb,var(--ui-accent)_13%,transparent),color-mix(in_srgb,var(--ui-accent)_3%,transparent)_60%,transparent)] py-1.5 pl-2 pr-3", className)}>
+      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-ctl bg-brand/15 text-brand">
+        <Sparkles size={16} />
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-[14px] font-semibold text-white">Vibey Client</span>
-          {s?.enabled && s.present && <span className="border border-brand/40 bg-brand/15 px-1.5 text-[10px] font-semibold uppercase tracking-wider text-brand">{t("vc.managed")}</span>}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-[13.5px] font-semibold text-text">Vibey Client</span>
+          {s?.enabled && s.present && <span className="rounded-pill bg-brand/15 px-1.5 text-[10.5px] font-semibold text-brand">{t("vc.managed")}</span>}
         </div>
-        <div className={cn("mt-0.5 flex items-center gap-1.5 truncate text-[12px]", tone === "warn" ? "text-warn" : tone === "ok" ? "text-muted" : "text-dim")}>
+        <div className={cn("flex min-w-0 items-center gap-1.5 truncate text-[12.5px]", tone === "warn" ? "text-warn" : tone === "ok" ? "text-muted" : "text-dim")}>
           {tone === "warn" && <AlertTriangle size={12} className="shrink-0" />}
           {s?.update_available && <ArrowUpCircle size={12} className="shrink-0 text-brand" />}
           <span className="truncate">{line}</span>

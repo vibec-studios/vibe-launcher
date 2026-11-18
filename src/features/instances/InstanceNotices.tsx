@@ -29,8 +29,8 @@ const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElemen
     <button
       ref={ref}
       className={cn(
-        "flex h-8 shrink-0 items-center gap-1.5 px-2 text-[12.5px] font-medium transition-colors duration-100",
-        "hover:bg-white/[.05] hover:text-white data-[state=open]:bg-white/[.06] data-[state=open]:text-white",
+        "flex h-7 shrink-0 items-center gap-1.5 rounded-ctl px-2 text-[12.5px] font-medium transition-colors duration-100",
+        "hover:bg-white/[.06] hover:text-text data-[state=open]:bg-white/[.07] data-[state=open]:text-text",
         tone === "danger" ? "text-text" : "text-muted",
         className,
       )}
@@ -54,7 +54,7 @@ function PopoverChip({ chip, children, width = 460 }: { chip: ReactNode; childre
           sideOffset={8}
           collisionPadding={12}
           style={{ width }}
-          className="z-[60] border border-line2 bg-[#07070a] shadow-[0_16px_40px_rgba(0,0,0,.65)] outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="glass z-[60] overflow-hidden rounded-card bg-overlay shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           {children(() => setOpen(false))}
         </Popover.Content>

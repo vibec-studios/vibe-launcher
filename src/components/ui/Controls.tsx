@@ -7,7 +7,7 @@ import { cn } from "./cn";
 import { Button } from "./Button";
 import { t } from "@/i18n";
 
-/** Eckige Checkbox (Akzentfarbe). */
+/** Checkbox (Akzentfarbe). */
 export function Checkbox({
   checked,
   onChange,
@@ -30,8 +30,8 @@ export function Checkbox({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        "grid h-[18px] w-[18px] shrink-0 place-items-center border transition-colors duration-100 disabled:opacity-45",
-        checked ? "border-accent bg-accent text-[var(--on-accent)]" : "border-line2 hover:border-white/40",
+        "grid h-[18px] w-[18px] shrink-0 place-items-center rounded-xs border transition-colors duration-100 disabled:opacity-45",
+        checked ? "border-accent bg-accent text-[var(--on-accent)]" : "border-white/20 hover:border-white/40",
         className,
       )}
     >
@@ -47,9 +47,9 @@ export function Switch({ checked, onChange, disabled, label }: { checked: boolea
       onCheckedChange={onChange}
       disabled={disabled}
       aria-label={label}
-      className="relative h-5 w-9 shrink-0 border border-line2 bg-surface transition-colors duration-150 data-[state=checked]:border-accent data-[state=checked]:bg-accent disabled:opacity-45"
+      className="relative h-5 w-9 shrink-0 rounded-pill bg-white/[.12] transition-colors duration-150 hover:bg-white/[.17] data-[state=checked]:bg-accent disabled:opacity-45"
     >
-      <Sw.Thumb className="block h-3 w-3 translate-x-[3px] bg-muted transition-transform duration-150 data-[state=checked]:translate-x-[19px] data-[state=checked]:bg-white" />
+      <Sw.Thumb className="block h-3.5 w-3.5 translate-x-[3px] rounded-pill bg-white/75 shadow-e1 transition-transform duration-150 data-[state=checked]:translate-x-[18px] data-[state=checked]:bg-white" />
     </Sw.Root>
   );
 }
@@ -81,10 +81,10 @@ export function Slider({
       onValueChange={(v) => onChange(v[0])}
       className={cn("relative flex h-5 w-full touch-none select-none items-center", className)}
     >
-      <Sl.Track className="relative h-1 grow bg-white/10">
+      <Sl.Track className="relative h-1 grow overflow-hidden rounded-pill bg-white/[.12]">
         <Sl.Range className="absolute h-full bg-accent" />
       </Sl.Track>
-      <Sl.Thumb className="block h-4 w-4 border-2 border-accent bg-black outline-none transition-transform duration-100 hover:scale-110 focus-visible:scale-110" />
+      <Sl.Thumb className="block h-4 w-4 rounded-pill bg-white shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_45%,transparent),0_1px_3px_rgb(0_0_0/.5)] outline-none transition-transform duration-100 hover:scale-110 focus-visible:scale-110" />
     </Sl.Root>
   );
 }
@@ -93,7 +93,7 @@ export function Slider({
 export function Progress({ value, className, tone = "accent" }: { value: number | null; className?: string; tone?: "accent" | "danger" | "ok" }) {
   const color = tone === "danger" ? "bg-danger" : tone === "ok" ? "bg-ok" : "bg-accent";
   return (
-    <div className={cn("relative h-1 w-full overflow-hidden bg-white/[.08]", className)} role="progressbar" aria-valuenow={value ?? undefined}>
+    <div className={cn("relative h-1 w-full overflow-hidden rounded-pill bg-white/[.08]", className)} role="progressbar" aria-valuenow={value ?? undefined}>
       {value === null ? (
         <div className={cn("absolute inset-y-0 w-2/5", color)} style={{ animation: "indeterminate 1.1s var(--ease-snap) infinite" }} />
       ) : (
@@ -109,9 +109,9 @@ export function Chip({ children, active, onClick, className }: { children: React
     <Tag
       onClick={onClick}
       className={cn(
-        "inline-flex h-7 items-center gap-1.5 border px-2.5 text-[12px] font-medium transition-colors duration-150",
-        active ? "border-accent bg-accent text-[var(--on-accent)]" : "border-line2 text-text",
-        onClick && !active && "hover:border-accent",
+        "inline-flex h-7 items-center gap-1.5 rounded-pill px-2.5 text-[12px] font-medium transition-colors duration-150",
+        active ? "bg-accent text-[var(--on-accent)]" : "bg-white/[.06] text-text",
+        onClick && !active && "hover:bg-white/[.1]",
         className,
       )}
     >
@@ -124,8 +124,8 @@ export function Chip({ children, active, onClick, className }: { children: React
 export function Tag({ children, className, color }: { children: ReactNode; className?: string; color?: string }) {
   return (
     <span
-      className={cn("inline-flex h-5 items-center gap-1 border border-line2 px-1.5 font-mono text-[10px] uppercase tracking-[.08em] text-muted", className)}
-      style={color ? { color, borderColor: `color-mix(in srgb, ${color} 45%, transparent)` } : undefined}
+      className={cn("inline-flex h-5 items-center gap-1 rounded-xs bg-white/[.06] px-1.5 font-mono text-[10px] uppercase tracking-[.06em] text-muted", className)}
+      style={color ? { color, background: `color-mix(in srgb, ${color} 14%, transparent)` } : undefined}
     >
       {children}
     </span>
@@ -162,13 +162,12 @@ export function ErrorState({ error, onRetry, className }: { error: unknown; onRe
   );
 }
 
-/** Abschnitt mit Mono-Überschrift. */
+/** Abschnitt mit ruhiger Überschrift (ohne Trennlinie). */
 export function Section({ title, right, children, className }: { title: ReactNode; right?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn("flex flex-col gap-3", className)}>
-      <div className="flex items-center gap-3">
-        <h3 className="text-[14px] font-semibold text-white">{title}</h3>
-        <div className="h-px flex-1 bg-line" />
+    <section className={cn("flex flex-col gap-2.5", className)}>
+      <div className="flex min-h-6 items-center gap-3">
+        <h3 className="flex-1 text-section text-text">{title}</h3>
         {right}
       </div>
       {children}

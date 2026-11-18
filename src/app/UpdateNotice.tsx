@@ -85,7 +85,7 @@ export function UpdateButton() {
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <button className="flex h-8 items-center gap-2 bg-brand px-3 text-[13px] font-semibold text-white transition-[filter] duration-150 hover:brightness-110">
+        <button className="flex h-8 items-center gap-2 rounded-ctl bg-brand px-3 text-[13px] font-semibold text-[var(--ui-on-accent)] transition-[filter] duration-150 hover:brightness-110">
           <ArrowDownToLine size={15} />
           {running ? tt("update.installing_short") : tt("update.available_short")}
         </button>
@@ -95,7 +95,7 @@ export function UpdateButton() {
           align="end"
           sideOffset={8}
           collisionPadding={8}
-          className="z-[60] w-[360px] border border-line2 bg-[#07070a] shadow-[0_16px_40px_rgba(0,0,0,.65)] data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="glass z-[60] w-[360px] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           <div className="border-b border-line px-4 py-3">
             <div className="text-[15px] font-semibold text-white">{tt("update.title", { version: info.version })}</div>

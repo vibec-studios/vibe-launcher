@@ -89,8 +89,8 @@ export function SelectBox({ state, onClick, label }: { state: "on" | "off" | "mi
       onClick={onClick}
       onDoubleClick={(e) => e.stopPropagation()}
       className={cn(
-        "grid h-[18px] w-[18px] place-items-center border transition-colors duration-100",
-        state === "off" ? "border-line2 hover:border-white/40" : "border-accent bg-accent text-[var(--on-accent)]",
+        "grid h-[18px] w-[18px] place-items-center rounded-xs border transition-colors duration-100",
+        state === "off" ? "border-white/20 hover:border-white/40" : "border-accent bg-accent text-[var(--on-accent)]",
       )}
     >
       {state === "on" ? <Check size={12} strokeWidth={3} /> : state === "mixed" ? <span className="h-0.5 w-2 bg-current" /> : null}
@@ -127,7 +127,7 @@ export const ContentRow = memo(function ContentRow({
         className={cn(
           GRID,
           "h-full border-b border-line transition-colors duration-100",
-          selected ? "bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]" : "hover:bg-white/[.025]",
+          selected ? "bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]" : "hover:bg-white/[.03]",
         )}
       >
         <SelectBox
@@ -142,7 +142,7 @@ export const ContentRow = memo(function ContentRow({
           <ProjectIcon src={item.icon} size={34} className={cn(!item.enabled && "grayscale")} />
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="truncate text-[14px] font-semibold text-white">{item.name}</span>
+              <span className="truncate text-[13.5px] font-semibold text-text">{item.name}</span>
               {item.kind === "mod" && item.side !== "unknown" && <SideTag side={item.side} />}
             </div>
             <div className="truncate text-[12px] text-dim">{sub}</div>
@@ -178,7 +178,7 @@ export const ContentRow = memo(function ContentRow({
             trigger={
               <button
                 aria-label={t("common.more")}
-                className="grid h-8 w-8 place-items-center text-dim transition-colors duration-100 hover:bg-white/[.06] hover:text-white data-[state=open]:bg-white/[.06] data-[state=open]:text-white"
+                className="grid h-8 w-8 place-items-center rounded-ctl text-dim transition-colors duration-100 hover:bg-white/[.06] hover:text-text data-[state=open]:bg-white/[.06] data-[state=open]:text-text"
               >
                 <MoreVertical size={16} />
               </button>

@@ -1,5 +1,12 @@
-/* Vibe Launcher · Look der Vibe-Craft-Website: tiefes Schwarz, Pixel-Überschriften (Silkscreen),
-   ruhige Sans (Inter), Mono-Etiketten (JetBrains Mono), eckige Kanten, feine Linien, Akzent je Instanz. */
+/* Vibe Launcher · Design-System
+   Alle Farben, Radien, Abstände und Schatten sind CSS-Variablen. Die Darstellungs-Einstellungen
+   (src/lib/appearance.ts) setzen nur Attribute/Variablen an <html>:
+     data-tone="dark|darker|oled"   Hintergrundstufen
+     data-radius="square|slight|round"
+     data-density="normal|compact"  skaliert die Tailwind-Abstands-Skala
+     data-bg="on"                   Hintergrundbild/-animation aktiv -> Flächen halbtransparent
+     --ui-accent / --ui-on-accent   globale Akzentfarbe
+   Grundsatz: Ebenen über Helligkeit (Elevation) statt Rahmen. Linien nur, wo sie trennen müssen. */
 @import "tailwindcss";
 
 @import "@fontsource/inter/400.css";
@@ -12,24 +19,48 @@
 @import "@fontsource/silkscreen/400.css";
 @import "@fontsource/silkscreen/700.css";
 
-/* Akzent pro Container überschreibbar (style={{"--accent": …}}) – daher inline statt aufgelöst */
+/* ------------------------------------------------------------------ Tailwind-Theme -> Laufzeit-Variablen
+   `inline`: Utilities lesen die Variable direkt, damit Einstellungen und lokale Akzente (style={{"--accent"}})
+   ohne Neuberechnung greifen. */
 @theme inline {
+  /* Akzent: global (Einstellung) bzw. pro Container überschreibbar (Instanzfarbe) */
   --color-accent: var(--accent);
+  --color-brand: var(--ui-accent);
+
+  /* Flächen, von hinten nach vorn */
+  --color-bg: var(--frame);         /* Fensterrahmen: Seitenleiste + Titelleiste */
+  --color-panel: var(--canvas);     /* Inhaltsfläche */
+  --color-surface: var(--surface-1); /* Karten, Gruppen */
+  --color-surface2: var(--surface-2); /* angehoben / Hover / Sekundär-Knopf */
+  --color-surface3: var(--surface-3); /* aktiv / gedrückt */
+  --color-overlay: var(--overlay);  /* Menüs, Dialoge, Toasts */
+  --color-field: var(--field);      /* Eingabefelder */
+  --color-line: var(--line-1);
+  --color-line2: var(--line-2);
+
+  /* Text */
+  --color-text: var(--text-1);
+  --color-muted: var(--text-2);
+  --color-dim: var(--text-3);
+
+  /* Ecken (Einstellung „Ecken“) */
+  --radius-dot: var(--r-dot);     /* Status-Punkte */
+  --radius-xs: var(--r-xs);       /* Etiketten, Checkboxen */
+  --radius-ctl: var(--r-ctl);     /* Knöpfe, Felder, Menüeinträge */
+  --radius-card: var(--r-card);   /* Karten, Menüs, Icons */
+  --radius-panel: var(--r-panel); /* Dialoge, große Flächen */
+  --radius-pill: var(--r-pill);   /* Schalter, Badges */
+
+  /* Dichte: die ganze Abstands-Skala (p-, m-, gap-, h-, w- …) */
+  --spacing: var(--ui-spacing);
+
+  /* Elevation */
+  --shadow-e1: var(--sh-1);
+  --shadow-e2: var(--sh-2);
+  --shadow-e3: var(--sh-3);
 }
 
 @theme {
-  --color-bg: #000;
-  --color-surface: #0b0b0e;
-  --color-surface2: #121217;
-  --color-surface3: #18181f;
-  /* Inhaltsfläche der App (heller als die schwarze Leiste) */
-  --color-panel: #08080b;
-  --color-line: rgba(255, 255, 255, 0.09);
-  --color-line2: rgba(255, 255, 255, 0.16);
-  --color-text: #f4f4f5;
-  --color-muted: #a1a1aa;
-  --color-dim: #6b6b75;
-  --color-brand: #8b6cff;
   --color-brand2: #3fe0c5;
   --color-danger: #ff5470;
   --color-warn: #ffb547;
@@ -39,7 +70,25 @@
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
 
-  /* Eckig wie die Website */
+  /* Typo-Skala: wenige, klar getrennte Stufen */
+  --text-hero: 24px;
+  --text-hero--line-height: 1.15;
+  --text-hero--font-weight: 700;
+  --text-hero--letter-spacing: -0.02em;
+  --text-title: 18px;
+  --text-title--line-height: 1.25;
+  --text-title--font-weight: 700;
+  --text-title--letter-spacing: -0.01em;
+  --text-section: 13px;
+  --text-section--line-height: 1.4;
+  --text-section--font-weight: 600;
+  --text-body: 13.5px;
+  --text-body--line-height: 1.45;
+  --text-meta: 12.5px;
+  --text-meta--line-height: 1.4;
+  --text-caption: 11px;
+  --text-caption--line-height: 1.35;
+
   --radius-none: 0;
 
   --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -56,15 +105,107 @@
 @keyframes vl-pixel { 0%, 24% { opacity: 1; } 25%, 100% { opacity: .25; } }
 @keyframes indeterminate { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
 
+/* ------------------------------------------------------------------ Laufzeit-Variablen */
+
 :root {
-  --accent: #8b6cff;
-  --on-accent: #fff;
-  --titlebar-h: 40px;
-  --sidebar-w: 232px;
+  color-scheme: dark;
+
+  /* Akzent */
+  --ui-accent: #8b6cff;
+  --ui-on-accent: #fff;
+  --accent: var(--ui-accent);
+  --on-accent: var(--ui-on-accent);
+
+  /* Ton „dunkel“ (Standard) */
+  --tone-frame: #0a0a0d;
+  --tone-canvas: #101014;
+  --tone-s1: #17171c;
+  --tone-s2: #1e1e24;
+  --tone-s3: #26262d;
+  --tone-overlay: #16161b;
+
+  /* Deckkraft der Flächen; mit Hintergrundbild kleiner (siehe [data-bg]) */
+  --a-frame: 100%;
+  --a-canvas: 100%;
+  --a-surface: 100%;
+  --a-overlay: 100%;
+
+  --frame: color-mix(in srgb, var(--tone-frame) var(--a-frame), transparent);
+  --canvas: color-mix(in srgb, var(--tone-canvas) var(--a-canvas), transparent);
+  --surface-1: color-mix(in srgb, var(--tone-s1) var(--a-surface), transparent);
+  --surface-2: color-mix(in srgb, var(--tone-s2) var(--a-surface), transparent);
+  --surface-3: color-mix(in srgb, var(--tone-s3) var(--a-surface), transparent);
+  --overlay: color-mix(in srgb, var(--tone-overlay) var(--a-overlay), transparent);
+  --field: rgb(255 255 255 / 0.045);
+  --line-1: rgb(255 255 255 / 0.065);
+  --line-2: rgb(255 255 255 / 0.11);
+
+  --text-1: #f4f4f6;
+  --text-2: #a3a3ad;
+  --text-3: #6d6d78;
+
+  /* Ecken: Grundwert + abgeleitete Stufen */
+  --r: 4px;
+  --r-dot: 999px;
+  --r-xs: calc(var(--r) * 0.5);
+  --r-ctl: var(--r);
+  --r-card: calc(var(--r) * 1.5);
+  --r-panel: calc(var(--r) * 2);
+  --r-pill: calc(var(--r) * 0.75);
+
+  /* Dichte */
+  --ui-spacing: 0.25rem;
+  --titlebar-h: 44px;
+  --rail-w: 60px;
+
+  /* Elevation: Schatten + Haarlinie als Ring (statt Rahmen) */
+  --sh-1: 0 1px 2px rgb(0 0 0 / 0.35);
+  --sh-2: 0 0 0 1px rgb(255 255 255 / 0.07), 0 12px 32px -8px rgb(0 0 0 / 0.6);
+  --sh-3: 0 0 0 1px rgb(255 255 255 / 0.08), 0 28px 72px -16px rgb(0 0 0 / 0.75);
+
+  /* Hintergrund (Abdunklung/Unschärfe) */
+  --bg-dim: 0.45;
+  --bg-blur: 0px;
+
   --tt-bg: rgba(16, 0, 16, 0.94);
   --tt-b1: #5000ff;
   --tt-b2: #28007f;
-  color-scheme: dark;
+}
+
+:root[data-tone="darker"] {
+  --tone-frame: #040405;
+  --tone-canvas: #09090b;
+  --tone-s1: #111114;
+  --tone-s2: #17171b;
+  --tone-s3: #1f1f24;
+  --tone-overlay: #0f0f12;
+}
+:root[data-tone="oled"] {
+  --tone-frame: #000;
+  --tone-canvas: #000;
+  --tone-s1: #0d0d0f;
+  --tone-s2: #141417;
+  --tone-s3: #1c1c20;
+  --tone-overlay: #0c0c0e;
+  --line-1: rgb(255 255 255 / 0.08);
+}
+
+:root[data-radius="square"] { --r: 0px; --r-dot: 0px; --r-pill: 0px; }
+:root[data-radius="round"] { --r: 9px; --r-pill: 999px; --r-xs: 5px; }
+
+:root[data-density="compact"] {
+  --ui-spacing: 0.22rem;
+  --titlebar-h: 40px;
+  --rail-w: 54px;
+}
+
+/* Hintergrundbild/-animation: Flächen werden halbtransparent, Überlagerungen bekommen Unschärfe */
+:root[data-bg="on"] {
+  --a-frame: 62%;
+  --a-canvas: 0%;
+  --a-surface: 74%;
+  --a-overlay: 88%;
+  --field: rgb(255 255 255 / 0.06);
 }
 
 /* ------------------------------------------------------------------ Grundregeln der App-Shell */
@@ -78,9 +219,11 @@ html, body, #root {
   overscroll-behavior: none;   /* Kein Gummiband / Überscrollen */
 }
 
+/* Grundfarbe am <html>: <body> bleibt durchsichtig, sonst verdeckt es den Hintergrund (z-index -1) */
+html { background: var(--tone-frame); }
 body {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: transparent;
+  color: var(--text-1);
   font: 14px/1.5 var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -106,10 +249,10 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 
 @layer base {
   :focus { outline: none; }
-  :focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+  :focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 1px; }
 }
 
-/* Scrollbereiche: schlanke, eckige Scrollbars, kein Smooth-Scroll, kein Überscroll-Weiterreichen */
+/* Scrollbereiche: schlanke Scrollbars, kein Smooth-Scroll, kein Überscroll-Weiterreichen */
 .scroll {
   overflow-y: auto;
   overflow-x: hidden;
@@ -120,20 +263,19 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 .scroll-x { overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border: 3px solid transparent; background-clip: padding-box; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.24); border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border: 3px solid transparent; background-clip: padding-box; border-radius: var(--r-pill); }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); border: 3px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-corner { background: transparent; }
 
 /* ------------------------------------------------------------------ Typo-Bausteine */
 
-/* App-Typo (Modrinth-App-artig): Inter für Überschriften, normale Schreibweise.
-   Silkscreen nur noch für die Wortmarke (.brand). */
+/* Überschriften: Inter fett. Silkscreen nur für die Wortmarke (.brand). */
 .display {
   font-family: var(--font-sans);
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.2;
-  color: #fff;
+  color: var(--text-1);
 }
 .brand {
   font-family: var(--font-display);
@@ -141,20 +283,23 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
-/* Kleine Abschnitts-Überschrift */
+/* Kleine Abschnitts-/Feld-Überschrift */
 .label {
   font: 600 12px/1.4 var(--font-sans);
-  color: var(--color-muted);
+  color: var(--text-2);
 }
 /* Veraltet (Landing-Page-Stil) – nicht mehr verwenden */
 .eyebrow {
   font: 600 12px/1.4 var(--font-sans);
-  color: var(--color-muted);
+  color: var(--text-2);
 }
 
 /* Fenster-Drag-Bereich der eigenen Titelleiste */
 .drag { -webkit-app-region: drag; app-region: drag; }
 .no-drag { -webkit-app-region: no-drag; app-region: no-drag; }
+
+/* Überlagerungen (Menüs, Dialoge) über einem Hintergrundbild: Milchglas */
+:root[data-bg="on"] .glass { backdrop-filter: blur(18px) saturate(1.2); }
 
 /* Minecraft-Tooltip (wie .mc-tooltip der Website) */
 .mc-tooltip {
@@ -169,6 +314,7 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
   background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 37%, rgba(255,255,255,.04) 63%);
   background-size: 200% 100%;
   animation: var(--animate-shimmer);
+  border-radius: var(--r-ctl);
 }
 
 /* Weniger Bewegung: System-Einstellung oder Launcher-Einstellung */

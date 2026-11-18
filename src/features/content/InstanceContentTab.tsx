@@ -349,7 +349,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
     <div className="@container flex h-full min-h-0 flex-col outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
       {/* Werkzeugleiste: links Finden (Suche, Status, Seite, Sortierung), rechts Sets und seltene Werkzeuge */}
       {!empty && (
-        <div className="flex h-14 shrink-0 items-center gap-2 px-6">
+        <div className="flex h-13 shrink-0 items-center gap-2 px-6">
           <SearchInput value={text} onChange={setText} placeholder={t(`content.search.${kind}`)} className="min-w-[120px] max-w-[260px] flex-1" />
           <div className="w-[130px] shrink-0 @min-[1100px]:w-[150px]">
             <Select<ContentFilter>
@@ -425,7 +425,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
 
       {/* Tabellenkopf bzw. Auswahlleiste (gleiche Höhe -> kein Springen) */}
       {!empty && (
-        <div className={cn(GRID, "h-10 shrink-0 border-y border-line bg-surface text-[12.5px] font-medium text-muted")}>
+        <div className={cn(GRID, "h-9 shrink-0 border-b border-line text-[12px] font-medium text-dim")}>
           <SelectBox
             state={headState}
             label={t("common.select_all")}
@@ -433,7 +433,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
           />
           {selection.size > 0 ? (
             <div className="col-span-3 flex min-w-0 items-center gap-0.5 animate-fade-in">
-              <span className="mr-2 text-[13px] font-semibold text-white">{t("content.selected", { n: selection.size })}</span>
+              <span className="mr-2 text-[13px] font-semibold text-text">{t("content.selected", { n: selection.size })}</span>
               <BarButton icon={<Power size={14} />} onClick={() => setEnabled(selItems, true)} disabled={!selItems.some((c) => !c.enabled)}>
                 {t("content.menu.enable")}
               </BarButton>
@@ -556,7 +556,7 @@ function BarButton({ icon, children, onClick, disabled, danger }: { icon: React.
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex h-7 items-center gap-1.5 px-2 text-[13px] font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-35",
+        "flex h-7 items-center gap-1.5 rounded-ctl px-2 text-[13px] font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-35",
         danger ? "text-danger hover:bg-danger/10" : "text-text hover:bg-white/[.07]",
       )}
     >

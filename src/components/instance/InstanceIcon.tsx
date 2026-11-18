@@ -46,11 +46,13 @@ export const InstanceIcon = memo(function InstanceIcon({
   const showImg = src && failed !== src;
   return (
     <div
-      className={cn("relative grid shrink-0 place-items-center overflow-hidden border border-line bg-surface2", className)}
+      className={cn("relative grid shrink-0 place-items-center overflow-hidden bg-surface2", className)}
       style={{
         width: size,
         height: size,
-        background: showImg ? undefined : `radial-gradient(80% 80% at 50% 35%, color-mix(in srgb, ${accent} 22%, #0b0b0e), #0b0b0e)`,
+        // Ecken wachsen mit der Icon-Größe (bei „eckig“ bleibt es 0)
+        borderRadius: `calc(var(--r) * ${Math.max(0.75, Math.min(2.4, size / 36)).toFixed(2)})`,
+        background: showImg ? undefined : `radial-gradient(80% 80% at 50% 30%, color-mix(in srgb, ${accent} 26%, #141419), #0d0d11)`,
       }}
     >
       {showImg ? (

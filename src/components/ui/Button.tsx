@@ -12,24 +12,26 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: ReactNode;
 }
 
+// Hierarchie: primary/accent = Hauptaktion (gefüllt, Farbe) · ghost = Sekundär (gefüllte Fläche, ohne Rahmen)
+// · outline = selten, mit Haarlinie · subtle = nur Text · danger = rot getönt.
 const variants: Record<ButtonVariant, string> = {
-  // Lila Markenfläche
-  primary: "bg-brand text-white border-transparent hover:brightness-110",
+  // Globale Akzentfarbe (Einstellung „Akzentfarbe“)
+  primary: "border-transparent bg-brand text-[var(--ui-on-accent)] hover:brightness-110 shadow-e1",
   // Akzent der aktuellen Instanz
-  accent: "bg-accent text-[var(--on-accent)] border-transparent hover:brightness-110",
-  ghost: "bg-surface2 text-text border-line hover:bg-surface3 hover:border-line2",
-  outline: "bg-transparent text-text border-line2 hover:border-accent",
-  subtle: "bg-transparent text-muted border-transparent hover:text-white hover:bg-white/5",
-  danger: "bg-transparent text-danger border-danger/40 hover:bg-danger hover:text-black hover:border-danger",
+  accent: "border-transparent bg-accent text-[var(--on-accent)] hover:brightness-110 shadow-e1",
+  ghost: "border-transparent bg-surface2 text-text hover:bg-surface3",
+  outline: "bg-transparent text-text border-line2 hover:border-white/25 hover:bg-white/[.04]",
+  subtle: "border-transparent bg-transparent text-muted hover:text-text hover:bg-white/[.06]",
+  danger: "border-transparent bg-danger/12 text-danger hover:bg-danger hover:text-black",
 };
 
 const sizes: Record<ButtonSize, string> = {
   sm: "h-8 px-3 text-[13px] gap-1.5",
-  md: "h-9 px-4 text-[14px] gap-2",
+  md: "h-9 px-4 text-[13.5px] gap-2",
   lg: "h-11 px-6 text-[15px] gap-2.5",
 };
 
-/** Knopf im Website-Stil: Mono, Großbuchstaben, eckig. */
+/** Knopf. Ecken folgen der Einstellung (rounded-ctl). */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { variant = "ghost", size = "md", loading, icon, className, children, disabled, ...rest },
   ref,
@@ -39,7 +41,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center border font-sans font-semibold whitespace-nowrap",
+        "inline-flex shrink-0 items-center justify-center rounded-ctl border font-sans font-semibold whitespace-nowrap",
         "transition-[background-color,color,border-color,filter,transform] duration-150 active:translate-y-px",
         "disabled:opacity-45 disabled:pointer-events-none",
         variants[variant],
@@ -58,11 +60,13 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   label: string;
   size?: "sm" | "md";
   active?: boolean;
+  /** filled = Fläche (Standard), ghost = nur Symbol, Fläche beim Hover */
+  variant?: "filled" | "ghost";
 }
 
 /** Quadratischer Symbol-Knopf. `label` wird als aria-label und title genutzt. */
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { label, size = "md", active, className, children, ...rest },
+  { label, size = "md", active, variant = "filled", className, children, ...rest },
   ref,
 ) {
   return (
@@ -71,8 +75,12 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-label={label}
       aria-pressed={active}
       className={cn(
-        "inline-grid shrink-0 place-items-center border text-text transition-colors duration-150",
-        active ? "border-line2 bg-surface3 text-white" : "border-line bg-surface2 text-muted hover:bg-surface3 hover:text-white",
+        "inline-grid shrink-0 place-items-center rounded-ctl border border-transparent transition-colors duration-150",
+        active
+          ? "bg-surface3 text-text"
+          : variant === "ghost"
+            ? "bg-transparent text-muted hover:bg-white/[.07] hover:text-text"
+            : "bg-surface2 text-muted hover:bg-surface3 hover:text-text",
         "disabled:opacity-45 disabled:pointer-events-none",
         size === "sm" ? "h-8 w-8" : "h-9 w-9",
         className,

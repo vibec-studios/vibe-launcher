@@ -41,7 +41,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
   const top = diag.data?.[0];
   if (!key || dismissed === key) return null;
   return (
-    <div className="shrink-0 border-b border-danger/30 bg-danger/[.08] animate-fade-in">
+    <div className="shrink-0 bg-danger/[.08] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-danger)_25%,transparent)] animate-fade-in">
       <div className={cn(wrap, "flex items-center gap-3 py-2.5")}>
         <AlertTriangle size={18} className="shrink-0 text-danger" />
         <div className="min-w-0 flex-1">
@@ -83,7 +83,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
         </IconButton>
       </div>
       {top && (
-        <div className={cn(wrap, "border-t border-danger/20 py-3")}>
+        <div className={cn(wrap, "pb-3")}>
           <DiagnosisCard d={top} inst={instance} crashReport={crashReport} compact />
         </div>
       )}
@@ -117,11 +117,12 @@ interface SubItem {
   count?: number;
 }
 
+/** Unterseiten als leise Segment-Leiste (zweite Ebene, deutlich schwächer als die Bereichs-Tabs). */
 function SubNav({ items, value, onChange, right }: { items: SubItem[]; value: InstanceTab; onChange: (v: InstanceTab) => void; right?: React.ReactNode }) {
   const t = useT();
   return (
-    <div className={cn(wrap, "flex h-12 shrink-0 items-center gap-1 border-b border-line")}>
-      <div className="flex min-w-0 items-center gap-1" role="tablist" aria-label={t("ipage.sub.label")}>
+    <div className={cn(wrap, "flex h-12 shrink-0 items-center gap-1 pt-1")}>
+      <div className="flex min-w-0 items-center gap-0.5 rounded-ctl bg-field p-0.5" role="tablist" aria-label={t("ipage.sub.label")}>
         {items.map((it) => {
           const active = it.value === value;
           return (
@@ -131,8 +132,8 @@ function SubNav({ items, value, onChange, right }: { items: SubItem[]; value: In
               aria-selected={active}
               onClick={() => onChange(it.value)}
               className={cn(
-                "flex h-8 items-center gap-2 px-3 text-[13px] font-semibold transition-colors duration-100",
-                active ? "bg-surface3 text-white" : "text-muted hover:bg-white/[.04] hover:text-white",
+                "flex h-7 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-2.5 text-[13px] font-semibold transition-colors duration-100",
+                active ? "bg-surface3 text-text shadow-e1" : "text-muted hover:text-text",
               )}
             >
               {it.label}
@@ -228,7 +229,7 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
           <Tabs<Area>
             value={area}
             onChange={openArea}
-            className="-mx-3 h-11! gap-2 border-b-0"
+            className="-mx-3 h-10! gap-1 border-b-0"
             items={[
               { value: "content", label: t("ipage.tab.content") },
               { value: "worlds", label: t("ipage.tab.worlds") },
@@ -249,8 +250,8 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
             area === "content" ? (
               <Button
                 size="sm"
-                variant="accent"
-                icon={<Plus size={15} />}
+                variant="ghost"
+                icon={<Plus size={15} className="text-accent" />}
                 onClick={() => nav({ to: "/discover", search: { instance: inst.id, type: discoverType[active] as never } })}
               >
                 {t("content.add")}
@@ -262,7 +263,7 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
       <div className="relative min-h-0 flex-1">
         {area === "content" ? (
           <div className="flex h-full min-h-0 flex-col">
-            {kind === "mod" && <VibeyClientSlot instance={inst} className="mx-4 mt-3 shrink-0" />}
+            {kind === "mod" && <VibeyClientSlot instance={inst} className="mx-6 mt-1 shrink-0" />}
             <div className="relative min-h-0 flex-1">
               <InstanceContentTab key={active} instance={inst} kind={kind} />
             </div>
