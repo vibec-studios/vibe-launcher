@@ -227,12 +227,15 @@ export async function configure(next: VibeConfig) {
     clearRetry();
     set({ identity: ident.name, scope: ident.scope, unlinked: unlinkedScopes().includes(ident.scope) });
   }
+  // Debug-Offline-Testprofil (VIBE_DEV_OFFLINE_ACCOUNT) nur an einem lokalen Test-Backend automatisch anmelden –
+  // nie am echten Backend (dort gibt es keinen Dev-Bypass, nur fehlschlagende Anmeldeversuche)
+  autoAllowed = !ident.dev || isLoopback(status.api_url);
   const loggedIn = await client.isLoggedIn();
   if (seq !== cfgSeq) return;
   if (!loggedIn) {
     if (get().conn === "logging_in") return;
     // Automatisch verbinden (einmal je Account und Sitzung; Netzwerkfehler -> später erneut)
-    if (!get().unlinked && autoTries < MAX_AUTO_TRIES && !retryTimer) {
+    if (autoAllowed && !get().unlinked && autoTries < MAX_AUTO_TRIES && !retryTimer) {
       void autoLogin();
       return;
     }
@@ -263,6 +266,15 @@ function teardown(conn: Conn) {
 
 const MAX_AUTO_TRIES = 2;
 let autoTries = 0;
+let autoAllowed = true;
+
+function isLoopback(url: string) {
+  try {
+    return ["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 let retryDelay = 30_000;
 
@@ -275,7 +287,7 @@ function clearRetry() {
 /** Automatische Anmeldung, sobald ein Microsoft-Account da ist (kein Klick nötig). */
 async function autoLogin() {
   const c = client;
-  if (!c || get().unlinked || get().conn === "logging_in" || !cfg.enabled) return;
+  if (!c || !autoAllowed || get().unlinked || get().conn === "logging_in" || !cfg.enabled) return;
   autoTries++;
   try {
     await login();

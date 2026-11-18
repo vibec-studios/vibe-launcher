@@ -289,7 +289,7 @@ function SelectedPanel({ instance: i }: { instance: Instance }) {
                     {t("home.updates", { n: nUpdates })}
                   </button>
                 ) : phase === "idle" && i.install_state === "installed" ? (
-                  <span className="text-text">{modded && mods.data ? t("home.ready_mods", { n: mods.data.length }) : t("home.ready")}</span>
+                  <span className="text-text">{modded && mods.data ? t(mods.data.length === 1 ? "home.ready_mods_one" : "home.ready_mods", { n: mods.data.length }) : t("home.ready")}</span>
                 ) : phase === "idle" && i.install_state === "not_installed" ? (
                   <span className="inline-flex items-center gap-1.5 text-muted">
                     <HardDriveDownload size={12} />

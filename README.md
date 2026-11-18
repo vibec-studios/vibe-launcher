@@ -123,7 +123,7 @@ Azure-App-Registrierung:
 
 - **Release-Kanal:** Tag `vX.Y.Z` pushen → GitHub Actions baut und veröffentlicht das Release.
 - **Dev-Kanal:** jeder Commit auf `main` → neuer Dev-Build im Vorab-Release `dev`.
-- Im Launcher unter *Einstellungen → Über & Updates* umschaltbar; Updates erscheinen oben rechts als „Update verfügbar“.
+- Im Launcher unter *Einstellungen → Updates* umschaltbar; Updates erscheinen oben rechts als „Update verfügbar“.
 
 Details: [docs/RELEASE.md](docs/RELEASE.md). Der private Updater-Schlüssel gehört **nie** ins Repository.
 

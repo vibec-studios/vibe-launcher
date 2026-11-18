@@ -7,6 +7,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Check, CircleDot, Lock, PackagePlus, PenTool, Save, Search, Sparkles, Undo2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, EmptyState, ErrorState, SearchInput, Spinner, Switch, Tooltip, cn, toast } from "@/components/ui";
+import { installInstance } from "@/components/instance/actions";
 import { useLang, useT } from "@/i18n";
 import { queryClient, waitForTask } from "@/lib/queries";
 import { VibeError } from "@/lib/vibe-sdk";
@@ -39,6 +40,8 @@ export function CosmeticsPage() {
       const id = await vapi.clientCreateInstance();
       const task = await waitForTask(id);
       toast.success(t("cos.create.done"), task.message ?? undefined);
+      // Wie bei jeder neuen Instanz: Minecraft + Loader gleich mitinstallieren
+      if (task.instance_id) installInstance(task.instance_id);
       if (task.instance_id) nav({ to: "/instances/$id", params: { id: task.instance_id }, search: { tab: "content" } });
     } catch (e) {
       toast.error(e, t("cos.create.failed"));
