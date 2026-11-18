@@ -135,7 +135,21 @@ export type BackgroundKind = "none" | "gradient" | "image" | "animated";
 export type BackgroundGradient = "accent" | "dusk" | "ocean" | "ember" | "forest";
 export type BackgroundAnimated = "aurora" | "particles" | "waves" | "blocks" | "custom";
 
+/** Voreinstellungen, die mehrere Werte zugleich setzen (siehe THEMES in src/lib/appearance.ts) */
+export type ThemeId = "standard" | "winter" | "graphite";
+export type AppearanceFont = "inter" | "system";
+export type AppearanceHeadings = "default" | "pixel";
+export type AppearanceContrast = "normal" | "high";
+export type AppearanceCards = "flat" | "outlined";
+export type AppearanceMotion = "normal" | "more";
+/** Einträge der Seitenleiste (Reihenfolge/Sichtbarkeit einstellbar) */
+export type NavKey = "home" | "instances" | "servers" | "social" | "discover" | "skins" | "cosmetics" | "screenshots";
+
 export interface Appearance {
+  /** Gewähltes Theme; die Einzelwerte bleiben danach frei anpassbar */
+  theme: ThemeId;
+  /** Im Dezember/Januar automatisch das Winter-Theme zeigen */
+  seasonal: boolean;
   accent: string;
   tone: AppearanceTone;
   radius: AppearanceRadius;
@@ -154,6 +168,45 @@ export interface Appearance {
     dim: number;
     /** Unschärfe 0–40 px */
     blur: number;
+  };
+  /** Schrift für Fließtext */
+  font: AppearanceFont;
+  /** Überschriften: wie Fließtext oder Pixel-Schrift */
+  headings: AppearanceHeadings;
+  /** Schriftgröße in Prozent (90–115), unabhängig von der UI-Skalierung */
+  font_scale: number;
+  contrast: AppearanceContrast;
+  /** Karten flach oder mit feiner Kante */
+  cards: AppearanceCards;
+  sidebar: {
+    /** compact = nur Icons, wide = mit Beschriftung */
+    mode: "compact" | "wide";
+    /** Zuletzt gespielte Instanzen in der Seitenleiste */
+    instances: boolean;
+    order: NavKey[];
+    hidden: NavKey[];
+  };
+  /** Instanz-Kacheln groß oder klein */
+  icon_size: "large" | "small";
+  /** Standardansicht der Bibliothek */
+  library_view: "grid" | "list";
+  /** Statusfarben (Hex) */
+  status: { ok: string; warn: string; danger: string };
+  /** „Mehr Animationen“ (Gegenstück zu „Animationen reduzieren“) */
+  motion: AppearanceMotion;
+  /** Übergang beim Seitenwechsel */
+  nav_animations: boolean;
+  /** Theme-Extras (wirken nur, wenn das Theme sie hat – z. B. Winter) */
+  effects: {
+    snow: boolean;
+    /** Schneemenge 10–100 % */
+    snow_amount: number;
+    /** Ganz wenig Schnee sammelt sich auf Kanten */
+    snow_settle: boolean;
+    /** Theme-Maskottchen statt Logo in der Seitenleiste */
+    mascot: boolean;
+    /** Feine Frost-Details an Dialogkanten */
+    frost: boolean;
   };
 }
 

@@ -172,7 +172,7 @@ function SettingsBody() {
           </D.Close>
         </header>
         <div key={tab} className="scroll min-h-0 flex-1">
-          <div className="flex flex-col gap-5 px-7 pb-10 pt-1 animate-fade-in">
+          <div className="vl-settings flex flex-col gap-5 px-7 pb-10 pt-1 animate-fade-in">
             {!s ? <LoadingCards /> : <TabContent tab={tab} s={s} update={update} />}
           </div>
         </div>

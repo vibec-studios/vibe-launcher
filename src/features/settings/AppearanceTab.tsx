@@ -1,13 +1,53 @@
-// Tab „Darstellung“: Akzentfarbe, Ton, Ecken, Dichte, Skalierung, Hintergrund (Verlauf/Bild/animiert),
-// Abdunklung/Unschärfe. Jede Änderung wirkt sofort (Vorschau über useAppearanceDraft) und speichert automatisch.
+// Tab „Darstellung“: Theme (Voreinstellung mit Extras), Farbe, Schrift, Form & Dichte, Seitenleiste, Bibliothek,
+// Bewegung, Hintergrund. Jede Änderung wirkt sofort (Vorschau über useAppearanceDraft) und speichert automatisch.
 import { useEffect, useState, type ReactNode } from "react";
-import { Boxes, Check, Film, ImagePlus, Pipette, Rainbow, RotateCcw, Sparkles, Trash2, Waves } from "lucide-react";
+import {
+  Boxes,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Compass,
+  Eye,
+  EyeOff,
+  Film,
+  Home,
+  ImagePlus,
+  Images,
+  LayoutGrid,
+  LibraryBig,
+  List,
+  Pipette,
+  Rainbow,
+  RotateCcw,
+  Server as ServerIcon,
+  Shirt,
+  Snowflake,
+  Sparkles,
+  Trash2,
+  Users,
+  Waves,
+} from "lucide-react";
 import { api } from "@/lib/api";
-import type { Appearance, BackgroundAnimated, BackgroundGradient, BackgroundKind, Settings } from "@/lib/types";
-import { ACCENT_PRESETS, DEFAULT_APPEARANCE, GRADIENTS, isVideoFile, normalizeAppearance, useAppearanceDraft } from "@/lib/appearance";
+import type { Appearance, BackgroundAnimated, BackgroundGradient, BackgroundKind, NavKey, Settings, ThemeId } from "@/lib/types";
+import {
+  ACCENT_PRESETS,
+  DEFAULT_APPEARANCE,
+  GRADIENTS,
+  THEMES,
+  THEME_IDS,
+  applyTheme,
+  effectiveAppearance,
+  isThemeModified,
+  isVideoFile,
+  isWinterSeason,
+  normalizeAppearance,
+  themeExtra,
+  useAppearanceDraft,
+} from "@/lib/appearance";
 import { imageSrc } from "@/lib/format";
-import { Button, Input, Segmented, SettingRow, SettingsCard, Slider, Switch, Tooltip, cn, toast } from "@/components/ui";
+import { AnimatedNumber, Button, IconButton, Input, Segmented, SettingRow, SettingsCard, Slider, Switch, Tag, Tooltip, cn, toast } from "@/components/ui";
 import { Backdrop } from "@/app/Backdrop";
+import { Snowfall } from "@/app/Snowfall";
 import { useT } from "@/i18n";
 
 type Update = (p: Partial<Settings>, delay?: number) => void;
@@ -20,11 +60,23 @@ const ANIMATED: { key: BackgroundAnimated; icon: ReactNode }[] = [
   { key: "blocks", icon: <Boxes size={18} /> },
   { key: "custom", icon: <Film size={18} /> },
 ];
+const NAV_ICONS: Record<NavKey, ReactNode> = {
+  home: <Home size={15} />,
+  instances: <LibraryBig size={15} />,
+  servers: <ServerIcon size={15} />,
+  social: <Users size={15} />,
+  discover: <Compass size={15} />,
+  skins: <Shirt size={15} />,
+  cosmetics: <Sparkles size={15} />,
+  screenshots: <Images size={15} />,
+};
 
 export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
   const t = useT();
   const a = normalizeAppearance(s.appearance);
   const b = a.background;
+  const shown = effectiveAppearance(a);
+  const theme = THEMES[shown.theme];
 
   // Vorschau: der ganze Launcher zeigt den Entwurf, solange dieser Tab offen ist
   const key = JSON.stringify(a);
@@ -36,12 +88,30 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
 
   const set = (p: Partial<Appearance>, delay?: number) => update({ appearance: { ...a, ...p } }, delay);
   const setBg = (p: Partial<Appearance["background"]>, delay?: number) => set({ background: { ...b, ...p } }, delay);
+  const setFx = (p: Partial<Appearance["effects"]>, delay?: number) => set({ effects: { ...a.effects, ...p } }, delay);
+  const setSidebar = (p: Partial<Appearance["sidebar"]>) => set({ sidebar: { ...a.sidebar, ...p } });
+  const motion = s.reduce_motion ? "reduced" : a.motion;
+  const seasonalActive = a.seasonal && a.theme === "standard" && isWinterSeason();
+
+  const moveNav = (k: NavKey, dir: -1 | 1) => {
+    const order = [...a.sidebar.order];
+    const i = order.indexOf(k);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j], order[i]];
+    setSidebar({ order });
+  };
+  const toggleNav = (k: NavKey) => {
+    const hidden = a.sidebar.hidden.includes(k) ? a.sidebar.hidden.filter((x) => x !== k) : [...a.sidebar.hidden, k];
+    setSidebar({ hidden });
+  };
 
   return (
     <>
-      <div className="flex items-end gap-4">
-        <MiniPreview a={a} />
-        <div className="flex flex-1 flex-col items-end self-stretch">
+      {/* ---------------------------------------------------------- Theme + Live-Vorschau */}
+      <SettingsCard
+        title={t("ap.section.theme")}
+        right={
           <Button
             size="sm"
             variant="subtle"
@@ -51,11 +121,71 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
               toast.info(t("ap.reset.done"));
             }}
           >
-            {t("ap.reset")}
+            {t("ap.reset_all")}
           </Button>
+        }
+      >
+        <div className="flex flex-wrap items-start gap-5 p-4">
+          <MiniPreview a={shown} />
+          <div className="flex min-w-[260px] flex-1 flex-col gap-3">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-2.5">
+              {THEME_IDS.map((id) => (
+                <ThemeTile
+                  key={id}
+                  id={id}
+                  active={a.theme === id}
+                  modified={a.theme === id && isThemeModified(a)}
+                  onClick={() => set(applyTheme(a, id))}
+                />
+              ))}
+            </div>
+            <p className="text-[12.5px] leading-relaxed text-muted">{t(`ap.theme.${shown.theme}.desc`)}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="subtle" icon={<RotateCcw size={13} />} disabled={!isThemeModified(a)} onClick={() => set(applyTheme(a, a.theme))}>
+                {t("ap.theme.reset", { name: t(`ap.theme.${a.theme}`) })}
+              </Button>
+              {seasonalActive && (
+                <Tag className="h-6 gap-1.5 px-2 text-[12px]">
+                  <Snowflake size={12} /> {t("ap.seasonal.active")}
+                </Tag>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+        <SettingRow title={t("ap.seasonal")} description={t("ap.seasonal.desc")}>
+          <Switch checked={a.seasonal} onChange={(seasonal) => set({ seasonal })} label={t("ap.seasonal")} />
+        </SettingRow>
+      </SettingsCard>
 
+      {theme.extras.length > 0 && (
+        <SettingsCard title={t("ap.section.extras", { name: t(`ap.theme.${theme.id}`) })}>
+          {theme.extras.includes("snow") && (
+            <>
+              <SettingRow title={t("ap.fx.snow")} description={t("ap.fx.snow.desc")}>
+                <Switch checked={a.effects.snow} onChange={(snow) => setFx({ snow })} label={t("ap.fx.snow")} />
+              </SettingRow>
+              <SettingRow title={t("ap.fx.snow_amount")} className={cn(!a.effects.snow && "opacity-50")}>
+                <SliderValue value={a.effects.snow_amount} min={10} max={100} step={5} unit="%" disabled={!a.effects.snow} onChange={(snow_amount) => setFx({ snow_amount }, 300)} />
+              </SettingRow>
+              <SettingRow title={t("ap.fx.snow_settle")} description={t("ap.fx.snow_settle.desc")} className={cn(!a.effects.snow && "opacity-50")}>
+                <Switch checked={a.effects.snow_settle} disabled={!a.effects.snow} onChange={(snow_settle) => setFx({ snow_settle })} label={t("ap.fx.snow_settle")} />
+              </SettingRow>
+            </>
+          )}
+          {theme.extras.includes("mascot") && (
+            <SettingRow title={t("ap.fx.mascot")} description={t("ap.fx.mascot.desc")}>
+              <Switch checked={a.effects.mascot} onChange={(mascot) => setFx({ mascot })} label={t("ap.fx.mascot")} />
+            </SettingRow>
+          )}
+          {theme.extras.includes("frost") && (
+            <SettingRow title={t("ap.fx.frost")} description={t("ap.fx.frost.desc")}>
+              <Switch checked={a.effects.frost} onChange={(frost) => setFx({ frost })} label={t("ap.fx.frost")} />
+            </SettingRow>
+          )}
+        </SettingsCard>
+      )}
+
+      {/* ---------------------------------------------------------- Farbe */}
       <SettingsCard title={t("ap.section.color")}>
         <SettingRow title={t("ap.accent")} description={t("ap.accent.desc")} stacked>
           <AccentPicker value={a.accent} onChange={(accent, d) => set({ accent }, d)} />
@@ -67,8 +197,60 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
             items={(["dark", "dim", "oled"] as const).map((v) => ({ value: v, label: t(`ap.tone.${v}`) }))}
           />
         </SettingRow>
+        <SettingRow title={t("ap.contrast")} description={t("ap.contrast.desc")}>
+          <Segmented
+            value={a.contrast}
+            onChange={(contrast) => set({ contrast })}
+            items={(["normal", "high"] as const).map((v) => ({ value: v, label: t(`ap.contrast.${v}`) }))}
+          />
+        </SettingRow>
+        <SettingRow title={t("ap.status")} description={t("ap.status.desc")}>
+          <div className="flex items-center gap-2">
+            {(["ok", "warn", "danger"] as const).map((k) => (
+              <StatusSwatch key={k} label={t(`ap.status.${k}`)} value={a.status[k]} onChange={(v) => set({ status: { ...a.status, [k]: v } }, 250)} />
+            ))}
+            <Tooltip content={t("ap.status.from_accent")}>
+              <IconButton
+                label={t("ap.status.from_accent")}
+                size="sm"
+                variant="ghost"
+                onClick={() => set({ status: { ...a.status, ok: a.accent } })}
+              >
+                <Pipette size={14} />
+              </IconButton>
+            </Tooltip>
+          </div>
+        </SettingRow>
       </SettingsCard>
 
+      {/* ---------------------------------------------------------- Schrift */}
+      <SettingsCard title={t("ap.section.font")}>
+        <SettingRow title={t("ap.font")} description={t("ap.font.desc")}>
+          <Segmented
+            value={a.font}
+            onChange={(font) => set({ font })}
+            items={[
+              { value: "inter", label: <span style={{ fontFamily: "Inter" }}>Inter</span> },
+              { value: "system", label: <span style={{ fontFamily: "system-ui, 'Segoe UI'" }}>{t("ap.font.system")}</span> },
+            ]}
+          />
+        </SettingRow>
+        <SettingRow title={t("ap.headings")} description={t("ap.headings.desc")}>
+          <Segmented
+            value={a.headings}
+            onChange={(headings) => set({ headings })}
+            items={[
+              { value: "default", label: t("ap.headings.default") },
+              { value: "pixel", label: <span style={{ fontFamily: "Silkscreen", fontWeight: 400, fontSize: 12 }}>PIXEL</span> },
+            ]}
+          />
+        </SettingRow>
+        <SettingRow title={t("ap.font_scale")} description={t("ap.font_scale.desc")}>
+          <SliderValue value={a.font_scale} min={90} max={115} step={5} unit="%" onChange={(font_scale) => set({ font_scale }, 300)} />
+        </SettingRow>
+      </SettingsCard>
+
+      {/* ---------------------------------------------------------- Form & Dichte */}
       <SettingsCard title={t("ap.section.shape")}>
         <SettingRow title={t("ap.radius")} description={t("ap.radius.desc")}>
           <Segmented
@@ -78,11 +260,23 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
               value: v,
               label: (
                 <span className="flex items-center gap-1.5">
-                  <span
-                    className="h-3 w-3 border-[1.5px] border-current opacity-80"
-                    style={{ borderRadius: v === "square" ? 0 : v === "slight" ? 2 : 4.5 }}
-                  />
+                  <span className="h-3 w-3 border-[1.5px] border-current opacity-80" style={{ borderRadius: v === "square" ? 0 : v === "slight" ? 2 : 4.5 }} />
                   {t(`ap.radius.${v}`)}
+                </span>
+              ),
+            }))}
+          />
+        </SettingRow>
+        <SettingRow title={t("ap.cards")} description={t("ap.cards.desc")}>
+          <Segmented
+            value={a.cards}
+            onChange={(cards) => set({ cards })}
+            items={(["flat", "outlined"] as const).map((v) => ({
+              value: v,
+              label: (
+                <span className="flex items-center gap-1.5">
+                  <span className={cn("h-3 w-3.5 bg-white/15", v === "outlined" && "shadow-[inset_0_0_0_1.5px_currentColor]")} />
+                  {t(`ap.cards.${v}`)}
                 </span>
               ),
             }))}
@@ -100,6 +294,118 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
         </SettingRow>
       </SettingsCard>
 
+      {/* ---------------------------------------------------------- Seitenleiste */}
+      <SettingsCard
+        title={t("ap.section.sidebar")}
+        right={
+          <Button
+            size="sm"
+            variant="subtle"
+            icon={<RotateCcw size={13} />}
+            disabled={JSON.stringify(a.sidebar) === JSON.stringify(DEFAULT_APPEARANCE.sidebar)}
+            onClick={() => set({ sidebar: DEFAULT_APPEARANCE.sidebar })}
+          >
+            {t("ap.reset")}
+          </Button>
+        }
+      >
+        <SettingRow title={t("ap.sidebar.mode")} description={t("ap.sidebar.mode.desc")}>
+          <Segmented
+            value={a.sidebar.mode}
+            onChange={(mode) => setSidebar({ mode })}
+            items={(["compact", "wide"] as const).map((v) => ({ value: v, label: t(`ap.sidebar.${v}`) }))}
+          />
+        </SettingRow>
+        <SettingRow title={t("ap.sidebar.instances")} description={t("ap.sidebar.instances.desc")}>
+          <Switch checked={a.sidebar.instances} onChange={(instances) => setSidebar({ instances })} label={t("ap.sidebar.instances")} />
+        </SettingRow>
+        <SettingRow title={t("ap.sidebar.order")} description={t("ap.sidebar.order.desc")} stacked>
+          <div className="flex flex-col gap-px overflow-hidden rounded-ctl" role="list">
+            {a.sidebar.order.map((k, i) => {
+              const hidden = a.sidebar.hidden.includes(k);
+              return (
+                <div key={k} role="listitem" className="flex h-10 items-center gap-3 bg-white/[.03] px-3">
+                  <span className={cn("text-muted", hidden && "opacity-40")}>{NAV_ICONS[k]}</span>
+                  <span className={cn("flex-1 text-[13px] font-medium", hidden ? "text-dim line-through decoration-white/20" : "text-text")}>{t(`nav.${k}`)}</span>
+                  <IconButton label={t("ap.sidebar.up")} size="sm" variant="ghost" className="h-7 w-7" disabled={i === 0} onClick={() => moveNav(k, -1)}>
+                    <ChevronUp size={15} />
+                  </IconButton>
+                  <IconButton
+                    label={t("ap.sidebar.down")}
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    disabled={i === a.sidebar.order.length - 1}
+                    onClick={() => moveNav(k, 1)}
+                  >
+                    <ChevronDown size={15} />
+                  </IconButton>
+                  <IconButton
+                    label={hidden ? t("ap.sidebar.show") : t("ap.sidebar.hide")}
+                    tip
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    disabled={k === "home"}
+                    onClick={() => toggleNav(k)}
+                  >
+                    {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </IconButton>
+                </div>
+              );
+            })}
+          </div>
+        </SettingRow>
+      </SettingsCard>
+
+      {/* ---------------------------------------------------------- Bibliothek */}
+      <SettingsCard title={t("ap.section.library")}>
+        <SettingRow title={t("ap.icon_size")} description={t("ap.icon_size.desc")}>
+          <Segmented
+            value={a.icon_size}
+            onChange={(icon_size) => set({ icon_size })}
+            items={(["large", "small"] as const).map((v) => ({ value: v, label: t(`ap.icon_size.${v}`) }))}
+          />
+        </SettingRow>
+        <SettingRow title={t("ap.library_view")} description={t("ap.library_view.desc")}>
+          <Segmented
+            value={a.library_view}
+            onChange={(library_view) => {
+              // sofort übernehmen (die Bibliothek merkt sich sonst die zuletzt umgeschaltete Ansicht)
+              try {
+                localStorage.setItem("vl.inst.view", JSON.stringify(library_view));
+              } catch {
+                /* egal */
+              }
+              set({ library_view });
+            }}
+            items={[
+              { value: "grid", label: <span className="flex items-center gap-1.5"><LayoutGrid size={13} />{t("ap.library_view.grid")}</span> },
+              { value: "list", label: <span className="flex items-center gap-1.5"><List size={13} />{t("ap.library_view.list")}</span> },
+            ]}
+          />
+        </SettingRow>
+      </SettingsCard>
+
+      {/* ---------------------------------------------------------- Bewegung */}
+      <SettingsCard title={t("ap.section.motion")}>
+        <SettingRow title={t("ap.motion")} description={t(`ap.motion.${motion}.desc`)}>
+          <Segmented
+            value={motion}
+            onChange={(v) => {
+              const reduce_motion = v === "reduced";
+              document.documentElement.dataset.reduceMotion = String(reduce_motion);
+              update({ reduce_motion, appearance: { ...a, motion: v === "more" ? "more" : v === "normal" ? "normal" : a.motion } });
+            }}
+            items={(["reduced", "normal", "more"] as const).map((v) => ({ value: v, label: t(`ap.motion.${v}`) }))}
+          />
+        </SettingRow>
+        <SettingRow title={t("ap.nav_animations")} description={t("ap.nav_animations.desc")} className={cn(motion === "reduced" && "opacity-50")}>
+          <Switch checked={a.nav_animations} disabled={motion === "reduced"} onChange={(nav_animations) => set({ nav_animations })} label={t("ap.nav_animations")} />
+        </SettingRow>
+      </SettingsCard>
+
+      {/* ---------------------------------------------------------- Hintergrund */}
       <SettingsCard title={t("ap.section.background")}>
         <SettingRow title={t("ap.bg.kind")} description={`${t("ap.bg.kind.desc")} ${t("ap.paused_hint")}`} stacked>
           <div className="flex flex-col gap-3">
@@ -118,21 +424,14 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
               </div>
             )}
             {b.kind === "image" && (
-              <FilePick
-                slot="image"
-                path={b.image}
-                onPicked={(image) => setBg({ image, kind: "image" })}
-                onRemove={() => setBg({ image: null, kind: "none" })}
-              />
+              <FilePick slot="image" path={b.image} onPicked={(image) => setBg({ image, kind: "image" })} onRemove={() => setBg({ image: null, kind: "none" })} />
             )}
             {b.kind === "animated" && (
               <>
                 <div className="flex flex-wrap gap-2">
                   {ANIMATED.map(({ key, icon }) => (
                     <PresetTile key={key} label={t(`ap.anim.${key}`)} active={b.animated === key} onClick={() => setBg({ animated: key })}>
-                      <span className="absolute inset-0 grid place-items-center bg-white/[.05] text-muted">
-                        {icon}
-                      </span>
+                      <span className="absolute inset-0 grid place-items-center bg-white/[.05] text-muted">{icon}</span>
                     </PresetTile>
                   ))}
                 </div>
@@ -152,16 +451,6 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
       </SettingsCard>
 
       <SettingsCard title={t("ap.section.more")}>
-        <SettingRow title={t("settings.reduce_motion")} description={t("settings.reduce_motion.desc")}>
-          <Switch
-            checked={s.reduce_motion}
-            onChange={(reduce_motion) => {
-              document.documentElement.dataset.reduceMotion = String(reduce_motion);
-              update({ reduce_motion });
-            }}
-            label={t("settings.reduce_motion")}
-          />
-        </SettingRow>
         <SettingRow title={t("settings.minecraftcapes")} description={t("settings.minecraftcapes.desc")}>
           <Switch checked={s.minecraftcapes} onChange={(minecraftcapes) => update({ minecraftcapes })} label={t("settings.minecraftcapes")} />
         </SettingRow>
@@ -172,18 +461,35 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
 
 // ------------------------------------------------------------------ Bausteine
 
-/** Verkleinerter Launcher: Rahmen, Seitenleiste, Bühne und Kacheln – liest dieselben CSS-Variablen. */
+/**
+ * Live-Vorschau: verkleinerter Launcher (Rahmen, Seitenleiste, Bühne, Kacheln). Liest dieselben CSS-Variablen wie
+ * die App (der Entwurf ist global angewendet) und zeigt Theme-Extras: Schneefall, Robbe mit Schal, Frost.
+ */
 function MiniPreview({ a }: { a: Appearance }) {
   const t = useT();
+  const snow = themeExtra(a, "snow");
+  const mascot = themeExtra(a, "mascot");
+  const frost = themeExtra(a, "frost");
+  const wide = a.sidebar.mode === "wide";
   return (
-    <div className="relative h-[168px] w-[300px] shrink-0 overflow-hidden rounded-card bg-[var(--tone-frame)] shadow-[0_0_0_1px_var(--line-2)]" aria-label={t("ap.preview")}>
+    <div className="relative h-[180px] w-[320px] shrink-0 overflow-hidden rounded-card bg-[var(--tone-frame)] shadow-[0_0_0_1px_var(--line-2)]" aria-label={t("ap.preview")}>
       <Backdrop appearance={a} contained />
       <div className="absolute inset-0 flex">
-        <div className="flex w-8 flex-col items-center gap-1.5 bg-bg pt-2">
-          <span className="h-4 w-4 rounded-xs bg-brand/80" />
-          {[0, 1, 2, 3].map((i) => (
-            <span key={i} className="h-4 w-4 rounded-xs bg-white/10" />
-          ))}
+        <div className={cn("flex shrink-0 flex-col gap-1.5 bg-bg pt-2", wide ? "w-[72px] items-stretch px-1.5" : "w-8 items-center")}>
+          {mascot ? (
+            <img src="/logo-seal-winter.png" alt="" className="h-5 w-5 self-center object-contain [image-rendering:pixelated]" />
+          ) : (
+            <span className="h-4 w-4 self-center rounded-xs bg-brand/80" />
+          )}
+          {a.sidebar.order
+            .filter((k) => !a.sidebar.hidden.includes(k))
+            .slice(0, 5)
+            .map((k, i) => (
+              <span key={k} className="flex items-center gap-1">
+                <span className={cn("h-3.5 w-3.5 shrink-0 rounded-xs", i === 0 ? "bg-brand/70" : "bg-white/10")} />
+                {wide && <span className="h-1.5 flex-1 rounded-xs bg-white/15" />}
+              </span>
+            ))}
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="h-5 bg-bg" />
@@ -191,27 +497,113 @@ function MiniPreview({ a }: { a: Appearance }) {
             <div className="relative flex items-center gap-2 overflow-hidden rounded-card bg-surface p-2">
               <span className="h-7 w-7 rounded-ctl bg-surface3" />
               <span className="flex flex-1 flex-col gap-1">
-                <span className="h-2 w-20 rounded-xs bg-white/80" />
-                <span className="h-1.5 w-14 rounded-xs bg-white/25" />
+                <span className="h-2 w-20 rounded-xs bg-white/80" style={a.headings === "pixel" ? { borderRadius: 0, height: 7 } : undefined} />
+                <span className="h-1.5 w-14 rounded-xs bg-[var(--text-3)]" />
               </span>
               <span className="h-5 w-12 rounded-ctl bg-brand" />
             </div>
-            <div className="grid grid-cols-4 gap-1.5">
-              {[0, 1, 2, 3].map((i) => (
+            <div className={cn("grid gap-1.5", a.icon_size === "small" ? "grid-cols-5" : "grid-cols-4")}>
+              {[0, 1, 2, 3, 4].slice(0, a.icon_size === "small" ? 5 : 4).map((i) => (
                 <span key={i} className="flex flex-col gap-1">
                   <span className="aspect-[4/3] rounded-ctl bg-surface" />
                   <span className="h-1.5 w-3/4 rounded-xs bg-white/30" />
                 </span>
               ))}
             </div>
-            <div className="mt-auto flex gap-1.5">
+            <div className="mt-auto flex items-center gap-1.5">
               <span className="h-4 w-14 rounded-ctl bg-surface2" />
               <span className="h-4 w-10 rounded-ctl bg-field" />
+              <span className="ml-auto flex gap-1">
+                <span className="h-2 w-2 rounded-dot bg-ok" />
+                <span className="h-2 w-2 rounded-dot bg-warn" />
+                <span className="h-2 w-2 rounded-dot bg-danger" />
+              </span>
             </div>
           </div>
         </div>
       </div>
+      {/* Mini-Dialog mit Frost oben rechts */}
+      {frost && (
+        <div className="absolute right-3 top-8 h-10 w-24 rounded-panel bg-overlay shadow-e3">
+          <span
+            className="absolute inset-0 opacity-70 [image-rendering:pixelated]"
+            style={{ background: "var(--frost-l) left top / 60px 36px no-repeat, var(--frost-r) right top / 60px 36px no-repeat" }}
+          />
+          <span className="absolute left-2 top-2.5 h-1.5 w-10 rounded-xs bg-white/60" />
+          <span className="absolute left-2 top-5 h-1 w-14 rounded-xs bg-white/20" />
+        </div>
+      )}
+      {snow && <Snowfall contained amount={a.effects.snow_amount} settle={false} />}
     </div>
+  );
+}
+
+/** Theme-Kachel: kleine, statische Launcher-Skizze in den Farben des Themes. */
+function ThemeTile({ id, active, modified, onClick }: { id: ThemeId; active: boolean; modified: boolean; onClick: () => void }) {
+  const t = useT();
+  const th = THEMES[id];
+  const sw = th.swatch;
+  const ac = th.tokens.accent;
+  return (
+    <button onClick={onClick} aria-pressed={active} className="group flex min-w-0 flex-col gap-1.5 text-left">
+      <span
+        className={cn(
+          "relative block h-[66px] w-full overflow-hidden rounded-card",
+          active ? "outline outline-2 outline-offset-2 outline-brand" : "group-hover:outline group-hover:outline-1 group-hover:outline-offset-2 group-hover:outline-white/25",
+        )}
+        style={{ background: sw.frame }}
+      >
+        <span className="absolute inset-y-0 left-0 flex w-4 flex-col items-center gap-1 pt-1.5">
+          <span className="h-2 w-2" style={{ background: ac }} />
+          <span className="h-2 w-2" style={{ background: sw.surface2 }} />
+          <span className="h-2 w-2" style={{ background: sw.surface2 }} />
+        </span>
+        <span className="absolute bottom-0 left-4 right-0 top-2.5 flex flex-col gap-1 p-1.5" style={{ background: sw.canvas }}>
+          <span className="flex items-center gap-1 p-1" style={{ background: sw.surface }}>
+            <span className="h-1.5 w-8" style={{ background: sw.text, opacity: 0.85 }} />
+            <span className="ml-auto h-2.5 w-5" style={{ background: ac }} />
+          </span>
+          <span className="grid grid-cols-3 gap-1">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="h-3" style={{ background: sw.surface, boxShadow: th.tokens.cards === "outlined" ? "inset 0 0 0 1px rgb(255 255 255 / .14)" : undefined }} />
+            ))}
+          </span>
+        </span>
+        {id === "winter" && (
+          // ein paar ruhende Flocken + Schneekante auf der Inhaltsfläche
+          <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 120 66" preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden>
+            <g fill="#eaf4ff">
+              <rect x="30" y="5" width="1.5" height="1.5" opacity=".7" />
+              <rect x="58" y="14" width="1" height="1" opacity=".5" />
+              <rect x="84" y="4" width="2" height="2" opacity=".8" />
+              <rect x="101" y="20" width="1" height="1" opacity=".5" />
+              <rect x="70" y="36" width="1.5" height="1.5" opacity=".6" />
+              <rect x="44" y="50" width="1" height="1" opacity=".5" />
+              <rect x="110" y="44" width="1.5" height="1.5" opacity=".6" />
+              <rect x="22" y="8" width="18" height="1" opacity=".55" />
+              <rect x="48" y="8.5" width="26" height=".75" opacity=".4" />
+              <rect x="90" y="8" width="14" height="1" opacity=".5" />
+            </g>
+          </svg>
+        )}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className={cn("truncate text-[12.5px] font-medium", active ? "text-text" : "text-muted group-hover:text-text")}>{t(`ap.theme.${id}`)}</span>
+        {id === "winter" && <Snowflake size={11} className="shrink-0 text-dim" />}
+        {modified && <span className="ml-auto shrink-0 text-[11px] text-dim">{t("ap.theme.modified")}</span>}
+      </span>
+    </button>
+  );
+}
+
+/** Farbfeld mit Farbwähler (Statusfarben). */
+function StatusSwatch({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <Tooltip content={label}>
+      <label className="relative grid h-8 w-8 cursor-pointer place-items-center rounded-ctl" style={{ background: value }}>
+        <input type="color" aria-label={label} value={value} onChange={(e) => onChange(e.target.value.toLowerCase())} className="absolute inset-0 cursor-pointer opacity-0" />
+      </label>
+    </Tooltip>
   );
 }
 
@@ -219,10 +611,11 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (v: string
   const t = useT();
   const [hex, setHex] = useState(value);
   useEffect(() => setHex(value), [value]);
-  const custom = !ACCENT_PRESETS.includes(value.toLowerCase());
+  const presets = [...ACCENT_PRESETS, ...THEME_IDS.map((id) => THEMES[id].tokens.accent).filter((c) => !ACCENT_PRESETS.includes(c))];
+  const custom = !presets.includes(value.toLowerCase());
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {ACCENT_PRESETS.map((c) => {
+      {presets.map((c) => {
         const active = c === value.toLowerCase();
         return (
           <button
@@ -230,10 +623,7 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (v: string
             aria-label={c}
             aria-pressed={active}
             onClick={() => onChange(c)}
-            className={cn(
-              "grid h-8 w-8 place-items-center rounded-ctl transition-transform duration-100 hover:scale-105",
-              active && "outline outline-2 outline-offset-2 outline-white/80",
-            )}
+            className={cn("grid h-8 w-8 place-items-center rounded-ctl transition-transform duration-100 hover:scale-105", active && "outline outline-2 outline-offset-2 outline-white/80")}
             style={{ background: c }}
           >
             {active && <Check size={15} strokeWidth={3} className="text-black/70" />}
@@ -250,13 +640,7 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (v: string
           style={custom ? { background: value, color: "rgb(0 0 0 / .7)" } : undefined}
         >
           <Pipette size={14} />
-          <input
-            type="color"
-            aria-label={t("ap.accent.custom")}
-            value={value}
-            onChange={(e) => onChange(e.target.value, 250)}
-            className="absolute inset-0 cursor-pointer opacity-0"
-          />
+          <input type="color" aria-label={t("ap.accent.custom")} value={value} onChange={(e) => onChange(e.target.value, 250)} className="absolute inset-0 cursor-pointer opacity-0" />
         </label>
       </Tooltip>
       <Input
@@ -296,7 +680,7 @@ function SliderValue({
     <div className="flex w-[260px] max-w-full items-center gap-3">
       <Slider value={value} min={min} max={max} step={step} disabled={disabled} onChange={onChange} />
       <span className="w-12 shrink-0 text-right font-mono text-[12px] tabular-nums text-muted">
-        {value}
+        <AnimatedNumber value={value} />
         {unit === "%" ? " %" : ` ${unit}`}
       </span>
     </div>

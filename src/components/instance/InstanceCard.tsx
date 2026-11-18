@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowUpCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Instance } from "@/lib/types";
-import { ContextMenu, Progress, cn } from "@/components/ui";
+import { AnimatedNumber, ContextMenu, Progress, cn } from "@/components/ui";
 import { formatDuration, formatRelative, imageSrc, instanceAccent, loaderNames } from "@/lib/format";
 import { useT } from "@/i18n";
 import { InstanceIcon, PixelBlock } from "./InstanceIcon";
@@ -34,7 +34,11 @@ export function InstanceStatus({ instance: i, compact }: { instance: Instance; c
     return (
       <span className="inline-flex min-w-0 items-center gap-1.5 text-accent">
         <span className="truncate">{compact ? t("inst.preparing") : (task?.message ?? t("inst.preparing"))}</span>
-        {task?.progress != null && <span className="shrink-0 tabular-nums">{Math.round(task.progress * 100)}%</span>}
+        {task?.progress != null && (
+          <span className="shrink-0 tabular-nums">
+            <AnimatedNumber value={Math.round(task.progress * 100)} />%
+          </span>
+        )}
       </span>
     );
   if (i.install_state === "installed") return <span className="text-muted">{t("inst.status.installed")}</span>;
@@ -118,11 +122,11 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
         onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(i)}
         style={accentVars(accent)}
         className={cn(
-          "group relative flex min-w-0 flex-col rounded-panel p-1.5 text-left transition-colors duration-100",
+          "vl-card group relative flex min-w-0 flex-col rounded-panel p-1.5 text-left transition-colors duration-100",
           "hover:bg-white/[.04] data-[state=open]:bg-white/[.04]",
         )}
       >
-        <div className="relative aspect-[4/3] overflow-hidden rounded-card bg-surface2">
+        <div className="vl-zoom relative aspect-[4/3] overflow-hidden rounded-card bg-surface2">
           <IconArea instance={i} accent={accent} />
           <RunningBadge id={i.id} />
           <UpdatesBadge id={i.id} />

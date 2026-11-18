@@ -6,6 +6,10 @@
      data-density="normal|compact"  skaliert die Tailwind-Abstands-Skala
      data-bg="on"                   Hintergrundbild/-animation aktiv -> Flächen halbtransparent
      --ui-accent / --ui-on-accent   globale Akzentfarbe
+     data-theme="standard|winter|graphite"   Theme-Paletten (Winter: kühle Grautöne)
+     data-contrast / data-cards / data-font / data-headings / data-sidebar / data-icons
+     data-motion="normal|more"  data-nav="on|off"  data-frost="on"
+     --ui-ok/--ui-warn/--ui-danger  Statusfarben   --font-scale  Schriftgröße (siehe vite.config.ts)
    Grundsatz: flach und schwarz. Ebenen nur über minimale, neutrale Grautöne statt Rahmen; keine Verläufe,
    kein Milchglas, kaum Schatten. Linien nur, wo sie trennen müssen. */
 @import "tailwindcss";
@@ -55,6 +59,14 @@
   /* Dichte: die ganze Abstands-Skala (p-, m-, gap-, h-, w- …) */
   --spacing: var(--ui-spacing);
 
+  /* Statusfarben (Einstellung) */
+  --color-danger: var(--ui-danger);
+  --color-warn: var(--ui-warn);
+  --color-ok: var(--ui-ok);
+
+  /* Schrift (Einstellung „Schriftart“) */
+  --font-sans: var(--ui-font);
+
   /* Elevation */
   --shadow-e1: var(--sh-1);
   --shadow-e2: var(--sh-2);
@@ -63,12 +75,8 @@
 
 @theme {
   --color-brand2: #3fe0c5;
-  --color-danger: #ff5470;
-  --color-warn: #ffb547;
-  --color-ok: #3fe0c5;
 
   --font-display: "Silkscreen", "Courier New", monospace;
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
 
   /* Typo-Skala: wenige, klar getrennte Stufen */
@@ -114,6 +122,9 @@
   /* Akzent */
   --ui-accent: #8b6cff;
   --ui-on-accent: #fff;
+  --ui-ok: #3fe0c5;
+  --ui-warn: #ffb547;
+  --ui-danger: #ff5470;
   --accent: var(--ui-accent);
   --on-accent: var(--ui-on-accent);
 
@@ -141,9 +152,21 @@
   --line-1: rgb(255 255 255 / 0.07);
   --line-2: rgb(255 255 255 / 0.12);
 
-  --text-1: #f4f4f6;
-  --text-2: #a3a3ad;
-  --text-3: #6d6d78;
+  /* Text: Themes setzen --t1..--t3, „Kontrast: hoch“ hellt 2/3 auf */
+  --t1: #f4f4f6;
+  --t2: #a3a3ad;
+  --t3: #6d6d78;
+  --text-1: var(--t1);
+  --text-2: var(--t2);
+  --text-3: var(--t3);
+
+  /* Schrift */
+  --ui-font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-heading: var(--ui-font);
+  --font-scale: 1;
+
+  /* Instanz-Kacheln (Einstellung „Instanz-Icons“) */
+  --inst-tile: 164px;
 
   /* Ecken: Grundwert + abgeleitete Stufen (Standard eckig) */
   --r: 0px;
@@ -199,6 +222,59 @@
   --titlebar-h: 40px;
   --rail-w: 54px;
 }
+/* Seitenleiste breit (mit Beschriftung) */
+:root[data-sidebar="wide"] { --rail-w: 212px; }
+:root[data-sidebar="wide"][data-density="compact"] { --rail-w: 196px; }
+
+/* ---------- Theme „Winter“: kühle, leicht blaue Grautöne (je Ton), eisiger Text */
+:root[data-theme="winter"] {
+  --tone-frame: #020407;
+  --tone-canvas: #080b10;
+  --tone-s1: #0e1218;
+  --tone-s2: #151a22;
+  --tone-s3: #1c222c;
+  --tone-overlay: #0d1117;
+  --line-1: rgb(200 225 255 / 0.07);
+  --line-2: rgb(200 225 255 / 0.12);
+  --field: rgb(200 225 255 / 0.05);
+  --t1: #eef4fa;
+  --t2: #9eabbb;
+  --t3: #67727f;
+  --sh-2: 0 0 0 1px rgb(200 225 255 / 0.09), 0 6px 20px rgb(0 0 0 / 0.5);
+  --sh-3: 0 0 0 1px rgb(200 225 255 / 0.1), 0 10px 32px rgb(0 0 0 / 0.55);
+}
+:root[data-theme="winter"][data-tone="dim"] {
+  --tone-frame: #0a0e13;
+  --tone-canvas: #10151b;
+  --tone-s1: #171d25;
+  --tone-s2: #1e252e;
+  --tone-s3: #262e38;
+  --tone-overlay: #161c23;
+}
+:root[data-theme="winter"][data-tone="oled"] {
+  --tone-frame: #000;
+  --tone-canvas: #000;
+  --tone-s1: #080b0f;
+  --tone-s2: #0f1318;
+  --tone-s3: #161b21;
+  --tone-overlay: #090c10;
+}
+
+/* ---------- Kontrast hoch: Sekundärtext und Linien deutlich heller, Flächen klarer getrennt */
+:root[data-contrast="high"] {
+  --text-2: color-mix(in srgb, var(--t2), #fff 38%);
+  --text-3: color-mix(in srgb, var(--t3), #fff 32%);
+  --line-1: rgb(255 255 255 / 0.13);
+  --line-2: rgb(255 255 255 / 0.2);
+  --field: rgb(255 255 255 / 0.08);
+}
+
+/* ---------- Schrift */
+:root[data-font="system"] { --ui-font: system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, sans-serif; }
+:root[data-headings="pixel"] { --font-heading: "Silkscreen", "Courier New", monospace; }
+
+/* ---------- Instanz-Kacheln klein */
+:root[data-icons="small"] { --inst-tile: 128px; }
 
 /* Hintergrundbild/-animation: Flächen leicht transparent (ohne Unschärfe), Menüs/Dialoge bleiben solide */
 :root[data-bg="on"] {
@@ -269,9 +345,10 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 
 /* ------------------------------------------------------------------ Typo-Bausteine */
 
-/* Überschriften: Inter fett. Silkscreen nur für die Wortmarke (.brand). */
+/* Überschriften: Inter fett (bzw. Pixel-Schrift, Einstellung „Überschriften“). Silkscreen sonst nur für die
+   Wortmarke (.brand). */
 .display {
-  font-family: var(--font-sans);
+  font-family: var(--font-heading);
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.2;
@@ -283,6 +360,14 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
+/* Pixel-Überschriften: Silkscreen ist breit und hoch – etwas kleiner setzen, ohne Laufweite */
+:root[data-headings="pixel"] :is(.display, .text-hero, .text-title, h1, h2) {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  letter-spacing: 0;
+  font-size-adjust: 0.42;
+}
+
 /* Kleine Abschnitts-/Feld-Überschrift */
 .label {
   font: 600 12px/1.4 var(--font-sans);
@@ -312,6 +397,133 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
   background-size: 200% 100%;
   animation: var(--animate-shimmer);
   border-radius: var(--r-ctl);
+}
+
+/* ------------------------------------------------------------------ Kartenstil „mit Kante“
+   In @layer base, damit eigene shadow-Utilities einzelner Karten (z. B. Gefahrenzone) Vorrang behalten. */
+@layer base {
+  /* Nur Flächen/Karten – Knöpfe und Reiter bleiben flach */
+  :root[data-cards="outlined"] .bg-surface:not(button, a, [role="button"], [role="tab"], [role="radio"]) { box-shadow: inset 0 0 0 1px var(--line-2); }
+}
+
+/* ------------------------------------------------------------------ Bewegung
+   Drei Stufen: reduziert (data-reduce-motion / System), normal (Standard, dezent), mehr (data-motion="more").
+   Alles zentral hier – Seiten brauchen nichts zu tun:
+     .vl-page        Seitenwechsel (Shell, je Route neu gemountet), abschaltbar über data-nav="off"
+     Raster          Kachel-Raster (grid-cols-[repeat(auto-…)]) und .vl-stagger blenden gestaffelt ein –
+                     bewusst nicht Tabellen-/Listenzeilen (deren Zellen und virtualisierte Zeilen sollen ruhig bleiben)
+     .vl-card        Kachel hebt sich beim Hover minimal, Bild zoomt (.vl-zoom)
+     Knöpfe/Schalter Druck-Feedback, federnde Schalter, Häkchen-Pop, weiche Fortschrittsbalken
+     Dialoge/Menüs   Ein- und Ausblenden (Radix wartet auf das Ende der Ausblend-Animation)
+   Zahlen animiert <AnimatedNumber> (components/ui), Dauer über --motion-num. */
+:root {
+  --motion-num: 0ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+
+@keyframes vl-page-fade { from { opacity: 0; } }
+@keyframes vl-page-rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes vl-item-in { from { opacity: 0; transform: translateY(8px) scale(0.985); } }
+@keyframes vl-pop-in { from { opacity: 0; scale: 0.97; } }
+@keyframes vl-pop-out { to { opacity: 0; scale: 0.98; } }
+@keyframes vl-menu-in { from { opacity: 0; translate: 0 -4px; scale: 0.98; } }
+@keyframes vl-menu-out { to { opacity: 0; scale: 0.98; } }
+@keyframes vl-fade-out { to { opacity: 0; } }
+@keyframes vl-check { 0% { scale: 0.4; } 60% { scale: 1.18; } 100% { scale: 1; } }
+
+.vl-page { height: 100%; width: 100%; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Normal: nur ein ganz kurzes Einblenden beim Seitenwechsel */
+  html:not([data-reduce-motion="true"])[data-nav="on"] .vl-page { animation: vl-page-fade 0.14s ease-out; }
+
+  html:not([data-reduce-motion="true"])[data-motion="more"] {
+    --motion-num: 450ms;
+
+    /* Seitenwechsel: Einblenden + leichtes Aufsteigen */
+    &[data-nav="on"] .vl-page { animation: vl-page-rise 0.26s var(--ease-out); }
+
+    /* Gestaffeltes Einblenden von Kacheln (nur die ersten 12 verzögert) */
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > * { animation: vl-item-in 0.32s var(--ease-out) backwards; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(2) { animation-delay: 25ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(3) { animation-delay: 50ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(4) { animation-delay: 75ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(5) { animation-delay: 100ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(6) { animation-delay: 125ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(7) { animation-delay: 150ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(8) { animation-delay: 175ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(9) { animation-delay: 200ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(10) { animation-delay: 225ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(11) { animation-delay: 250ms; }
+    & .vl-page :is([class*="grid-cols-[repeat(auto"], .vl-stagger) > :nth-child(n + 12) { animation-delay: 275ms; }
+    /* Einstellungskarten (SettingsCard) gestaffelt */
+    & .vl-settings > section { animation: vl-item-in 0.3s var(--ease-out) backwards; }
+    & .vl-settings > section:nth-child(2) { animation-delay: 40ms; }
+    & .vl-settings > section:nth-child(3) { animation-delay: 80ms; }
+    & .vl-settings > section:nth-child(n + 4) { animation-delay: 120ms; }
+
+    /* Hover: Kachel hebt sich um 2 px, Bild zoomt leicht */
+    & .vl-card { transition: translate 0.22s var(--ease-out), background-color 0.1s; }
+    & .vl-card:hover { translate: 0 -2px; }
+    & .vl-zoom img { transition: scale 0.4s var(--ease-out); }
+    & .vl-card:hover .vl-zoom img { scale: 1.035; }
+
+    /* Druck-Feedback für Knöpfe */
+    & button:not(:disabled, [role="switch"]) { transition-property: color, background-color, border-color, opacity, scale, translate; }
+    & button:not(:disabled, [role="switch"]):active { scale: 0.96; transition-duration: 60ms; }
+
+    /* Schalter federn, Häkchen poppen */
+    & [role="switch"] > span { transition: translate 0.32s var(--ease-spring), background-color 0.15s, scale 0.15s; }
+    & [role="switch"]:active > span { scale: 1.15 0.9; }
+    & [role="checkbox"][aria-checked="true"] svg { animation: vl-check 0.24s var(--ease-out); }
+
+    /* Fortschritt gleitet statt zu springen */
+    & [role="progressbar"] > div { transition: width 0.5s var(--ease-out); }
+
+    /* Dialoge und Menüs: weich ein- und ausblenden */
+    & :is([role="dialog"], [role="alertdialog"])[data-state="open"] { animation: vl-pop-in 0.22s var(--ease-out); }
+    & :is([role="dialog"], [role="alertdialog"])[data-state="closed"] { animation: vl-pop-out 0.13s ease-in forwards; }
+    & .fixed.inset-0[data-state="open"] { animation: fade-in 0.2s ease-out; }
+    & .fixed.inset-0[data-state="closed"] { animation: vl-fade-out 0.14s ease-in forwards; }
+    & [role="menu"][data-state="open"] { animation: vl-menu-in 0.16s var(--ease-out); }
+    & [role="menu"][data-state="closed"] { animation: vl-menu-out 0.1s ease-in forwards; }
+  }
+}
+
+/* ------------------------------------------------------------------ Winter-Details */
+
+/* Frost: feine Pixel-Eiskristalle in den oberen Dialogecken + hauchdünne eisige Oberkante */
+/* nur modale Dialoge (.fixed) – Popovers haben ebenfalls role="dialog" */
+:root[data-frost="on"] :is([role="dialog"], [role="alertdialog"]).fixed::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    var(--frost-l) left top / 120px 72px no-repeat,
+    var(--frost-r) right top / 120px 72px no-repeat,
+    linear-gradient(rgb(220 240 255 / 0.18), rgb(220 240 255 / 0.18)) left top / 100% 1px no-repeat;
+  image-rendering: pixelated;
+  opacity: 0.6;
+}
+
+/* Leerzustände: ein kleines Pixel-Schneehäubchen auf dem Icon */
+.vl-empty-icon { position: relative; display: inline-grid; }
+/* nur auf Strich-Icons (SVG) – nicht auf Logos/Bildern */
+:root[data-theme="winter"] .vl-empty-icon:has(> svg)::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -5px;
+  width: 30px;
+  height: 8px;
+  translate: -50% 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15' height='4' shape-rendering='crispEdges' fill='%23e8f4ff'><rect x='4' y='0' width='5' height='1'/><rect x='2' y='1' width='10' height='1'/><rect x='1' y='2' width='13' height='1'/><rect x='0' y='3' width='15' height='1' fill-opacity='.5'/></svg>") center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  opacity: 0.85;
 }
 
 /* Weniger Bewegung: System-Einstellung oder Launcher-Einstellung */

@@ -74,6 +74,10 @@ pub struct Settings {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct Appearance {
+    /// Theme-Voreinstellung: "standard" | "winter" | "graphite" (Einzelwerte bleiben frei anpassbar)
+    pub theme: String,
+    /// Im Dezember/Januar automatisch das Winter-Theme zeigen
+    pub seasonal: bool,
     /// Akzentfarbe als Hex ("#8b6cff")
     pub accent: String,
     /// Hintergrund-Ton: "dark" (Schwarz) | "dim" (Dunkelgrau) | "oled"
@@ -85,6 +89,88 @@ pub struct Appearance {
     /// UI-Skalierung in Prozent (80–130)
     pub ui_scale: u32,
     pub background: Background,
+    /// Schrift: "inter" | "system"
+    pub font: String,
+    /// Überschriften: "default" | "pixel"
+    pub headings: String,
+    /// Schriftgröße in Prozent (90–115), unabhängig von der UI-Skalierung
+    pub font_scale: u32,
+    /// Kontrast: "normal" | "high"
+    pub contrast: String,
+    /// Kartenstil: "flat" | "outlined"
+    pub cards: String,
+    pub sidebar: Sidebar,
+    /// Instanz-Kacheln: "large" | "small"
+    pub icon_size: String,
+    /// Standardansicht der Bibliothek: "grid" | "list"
+    pub library_view: String,
+    pub status: StatusColors,
+    /// Animationen: "normal" | "more" (reduziert = `Settings::reduce_motion`)
+    pub motion: String,
+    /// Übergang beim Seitenwechsel
+    pub nav_animations: bool,
+    pub effects: Effects,
+}
+
+/// Seitenleiste.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct Sidebar {
+    /// "compact" (nur Icons) | "wide" (mit Beschriftung)
+    pub mode: String,
+    /// Zuletzt gespielte Instanzen anzeigen
+    pub instances: bool,
+    /// Reihenfolge der Einträge (Schlüssel wie "home", "instances" …)
+    pub order: Vec<String>,
+    /// Ausgeblendete Einträge
+    pub hidden: Vec<String>,
+}
+
+/// Statusfarben als Hex.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct StatusColors {
+    pub ok: String,
+    pub warn: String,
+    pub danger: String,
+}
+
+/// Theme-Extras (wirken nur bei Themes, die sie haben, z. B. Winter).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct Effects {
+    pub snow: bool,
+    /// Schneemenge in Prozent (10–100)
+    pub snow_amount: u32,
+    pub snow_settle: bool,
+    pub mascot: bool,
+    pub frost: bool,
+}
+
+/// Bekannte Seitenleisten-Einträge (Standard-Reihenfolge).
+pub const NAV_KEYS: [&str; 8] = ["home", "instances", "servers", "social", "discover", "skins", "cosmetics", "screenshots"];
+
+impl Default for Sidebar {
+    fn default() -> Self {
+        Sidebar {
+            mode: "compact".into(),
+            instances: true,
+            order: NAV_KEYS.iter().map(|s| s.to_string()).collect(),
+            hidden: Vec::new(),
+        }
+    }
+}
+
+impl Default for StatusColors {
+    fn default() -> Self {
+        StatusColors { ok: "#3fe0c5".into(), warn: "#ffb547".into(), danger: "#ff5470".into() }
+    }
+}
+
+impl Default for Effects {
+    fn default() -> Self {
+        Effects { snow: true, snow_amount: 50, snow_settle: true, mascot: true, frost: true }
+    }
 }
 
 /// Fensterhintergrund hinter allen Flächen.
@@ -110,12 +196,26 @@ pub struct Background {
 impl Default for Appearance {
     fn default() -> Self {
         Appearance {
+            theme: "standard".into(),
+            seasonal: false,
             accent: "#8b6cff".into(),
             tone: "dark".into(),
             radius: "square".into(),
             density: "normal".into(),
             ui_scale: 100,
             background: Background::default(),
+            font: "inter".into(),
+            headings: "default".into(),
+            font_scale: 100,
+            contrast: "normal".into(),
+            cards: "flat".into(),
+            sidebar: Sidebar::default(),
+            icon_size: "large".into(),
+            library_view: "grid".into(),
+            status: StatusColors::default(),
+            motion: "normal".into(),
+            nav_animations: true,
+            effects: Effects::default(),
         }
     }
 }
@@ -143,12 +243,37 @@ impl Appearance {
                 *v = def.to_string();
             }
         };
-        let hex = self.accent.trim_start_matches('#');
-        if hex.len() != 6 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
-            self.accent = d.accent.clone();
-        } else {
-            self.accent = format!("#{}", hex.to_ascii_lowercase());
+        fix_hex(&mut self.accent, &d.accent);
+        pick(&mut self.theme, &["standard", "winter", "graphite"], &d.theme);
+        pick(&mut self.font, &["inter", "system"], &d.font);
+        pick(&mut self.headings, &["default", "pixel"], &d.headings);
+        self.font_scale = self.font_scale.clamp(90, 115);
+        pick(&mut self.contrast, &["normal", "high"], &d.contrast);
+        pick(&mut self.cards, &["flat", "outlined"], &d.cards);
+        pick(&mut self.icon_size, &["large", "small"], &d.icon_size);
+        pick(&mut self.library_view, &["grid", "list"], &d.library_view);
+        pick(&mut self.motion, &["normal", "more"], &d.motion);
+        pick(&mut self.sidebar.mode, &["compact", "wide"], &d.sidebar.mode);
+        // Reihenfolge: nur bekannte Einträge, jeder genau einmal; fehlende hinten anhängen
+        let mut order: Vec<String> = Vec::new();
+        for k in self.sidebar.order.iter().chain(d.sidebar.order.iter()) {
+            if NAV_KEYS.contains(&k.as_str()) && !order.contains(k) {
+                order.push(k.clone());
+            }
         }
+        self.sidebar.order = order;
+        // „Start“ bleibt immer sichtbar
+        let mut hidden: Vec<String> = Vec::new();
+        for k in &self.sidebar.hidden {
+            if NAV_KEYS.contains(&k.as_str()) && k != "home" && !hidden.contains(k) {
+                hidden.push(k.clone());
+            }
+        }
+        self.sidebar.hidden = hidden;
+        fix_hex(&mut self.status.ok, &d.status.ok);
+        fix_hex(&mut self.status.warn, &d.status.warn);
+        fix_hex(&mut self.status.danger, &d.status.danger);
+        self.effects.snow_amount = self.effects.snow_amount.clamp(10, 100);
         pick(&mut self.tone, &["dark", "dim", "oled"], &d.tone);
         pick(&mut self.radius, &["square", "slight", "round"], &d.radius);
         pick(&mut self.density, &["compact", "normal"], &d.density);
@@ -160,6 +285,16 @@ impl Appearance {
         pick(&mut b.animated, &["aurora", "particles", "waves", "blocks", "custom"], &db.animated);
         b.dim = b.dim.min(90);
         b.blur = b.blur.min(40);
+    }
+}
+
+/// Hex-Farbe normalisieren ("FF00AA" -> "#ff00aa"), ungültig -> Standard.
+fn fix_hex(v: &mut String, def: &str) {
+    let hex = v.trim_start_matches('#');
+    if hex.len() != 6 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
+        *v = def.to_string();
+    } else {
+        *v = format!("#{}", hex.to_ascii_lowercase());
     }
 }
 
@@ -322,6 +457,7 @@ mod tests {
             density: "dense".into(),
             ui_scale: 400,
             background: Background { kind: "video".into(), dim: 120, blur: 99, ..Background::default() },
+            ..Appearance::default()
         };
         a.sanitize();
         assert_eq!(a.accent, "#ff00aa");
@@ -336,5 +472,50 @@ mod tests {
         let mut bad = Appearance { accent: "#12345z".into(), ..Appearance::default() };
         bad.sanitize();
         assert_eq!(bad.accent, "#8b6cff");
+    }
+
+    #[test]
+    fn appearance_customize_sanitize() {
+        let mut a = Appearance {
+            theme: "summer".into(),
+            font_scale: 200,
+            motion: "wild".into(),
+            sidebar: Sidebar {
+                mode: "huge".into(),
+                instances: false,
+                order: vec!["skins".into(), "bogus".into(), "home".into(), "skins".into()],
+                hidden: vec!["home".into(), "servers".into(), "nope".into()],
+            },
+            status: StatusColors { ok: "00FF00".into(), warn: "zzz".into(), danger: "#FF0000".into() },
+            effects: Effects { snow_amount: 0, ..Effects::default() },
+            ..Appearance::default()
+        };
+        a.sanitize();
+        assert_eq!(a.theme, "standard");
+        assert_eq!(a.font_scale, 115);
+        assert_eq!(a.motion, "normal");
+        assert_eq!(a.sidebar.mode, "compact");
+        assert!(!a.sidebar.instances);
+        // gewählte Reihenfolge zuerst, Rest angehängt, keine Doppelten
+        assert_eq!(a.sidebar.order[0], "skins");
+        assert_eq!(a.sidebar.order[1], "home");
+        assert_eq!(a.sidebar.order.len(), NAV_KEYS.len());
+        // „Start“ lässt sich nicht ausblenden
+        assert_eq!(a.sidebar.hidden, vec!["servers".to_string()]);
+        assert_eq!(a.status.ok, "#00ff00");
+        assert_eq!(a.status.warn, "#ffb547");
+        assert_eq!(a.status.danger, "#ff0000");
+        assert_eq!(a.effects.snow_amount, 10);
+    }
+
+    #[test]
+    fn appearance_partial_json_gets_new_defaults() {
+        let a: Appearance = serde_json::from_str(r##"{"accent":"#5aa9ff","sidebar":{"mode":"wide"}}"##).unwrap();
+        assert_eq!(a.accent, "#5aa9ff");
+        assert_eq!(a.theme, "standard");
+        assert_eq!(a.sidebar.mode, "wide");
+        assert!(a.sidebar.instances);
+        assert_eq!(a.sidebar.order.len(), NAV_KEYS.len());
+        assert!(a.effects.snow);
     }
 }

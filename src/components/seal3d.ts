@@ -20,6 +20,12 @@ export const SEAL_COLORS = {
   iceLight: "#f6fbff",
   iceSide: "#bcd9ee",
   iceDark: "#9cc4e2",
+  // Winter: Strickschal (gedämpftes Rot mit Wollweiß), Schnee
+  scarf: "#c2443e",
+  scarfDark: "#9e3532",
+  scarfStripe: "#efe4d2",
+  snow: "#f4f9ff",
+  snowShade: "#dbe8f4",
 };
 export type SealPalette = typeof SEAL_COLORS;
 
@@ -93,7 +99,9 @@ type Face = "px" | "nx" | "py" | "ny" | "pz" | "nz";
  * Baut die Robbe. 1 Einheit = 1 Pixel; Gesamtgröße ≈ 32 × 15 × 20 (mit Eisblock). Kopf zeigt nach +X,
  * Unterseite der Robbe bei y = 0. Für die Szene skalieren (z. B. 1/16).
  */
-export function buildSeal(THREE: typeof THREE_NS, palette: SealPalette = SEAL_COLORS): SealParts {
+export function buildSeal(THREE: typeof THREE_NS, palette: SealPalette = SEAL_COLORS, opts: { winter?: boolean } = {}): SealParts {
+  const winter = !!opts.winter;
+  const none: Painter = () => {};
   C = palette;
   const geos: THREE_NS.BufferGeometry[] = [];
   const mats: THREE_NS.Material[] = [];
@@ -139,7 +147,13 @@ export function buildSeal(THREE: typeof THREE_NS, palette: SealPalette = SEAL_CO
     7,
     10,
     {
-      py: all(noisy(C.back, 0.018, 3), px(C.spot, [[3, 2], [4, 2], [9, 6], [12, 3]])),
+      py: all(
+        noisy(C.back, 0.018, 3),
+        px(C.spot, [[3, 2], [4, 2], [9, 6], [12, 3]]),
+        // Winter: ein paar Schneeflocken sind auf dem Rücken liegen geblieben
+        winter ? px(C.snow, [[1, 4], [2, 4], [2, 5], [6, 1], [7, 1], [11, 7], [12, 7], [13, 2], [5, 8]]) : none,
+        winter ? px(C.snowShade, [[1, 5], [7, 2], [12, 8]]) : none,
+      ),
       ny: noisy(C.belly, 0.018, 4),
       pz: all(noisy(C.body, 0.018, 5), rows(C.belly, 5, 2)),
       nz: all(noisy(C.body, 0.018, 6), rows(C.belly, 5, 2)),
@@ -168,7 +182,24 @@ export function buildSeal(THREE: typeof THREE_NS, palette: SealPalette = SEAL_CO
   const faceBase = all(noisy(C.body, 0.015, 20), px(C.cheek, [[0, 6], [7, 6]]));
   const faceOpen = tex(8, 8, all(faceBase, px(C.eye, eyes), px(C.shine, [[1, 3], [5, 3]])));
   const faceShut = tex(8, 8, all(faceBase, px(C.eye, [[1, 4], [2, 4], [5, 4], [6, 4]])));
-  const headMesh = box(8, 8, 8, { py: all(noisy(C.back, 0.018, 21), px(C.spot, [[5, 2]])), ny: noisy(C.belly, 0.018, 22) }, noisy(C.body, 0.018, 23));
+  // Winter: kleines Schneehäubchen auf dem Kopf (Oberseite fast ganz weiß, Ränder ausgefranst)
+  const headTop: Painter = winter
+    ? all(
+        noisy(C.back, 0.018, 21),
+        (g) => {
+          const r = rng(77);
+          for (let y = 0; y < 8; y++)
+            for (let x = 0; x < 8; x++) {
+              const edge = Math.min(x, y, 7 - x, 7 - y);
+              if (edge >= 2 || r() < (edge === 1 ? 0.75 : 0.3)) {
+                g.fillStyle = r() < 0.2 ? C.snowShade : C.snow;
+                g.fillRect(x, y, 1, 1);
+              }
+            }
+        },
+      )
+    : all(noisy(C.back, 0.018, 21), px(C.spot, [[5, 2]]));
+  const headMesh = box(8, 8, 8, { py: headTop, ny: noisy(C.belly, 0.018, 22) }, noisy(C.body, 0.018, 23));
   const faceMat = (headMesh.material as THREE_NS.MeshLambertMaterial[])[0];
   faceMat.map?.dispose();
   faceMat.map = faceOpen;
@@ -191,6 +222,44 @@ export function buildSeal(THREE: typeof THREE_NS, palette: SealPalette = SEAL_CO
   snout.position.set(8.5, 0, 0);
   head.add(snout);
   seal.add(head);
+
+  // ---------------------------------------------------------------- Winter: Strickschal
+  if (winter) {
+    // Einfarbig gestrickt (Rippen: jede zweite Spalte etwas dunkler); Wollweiß nur als Streifen an den Enden
+    const knit = (seed: number, vertical = false, stripes: number[] = []): Painter =>
+      all(noisy(C.scarf, 0.03, seed), (g, w, h) => {
+        for (let y = 0; y < h; y++)
+          for (let x = 0; x < w; x++) {
+            const row = vertical ? x : y;
+            const col = vertical ? y : x;
+            if (stripes.includes(row)) g.fillStyle = C.scarfStripe;
+            else if (col % 2 === 1) g.fillStyle = C.scarfDark;
+            else continue;
+            g.fillRect(x, y, 1, 1);
+          }
+      });
+    // Fransen: unterste Reihe abwechselnd Wollweiß/dunkel
+    const fringe: Painter = (g, w, h) => {
+      for (let x = 0; x < w; x++) {
+        g.fillStyle = x % 2 ? C.scarfDark : C.scarfStripe;
+        g.fillRect(x, h - 1, 1, 1);
+      }
+    };
+    // Dicker Ring um den Hals (breiter als Körper/Kopf, damit er aufliegt)
+    // Liegt tief am Hals und ragt vorn unter dem Kopf hervor -> auch in 34 px als Band erkennbar
+    const ring = box(6, 3, 11, { py: knit(92, true) }, knit(93));
+    ring.position.set(7.2, 6.1, 0);
+    seal.add(ring);
+    // Zwei herabhängende Enden vorn auf der Kamera-Seite: eins lang, eins kürzer und leicht schräg
+    const endA = box(3, 5, 1, {}, all(knit(94, false, [2]), fringe));
+    endA.position.set(9, 3.6, 5.2);
+    endA.rotation.z = 0.05;
+    seal.add(endA);
+    const endB = box(2.5, 3.5, 1, {}, all(knit(95, false, [1]), fringe));
+    endB.position.set(6.6, 4.3, 5.6);
+    endB.rotation.z = -0.2;
+    seal.add(endB);
+  }
 
   // ---------------------------------------------------------------- Flossen (Gruppen mit Drehpunkt am Ansatz)
   const fin = (seed: number) => box(5, 1, 3, {}, noisy(C.flipper, 0.02, seed));

@@ -11,6 +11,7 @@ import { openNewInstance, useInstanceActions } from "@/components/instance/actio
 import { Logo3D } from "@/components/Logo3D";
 import { openImport } from "@/features/import/ImportDialog";
 import { useT } from "@/i18n";
+import { cachedAppearance } from "@/lib/appearance";
 
 type SortKey = "recent" | "name" | "created" | "playtime";
 const SORTS: SortKey[] = ["recent", "name", "created", "playtime"];
@@ -51,8 +52,8 @@ function cmpVersion(a: string, b: string): number {
   return 0;
 }
 
-/** Raster: bei 1280 px Fensterbreite 6 Kacheln je Reihe. */
-export const gridCls = "grid grid-cols-[repeat(auto-fill,minmax(164px,1fr))] gap-x-2 gap-y-2";
+/** Raster: bei 1280 px Fensterbreite 6 Kacheln je Reihe; Kachelbreite aus der Einstellung „Instanz-Kacheln“ (--inst-tile). */
+export const gridCls = "grid grid-cols-[repeat(auto-fill,minmax(var(--inst-tile),1fr))] gap-x-2 gap-y-2";
 
 export function InstancesPage() {
   const t = useT();
@@ -63,7 +64,8 @@ export function InstancesPage() {
   const [sort, setSortState] = useState<SortKey>(() => load("vl.inst.sort", "recent"));
   const [groupBy, setGroupByState] = useState<GroupKey>(() => load("vl.inst.groupby", "group"));
   const [collapsed, setCollapsed] = useState<string[]>(() => load("vl.inst.collapsed", []));
-  const [view, setViewState] = useState<ViewKey>(() => load("vl.inst.view", "grid"));
+  // Standardansicht aus der Darstellung; eine Umschaltung hier gilt, bis die Einstellung geändert wird
+  const [view, setViewState] = useState<ViewKey>(() => load("vl.inst.view", cachedAppearance().library_view));
   const q = useDeferredValue(query.trim().toLowerCase());
 
   const persist =

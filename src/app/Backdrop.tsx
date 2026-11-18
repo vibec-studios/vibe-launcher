@@ -2,69 +2,12 @@
 // (Aurora per CSS; Partikel, Wellen, Blöcke per Canvas mit max. 30 fps). Darüber liegt die Abdunklung.
 // Pausiert, wenn das Fenster unsichtbar/minimiert ist oder ein Spiel läuft; „Animationen reduzieren“ und
 // prefers-reduced-motion zeigen ein Standbild.
-import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { isRunning, useGameStore, useSettings } from "@/lib/queries";
+import { memo, useEffect, useRef, type CSSProperties } from "react";
+import { useMotion } from "./motion";
 import { GRADIENTS, hasBackground, isVideoFile } from "@/lib/appearance";
 import { imageSrc } from "@/lib/format";
 import type { Appearance } from "@/lib/types";
 import { cn } from "@/components/ui";
-
-// ------------------------------------------------------------------ Pausieren
-
-/**
- * Fenster sichtbar? WebView2 meldet beim Minimieren weiter „visible“ – daher zusätzlich die Tauri-Fenster-API
- * (minimiert / versteckt, z. B. „Launcher beim Spielstart verstecken“): bei Größenänderung und alle 2 s.
- */
-function usePageVisible() {
-  const [docVisible, setDocVisible] = useState(() => document.visibilityState === "visible");
-  const [winVisible, setWinVisible] = useState(true);
-  useEffect(() => {
-    const on = () => setDocVisible(document.visibilityState === "visible");
-    document.addEventListener("visibilitychange", on);
-    return () => document.removeEventListener("visibilitychange", on);
-  }, []);
-  useEffect(() => {
-    if (import.meta.env.VITE_MOCK === "1") return;
-    let alive = true;
-    const w = getCurrentWindow();
-    const check = () =>
-      Promise.all([w.isMinimized(), w.isVisible()])
-        .then(([min, vis]) => alive && setWinVisible(!min && vis))
-        .catch(() => {});
-    void check();
-    const un = w.onResized(() => void check());
-    const timer = setInterval(check, 2000);
-    return () => {
-      alive = false;
-      clearInterval(timer);
-      void un.then((f) => f());
-    };
-  }, []);
-  return docVisible && winVisible;
-}
-
-function useSystemReducedMotion() {
-  const [reduce, setReduce] = useState(() => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
-  useEffect(() => {
-    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    if (!mq) return;
-    const on = () => setReduce(mq.matches);
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
-  return reduce;
-}
-
-/** still = nie animieren (Standbild), paused = gerade anhalten (unsichtbar / Spiel läuft). */
-function useMotion() {
-  const visible = usePageVisible();
-  const gameRunning = useGameStore((s) => Object.values(s.states).some((g) => isRunning(g)));
-  const settingReduce = useSettings().data?.reduce_motion ?? false;
-  const sysReduce = useSystemReducedMotion();
-  const still = settingReduce || sysReduce;
-  return { still, paused: still || !visible || gameRunning };
-}
 
 // ------------------------------------------------------------------ Canvas-Animationen
 
@@ -154,6 +97,7 @@ const PAINTERS = { particles: makeParticles, waves: makeWaves, blocks: makeBlock
 const CanvasAnim = memo(function CanvasAnim({ kind, accent, paused }: { kind: keyof typeof PAINTERS; accent: string; paused: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const state = useRef({ accent, paused, t: 0 });
+  const wake = useRef<() => void>(() => {});
   state.current.accent = accent;
   state.current.paused = paused;
 
@@ -181,22 +125,36 @@ const CanvasAnim = memo(function CanvasAnim({ kind, accent, paused }: { kind: ke
     let last = performance.now();
     let acc = 0;
     const frame = (now: number) => {
+      // Pausiert: Schleife ganz anhalten (kein Leerlauf-rAF); `wake` startet sie wieder
+      if (state.current.paused) {
+        raf = 0;
+        return;
+      }
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      if (state.current.paused) return;
       acc += dt;
       if (acc < 1 / 30) return; // höchstens 30 fps
       state.current.t += acc;
       acc = 0;
       paint(ctx, w, h, state.current.t, state.current.accent);
     };
-    raf = requestAnimationFrame(frame);
+    wake.current = () => {
+      if (raf || state.current.paused) return;
+      last = performance.now();
+      raf = requestAnimationFrame(frame);
+    };
+    wake.current();
     return () => {
       cancelAnimationFrame(raf);
+      wake.current = () => {};
       ro.disconnect();
     };
   }, [kind]);
+
+  useEffect(() => {
+    if (!paused) wake.current();
+  }, [paused]);
 
   // Farbwechsel auch im Standbild sofort zeigen
   useEffect(() => {
