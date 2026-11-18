@@ -98,12 +98,17 @@ export function MissingPanel({ instanceId, onDismissed }: { instanceId: string; 
           </div>
         ))}
       </div>
-      {watching && (
-        <div className="flex items-center gap-2 border-t border-line px-4 py-2 text-[12px] text-muted">
-          <Spinner size={11} className="text-dim" />
-          {t("missing.watching")}
-        </div>
-      )}
+      <div className="flex items-center gap-3 border-t border-line px-3 py-2">
+        <Button size="sm" variant="ghost" icon={<Search size={13} />} loading={scanning} onClick={search}>
+          {t("missing.search")}
+        </Button>
+        {watching && (
+          <span className="flex min-w-0 items-center gap-1.5 truncate text-[12px] text-dim" title={t("missing.watching_tip")}>
+            <Spinner size={10} />
+            <span className="truncate">{t("missing.watching")}</span>
+          </span>
+        )}
+      </div>
       <div className="flex items-center gap-1 border-t border-line px-3 py-2">
         <IconButton
           label={t("common.open_folder")}
@@ -121,9 +126,6 @@ export function MissingPanel({ instanceId, onDismissed }: { instanceId: string; 
         <div className="flex-1" />
         <Button size="sm" variant="subtle" onClick={dismiss}>
           {t("missing.dismiss")}
-        </Button>
-        <Button size="sm" variant="ghost" icon={<Search size={13} />} loading={scanning} onClick={search}>
-          {t("missing.search")}
         </Button>
       </div>
     </div>

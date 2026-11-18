@@ -238,7 +238,7 @@ function PickerList({ project, close }: { project: P; close: () => void }) {
           <span>{t("manual.picker_note")}</span>
         </div>
       )}
-      <div className="px-2.5 pb-1 pt-2 text-[11px] font-semibold text-dim">{t("discover.install_in")}</div>
+      <div className="px-2.5 pb-1 pt-2 text-[11px] font-semibold text-dim">{project.manual_download ? t("manual.download_for") : t("discover.install_in")}</div>
       {isPending ? (
         <div className="grid h-16 place-items-center">
           <Spinner size={14} />
@@ -345,13 +345,13 @@ function PickerRow({
               e.stopPropagation();
               startManualDownload(inst.id, project, null, { open: false }).catch(() => {});
             }}
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-ctl text-dim opacity-0 transition-opacity hover:bg-white/[.08] hover:text-text group-hover:opacity-100"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-ctl text-dim opacity-0 transition-opacity hover:bg-white/[.08] hover:text-text group-hover:opacity-100 group-focus-visible:opacity-100"
           >
             <ListPlus size={14} />
           </span>
         </Tooltip>
       )}
-      <span className={cn("flex shrink-0 justify-end text-[12px]", manual ? "w-[96px]" : "w-[78px]")}>
+      <span className={cn("flex shrink-0 justify-end whitespace-nowrap text-[12px]", manual ? "w-[104px]" : "w-[78px]")}>
         {running ? (
           <span className="flex w-full flex-col gap-1">
             <span className="text-right tabular-nums text-muted">{task?.progress != null ? `${Math.round(task.progress * 100)} %` : ""}</span>
@@ -372,7 +372,7 @@ function PickerRow({
         ) : (
           <span className={cn("flex items-center gap-1 font-semibold opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100", ok ? "text-text" : "text-muted")}>
             {!ok ? <ListFilter size={13} /> : manual ? <ExternalLink size={13} /> : <Download size={13} />}
-            {!ok ? t("discover.install_pick_version") : manual ? t("manual.download_short") : t("common.install")}
+            {!ok ? t("discover.install_pick_version") : manual ? t("missing.download") : t("common.install")}
           </span>
         )}
       </span>

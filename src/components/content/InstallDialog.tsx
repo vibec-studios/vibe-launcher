@@ -149,9 +149,12 @@ function Footer({ phase, setPhase, isPack, onClose }: { phase: Phase; setPhase: 
   if (phase.k === "select")
     return (
       <>
-        <Button variant="subtle" onClick={onClose}>
-          {t("common.cancel")}
-        </Button>
+        {/* Manuell: drei Knöpfe passen nicht – Schließen über das X */}
+        {!start.alt && (
+          <Button variant="subtle" onClick={onClose}>
+            {t("common.cancel")}
+          </Button>
+        )}
         {start.alt && (
           <Tooltip content={<span className="block max-w-[260px] leading-snug">{t("manual.add_tip")}</span>}>
             <Button variant="ghost" disabled={start.disabled || start.busy} onClick={() => start.alt?.run()} icon={<ListPlus size={14} />}>
