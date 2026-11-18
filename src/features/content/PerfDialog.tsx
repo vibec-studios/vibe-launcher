@@ -1,6 +1,5 @@
 // OWNER: Content-Agent. Ein-Klick „Performance-Mods installieren“ mit Vorschau.
 import { useQuery } from "@tanstack/react-query";
-import { Gauge } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button, Dialog, ErrorState, Skeleton, toast } from "@/components/ui";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
@@ -11,21 +10,8 @@ import { queryClient, waitForTask } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { SelectBox } from "./ContentRow";
 
-export function PerfButton({ instance }: { instance: Instance }) {
-  const t = useT();
-  const [open, setOpen] = useState(false);
-  if (instance.loader.kind === "vanilla") return null;
-  return (
-    <>
-      <Button size="sm" variant="ghost" icon={<Gauge size={14} />} onClick={() => setOpen(true)}>
-        {t("perf.button")}
-      </Button>
-      {open && <PerfDialog instance={instance} onClose={() => setOpen(false)} />}
-    </>
-  );
-}
-
-function PerfDialog({ instance, onClose }: { instance: Instance; onClose: () => void }) {
+/** Vorschau + Installation bewährter Performance-Mods (erreichbar über das Werkzeug-Menü der Inhalte-Liste). */
+export function PerfDialog({ instance, onClose }: { instance: Instance; onClose: () => void }) {
   const t = useT();
   const q = useQuery({ queryKey: ["perf", instance.id, instance.mc_version, instance.loader.kind], queryFn: () => api.perfPreview(instance.id), staleTime: 60_000, retry: 0 });
   const [sel, setSel] = useState<Set<string>>(new Set());

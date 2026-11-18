@@ -1,29 +1,28 @@
-// OWNER: Frontend-Agent A. Instanzseite: kompakter Kopf (Icon, Name, Metazeile, Spielen/Ordner/Mehr),
-// Tabs (Mods, Resourcepacks, Shader, Welten, Logs, Einstellungen), Crash-Banner.
+// OWNER: Frontend-Agent A. Instanzseite: Kopfzeile (InstanceHeader) mit vier Bereichen (Inhalte, Welten, Logs,
+// Einstellungen) und Hinweiszeile, Unterseiten-Leiste, Crash-Banner.
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, FileText, FolderOpen, MoreHorizontal, Stethoscope, UploadCloud, X } from "lucide-react";
-import { useGameState, useInstance } from "@/lib/queries";
-import type { Instance } from "@/lib/types";
+import { create } from "zustand";
+import { AlertTriangle, FileText, Plus, Stethoscope, UploadCloud, X } from "lucide-react";
+import { api } from "@/lib/api";
+import { qk, useGameState, useInstance } from "@/lib/queries";
+import type { ContentKind, Instance } from "@/lib/types";
 import type { InstanceTab } from "@/app/router";
-import { formatDuration, formatRelative, instanceAccent, loaderNames } from "@/lib/format";
-import { Button, DropdownMenu, ErrorState, IconButton, Skeleton, Tabs, Tooltip, cn } from "@/components/ui";
-import { InstanceIcon } from "@/components/instance/InstanceIcon";
-import { StatusHint } from "@/components/instance/InstanceCard";
-import { InstanceDropdownContent } from "@/components/instance/InstanceMenu";
-import { PlayButton } from "@/components/instance/PlayButton";
-import { openFolder, setIcon } from "@/components/instance/actions";
+import { instanceAccent } from "@/lib/format";
+import { Button, ErrorState, IconButton, Tabs, cn } from "@/components/ui";
 import { InstanceContentTab } from "@/features/content/InstanceContentTab";
 import { LogsTab, showLogFile, uploadCrash } from "@/features/logs/LogsTab";
 import { useT } from "@/i18n";
 import { WorldsTab } from "./WorldsTab";
 import { ServersTab } from "./ServersTab";
 import { DiagnosisCard, DiagnosisDialog, useDiagnosis } from "@/features/logs/Diagnosis";
-import { ActiveModSet } from "@/features/content/ModSetsMenu";
 import { InstanceSettingsTab } from "./InstanceSettingsTab";
 import { BackupsTab } from "@/features/backups/BackupsTab";
 import { ConfigsTab } from "@/features/configs/ConfigsTab";
 import { accentVars } from "@/components/instance/accent";
+import { HeaderSkeleton, InstanceHeader } from "./InstanceHeader";
+import { InstanceNotices } from "./InstanceNotices";
 
 const route = getRouteApi("/instances/$id");
 const wrap = "w-full px-6";
@@ -92,72 +91,97 @@ function CrashBanner({ instance }: { instance: Instance }) {
   );
 }
 
-function HeaderSkeleton() {
-  return (
-    <header className="shrink-0 border-b border-line">
-      <div className={cn(wrap, "flex items-center gap-4 pb-3 pt-5")}>
-        <Skeleton className="h-16 w-16" />
-        <div className="flex flex-1 flex-col gap-2">
-          <Skeleton className="h-6 w-64" />
-          <Skeleton className="h-4 w-80" />
-        </div>
-        <Skeleton className="h-10 w-[136px]" />
-      </div>
-      <div className={cn(wrap, "flex h-11 items-center gap-6")}>
-        {Array.from({ length: 7 }, (_, i) => (
-          <Skeleton key={i} className="h-3.5 w-16" />
-        ))}
-      </div>
-    </header>
-  );
+// ------------------------------------------------------------------ Bereiche
+// Vier Bereiche statt neun Tabs. Die URL behält die bisherigen Tab-Werte (Router und Deep-Links bleiben gültig);
+// Unterseiten erscheinen als zweite, leisere Leiste.
+type Area = "content" | "worlds" | "logs" | "settings";
+const areaOf: Record<InstanceTab, Area> = {
+  content: "content",
+  resourcepacks: "content",
+  shaders: "content",
+  worlds: "worlds",
+  servers: "worlds",
+  logs: "logs",
+  settings: "settings",
+  configs: "settings",
+  backups: "settings",
+};
+
+/** Zuletzt geöffnete Unterseite je Bereich (bleibt beim Wechsel erhalten). */
+const useLastSub = create<Partial<Record<Area, InstanceTab>>>(() => ({}));
+
+interface SubItem {
+  value: InstanceTab;
+  label: string;
+  count?: number;
 }
 
-/** Metazeile: „Fabric 0.16.9 · Minecraft 1.21.4 · 12 h gespielt · Modpack …“ */
-function MetaLine({ instance: i }: { instance: Instance }) {
+function SubNav({ items, value, onChange, right }: { items: SubItem[]; value: InstanceTab; onChange: (v: InstanceTab) => void; right?: React.ReactNode }) {
   const t = useT();
-  const src = i.source;
-  const parts: React.ReactNode[] = [
-    i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]}${i.loader.version ? ` ${i.loader.version}` : ""}`,
-    `Minecraft ${i.mc_version}`,
-  ];
-  if (i.play_time_secs >= 60) parts.push(t("inst.meta.played", { time: formatDuration(i.play_time_secs) }));
-  parts.push(i.last_played ? t("inst.meta.last", { when: formatRelative(i.last_played) }) : t("inst.never_played"));
-  if (src) parts.push(`${t("inst.modpack")}: ${src.name ?? src.kind}${src.version_name ? ` ${src.version_name}` : ""}`);
   return (
-    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted">
-      {parts.map((p, n) => (
-        <span key={n} className="flex items-center gap-2 whitespace-nowrap">
-          {n > 0 && <span className="text-dim">·</span>}
-          {p}
-        </span>
-      ))}
-      <StatusHintInline instance={i} />
-      <span className="flex items-center gap-2 whitespace-nowrap before:text-dim before:content-['·'] empty:hidden">
-        <ActiveModSet instanceId={i.id} />
-      </span>
+    <div className={cn(wrap, "flex h-12 shrink-0 items-center gap-1 border-b border-line")}>
+      <div className="flex min-w-0 items-center gap-1" role="tablist" aria-label={t("ipage.sub.label")}>
+        {items.map((it) => {
+          const active = it.value === value;
+          return (
+            <button
+              key={it.value}
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(it.value)}
+              className={cn(
+                "flex h-8 items-center gap-2 px-3 text-[13px] font-semibold transition-colors duration-100",
+                active ? "bg-surface3 text-white" : "text-muted hover:bg-white/[.04] hover:text-white",
+              )}
+            >
+              {it.label}
+              {it.count !== undefined && <span className={cn("text-[12px] font-medium tabular-nums", active ? "text-muted" : "text-dim")}>{it.count}</span>}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex-1" />
+      {right}
     </div>
   );
 }
 
-function StatusHintInline({ instance }: { instance: Instance }) {
-  return (
-    <span className="flex items-center gap-2 whitespace-nowrap before:text-dim before:content-['·'] empty:hidden">
-      <StatusHint instance={instance} />
-    </span>
-  );
+const discoverType: Partial<Record<InstanceTab, string>> = { content: "mod", resourcepacks: "resourcepack", shaders: "shader" };
+
+/** Unterseiten des aktiven Bereichs (mit Anzahl, sobald bekannt). */
+function useSubItems(id: string, vanilla: boolean, area: Area): SubItem[] {
+  const t = useT();
+  const list = (kind: ContentKind, enabled: boolean) => ({ queryKey: qk.content(id, kind), queryFn: () => api.contentList(id, kind), staleTime: 60_000, enabled });
+  const mods = useQuery(list("mod", area === "content" && !vanilla));
+  const packs = useQuery(list("resourcepack", area === "content"));
+  const shaders = useQuery(list("shader", area === "content"));
+  const worlds = useQuery({ queryKey: qk.worlds(id), queryFn: () => api.worldsList(id), enabled: area === "worlds" });
+  const servers = useQuery({ queryKey: ["servers", id], queryFn: () => api.instanceServersList(id), enabled: area === "worlds" });
+  if (area === "content")
+    return [
+      ...(vanilla ? [] : [{ value: "content" as const, label: t("inst.tab.mods"), count: mods.data?.length }]),
+      { value: "resourcepacks", label: t("inst.tab.resourcepacks"), count: packs.data?.length },
+      { value: "shaders", label: t("inst.tab.shaders"), count: shaders.data?.length },
+    ];
+  if (area === "worlds")
+    return [
+      { value: "worlds", label: t("inst.tab.worlds"), count: worlds.data?.length },
+      { value: "servers", label: t("inst.tab.servers"), count: servers.data?.length },
+    ];
+  if (area === "settings")
+    return [
+      { value: "settings", label: t("ipage.sub.instance") },
+      { value: "configs", label: t("inst.tab.configs") },
+      { value: "backups", label: t("inst.tab.backups") },
+    ];
+  return [];
 }
 
 export function InstancePage() {
-  const t = useT();
   const { id } = route.useParams();
   const { tab } = route.useSearch();
-  const navTab = route.useNavigate();
   const nav = useNavigate();
   const { data: inst, isError, error, refetch } = useInstance(id);
-
-  const vanilla = inst?.loader.kind === "vanilla";
-  const active: InstanceTab = vanilla && tab === "content" ? "resourcepacks" : tab;
-  const setTab = (v: InstanceTab) => navTab({ search: { tab: v }, replace: true });
 
   // Gelöschte Instanz (z. B. aus einem anderen Fenster) -> zurück zur Liste
   useEffect(() => {
@@ -169,67 +193,74 @@ export function InstancePage() {
       <div className="flex h-full flex-col">{isError ? <ErrorState error={error} onRetry={() => refetch()} className="flex-1" /> : <HeaderSkeleton />}</div>
     );
   }
+  // Eigener Baum je Instanz: Abfragen behalten sonst (placeholderData) kurz die Daten der vorigen Instanz
+  return <InstanceView key={inst.id} inst={inst} tab={tab} />;
+}
+
+function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
+  const t = useT();
+  const navTab = route.useNavigate();
+  const nav = useNavigate();
+  const vanilla = inst.loader.kind === "vanilla";
+  const active: InstanceTab = vanilla && tab === "content" ? "resourcepacks" : tab;
+  const area = areaOf[active];
+  const subItems = useSubItems(inst.id, vanilla, area);
+  // Aktuelle Unterseite merken (auch wenn sie per Link geöffnet wurde)
+  useEffect(() => useLastSub.setState({ [area]: active }), [area, active]);
+  const setTab = (v: InstanceTab) => navTab({ search: { tab: v }, replace: true });
+  const openArea = (a: Area) => {
+    if (a === area) return;
+    const last = useLastSub.getState()[a];
+    const first: Record<Area, InstanceTab> = { content: vanilla ? "resourcepacks" : "content", worlds: "worlds", logs: "logs", settings: "settings" };
+    setTab(last && !(vanilla && last === "content") ? last : first[a]);
+  };
 
   const accent = instanceAccent(inst.id, inst.accent);
+  const kind: ContentKind = active === "content" ? "mod" : active === "resourcepacks" ? "resourcepack" : "shader";
 
   return (
     <div className="flex h-full flex-col" style={accentVars(accent)}>
-      <header className="shrink-0 border-b border-line bg-panel">
-        <div className={cn(wrap, "flex items-center gap-4 pb-3 pt-5")}>
-          <Tooltip content={t("inst.icon.choose")}>
-            <button onClick={() => setIcon(inst)} className="shrink-0" aria-label={t("inst.icon.choose")}>
-              <InstanceIcon icon={inst.icon} accent={accent} size={64} />
-            </button>
-          </Tooltip>
-          <div className="min-w-0 flex-1">
-            <h1 className="display truncate text-[22px]" title={inst.name}>
-              {inst.name}
-            </h1>
-            <MetaLine instance={inst} />
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <PlayButton instance={inst} size="md" />
-            <Tooltip content={t("common.open_folder")}>
-              <IconButton label={t("common.open_folder")} className="h-10 w-10" onClick={() => openFolder(inst)}>
-                <FolderOpen size={17} />
-              </IconButton>
-            </Tooltip>
-            <DropdownMenu
-              trigger={
-                <IconButton label={t("common.more")} className="h-10 w-10 data-[state=open]:bg-surface3 data-[state=open]:text-white">
-                  <MoreHorizontal size={17} />
-                </IconButton>
-              }
-            >
-              <InstanceDropdownContent instance={inst} onDeleted={() => nav({ to: "/instances" })} />
-            </DropdownMenu>
-          </div>
-        </div>
-        <div className={wrap}>
-          <Tabs<InstanceTab>
-            value={active}
-            onChange={setTab}
-            className="-mx-3 h-11! border-b-0"
+      <InstanceHeader
+        instance={inst}
+        accent={accent}
+        tabs={
+          <Tabs<Area>
+            value={area}
+            onChange={openArea}
+            className="-mx-3 h-11! gap-2 border-b-0"
             items={[
-              ...(vanilla ? [] : [{ value: "content" as const, label: t("inst.tab.mods") }]),
-              { value: "resourcepacks", label: t("inst.tab.resourcepacks") },
-              { value: "shaders", label: t("inst.tab.shaders") },
-              { value: "worlds", label: t("inst.tab.worlds") },
-              { value: "servers", label: t("inst.tab.servers") },
-              { value: "backups", label: t("inst.tab.backups") },
-              { value: "logs", label: t("inst.tab.logs") },
-              { value: "configs", label: t("inst.tab.configs") },
-              { value: "settings", label: t("inst.tab.settings") },
+              { value: "content", label: t("ipage.tab.content") },
+              { value: "worlds", label: t("ipage.tab.worlds") },
+              { value: "logs", label: t("ipage.tab.logs") },
+              { value: "settings", label: t("ipage.tab.settings") },
             ]}
           />
-        </div>
-      </header>
+        }
+        notices={<InstanceNotices instance={inst} tab={active} />}
+      />
       <CrashBanner instance={inst} />
+      {subItems.length > 0 && (
+        <SubNav
+          items={subItems}
+          value={active}
+          onChange={setTab}
+          right={
+            area === "content" ? (
+              <Button
+                size="sm"
+                variant="accent"
+                icon={<Plus size={15} />}
+                onClick={() => nav({ to: "/discover", search: { instance: inst.id, type: discoverType[active] as never } })}
+              >
+                {t("content.add")}
+              </Button>
+            ) : undefined
+          }
+        />
+      )}
       <div className="relative min-h-0 flex-1">
-        {active === "content" || active === "resourcepacks" || active === "shaders" ? (
-          <div className="h-full overflow-y-auto overflow-x-hidden overscroll-contain">
-            <InstanceContentTab key={active} instance={inst} kind={active === "content" ? "mod" : active === "resourcepacks" ? "resourcepack" : "shader"} />
-          </div>
+        {area === "content" ? (
+          <InstanceContentTab key={active} instance={inst} kind={kind} />
         ) : active === "worlds" ? (
           <WorldsTab instance={inst} />
         ) : active === "servers" ? (
@@ -247,3 +278,4 @@ export function InstancePage() {
     </div>
   );
 }
+

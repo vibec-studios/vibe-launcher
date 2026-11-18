@@ -217,17 +217,17 @@ export function ServersTab({ instance }: { instance: Instance }) {
 
   return (
     <div className="scroll h-full">
-      <div className="flex w-full flex-col gap-3 px-6 py-5">
+      <div className="flex w-full flex-col gap-3 px-6 py-6">
         <div className="flex items-center gap-3">
           <span className="text-[13px] text-muted">{q.data ? t("servers.count", { n: list.length }) : ""}</span>
           {locked && <span className="text-[12px] text-warn">{t("servers.locked")}</span>}
           <div className="flex-1" />
           <Tooltip content={t("servers.refresh")}>
-            <IconButton label={t("servers.refresh")} onClick={() => qc.invalidateQueries({ queryKey: ["server-ping"] })}>
+            <IconButton label={t("servers.refresh")} size="sm" onClick={() => qc.invalidateQueries({ queryKey: ["server-ping"] })}>
               <RefreshCw size={15} />
             </IconButton>
           </Tooltip>
-          <Button variant="primary" icon={<Plus size={15} />} disabled={locked} onClick={() => setEditing(-1)}>
+          <Button size="sm" variant="accent" icon={<Plus size={14} />} disabled={locked} onClick={() => setEditing(-1)}>
             {t("servers.add")}
           </Button>
         </div>
@@ -242,7 +242,7 @@ export function ServersTab({ instance }: { instance: Instance }) {
             title={t("servers.empty.title")}
             text={t("servers.empty.text")}
             action={
-              <Button variant="primary" icon={<Plus size={15} />} disabled={locked} onClick={() => setEditing(-1)}>
+              <Button size="sm" variant="accent" icon={<Plus size={14} />} disabled={locked} onClick={() => setEditing(-1)}>
                 {t("servers.add")}
               </Button>
             }
