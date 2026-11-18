@@ -1,0 +1,12 @@
+Vibe Launcher
+Copyright 2026 Vibe Craft Studios
+
+The source code in this repository is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The Apache License does not cover:
+  - the names "Vibe", "Vibe Launcher", "Vibey", "Vibey Client", "Vibe Craft Studios" and the seal mascot/logo
+    (see TRADEMARKS.md),
+  - the artwork and other assets listed in ASSETS-LICENSE.md (all rights reserved),
+  - access to the Vibe online services such as vibe.henny.dev and the Vibey relay (see SERVICES.md).
+
+Forks must use their own name, their own artwork and their own backend services.

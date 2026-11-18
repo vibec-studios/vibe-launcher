@@ -144,3 +144,20 @@ new client IDs must be approved by Mojang via <https://aka.ms/mce-reviewappid> b
 **Releases:** set the secrets `TAURI_SIGNING_PRIVATE_KEY` (+ optional `_PASSWORD`), `CURSEFORGE_API_KEY`,
 `VIBE_MSA_CLIENT_ID`, bump the version in `package.json` and `src-tauri/Cargo.toml`, push a `vX.Y.Z` tag, then publish the
 draft release created by GitHub Actions. See [docs/RELEASE.md](docs/RELEASE.md).
+
+## Lizenz / License
+
+**Code:** [Apache License 2.0](LICENSE). Forken, ändern und weitergeben ist erlaubt.
+
+**Nicht** von der Code-Lizenz erfasst:
+
+- **Namen und Logos** („Vibe“, „Vibey“, „Vibe Craft Studios“, die Robbe): Forks brauchen einen eigenen Namen und
+  eigene Logos und dürfen nicht unter unseren Namen vermarktet werden – [TRADEMARKS.md](TRADEMARKS.md).
+- **Grafiken und Modelle** (Branding, Icons, Robbe, Cosmetics): alle Rechte vorbehalten –
+  [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
+- **Vibe-Dienste** (Backend `vibe.henny.dev`, Relay `vibey.henny.dev`): nur für offizielle Builds; Forks müssen
+  eigene Dienste nutzen – [SERVICES.md](SERVICES.md).
+
+*English:* the code is Apache-2.0. Our names and logos, the seal, artwork and models, and the Vibe online services are
+not included: forks must use their own name, artwork and backend. See TRADEMARKS.md, ASSETS-LICENSE.md and
+SERVICES.md.
