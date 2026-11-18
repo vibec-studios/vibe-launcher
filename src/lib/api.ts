@@ -30,6 +30,14 @@ export const api = {
   instanceSetIcon: (id: string, path: string | null) => call<T.Instance>("instance_set_icon", { id, path }),
   instanceOpenFolder: (id: string, sub?: string | null) => call<void>("instance_open_folder", { id, sub: sub ?? null }),
 
+  // ---------------------------------------------------------------- Client-Packs
+  /** Für eine Instanz (mit Installationsstand) oder eine geplante Instanz (Version + Loader). */
+  clientPacksList: (q: { instanceId: string } | { mcVersion: string; loader: T.LoaderKind }) =>
+    call<T.ClientPacksOverview>("client_packs_list", { instanceId: null, mcVersion: null, loader: null, ...q }),
+  /** Task-ID. `replace`: andere Clients vorher entfernen (nach Bestätigung). */
+  clientPackInstall: (instanceId: string, packId: string, replace = false) => call<string>("client_pack_install", { instanceId, packId, replace }),
+  clientPackRemove: (instanceId: string, packId: string) => call<void>("client_pack_remove", { instanceId, packId }),
+
   // ---------------------------------------------------------------- Einstellungen / System / Aufgaben
   settingsGet: () => call<T.Settings>("settings_get"),
   settingsSet: (settings: T.Settings) => call<T.Settings>("settings_set", { settings }),

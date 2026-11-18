@@ -28,6 +28,14 @@ export interface WindowOptions {
   fullscreen: boolean | null;
 }
 
+/** Start-Hooks je Instanz (Befehle in der System-Shell im Spielordner). */
+export interface LaunchHooks {
+  pre_launch: string | null;
+  post_exit: string | null;
+  /** Wrapper vor Java; ersetzt den globalen */
+  wrapper: string | null;
+}
+
 export type PackSourceKind = "modrinth" | "curseforge" | "vlpack" | "prism" | "local" | "vibe";
 
 export interface PackSource {
@@ -50,6 +58,8 @@ export interface Instance {
   loader: Loader;
   java: JavaOptions;
   window: WindowOptions;
+  /** Fehlt bei älteren Mock-Daten */
+  hooks?: LaunchHooks;
   source: PackSource | null;
   install_state: InstallState;
   version_id: string | null;
@@ -80,6 +90,7 @@ export interface InstancePatch {
   loader?: Loader;
   java?: JavaOptions;
   window?: WindowOptions;
+  hooks?: LaunchHooks;
   notes?: string | null;
   auto_update_content?: boolean | null;
 }
@@ -1189,4 +1200,45 @@ export interface VibeShareOptions {
 export interface VibeShareLink {
   code: string;
   url: string | null;
+}
+
+// ------------------------------------------------------------------ Client-Packs
+
+export type ClientPackId = "vibey" | "norisk" | "norisk-mini" | "essential" | (string & {});
+
+export interface ClientPackInstall {
+  version: string | null;
+  files: string[];
+  mc_version: string | null;
+  loader: string | null;
+  installed_at: number | null;
+  disabled_by_user: boolean;
+  missing: boolean;
+  mismatch: boolean;
+}
+
+export interface ClientPackOffer {
+  id: ClientPackId;
+  category: "official" | "community";
+  source: "vibe" | "norisk" | "modrinth";
+  /** Packs derselben Gruppe schließen sich aus ("client") */
+  group: string | null;
+  vendor: string | null;
+  homepage: string | null;
+  projects: string[];
+  /** null = unbekannt (Quelle nicht erreichbar) */
+  available: boolean | null;
+  reason: "loader" | "version" | "vibe_off" | "unreachable" | null;
+  error: string | null;
+  mc_versions: string[];
+  latest_version: string | null;
+  update_available: boolean;
+  installed: ClientPackInstall | null;
+}
+
+export interface ClientPacksOverview {
+  mc_version: string;
+  loader: LoaderKind;
+  vibe_enabled: boolean;
+  packs: ClientPackOffer[];
 }

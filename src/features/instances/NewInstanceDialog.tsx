@@ -24,6 +24,7 @@ import { openImport } from "@/features/import/ImportDialog";
 import { PackIcon } from "@/features/home/Discover";
 import { usePopularModpacks } from "@/features/home/data";
 import { useT } from "@/i18n";
+import { ClientPackPicker, installPackAfterCreate } from "./settings/ClientPacks";
 
 export function suggestName(v: VersionValue): string {
   if (!v.mc) return "";
@@ -367,6 +368,7 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
   const [accent, setAccent] = useState(() => accentPalette[Math.floor(Math.random() * accentPalette.length)]);
   const [group, setGroup] = useState("");
   const [icon, setIcon] = useState<string | null>(null);
+  const [pack, setPack] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -404,6 +406,8 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
       onDone();
       nav({ to: "/instances/$id", params: { id: inst.id }, search: { tab: "content" } });
       installInstance(inst.id);
+      // Client-Pack (falls gewählt) parallel zur Spiel-Installation in mods/ legen
+      if (pack && needsLv) void installPackAfterCreate(t, inst.id, pack);
     } catch (e) {
       toast.error(e, t("newinst.failed"));
       setBusy(false);
@@ -449,6 +453,12 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
             <span className="label">{t("newinst.loader")}</span>
             <LoaderCards value={ver.loader} onChange={(loader) => loader !== ver.loader && setVer({ ...ver, loader, loaderVersion: null })} />
           </div>
+          {ver.loader !== "vanilla" && (
+            <div className="flex flex-col gap-1.5">
+              <span className="label">{t("cp.new.label")}</span>
+              <ClientPackPicker mc={ver.mc} loader={ver.loader} value={pack} onChange={setPack} />
+            </div>
+          )}
         </div>
 
         {/* Rechts: Minecraft-Version (+ Loader-Version) */}
@@ -488,7 +498,7 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
                 : t("newinst.summary", { mc: ver.mc })
               : "…"}
           </div>
-          <div className="truncate text-[12px] text-muted">{t("newinst.after")}</div>
+          <div className="truncate text-[12px] text-muted">{pack && needsLv ? t("cp.new.after", { name: t(`cp.${pack}.name`) }) : t("newinst.after")}</div>
         </div>
         <Button variant="subtle" onClick={onDone} disabled={busy}>
           {t("common.cancel")}

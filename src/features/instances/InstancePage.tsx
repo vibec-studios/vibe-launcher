@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { create } from "zustand";
-import { AlertTriangle, Archive, Settings as SettingsIcon, Boxes, FileText, FolderOpen, Globe2, SquareTerminal, Stethoscope, UploadCloud, X } from "lucide-react";
+import { AlertTriangle, Archive, Boxes, FileText, FolderOpen, Globe2, SquareTerminal, Stethoscope, UploadCloud, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useGameState, useInstance } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
@@ -17,7 +17,8 @@ import { useT } from "@/i18n";
 import { WorldsTab } from "./WorldsTab";
 import { ServersTab } from "./ServersTab";
 import { DiagnosisCard, DiagnosisDialog, useDiagnosis } from "@/features/logs/Diagnosis";
-import { InstanceSettingsTab } from "./InstanceSettingsTab";
+import { InstanceSettingsDialog } from "./settings/InstanceSettingsDialog";
+import { openInstanceSettings, useInstanceSettings } from "./settings/store";
 import { BackupsTab } from "@/features/backups/BackupsTab";
 import { InstanceFilesTab } from "@/features/files";
 import { accentVars } from "@/components/instance/accent";
@@ -94,10 +95,11 @@ function CrashBanner({ instance }: { instance: Instance }) {
 }
 
 // ------------------------------------------------------------------ Bereiche
-// Tabs wie in der Modrinth App: Inhalte, Welten, Logs, Dateien, Backups; Einstellungen über das Zahnrad im Kopf.
+// Tabs wie in der Modrinth App: Inhalte, Welten, Logs, Dateien, Backups; Einstellungen als Popup über das Zahnrad
+// im Kopf (alte Deep-Links `?tab=settings` öffnen das Popup).
 // Die URL behält die bisherigen Tab-Werte (Deep-Links bleiben gültig): content/resourcepacks/shaders öffnen die
 // Inhalte (mit passendem Typ-Filter), worlds/servers die Welten.
-type Area = "content" | "worlds" | "logs" | "files" | "backups" | "settings";
+type Area = "content" | "worlds" | "logs" | "files" | "backups";
 const areaOf: Record<InstanceTab, Area> = {
   content: "content",
   resourcepacks: "content",
@@ -107,7 +109,7 @@ const areaOf: Record<InstanceTab, Area> = {
   logs: "logs",
   files: "files",
   backups: "backups",
-  settings: "settings",
+  settings: "content",
 };
 
 /** Zuletzt geöffnete Unterseite je Bereich (bleibt beim Wechsel erhalten). */
@@ -183,12 +185,21 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
   const area = areaOf[active];
   const worldItems = useWorldItems(inst.id, area === "worlds");
   // Aktuelle Unterseite merken (auch wenn sie per Link geöffnet wurde)
-  useEffect(() => useLastSub.setState({ [area]: active }), [area, active]);
+  useEffect(() => {
+    if (active !== "settings") useLastSub.setState({ [area]: active });
+  }, [area, active]);
+  // `?tab=settings` (alte Links, „Einstellungen“ aus Menüs): Popup öffnen, Seite bleibt bei den Inhalten
+  useEffect(() => {
+    if (active !== "settings") return;
+    openInstanceSettings(inst.id);
+    navTab({ search: { tab: useLastSub.getState().content ?? "content" }, replace: true });
+  }, [active, inst.id, navTab]);
+  const settingsOpen = useInstanceSettings((s) => s.instanceId === inst.id);
   const setTab = (v: InstanceTab) => navTab({ search: { tab: v }, replace: true });
   const openArea = (a: Area) => {
     if (a === area) return;
     const last = useLastSub.getState()[a];
-    const first: Record<Area, InstanceTab> = { content: "content", worlds: "worlds", logs: "logs", files: "files", backups: "backups", settings: "settings" };
+    const first: Record<Area, InstanceTab> = { content: "content", worlds: "worlds", logs: "logs", files: "files", backups: "backups" };
     setTab(last ?? first[a]);
   };
 
@@ -202,9 +213,9 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
       <InstanceHeader
         instance={inst}
         accent={accent}
-        settingsActive={area === "settings"}
-        onSettings={() => (area === "settings" ? openArea("content") : openArea("settings"))}
-        badge={<VibeyClientBadge instance={inst} label={t("ipage.vibey_active")} onClick={() => openArea("settings")} />}
+        settingsActive={settingsOpen}
+        onSettings={() => openInstanceSettings(inst.id)}
+        badge={<VibeyClientBadge instance={inst} label={t("ipage.vibey_active")} onClick={() => openInstanceSettings(inst.id, "vibe")} />}
         tabs={
           <Tabs<Area | "">
             value={area}
@@ -216,8 +227,6 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
               { value: "logs", label: t("ipage.tab.logs"), icon: <SquareTerminal size={15} /> },
               { value: "files", label: t("inst.tab.files"), icon: <FolderOpen size={15} /> },
               { value: "backups", label: t("inst.tab.backups"), icon: <Archive size={15} /> },
-              // Einstellungen öffnen sich über das Zahnrad; solange sie offen sind, stehen sie als aktiver Tab da
-              ...(area === "settings" ? [{ value: "settings" as const, label: t("ipage.tab.settings"), icon: <SettingsIcon size={15} /> }] : []),
             ]}
           />
         }
@@ -241,12 +250,11 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
           <BackupsTab instance={inst} />
         ) : area === "logs" ? (
           <LogsTab instance={inst} />
-        ) : area === "files" ? (
-          <InstanceFilesTab instance={inst} />
         ) : (
-          <InstanceSettingsTab instance={inst} />
+          <InstanceFilesTab instance={inst} />
         )}
       </div>
+      <InstanceSettingsDialog instance={inst} />
     </div>
   );
 }

@@ -15,6 +15,7 @@ function inst(id: string, name: string, mc: string, kind: Instance["loader"]["ki
     loader: { kind, version: ver },
     java: { path: null, min_memory_mb: null, max_memory_mb: null, jvm_args: null, env: {} },
     window: { width: null, height: null, fullscreen: null },
+    hooks: { pre_launch: null, post_exit: null, wrapper: null },
     source: null,
     install_state: "installed",
     version_id: null,

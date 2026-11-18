@@ -406,8 +406,10 @@ async fn offer(state: &AppState, d: &'static PackDef, instance: Option<&Instance
                 if let Some(r) = load(state, &inst.id).get(d.id) {
                     let idx = ContentIndex::load(&state.paths, &inst.id);
                     if present(state, &inst.id, r, &idx) {
+                        // Version der (ersten) Pack-Mod aus dem Inhalts-Index (folgt auch normalen Updates)
+                        let version = r.projects.iter().find_map(|pid| idx.files.values().find(|e| e.source == Source::Modrinth && &e.project_id == pid).and_then(|e| e.version_number.clone()));
                         o.installed = Some(PackInstall {
-                            version: None,
+                            version,
                             files: r.files.clone(),
                             mc_version: Some(r.mc_version.clone()),
                             loader: Some(r.loader.clone()),
