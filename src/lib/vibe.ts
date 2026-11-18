@@ -14,7 +14,6 @@ export interface VibeFlags {
   hosting: boolean;
   /** Modpacks per Link/Code teilen */
   sharing: boolean;
-  apiUrl: string;
 }
 
 export function useVibe(): VibeFlags {
@@ -26,6 +25,5 @@ export function useVibe(): VibeFlags {
     presence: on && !!v?.presence,
     hosting: on && !!v?.hosting,
     sharing: on && !!v?.sharing,
-    apiUrl: v?.api_url ?? "",
   };
 }

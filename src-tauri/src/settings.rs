@@ -83,8 +83,6 @@ pub struct StoreConfig {
 pub struct VibeServices {
     /// Hauptschalter: aus = der Launcher spricht nie mit dem Vibe-Backend/Relay
     pub enabled: bool,
-    /// Basis-URL des Backends
-    pub api_url: String,
     /// Freunde, Chats, Einladungen
     pub social: bool,
     /// Online-Status/„spielt gerade“ an Freunde senden
@@ -99,7 +97,6 @@ impl Default for VibeServices {
     fn default() -> Self {
         VibeServices {
             enabled: true,
-            api_url: option_env!("VIBE_API_URL").unwrap_or("https://vibe.henny.dev").to_string(),
             social: true,
             presence: true,
             hosting: true,

@@ -25,6 +25,8 @@ import { VibeBridge } from "@/features/social/VibeBridge";
 import { SocialDialogs } from "@/features/social/dialogs";
 import { FriendsPanel, FriendsPanelToggle } from "@/features/social/FriendsPanel";
 import { useSocialBadge } from "@/features/social/hooks";
+import { SettingsDialog } from "@/features/settings/SettingsDialog";
+import { openSettings, useSettingsDialog } from "@/features/settings/store";
 
 // ------------------------------------------------------------------ Icon-Leiste
 
@@ -81,6 +83,7 @@ function Rail() {
   const serversRunning = useServerStore((s) => Object.values(s.statuses).some((x) => x.state === "running"));
   const vibe = useVibe();
   const socialBadge = useSocialBadge();
+  const settingsOpen = useSettingsDialog((s) => s.open);
   return (
     <nav className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-line bg-black py-2">
       <Tooltip content="Vibe Launcher" side="right">
@@ -133,7 +136,7 @@ function Rail() {
         </Tooltip>
       </div>
       <div className="my-1.5 h-px w-8 bg-line" />
-      <RailButton label={t("nav.settings")} active={path === "/settings"} onClick={() => nav({ to: "/settings" })}>
+      <RailButton label={t("nav.settings")} active={settingsOpen} onClick={() => openSettings()}>
         <SettingsIcon size={20} />
       </RailButton>
       <AccountChip />
@@ -179,7 +182,6 @@ function usePageTitle(): ReactNode {
       </>
     );
   if (path === "/accounts") return t("nav.accounts");
-  if (path === "/settings") return t("nav.settings");
   if (path === "/stats") return t("stats.title");
   if (path === "/skins") return t("nav.skins");
   if (path === "/screenshots") return t("nav.screenshots");
@@ -304,6 +306,7 @@ export function Shell() {
       <ServerDialogs />
       <VibeBridge />
       <SocialDialogs />
+      <SettingsDialog />
     </div>
   );
 }

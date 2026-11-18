@@ -139,7 +139,7 @@ export function DiscoverPage() {
                 <div className="flex items-center gap-1.5">
                   {!cfAvailable && !sys.isPending && (
                     <Tooltip content={t("discover.cf_disabled")}>
-                      <Link to="/settings" aria-label={t("discover.cf_disabled")} className="grid h-8 w-8 place-items-center text-dim hover:text-white">
+                      <Link to="/settings" search={{ tab: "downloads" }} aria-label={t("discover.cf_disabled")} className="grid h-8 w-8 place-items-center text-dim hover:text-white">
                         <Info size={15} />
                       </Link>
                     </Tooltip>
@@ -194,7 +194,7 @@ export function DiscoverPage() {
               title={t("discover.cf_title")}
               text={t("discover.cf_text")}
               action={
-                <Link to="/settings" className="inline-flex h-8 items-center gap-2 border border-line bg-surface2 px-3 text-[13px] font-semibold text-text transition-colors hover:bg-surface3 hover:border-line2">
+                <Link to="/settings" search={{ tab: "downloads" }} className="inline-flex h-8 items-center gap-2 border border-line bg-surface2 px-3 text-[13px] font-semibold text-text transition-colors hover:bg-surface3 hover:border-line2">
                   {t("discover.cf_settings")}
                 </Link>
               }

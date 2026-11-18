@@ -1,6 +1,6 @@
 // Account-Knopf unten in der Icon-Leiste: aktiver Account, Wechseln, Microsoft-Konto hinzufügen.
 import { useNavigate } from "@tanstack/react-router";
-import { Check, Cloud, CloudOff, LogIn, LogOut, UserRound, Users } from "lucide-react";
+import { Check, Cloud, Link2Off, LogIn, Settings as SettingsIcon, UserRound, Users } from "lucide-react";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAccounts } from "@/lib/queries";
@@ -9,7 +9,8 @@ import { useT } from "@/i18n";
 import { PlayerHead } from "@/components/PlayerHead";
 import { MsaDialog } from "@/features/accounts/MsaDialog";
 import { useVibe } from "@/lib/vibe";
-import { login, logout, useSocial } from "@/features/social/service";
+import { connect, unlink, useSocial } from "@/features/social/service";
+import { openSettings } from "@/features/settings/store";
 import { cn } from "@/components/ui";
 
 export function AccountChip() {
@@ -54,14 +55,17 @@ export function AccountChip() {
           <>
             <DropdownLabel>{t(`social.chip.${conn}`)}</DropdownLabel>
             {conn === "logged_out" ? (
-              <DropdownItem icon={<Cloud size={14} />} onSelect={() => login().catch((e) => toast.error(e))}>
+              <DropdownItem icon={<Cloud size={14} />} onSelect={() => connect().catch((e) => toast.error(e))}>
                 {t("social.conn.login")}
               </DropdownItem>
             ) : (
-              <DropdownItem icon={conn === "offline" ? <CloudOff size={14} /> : <LogOut size={14} />} onSelect={() => logout()}>
-                {t("social.chip.logout")}
+              <DropdownItem icon={<Link2Off size={14} />} onSelect={() => unlink()}>
+                {t("vibe.account.unlink")}
               </DropdownItem>
             )}
+            <DropdownItem icon={<SettingsIcon size={14} />} onSelect={() => openSettings("vibe")}>
+              {t("vibe.account.manage")}
+            </DropdownItem>
           </>
         )}
         <DropdownSeparator />

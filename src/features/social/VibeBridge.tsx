@@ -4,7 +4,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAccounts, useInstances, useServers } from "@/lib/queries";
 import { useVibe } from "@/lib/vibe";
 import { toast } from "@/components/ui";
+import { openSettings } from "@/features/settings/store";
+import { t } from "@/i18n";
 import { configure, markRead, setPresenceSources, setSocialHooks, useSocial } from "./service";
+
+const HINT_KEY = "vibe.auto_hint_shown";
 
 export function VibeBridge() {
   const vibe = useVibe();
@@ -17,7 +21,7 @@ export function VibeBridge() {
   // Einstellungen / Account -> Client + Gateway
   useEffect(() => {
     void configure({ enabled: vibe.enabled, social: vibe.social, presence: vibe.presence, sharing: vibe.sharing, hosting: vibe.hosting });
-  }, [vibe.enabled, vibe.social, vibe.presence, vibe.sharing, vibe.hosting, vibe.apiUrl, active]);
+  }, [vibe.enabled, vibe.social, vibe.presence, vibe.sharing, vibe.hosting, active]);
 
   useEffect(() => {
     setPresenceSources(instances, servers);
@@ -29,6 +33,20 @@ export function VibeBridge() {
       (chatId) => nav({ to: "/social", search: chatId ? { chat: chatId } : {} }),
     );
   }, [nav]);
+
+  // Erstes automatisches Verbinden -> einmal dezent darauf hinweisen (mit Link zu „Vibe & Konto“)
+  const autoLinked = useSocial((s) => s.autoLinked);
+  useEffect(() => {
+    if (!autoLinked) return;
+    try {
+      if (localStorage.getItem(HINT_KEY)) return;
+      localStorage.setItem(HINT_KEY, "1");
+    } catch {
+      return;
+    }
+    const name = useSocial.getState().me?.name ?? useSocial.getState().identity ?? "";
+    toast.info(t("vibe.hint.title"), t("vibe.hint.text", { name }), { label: t("vibe.hint.action"), onClick: () => openSettings("vibe") }, 12_000);
+  }, [autoLinked]);
 
   // Zurück ins Fenster -> sichtbaren Chat als gelesen markieren
   useEffect(() => {

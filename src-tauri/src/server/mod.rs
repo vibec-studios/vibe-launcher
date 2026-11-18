@@ -67,8 +67,6 @@ pub struct Server {
     #[serde(default)]
     pub connection: ServerConnection,
     #[serde(default)]
-    pub relay_address: Option<String>,
-    #[serde(default)]
     pub eula: bool,
     #[serde(default)]
     pub install_state: InstallState,
@@ -89,11 +87,15 @@ impl Server {
     pub fn memory(&self) -> u32 {
         self.memory_mb.unwrap_or(DEFAULT_MEMORY_MB).max(512)
     }
+    /// Relay-Adresse: immer der offizielle Vibey-Relay (eine früher je Server gespeicherte `relay_address` wird beim
+    /// Einlesen verworfen). Nur Debug-Builds dürfen per Env `VIBE_RELAY` auf einen lokalen Relay umleiten.
     pub fn relay(&self) -> String {
-        self.relay_address.clone().filter(|s| !s.trim().is_empty()).unwrap_or_else(|| {
-            std::env::var("VIBE_RELAY").ok().filter(|s| !s.trim().is_empty()).unwrap_or_else(|| DEFAULT_RELAY.to_string())
-        })
+        relay_address(crate::vibe::debug_override("VIBE_RELAY"))
     }
+}
+
+fn relay_address(over: Option<String>) -> String {
+    over.unwrap_or_else(|| DEFAULT_RELAY.to_string())
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -127,7 +129,6 @@ pub struct ServerPatch {
     pub auto_start: Option<bool>,
     pub auto_restart: Option<bool>,
     pub connection: Option<ServerConnection>,
-    pub relay_address: Option<Option<String>>,
 }
 
 pub fn servers_root(paths: &Paths) -> PathBuf {
@@ -258,7 +259,6 @@ impl ServerStore {
             auto_start: false,
             auto_restart: true,
             connection: ServerConnection::Local,
-            relay_address: None,
             eula: false,
             install_state: InstallState::NotInstalled,
             created_at: now_ms(),
@@ -311,7 +311,6 @@ impl ServerStore {
             if let Some(v) = p.auto_start { s.auto_start = v; }
             if let Some(v) = p.auto_restart { s.auto_restart = v; }
             if let Some(v) = p.connection { s.connection = v; }
-            if let Some(v) = p.relay_address { s.relay_address = v.map(|x| x.trim().to_string()).filter(|x| !x.is_empty()); }
         })
     }
 
@@ -333,5 +332,16 @@ mod tests {
         assert_eq!(super::slug("Mein Server!"), "mein-server");
         assert_eq!(super::slug("Größe"), "groesse");
         assert_eq!(super::slug("///"), "server");
+    }
+
+    #[test]
+    fn relay_is_fixed() {
+        assert_eq!(super::relay_address(None), super::DEFAULT_RELAY);
+        // Alte Server-Dateien mit eigener Relay-Adresse laden weiter, die Adresse wird verworfen
+        let json = r#"{"id":"a","name":"A","mc_version":"1.21.1","loader":{"kind":"vanilla","version":null},"port":25565,
+            "relay_address":"evil.example:25565","created_at":0}"#;
+        let s: super::Server = serde_json::from_str(json).expect("alte Server-Datei");
+        assert_eq!(s.relay(), super::relay_address(crate::vibe::debug_override("VIBE_RELAY")));
+        assert!(!serde_json::to_string(&s).unwrap().contains("evil.example"));
     }
 }

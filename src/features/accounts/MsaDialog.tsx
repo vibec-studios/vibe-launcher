@@ -98,6 +98,7 @@ export function MsaDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
           <p className="max-w-[420px] text-[13px] text-muted">{t("accounts.msa.unavailable_text")}</p>
           <Link
             to="/settings"
+            search={{ tab: "general" }}
             onClick={() => onOpenChange(false)}
             className="mt-1 inline-flex h-9 items-center border border-line bg-surface2 px-4 text-[14px] font-semibold transition-colors hover:bg-surface3"
           >

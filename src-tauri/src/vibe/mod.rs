@@ -4,7 +4,7 @@
 //! Webview nicht darf oder nicht soll:
 //! - **Mojang-Join** für den Login (das Minecraft-Token verlässt Rust nie),
 //! - **Vibe-Tokens** im OS-Schlüsselbund (je Minecraft-Account und Backend-Adresse),
-//! - **HTTP und WebSocket** zum Backend (CSP der Webview, frei wählbare `api_url`, kein CORS) –
+//! - **HTTP und WebSocket** zum Backend (CSP der Webview, kein CORS) –
 //!   und damit die harte Sperre: Ist `settings.vibe.enabled` aus, gibt es keine Verbindung.
 //! - **Modpacks teilen/importieren** (Export, Multipart-Upload, Overrides mit Zip-Slip-Prüfung).
 pub mod packs;
@@ -29,10 +29,30 @@ pub enum Feature {
     Hosting,
 }
 
-/// Basis-URL des Backends: Env `VIBE_API_URL` (Laufzeit, z. B. lokale Testinstanz) > Einstellung.
-pub fn api_base(state: &AppState) -> String {
-    let raw = std::env::var("VIBE_API_URL").ok().filter(|s| !s.trim().is_empty()).unwrap_or_else(|| state.settings().vibe.api_url);
-    normalize_base(&raw)
+/// Offizielles Backend von Vibe Craft Studios. Nutzer können keine eigene Adresse einstellen.
+pub const DEFAULT_API_URL: &str = "https://vibe.henny.dev";
+
+/// Basis-URL des Backends: immer [`DEFAULT_API_URL`]. Nur Debug-Builds dürfen sie für die lokale Entwicklung per
+/// Env `VIBE_API_URL` überschreiben (z. B. `http://127.0.0.1:3000`); Release-Builds ignorieren die Variable.
+pub fn api_base(_state: &AppState) -> String {
+    normalize_base(&effective_api_url(debug_override("VIBE_API_URL")))
+}
+
+fn effective_api_url(over: Option<String>) -> String {
+    over.unwrap_or_else(|| DEFAULT_API_URL.to_string())
+}
+
+/// Wert einer Entwickler-Umgebungsvariable – nur in Debug-Builds, in Release immer `None`.
+pub fn debug_override(name: &str) -> Option<String> {
+    #[cfg(debug_assertions)]
+    {
+        std::env::var(name).ok().map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let _ = name;
+        None
+    }
 }
 
 pub fn normalize_base(raw: &str) -> String {
@@ -326,6 +346,18 @@ mod tests {
         let local = "http://127.0.0.1:3917";
         assert!(check_api_url(local, "http://127.0.0.1:3917/api/v1/packs/ABC/versions/1/overrides.zip").is_ok());
         assert!(check_api_url(local, "http://127.0.0.1:3000/api/v1/meta").is_err());
+    }
+
+    #[test]
+    fn api_url_is_fixed() {
+        assert_eq!(effective_api_url(None), DEFAULT_API_URL);
+        assert_eq!(effective_api_url(Some("http://127.0.0.1:3000".into())), "http://127.0.0.1:3000");
+        // Release-Builds lesen keine Env-Variablen
+        #[cfg(not(debug_assertions))]
+        {
+            std::env::set_var("VIBE_API_URL", "https://evil.example");
+            assert!(debug_override("VIBE_API_URL").is_none());
+        }
     }
 
     #[test]

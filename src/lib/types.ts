@@ -541,7 +541,6 @@ export interface Screenshot {
 export interface VibeServices {
   /** Hauptschalter: aus = keine Verbindung zum Vibe-Backend/Relay */
   enabled: boolean;
-  api_url: string;
   social: boolean;
   presence: boolean;
   hosting: boolean;
@@ -656,8 +655,6 @@ export interface Server {
   /** Nach Absturz automatisch neu starten (max. 3× in 10 min) */
   auto_restart: boolean;
   connection: ServerConnection;
-  /** Relay-Adresse host:port (null = Standard vibey.henny.dev:25565) */
-  relay_address: string | null;
   /** Minecraft-EULA akzeptiert (eula.txt) */
   eula: boolean;
   install_state: InstallState;
@@ -744,7 +741,6 @@ export interface ServerPatch {
   auto_start?: boolean;
   auto_restart?: boolean;
   connection?: ServerConnection;
-  relay_address?: string | null;
 }
 
 export interface ServerCreated {
@@ -966,7 +962,7 @@ export interface VibeIdentity {
 
 export interface VibeStatus {
   enabled: boolean;
-  /** Effektive Backend-Adresse (Env `VIBE_API_URL` > Einstellung) */
+  /** Backend-Adresse (immer das offizielle Backend; nur Debug-Builds: Env `VIBE_API_URL`) */
   api_url: string;
   gateway_url: string;
   identity: VibeIdentity | null;

@@ -96,7 +96,7 @@ pub async fn server_update(state: State<'_, AppState>, id: String, patch: Server
         let dir = server_dir(&state.paths, &id);
         server::props::set(&dir.join("server.properties"), &[("server-port".into(), s.port.to_string())])?;
     }
-    if s.connection != before.connection || s.relay_address != before.relay_address {
+    if s.connection != before.connection {
         server::run::restart_tunnel_if_running(&state, &id);
     }
     Ok(s)

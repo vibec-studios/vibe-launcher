@@ -56,7 +56,7 @@ let settings: Settings = {
   msa_client_id: null,
   check_updates: true,
   update_channel: "release",
-  vibe: { enabled: true, api_url: "https://vibe.henny.dev", social: true, presence: true, hosting: true, sharing: true },
+  vibe: { enabled: true, social: true, presence: true, hosting: true, sharing: true },
   discord_rpc: true,
   wrapper_command: null,
   open_log_on_launch: false,
