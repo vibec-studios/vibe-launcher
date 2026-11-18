@@ -18,6 +18,7 @@ pub mod tasks;
 pub mod updater;
 pub mod util;
 pub mod vibe;
+pub mod vibey_client;
 
 use state::AppState;
 use tauri::Manager;
@@ -316,6 +317,20 @@ pub fn run() {
             commands::vibe::vibe_pack_share,
             commands::vibe::vibe_pack_link,
             commands::vibe::vibe_pack_install,
+            vibey_client::commands::vibey_client_latest,
+            vibey_client::commands::vibey_client_status,
+            vibey_client::commands::vibey_client_set,
+            vibey_client::commands::vibey_client_create_instance,
+            vibey_client::commands::vibey_client_instances,
+            vibey_client::commands::vibey_cosmetic_asset,
+            vibey_client::commands::vibey_cosmetic_thumbnail,
+            vibey_client::commands::vibey_bundle_read,
+            vibey_client::commands::vibey_png_read,
+            vibey_client::commands::vibey_submission_upload,
+            vibey_client::commands::vibey_blockbench_status,
+            vibey_client::commands::vibey_blockbench_install_plugin,
+            vibey_client::commands::vibey_blockbench_open,
+            vibey_client::commands::vibey_blockbench_reveal_plugin,
         ])
         .run(tauri::generate_context!())
         .expect("Fehler beim Starten des Launchers");

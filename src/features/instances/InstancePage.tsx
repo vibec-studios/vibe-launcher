@@ -23,6 +23,7 @@ import { ConfigsTab } from "@/features/configs/ConfigsTab";
 import { accentVars } from "@/components/instance/accent";
 import { HeaderSkeleton, InstanceHeader } from "./InstanceHeader";
 import { InstanceNotices } from "./InstanceNotices";
+import { VibeyClientSlot } from "@/features/cosmetics/VibeyClientSlot";
 
 const route = getRouteApi("/instances/$id");
 const wrap = "w-full px-6";
@@ -260,7 +261,12 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
       )}
       <div className="relative min-h-0 flex-1">
         {area === "content" ? (
-          <InstanceContentTab key={active} instance={inst} kind={kind} />
+          <div className="flex h-full min-h-0 flex-col">
+            {kind === "mod" && <VibeyClientSlot instance={inst} className="mx-4 mt-3 shrink-0" />}
+            <div className="relative min-h-0 flex-1">
+              <InstanceContentTab key={active} instance={inst} kind={kind} />
+            </div>
+          </div>
         ) : active === "worlds" ? (
           <WorldsTab instance={inst} />
         ) : active === "servers" ? (

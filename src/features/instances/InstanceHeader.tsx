@@ -13,7 +13,6 @@ import { setIcon } from "@/components/instance/actions";
 import { useT } from "@/i18n";
 import { formatDuration, formatRelative, loaderNames } from "@/lib/format";
 import type { Instance } from "@/lib/types";
-import { VibeyClientSlot } from "./VibeyClientSlot";
 
 export const pageX = "px-6";
 const route = getRouteApi("/instances/$id");
@@ -78,8 +77,6 @@ export function InstanceHeader({ instance, accent, tabs, notices }: { instance: 
           <MetaLine instance={instance} />
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {/* Reserviert für die „Vibey Client“-Option (Ein/Aus, Update) – siehe VibeyClientSlot.tsx */}
-          <VibeyClientSlot instance={instance} />
           <PlayButton instance={instance} size="lg" />
           <DropdownMenu
             trigger={

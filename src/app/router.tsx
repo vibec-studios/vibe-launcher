@@ -1,6 +1,6 @@
 // Routen (Hash-History, code-basiert). Seiten lesen Parameter über `getRouteApi("/pfad")`,
 // damit es keine Import-Zyklen gibt:   const route = getRouteApi("/instances/$id"); route.useSearch()
-import { createHashHistory, createRootRoute, createRoute, createRouter, redirect } from "@tanstack/react-router";
+import { createHashHistory, createRootRoute, createRoute, createRouter, lazyRouteComponent, redirect } from "@tanstack/react-router";
 import { Shell } from "./Shell";
 import { HomePage } from "@/features/home/HomePage";
 import { InstancesPage } from "@/features/instances/InstancesPage";
@@ -110,7 +110,21 @@ const socialRoute = createRoute({
   validateSearch: (s: Record<string, unknown>): { chat?: string } => ({ chat: typeof s.chat === "string" && s.chat.length <= 64 ? s.chat : undefined }),
 });
 
+// Cosmetics (three.js nur bei Bedarf laden)
+const cosmeticsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/cosmetics",
+  component: lazyRouteComponent(() => import("@/features/cosmetics/CosmeticsPage"), "CosmeticsPage"),
+});
+const creatorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/cosmetics/creator",
+  component: lazyRouteComponent(() => import("@/features/cosmetics/CreatorPage"), "CreatorPage"),
+});
+
 const routeTree = rootRoute.addChildren([
+  cosmeticsRoute,
+  creatorRoute,
   socialRoute,
   homeRoute,
   instancesRoute,
