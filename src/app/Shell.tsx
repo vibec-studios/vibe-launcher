@@ -41,7 +41,7 @@ function RailButton({ label, active, onClick, children }: { label: string; activ
         onClick={onClick}
         className={cn(
           "relative grid h-10 w-10 place-items-center rounded-ctl transition-colors duration-100",
-          active ? "bg-white/[.08] text-text" : "text-muted hover:bg-white/[.05] hover:text-text",
+          active ? "bg-white/[.08] text-brand" : "text-muted hover:bg-white/[.05] hover:text-text",
         )}
       >
         {children}

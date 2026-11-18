@@ -1,6 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "./cn";
 import { Spinner } from "./Spinner";
+import { Tooltip } from "./Tooltip";
 
 export type ButtonVariant = "primary" | "accent" | "ghost" | "outline" | "subtle" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -60,16 +61,23 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   label: string;
   size?: "sm" | "md";
   active?: boolean;
-  /** filled = Fläche (Standard), ghost = nur Symbol, Fläche beim Hover */
-  variant?: "filled" | "ghost";
+  /** filled = Fläche (Standard), ghost = nur Symbol, Fläche beim Hover, accent = Hauptaktion (Akzentfarbe) */
+  variant?: "filled" | "ghost" | "accent";
+  /** Tooltip mit `label` (oder eigenem Inhalt) zeigen */
+  tip?: boolean | ReactNode;
+  tipSide?: "top" | "bottom" | "left" | "right";
+  /** Kleines Abzeichen oben rechts: Zahl oder Punkt (true) */
+  badge?: number | boolean | null;
+  badgeTone?: "accent" | "warn" | "danger" | "muted";
 }
 
 /** Quadratischer Symbol-Knopf. `label` wird als aria-label und title genutzt. */
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { label, size = "md", active, variant = "filled", className, children, ...rest },
+  { label, size = "md", active, variant = "filled", tip, tipSide = "bottom", badge, badgeTone = "accent", className, children, ...rest },
   ref,
 ) {
-  return (
+  const tone = { accent: "bg-accent text-[var(--on-accent)]", warn: "bg-warn text-black", danger: "bg-danger text-black", muted: "bg-surface3 text-text" }[badgeTone];
+  const btn = (
     <button
       ref={ref}
       aria-label={label}
@@ -80,14 +88,33 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
           ? "bg-surface3 text-text"
           : variant === "ghost"
             ? "bg-transparent text-muted hover:bg-white/[.07] hover:text-text"
-            : "bg-surface2 text-muted hover:bg-surface3 hover:text-text",
-        "disabled:opacity-45 disabled:pointer-events-none",
+            : variant === "accent"
+              ? "bg-accent text-[var(--on-accent)] hover:brightness-110"
+              : "bg-surface2 text-muted hover:bg-surface3 hover:text-text",
+        "relative disabled:opacity-45 disabled:pointer-events-none",
         size === "sm" ? "h-8 w-8" : "h-9 w-9",
         className,
       )}
       {...rest}
     >
       {children}
+      {badge !== undefined && badge !== null && badge !== false && badge !== 0 && (
+        <span
+          className={cn(
+            "pointer-events-none absolute -right-1 -top-1 grid place-items-center rounded-pill font-semibold leading-none tabular-nums",
+            badge === true ? "h-2 w-2 rounded-dot" : "h-4 min-w-4 px-1 text-[10px]",
+            tone,
+          )}
+        >
+          {badge === true ? null : badge > 99 ? "99+" : badge}
+        </span>
+      )}
     </button>
+  );
+  if (!tip) return btn;
+  return (
+    <Tooltip content={tip === true ? label : tip} side={tipSide}>
+      {btn}
+    </Tooltip>
   );
 });
