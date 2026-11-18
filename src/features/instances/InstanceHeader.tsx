@@ -12,6 +12,8 @@ import { InstanceDropdownContent } from "@/components/instance/InstanceMenu";
 import { PlayButton } from "@/components/instance/PlayButton";
 import { setIcon } from "@/components/instance/actions";
 import { useT } from "@/i18n";
+import { useSimple } from "@/lib/mode";
+import { AutofixButton } from "@/features/content/AutoFix";
 import { formatDuration, formatRelative, loaderNames } from "@/lib/format";
 import type { Instance } from "@/lib/types";
 
@@ -29,6 +31,7 @@ function Meta({ icon, children, title }: { icon: ReactNode; children: ReactNode;
 /** Meta-Zeile mit Symbolen: Loader + Version · Spielzeit · zuletzt gespielt · Modpack · Status. */
 function MetaLine({ instance: i }: { instance: Instance }) {
   const t = useT();
+  const simple = useSimple();
   const src = i.source;
   const loader = i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]}${i.loader.version ? ` ${i.loader.version}` : ""}`;
   const packVersion = src?.version_name ?? "";
@@ -39,12 +42,11 @@ function MetaLine({ instance: i }: { instance: Instance }) {
     : null;
   return (
     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-muted">
-      <Meta icon={<Box size={15} />}>
-        {loader} · Minecraft {i.mc_version}
-      </Meta>
+      {/* Simple: nur die Minecraft-Version, kein Mod-Unterbau/keine Loader-Version */}
+      <Meta icon={<Box size={15} />}>{simple ? `Minecraft ${i.mc_version}` : `${loader} · Minecraft ${i.mc_version}`}</Meta>
       {i.play_time_secs >= 60 && <Meta icon={<Timer size={15} />}>{t("inst.meta.played", { time: formatDuration(i.play_time_secs) })}</Meta>}
       <Meta icon={<Clock size={15} />}>{i.last_played ? t("inst.meta.last", { when: formatRelative(i.last_played) }) : t("inst.never_played")}</Meta>
-      {pack && (
+      {pack && !simple && (
         <Meta icon={<Package size={15} />} title={src?.name ?? undefined}>
           {pack}
         </Meta>
@@ -76,6 +78,7 @@ export function InstanceHeader({
 }) {
   const t = useT();
   const nav = useNavigate();
+  const simple = useSimple();
   return (
     <header className="shrink-0">
       {/* Kopfblock: großes Icon, Name, Meta-Zeile; rechts Spielen, Einstellungen, Mehr */}
@@ -96,18 +99,22 @@ export function InstanceHeader({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <PlayButton instance={instance} size="lg" />
+          {/* Simple: „Probleme beheben“ direkt im Kopf statt Logs/Dateien */}
+          {simple && <AutofixButton req={{ instanceId: instance.id }} variant="ghost" size="md" className="h-11" />}
           <IconButton label={t("ipage.settings")} tip active={settingsActive} className={cn("h-11 w-11", settingsActive && "text-accent")} onClick={onSettings}>
             <Settings size={19} />
           </IconButton>
-          <DropdownMenu
-            trigger={
-              <IconButton label={t("common.more")} tip className="h-11 w-11 data-[state=open]:bg-surface3 data-[state=open]:text-text">
-                <MoreHorizontal size={19} />
-              </IconButton>
-            }
-          >
-            <InstanceDropdownContent instance={instance} onDeleted={() => nav({ to: "/instances" })} onEdit={onSettings} />
-          </DropdownMenu>
+          {!simple && (
+            <DropdownMenu
+              trigger={
+                <IconButton label={t("common.more")} tip className="h-11 w-11 data-[state=open]:bg-surface3 data-[state=open]:text-text">
+                  <MoreHorizontal size={19} />
+                </IconButton>
+              }
+            >
+              <InstanceDropdownContent instance={instance} onDeleted={() => nav({ to: "/instances" })} onEdit={onSettings} />
+            </DropdownMenu>
+          )}
         </div>
       </div>
       {/* Tab-Leiste mit klarer Trennung zum Inhalt; darunter Hinweise mit Text */}

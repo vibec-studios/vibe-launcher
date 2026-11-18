@@ -7,11 +7,14 @@ import type { Settings, VibeServices } from "@/lib/types";
 import { SettingRow, SettingsCard, Switch } from "@/components/ui";
 import { useT } from "@/i18n";
 import { VibeAccountCard, VibeDangerCard, VibePrivacyCard } from "@/features/social/VibeAccountSettings";
+import { useSimple } from "@/lib/mode";
 
 const SUBS: (keyof Pick<VibeServices, "social" | "presence" | "hosting" | "sharing">)[] = ["social", "presence", "hosting", "sharing"];
 
 export function VibeTab({ settings: s, update }: { settings: Settings; update: (p: Partial<Settings>, delay?: number) => void }) {
   const t = useT();
+  // Simple-Modus: nur Vibe an/aus und das Vibe-Konto
+  const simple = useSimple();
   const discord = useQuery({ queryKey: ["discord-available"], queryFn: api.discordAvailable, staleTime: Infinity });
   const v = s.vibe;
   const setVibe = (p: Partial<VibeServices>, delay?: number) => update({ vibe: { ...v, ...p } }, delay);
@@ -32,6 +35,8 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
       {v.enabled && (
         <>
           <VibeAccountCard />
+          {!simple && (
+          <>
           <SettingsCard title={t("vibe.features")}>
             {SUBS.map((k) => (
               <SettingRow key={k} title={t(`vibe.${k}`)} description={t(`vibe.${k}.desc`)}>
@@ -40,9 +45,13 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
             ))}
           </SettingsCard>
           <VibePrivacyCard />
+          </>
+          )}
         </>
       )}
 
+      {!simple && (
+      <>
       <SettingsCard title="Discord">
         <SettingRow
           title={t("vibe.discord")}
@@ -53,6 +62,8 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
       </SettingsCard>
 
       {v.enabled && <VibeDangerCard />}
+      </>
+      )}
     </>
   );
 }

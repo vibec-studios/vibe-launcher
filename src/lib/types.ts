@@ -136,7 +136,17 @@ export interface Settings {
   minecraftcapes: boolean;
   /** Darstellung (Akzent, Ton, Ecken, Dichte, Skalierung, Hintergrund) */
   appearance: Appearance;
+  /** Bedienung: geführter Simple-Modus oder alle Funktionen (Expert). Siehe src/lib/mode.tsx */
+  ui_mode: UiMode;
+  /** Einrichtung beim ersten Start abgeschlossen (fehlt nur bei ganz neuen Nutzern) */
+  onboarding_done: boolean;
+  /** Hinweis „Neu: Simple-Modus“ gesehen (bestehende Nutzer, einmalig) */
+  simple_hint_seen: boolean;
+  /** Einführungs-Bubbles im Simple-Modus gesehen */
+  simple_tour_done: boolean;
 }
+
+export type UiMode = "simple" | "expert";
 
 /** dark = Schwarz (Standard), dim = Dunkelgrau, oled = auch Flächen fast schwarz */
 export type AppearanceTone = "dark" | "dim" | "oled";

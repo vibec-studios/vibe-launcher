@@ -53,6 +53,14 @@ import { SkinImportSettings } from "@/features/skins/SkinImport";
 import { VibeTab } from "./VibeCard";
 import { AppearanceTab } from "./AppearanceTab";
 import { SETTINGS_TABS, closeSettings, setSettingsTab, useSettingsDialog, type SettingsTab } from "./store";
+import { setMode, useSimple, type UiMode } from "@/lib/mode";
+import { restartOnboarding, startTour } from "@/features/onboarding/store";
+import { PlayerHead } from "@/components/PlayerHead";
+import { useAccounts } from "@/lib/queries";
+import { useNavigate } from "@tanstack/react-router";
+
+/** Simple-Modus: nur das Wichtigste; der Rest erscheint mit „Expert-Modus aktivieren“. */
+const SIMPLE_SETTINGS_TABS: SettingsTab[] = ["general", "appearance", "vibe", "updates", "about"];
 
 const ICONS: Record<SettingsTab, ReactNode> = {
   general: <SlidersHorizontal size={16} />,
@@ -110,8 +118,11 @@ function SettingsBody() {
   const t = useT();
   const qc = useQueryClient();
   const settings = useSettings();
-  const tab = useSettingsDialog((s) => s.tab);
+  const stored = useSettingsDialog((s) => s.tab);
   const narrow = useNarrow();
+  const simple = useSimple();
+  const tabs = simple ? SIMPLE_SETTINGS_TABS : SETTINGS_TABS;
+  const tab: SettingsTab = (tabs as readonly SettingsTab[]).includes(stored) ? stored : "general";
 
   const save = async (p: Partial<Settings>) => {
     const base = qc.getQueryData<Settings>(qk.settings);
@@ -131,7 +142,7 @@ function SettingsBody() {
           </span>
         </div>
         <nav role="tablist" aria-orientation="vertical" className="scroll flex min-h-0 flex-1 flex-col gap-0.5 px-2.5 max-[880px]:items-center max-[880px]:px-0">
-          {SETTINGS_TABS.map((id) => {
+          {tabs.map((id) => {
             const active = id === tab;
             const btn = (
               <button
@@ -157,6 +168,17 @@ function SettingsBody() {
             );
           })}
         </nav>
+        {simple && (
+          <div className="px-2.5 pb-1 max-[880px]:hidden">
+            <button
+              onClick={() => void setMode("expert").catch((e) => toast.error(e))}
+              className="flex w-full items-center gap-2 rounded-ctl px-3 py-2 text-left text-[12.5px] font-medium text-muted transition-colors hover:bg-white/[.05] hover:text-text"
+            >
+              <SlidersHorizontal size={14} className="shrink-0 text-dim" />
+              {t("simple.settings.more")}
+            </button>
+          </div>
+        )}
         <div className="flex h-11 shrink-0 items-center px-5 max-[880px]:justify-center max-[880px]:px-0">
           <SaveIndicator state={state} />
         </div>
@@ -228,7 +250,84 @@ function LoadingCards() {
 
 // ------------------------------------------------------------------ Tabs
 
+/** Bedienung: Simple/Expert, Einrichtung bzw. Einführung erneut starten (in beiden Modi). */
+function ModeCard() {
+  const t = useT();
+  const simple = useSimple();
+  return (
+    <SettingsCard title={t("mode.section")}>
+      <SettingRow title={t("mode.title")} description={simple ? t("mode.simple.desc") : t("mode.expert.desc")}>
+        <Segmented<UiMode>
+          value={simple ? "simple" : "expert"}
+          onChange={(m) => void setMode(m).catch((e) => toast.error(e))}
+          items={[
+            { value: "simple", label: t("mode.simple") },
+            { value: "expert", label: t("mode.expert") },
+          ]}
+        />
+      </SettingRow>
+      <SettingRow title={t("mode.onboarding")} description={t("mode.onboarding.desc")}>
+        <div className="flex gap-2">
+          {simple && (
+            <Button
+              size="sm"
+              variant="subtle"
+              onClick={() => {
+                closeSettings();
+                startTour();
+              }}
+            >
+              {t("mode.tour")}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            onClick={() => {
+              closeSettings();
+              restartOnboarding();
+            }}
+          >
+            {t("mode.onboarding.start")}
+          </Button>
+        </div>
+      </SettingRow>
+    </SettingsCard>
+  );
+}
+
+/** Simple-Modus: angemeldetes Konto mit Verwalten. */
+function AccountCard() {
+  const t = useT();
+  const nav = useNavigate();
+  const { data: accounts = [] } = useAccounts();
+  const active = accounts.find((a) => a.active) ?? accounts[0];
+  return (
+    <SettingsCard title={t("simple.settings.account")}>
+      <SettingRow
+        title={
+          <span className="flex items-center gap-2.5">
+            {active && <PlayerHead uuid={active.uuid} name={active.username} size={22} />}
+            {active ? active.username : t("rail.no_account")}
+          </span>
+        }
+        description={active ? t("acct.microsoft") : t("acct.sign_in_hint")}
+      >
+        <Button
+          size="sm"
+          onClick={() => {
+            closeSettings();
+            nav({ to: "/accounts" });
+          }}
+        >
+          {accounts.length ? t("rail.manage_accounts") : t("acct.sign_in")}
+        </Button>
+      </SettingRow>
+    </SettingsCard>
+  );
+}
+
 function GeneralTab({ s, update }: TabProps) {
+  const simple = useSimple();
   const t = useT();
   const sys = useSystemInfo();
   return (
@@ -249,6 +348,12 @@ function GeneralTab({ s, update }: TabProps) {
         </SettingRow>
       </SettingsCard>
 
+      <ModeCard />
+
+      {simple ? (
+        <AccountCard />
+      ) : (
+      <>
       <SettingsCard title={t("settings.section.content")}>
         <SettingRow title={t("settings.auto_update")} description={t("settings.auto_update.desc")}>
           <Switch checked={s.auto_update_content} onChange={(v) => update({ auto_update_content: v })} label={t("settings.auto_update")} />
@@ -277,6 +382,8 @@ function GeneralTab({ s, update }: TabProps) {
       </SettingsCard>
 
       <SkinImportSettings />
+      </>
+      )}
     </>
   );
 }
@@ -514,6 +621,7 @@ function DownloadsTab({ s, update }: TabProps) {
 
 function UpdatesTab({ s, update }: TabProps) {
   const t = useT();
+  const simple = useSimple();
   const sys = useSystemInfo();
   const [checking, setChecking] = useState(false);
   const checkUpdates = async () => {
@@ -526,6 +634,7 @@ function UpdatesTab({ s, update }: TabProps) {
   };
   return (
     <SettingsCard title={t("settings.section.updates")} right={sys.data && <span className="text-caption font-semibold tabular-nums text-dim">v{sys.data.version}</span>}>
+      {!simple && (
       <SettingRow title={t("settings.channel")} description={s.update_channel === "dev" ? t("settings.channel.dev.desc") : t("settings.channel.release.desc")}>
         <Segmented
           value={s.update_channel}
@@ -536,6 +645,7 @@ function UpdatesTab({ s, update }: TabProps) {
           ]}
         />
       </SettingRow>
+      )}
       <SettingRow title={t("settings.check_updates")} description={t("settings.check_updates.desc")}>
         <Switch checked={s.check_updates} onChange={(check_updates) => update({ check_updates })} label={t("settings.check_updates")} />
       </SettingRow>

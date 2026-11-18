@@ -4,7 +4,7 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowLeft, Check, ChevronDown, Flame, Info, LayoutGrid, List, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Flame, Info, LayoutGrid, List, Plus, Puzzle, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, EmptyState, ErrorState, IconButton, Segmented, Select, SearchInput, Skeleton, Spinner, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -13,7 +13,10 @@ import { formatLoader } from "@/lib/format";
 import { qk, useGameVersions, useInstances, useSettings, useSystemInfo } from "@/lib/queries";
 import type { Category, Instance, LoaderKind, ProjectHit, ProjectType, SearchQuery, SortOrder, Source } from "@/lib/types";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
-import { compareMc, contentKindOf } from "@/components/content/util";
+import { compareMc, compatibility, contentKindOf } from "@/components/content/util";
+import { useSimple } from "@/lib/mode";
+import { byRecent } from "@/features/home/data";
+import { openNewGame } from "@/components/instance/actions";
 import { Browse } from "./Browse";
 import { DiscoverProjectOverlay, useProjectOverlayNav } from "./ProjectOverlay";
 import { CategoryIcon, catIconKey, catLabel, fmtNum } from "./categoryIcons";
@@ -38,16 +41,33 @@ export function DiscoverPage() {
   const t = useT();
   const search = route.useSearch();
   const navigate = route.useNavigate();
+  // Simple-Modus: nur Modrinth, nur Kategorie + Suche, Installieren direkt ins gewählte Spiel, Unpassendes ausgeblendet
+  const simple = useSimple();
   const sys = useSystemInfo();
-  const cfAvailable = !!sys.data?.curseforge_available;
+  const cfAvailable = !!sys.data?.curseforge_available && !simple;
   const stores = useQuery({ queryKey: ["stores"], queryFn: api.storesList, staleTime: 5 * 60_000 });
   const enabledStores = (stores.data ?? []).filter((s) => s.enabled && !s.error);
-  const storeSource = search.source?.startsWith("store:") && enabledStores.some((s) => `store:${s.id}` === search.source) ? search.source : null;
+  const storeSource = !simple && search.source?.startsWith("store:") && enabledStores.some((s) => `store:${s.id}` === search.source) ? search.source : null;
   const source: Source = storeSource ?? (search.source === "curseforge" && cfAvailable ? "curseforge" : "modrinth");
   const instances = useInstances();
   const target = useMemo(() => (search.instance ? (instances.data?.find((i) => i.id === search.instance) ?? null) : null), [instances.data, search.instance]);
-  const type: ProjectType = search.type ?? "mod";
+  const rawType: ProjectType = search.type ?? "mod";
+  const type: ProjectType = simple && rawType === "datapack" ? "mod" : rawType;
   const effectiveType: ProjectType = target && type === "modpack" ? "mod" : type;
+
+  // Simple: ohne gewähltes Spiel automatisch das zuletzt gespielte passende nehmen (Modpacks brauchen keins)
+  const simpleTargets = useMemo(
+    () => byRecent(instances.data ?? []).filter((i) => type !== "mod" || i.loader.kind !== "vanilla"),
+    [instances.data, type],
+  );
+  useEffect(() => {
+    if (!simple || type === "modpack" || !instances.data) return;
+    const ok = target && simpleTargets.some((i) => i.id === target.id);
+    if (ok) return;
+    const pick = simpleTargets[0];
+    if (pick ? pick.id !== search.instance : !!search.instance) navigate({ search: (s) => ({ ...s, instance: pick?.id }), replace: true });
+  }, [simple, type, instances.data, target, simpleTargets, search.instance, navigate]);
+  const simpleNoTarget = simple && type !== "modpack" && !!instances.data && simpleTargets.length === 0;
 
   // Filter aus der Ziel-Instanz vorbelegen
   const applyInstance = useDiscoverFilters((s) => s.applyInstance);
@@ -104,8 +124,9 @@ export function DiscoverPage() {
     const seen = new Set<string>();
     const out: ProjectHit[] = [];
     for (const p of results.data?.pages ?? []) for (const h of p.hits) if (!seen.has(h.id)) (seen.add(h.id), out.push(h));
-    return out;
-  }, [results.data]);
+    // Simple: Unpassendes ausblenden statt nur markieren
+    return simple && target ? out.filter((h) => h.project_type === "modpack" || compatibility(h, target).ok) : out;
+  }, [results.data, simple, target]);
   const total = results.data?.pages[0]?.total ?? 0;
 
   // Bereits installierte Projekte der Ziel-Instanz
@@ -125,11 +146,12 @@ export function DiscoverPage() {
 
   const setType = (v: ProjectType) => {
     useDiscoverFilters.getState().set({ categories: [] });
-    navigate({ search: (s) => ({ ...s, type: v === "mod" ? undefined : v }), replace: true });
+    // Simple: Modpacks werden ein neues Spiel – dafür das Ziel-Spiel lösen
+    navigate({ search: (s) => ({ ...s, type: v === "mod" ? undefined : v, instance: simple && v === "modpack" ? undefined : s.instance }), replace: true });
   };
 
-  const typeItems = (["mod", "modpack", "resourcepack", "shader", "datapack"] as ProjectType[])
-    .filter((v) => !(target && v === "modpack"))
+  const typeItems = (simple ? (["mod", "resourcepack", "shader", "modpack"] as ProjectType[]) : (["mod", "modpack", "resourcepack", "shader", "datapack"] as ProjectType[]))
+    .filter((v) => simple || !(target && v === "modpack"))
     .map((v) => ({ value: v, label: t(`discover.tab.${v}`) }));
 
   const sourceValue: Source = storeSource ?? (search.source === "curseforge" ? "curseforge" : "modrinth");
@@ -175,9 +197,13 @@ export function DiscoverPage() {
   return (
     <div className="relative flex h-full flex-col">
       {search.p && <DiscoverProjectOverlay value={search.p} instanceId={search.instance} />}
-      {search.instance && <TargetBanner instanceId={search.instance} type={effectiveType} />}
+      {simple ? (
+        type !== "modpack" && !simpleNoTarget && <SimpleTargetBar target={target} options={simpleTargets} />
+      ) : (
+        search.instance && <TargetBanner instanceId={search.instance} type={effectiveType} />
+      )}
       <div className="flex min-h-0 flex-1">
-        <FilterSidebar type={effectiveType} source={source} sourcePicker={sourcePicker} />
+        <FilterSidebar type={effectiveType} source={source} sourcePicker={sourcePicker} simple={simple} />
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Eine Werkzeugleiste: Typ · Suche (Sortierung über den Ergebnissen, Quelle in der Filterleiste) */}
           <div className="flex shrink-0 flex-wrap items-center gap-2 px-6 pt-3">
@@ -202,6 +228,7 @@ export function DiscoverPage() {
               view={view}
               onView={(v) => useDiscoverView.getState().setView(effectiveType, v)}
               cats={catsQ.data}
+              simple={simple}
               canBrowse={!search.q && (source === "modrinth" || source === "curseforge") && !curseforgeBlocked}
               onBrowse={() => {
                 setText("");
@@ -209,7 +236,18 @@ export function DiscoverPage() {
               }}
             />
           )}
-          {curseforgeBlocked ? (
+          {simpleNoTarget ? (
+            <EmptyState
+              icon={<Puzzle size={28} />}
+              title={t("sdisc.no_target.title")}
+              text={t("sdisc.no_target.text")}
+              action={
+                <Button variant="primary" icon={<Plus size={15} />} onClick={() => openNewGame("mods")}>
+                  {t("sdisc.no_target.cta")}
+                </Button>
+              }
+            />
+          ) : curseforgeBlocked ? (
             <EmptyState
               icon={<Info size={28} />}
               title={t("discover.cf_title")}
@@ -276,7 +314,9 @@ function ResultsBar({
   canBrowse,
   onBrowse,
   cats,
+  simple,
 }: {
+  simple?: boolean;
   /** Kategorienliste (Namen der aktiven Kategorie-Filter) */
   cats?: Category[];
   total: number | null;
@@ -320,6 +360,8 @@ function ResultsBar({
         })}
         {fetching && <Spinner size={11} className="ml-1 text-brand" />}
       </div>
+      {!simple && (
+      <>
       <Tooltip content={t("discover.sort")}>
         <div className="w-[164px] shrink-0">
           <Select
@@ -349,6 +391,8 @@ function ResultsBar({
           </Tooltip>
         ))}
       </div>
+      </>
+      )}
     </div>
   );
 }
@@ -488,6 +532,28 @@ function ResultList({
   );
 }
 
+/** Simple: „Wird installiert in: [Spiel]“ – Wechsel per Auswahl, Hinweis, dass nur Passendes erscheint. */
+function SimpleTargetBar({ target, options }: { target: Instance | null; options: Instance[] }) {
+  const t = useT();
+  const navigate = route.useNavigate();
+  return (
+    <div className="flex h-12 shrink-0 items-center gap-3 border-b border-line px-6">
+      {target ? <InstanceBadge instance={target} size={24} /> : <Skeleton className="h-6 w-6 rounded-ctl" />}
+      <span className="shrink-0 text-[13px] text-muted">{t("sdisc.target")}</span>
+      <div className="w-[240px] min-w-0">
+        <Select
+          size="sm"
+          value={target?.id ?? null}
+          placeholder={t("common.loading")}
+          onChange={(id) => navigate({ search: (s) => ({ ...s, instance: id }), replace: true })}
+          options={options.map((i) => ({ value: i.id, label: i.name }))}
+        />
+      </div>
+      <span className="min-w-0 flex-1 truncate text-[12.5px] text-dim">{t("sdisc.target_hint")}</span>
+    </div>
+  );
+}
+
 function TargetBanner({ instanceId, type }: { instanceId: string; type: ProjectType }) {
   const t = useT();
   const navigate = route.useNavigate();
@@ -584,7 +650,7 @@ function CheckRow({ on, label, onClick, radio, icon }: { on: boolean; label: Rea
   );
 }
 
-function FilterSidebar({ type, source, sourcePicker }: { type: ProjectType; source: Source; sourcePicker: React.ReactNode }) {
+function FilterSidebar({ type, source, sourcePicker, simple }: { type: ProjectType; source: Source; sourcePicker: React.ReactNode; simple?: boolean }) {
   const t = useT();
   const f = useDiscoverFilters();
   const gv = useGameVersions();
@@ -604,7 +670,7 @@ function FilterSidebar({ type, source, sourcePicker }: { type: ProjectType; sour
     placeholderData: undefined,
   });
 
-  const active = !!(f.version || f.loader || f.categories.length || f.sort !== "relevance" || f.trending);
+  const active = simple ? f.categories.length > 0 : !!(f.version || f.loader || f.categories.length || f.sort !== "relevance" || f.trending);
   const loaderApplies = type === "mod" || type === "modpack";
 
   return (
@@ -617,6 +683,8 @@ function FilterSidebar({ type, source, sourcePicker }: { type: ProjectType; sour
           </IconButton>
         )}
       </div>
+      {!simple && (
+      <>
       <FilterGroup id="source" title={t("discover.source")}>
         {sourcePicker}
       </FilterGroup>
@@ -639,6 +707,8 @@ function FilterSidebar({ type, source, sourcePicker }: { type: ProjectType; sour
             ))}
           </div>
         </FilterGroup>
+      )}
+      </>
       )}
       <FilterGroup
         id="categories"

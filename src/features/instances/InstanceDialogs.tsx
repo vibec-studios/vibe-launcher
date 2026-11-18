@@ -9,6 +9,8 @@ import { useT } from "@/i18n";
 import { GroupInput, NewInstanceDialog } from "./NewInstanceDialog";
 import { ActionHost } from "@/components/instance/ActionHost";
 import { AutofixHost } from "@/features/content/AutoFix";
+import { useSimple } from "@/lib/mode";
+import { SimpleNewGameDialog } from "./simple/SimpleNewGame";
 
 function GroupDialog() {
   const t = useT();
@@ -55,9 +57,15 @@ function GroupDialog() {
 export function InstanceDialogs() {
   const exportFor = useInstanceDialogs((s) => s.exportFor);
   const newOpen = useInstanceDialogs((s) => s.newOpen);
+  const newGoal = useInstanceDialogs((s) => s.newGoal);
+  const newExpert = useInstanceDialogs((s) => s.newExpert);
+  // Simple-Modus: geführter Assistent; „Erweitert“ öffnet den vollen Dialog
+  const guided = useSimple() && !newExpert;
+  const onOpenChange = (o: boolean) => useInstanceDialogs.setState(o ? { newOpen: true } : { newOpen: false, newGoal: null, newExpert: false });
   return (
     <>
-      <NewInstanceDialog open={newOpen} onOpenChange={(o) => useInstanceDialogs.setState({ newOpen: o })} />
+      <NewInstanceDialog open={newOpen && !guided} onOpenChange={onOpenChange} />
+      <SimpleNewGameDialog open={newOpen && guided} goal={newGoal} onOpenChange={onOpenChange} />
       <GroupDialog />
       <ActionHost />
       <AutofixHost />

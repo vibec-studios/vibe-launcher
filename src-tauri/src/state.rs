@@ -37,7 +37,7 @@ impl AppState {
         if let Err(e) = paths.ensure() {
             tracing::error!("Datenordner {:?} nicht anlegbar: {e}", paths.root);
         }
-        let settings = Settings::load(&paths.settings_file());
+        let settings = Settings::load_for(&paths);
         let net = Arc::new(Net::new(settings.concurrent_downloads as usize));
         let tasks = Tasks::new(app.clone());
         let instances = InstanceStore::load(paths.clone(), app.clone());

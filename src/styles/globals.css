@@ -225,6 +225,9 @@
 /* Seitenleiste breit (mit Beschriftung) */
 :root[data-sidebar="wide"] { --rail-w: 212px; }
 :root[data-sidebar="wide"][data-density="compact"] { --rail-w: 196px; }
+/* Simple-Modus: Seitenleiste immer mit Beschriftung */
+:root[data-mode="simple"] { --rail-w: 212px; }
+:root[data-mode="simple"][data-density="compact"] { --rail-w: 196px; }
 
 /* ---------- Theme „Winter“: kühle, leicht blaue Grautöne (je Ton), eisiger Text */
 :root[data-theme="winter"] {
@@ -442,6 +445,10 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
   html:not([data-reduce-motion="true"]) .vl-sheet { animation: vl-sheet-in 0.18s var(--ease-out); }
   html:not([data-reduce-motion="true"]) .vl-sheet-backdrop { animation: fade-in 0.16s ease-out; }
   html:not([data-reduce-motion="true"])[data-motion="more"] .vl-sheet { animation-duration: 0.3s; }
+  /* Onboarding-/Assistent-Schritte und Einführungs-Bubbles */
+  html:not([data-reduce-motion="true"]) .vl-step { animation: vl-page-fade 0.16s ease-out; }
+  html:not([data-reduce-motion="true"]) .vl-bubble { animation: vl-pop-in 0.16s var(--ease-out); }
+  html:not([data-reduce-motion="true"])[data-motion="more"] .vl-step { animation: vl-page-rise 0.3s var(--ease-out); }
 
   html:not([data-reduce-motion="true"])[data-motion="more"] {
     --motion-num: 450ms;
