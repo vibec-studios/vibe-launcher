@@ -147,8 +147,10 @@ export default {
     "vibe.sharing": "Modpacks teilen",
     "vibe.sharing.desc": "Instanzen per Link oder Code an andere weitergeben.",
     "vibe.discord": "Discord-Status",
-    "vibe.discord.desc": "Zeigt in Discord, welche Instanz du spielst (Rich Presence). Funktioniert, wenn die Discord-App läuft.",
+    "vibe.discord.desc": "Zeigt in Discord, was du spielst. Hostest du eine Welt, können Freunde direkt über „Beitreten“ mitspielen. Funktioniert, wenn die Discord-App läuft.",
     "vibe.discord.unavailable": "In diesem Build nicht verfügbar.",
+    "vibe.discord.details": "Server und Welt anzeigen",
+    "vibe.discord.details.desc": "Zeigt den Servernamen bzw. den Namen deiner gehosteten Welt. Aus = nur „Im Mehrspieler“ bzw. „Hostet eine Welt“. Server können ihren Namen selbst verbergen.",
 
     // Aktionen von außen
     "action.source_hint": "Diese Anfrage kam von außerhalb des Launchers (Link oder Verknüpfung).",
@@ -305,8 +307,10 @@ export default {
     "vibe.sharing": "Share modpacks",
     "vibe.sharing.desc": "Pass instances on via link or code.",
     "vibe.discord": "Discord status",
-    "vibe.discord.desc": "Shows in Discord which instance you're playing (Rich Presence). Works while the Discord app is running.",
+    "vibe.discord.desc": "Shows in Discord what you're playing. When you host a world, friends can join right away via “Join”. Works while the Discord app is running.",
     "vibe.discord.unavailable": "Not available in this build.",
+    "vibe.discord.details": "Show server and world",
+    "vibe.discord.details.desc": "Shows the server name or the name of the world you host. Off = just “In multiplayer” or “Hosting a world”. Servers can hide their name themselves.",
 
     "action.source_hint": "This request came from outside the launcher (link or shortcut).",
     "action.install.title": "Install content?",

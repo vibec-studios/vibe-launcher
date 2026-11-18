@@ -66,6 +66,7 @@ let settings: Settings = {
   update_channel: "release",
   vibe: { enabled: true, social: true, presence: true, hosting: true, sharing: true },
   discord_rpc: true,
+  discord_details: true,
   wrapper_command: null,
   open_log_on_launch: false,
   reduce_motion: false,

@@ -50,8 +50,6 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
         </>
       )}
 
-      {!simple && (
-      <>
       <SettingsCard title="Discord">
         <SettingRow
           title={t("vibe.discord")}
@@ -59,11 +57,19 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
         >
           <Switch checked={s.discord_rpc} onChange={(discord_rpc) => update({ discord_rpc })} label={t("vibe.discord")} />
         </SettingRow>
+        {!simple && (
+          <SettingRow title={t("vibe.discord.details")} description={t("vibe.discord.details.desc")}>
+            <Switch
+              checked={s.discord_details}
+              disabled={!s.discord_rpc}
+              onChange={(discord_details) => update({ discord_details })}
+              label={t("vibe.discord.details")}
+            />
+          </SettingRow>
+        )}
       </SettingsCard>
 
-      {v.enabled && <VibeDangerCard />}
-      </>
-      )}
+      {!simple && v.enabled && <VibeDangerCard />}
     </>
   );
 }

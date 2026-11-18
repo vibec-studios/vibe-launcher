@@ -242,6 +242,13 @@ export const api = {
   optsyncApplyAll: () => call<number>("optsync_apply_all"),
   shortcutCreate: (instanceId: string, location: "desktop" | "start_menu") => call<string>("shortcut_create", { instanceId, location }),
   appActionsTake: () => call<T.AppAction[]>("app_actions_take"),
+  // ---------------------------------------------------------------- Spiel-Links
+  /** Abgelaufen/unbekannt: Fehler `{ kind: "not_found" }` */
+  playLinkGet: (code: string) => call<T.PlayLink>("play_link_get", { code }),
+  playJoinPreview: (link: T.PlayLink) => call<T.JoinPreview>("play_join_preview", { link }),
+  /** Task-ID; die Instanz steht danach in `task.instance_id` */
+  playJoinSetup: (link: T.PlayLink, instanceId: string | null) => call<string>("play_join_setup", { link, instanceId }),
+  playSessions: () => call<T.RunningSession[]>("play_sessions"),
   discordAvailable: () => call<boolean>("discord_available"),
   // ---------------------------------------------------------------- Vibe-Dienste (Netzwerk nur, wenn settings.vibe.enabled)
   vibeStatus: () => call<T.VibeStatus>("vibe_status"),

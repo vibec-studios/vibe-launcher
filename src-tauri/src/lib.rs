@@ -14,6 +14,7 @@ pub mod minecraftcapes;
 pub mod net;
 pub mod paths;
 pub mod platform;
+pub mod play;
 pub mod server;
 pub mod settings;
 pub mod state;
@@ -307,6 +308,10 @@ pub fn run() {
             commands::platform::shortcut_create,
             commands::platform::app_actions_take,
             commands::platform::discord_available,
+            commands::play::play_link_get,
+            commands::play::play_join_preview,
+            commands::play::play_join_setup,
+            commands::play::play_sessions,
             commands::content::modpack_check,
             commands::content::modpack_update_preview,
             commands::content::modpack_update,

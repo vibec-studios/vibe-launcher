@@ -486,7 +486,7 @@ pub async fn install(state: AppState, task: TaskHandle, instance_id: String, pac
     }
 }
 
-fn pretty(id: &str) -> &'static str {
+pub fn pretty(id: &str) -> &'static str {
     match id {
         "vibey" => "Vibey Client",
         "norisk" => "NoRisk Client",

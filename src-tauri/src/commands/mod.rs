@@ -10,3 +10,4 @@ pub mod screenshots;
 pub mod backups;
 pub mod files;
 pub mod vibe;
+pub mod play;
