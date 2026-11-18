@@ -1,9 +1,14 @@
-//! Cosmetics: `.vibey`-Assets (per SHA-256, unveränderlich) und Vorschaubilder mit Platten-Cache, eigene
-//! Bundles lesen und Einreichungen hochladen (`POST /api/v1/cosmetics/submissions`, multipart).
+//! Cosmetics: öffentlicher Katalog, `.vibey`-Assets (per SHA-256, unveränderlich) und Vorschaubilder mit
+//! Platten-Cache, eigene Bundles lesen und Einreichungen hochladen (`POST /api/v1/cosmetics/submissions`, multipart).
+//!
+//! Katalog, Assets und Vorschaubilder sind öffentlich: Sie brauchen keinen Vibe-Login (Gastansicht der Garderobe),
+//! gehen aber nur an die feste Backend-Adresse. Ist der Vibe-Hauptschalter aus, gibt es keine Verbindung – dann
+//! zeigt der Launcher nur, was schon auf der Platte liegt.
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
 use crate::vibe::{self, Feature};
 use base64::Engine;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
@@ -18,6 +23,85 @@ fn assets_dir(state: &AppState) -> PathBuf {
 }
 fn thumbs_dir(state: &AppState) -> PathBuf {
     super::data_dir(state).join("thumbs")
+}
+fn catalog_path(state: &AppState) -> PathBuf {
+    super::data_dir(state).join("catalog.json")
+}
+
+/// Katalog höchstens 8 MiB
+const MAX_CATALOG_BYTES: usize = 8 * 1024 * 1024;
+
+/// Zuletzt geladener Katalog auf der Platte (je Backend-Adresse).
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct StoredCatalog {
+    api_url: String,
+    catalog: serde_json::Value,
+}
+
+/// Antwort von [`catalog`]: `cached` = vom letzten Abruf (Vibe aus oder Server nicht erreichbar).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogResult {
+    pub catalog: serde_json::Value,
+    pub cached: bool,
+}
+
+async fn read_catalog_cache(state: &AppState, base: &str) -> Option<serde_json::Value> {
+    let b = tokio::fs::read(catalog_path(state)).await.ok()?;
+    let s: StoredCatalog = serde_json::from_slice(&b).ok()?;
+    (vibe::normalize_base(&s.api_url) == base).then_some(s.catalog)
+}
+
+/// Prüft grob die Form (`{ version, items: [] }`), damit kein Unsinn im Cache landet.
+fn valid_catalog(v: &serde_json::Value) -> bool {
+    v.get("version").is_some() && v.get("items").is_some_and(|i| i.is_array())
+}
+
+/// Öffentlicher Katalog `GET /api/v1/cosmetics/catalog` (ohne Login, ohne Token). Wird auf der Platte gemerkt;
+/// Vibe aus oder Server nicht erreichbar -> letzter Stand (falls vorhanden).
+pub async fn catalog(state: &AppState) -> AppResult<CatalogResult> {
+    let base = vibe::api_base(state);
+    let base = match vibe::ensure(state, Feature::Any) {
+        Ok(b) => b,
+        Err(e) => {
+            return match read_catalog_cache(state, &base).await {
+                Some(catalog) => Ok(CatalogResult { catalog, cached: true }),
+                None => Err(e),
+            }
+        }
+    };
+    let url = vibe::check_api_url(&base, &format!("{base}/api/v1/cosmetics/catalog"))?;
+    let r = match state.net.client.get(url).header("accept", "application/json").timeout(Duration::from_secs(20)).send().await {
+        Ok(r) => r,
+        Err(e) => {
+            return match read_catalog_cache(state, &base).await {
+                Some(catalog) => Ok(CatalogResult { catalog, cached: true }),
+                None => Err(e.into()),
+            }
+        }
+    };
+    let status = r.status().as_u16();
+    let bytes = r.bytes().await?;
+    if !(200..300).contains(&status) {
+        return Err(vibe::api_error(status, &String::from_utf8_lossy(&bytes)));
+    }
+    if bytes.len() > MAX_CATALOG_BYTES {
+        return Err(AppError::msg("Katalog zu groß"));
+    }
+    let catalog: serde_json::Value = serde_json::from_slice(&bytes).map_err(|e| AppError::msg(format!("Antwort des Vibe-Servers ist ungültig: {e}")))?;
+    if !valid_catalog(&catalog) {
+        return Err(AppError::msg("Antwort des Vibe-Servers ist ungültig (Katalog)"));
+    }
+    let stored = StoredCatalog { api_url: base.clone(), catalog };
+    if let Ok(json) = serde_json::to_vec(&stored) {
+        let path = catalog_path(state);
+        let tmp = path.with_extension("part");
+        if tokio::fs::create_dir_all(super::data_dir(state)).await.is_ok() && tokio::fs::write(&tmp, &json).await.is_ok() {
+            let _ = tokio::fs::rename(&tmp, &path).await;
+        }
+    }
+    Ok(CatalogResult { catalog: stored.catalog, cached: false })
 }
 
 /// `.vibey`-Bundle per SHA-256: aus dem Cache oder vom Backend (Prüfsumme wird geprüft). Liefert den JSON-Text.
@@ -83,10 +167,17 @@ fn prune_assets(state: &AppState) {
 /// Vorschaubild (relativ zur Backend-Adresse oder absolut unter ihr) als `data:`-URL. `None` = keins vorhanden.
 /// `token`: für Bilder, die nur der Einreicher sehen darf (eigene Einreichungen).
 pub async fn thumbnail(state: &AppState, url: &str, token: Option<&str>) -> AppResult<Option<String>> {
-    let base = vibe::ensure(state, Feature::Any)?;
+    let base = vibe::api_base(state);
     let abs = super::resolve_url(&base, url)?;
     let key = super::sha256_bytes(abs.as_bytes());
     let path = thumbs_dir(state).join(format!("{key}.png"));
+    // Vibe aus: keine Verbindung, nur der Cache (egal wie alt)
+    if let Err(e) = vibe::ensure(state, Feature::Any) {
+        return match tokio::fs::read(&path).await {
+            Ok(b) => Ok(Some(png_data_url(&b))),
+            Err(_) => Err(e),
+        };
+    }
     let fresh = std::fs::metadata(&path).ok().and_then(|m| m.modified().ok()).is_some_and(|t| t.elapsed().unwrap_or_default() < THUMB_TTL);
     if fresh {
         if let Ok(b) = tokio::fs::read(&path).await {
@@ -225,6 +316,14 @@ mod tests {
         assert_eq!(png_size(&b), Some((256, 128)));
         assert_eq!(png_size(b"GIF89a................."), None);
         assert!(png_data_url(&b).starts_with("data:image/png;base64,iVBOR"));
+    }
+
+    #[test]
+    fn catalog_shape() {
+        assert!(valid_catalog(&serde_json::json!({ "version": "abc", "items": [] })));
+        assert!(!valid_catalog(&serde_json::json!({ "version": "abc" })));
+        assert!(!valid_catalog(&serde_json::json!({ "items": {} , "version": 1})));
+        assert!(!valid_catalog(&serde_json::json!([])));
     }
 
     #[tokio::test]

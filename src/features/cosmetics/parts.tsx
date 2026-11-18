@@ -1,4 +1,5 @@
-// Kleine Bausteine der Cosmetics-Seiten: Zugangs-Zustände, Vorschaubild, Seltenheit, Bundle-Hook.
+// Kleine Bausteine der Cosmetics-Seiten: Zugangs-Zustände (ganzseitig und als Banner der Gastansicht),
+// Vorschaubild, Seltenheit, Bundle-Hook.
 import { useNavigate } from "@tanstack/react-router";
 import { CloudOff, ImageOff, LogIn, Settings as SettingsIcon, UserRound } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -24,7 +25,7 @@ export function AccessState({ access, title }: { access: Access; title?: string 
         {icon(<CloudOff size={22} />)}
         <h3 className="display text-[16px] text-white">{t("cos.gate.off_title")}</h3>
         <p className="max-w-md text-[13px] leading-relaxed text-muted">{t("cos.gate.off_text")}</p>
-        <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => nav({ to: "/settings" })}>
+        <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => nav({ to: "/settings", search: { tab: "vibe" } })}>
           {t("action.open_settings")}
         </Button>
       </>
@@ -67,6 +68,61 @@ export function AccessState({ access, title }: { access: Access; title?: string 
     <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-16 text-center">
       {title && <div className="mb-2 font-mono text-[11px] uppercase tracking-[.18em] text-dim">{title}</div>}
       {body}
+    </div>
+  );
+}
+
+/**
+ * Kompakter Hinweis über der Gast-Garderobe (ohne Vibe-Login): was fehlt, plus die passende Aktion
+ * (Vibe einschalten / Account hinzufügen / verbinden).
+ */
+export function AccessBanner({ access }: { access: Access }) {
+  const t = useT();
+  const nav = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  if (access === "loading" || access === "ready") return null;
+  const v =
+    access === "off"
+      ? { icon: <CloudOff size={16} />, title: t("cos.gate.off_title"), text: t("cos.guest.off_text") }
+      : access === "no_account"
+        ? { icon: <UserRound size={16} />, title: t("cos.gate.account_title"), text: t("cos.guest.account_text") }
+        : { icon: <LogIn size={16} />, title: t("cos.gate.login_title"), text: t("cos.guest.login_text") };
+  const action =
+    access === "off" ? (
+      <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => nav({ to: "/settings", search: { tab: "vibe" } })}>
+        {t("cos.guest.off_action")}
+      </Button>
+    ) : access === "no_account" ? (
+      <Button size="sm" icon={<UserRound size={14} />} onClick={() => nav({ to: "/accounts" })}>
+        {t("cos.guest.account_action")}
+      </Button>
+    ) : (
+      <Button
+        size="sm"
+        variant="primary"
+        loading={busy}
+        icon={<LogIn size={14} />}
+        onClick={async () => {
+          setBusy(true);
+          setErr(null);
+          await login().catch((e) => setErr(String((e as { message?: string })?.message ?? e)));
+          setBusy(false);
+        }}
+      >
+        {t("cos.guest.login_action")}
+      </Button>
+    );
+  return (
+    <div className="flex shrink-0 items-center gap-3 border-b border-line bg-surface px-6 py-2.5">
+      <div className="grid h-8 w-8 shrink-0 place-items-center border border-line2 bg-surface2 text-muted">{v.icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] font-semibold text-white">{v.title}</div>
+        <div className="text-[12px] leading-snug text-muted">
+          {err ? <span className="text-danger">{err}</span> : v.text}
+        </div>
+      </div>
+      <div className="shrink-0">{action}</div>
     </div>
   );
 }

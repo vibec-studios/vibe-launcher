@@ -26,7 +26,8 @@ const enc = encodeURIComponent;
 
 /** REST der Cosmetics-API (VIBE-API-2 §3/§4 + bestehende Katalog-/Loadout-Routen). */
 export const capi = {
-  catalog: () => requireClient().request<Catalog>("GET", "/api/v1/cosmetics/catalog", { auth: false }),
+  /** Öffentlich (ohne Login, auch in der Gastansicht): läuft in Rust mit Platten-Cache für „Vibe aus“. */
+  catalog: () => invoke<{ catalog: Catalog; cached: boolean }>("vibey_cosmetics_catalog").then((r) => ({ ...r.catalog, cached: r.cached })),
   me: () => requireClient().request<CosmeticsMe>("GET", "/api/v1/cosmetics/me"),
   setLoadout: (body: { slots?: LoadoutSlots; emoteWheel?: (string | null)[] }) => requireClient().request<Loadout>("PUT", "/api/v1/cosmetics/loadout", { body }),
   submissions: async () => {

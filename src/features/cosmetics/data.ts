@@ -35,10 +35,18 @@ export function useAccess(): Access {
   return "ready";
 }
 
+/** Ohne Vibe-Login: Garderobe nur ansehen und anprobieren (Katalog/Assets sind öffentlich). */
+export const isGuest = (a: Access) => a === "off" || a === "no_account" || a === "logged_out";
+
+/** Was ein Gast tragen dürfte: kostenlose Items (`availability: "default"`). */
+export const freeItems = (c: Catalog | undefined) => (c?.items ?? []).filter((i) => i.availability === "default").map((i) => i.id);
+
 export function useCatalog(enabled: boolean) {
   const live = useSocial((s) => s.conn === "ready");
+  const vibeOn = useSettings().data?.vibe?.enabled ?? false;
   return useQuery({
-    queryKey: cqk.catalog,
+    // Schalter im Schlüssel: Vibe an/aus lädt sofort neu (Netz statt Platten-Cache und umgekehrt)
+    queryKey: [...cqk.catalog, vibeOn],
     queryFn: capi.catalog,
     enabled,
     staleTime: 60_000,
@@ -146,7 +154,8 @@ export const RARITY_COLOR: Record<string, string> = { common: "#a1a1aa", rare: "
 
 export function onCatalogUpdated(d: unknown) {
   const v = (d as { version?: string } | null)?.version;
-  const cur = queryClient.getQueryData<Catalog>(cqk.catalog);
+  // Live-Updates gibt es nur mit eingeschaltetem Vibe
+  const cur = queryClient.getQueryData<Catalog>([...cqk.catalog, true]);
   if (v && cur?.version === v) return;
   void queryClient.invalidateQueries({ queryKey: cqk.catalog });
   void queryClient.invalidateQueries({ queryKey: cqk.me });
