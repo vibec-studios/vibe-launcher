@@ -4,6 +4,7 @@ pub mod core;
 pub mod game;
 pub mod server;
 pub mod skins;
+pub mod minecraftcapes;
 pub mod platform;
 pub mod screenshots;
 pub mod backups;

@@ -19,12 +19,13 @@ import configs from "./configs";
 import social from "./social";
 import instancepage from "./instancepage";
 import cosmetics from "./cosmetics";
+import minecraftcapes from "./minecraftcapes";
 
 export type Lang = "de" | "en";
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, configs, social, instancepage, cosmetics];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, configs, social, instancepage, cosmetics, minecraftcapes];
 const dicts: Record<Lang, Dict> = { de: {}, en: {} };
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);

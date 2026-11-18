@@ -8,6 +8,7 @@ pub mod error;
 pub mod events;
 pub mod instance;
 pub mod minecraft;
+pub mod minecraftcapes;
 pub mod net;
 pub mod paths;
 pub mod platform;
@@ -174,6 +175,9 @@ pub fn run() {
             commands::skins::skin_library_remove,
             commands::skins::skin_library_export,
             commands::skins::skin_library_reveal,
+            commands::minecraftcapes::mccapes_profile,
+            commands::minecraftcapes::mccapes_mod_status,
+            commands::minecraftcapes::mccapes_mod_set,
             // game
             commands::game::game_versions,
             commands::game::loader_game_versions,

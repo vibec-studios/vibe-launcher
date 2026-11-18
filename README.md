@@ -42,7 +42,7 @@ Instanzen, Mods, Modpacks, Skins – schnell, aufgeräumt und ohne Schnickschnac
 | 🔄 **Mod-Updates** | Updates prüfen und mit einem Klick einspielen – oder automatisch vor jedem Start. Einzelne Mods lassen sich fixieren. |
 | 📦 **Import & Export** | `.mrpack`, CurseForge-ZIP, eigenes `.vlpack`, Prism/MultiMC – und **direkt aus anderen Launchern** (Modrinth App, Prism, CurseForge App, ATLauncher). |
 | 🟫 **Hotbar & Direkt in die Welt** | Die Startseite ist eine Minecraft-Hotbar (Tasten 1–9). Ein Klick auf eine Welt startet das Spiel direkt darin. |
-| 👕 **Skins & Capes** | 3D-Vorschau, eigene Skin-Bibliothek, Skins per Datei oder Spielername, Capes umschalten. |
+| 👕 **Skins & Capes** | 3D-Vorschau, eigene Skin-Bibliothek, Skins per Datei oder Spielername, Capes umschalten. Dazu **MinecraftCapes**: eigenes (auch animiertes) Cape und Ohren in der Vorschau, die Mod per Schalter je Instanz (abschaltbar; abgefragt wird nur die eigene UUID). |
 | 🖼️ **Screenshots** | Alle Screenshots aller Instanzen an einem Ort – mit Großansicht, Kopieren und Löschen. |
 | 📜 **Logs** | Live-Konsole mit Filtern und Suche, Crash-Erkennung, Upload zu **mclo.gs** mit einem Klick. |
 | 🔐 **Accounts** | Microsoft-Login, mehrere Konten; Tokens liegen im Windows-Tresor, nie im Klartext. |
