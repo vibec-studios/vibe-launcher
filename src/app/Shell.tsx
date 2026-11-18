@@ -12,7 +12,7 @@ import { isRunning, useGameStore, useInstance, useInstances, useInstanceTasks, u
 import { ServerDialogs } from "@/features/servers/ServerDialogs";
 import { instanceAccent } from "@/lib/format";
 import type { Instance, NavKey } from "@/lib/types";
-import { themeExtra, useLiveAppearance } from "@/lib/appearance";
+import { useLiveAppearance } from "@/lib/appearance";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { Logo3D } from "@/components/Logo3D";
 import { InstanceContextMenuContent } from "@/components/instance/InstanceMenu";
@@ -106,10 +106,9 @@ const NAV: Record<NavKey, NavDef> = {
   screenshots: { icon: <Images size={20} />, label: "nav.screenshots", go: (nav) => nav({ to: "/screenshots" }), match: (p) => p === "/screenshots" },
 };
 
-/** Logo oben: 3D-Robbe – im Winter-Theme mit Schal (Maskottchen). */
+/** Logo oben: 3D-Robbe – im Winter-Theme mit Schal (Maskottchen, Logo3D folgt dem Theme selbst). */
 function RailLogo({ wide }: { wide: boolean }) {
   const nav = useNavigate();
-  const winter = useLiveAppearance((s) => themeExtra(s.a, "mascot"));
   return (
     <Tooltip content={wide ? null : "Vibe Launcher"} side="right">
       <button
@@ -117,7 +116,7 @@ function RailLogo({ wide }: { wide: boolean }) {
         onClick={() => nav({ to: "/" })}
         className={cn("mb-1 flex h-10 shrink-0 items-center", wide ? "w-full gap-2.5 px-1.5" : "w-10 justify-center")}
       >
-        <Logo3D key={winter ? "winter" : "std"} size={34} speed={0} hoverSpin float={false} interactive={false} winter={winter} />
+        <Logo3D size={34} speed={0} hoverSpin float={false} interactive={false} />
         {wide && <span className="truncate text-[14px] font-bold tracking-[-0.01em] text-text">Vibe Launcher</span>}
       </button>
     </Tooltip>

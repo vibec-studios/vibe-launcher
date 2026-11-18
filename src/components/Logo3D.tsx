@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type * as THREE_NS from "three";
 import { cn } from "@/components/ui";
 import { useSettings } from "@/lib/queries";
+import { themeExtra, useLiveAppearance } from "@/lib/appearance";
 import { addSealLights, buildSeal, poseSeal } from "./seal3d";
 
 export interface Logo3DProps {
@@ -18,7 +19,7 @@ export interface Logo3DProps {
   hoverSpin?: boolean;
   /** Ohne Eisscholle, enger eingepasst – für kleine Größen (Leiste) */
   compact?: boolean;
-  /** Winter-Theme: Robbe mit Strickschal und etwas Schnee */
+  /** Winter-Theme: Robbe mit Strickschal und etwas Schnee. Ohne Angabe: folgt dem Theme (Extra „Robbe mit Schal“). */
   winter?: boolean;
 }
 
@@ -32,7 +33,9 @@ function prefersStatic(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.reduceMotion === "true";
 }
 
-export function Logo3D({ size = 160, className, hoverSpin = true, compact = size < 48, winter = false }: Logo3DProps) {
+export function Logo3D({ size = 160, className, hoverSpin = true, compact = size < 48, winter: winterProp }: Logo3DProps) {
+  const themeWinter = useLiveAppearance((s) => themeExtra(s.a, "mascot"));
+  const winter = winterProp ?? themeWinter;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const reduce = useSettings().data?.reduce_motion ?? false;

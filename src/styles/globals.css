@@ -512,7 +512,8 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 
 /* Leerzustände: ein kleines Pixel-Schneehäubchen auf dem Icon */
 .vl-empty-icon { position: relative; display: inline-grid; }
-:root[data-theme="winter"] .vl-empty-icon::before {
+/* nur auf Strich-Icons (SVG) – nicht auf Logos/Bildern */
+:root[data-theme="winter"] .vl-empty-icon:has(> svg)::before {
   content: "";
   position: absolute;
   left: 50%;

@@ -106,11 +106,11 @@ export const Snowfall = memo(function Snowfall({
       const n = Math.max(1, Math.floor(r.width / COL_W));
       if (ledge && ledge.x0 === Math.round(r.left) && ledge.y === Math.round(r.top) && ledge.cols.length === n) return;
       ledge = { x0: Math.round(r.left), y: Math.round(r.top), cols: new Float32Array(n) };
-      // Es liegt schon ein wenig Schnee: ein paar kleine, verstreute Häufchen
-      for (let i = 0; i < Math.round(n / 40); i++) {
+      // Es liegt schon ein wenig Schnee: wenige flache, unregelmäßige Streifen (meist 1 px, selten 2 px)
+      for (let i = 0; i < Math.round(n / 70); i++) {
         const c = Math.floor(rnd() * n);
-        const hgt = 1 + rnd() * 1.6;
-        for (let j = -2; j <= 2; j++) if (c + j >= 0 && c + j < n) ledge.cols[c + j] = Math.max(ledge.cols[c + j], hgt - Math.abs(j) * 0.6);
+        const len = 2 + Math.floor(rnd() * 7);
+        for (let j = 0; j < len && c + j < n; j++) ledge.cols[c + j] = Math.max(ledge.cols[c + j], rnd() < 0.18 && j > 0 && j < len - 1 ? 2 : 1);
       }
     };
 
@@ -152,10 +152,13 @@ export const Snowfall = memo(function Snowfall({
         if (lg && f.layer > 0 && prevY < lg.y && f.y >= lg.y) {
           const ci = Math.floor((f.x - lg.x0) / COL_W);
           if (ci >= 0 && ci < lg.cols.length && rnd() < 0.3) {
-            const add = f.layer === 2 ? 0.9 : 0.5;
-            lg.cols[ci] = Math.min(MAX_PILE, lg.cols[ci] + add);
-            if (ci > 0) lg.cols[ci - 1] = Math.min(MAX_PILE, lg.cols[ci - 1] + add * 0.4);
-            if (ci + 1 < lg.cols.length) lg.cols[ci + 1] = Math.min(MAX_PILE, lg.cols[ci + 1] + add * 0.4);
+            // Flocke zerfällt beim Aufsetzen: etwas Schnee auf 1–3 Nachbarsäulen, leicht windabwärts versetzt
+            const add = f.layer === 2 ? 0.9 : 0.55;
+            const spread = 1 + Math.floor(rnd() * 3);
+            for (let j = -1; j < spread; j++) {
+              const k = ci + j;
+              if (k >= 0 && k < lg.cols.length) lg.cols[k] = Math.min(MAX_PILE, lg.cols[k] + (j === 0 ? add : add * (0.3 + rnd() * 0.4)));
+            }
             spawn(f, true);
             continue;
           }
