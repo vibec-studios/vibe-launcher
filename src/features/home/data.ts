@@ -47,13 +47,13 @@ export function useUpdateCounts() {
   return useQuery({ queryKey: ["update-counts"], queryFn: api.contentUpdateCounts, staleTime: 60_000, refetchInterval: 120_000 });
 }
 
-/** Beliebte Modpacks (Modrinth, nach Downloads) – Startseite und „Neue Instanz › Modpack“. */
-export function usePopularModpacks(limit = 8) {
+/** Beliebte Modpacks (nach Downloads) – Startseite und „Neue Instanz › Modpack“. */
+export function usePopularModpacks(limit = 8, source: "modrinth" | "curseforge" = "modrinth") {
   return useQuery({
-    queryKey: ["home", "popular-modpacks", limit],
+    queryKey: ["home", "popular-modpacks", source, limit],
     queryFn: () =>
       api.contentSearch({
-        source: "modrinth",
+        source,
         query: "",
         project_type: "modpack",
         game_version: null,

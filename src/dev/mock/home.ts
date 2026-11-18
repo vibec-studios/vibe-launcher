@@ -52,19 +52,37 @@ const servers: RecentServer[] = [
 
 // Pixel-Landschaft als „Screenshot“ (nur Mock)
 function landscape(seed: number) {
-  const r = (n: number) => ((Math.sin(seed * 97 + n * 13.7) + 1) / 2);
+  const r = (n: number) => (Math.sin(seed * 97 + n * 13.7) + 1) / 2;
   let hills = "";
   for (let x = 0; x < 160; x += 4) hills += `<rect x="${x}" y="${44 + Math.round(r(x) * 10)}" width="4" height="60" fill="#3d7a3a"/>`;
   let ground = "";
-  for (let x = 0; x < 160; x += 4) ground += `<rect x="${x}" y="${60 + Math.round(r(x + 99) * 4)}" width="4" height="40" fill="#5fae3f"/><rect x="${x}" y="${66 + Math.round(r(x + 99) * 4)}" width="4" height="40" fill="#7a5537"/>`;
+  for (let x = 0; x < 160; x += 4)
+    ground += `<rect x="${x}" y="${60 + Math.round(r(x + 99) * 4)}" width="4" height="40" fill="#5fae3f"/><rect x="${x}" y="${66 + Math.round(r(x + 99) * 4)}" width="4" height="40" fill="#7a5537"/>`;
   let trees = "";
-  for (const x of [22, 58, 118, 140]) trees += `<rect x="${x + 3}" y="44" width="3" height="18" fill="#5b3b22"/><rect x="${x - 3}" y="34" width="15" height="12" fill="#2f6b2b"/>`;
+  for (const x of [22, 58, 118, 140])
+    trees += `<rect x="${x + 3}" y="44" width="3" height="18" fill="#5b3b22"/><rect x="${x - 3}" y="34" width="15" height="12" fill="#2f6b2b"/>`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90" shape-rendering="crispEdges"><rect width="160" height="90" fill="${seed % 2 ? "#7fb6f0" : "#f0a86b"}"/><rect x="120" y="10" width="12" height="12" fill="#fff4b0"/><rect x="18" y="16" width="28" height="5" fill="#fff" opacity=".8"/><rect x="70" y="22" width="20" height="4" fill="#fff" opacity=".7"/>${hills}${ground}${trees}<rect x="84" y="62" width="30" height="5" fill="#3f76e4"/></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 const shots = [
-  { instance_id: "survival", file_name: "2026-11-18_19.42.10.png", path: "C:/mock/shots/a.png", size: 2_400_000, width: 1920, height: 1080, taken_at: now - 70 * 60_000 },
-  { instance_id: "vanilla", file_name: "2026-11-15_12.01.33.png", path: "C:/mock/shots/b.png", size: 2_100_000, width: 1920, height: 1080, taken_at: now - 3 * D },
+  {
+    instance_id: "survival",
+    file_name: "2026-11-18_19.42.10.png",
+    path: "C:/mock/shots/a.png",
+    size: 2_400_000,
+    width: 1920,
+    height: 1080,
+    taken_at: now - 70 * 60_000,
+  },
+  {
+    instance_id: "vanilla",
+    file_name: "2026-11-15_12.01.33.png",
+    path: "C:/mock/shots/b.png",
+    size: 2_100_000,
+    width: 1920,
+    height: 1080,
+    taken_at: now - 3 * D,
+  },
 ];
 
 const handlers: Handlers = {
@@ -85,6 +103,30 @@ const handlers: Handlers = {
     error: null,
   }),
   content_update_counts: () => ({ survival: 3, "hh-armors": 5 }),
+  launchers_detect: () => [
+    {
+      id: "prism",
+      name: "Prism Launcher",
+      path: "C:\\Users\\steve\\AppData\\Roaming\\PrismLauncher",
+      instances: Array.from({ length: 7 }, (_, n) => ({
+        source_path: `p${n}`,
+        name: `Prism ${n}`,
+        mc_version: "1.20.1",
+        loader: { kind: "forge", version: "47.3.0" },
+        icon: null,
+        mod_count: 40,
+        last_played: null,
+      })),
+    },
+    {
+      id: "curseforge",
+      name: "CurseForge",
+      path: "C:\\Users\\steve\\curseforge\\minecraft\\Instances",
+      instances: [
+        { source_path: "c0", name: "ATM9", mc_version: "1.20.1", loader: { kind: "forge", version: "47.3.0" }, icon: null, mod_count: 400, last_played: null },
+      ],
+    },
+  ],
 };
 
 // ------------------------------------------------------------------ Vibe: Freunde
