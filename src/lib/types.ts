@@ -121,6 +121,8 @@ export interface Settings {
   world_backup_on_launch: boolean;
   /** Aufbewahrte automatische Backups je Welt */
   world_backups_keep: number;
+  /** MinecraftCapes-Cape/Ohren anzeigen (aus = keine Anfragen an api.minecraftcapes.net) */
+  minecraftcapes: boolean;
 }
 
 export interface StoreConfig {

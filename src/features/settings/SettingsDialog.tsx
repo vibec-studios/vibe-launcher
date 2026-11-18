@@ -292,6 +292,9 @@ function AppearanceTab({ s, update }: TabProps) {
           label={t("settings.reduce_motion")}
         />
       </SettingRow>
+      <SettingRow title={t("settings.minecraftcapes")} description={t("settings.minecraftcapes.desc")}>
+        <Switch checked={s.minecraftcapes} onChange={(minecraftcapes) => update({ minecraftcapes })} label={t("settings.minecraftcapes")} />
+      </SettingRow>
     </SettingsCard>
   );
 }

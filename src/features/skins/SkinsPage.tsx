@@ -13,6 +13,7 @@ import {
   RotateCw,
   Save,
   Shirt,
+  Sparkles,
   Trash2,
   UserRound,
   Users,
@@ -32,6 +33,7 @@ import {
   Select,
   Skeleton,
   Spinner,
+  Tabs,
   Tooltip,
   cn,
   confirm,
@@ -47,6 +49,8 @@ import { registerDropTarget, useDragState } from "@/components/content/dragdrop"
 import { MsaDialog } from "@/features/accounts/MsaDialog";
 import { useCapeFront, useSkinFront } from "./render";
 import type { ViewerAnimation } from "./SkinViewer3D";
+import { McCapesPanel, McCapeThumb } from "./McCapesPanel";
+import { useCapeFrames, useMcCapesEnabled, useMcProfile, type McCapeFrames, type McProfile } from "./minecraftcapes";
 
 const SkinViewer3D = lazy(() => import("./SkinViewer3D"));
 
@@ -109,8 +113,24 @@ export function SkinsPage() {
   const [rotate, setRotate] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<LibrarySkin | null>(null);
+  const [tab, setTab] = useState<"library" | "mccapes">("library");
 
-  useEffect(() => setPreview(null), [accountId]);
+  // MinecraftCapes (nur wenn in den Einstellungen an – sonst keine Anfrage)
+  const mcEnabled = useMcCapesEnabled();
+  const mcQ = useMcProfile(accountId, mcEnabled && !!account);
+  const mcProfile = mcEnabled && mcQ.data?.account_id === accountId ? mcQ.data : undefined;
+  const mcFrames = useCapeFrames(mcProfile?.cape);
+  const mcHas = !!mcProfile && (!!mcProfile.cape || !!mcProfile.ears);
+  const [mcShownRaw, setMcShown] = useState(false);
+  const mcShown = mcShownRaw && mcHas;
+
+  useEffect(() => {
+    setPreview(null);
+    setMcShown(false);
+  }, [accountId]);
+  useEffect(() => {
+    if (!mcEnabled) setTab("library");
+  }, [mcEnabled]);
 
   useEvent("skins://changed", (p) => {
     if (p.scope === "library") void queryClient.invalidateQueries({ queryKey: skq.library });
@@ -243,7 +263,17 @@ export function SkinsPage() {
           <div className="relative min-h-0 flex-1 overflow-hidden bg-[radial-gradient(ellipse_at_50%_40%,rgba(139,108,255,.10),transparent_65%)]">
             {viewerSkin ? (
               <Suspense fallback={<CenterSpinner />}>
-                <SkinViewer3D skin={viewerSkin} variant={viewerVariant} cape={shownCape?.data_url ?? null} animation={anim} autoRotate={rotate} />
+                <SkinViewer3D
+                  skin={viewerSkin}
+                  variant={viewerVariant}
+                  cape={shownCape?.data_url ?? null}
+                  animation={anim}
+                  autoRotate={rotate}
+                  mcCape={mcShown ? mcFrames : null}
+                  glint={mcShown && !!mcProfile?.glint}
+                  ears={mcShown ? (mcProfile?.ears?.data_url ?? null) : null}
+                  upsideDown={mcShown && !!mcProfile?.upside_down}
+                />
               </Suspense>
             ) : !account ? (
               <NoAccount onLogin={() => setMsa(true)} />
@@ -320,33 +350,58 @@ export function SkinsPage() {
           )}
 
           {account && !account.needs_relogin && (
-            <div className="shrink-0 border-t border-line px-3 pb-3 pt-2.5">
-              <div className="mb-2 text-[12.5px] font-semibold text-muted">{t("skins.capes")}</div>
-              {!profile ? (
-                <div className="flex gap-2">
-                  {[0, 1, 2].map((i) => (
-                    <Skeleton key={i} className="h-[76px] w-[58px]" />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  <CapeTile
-                    label={t("skins.no_cape")}
-                    selected={shownCapeId === null}
-                    active={!activeCape}
-                    onClick={() => setPreview((p) => ({ ...p, capeId: null }))}
-                  />
-                  {profile.capes.map((c) => (
+            <div className="flex shrink-0 flex-wrap gap-x-4 gap-y-3 border-t border-line px-3 pb-3 pt-2.5">
+              <div className="min-w-0">
+                <div className="mb-2 text-[12.5px] font-semibold text-muted">{t("skins.capes")}</div>
+                {!profile ? (
+                  <div className="flex gap-2">
+                    {[0, 1, 2].map((i) => (
+                      <Skeleton key={i} className="h-[76px] w-[58px]" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
                     <CapeTile
-                      key={c.id}
-                      cape={c}
-                      label={c.alias}
-                      selected={shownCapeId === c.id}
-                      active={c.state === "ACTIVE"}
-                      onClick={() => setPreview((p) => ({ ...p, capeId: c.id }))}
+                      label={t("skins.no_cape")}
+                      selected={!mcShown && shownCapeId === null}
+                      active={!activeCape}
+                      onClick={() => {
+                        setMcShown(false);
+                        setPreview((p) => ({ ...p, capeId: null }));
+                      }}
                     />
-                  ))}
-                  {profile.capes.length === 0 && <span className="self-center text-[12.5px] text-dim">{t("skins.no_capes")}</span>}
+                    {profile.capes.map((c) => (
+                      <CapeTile
+                        key={c.id}
+                        cape={c}
+                        label={c.alias}
+                        selected={!mcShown && shownCapeId === c.id}
+                        active={c.state === "ACTIVE"}
+                        onClick={() => {
+                          setMcShown(false);
+                          setPreview((p) => ({ ...p, capeId: c.id }));
+                        }}
+                      />
+                    ))}
+                    {profile.capes.length === 0 && <span className="self-center text-[12.5px] text-dim">{t("skins.no_capes")}</span>}
+                  </div>
+                )}
+              </div>
+              {mcHas && (
+                <div className="min-w-0 border-l border-line pl-4">
+                  <div className="mb-2 flex items-baseline gap-1.5 text-[12.5px] font-semibold text-muted">
+                    {t("mccapes.title")}
+                    <span className="font-normal text-dim">· {t("mccapes.strip_hint")}</span>
+                  </div>
+                  <McTile
+                    profile={mcProfile!}
+                    frames={mcFrames}
+                    selected={mcShown}
+                    onClick={() => {
+                      setMcShown((v) => !v);
+                      if (mcEnabled) setTab("mccapes");
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -355,70 +410,121 @@ export function SkinsPage() {
 
         {/* ------------------------------------------------------------ Bibliothek */}
         <section className={cn("flex min-h-0 flex-col border bg-surface transition-colors duration-150", dragOver ? "border-accent" : "border-line")}>
-          <div className="flex h-12 shrink-0 items-center gap-3 border-b border-line px-3">
-            <div className="min-w-0 flex-1">
-              <span className="text-[13.5px] font-semibold text-white">{t("skins.library")}</span>
-              {libraryQ.data && <span className="ml-2 text-[12px] text-dim">{t("skins.library_count", { n: libraryQ.data.length })}</span>}
+          {mcEnabled && account ? (
+            <Tabs
+              className="shrink-0 px-1.5 pr-3"
+              value={tab}
+              onChange={setTab}
+              items={[
+                { value: "library", label: t("skins.library"), badge: libraryQ.data?.length },
+                { value: "mccapes", label: t("mccapes.title"), icon: <Sparkles size={14} /> },
+              ]}
+              right={tab === "library" ? <AddFileButton /> : undefined}
+            />
+          ) : (
+            <div className="flex h-12 shrink-0 items-center gap-3 border-b border-line px-3">
+              <div className="min-w-0 flex-1">
+                <span className="text-[13.5px] font-semibold text-white">{t("skins.library")}</span>
+                {libraryQ.data && <span className="ml-2 text-[12px] text-dim">{t("skins.library_count", { n: libraryQ.data.length })}</span>}
+              </div>
+              <AddFileButton />
             </div>
-            <Button
-              size="sm"
-              icon={<ImagePlus size={14} />}
-              onClick={async () => {
-                const sel = await openDialog({ multiple: true, filters: [{ name: "PNG", extensions: ["png"] }] });
-                if (sel) await addFiles(Array.isArray(sel) ? sel : [sel]);
-              }}
-            >
-              {t("skins.add_file")}
-            </Button>
-          </div>
-          <ImportByName />
-          <div className="scroll relative min-h-0 flex-1 p-3">
-            {libraryQ.isPending ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2">
-                {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-[158px]" />
-                ))}
+          )}
+          {tab === "mccapes" && mcEnabled && account ? (
+            <McCapesPanel profileQ={mcQ} frames={mcFrames} shown={mcShown} onShownChange={setMcShown} />
+          ) : (
+            <>
+              <ImportByName />
+              <div className="scroll relative min-h-0 flex-1 p-3">
+                {libraryQ.isPending ? (
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2">
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton key={i} className="h-[158px]" />
+                    ))}
+                  </div>
+                ) : libraryQ.isError ? (
+                  <ErrorState error={libraryQ.error} onRetry={() => void libraryQ.refetch()} />
+                ) : libraryQ.data.length === 0 ? (
+                  <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+                    <Shirt size={26} className="text-dim" />
+                    <div className="text-[14px] font-semibold text-white">{t("skins.library_empty_title")}</div>
+                    <p className="max-w-[340px] text-[12.5px] text-muted">{t("skins.library_empty_text")}</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2">
+                    {libraryQ.data.map((s) => (
+                      <LibraryTile
+                        key={s.id}
+                        skin={s}
+                        selected={preview?.skin?.id === s.id}
+                        canApply={!!profile && !busy}
+                        onPreview={() => setPreview((p) => ({ capeId: p?.capeId, skin: s, variant: s.variant }))}
+                        onApply={() => {
+                          if (!accountId) return;
+                          void mutate("apply", () => api.skinApplyLibrary(accountId, s.id, null), tt("skins.applied"), tt("skins.error.apply")).then(
+                            (ok) => ok && setPreview(null),
+                          );
+                        }}
+                        onRename={() => setRenaming(s)}
+                      />
+                    ))}
+                  </div>
+                )}
+                {dragOver && (
+                  <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/70 text-[14px] font-semibold text-white">
+                    {t("skins.drop_here")}
+                  </div>
+                )}
               </div>
-            ) : libraryQ.isError ? (
-              <ErrorState error={libraryQ.error} onRetry={() => void libraryQ.refetch()} />
-            ) : libraryQ.data.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-                <Shirt size={26} className="text-dim" />
-                <div className="text-[14px] font-semibold text-white">{t("skins.library_empty_title")}</div>
-                <p className="max-w-[340px] text-[12.5px] text-muted">{t("skins.library_empty_text")}</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2">
-                {libraryQ.data.map((s) => (
-                  <LibraryTile
-                    key={s.id}
-                    skin={s}
-                    selected={preview?.skin?.id === s.id}
-                    canApply={!!profile && !busy}
-                    onPreview={() => setPreview((p) => ({ capeId: p?.capeId, skin: s, variant: s.variant }))}
-                    onApply={() => {
-                      if (!accountId) return;
-                      void mutate("apply", () => api.skinApplyLibrary(accountId, s.id, null), tt("skins.applied"), tt("skins.error.apply")).then(
-                        (ok) => ok && setPreview(null),
-                      );
-                    }}
-                    onRename={() => setRenaming(s)}
-                  />
-                ))}
-              </div>
-            )}
-            {dragOver && (
-              <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/70 text-[14px] font-semibold text-white">
-                {t("skins.drop_here")}
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </section>
       </div>
 
       <RenameDialog skin={renaming} onClose={() => setRenaming(null)} />
       <MsaDialog open={msa} onOpenChange={setMsa} />
     </div>
+  );
+}
+
+function AddFileButton() {
+  const t = useT();
+  return (
+    <Button
+      size="sm"
+      icon={<ImagePlus size={14} />}
+      onClick={async () => {
+        const sel = await openDialog({ multiple: true, filters: [{ name: "PNG", extensions: ["png"] }] });
+        if (sel) await addFiles(Array.isArray(sel) ? sel : [sel]);
+      }}
+    >
+      {t("skins.add_file")}
+    </Button>
+  );
+}
+
+/** MinecraftCapes-Kachel in der Cape-Leiste (klar getrennt von den offiziellen Capes). */
+function McTile({ profile, frames, selected, onClick }: { profile: McProfile; frames: McCapeFrames | null; selected: boolean; onClick: () => void }) {
+  const t = useT();
+  return (
+    <Tooltip content={`${t("mccapes.title")} · ${t("mccapes.show_in_preview")}`}>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={selected}
+        className={cn(
+          "relative grid h-[76px] w-[58px] place-items-center border bg-surface2 transition-colors duration-150",
+          selected ? "border-accent bg-accent/10" : "border-dashed border-line2 hover:border-line2 hover:bg-surface3",
+        )}
+      >
+        {profile.cape ? <McCapeThumb frames={frames} scale={4} /> : <Sparkles size={18} className="text-dim" />}
+        {profile.cape && profile.glint && (
+          <span className="absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center bg-[#7b4dff] text-white">
+            <Sparkles size={10} strokeWidth={2.5} />
+          </span>
+        )}
+      </button>
+    </Tooltip>
   );
 }
 

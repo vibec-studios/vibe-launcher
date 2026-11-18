@@ -65,6 +65,7 @@ let settings: Settings = {
   snapshot_keep: 10,
   world_backup_on_launch: false,
   world_backups_keep: 5,
+  minecraftcapes: true,
   stores: [{ id: "vibe-craft-studios", name: "Vibe Craft Studios", url: "https://vibec-studios.github.io/data/store.json", enabled: true, icon: null }],
 };
 

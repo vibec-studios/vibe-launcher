@@ -64,6 +64,8 @@ pub struct Settings {
     pub world_backup_on_launch: bool,
     /// Aufbewahrte automatische Backups je Welt
     pub world_backups_keep: u32,
+    /// MinecraftCapes-Cape/Ohren des eigenen Accounts anzeigen (aus = keine Anfragen an api.minecraftcapes.net)
+    pub minecraftcapes: bool,
 }
 
 /// Eintrag in der Store-Liste.
@@ -134,6 +136,7 @@ impl Default for Settings {
             snapshot_keep: 10,
             world_backup_on_launch: false,
             world_backups_keep: 5,
+            minecraftcapes: true,
         }
     }
 }
