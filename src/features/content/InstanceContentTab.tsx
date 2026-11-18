@@ -350,8 +350,8 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
       {/* Werkzeugleiste: links Finden (Suche, Status, Seite, Sortierung), rechts Sets und seltene Werkzeuge */}
       {!empty && (
         <div className="flex h-14 shrink-0 items-center gap-2 px-6">
-          <SearchInput value={text} onChange={setText} placeholder={t(`content.search.${kind}`)} className="w-[200px] min-w-0 shrink @min-[1100px]:w-[260px]" />
-          <div className="w-[150px] shrink-0">
+          <SearchInput value={text} onChange={setText} placeholder={t(`content.search.${kind}`)} className="min-w-[120px] max-w-[260px] flex-1" />
+          <div className="w-[130px] shrink-0 @min-[1100px]:w-[150px]">
             <Select<ContentFilter>
               size="sm"
               value={filter}
@@ -368,7 +368,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
             />
           </div>
           {kind === "mod" && (
-            <div className="w-[140px] shrink-0">
+            <div className="w-[130px] shrink-0 @min-[1100px]:w-[150px]">
               <Select<SideFilter>
                 size="sm"
                 value={sideFilter}
@@ -377,10 +377,10 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
               />
             </div>
           )}
-          <div className="w-[150px] shrink-0">
+          <div className="w-[130px] shrink-0 @min-[1100px]:w-[150px]">
             <Select<ContentSort> size="sm" value={sort} onChange={setContentSort} options={SORTS.map((v) => ({ value: v, label: t(`ipage.sort.${v}`) }))} />
           </div>
-          <div className="flex-1" />
+          <div className="min-w-0 flex-1" />
           {counts.updates > 0 && (
             <Button
               size="sm"
@@ -388,15 +388,18 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
               icon={updatesRunning ? <Spinner size={12} /> : <RefreshCw size={14} className="text-accent" />}
               disabled={updatesRunning}
               onClick={() => update(all.filter((c) => updates.has(contentKey(c.file_name))))}
+              aria-label={t("content.update_all", { n: counts.updates })}
+              title={t("content.update_all", { n: counts.updates })}
             >
-              {t("ipage.update_n", { n: counts.updates })}
+              <span className="hidden @min-[1100px]:inline">{t("ipage.update_n", { n: counts.updates })}</span>
+              <span className="tabular-nums @min-[1100px]:hidden">{counts.updates}</span>
             </Button>
           )}
           {kind === "mod" && <ModSetsMenu instanceId={id} />}
           <DropdownMenu
             trigger={
-              <Button size="sm" variant="ghost" icon={<SlidersHorizontal size={14} />} className="data-[state=open]:bg-surface3">
-                {t("ipage.tools")}
+              <Button size="sm" variant="ghost" icon={<SlidersHorizontal size={14} />} aria-label={t("ipage.tools")} title={t("ipage.tools")} className="data-[state=open]:bg-surface3">
+                <span className="hidden @min-[1100px]:inline">{t("ipage.tools")}</span>
               </Button>
             }
           >
