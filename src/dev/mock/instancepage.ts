@@ -133,7 +133,7 @@ const handlers: Handlers = {
     legacy: false,
   }),
   modpack_update: ({ instanceId }) => fakeTask("modpack_update", "Modpack aktualisieren", instanceId as string, 2500),
-  autofix_quick: ({ instanceId }) => ({ errors: instanceId === "survival" && !fixReport ? 3 : 0, warnings: 0, crashed: false }),
+  autofix_quick: ({ instanceId }) => ({ errors: instanceId === "survival" && (!fixReport || fixReport.undone) ? 3 : 0, warnings: 0, crashed: false }),
   autofix_plan: ({ instanceId }) => (instanceId === "survival" && (!fixReport || fixReport.undone) ? fixPlan : { crash: false, steps: [], unfixable: [] }),
   autofix_apply: ({ instanceId, actions }) =>
     fakeTask("autofix", "Probleme beheben", instanceId as string, 2200, () => {
@@ -141,7 +141,7 @@ const handlers: Handlers = {
       fixReport = {
         created: Date.now(),
         snapshot_id: "fix-1",
-        results: list.map((action, i) => ({ action, ok: i !== 3 || list.length < 4, error: i === 3 && list.length >= 4 ? "Java 21 konnte nicht heruntergeladen werden (offline)" : null })),
+        results: list.map((action) => ({ action, ok: true, error: null })),
         manual: [{ file_name: "better-end-4.0.jar", project_name: "Better End", page_url: "https://www.curseforge.com/minecraft/mc-mods/betterend/files/1", kind: "mod", version_number: "4.0.11", is_update: true }],
         prev_java: null,
         undone: false,

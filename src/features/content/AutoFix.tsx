@@ -67,15 +67,16 @@ export function launchCheckSkipped(id: string, errors: number) {
 // ------------------------------------------------------------------ Texte
 
 function actionText(a: FixAction, t: ReturnType<typeof useT>, step?: FixStep): string {
+  const main = !!step && JSON.stringify(step.action) === JSON.stringify(a);
   switch (a.kind) {
     case "install":
       return t("fix.do.install", { title: a.title });
     case "replace":
       return a.manual ? t("fix.do.replace_manual", { title: a.title, to: a.to_version }) : t("fix.do.replace", { title: a.title, to: a.to_version });
     case "enable":
-      return t("fix.do.enable", { name: step?.action === a ? step.name : fileLabel(a.file_name) });
+      return t("fix.do.enable", { name: main ? step!.name : fileLabel(a.file_name) });
     case "disable":
-      return t("fix.do.disable", { name: step ? (step.action === a ? step.name : (step.alt_name ?? fileLabel(a.file_name))) : fileLabel(a.file_name) });
+      return t("fix.do.disable", { name: step ? (main ? step.name : (step.alt_name ?? fileLabel(a.file_name))) : fileLabel(a.file_name) });
     case "set_java":
       return t("fix.do.java", { major: a.major });
     case "set_ram":
@@ -213,8 +214,11 @@ function PlanView({
   );
 }
 
-function ReportView({ report, undone }: { report: FixReport; undone: boolean }) {
+function ReportView({ report, undone, steps }: { report: FixReport; undone: boolean; steps: FixStep[] }) {
   const t = useT();
+  // Namen aus dem Plan (Dateinamen sind im Ergebnis nicht schön)
+  const same = (a: FixAction | null, b: FixAction) => !!a && JSON.stringify(a) === JSON.stringify(b);
+  const stepOf = (a: FixAction) => steps.find((s) => same(s.action, a) || same(s.alt, a));
   const ok = report.results.filter((r) => r.ok).length;
   return (
     <div className="flex flex-col gap-4">
@@ -232,7 +236,7 @@ function ReportView({ report, undone }: { report: FixReport; undone: boolean }) 
           <div key={i} className="flex items-start gap-2.5 px-1 py-1.5 text-[13px]">
             <span className={cn("mt-px shrink-0", undone ? "text-dim" : r.ok ? "text-ok" : "text-danger")}>{r.ok ? <Check size={14} strokeWidth={2.5} /> : <X size={14} strokeWidth={2.5} />}</span>
             <span className="min-w-0 flex-1">
-              <span className={cn(undone ? "text-muted line-through decoration-white/20" : "text-text")}>{actionText(r.action, t)}</span>
+              <span className={cn(undone ? "text-muted line-through decoration-white/20" : "text-text")}>{actionText(r.action, t, stepOf(r.action))}</span>
               {r.error && <span className="selectable block text-[12px] text-danger">{r.error}</span>}
             </span>
           </div>
@@ -446,7 +450,7 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
           <div className="min-h-[18px] truncate text-[12.5px] text-muted">{task?.message ?? ""}</div>
         </div>
       ) : report ? (
-        <ReportView report={report} undone={phase === "undone"} />
+        <ReportView report={report} undone={phase === "undone"} steps={plan.data?.steps ?? []} />
       ) : null}
     </Dialog>
   );
