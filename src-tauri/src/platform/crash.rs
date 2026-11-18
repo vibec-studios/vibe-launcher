@@ -19,6 +19,8 @@ pub struct Culprit {
 pub enum Action {
     /// Mod-Datei deaktivieren
     DisableMod { file: String },
+    /// Deaktivierte Abhängigkeit (`.jar.disabled`) wieder aktivieren
+    EnableMod { file: String, name: Option<String> },
     /// Abhängigkeit installieren (Modrinth-Slug/ID bzw. Mod-ID)
     InstallDependency {
         mod_id: String,
@@ -86,6 +88,8 @@ impl Diagnosis {
 #[derive(Debug, Default, Clone)]
 pub struct ModIndex {
     pub by_id: HashMap<String, Vec<(String, Option<String>)>>,
+    /// Deaktivierte Jars (`.jar.disabled`): Mod-ID -> (Datei, Name)
+    pub disabled: HashMap<String, (String, Option<String>)>,
 }
 
 impl ModIndex {
@@ -95,7 +99,8 @@ impl ModIndex {
             .and_then(|v| v.first())
     }
 
-    /// Liest Mod-IDs aus fabric.mod.json / quilt.mod.json / (neoforge.)mods.toml aller aktiven Jars.
+    /// Liest Mod-IDs aus fabric.mod.json / quilt.mod.json / (neoforge.)mods.toml aller aktiven Jars
+    /// (und getrennt die der deaktivierten `.jar.disabled`).
     pub fn scan(mods_dir: &Path) -> ModIndex {
         let mut idx = ModIndex::default();
         let Ok(rd) = std::fs::read_dir(mods_dir) else {
@@ -103,10 +108,18 @@ impl ModIndex {
         };
         for e in rd.flatten() {
             let p = e.path();
+            let file = e.file_name().to_string_lossy().to_string();
+            if file.ends_with(".jar.disabled") {
+                for (id, name) in read_mod_ids(&p) {
+                    idx.disabled
+                        .entry(id.to_ascii_lowercase())
+                        .or_insert((file.clone(), name));
+                }
+                continue;
+            }
             if p.extension().and_then(|x| x.to_str()) != Some("jar") {
                 continue;
             }
-            let file = e.file_name().to_string_lossy().to_string();
             for (id, name) in read_mod_ids(&p) {
                 idx.by_id
                     .entry(id.to_ascii_lowercase())
@@ -243,6 +256,28 @@ fn is_builtin(id: &str) -> bool {
     )
 }
 
+/// Fehlende Abhängigkeit: liegt sie deaktiviert in `mods/`, heißt die Lösung „aktivieren“ statt „installieren“.
+fn missing_dependency(mods: &ModIndex, dep_id: &str, dep_name: Option<&str>) -> Diagnosis {
+    let d = Diagnosis::new("missing_dependency", 95).param("dependency", dep_id);
+    match mods.disabled.get(&dep_id.to_ascii_lowercase()) {
+        Some((file, name)) => {
+            let name = name.clone().or_else(|| dep_name.map(Into::into));
+            d.param("dependency_name", name.as_deref().unwrap_or(dep_id))
+                .param("disabled_file", file)
+                .action(Action::EnableMod {
+                    file: file.clone(),
+                    name,
+                })
+        }
+        None => d
+            .param("dependency_name", dep_name.unwrap_or(dep_id))
+            .action(Action::InstallDependency {
+                mod_id: dep_id.into(),
+                name: dep_name.map(Into::into),
+            }),
+    }
+}
+
 /// Hauptfunktion: Text (Crash-Report + Log) und optional Exit-Code auswerten.
 pub fn analyze(
     text: &str,
@@ -276,27 +311,15 @@ pub fn analyze(
             continue;
         }
         let dep_name = c.get(3).map(|m| m.as_str());
-        let d = Diagnosis::new("missing_dependency", 95)
+        let d = missing_dependency(mods, dep_id, dep_name)
             .culprit(Some(&c[2]), Some(&c[1]))
-            .param("dependency", dep_id)
-            .param("dependency_name", dep_name.unwrap_or(dep_id))
-            .action(Action::InstallDependency {
-                mod_id: dep_id.into(),
-                name: dep_name.map(Into::into),
-            })
             .evidence(line_of(text, c.get(0).unwrap().start()));
         push(d, &mut out);
     }
     for c in r.forge_missing.captures_iter(text) {
-        let d = Diagnosis::new("missing_dependency", 95)
+        let d = missing_dependency(mods, &c[1], None)
             .culprit(Some(&c[2]), None)
-            .param("dependency", &c[1])
-            .param("dependency_name", &c[1])
             .param("range", &c[3])
-            .action(Action::InstallDependency {
-                mod_id: c[1].into(),
-                name: None,
-            })
             .evidence(line_of(text, c.get(0).unwrap().start()));
         push(d, &mut out);
     }
@@ -595,6 +618,19 @@ More details:
         assert_eq!(missing[1].params["dependency_name"], "Cloth Config v13");
         assert!(
             matches!(&missing[0].actions[0], Action::InstallDependency { mod_id, .. } if mod_id == "fabric-api")
+        );
+
+        // Fabric API liegt deaktiviert im mods-Ordner -> aktivieren statt installieren
+        idx.disabled.insert(
+            "fabric-api".into(),
+            ("fabric-api-0.92.jar.disabled".into(), Some("Fabric API".into())),
+        );
+        let d = analyze(FABRIC_MISSING, Some(1), &idx, 4096);
+        let m = d.iter().find(|x| x.params.get("dependency").map(String::as_str) == Some("fabric-api")).unwrap();
+        assert_eq!(m.params["disabled_file"], "fabric-api-0.92.jar.disabled");
+        assert_eq!(m.params["dependency_name"], "Fabric API");
+        assert!(
+            matches!(&m.actions[0], Action::EnableMod { file, .. } if file == "fabric-api-0.92.jar.disabled")
         );
     }
 

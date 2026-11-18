@@ -551,6 +551,8 @@ export interface VibeServices {
 
 export type DiagnosisAction =
   | { kind: "disable_mod"; file: string }
+  /** Deaktivierte Abhängigkeit wieder aktivieren */
+  | { kind: "enable_mod"; file: string; name: string | null }
   | { kind: "install_dependency"; mod_id: string; name: string | null }
   | { kind: "set_java"; major: number }
   | { kind: "increase_ram"; suggest_mb: number }
@@ -800,12 +802,14 @@ export interface SideInfo {
   rel_path: string;
 }
 
-export type DepIssueKind = "missing_dependency" | "version_mismatch" | "incompatible" | "duplicate" | "wrong_loader" | "wrong_minecraft";
+export type DepIssueKind = "missing_dependency" | "disabled_dependency" | "version_mismatch" | "incompatible" | "duplicate" | "wrong_loader" | "wrong_minecraft";
 
 export type DepFix =
   | { action: "install"; source: Source; project_id: string; title: string }
   | { action: "remove"; file_names: string[] }
-  | { action: "disable"; file_name: string };
+  | { action: "disable"; file_name: string }
+  /** Deaktivierte Abhängigkeit wieder aktivieren */
+  | { action: "enable"; file_name: string; title: string };
 
 export interface DepIssue {
   kind: DepIssueKind;
