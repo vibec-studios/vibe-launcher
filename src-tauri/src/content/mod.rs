@@ -23,6 +23,7 @@ pub mod local;
 pub mod meta;
 pub mod missing;
 pub mod modrinth;
+pub mod norisk;
 pub mod murmur;
 pub mod nbt;
 pub mod provider;
@@ -413,6 +414,8 @@ pub enum LauncherKind {
     Multimc,
     Curseforge,
     Atlauncher,
+    /// NoRisk Client Launcher (Profile aus `meta/app.db`)
+    Norisk,
     /// Beliebiger Spielordner ohne Launcher-Metadaten (nur über `launcher_scan_dir`)
     Folder,
 }

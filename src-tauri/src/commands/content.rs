@@ -192,7 +192,8 @@ pub async fn import_external(
     mc_version: Option<String>,
     loader: Option<crate::instance::Loader>,
 ) -> AppResult<String> {
-    if !std::path::Path::new(&source_path).is_dir() {
+    // NoRisk-Profile: Kennung `<spielordner>#<profil-id>`; der Ordner fehlt bei nie gestarteten Profilen
+    if source != LauncherKind::Norisk && !std::path::Path::new(&source_path).is_dir() {
         return Err(AppError::NotFound(source_path));
     }
     let st = state.inner().clone();

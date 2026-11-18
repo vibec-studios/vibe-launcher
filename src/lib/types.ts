@@ -533,7 +533,7 @@ export interface UpdateInfo {
 // ------------------------------------------------------------------ Import aus anderen Launchern
 
 /** folder = beliebiger Spielordner (nur über launcherScanDir) */
-export type LauncherKind = "modrinth" | "prism" | "multimc" | "curseforge" | "atlauncher" | "folder";
+export type LauncherKind = "modrinth" | "prism" | "multimc" | "curseforge" | "atlauncher" | "norisk" | "folder";
 
 export interface ExternalInstance {
   /** Instanzordner im fremden Launcher (Kennung für importExternal) */

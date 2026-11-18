@@ -1,5 +1,5 @@
-//! Import direkt aus anderen Launchern: Modrinth App, Prism/MultiMC, CurseForge App, ATLauncher
-//! oder ein beliebiger Spielordner.
+//! Import direkt aus anderen Launchern: Modrinth App, Prism/MultiMC, CurseForge App, ATLauncher,
+//! NoRisk Client (siehe [`super::norisk`]) oder ein beliebiger Spielordner.
 //!
 //! Fremde Ordner werden **nur gelesen**. Die SQLite-Datenbank der Modrinth App (WAL-Modus, App läuft
 //! evtl.) wird vor dem Lesen samt `-wal`/`-shm` nach `cache/tmp/` kopiert.
@@ -25,6 +25,8 @@ pub struct Found {
     pub icon_path: Option<PathBuf>,
     pub pack: Option<PackSource>,
     pub prism: Option<PrismSettings>,
+    /// NoRisk: was übernommen/installiert wird
+    pub norisk: Option<super::norisk::Plan>,
 }
 
 fn launcher_name(k: LauncherKind) -> &'static str {
@@ -34,6 +36,7 @@ fn launcher_name(k: LauncherKind) -> &'static str {
         LauncherKind::Multimc => "MultiMC",
         LauncherKind::Curseforge => "CurseForge",
         LauncherKind::Atlauncher => "ATLauncher",
+        LauncherKind::Norisk => "NoRisk Client",
         LauncherKind::Folder => "Ordner",
     }
 }
@@ -81,7 +84,7 @@ fn count_mods(game_dir: &Path) -> u32 {
         .count() as u32
 }
 
-fn found(name: String, game_dir: PathBuf, source_path: &Path, mc: String, loader: Loader, icon_path: Option<PathBuf>) -> Found {
+pub(crate) fn found(name: String, game_dir: PathBuf, source_path: &Path, mc: String, loader: Loader, icon_path: Option<PathBuf>) -> Found {
     Found {
         info: ExternalInstance {
             source_path: s(source_path),
@@ -100,6 +103,7 @@ fn found(name: String, game_dir: PathBuf, source_path: &Path, mc: String, loader
         icon_path,
         pack: None,
         prism: None,
+        norisk: None,
     }
 }
 
@@ -197,6 +201,11 @@ pub fn modrinth_roots() -> Vec<PathBuf> {
 
 /// Datenbank samt WAL in den Cache kopieren (nur bei Änderung) und öffnen.
 fn open_db_copy(root: &Path, tmp: &Path) -> Option<rusqlite::Connection> {
+    open_db_copy_named(root, tmp, "modrinth-db")
+}
+
+/// `<root>/app.db` (+ `-wal`/`-shm`) nach `tmp/<prefix>-<hash>/` kopieren und die Kopie öffnen.
+pub(crate) fn open_db_copy_named(root: &Path, tmp: &Path, prefix: &str) -> Option<rusqlite::Connection> {
     let db = root.join("app.db");
     if !db.is_file() {
         return None;
@@ -204,7 +213,7 @@ fn open_db_copy(root: &Path, tmp: &Path) -> Option<rusqlite::Connection> {
     let stamp_of = |p: &Path| std::fs::metadata(p).ok().map(|m| format!("{}:{:?}", m.len(), m.modified().ok())).unwrap_or_default();
     let stamp = format!("{}|{}", stamp_of(&db), stamp_of(&root.join("app.db-wal")));
     let key = hex::encode(<sha1::Sha1 as sha1::Digest>::digest(norm(&s(root)).as_bytes()));
-    let dir = tmp.join(format!("modrinth-db-{}", &key[..12]));
+    let dir = tmp.join(format!("{prefix}-{}", &key[..12]));
     let stamp_file = dir.join("stamp");
     if std::fs::read_to_string(&stamp_file).ok().as_deref() != Some(stamp.as_str()) {
         let _ = std::fs::remove_dir_all(&dir);
@@ -578,13 +587,25 @@ pub fn detect_blocking(tmp: &Path) -> Vec<(ExternalLauncher, Vec<Found>)> {
     for r in atlauncher_roots() {
         out.push(launcher(LauncherKind::Atlauncher, &r, atlauncher_scan(&r)));
     }
+    for r in super::norisk::roots() {
+        out.push(launcher(LauncherKind::Norisk, &r, super::norisk::scan(&r, tmp, &icons_of(tmp))));
+    }
     out
+}
+
+/// `cache/icons` neben `cache/tmp`.
+fn icons_of(tmp: &Path) -> PathBuf {
+    tmp.parent().map(|c| c.join("icons")).unwrap_or_else(|| tmp.join("icons"))
 }
 
 /// Frei gewählten Ordner analysieren: Launcher-Wurzel, Instanzen-Ordner oder einzelne Instanz.
 pub fn scan_dir_blocking(path: &Path, tmp: &Path) -> AppResult<(ExternalLauncher, Vec<Found>)> {
     if !path.is_dir() {
         return Err(AppError::NotFound(format!("Ordner {}", path.display())));
+    }
+    // NoRisk-Wurzel
+    if super::norisk::is_root(path) {
+        return Ok(launcher(LauncherKind::Norisk, path, super::norisk::scan(path, tmp, &icons_of(tmp))));
     }
     // Modrinth-Wurzel / Profilordner / einzelnes Profil
     if path.join("app.db").is_file() || (path.join("profiles").is_dir() && path.join("meta").is_dir()) {
@@ -667,6 +688,7 @@ fn describe_blocking(kind: LauncherKind, source: &Path, tmp: &Path) -> AppResult
         }
         LauncherKind::Curseforge => curseforge_one(source),
         LauncherKind::Atlauncher => atlauncher_one(source),
+        LauncherKind::Norisk => super::norisk::describe(&s(source), tmp, &icons_of(tmp)),
         LauncherKind::Folder => folder_one(source),
     };
     f.ok_or_else(|| AppError::NotFound(format!("Instanz {}", source.display())))
@@ -678,6 +700,13 @@ struct ExternalMark {
     launcher: LauncherKind,
     source_path: String,
     imported_at: i64,
+}
+
+pub(crate) fn write_mark(state: &AppState, instance_id: &str, launcher: LauncherKind, source_path: &str) -> AppResult<()> {
+    crate::util::write_json_atomic(
+        &state.paths.instance_dir(instance_id).join("external.json"),
+        &ExternalMark { launcher, source_path: source_path.to_string(), imported_at: crate::util::now_ms() },
+    )
 }
 
 fn imported_map(state: &AppState) -> HashMap<String, String> {
@@ -763,6 +792,9 @@ pub async fn run_import(
     let tmp = state.paths.tmp();
     let sp = PathBuf::from(&source_path);
     let f = tokio::task::spawn_blocking(move || describe_blocking(kind, &sp, &tmp)).await??;
+    if kind == LauncherKind::Norisk {
+        return super::norisk::run_import(state, task, f, source_path, name, mc_version, loader).await;
+    }
     let mc = mc_version.filter(|v| !v.trim().is_empty()).unwrap_or_else(|| f.info.mc_version.clone());
     if mc.trim().is_empty() {
         return Err(AppError::Invalid(format!("{}: Minecraft-Version unbekannt – bitte angeben", f.info.name)));
@@ -794,7 +826,7 @@ pub async fn run_import(
                 LauncherKind::Modrinth => PackSourceKind::Modrinth,
                 LauncherKind::Curseforge => PackSourceKind::Curseforge,
                 LauncherKind::Prism | LauncherKind::Multimc => PackSourceKind::Prism,
-                LauncherKind::Atlauncher | LauncherKind::Folder => PackSourceKind::Local,
+                LauncherKind::Atlauncher | LauncherKind::Norisk | LauncherKind::Folder => PackSourceKind::Local,
             },
             project_id: None,
             version_id: None,
