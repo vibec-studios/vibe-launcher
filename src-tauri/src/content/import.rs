@@ -597,6 +597,7 @@ fn new_instance(name: String, plan: &PackPlan, source: Option<PackSource>) -> In
         loader: plan.loader.clone(),
         java: Default::default(),
         window: Default::default(),
+        hooks: Default::default(),
         source,
         install_state: InstallState::NotInstalled,
         version_id: None,

@@ -69,6 +69,18 @@ pub struct WindowOptions {
     pub fullscreen: Option<bool>,
 }
 
+/// Start-Hooks (siehe `minecraft::hooks`): Befehle vor dem Start / nach dem Beenden, Wrapper vor Java.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(default)]
+pub struct LaunchHooks {
+    /// Vor dem Start; Exit-Code ≠ 0 bricht den Start ab
+    pub pre_launch: Option<String>,
+    /// Nach dem Beenden des Spiels
+    pub post_exit: Option<String>,
+    /// Wrapper-Befehl vor Java (ersetzt den globalen)
+    pub wrapper: Option<String>,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum PackSourceKind {
@@ -119,6 +131,8 @@ pub struct Instance {
     #[serde(default)]
     pub window: WindowOptions,
     #[serde(default)]
+    pub hooks: LaunchHooks,
+    #[serde(default)]
     pub source: Option<PackSource>,
     #[serde(default)]
     pub install_state: InstallState,
@@ -163,6 +177,7 @@ pub struct InstancePatch {
     pub loader: Option<Loader>,
     pub java: Option<JavaOptions>,
     pub window: Option<WindowOptions>,
+    pub hooks: Option<LaunchHooks>,
     #[serde(deserialize_with = "double_option")]
     pub notes: Option<Option<String>>,
     #[serde(deserialize_with = "double_option")]
@@ -286,6 +301,7 @@ impl InstanceStore {
             loader: req.loader,
             java: Default::default(),
             window: Default::default(),
+            hooks: Default::default(),
             source: None,
             install_state: InstallState::NotInstalled,
             version_id: None,
@@ -335,6 +351,7 @@ impl InstanceStore {
             if let Some(v) = p.loader { i.loader = v; }
             if let Some(v) = p.java { i.java = v; }
             if let Some(v) = p.window { i.window = v; }
+            if let Some(v) = p.hooks { i.hooks = v; }
             if let Some(v) = p.notes { i.notes = v; }
             if let Some(v) = p.auto_update_content { i.auto_update_content = v; }
         })

@@ -306,6 +306,14 @@ impl GameManager {
                 gm.emit_state(&st);
             }
             let _ = state.instances.modify(&instance_id, |i| i.play_time_secs = i.play_time_secs.saturating_add(secs));
+            // Post-Exit-Hook der Instanz (Fehler nur ins Log)
+            if let Ok(inst) = state.instances.get(&instance_id) {
+                if let Some(cmd) = inst.hooks.post_exit.clone().filter(|c| !c.trim().is_empty()) {
+                    if let Err(e) = super::hooks::run(&state, &inst, "Post-Exit", &cmd, None).await {
+                        gm.launcher_line(&instance_id, LogLevel::Error, e.to_string());
+                    }
+                }
+            }
             if !gm.any_running() {
                 apply_launch_behavior(&state, false);
             }

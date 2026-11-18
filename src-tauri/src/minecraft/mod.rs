@@ -6,6 +6,7 @@ use crate::error::AppResult;
 use serde::{Deserialize, Serialize};
 
 pub mod forge;
+pub mod hooks;
 pub mod install;
 pub mod java;
 pub mod launch;

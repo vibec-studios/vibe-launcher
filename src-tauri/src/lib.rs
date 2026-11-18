@@ -1,5 +1,6 @@
 //! Vibe Launcher – Backend.
 pub mod auth;
+pub mod client_packs;
 pub mod commands;
 #[cfg(debug_assertions)]
 mod devlive;
@@ -360,6 +361,9 @@ pub fn run() {
             commands::vibe::vibe_pack_link,
             commands::vibe::vibe_pack_install,
             vibey_client::commands::vibey_client_latest,
+            client_packs::commands::client_packs_list,
+            client_packs::commands::client_pack_install,
+            client_packs::commands::client_pack_remove,
             vibey_client::commands::vibey_client_status,
             vibey_client::commands::vibey_client_set,
             vibey_client::commands::vibey_client_create_instance,
