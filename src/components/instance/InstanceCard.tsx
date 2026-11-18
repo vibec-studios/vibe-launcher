@@ -1,4 +1,4 @@
-// Instanz-Kacheln: Raster-Kachel (Bibliothek, rahmenlos – das Bild trägt) und kompakte Zeile.
+// Instanz-Kacheln: Raster-Kachel (Bibliothek, rahmenlos – das Bild trägt) und Listenzeile.
 // Klick öffnet, Rechtsklick = Aktionsmenü, Spielen-Knopf erscheint beim Hover über dem Bild.
 import { memo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -170,52 +170,6 @@ export function InstanceCardSkeleton() {
     </div>
   );
 }
-
-/** Kompakte Zeile (Start-Seite „Weiterspielen“). */
-export const InstanceRow = memo(function InstanceRow({ instance: i, onOpen }: { instance: Instance; onOpen: (i: Instance) => void }) {
-  const t = useT();
-  const accent = instanceAccent(i.id, i.accent);
-  const { phase } = useRunPhase(i.id);
-  return (
-    <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label={i.name}
-        onClick={() => onOpen(i)}
-        onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(i)}
-        style={accentVars(accent)}
-        className="group relative flex min-w-0 items-center gap-3 overflow-hidden rounded-card bg-surface p-2 pr-2.5 transition-colors duration-100 hover:bg-surface2 data-[state=open]:bg-surface2"
-      >
-        <InstanceIcon icon={i.icon} accent={accent} size={48} />
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-semibold text-text">{i.name}</div>
-          <div className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] text-muted">
-            <span className="truncate">{loaderLine(i)}</span>
-            <span className="text-dim">·</span>
-            <span className="truncate">
-              {phase !== "idle" || i.install_state === "failed" || i.install_state === "installing" ? (
-                <InstanceStatus instance={i} compact />
-              ) : i.last_played ? (
-                formatRelative(i.last_played)
-              ) : (
-                t("inst.never_played")
-              )}
-            </span>
-            {i.play_time_secs > 0 && (
-              <>
-                <span className="text-dim">·</span>
-                <span className="shrink-0">{formatDuration(i.play_time_secs)}</span>
-              </>
-            )}
-          </div>
-        </div>
-        <PlayButton instance={i} size="icon" subtle />
-        <CardProgress id={i.id} />
-      </div>
-    </ContextMenu>
-  );
-});
 
 /** Kompakte Zeile der Bibliothek (Listenansicht): Icon, Name, Loader/Version, zuletzt gespielt, Spielzeit, Spielen. */
 export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOpen }: { instance: Instance; onOpen: (i: Instance) => void }) {

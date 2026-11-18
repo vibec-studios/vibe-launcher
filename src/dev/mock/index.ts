@@ -6,11 +6,12 @@ import b from "./b";
 import skins from "./skins";
 import servers from "./servers";
 import instancepage from "./instancepage";
+import home from "./home";
 import type { Handlers } from "./util";
 
 mockWindows("main");
 
-const handlers: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage };
+const handlers: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home };
 
 mockIPC(
   async (cmd, args) => {
