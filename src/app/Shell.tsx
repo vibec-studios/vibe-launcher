@@ -3,7 +3,7 @@
 // kompakte Topbar (Zurück/Vor, Titel, laufende Spiele, Aufgaben, Fensterknöpfe), Inhaltsfläche.
 import { Outlet, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ChevronLeft, ChevronRight, Compass, Copy, Home, Images, LibraryBig, Minus, Plus, Server as ServerIcon, Settings as SettingsIcon, Shirt, Square, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Compass, Copy, Home, Images, LibraryBig, Minus, Plus, Server as ServerIcon, Settings as SettingsIcon, Shirt, Square, Users, X } from "lucide-react";
 import { memo, useEffect, useState, type ReactNode } from "react";
 import { ContextMenu, Spinner, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -20,6 +20,11 @@ import { TaskDock } from "./TaskDock";
 import { UpdateButton } from "./UpdateNotice";
 import { AccountChip } from "./AccountChip";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { useVibe } from "@/lib/vibe";
+import { VibeBridge } from "@/features/social/VibeBridge";
+import { SocialDialogs } from "@/features/social/dialogs";
+import { FriendsPanel, FriendsPanelToggle } from "@/features/social/FriendsPanel";
+import { useSocialBadge } from "@/features/social/hooks";
 
 // ------------------------------------------------------------------ Icon-Leiste
 
@@ -74,6 +79,8 @@ function Rail() {
   const recent = instances.slice(0, 8);
   const at = (p: string) => path === p || path.startsWith(p + "/");
   const serversRunning = useServerStore((s) => Object.values(s.statuses).some((x) => x.state === "running"));
+  const vibe = useVibe();
+  const socialBadge = useSocialBadge();
   return (
     <nav className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-line bg-black py-2">
       <Tooltip content="Vibe Launcher" side="right">
@@ -91,6 +98,16 @@ function Rail() {
         <ServerIcon size={20} />
         {serversRunning && <span className="absolute bottom-1.5 right-1.5 h-2 w-2 border border-black bg-ok" />}
       </RailButton>
+      {vibe.social && (
+        <RailButton label={t("nav.social")} active={at("/social")} onClick={() => nav({ to: "/social", search: {} })}>
+          <Users size={20} />
+          {socialBadge > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center border border-black bg-brand px-0.5 font-mono text-[9px] font-bold leading-none text-white">
+              {socialBadge > 9 ? "9+" : socialBadge}
+            </span>
+          )}
+        </RailButton>
+      )}
       <RailButton label={t("nav.discover")} active={at("/discover") || at("/project")} onClick={() => nav({ to: "/discover" })}>
         <Compass size={20} />
       </RailButton>
@@ -166,6 +183,7 @@ function usePageTitle(): ReactNode {
   if (path === "/stats") return t("stats.title");
   if (path === "/skins") return t("nav.skins");
   if (path === "/screenshots") return t("nav.screenshots");
+  if (path === "/social") return t("nav.social");
   return null;
 }
 
@@ -252,6 +270,7 @@ function Topbar() {
         <UpdateButton />
         <RunningGames />
         <TaskDock />
+        <FriendsPanelToggle />
       </div>
       <div className="h-6 w-px bg-line" />
       <WindowControls />
@@ -268,14 +287,23 @@ export function Shell() {
       <Rail />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
-        <main className="relative min-h-0 flex-1 bg-panel">
-          <ErrorBoundary key={path}>
-            <Outlet />
-          </ErrorBoundary>
-        </main>
+        <div className="flex min-h-0 flex-1">
+          <main className="relative min-h-0 min-w-0 flex-1 bg-panel">
+            <ErrorBoundary key={path}>
+              <Outlet />
+            </ErrorBoundary>
+          </main>
+          {path !== "/social" && (
+            <ErrorBoundary>
+              <FriendsPanel />
+            </ErrorBoundary>
+          )}
+        </div>
       </div>
       <InstanceDialogs />
       <ServerDialogs />
+      <VibeBridge />
+      <SocialDialogs />
     </div>
   );
 }

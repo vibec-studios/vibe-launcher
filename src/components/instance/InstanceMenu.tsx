@@ -21,8 +21,11 @@ import {
   Monitor,
   LayoutList,
   Server as ServerIcon,
+  Share2,
 } from "lucide-react";
 import { openNewServer } from "@/features/servers/actions";
+import { openShare } from "@/features/social/dialogs";
+import { useVibe } from "@/lib/vibe";
 import {
   ContextItem,
   ContextLabel,
@@ -81,6 +84,7 @@ function MenuBody({ instance: i, kit, onPage, onDeleted }: { instance: Instance;
   const groups = [...new Set(all.map((x) => x.group).filter((g): g is string => !!g))].sort((a, b) => a.localeCompare(b));
   const accent = instanceAccent(i.id, i.accent);
   const running = phase === "running" || phase === "preparing";
+  const vibe = useVibe();
 
   return (
     <>
@@ -112,6 +116,11 @@ function MenuBody({ instance: i, kit, onPage, onDeleted }: { instance: Instance;
       <Item icon={<Upload size={14} />} onSelect={() => openExport(i)}>
         {t("inst.export")}
       </Item>
+      {vibe.sharing && (
+        <Item icon={<Share2 size={14} />} onSelect={() => openShare(i.id)}>
+          {t("social.share.menu")}
+        </Item>
+      )}
       <Sub icon={<LinkIcon size={14} />} label={t("inst.shortcut")}>
         <Item icon={<Monitor size={14} />} onSelect={() => createShortcut(i, "desktop")}>
           {t("inst.shortcut.desktop")}

@@ -28,7 +28,7 @@ export interface WindowOptions {
   fullscreen: boolean | null;
 }
 
-export type PackSourceKind = "modrinth" | "curseforge" | "vlpack" | "prism" | "local";
+export type PackSourceKind = "modrinth" | "curseforge" | "vlpack" | "prism" | "local" | "vibe";
 
 export interface PackSource {
   kind: PackSourceKind;
@@ -952,4 +952,64 @@ export interface ConfigSearchHit {
   /** 1-basiert */
   line: number;
   text: string;
+}
+
+// ---------------------------------------------------------------- Vibe-Dienste (commands/vibe.rs)
+
+export interface VibeIdentity {
+  /** Account-ID bzw. `dev-<name>` (nur Debug) */
+  scope: string;
+  name: string;
+  uuid: string;
+  dev: boolean;
+}
+
+export interface VibeStatus {
+  enabled: boolean;
+  /** Effektive Backend-Adresse (Env `VIBE_API_URL` > Einstellung) */
+  api_url: string;
+  gateway_url: string;
+  identity: VibeIdentity | null;
+  logged_in: boolean;
+}
+
+/** Wie `StoredTokens` im SDK */
+export interface VibeTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  sessionId: string;
+}
+
+export interface VibeHttpRequest {
+  method: string;
+  url: string;
+  headers: Record<string, string>;
+  body?: string | null;
+}
+
+export interface VibeHttpResponse {
+  status: number;
+  body: string;
+  content_type: string | null;
+  retry_after: string | null;
+}
+
+export type VibeWsEvent =
+  | { type: "open"; id: string }
+  | { type: "message"; id: string; data: string }
+  | { type: "close"; id: string; code: number; reason: string };
+
+export interface VibeShareOptions {
+  visibility?: "public" | "unlisted" | "friends";
+  description?: string | null;
+  changelog?: string | null;
+  /** Vorhandenes Pack: neue Version */
+  code?: string | null;
+  version?: string | null;
+}
+
+export interface VibeShareLink {
+  code: string;
+  url: string | null;
 }

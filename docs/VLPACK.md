@@ -76,3 +76,11 @@ spätere Exporte die Dateien wiedererkennen.
 `export_instance` mit `format: "vlpack"` schreibt Dateien mit bekannter Herkunft (Modrinth immer, CurseForge
 nur mit Download-URL) als `files`-Einträge, alles andere (eigene Mods, deaktivierte `.disabled`-Dateien,
 Konfiguration, Ordner-Resourcepacks …) unter `overrides/`. Das Instanz-Icon wird als `icon.png` mitgenommen.
+
+## Geteilte Packs (Vibe-Backend)
+
+„Als Link teilen“ lädt den `.vlpack`-Export zerlegt hoch: `manifest` = `vlpack.json`, `overrides` = ZIP mit dem
+**Inhalt** von `overrides/` (Pfade relativ zum Spielordner, ohne `overrides/`-Präfix), `icon` = Instanz-Icon. Beim
+Import per Code/Link wird daraus wieder ein `.vlpack` zusammengesetzt; ältere Uploads, deren Einträge alle mit
+`overrides/` beginnen, werden toleriert. Die Overrides-ZIP wird vor dem Import auf unsichere Pfade geprüft (Zip-Slip,
+Symlinks, Gerätenamen) – ein einziger unsicherer Eintrag bricht den Import ab.

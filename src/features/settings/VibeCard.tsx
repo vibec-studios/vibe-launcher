@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import type { Settings, VibeServices } from "@/lib/types";
 import { Input, SettingRow, SettingsCard, Switch, cn } from "@/components/ui";
 import { useT } from "@/i18n";
+import { VibeAccountSettings } from "@/features/social/VibeAccountSettings";
 
 const SUBS: (keyof Pick<VibeServices, "social" | "presence" | "hosting" | "sharing">)[] = ["social", "presence", "hosting", "sharing"];
 
@@ -20,8 +21,10 @@ export function VibeCard({ id, settings: s, update }: { id: string; settings: Se
       <SettingRow title={t("vibe.enabled")} description={t("vibe.enabled.desc")}>
         <Switch checked={v.enabled} onChange={(enabled) => setVibe({ enabled })} label={t("vibe.enabled")} />
       </SettingRow>
+      {!v.enabled && <p className="border-t border-line px-4 py-2.5 pl-8 text-[12px] text-dim">{t("vibe.off_hint")}</p>}
       {v.enabled && (
         <div className="border-t border-line bg-black/20">
+          <VibeAccountSettings />
           {SUBS.map((k) => (
             <SettingRow key={k} title={t(`vibe.${k}`)} description={t(`vibe.${k}.desc`)} className="pl-8">
               <Switch checked={v[k]} onChange={(on) => setVibe({ [k]: on })} label={t(`vibe.${k}`)} />

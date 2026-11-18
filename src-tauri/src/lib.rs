@@ -17,6 +17,7 @@ pub mod state;
 pub mod tasks;
 pub mod updater;
 pub mod util;
+pub mod vibe;
 
 use state::AppState;
 use tauri::Manager;
@@ -303,6 +304,18 @@ pub fn run() {
             commands::configs::config_restore,
             commands::configs::config_validate,
             commands::configs::config_search,
+            // Vibe-Dienste
+            commands::vibe::vibe_status,
+            commands::vibe::vibe_tokens_get,
+            commands::vibe::vibe_tokens_set,
+            commands::vibe::vibe_mojang_join,
+            commands::vibe::vibe_http,
+            commands::vibe::vibe_ws_open,
+            commands::vibe::vibe_ws_send,
+            commands::vibe::vibe_ws_close,
+            commands::vibe::vibe_pack_share,
+            commands::vibe::vibe_pack_link,
+            commands::vibe::vibe_pack_install,
         ])
         .run(tauri::generate_context!())
         .expect("Fehler beim Starten des Launchers");

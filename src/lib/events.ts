@@ -1,7 +1,7 @@
 // Backend-Events (siehe src-tauri/src/events.rs).
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useRef } from "react";
-import type { Account, GameState, Instance, LogLine, Server, ServerStatus, Settings, TaskInfo } from "./types";
+import type { Account, GameState, Instance, LogLine, Server, ServerStatus, Settings, TaskInfo, VibeWsEvent } from "./types";
 
 export interface EventMap {
   "task://update": TaskInfo;
@@ -23,6 +23,8 @@ export interface EventMap {
   "server://log": { server_id: string; lines: LogLine[] };
   /** Fenster soll schließen, aber Server laufen -> Frontend fragt und ruft api.serversQuit(stop) */
   "servers://close-requested": { running: number };
+  /** WebSocket-Brücke des Vibe-Gateways (vibe/ws.rs) */
+  "vibe://ws": VibeWsEvent;
 }
 
 export type EventName = keyof EventMap;

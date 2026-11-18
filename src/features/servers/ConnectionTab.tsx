@@ -10,6 +10,7 @@ import type { Server, ServerConnection, ServerPatch, TunnelStatus } from "@/lib/
 import { Button, Input, SettingRow, SettingsCard, Skeleton, Spinner, confirm, cn, toast } from "@/components/ui";
 import { SaveIndicator, useAutoSave } from "@/components/instance/forms";
 import { useT } from "@/i18n";
+import { HostingInvite } from "@/features/social/HostingInvite";
 import { AddressChip } from "./parts";
 
 const DEFAULT_RELAY = "vibey.henny.dev:25565";
@@ -193,7 +194,10 @@ export function ConnectionTab({ server }: { server: Server }) {
               <div className="flex flex-col gap-3 px-4 py-4">
                 {usesTunnel ? (
                   publicAddr ? (
-                    <AddressChip address={publicAddr} large />
+                    <>
+                      <AddressChip address={publicAddr} large />
+                      <HostingInvite serverId={server.id} relay={d.connection === "relay"} />
+                    </>
                   ) : (
                     <div className="grid h-12 place-items-center border border-dashed border-line2 text-[13px] text-dim">
                       {running ? t("srv.conn.waiting_address") : t("srv.conn.start_for_address")}
@@ -203,6 +207,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                   <>
                     <AddressChip address={addrs.data?.lan[0] ?? localAddr} large />
                     <p className="text-[12.5px] leading-relaxed text-muted">{t("srv.conn.local.friends")}</p>
+                    {st?.state === "running" && <HostingInvite serverId={server.id} relay={false} />}
                   </>
                 )}
 

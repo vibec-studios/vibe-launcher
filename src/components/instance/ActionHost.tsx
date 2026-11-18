@@ -16,6 +16,7 @@ import { useT } from "@/i18n";
 import { InstanceIcon } from "./InstanceIcon";
 import { useInstanceActions } from "./actions";
 import { ServerStatusLine } from "./motd";
+import { openInviteAccept, openPackImport } from "@/features/social/dialogs";
 
 function InstallBody({ a, onDone }: { a: Extract<AppAction, { kind: "install" }>; onDone: () => void }) {
   const t = useT();
@@ -124,8 +125,6 @@ function InstanceLine({ i }: { i: Instance }) {
 
 function ActionDialog({ a, onDone }: { a: AppAction; onDone: () => void }) {
   const t = useT();
-  const nav = useNavigate();
-  const vibe = useVibe();
   const { data: instances = [] } = useInstances();
   const { launch } = useInstanceActions();
   const recent = useMemo(() => instances.slice().sort((x, y) => (y.last_played ?? 0) - (x.last_played ?? 0)), [instances]);
@@ -183,27 +182,39 @@ function ActionDialog({ a, onDone }: { a: AppAction; onDone: () => void }) {
     );
   }
 
-  // pack / invite: Vibe-Backend folgt
+  // pack / invite: eigene Dialoge (fragen selbst nach, bevor etwas passiert)
+  return <VibeAction a={a} onDone={onDone} />;
+}
+
+function VibeAction({ a, onDone }: { a: Extract<AppAction, { kind: "pack" | "invite" }>; onDone: () => void }) {
+  const t = useT();
+  const nav = useNavigate();
+  const vibe = useVibe();
   const enabled = a.kind === "pack" ? vibe.sharing : vibe.social;
+  useEffect(() => {
+    if (!enabled) return;
+    if (a.kind === "pack") openPackImport(a.code);
+    else openInviteAccept({ inviteId: a.id });
+    onDone();
+  }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (enabled) return null;
   return (
     <ConfirmShell title={a.kind === "pack" ? t("action.pack.title") : t("action.invite.title")} onCancel={onDone}>
       <div className="flex items-start gap-3 text-[13px] text-muted">
         <ShieldAlert size={18} className="mt-0.5 shrink-0 text-warn" />
         <div>
-          <p>{enabled ? t("action.vibe_soon") : t("action.vibe_off")}</p>
+          <p>{t("action.vibe_off")}</p>
           <p className="mt-1 font-mono text-[12px] text-dim">{a.kind === "pack" ? a.code : a.id}</p>
-          {!enabled && (
-            <Button
-              size="sm"
-              className="mt-3"
-              onClick={() => {
-                onDone();
-                nav({ to: "/settings" });
-              }}
-            >
-              {t("action.open_settings")}
-            </Button>
-          )}
+          <Button
+            size="sm"
+            className="mt-3"
+            onClick={() => {
+              onDone();
+              nav({ to: "/settings" });
+            }}
+          >
+            {t("action.open_settings")}
+          </Button>
         </div>
       </div>
     </ConfirmShell>

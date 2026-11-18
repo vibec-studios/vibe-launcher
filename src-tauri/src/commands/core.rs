@@ -88,6 +88,7 @@ pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> App
     s.save(&state.paths.settings_file())?;
     state.net.set_concurrency(s.concurrent_downloads as usize);
     *state.settings.write() = s.clone();
+    crate::vibe::on_settings_changed(&state);
     events::emit(&state.app, events::SETTINGS_CHANGED, &s);
     Ok(s)
 }

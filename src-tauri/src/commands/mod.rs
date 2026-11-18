@@ -8,3 +8,4 @@ pub mod platform;
 pub mod screenshots;
 pub mod backups;
 pub mod configs;
+pub mod vibe;

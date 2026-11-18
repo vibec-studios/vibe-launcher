@@ -69,6 +69,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
 | Plattform | crash_analyze, instance_servers_list, instance_servers_save, server_ping, servers_recent, playtime_sessions, optsync_get, optsync_set_instance, optsync_capture, optsync_apply_all, shortcut_create, app_actions_take, discord_available (`commands/platform.rs`, Logik in `platform/`, OWNER Frontend-Agent A) |
 | Backups | snapshots_list, snapshot_create, snapshot_restore, snapshot_delete, world_backups_list, world_backup_create, world_backup_restore, world_backup_delete, world_copy, world_import_zip, backups_open_folder (`commands/backups.rs`) |
+| Vibe-Dienste | vibe_status, vibe_tokens_get, vibe_tokens_set, vibe_mojang_join, vibe_http, vibe_ws_open, vibe_ws_send, vibe_ws_close, vibe_pack_share, vibe_pack_link, vibe_pack_install (`commands/vibe.rs`, Logik in `vibe/`, Frontend `features/social`) |
 
 ### Wichtige Abläufe
 
@@ -269,6 +270,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | `accounts://changed` | Account[] | Accounts geändert |
 | `settings://changed` | Settings | Einstellungen gespeichert |
 | `skins://changed` | {scope: "library"} \| {scope: "profile", account_id} | Skin-Bibliothek bzw. Skin/Cape eines Accounts geändert |
+| `vibe://ws` | {type: "open" \| "message" \| "close", id, data?, code?, reason?} | WebSocket-Brücke des Vibe-Gateways |
 
 `app/EventBridge.tsx` hält damit React-Query-Caches und Stores aktuell – Seiten brauchen kein Polling.
 
@@ -370,3 +372,49 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   und fragt **immer** nach, bevor etwas passiert.
 - **Vibe-Dienste im Frontend**: `useVibe()` aus `src/lib/vibe.ts` – jedes Vibe-UI-Element blendet sich aus, wenn der
   passende Schalter aus ist.
+
+## Vibe-Dienste (Freunde, Chats, Presence, Einladungen, geteilte Modpacks)
+
+Backend: `https://vibe.henny.dev` (Repo `vibe-backend`, Protokoll REST `/api/v1/*` + Gateway `/ws`). Der Client ist das
+**vendored SDK** `src/lib/vibe-sdk/` (`@vibe-craft/sdk` 0.1.0, MIT: `client.ts`, `gateway.ts`, `emitter.ts` unverändert bis
+auf Importe; `types.ts` = öffentliche API-Typen aus `@vibe-craft/shared` als reine TS-Typen, ohne Admin-/Relay-Interna).
+
+- **Transport über Rust** (`src/lib/vibe-sdk/tauri.ts`): `tauriFetch` -> `vibe_http` (nur URLs unter `<api_url>/api/`,
+  Header `authorization|content-type|accept`), `TauriWebSocket` -> `vibe_ws_open/send/close` + Event `vibe://ws` (nur
+  `ws(s)://<host>/ws` der eingestellten Adresse). Grund: CSP der Webview, frei wählbare `api_url`, kein CORS – und
+  **`settings.vibe.enabled = false` sperrt jede Verbindung in Rust** (Commands liefern `not_configured`, offene WebSockets
+  werden beim Speichern der Einstellungen geschlossen).
+- **Adresse**: Env `VIBE_API_URL` (Laufzeit, z. B. lokale Testinstanz) > `settings.vibe.api_url` (Standard Build-Env
+  `VIBE_API_URL` bzw. `https://vibe.henny.dev`).
+- **Login** (Mojang-hasJoined): SDK `auth.challenge` -> `vibe_mojang_join(serverId)` (Rust ruft
+  `sessionserver.mojang.com/session/minecraft/join` mit dem Minecraft-Token des aktiven Accounts; bei 401/403 einmal
+  Refresh; das Token verlässt Rust nie) -> `auth.verify`. Der erste Login ist eine bewusste Nutzeraktion („Mit Vibe
+  verbinden“), danach verbindet der Launcher mit den gespeicherten Tokens automatisch.
+- **Tokens**: `vibe_tokens_get/set` (`StoredTokens` des SDK, camelCase) im Schlüsselbund unter `vibe:<account-id>` (gechunkt
+  wie die MS-Tokens) zusammen mit der `api_url` – Tokens einer anderen Backend-Adresse werden nie herausgegeben. Refresh
+  macht ausschließlich das SDK (rotierende Refresh-Tokens, Single-Flight). Nur Debug: ohne Account mit
+  `VIBE_DEV_OFFLINE_ACCOUNT` gilt `dev-<name>` als Identität (für ein Backend mit `AUTH_DEV_BYPASS`).
+- **Frontend** (`features/social`): `service.ts` hält VibeClient + VibeGateway je Account/Adresse, Gateway-Events ->
+  Zustand-Store `useSocial` (Freunde inkl. Presence, Anfragen, Chats mit `unreadCount`, Tippen, Einladungen, Hosts) bzw.
+  Query-Cache `["vibe","messages",chatId]` (Infinite Query, Seiten à 50, neueste zuerst; optimistische Nachrichten per
+  `nonce`). Nach `ready` wird der Zustand per REST neu geladen, nach `resumed` nicht. `VibeBridge` (Shell) verbindet
+  Einstellungen/Account mit dem Service, `SocialDialogs` hostet alle Dialoge.
+- **Schalter**: `enabled` aus -> keine Verbindung, keine Social-UI (Hinweis in den Einstellungen). `social` -> Freunde/
+  Chats/Einladungen-UI, Toasts. `presence` aus -> Gateway meldet `invisible` ohne Aktivität. `hosting` -> Einladen aus dem
+  Server-Verbindungs-Tab, Limits. `sharing` -> „Als Link teilen“, Pack-Import.
+- **Presence automatisch** aus `game://state` (laufende Instanz -> `playing` mit Name/Version/Loader) bzw. laufendem
+  Relay-Server (`hosting`), sonst `launcher`. Nur bei Änderung gesendet.
+- **Einladungen**: aus dem Verbindungs-Tab eines laufenden lokalen Servers bzw. aus einem Chat. Relay -> `hostSessionId`
+  (eigene Host-Session mit gleicher Adresse) oder `connection: relay`; playit -> `connection: playit`; Lokal/LAN ->
+  `connection: direct` mit LAN-Adresse (Hinweis „nur im selben Netzwerk“). Annehmen (`AcceptDialog`): passende Instanz
+  (gleicher Pack-Code `source.kind = "vibe"`, sonst gleiche MC-Version/Loader) oder neue Instanz (Pack installieren bzw.
+  Instanz anlegen), dann `instance_launch(..., server)` (Quick Play).
+- **Geteilte Modpacks**: `vibe_pack_share(instanceId, token, options)` exportiert als `.vlpack` (vorausgewählte Einträge
+  des Export-Dialogs) und lädt multipart hoch (`manifest`, `overrides` = Inhalt von `overrides/` **ohne** Präfix, `icon`);
+  mit `options.code` als neue Version. Der Code wird in `instances/<id>/vibe-share.json` gemerkt (`vibe_pack_link`).
+  `vibe_pack_install(code, versionId?, token?)` (Task `import`): Manifest + Overrides laden, Overrides-ZIP **streng prüfen**
+  (`vibe::packs::check_overrides`: keine `..`, keine absoluten Pfade/Laufwerke/`:`/Backslashes, keine Windows-
+  Gerätenamen, keine Symlinks, max. 100 000 Einträge/8 GiB – das Backend prüft das nicht), daraus ein temporäres `.vlpack`
+  bauen und mit dem normalen Import einlesen (`PackSource { kind: "vibe", project_id: code, version_id }`).
+- **Deep Links** `vibelauncher://pack/<code>` -> Pack-Dialog, `vibelauncher://invite/<id>` -> Annehmen-Dialog (beide
+  fragen vor jeder Aktion).

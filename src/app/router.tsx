@@ -14,6 +14,7 @@ import { ScreenshotsPage } from "@/features/screenshots/ScreenshotsPage";
 import { StatsPage } from "@/features/stats/StatsPage";
 import { ServersPage } from "@/features/servers/ServersPage";
 import { ServerPage } from "@/features/servers/ServerPage";
+import { SocialPage } from "@/features/social/SocialPage";
 import type { ProjectType, Source } from "@/lib/types";
 
 export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "servers" | "backups" | "logs" | "configs" | "settings";
@@ -92,7 +93,15 @@ const serverRoute = createRoute({
   }),
 });
 
+const socialRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/social",
+  component: SocialPage,
+  validateSearch: (s: Record<string, unknown>): { chat?: string } => ({ chat: typeof s.chat === "string" && s.chat.length <= 64 ? s.chat : undefined }),
+});
+
 const routeTree = rootRoute.addChildren([
+  socialRoute,
   homeRoute,
   instancesRoute,
   instanceRoute,

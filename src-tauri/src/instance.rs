@@ -77,6 +77,8 @@ pub enum PackSourceKind {
     Vlpack,
     Prism,
     Local,
+    /// Geteiltes Pack vom Vibe-Backend (`project_id` = Share-Code, `version_id` = Pack-Version)
+    Vibe,
 }
 
 /// Herkunft einer Modpack-Instanz (für Updates/Anzeige).

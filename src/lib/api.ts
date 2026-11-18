@@ -219,6 +219,22 @@ export const api = {
   shortcutCreate: (instanceId: string, location: "desktop" | "start_menu") => call<string>("shortcut_create", { instanceId, location }),
   appActionsTake: () => call<T.AppAction[]>("app_actions_take"),
   discordAvailable: () => call<boolean>("discord_available"),
+  // ---------------------------------------------------------------- Vibe-Dienste (Netzwerk nur, wenn settings.vibe.enabled)
+  vibeStatus: () => call<T.VibeStatus>("vibe_status"),
+  vibeTokensGet: () => call<T.VibeTokens | null>("vibe_tokens_get"),
+  vibeTokensSet: (tokens: T.VibeTokens | null) => call<void>("vibe_tokens_set", { tokens }),
+  /** Mojang-Join mit dem Token des aktiven Accounts (bleibt in Rust) – liefert den Minecraft-Namen */
+  vibeMojangJoin: (serverId: string) => call<{ name: string; uuid: string }>("vibe_mojang_join", { serverId }),
+  vibeHttp: (request: T.VibeHttpRequest) => call<T.VibeHttpResponse>("vibe_http", { request }),
+  vibeWsOpen: (id: string, url: string) => call<void>("vibe_ws_open", { id, url }),
+  vibeWsSend: (id: string, data: string) => call<void>("vibe_ws_send", { id, data }),
+  vibeWsClose: (id: string, code?: number, reason?: string) => call<void>("vibe_ws_close", { id, code: code ?? null, reason: reason ?? null }),
+  /** Exportiert + lädt hoch, liefert das Pack (JSON des Backends) */
+  vibePackShare: (instanceId: string, token: string, options: T.VibeShareOptions) => call<unknown>("vibe_pack_share", { instanceId, token, options }),
+  vibePackLink: (instanceId: string) => call<T.VibeShareLink | null>("vibe_pack_link", { instanceId }),
+  /** Gibt Task-ID zurück */
+  vibePackInstall: (code: string, versionId?: string | null, token?: string | null) =>
+    call<string>("vibe_pack_install", { code, versionId: versionId ?? null, token: token ?? null }),
   // ---------------------------------------------------------------- Backups (Snapshots + Welt-Backups)
   snapshotsList: (instanceId: string) => call<T.SnapshotInfo[]>("snapshots_list", { instanceId }),
   /** Gibt Task-ID zurück */
