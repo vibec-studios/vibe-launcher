@@ -41,7 +41,7 @@ function glintCanvas(): HTMLCanvasElement {
   const img = g.createImageData(n, n);
   let seed = 7;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
-  const stripes = Array.from({ length: 7 }, () => ({ off: rnd() * n, w: 1.5 + rnd() * 5, a: 0.25 + rnd() * 0.55 }));
+  const stripes = Array.from({ length: 6 }, () => ({ off: rnd() * n, w: 1 + rnd() * 2.5, a: 0.2 + rnd() * 0.5 }));
   for (let y = 0; y < n; y++) {
     for (let x = 0; x < n; x++) {
       // (x + y) mod n ist in beiden Richtungen periodisch -> nahtlos kachelbar
@@ -88,7 +88,7 @@ class GlintLayer {
       needsUpdate: boolean;
     };
     mat.color.setRGB(0, 0, 0);
-    mat.emissive.setRGB(0.62, 0.32, 1);
+    mat.emissive.setRGB(0.38, 0.17, 0.7);
     mat.roughness = 1;
     mat.metalness = 0;
     mat.alphaTest = 0.1;
@@ -260,11 +260,15 @@ export default function SkinViewer3D({
     else v.loadEars(null);
   }, [ears]);
 
+  // Kopfüber; mit Ohren etwas herauszoomen und die Figur verschieben, damit die Ohren ins Bild passen
   useEffect(() => {
     const v = viewer.current;
     if (!v) return;
     v.playerObject.rotation.z = upsideDown ? Math.PI : 0;
-  }, [upsideDown]);
+    const shift = ears ? 3 : 0;
+    v.playerWrapper.position.y = upsideDown ? shift : -shift;
+    v.zoom = ears ? 0.74 : 0.85;
+  }, [upsideDown, ears]);
 
   useEffect(() => {
     const v = viewer.current;

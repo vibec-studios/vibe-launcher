@@ -82,16 +82,22 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** HD-Capes (z. B. 2048 px breit) für die Vorschau verkleinern – sonst lädt jeder Frame MBs auf die GPU. */
+const MAX_FRAME_WIDTH = 512;
+
 export async function buildCapeFrames(dataUrl: string, layout: McCapeLayout): Promise<McCapeFrames> {
   const img = await loadImage(dataUrl);
+  const k = Math.min(1, MAX_FRAME_WIDTH / layout.canvas_width);
   const frames: HTMLCanvasElement[] = [];
   for (let i = 0; i < layout.frames; i++) {
     const c = document.createElement("canvas");
-    c.width = layout.canvas_width;
-    c.height = layout.canvas_height;
+    c.width = Math.max(1, Math.round(layout.canvas_width * k));
+    c.height = Math.max(1, Math.round(layout.canvas_height * k));
     const g = c.getContext("2d")!;
-    g.imageSmoothingEnabled = false;
-    g.drawImage(img, 0, i * layout.frame_height, layout.frame_width, layout.frame_height, 0, 0, layout.frame_width, layout.frame_height);
+    // Pixel-Art bleibt scharf; nur beim Verkleinern glätten
+    g.imageSmoothingEnabled = k < 1;
+    g.imageSmoothingQuality = "high";
+    g.drawImage(img, 0, i * layout.frame_height, layout.frame_width, layout.frame_height, 0, 0, layout.frame_width * k, layout.frame_height * k);
     frames.push(c);
   }
   return { frames, frameMs: layout.frame_ms };
