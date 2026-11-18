@@ -3,6 +3,7 @@
 // Pausiert, wenn das Fenster unsichtbar/minimiert ist oder ein Spiel läuft; „Animationen reduzieren“ und
 // prefers-reduced-motion zeigen ein Standbild.
 import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { isRunning, useGameStore, useSettings } from "@/lib/queries";
 import { GRADIENTS, hasBackground, isVideoFile } from "@/lib/appearance";
 import { imageSrc } from "@/lib/format";
@@ -11,14 +12,36 @@ import { cn } from "@/components/ui";
 
 // ------------------------------------------------------------------ Pausieren
 
+/**
+ * Fenster sichtbar? WebView2 meldet beim Minimieren weiter „visible“ – daher zusätzlich die Tauri-Fenster-API
+ * (minimiert / versteckt, z. B. „Launcher beim Spielstart verstecken“): bei Größenänderung und alle 2 s.
+ */
 function usePageVisible() {
-  const [visible, setVisible] = useState(() => document.visibilityState === "visible");
+  const [docVisible, setDocVisible] = useState(() => document.visibilityState === "visible");
+  const [winVisible, setWinVisible] = useState(true);
   useEffect(() => {
-    const on = () => setVisible(document.visibilityState === "visible");
+    const on = () => setDocVisible(document.visibilityState === "visible");
     document.addEventListener("visibilitychange", on);
     return () => document.removeEventListener("visibilitychange", on);
   }, []);
-  return visible;
+  useEffect(() => {
+    if (import.meta.env.VITE_MOCK === "1") return;
+    let alive = true;
+    const w = getCurrentWindow();
+    const check = () =>
+      Promise.all([w.isMinimized(), w.isVisible()])
+        .then(([min, vis]) => alive && setWinVisible(!min && vis))
+        .catch(() => {});
+    void check();
+    const un = w.onResized(() => void check());
+    const timer = setInterval(check, 2000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      void un.then((f) => f());
+    };
+  }, []);
+  return docVisible && winVisible;
 }
 
 function useSystemReducedMotion() {
