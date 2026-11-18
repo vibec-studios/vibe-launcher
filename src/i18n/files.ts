@@ -3,7 +3,6 @@ export default {
   de: {
     "inst.tab.files": "Dateien",
     "srv.tab.files": "Dateien",
-    "files.quick": "Häufig",
     "files.root": "Hauptordner",
     "files.filter": "Dateinamen suchen …",
     "files.search": "In Textdateien suchen …",
@@ -117,7 +116,6 @@ export default {
   en: {
     "inst.tab.files": "Files",
     "srv.tab.files": "Files",
-    "files.quick": "Frequent",
     "files.root": "Main folder",
     "files.filter": "Search file names …",
     "files.search": "Search in text files …",

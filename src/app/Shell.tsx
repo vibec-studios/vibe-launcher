@@ -118,9 +118,11 @@ function Rail() {
       <RailButton label={t("nav.skins")} active={path === "/skins"} onClick={() => nav({ to: "/skins" })}>
         <Shirt size={20} />
       </RailButton>
-      <RailButton label={t("nav.cosmetics")} active={at("/cosmetics")} onClick={() => nav({ to: "/cosmetics" })}>
-        <Sparkles size={20} />
-      </RailButton>
+      {vibe.enabled && (
+        <RailButton label={t("nav.cosmetics")} active={at("/cosmetics")} onClick={() => nav({ to: "/cosmetics" })}>
+          <Sparkles size={20} />
+        </RailButton>
+      )}
       <RailButton label={t("nav.screenshots")} active={path === "/screenshots"} onClick={() => nav({ to: "/screenshots" })}>
         <Images size={20} />
       </RailButton>

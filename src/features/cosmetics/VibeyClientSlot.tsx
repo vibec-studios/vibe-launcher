@@ -10,6 +10,7 @@ import { Button, SettingRow, SettingsCard, Spinner, Switch, Tooltip, cn, toast }
 import { useT } from "@/i18n";
 import { useEvent } from "@/lib/events";
 import { isRunning, useGameState, waitForTask } from "@/lib/queries";
+import { useVibe } from "@/lib/vibe";
 import type { Instance } from "@/lib/types";
 import { vapi } from "./api";
 import { cqk } from "./data";
@@ -47,9 +48,12 @@ export function VibeyClientSlot({ instance, className }: { instance: Instance; c
     if (p.instance_id === instance.id) void qc.invalidateQueries({ queryKey: cqk.status(instance.id) });
   });
 
+  const vibe = useVibe();
   const s = q.data;
   // Für Forge/Quilt/Vanilla nichts anzeigen, solange nichts eingeschaltet ist
   if (!loaderOk && !s?.enabled) return null;
+  // Vibe aus: der Client ist ein Vibe-Feature -> ausblenden (außer er ist noch eingeschaltet, damit man ihn abschalten kann)
+  if (!vibe.enabled && !s?.enabled) return null;
 
   const set = async (on: boolean) => {
     setBusy(true);
@@ -115,7 +119,7 @@ export function VibeyClientSlot({ instance, className }: { instance: Instance; c
         }
       >
         <div className="flex items-center gap-2">
-          {s?.enabled && (
+          {s?.enabled && vibe.enabled && (
             <Button size="sm" variant="subtle" onClick={() => nav({ to: "/cosmetics" })}>
               {t("vc.wardrobe")}
             </Button>
@@ -134,13 +138,14 @@ export function VibeyClientSlot({ instance, className }: { instance: Instance; c
 
 /** Kleines Symbol im Instanz-Kopf, solange der Vibey Client aktiv ist (Klick: zu den Einstellungen). */
 export function VibeyClientBadge({ instance, label, onClick }: { instance: Instance; label: string; onClick?: () => void }) {
+  const vibe = useVibe();
   const q = useQuery({
     queryKey: cqk.status(instance.id),
     queryFn: () => vapi.clientStatus(instance.id),
-    enabled: SUPPORTED.has(instance.loader.kind),
+    enabled: vibe.enabled && SUPPORTED.has(instance.loader.kind),
     staleTime: 60_000,
   });
-  if (!q.data?.enabled || !q.data.present) return null;
+  if (!vibe.enabled || !q.data?.enabled || !q.data.present) return null;
   return (
     <Tooltip content={label} side="bottom">
       <button aria-label={label} onClick={onClick} className="grid h-8 w-8 place-items-center rounded-ctl text-brand hover:bg-white/[.06]">
