@@ -94,7 +94,7 @@ impl ClientRelease {
     /// Alle unterstützten Minecraft-Versionen eines Loaders.
     pub fn mc_versions(&self, loader: &str) -> Vec<String> {
         let mut v: Vec<String> = self.files.iter().filter(|f| f.loader.eq_ignore_ascii_case(loader)).flat_map(|f| f.mc_versions.iter().cloned()).collect();
-        v.sort();
+        v.sort_by(|a, b| install::cmp_versions(a, b));
         v.dedup();
         v
     }
@@ -261,6 +261,9 @@ mod tests {
         assert!(r.file_for("forge", "1.21.1").is_none());
         assert_eq!(r.file_for("neoforge", "1.21.1").unwrap().requires.len(), 0);
         assert_eq!(r.mc_versions("fabric"), vec!["1.21.1", "1.21.4"]);
+        let mut r2 = r.clone();
+        r2.files[0].mc_versions = vec!["1.21.10".into(), "1.21.4".into(), "26.1".into(), "1.21.1".into()];
+        assert_eq!(r2.mc_versions("fabric"), vec!["1.21.1", "1.21.4", "1.21.10", "26.1"]);
     }
 
     #[test]

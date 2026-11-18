@@ -3,7 +3,7 @@
 // kompakte Topbar (Zurück/Vor, Titel, laufende Spiele, Aufgaben, Fensterknöpfe), Inhaltsfläche.
 import { Outlet, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ChevronLeft, ChevronRight, Compass, Copy, Home, Images, LibraryBig, Minus, Plus, Server as ServerIcon, Settings as SettingsIcon, Shirt, Square, Users, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Compass, Copy, Home, Images, LibraryBig, Minus, Plus, Server as ServerIcon, Settings as SettingsIcon, Shirt, Sparkles, Square, Users, X } from "lucide-react";
 import { memo, useEffect, useState, type ReactNode } from "react";
 import { ContextMenu, Spinner, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -22,6 +22,7 @@ import { AccountChip } from "./AccountChip";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useVibe } from "@/lib/vibe";
 import { VibeBridge } from "@/features/social/VibeBridge";
+import { CosmeticsBridge } from "@/features/cosmetics/CosmeticsBridge";
 import { SocialDialogs } from "@/features/social/dialogs";
 import { FriendsPanel, FriendsPanelToggle } from "@/features/social/FriendsPanel";
 import { useSocialBadge } from "@/features/social/hooks";
@@ -114,6 +115,9 @@ function Rail() {
       <RailButton label={t("nav.skins")} active={path === "/skins"} onClick={() => nav({ to: "/skins" })}>
         <Shirt size={20} />
       </RailButton>
+      <RailButton label={t("nav.cosmetics")} active={at("/cosmetics")} onClick={() => nav({ to: "/cosmetics" })}>
+        <Sparkles size={20} />
+      </RailButton>
       <RailButton label={t("nav.screenshots")} active={path === "/screenshots"} onClick={() => nav({ to: "/screenshots" })}>
         <Images size={20} />
       </RailButton>
@@ -184,6 +188,15 @@ function usePageTitle(): ReactNode {
   if (path === "/skins") return t("nav.skins");
   if (path === "/screenshots") return t("nav.screenshots");
   if (path === "/social") return t("nav.social");
+  if (path === "/cosmetics") return t("nav.cosmetics");
+  if (path === "/cosmetics/creator")
+    return (
+      <>
+        <span className="text-muted">{t("nav.cosmetics")}</span>
+        <ChevronRight size={14} className="text-dim" />
+        <span>{t("cos.creator")}</span>
+      </>
+    );
   return null;
 }
 
@@ -303,6 +316,7 @@ export function Shell() {
       <InstanceDialogs />
       <ServerDialogs />
       <VibeBridge />
+      <CosmeticsBridge />
       <SocialDialogs />
     </div>
   );

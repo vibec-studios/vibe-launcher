@@ -53,14 +53,21 @@ pub async fn vibey_cosmetic_asset(state: State<'_, AppState>, hash: String) -> A
 
 /// Vorschaubild als data:-URL (None = keins).
 #[tauri::command]
-pub async fn vibey_cosmetic_thumbnail(state: State<'_, AppState>, url: String) -> AppResult<Option<String>> {
-    cosmetics::thumbnail(&state, &url).await
+pub async fn vibey_cosmetic_thumbnail(state: State<'_, AppState>, url: String, token: Option<String>) -> AppResult<Option<String>> {
+    cosmetics::thumbnail(&state, &url, token.as_deref()).await
 }
 
 /// Eigene `.vibey`-Datei lesen (Vorschau/Prüfung).
 #[tauri::command]
 pub async fn vibey_bundle_read(path: String) -> AppResult<String> {
     cosmetics::read_bundle(&PathBuf::from(path)).await
+}
+
+/// Eigenes PNG als Vorschaubild lesen: `{ dataUrl, width, height }`.
+#[tauri::command]
+pub async fn vibey_png_read(path: String) -> AppResult<Value> {
+    let (url, w, h) = cosmetics::read_png(&PathBuf::from(path)).await?;
+    Ok(serde_json::json!({ "dataUrl": url, "width": w, "height": h }))
 }
 
 /// Einreichung hochladen (`POST /api/v1/cosmetics/submissions`). Liefert `{ submission }`.

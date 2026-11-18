@@ -256,6 +256,23 @@ export function errText(e: unknown): string {
   return String(e);
 }
 
+// ------------------------------------------------------------------ Gateway-Events für andere Features
+// (z. B. Cosmetics: `catalog.updated`, `submission.updated`). Überlebt Neuverbindungen und neue Gateways.
+
+type ExtraListener = { ev: string; fn: (d: unknown) => void; off?: () => void };
+const extraListeners = new Set<ExtraListener>();
+
+/** Gateway-Event abonnieren (auch Events, die das SDK noch nicht typisiert). Gibt die Abmeldung zurück. */
+export function onGatewayEvent(ev: string, fn: (d: unknown) => void): () => void {
+  const l: ExtraListener = { ev, fn };
+  extraListeners.add(l);
+  if (gateway) l.off = (gateway as unknown as { on: (e: string, f: (d: unknown) => void) => () => void }).on(ev, fn);
+  return () => {
+    extraListeners.delete(l);
+    l.off?.();
+  };
+}
+
 function stopGateway() {
   while (offGateway.length) offGateway.pop()!();
   gateway?.disconnect();
@@ -307,6 +324,8 @@ function wireGateway(gw: VibeGateway) {
     void reloadState();
   });
   on("resumed", () => pushPresence(true));
+
+  for (const l of extraListeners) l.off = (gw as unknown as { on: (e: string, f: (d: unknown) => void) => () => void }).on(l.ev, l.fn);
 
   // Freunde / Presence
   on("presence.update", (p) => {

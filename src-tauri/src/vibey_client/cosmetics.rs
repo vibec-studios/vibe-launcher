@@ -81,7 +81,8 @@ fn prune_assets(state: &AppState) {
 }
 
 /// Vorschaubild (relativ zur Backend-Adresse oder absolut unter ihr) als `data:`-URL. `None` = keins vorhanden.
-pub async fn thumbnail(state: &AppState, url: &str) -> AppResult<Option<String>> {
+/// `token`: für Bilder, die nur der Einreicher sehen darf (eigene Einreichungen).
+pub async fn thumbnail(state: &AppState, url: &str, token: Option<&str>) -> AppResult<Option<String>> {
     let base = vibe::ensure(state, Feature::Any)?;
     let abs = super::resolve_url(&base, url)?;
     let key = super::sha256_bytes(abs.as_bytes());
@@ -92,7 +93,11 @@ pub async fn thumbnail(state: &AppState, url: &str) -> AppResult<Option<String>>
             return Ok(Some(png_data_url(&b)));
         }
     }
-    let r = state.net.client.get(&abs).timeout(Duration::from_secs(30)).send().await;
+    let mut rb = state.net.client.get(&abs).timeout(Duration::from_secs(30));
+    if let Some(t) = token.filter(|t| !t.is_empty()) {
+        rb = rb.bearer_auth(t);
+    }
+    let r = rb.send().await;
     let r = match r {
         Ok(r) => r,
         // offline: alter Cache ist besser als nichts
@@ -147,6 +152,17 @@ pub async fn read_bundle(path: &Path) -> AppResult<String> {
     String::from_utf8(b).map_err(|_| AppError::Invalid("Datei ist kein gültiges UTF-8".into()))
 }
 
+/// Eigenes Vorschaubild lesen: PNG (≤ 1 MiB) als data:-URL plus Größe.
+pub async fn read_png(path: &Path) -> AppResult<(String, u32, u32)> {
+    let meta = tokio::fs::metadata(path).await.map_err(|_| AppError::NotFound(path.display().to_string()))?;
+    if meta.len() as usize > MAX_THUMB_BYTES {
+        return Err(AppError::Invalid("Bild zu groß (max. 1 MiB)".into()));
+    }
+    let b = tokio::fs::read(path).await?;
+    let (w, h) = png_size(&b).ok_or_else(|| AppError::Invalid("Keine PNG-Datei".into()))?;
+    Ok((png_data_url(&b), w, h))
+}
+
 /// Einreichung hochladen. `thumbnail_png` = Base64 eines PNG (optional, z. B. aus der 3D-Vorschau).
 pub async fn submit(state: &AppState, token: &str, bundle: &Path, name: &str, description: &str, thumbnail_png: Option<&str>) -> AppResult<serde_json::Value> {
     let base = vibe::ensure(state, Feature::Any)?;
@@ -178,9 +194,10 @@ pub async fn submit(state: &AppState, token: &str, bundle: &Path, name: &str, de
         if bytes.len() > MAX_THUMB_BYTES {
             return Err(AppError::Invalid("Vorschaubild zu groß (max. 1 MiB)".into()));
         }
+        // Backend: PNG ≤ 256×256 (SUBMISSION_THUMB_MAX_PX), ≤ 1 MB
         match png_size(&bytes) {
-            Some((256, 256)) => {}
-            Some((w, h)) => return Err(AppError::Invalid(format!("Vorschaubild muss 256×256 Pixel groß sein (ist {w}×{h})"))),
+            Some((w, h)) if (1..=256).contains(&w) && (1..=256).contains(&h) => {}
+            Some((w, h)) => return Err(AppError::Invalid(format!("Vorschaubild darf höchstens 256×256 Pixel groß sein (ist {w}×{h})"))),
             None => return Err(AppError::Invalid("Vorschaubild ist kein PNG".into())),
         }
         form = form.part("thumbnail", reqwest::multipart::Part::bytes(bytes).file_name("thumbnail.png").mime_str("image/png")?);

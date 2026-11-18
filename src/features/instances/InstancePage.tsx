@@ -24,6 +24,7 @@ import { InstanceSettingsTab } from "./InstanceSettingsTab";
 import { BackupsTab } from "@/features/backups/BackupsTab";
 import { ConfigsTab } from "@/features/configs/ConfigsTab";
 import { accentVars } from "@/components/instance/accent";
+import { VibeyClientSlot } from "@/features/cosmetics/VibeyClientSlot";
 
 const route = getRouteApi("/instances/$id");
 const wrap = "w-full px-6";
@@ -228,6 +229,7 @@ export function InstancePage() {
       <div className="relative min-h-0 flex-1">
         {active === "content" || active === "resourcepacks" || active === "shaders" ? (
           <div className="h-full overflow-y-auto overflow-x-hidden overscroll-contain">
+            {active === "content" && <VibeyClientSlot instance={inst} className="mx-4 mt-4" />}
             <InstanceContentTab key={active} instance={inst} kind={active === "content" ? "mod" : active === "resourcepacks" ? "resourcepack" : "shader"} />
           </div>
         ) : active === "worlds" ? (

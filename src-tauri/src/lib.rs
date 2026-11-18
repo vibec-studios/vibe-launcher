@@ -325,6 +325,7 @@ pub fn run() {
             vibey_client::commands::vibey_cosmetic_asset,
             vibey_client::commands::vibey_cosmetic_thumbnail,
             vibey_client::commands::vibey_bundle_read,
+            vibey_client::commands::vibey_png_read,
             vibey_client::commands::vibey_submission_upload,
             vibey_client::commands::vibey_blockbench_status,
             vibey_client::commands::vibey_blockbench_install_plugin,
