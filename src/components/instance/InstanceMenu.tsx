@@ -22,6 +22,7 @@ import {
   LayoutList,
   Server as ServerIcon,
   Share2,
+  SlidersHorizontal,
 } from "lucide-react";
 import { openNewServer } from "@/features/servers/actions";
 import { openShare } from "@/features/social/dialogs";
@@ -75,7 +76,11 @@ function Swatch({ color, active }: { color: string; active?: boolean }) {
   );
 }
 
-function MenuBody({ instance: i, kit, onPage, onDeleted }: { instance: Instance; kit: Kit; onPage?: boolean; onDeleted?: () => void }) {
+/**
+ * `onPage`: Menü der Instanzseite. Dort gibt es den großen Spielen-Knopf und den Bereich „Einstellungen“, daher ohne
+ * Spielen und statt der Untermenüs Icon/Akzentfarbe/Gruppe ein Eintrag „Bearbeiten …“ (`onEdit`).
+ */
+function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: Instance; kit: Kit; onPage?: boolean; onDeleted?: () => void; onEdit?: () => void }) {
   const t = useT();
   const { Item, Sub, Sep, Label } = kit;
   const actions = useInstanceActions();
@@ -88,7 +93,7 @@ function MenuBody({ instance: i, kit, onPage, onDeleted }: { instance: Instance;
 
   return (
     <>
-      {running ? (
+      {onPage ? null : running ? (
         <Item icon={<Square size={13} />} onSelect={() => killInstance(i)}>
           {t("common.stop")}
         </Item>
@@ -133,40 +138,48 @@ function MenuBody({ instance: i, kit, onPage, onDeleted }: { instance: Instance;
         {t("srv.host_instance")}
       </Item>
       <Sep />
-      <Sub icon={<ImageIcon size={14} />} label={t("inst.icon")}>
-        <Item icon={<ImageIcon size={14} />} onSelect={() => setIcon(i)}>
-          {t("inst.icon.choose")}
+      {onEdit ? (
+        <Item icon={<SlidersHorizontal size={14} />} onSelect={onEdit}>
+          {t("ipage.menu.edit")}
         </Item>
-        <Item icon={<RotateCcw size={14} />} disabled={!i.icon} onSelect={() => resetIcon(i)}>
-          {t("inst.icon.reset")}
-        </Item>
-      </Sub>
-      <Sub icon={<Palette size={14} />} label={t("inst.accent")}>
-        <Label>{t("inst.accent")}</Label>
-        {accentPalette.map((c) => (
-          <Item key={c} icon={<Swatch color={c} active={c === accent} />} onSelect={() => setAccent(i, c)}>
-            <span className="font-mono text-[12px] uppercase">{c}</span>
-          </Item>
-        ))}
-        <Sep />
-        <Item icon={<RotateCcw size={14} />} disabled={!i.accent} onSelect={() => setAccent(i, null)}>
-          {t("inst.accent.auto")}
-        </Item>
-      </Sub>
-      <Sub icon={<TagIcon size={14} />} label={t("inst.group")}>
-        {groups.map((g) => (
-          <Item key={g} icon={g === i.group ? <Check size={14} className="text-accent" /> : <Box size={14} />} onSelect={() => setGroup(i, g)}>
-            {g}
-          </Item>
-        ))}
-        {groups.length > 0 && <Sep />}
-        <Item icon={<Plus size={14} />} onSelect={() => openGroupPrompt(i)}>
-          {t("inst.group.new")}
-        </Item>
-        <Item icon={<RotateCcw size={14} />} disabled={!i.group} onSelect={() => setGroup(i, null)}>
-          {t("inst.group.none")}
-        </Item>
-      </Sub>
+      ) : (
+        <>
+          <Sub icon={<ImageIcon size={14} />} label={t("inst.icon")}>
+            <Item icon={<ImageIcon size={14} />} onSelect={() => setIcon(i)}>
+              {t("inst.icon.choose")}
+            </Item>
+            <Item icon={<RotateCcw size={14} />} disabled={!i.icon} onSelect={() => resetIcon(i)}>
+              {t("inst.icon.reset")}
+            </Item>
+          </Sub>
+          <Sub icon={<Palette size={14} />} label={t("inst.accent")}>
+            <Label>{t("inst.accent")}</Label>
+            {accentPalette.map((c) => (
+              <Item key={c} icon={<Swatch color={c} active={c === accent} />} onSelect={() => setAccent(i, c)}>
+                <span className="font-mono text-[12px] uppercase">{c}</span>
+              </Item>
+            ))}
+            <Sep />
+            <Item icon={<RotateCcw size={14} />} disabled={!i.accent} onSelect={() => setAccent(i, null)}>
+              {t("inst.accent.auto")}
+            </Item>
+          </Sub>
+          <Sub icon={<TagIcon size={14} />} label={t("inst.group")}>
+            {groups.map((g) => (
+              <Item key={g} icon={g === i.group ? <Check size={14} className="text-accent" /> : <Box size={14} />} onSelect={() => setGroup(i, g)}>
+                {g}
+              </Item>
+            ))}
+            {groups.length > 0 && <Sep />}
+            <Item icon={<Plus size={14} />} onSelect={() => openGroupPrompt(i)}>
+              {t("inst.group.new")}
+            </Item>
+            <Item icon={<RotateCcw size={14} />} disabled={!i.group} onSelect={() => setGroup(i, null)}>
+              {t("inst.group.none")}
+            </Item>
+          </Sub>
+        </>
+      )}
       <Sep />
       <Item icon={<Wrench size={14} />} disabled={running || phase === "busy"} onSelect={() => repairInstance(i)}>
         {t("inst.repair")}
@@ -182,6 +195,6 @@ export function InstanceContextMenuContent({ instance }: { instance: Instance })
   return <MenuBody instance={instance} kit={contextKit} />;
 }
 
-export function InstanceDropdownContent({ instance, onDeleted }: { instance: Instance; onDeleted?: () => void }) {
-  return <MenuBody instance={instance} kit={dropdownKit} onPage onDeleted={onDeleted} />;
+export function InstanceDropdownContent({ instance, onDeleted, onEdit }: { instance: Instance; onDeleted?: () => void; onEdit?: () => void }) {
+  return <MenuBody instance={instance} kit={dropdownKit} onPage onDeleted={onDeleted} onEdit={onEdit} />;
 }

@@ -11,7 +11,7 @@ import { SideTag } from "@/components/content/sides";
 
 export const ROW_H = 52;
 /** Spalten: Auswahl | Name | Version | Aktionen */
-export const GRID = "grid grid-cols-[18px_minmax(0,1fr)_minmax(0,190px)_88px] items-center gap-3 px-4 @min-[820px]:grid-cols-[18px_minmax(0,1fr)_minmax(0,260px)_88px]";
+export const GRID = "grid grid-cols-[18px_minmax(0,1fr)_minmax(0,190px)_88px] items-center gap-3 px-6 @min-[820px]:grid-cols-[18px_minmax(0,1fr)_minmax(0,260px)_88px]";
 
 export interface RowActions {
   click: (key: string, e: MouseEvent) => void;

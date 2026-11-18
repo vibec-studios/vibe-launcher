@@ -1,6 +1,7 @@
-// OWNER: Content-Agent. Abhängigkeits-Check im Inhalte-Tab: fehlende/inkompatible/doppelte Mods mit Ein-Klick-Lösungen.
+// OWNER: Content-Agent. Abhängigkeits-Check: fehlende/inkompatible/doppelte Mods mit Ein-Klick-Lösungen.
+// Wird in der Hinweiszeile der Instanzseite als Popover gezeigt (früher: eigenes Banner im Inhalte-Tab).
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, ChevronDown, ChevronUp, Download, PowerOff, RefreshCw, Trash2 } from "lucide-react";
+import { Download, PowerOff, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Spinner, cn, toast } from "@/components/ui";
 import { startContentInstall } from "@/components/content/install";
@@ -9,13 +10,15 @@ import { api } from "@/lib/api";
 import { queryClient } from "@/lib/queries";
 import type { DepFix, DepIssue } from "@/lib/types";
 
-export function DepsBanner({ instanceId }: { instanceId: string }) {
+export function useDepIssues(instanceId: string, enabled = true) {
+  return useQuery({ queryKey: ["content", instanceId, "deps"], queryFn: () => api.contentCheckDeps(instanceId), staleTime: 30_000, enabled });
+}
+
+export function DepsPanel({ instanceId }: { instanceId: string }) {
   const t = useT();
-  const q = useQuery({ queryKey: ["content", instanceId, "deps"], queryFn: () => api.contentCheckDeps(instanceId), staleTime: 30_000 });
-  const [open, setOpen] = useState(false);
+  const q = useDepIssues(instanceId);
   const [busy, setBusy] = useState<string | null>(null);
   const issues = q.data ?? [];
-  if (!issues.length) return null;
   const errors = issues.filter((i) => i.severity === "error").length;
 
   const run = async (key: string, fix: DepFix) => {
@@ -40,29 +43,34 @@ export function DepsBanner({ instanceId }: { instanceId: string }) {
         : t("deps.fix.disable", { name: f.file_name === i.file_name ? i.mod_name : f.file_name.replace(/\.jar(\.disabled)?$/, "") });
 
   return (
-    <div className={cn("mx-4 mb-2 border", errors ? "border-danger/35 bg-danger/[.06]" : "border-warn/35 bg-warn/[.05]")}>
-      <div className="flex items-center gap-2.5 px-3.5 py-2.5">
-        <AlertTriangle size={16} className={cn("shrink-0", errors ? "text-danger" : "text-warn")} />
+    <div>
+      <div className="flex items-start gap-3 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1">
-          <div className="text-[13.5px] font-semibold text-white">{errors ? t("deps.title", { n: issues.length }) : t("deps.title_warn", { n: issues.length })}</div>
-          {!open && <div className="truncate text-[12.5px] text-muted">{issues[0].message}</div>}
+          <div className="text-[13.5px] font-semibold text-white">
+            {issues.length === 0 ? t("deps.fixed") : errors ? t("deps.title", { n: issues.length }) : t("deps.title_warn", { n: issues.length })}
+          </div>
+          {errors > 0 && <div className="mt-0.5 text-[12.5px] text-muted">{t("deps.text")}</div>}
         </div>
-        <button className="flex h-7 items-center gap-1 px-2 text-[12.5px] text-muted hover:text-white" onClick={() => void q.refetch()} disabled={q.isFetching}>
+        <button
+          className="flex h-7 shrink-0 items-center gap-1.5 px-2 text-[12.5px] text-muted transition-colors hover:bg-white/[.06] hover:text-white"
+          onClick={() => void q.refetch()}
+          disabled={q.isFetching}
+        >
           {q.isFetching ? <Spinner size={11} /> : <RefreshCw size={13} />}
           {t("deps.recheck")}
         </button>
-        <button className="flex h-7 items-center gap-1 px-2 text-[12.5px] font-medium text-text hover:bg-white/[.06]" onClick={() => setOpen((o) => !o)}>
-          {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          {open ? t("deps.hide") : t("deps.show")}
-        </button>
       </div>
-      {open && (
-        <div className="scroll max-h-[240px] border-t border-line/70">
-          {issues.map((i, n) => (
-            <div key={n} className="flex items-center gap-3 border-b border-line/50 px-3.5 py-2 last:border-b-0">
-              <span className={cn("w-[74px] shrink-0 text-[11.5px] font-semibold", i.severity === "error" ? "text-danger" : "text-warn")}>{t(`deps.kind.${i.kind}`)}</span>
+      <div className="scroll max-h-[320px]">
+        {issues.map((i, n) => (
+          <div key={n} className="flex flex-col gap-2 border-b border-line/60 px-4 py-2.5 last:border-b-0">
+            <div className="flex items-start gap-2.5">
+              <span className={cn("mt-px w-[68px] shrink-0 text-[11.5px] font-semibold", i.severity === "error" ? "text-danger" : "text-warn")}>
+                {t(`deps.kind.${i.kind}`)}
+              </span>
               <span className="selectable min-w-0 flex-1 text-[13px] text-text">{i.message}</span>
-              <div className="flex shrink-0 gap-1">
+            </div>
+            {i.fixes.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pl-[78px]">
                 {i.fixes.slice(0, 2).map((f, k) => {
                   const key = `${n}-${k}`;
                   return (
@@ -75,16 +83,24 @@ export function DepsBanner({ instanceId }: { instanceId: string }) {
                         k === 0 ? "border-line2 bg-surface2 text-white hover:bg-surface3" : "border-transparent text-muted hover:text-white",
                       )}
                     >
-                      {busy === key ? <Spinner size={11} /> : f.action === "install" ? <Download size={13} /> : f.action === "remove" ? <Trash2 size={13} /> : <PowerOff size={13} />}
+                      {busy === key ? (
+                        <Spinner size={11} />
+                      ) : f.action === "install" ? (
+                        <Download size={13} />
+                      ) : f.action === "remove" ? (
+                        <Trash2 size={13} />
+                      ) : (
+                        <PowerOff size={13} />
+                      )}
                       {label(i, f)}
                     </button>
                   );
                 })}
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

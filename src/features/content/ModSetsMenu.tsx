@@ -1,4 +1,4 @@
-// OWNER: Content-Agent. Mod-Sets: Menü im Inhalte-Tab + Anzeige des aktiven Sets in der Instanz-Kopfzeile.
+// OWNER: Content-Agent. Mod-Sets: Menü in der Werkzeugleiste der Inhalte (zeigt auch das aktive Set).
 import { useQuery } from "@tanstack/react-query";
 import { Check, Layers, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -17,21 +17,6 @@ export function useModSets(instanceId: string) {
 function setData(id: string, d: ModSets) {
   queryClient.setQueryData(key(id), d);
   queryClient.invalidateQueries({ queryKey: ["content", id] });
-}
-
-/** „Set: Name“ für die Instanz-Kopfzeile (nichts, wenn kein Set aktiv). */
-export function ActiveModSet({ instanceId }: { instanceId: string }) {
-  const t = useT();
-  const { data } = useModSets(instanceId);
-  const active = data?.sets.find((s) => s.id === data.active);
-  if (!active) return null;
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <Layers size={13} className="text-dim" />
-      {t("modsets.active", { name: active.name })}
-      {data?.active_modified && <span className="text-dim">({t("modsets.modified")})</span>}
-    </span>
-  );
 }
 
 export function ModSetsMenu({ instanceId }: { instanceId: string }) {

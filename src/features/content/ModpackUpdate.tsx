@@ -1,6 +1,6 @@
-// OWNER: Content-Agent. Modpack-Updates: Banner (Instanzseite) + Vorschau-Dialog mit Änderungen, dann Anwenden.
+// OWNER: Content-Agent. Modpack-Updates: Prüfung (Hinweiszeile der Instanzseite) + Vorschau-Dialog mit Änderungen, dann Anwenden.
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, ArrowUpCircle, FileCog, Minus, Plus, RefreshCw } from "lucide-react";
+import { AlertTriangle, FileCog, Minus, Plus, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button, Dialog, ErrorState, Skeleton, cn, toast } from "@/components/ui";
 import { SideFilterBar, SideTag, countSides, sideMatches, type SideFilter } from "@/components/content/sides";
@@ -19,32 +19,6 @@ export function useModpackUpdate(instance: Instance) {
     staleTime: 10 * 60_000,
     retry: 0,
   });
-}
-
-/** Hinweis im Inhalte-Tab, wenn eine neue Pack-Version da ist. */
-export function ModpackUpdateBanner({ instance }: { instance: Instance }) {
-  const t = useT();
-  const q = useModpackUpdate(instance);
-  const [open, setOpen] = useState(false);
-  const u = q.data;
-  if (!u) return null;
-  return (
-    <>
-      <div className="mx-4 mb-2 flex items-center gap-3 border border-accent/40 bg-accent/[.07] px-3.5 py-2.5">
-        <ArrowUpCircle size={17} className="shrink-0 text-accent" />
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[13.5px] font-semibold text-white">
-            {t("modpack.update_available", { from: u.current_version ?? t("modpack.unknown_version"), to: u.latest.version_number })}
-          </div>
-          <div className="truncate text-[12.5px] text-muted">{t("modpack.update_text")}</div>
-        </div>
-        <Button size="sm" variant="accent" onClick={() => setOpen(true)}>
-          {t("modpack.show_changes")}
-        </Button>
-      </div>
-      {open && <ModpackUpdateDialog instance={instance} versionId={u.latest.id} onClose={() => setOpen(false)} />}
-    </>
-  );
 }
 
 const changeIcon = { added: <Plus size={13} className="text-ok" />, updated: <RefreshCw size={13} className="text-accent" />, removed: <Minus size={13} className="text-danger" /> };

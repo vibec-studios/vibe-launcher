@@ -1,18 +1,18 @@
-// OWNER: Frontend-Agent B. Wird von InstancePage (Agent A) für die Tabs Mods/Resourcepacks/Shader eingebunden.
-// Virtualisierte Liste (300+ Einträge flüssig), Suche/Filter, Mehrfachauswahl mit Sammelaktionen, Kontextmenü,
-// optimistisches Aktivieren, Updates, Dateien hinzufügen (Dialog + Drag & Drop), Banner für fehlende CurseForge-Dateien.
+// OWNER: Frontend-Agent B. Wird von InstancePage (Agent A) für den Bereich Inhalte (Mods/Resourcepacks/Shader) eingebunden.
+// Virtualisierte Liste (300+ Einträge flüssig), eine Werkzeugleiste (Suche, Status, Seite, Sortierung, Mod-Sets,
+// Werkzeuge-Menü), Mehrfachauswahl mit Sammelaktionen, Kontextmenü, optimistisches Aktivieren, Updates, Dateien
+// hinzufügen (Menü + Drag & Drop). Hinweise (Modpack-Update, Abhängigkeiten, manuelle Downloads) zeigt die
+// Hinweiszeile der Instanzseite.
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Check, FilePlus2, FolderOpen, PackagePlus, Plus, Power, PowerOff, RefreshCw, SearchX, Trash2, Upload, X } from "lucide-react";
+import { FilePlus2, FolderOpen, Gauge, PackagePlus, Plus, Power, PowerOff, RefreshCw, SearchX, SlidersHorizontal, Trash2, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type MouseEvent } from "react";
-import { create } from "zustand";
-import { Button, EmptyState, ErrorState, IconButton, SearchInput, Select, Spinner, Tooltip, confirm, cn, toast } from "@/components/ui";
+import { Button, DropdownItem, DropdownMenu, DropdownSeparator, EmptyState, ErrorState, SearchInput, Select, Spinner, Tooltip, confirm, cn, toast } from "@/components/ui";
 import { SIDE_FILTERS, sideMatches, type SideFilter } from "@/components/content/sides";
-import { DepsBanner } from "./DepsBanner";
 import { ModSetsMenu } from "./ModSetsMenu";
-import { ModpackUpdateBanner } from "./ModpackUpdate";
-import { PerfButton } from "./PerfDialog";
+import { PerfDialog } from "./PerfDialog";
+import { markUpdatesChecked, setContentFilter, setContentSort, setUpdateTask, useContentView, type ContentFilter, type ContentSort } from "./contentView";
 import { useT, t as tt } from "@/i18n";
 import { api, errorMessage, isCancelled } from "@/lib/api";
 import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
@@ -20,12 +20,9 @@ import type { ContentItem, ContentKind, ContentUpdate, Instance } from "@/lib/ty
 import { registerDropTarget, useDragState } from "@/components/content/dragdrop";
 import { contentKey, fileExt, kindExtensions, kindFolder } from "@/components/content/util";
 import { ContentRow, GRID, ROW_H, RowSkeleton, SelectBox, type RowActions } from "./ContentRow";
-import { MissingBanner } from "./MissingBanner";
 
-type Filter = "all" | "enabled" | "disabled" | "updates";
-
-/** Wurde für die Instanz schon nach Updates gesucht? (bleibt beim Tab-Wechsel erhalten) */
-const useUpdateChecks = create<{ checked: Record<string, boolean>; tasks: Record<string, string> }>(() => ({ checked: {}, tasks: {} }));
+const FILTERS: ContentFilter[] = ["all", "enabled", "disabled", "updates"];
+const SORTS: ContentSort[] = ["name", "recent", "size"];
 
 const discoverType: Record<ContentKind, string> = { mod: "mod", resourcepack: "resourcepack", shader: "shader", datapack: "datapack" };
 
@@ -49,8 +46,8 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
   const q = useQuery({ queryKey: listKey, queryFn: () => api.contentList(id, kind), staleTime: 60_000 });
 
   // ---------------------------------------------------------------- Updates
-  const checked = useUpdateChecks((s) => !!s.checked[id]);
-  const updTaskId = useUpdateChecks((s) => s.tasks[id]);
+  const checked = useContentView((s) => !!s.checked[id]);
+  const updTaskId = useContentView((s) => s.tasks[id]);
   const updTask = useTask(updTaskId);
   const updatesQ = useQuery({
     queryKey: qk.contentUpdates(id),
@@ -63,17 +60,33 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
     for (const u of updatesQ.data ?? []) if (u.kind === kind) m.set(contentKey(u.file_name), u);
     return m;
   }, [updatesQ.data, kind]);
-  const checkUpdates = () => {
-    if (!checked) useUpdateChecks.setState((s) => ({ checked: { ...s.checked, [id]: true } }));
-    else void updatesQ.refetch();
+  const checkUpdates = async () => {
+    markUpdatesChecked(id);
+    try {
+      const res = await queryClient.fetchQuery({ queryKey: qk.contentUpdates(id), queryFn: () => api.contentCheckUpdates(id), staleTime: 0 });
+      if (!res.some((u) => u.kind === kind)) toast.success(tt("content.no_updates"));
+      else setContentFilter(id, "updates");
+    } catch (e) {
+      toast.error(e);
+    }
   };
 
   // ---------------------------------------------------------------- Suche / Filter
   const [text, setText] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
+  const storedFilter = useContentView((s) => s.filter[id] ?? "all");
+  // „Updates“ erst, wenn Update-Daten da sind (eigene Prüfung oder bereits geladen, z. B. von der Startseite)
+  const known = checked || !!updatesQ.data;
+  const filter: ContentFilter = storedFilter === "updates" && !known ? "all" : storedFilter;
+  const setFilter = (f: ContentFilter) => setContentFilter(id, f);
+  const sort = useContentView((s) => s.sort);
   const [sideFilter, setSideFilter] = useState<SideFilter>("all");
+  const [perfOpen, setPerfOpen] = useState(false);
   const all = q.data ?? [];
-  const sorted = useMemo(() => [...all].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })), [all]);
+  const sorted = useMemo(() => {
+    const byName = (a: ContentItem, b: ContentItem) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+    const cmp = sort === "recent" ? (a: ContentItem, b: ContentItem) => b.modified - a.modified || byName(a, b) : sort === "size" ? (a: ContentItem, b: ContentItem) => b.size - a.size || byName(a, b) : byName;
+    return [...all].sort(cmp);
+  }, [all, sort]);
   const counts = useMemo(() => {
     let on = 0;
     for (const c of all) if (c.enabled) on++;
@@ -195,7 +208,7 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
           id,
           items.map((i) => i.file_name),
         );
-        useUpdateChecks.setState((s) => ({ tasks: { ...s.tasks, [id]: taskId } }));
+        setUpdateTask(id, taskId);
         waitForTask(taskId)
           .then(() => {
             toast.success(tt("content.updated", { n: items.length }));
@@ -334,65 +347,78 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
 
   return (
     <div className="@container flex h-full min-h-0 flex-col outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
-      {/* Werkzeugleiste */}
-      <div className="flex h-14 shrink-0 items-center gap-2 px-4">
-        <SearchInput
-          value={text}
-          onChange={setText}
-          placeholder={t(`content.search.${kind}`)}
-          className="w-[200px] min-w-0 shrink @min-[900px]:w-[260px]"
-          disabled={empty}
-        />
-        {!empty && (
-          <div className="flex items-center gap-1">
-            {(["all", "enabled", "disabled", "updates"] as Filter[]).map((f) =>
-              f === "updates" && !checked ? null : (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={cn(
-                    "flex h-8 items-center gap-1.5 px-2.5 text-[13px] font-medium transition-colors duration-100",
-                    filter === f ? "bg-surface3 text-white" : "text-muted hover:bg-white/[.04] hover:text-white",
-                  )}
-                >
-                  {t(`content.filter.${f}`)}
-                  <span className="text-[12px] text-dim">{q.isSuccess ? counts[f] : ""}</span>
-                </button>
-              ),
-            )}
-          </div>
-        )}
-        {!empty && kind === "mod" && (
+      {/* Werkzeugleiste: links Finden (Suche, Status, Seite, Sortierung), rechts Sets und seltene Werkzeuge */}
+      {!empty && (
+        <div className="flex h-14 shrink-0 items-center gap-2 px-6">
+          <SearchInput value={text} onChange={setText} placeholder={t(`content.search.${kind}`)} className="w-[200px] min-w-0 shrink @min-[1100px]:w-[260px]" />
           <div className="w-[150px] shrink-0">
-            <Select<SideFilter>
+            <Select<ContentFilter>
               size="sm"
-              value={sideFilter}
-              onChange={setSideFilter}
-              options={SIDE_FILTERS.map((f) => ({ value: f, label: t(`side.filter.${f}`) }))}
+              value={filter}
+              onChange={setFilter}
+              options={FILTERS.filter((f) => f !== "updates" || known).map((f) => ({
+                value: f,
+                label: (
+                  <span className="flex items-center gap-1.5">
+                    {t(`content.filter.${f}`)}
+                    <span className={cn("tabular-nums", f === "updates" && counts.updates ? "text-accent" : "text-dim")}>{q.isSuccess ? counts[f] : ""}</span>
+                  </span>
+                ),
+              }))}
             />
           </div>
-        )}
-        <div className="flex-1" />
-        {kind === "mod" && <ModSetsMenu instanceId={id} />}
-        {kind === "mod" && <PerfButton instance={instance} />}
-        <Tooltip content={t(`content.add_files.${kind}`)}>
-          <IconButton label={t(`content.add_files.${kind}`)} size="sm" onClick={addFiles}>
-            <FilePlus2 size={15} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip content={t("common.open_folder")}>
-          <IconButton label={t("common.open_folder")} size="sm" onClick={openFolder}>
-            <FolderOpen size={15} />
-          </IconButton>
-        </Tooltip>
-        <Button size="sm" variant="accent" icon={<Plus size={15} />} onClick={toDiscover}>
-          {t("content.add")}
-        </Button>
-      </div>
-
-      <MissingBanner instanceId={id} kind={kind} />
-      {kind === "mod" && <ModpackUpdateBanner instance={instance} />}
-      {kind === "mod" && !empty && <DepsBanner instanceId={id} />}
+          {kind === "mod" && (
+            <div className="w-[140px] shrink-0">
+              <Select<SideFilter>
+                size="sm"
+                value={sideFilter}
+                onChange={setSideFilter}
+                options={SIDE_FILTERS.map((f) => ({ value: f, label: t(`side.filter.${f}`) }))}
+              />
+            </div>
+          )}
+          <div className="w-[150px] shrink-0">
+            <Select<ContentSort> size="sm" value={sort} onChange={setContentSort} options={SORTS.map((v) => ({ value: v, label: t(`ipage.sort.${v}`) }))} />
+          </div>
+          <div className="flex-1" />
+          {counts.updates > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={updatesRunning ? <Spinner size={12} /> : <RefreshCw size={14} className="text-accent" />}
+              disabled={updatesRunning}
+              onClick={() => update(all.filter((c) => updates.has(contentKey(c.file_name))))}
+            >
+              {t("ipage.update_n", { n: counts.updates })}
+            </Button>
+          )}
+          {kind === "mod" && <ModSetsMenu instanceId={id} />}
+          <DropdownMenu
+            trigger={
+              <Button size="sm" variant="ghost" icon={<SlidersHorizontal size={14} />} className="data-[state=open]:bg-surface3">
+                {t("ipage.tools")}
+              </Button>
+            }
+          >
+            <DropdownItem icon={<RefreshCw size={14} />} disabled={updatesQ.isFetching} onSelect={() => void checkUpdates()}>
+              {t("content.check_updates")}
+            </DropdownItem>
+            {kind === "mod" && instance.loader.kind !== "vanilla" && (
+              <DropdownItem icon={<Gauge size={14} />} onSelect={() => setPerfOpen(true)}>
+                {t("perf.title")} …
+              </DropdownItem>
+            )}
+            <DropdownSeparator />
+            <DropdownItem icon={<FilePlus2 size={14} />} onSelect={() => void addFiles()}>
+              {t(`content.add_files.${kind}`)} …
+            </DropdownItem>
+            <DropdownItem icon={<FolderOpen size={14} />} onSelect={openFolder}>
+              {t("common.open_folder")}
+            </DropdownItem>
+          </DropdownMenu>
+        </div>
+      )}
+      {perfOpen && <PerfDialog instance={instance} onClose={() => setPerfOpen(false)} />}
 
       {/* Tabellenkopf bzw. Auswahlleiste (gleiche Höhe -> kein Springen) */}
       {!empty && (
@@ -430,32 +456,11 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
               <span>{t("content.col.name")}</span>
               <span>{t("content.col.version")}</span>
               <div className="flex items-center justify-end">
-                {updatesRunning ? (
+                {updatesRunning && (
                   <span className="flex items-center gap-1.5 text-[12px] text-muted">
-                    <Spinner size={11} className="text-brand" />
+                    <Spinner size={11} className="text-accent" />
                     {updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : ""}
                   </span>
-                ) : counts.updates > 0 ? (
-                  <Tooltip content={t("content.update_all", { n: counts.updates })}>
-                    <button
-                      onClick={() => update(all.filter((c) => updates.has(contentKey(c.file_name))))}
-                      className="flex h-7 items-center gap-1 px-1.5 text-[12.5px] font-semibold text-accent hover:bg-white/[.06]"
-                    >
-                      <RefreshCw size={13} />
-                      {counts.updates}
-                    </button>
-                  </Tooltip>
-                ) : (
-                  <Tooltip content={checked && updatesQ.isSuccess ? t("content.no_updates") : t("content.check_updates")}>
-                    <button
-                      aria-label={t("content.check_updates")}
-                      onClick={checkUpdates}
-                      disabled={updatesQ.isFetching}
-                      className="grid h-7 w-7 place-items-center text-dim transition-colors hover:bg-white/[.06] hover:text-white disabled:opacity-60"
-                    >
-                      {updatesQ.isFetching ? <Spinner size={11} className="text-brand" /> : checked && updatesQ.isSuccess ? <Check size={14} className="text-ok" /> : <RefreshCw size={14} />}
-                    </button>
-                  </Tooltip>
                 )}
               </div>
             </>
@@ -479,18 +484,42 @@ export function InstanceContentTab({ instance, kind }: { instance: Instance; kin
             title={t(`content.empty.${kind}`)}
             text={t(`content.empty_text.${kind}`)}
             action={
-              <div className="flex gap-2">
+              <div className="flex flex-wrap justify-center gap-2">
                 <Button variant="accent" icon={<Plus size={15} />} onClick={toDiscover}>
                   {t("content.add")}
                 </Button>
                 <Button variant="ghost" icon={<FilePlus2 size={15} />} onClick={addFiles}>
                   {t("content.add_files_short")}
                 </Button>
+                {kind === "mod" && (
+                  <Button variant="ghost" icon={<Gauge size={15} />} onClick={() => setPerfOpen(true)}>
+                    {t("perf.title")}
+                  </Button>
+                )}
+                <Button variant="subtle" icon={<FolderOpen size={15} />} onClick={openFolder}>
+                  {t("common.open_folder")}
+                </Button>
               </div>
             }
           />
         ) : visible.length === 0 ? (
-          <EmptyState icon={<SearchX size={28} />} title={t("content.no_match")} text={t("content.no_match_text")} />
+          <EmptyState
+            icon={<SearchX size={28} />}
+            title={t("content.no_match")}
+            text={t("content.no_match_text")}
+            action={
+              <Button
+                size="sm"
+                onClick={() => {
+                  setText("");
+                  setFilter("all");
+                  setSideFilter("all");
+                }}
+              >
+                {t("ipage.filter.reset")}
+              </Button>
+            }
+          />
         ) : (
           <div ref={scrollRef} className="scroll h-full" role="grid" aria-multiselectable>
             <div className="relative" style={{ height: v.getTotalSize() }}>

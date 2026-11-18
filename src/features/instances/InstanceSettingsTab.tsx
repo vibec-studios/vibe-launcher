@@ -180,7 +180,7 @@ export function InstanceSettingsTab({ instance }: { instance: Instance }) {
         <SaveIndicator state={state} />
       </div>
       <div className="scroll h-full">
-        <div className="flex w-full flex-col gap-4 px-6 py-5">
+        <div className="flex w-full flex-col gap-4 px-6 py-6">
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-5">
             <div className="flex flex-col gap-5">
               <SettingsCard title={t("isettings.general")}>
