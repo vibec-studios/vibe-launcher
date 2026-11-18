@@ -45,6 +45,12 @@ pub async fn vibey_client_instances(state: State<'_, AppState>) -> AppResult<Vec
     Ok(install::vibey_instances(&state))
 }
 
+/// Öffentlicher Cosmetics-Katalog (ohne Login; Vibe aus -> letzter Stand von der Platte).
+#[tauri::command]
+pub async fn vibey_cosmetics_catalog(state: State<'_, AppState>) -> AppResult<cosmetics::CatalogResult> {
+    cosmetics::catalog(&state).await
+}
+
 /// `.vibey`-Asset per SHA-256 (gecacht). Liefert den JSON-Text.
 #[tauri::command]
 pub async fn vibey_cosmetic_asset(state: State<'_, AppState>, hash: String) -> AppResult<String> {

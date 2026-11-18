@@ -322,6 +322,7 @@ pub fn run() {
             vibey_client::commands::vibey_client_set,
             vibey_client::commands::vibey_client_create_instance,
             vibey_client::commands::vibey_client_instances,
+            vibey_client::commands::vibey_cosmetics_catalog,
             vibey_client::commands::vibey_cosmetic_asset,
             vibey_client::commands::vibey_cosmetic_thumbnail,
             vibey_client::commands::vibey_bundle_read,

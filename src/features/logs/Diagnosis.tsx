@@ -1,7 +1,7 @@
 // Crash-Diagnose: Ergebnis von `crash_analyze` mit Schuldigem, Klartext und Aktionen.
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cpu, Download, FileWarning, MemoryStick, PowerOff, Stethoscope, UploadCloud } from "lucide-react";
+import { Cpu, Download, FileWarning, MemoryStick, Power, PowerOff, Stethoscope, UploadCloud } from "lucide-react";
 import { api, errorMessage } from "@/lib/api";
 import { qk, waitForTask } from "@/lib/queries";
 import type { Diagnosis, DiagnosisAction, Instance, LoaderKind } from "@/lib/types";
@@ -36,9 +36,11 @@ export function diagText(d: Diagnosis, t: (k: string, v?: Record<string, string 
   const id = KNOWN.includes(d.id) ? d.id : "exit_code";
   const mod = d.culprit?.name || d.culprit?.mod_id || t("diag.some_mod");
   const vars = { mod, ...d.params };
-  let text = t(`diag.${id}.text`, vars);
+  // Abhängigkeit ist da, nur deaktiviert
+  const off = id === "missing_dependency" && !!d.params.disabled_file;
+  let text = t(off ? "diag.missing_dependency.text_disabled" : `diag.${id}.text`, vars);
   if (id === "exit_code") text = t(`diag.exit.${d.params.hint ?? "exit_code"}`, vars);
-  return { title: t(`diag.${id}.title`, vars), text };
+  return { title: t(off ? "diag.missing_dependency.title_disabled" : `diag.${id}.title`, vars), text };
 }
 
 async function resolveDependency(inst: Instance, modId: string, name: string | null): Promise<{ id: string; title: string } | null> {
@@ -68,6 +70,10 @@ async function runAction(a: DiagnosisAction, inst: Instance, crashReport: string
     case "disable_mod":
       await api.contentSetEnabled(inst.id, "mod", a.file, false);
       toast.success(tt("diag.done.disabled"), a.file);
+      return;
+    case "enable_mod":
+      await api.contentSetEnabled(inst.id, "mod", a.file, true);
+      toast.success(tt("diag.done.enabled"), a.name ?? a.file);
       return;
     case "install_dependency": {
       const p = await resolveDependency(inst, a.mod_id, a.name);
@@ -111,7 +117,9 @@ function ActionButton({ a, inst, crashReport, onDone }: { a: DiagnosisAction; in
   const label =
     a.kind === "disable_mod"
       ? t("diag.act.disable")
-      : a.kind === "install_dependency"
+      : a.kind === "enable_mod"
+        ? t("diag.act.enable", { mod: a.name ?? a.file.replace(/\.jar\.disabled$/, "") })
+        : a.kind === "install_dependency"
         ? t("diag.act.install", { mod: a.name ?? a.mod_id })
         : a.kind === "set_java"
           ? t("diag.act.java", { major: a.major })
@@ -121,6 +129,8 @@ function ActionButton({ a, inst, crashReport, onDone }: { a: DiagnosisAction; in
   const icon =
     a.kind === "disable_mod" ? (
       <PowerOff size={13} />
+    ) : a.kind === "enable_mod" ? (
+      <Power size={13} />
     ) : a.kind === "install_dependency" ? (
       <Download size={13} />
     ) : a.kind === "set_java" ? (

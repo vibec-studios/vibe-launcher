@@ -354,7 +354,8 @@ pub async fn create_instance(state: AppState, task: TaskHandle) -> AppResult<()>
     let rel = super::latest(&state, true).await?;
     let mc = newest_supported(&state, &rel, "fabric").await.ok_or_else(|| AppError::NotFound("Der Vibey Client hat noch kein Fabric-Jar.".into()))?;
     let inst = state.instances.create(CreateInstance {
-        name: "Vibey Client".into(),
+        // Zweite Vibey-Instanz heißt „Vibey Client (2)“ usw.
+        name: state.instances.unique_name("Vibey Client"),
         mc_version: mc.clone(),
         loader: Loader { kind: LoaderKind::Fabric, version: None },
         icon: None,

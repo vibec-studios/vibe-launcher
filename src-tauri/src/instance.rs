@@ -244,6 +244,13 @@ impl InstanceStore {
         self.map.read().get(id).cloned().ok_or_else(|| AppError::NotFound(format!("Instanz {id}")))
     }
 
+    /// Freier Anzeigename: `Name`, `Name (2)`, `Name (3)` … (Groß-/Kleinschreibung egal). Für automatisch
+    /// angelegte Instanzen (z. B. „Vibey Client“), damit nicht zwei gleich heißen.
+    pub fn unique_name(&self, base: &str) -> String {
+        let map = self.map.read();
+        free_name(base, |n| map.values().any(|i| i.name.trim().eq_ignore_ascii_case(n)))
+    }
+
     fn unique_id(&self, name: &str) -> String {
         let base = slugify(name);
         let map = self.map.read();
@@ -391,8 +398,27 @@ impl InstanceStore {
     }
 }
 
+/// `base`, sonst `base (2)`, `base (3)` … – der erste Name, den `taken` nicht kennt.
+fn free_name(base: &str, taken: impl Fn(&str) -> bool) -> String {
+    let base = base.trim();
+    if !taken(base) {
+        return base.to_string();
+    }
+    (2..).map(|n| format!("{base} ({n})")).find(|n| !taken(n)).unwrap_or_else(|| base.to_string())
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn free_names() {
+        let taken = |list: &'static [&'static str]| move |n: &str| list.iter().any(|x| x.eq_ignore_ascii_case(n));
+        assert_eq!(super::free_name("Vibey Client", taken(&[])), "Vibey Client");
+        assert_eq!(super::free_name("Vibey Client", taken(&["vibey client"])), "Vibey Client (2)");
+        assert_eq!(super::free_name("Vibey Client", taken(&["Vibey Client", "Vibey Client (2)"])), "Vibey Client (3)");
+        // Lücken werden gefüllt
+        assert_eq!(super::free_name("Vibey Client", taken(&["Vibey Client", "Vibey Client (3)"])), "Vibey Client (2)");
+    }
+
     #[test]
     fn patch_null_clears() {
         let p: super::InstancePatch = serde_json::from_str(r#"{"accent":null,"auto_update_content":true}"#).unwrap();

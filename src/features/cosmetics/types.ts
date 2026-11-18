@@ -35,6 +35,8 @@ export interface CatalogItem {
 export interface Catalog {
   version: string;
   items: CatalogItem[];
+  /** Nur Launcher: letzter Stand von der Platte (Vibe aus oder Server nicht erreichbar) */
+  cached?: boolean;
 }
 
 export type LoadoutSlots = Partial<Record<CosmeticSlot, string | null>>;

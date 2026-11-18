@@ -1,6 +1,8 @@
 // Cosmetics-Seite: Garderobe wie im Vibey Client – Kategorien je Slot + Emotes, Suche, Karten mit Vorschaubildern,
 // große drehbare 3D-Vorschau mit dem eigenen Skin, Anprobieren per Hover/Klick, Anlegen/Ablegen, Emote-Rad und
 // Speichern ins Loadout am Backend. Gesperrte (nicht freigeschaltete) Items sind markiert und nicht anlegbar.
+// Ohne Vibe-Login (Gastansicht) gibt es Katalog, Suche und Anprobieren trotzdem – mit Hinweis-Banner oben, aber
+// ohne Anlegen, Emote-Rad und Speichern. Kostenlose Items (`availability: "default"`) gelten dann als frei.
 // Neue Items kommen ohne Update (catalog.updated → Katalog neu, Assets per SHA-256 nach).
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -12,8 +14,8 @@ import { useLang, useT } from "@/i18n";
 import { queryClient, waitForTask } from "@/lib/queries";
 import { VibeError } from "@/lib/vibe-sdk";
 import { capi, vapi } from "./api";
-import { categoryOf, cqk, itemDesc, itemName, prefetchAssets, useAccess, useCatalog, useMe } from "./data";
-import { AccessState, ItemThumb, RarityLabel, useBundle, useBundles } from "./parts";
+import { categoryOf, cqk, freeItems, isGuest, itemDesc, itemName, prefetchAssets, useAccess, useCatalog, useMe, type Access } from "./data";
+import { AccessBanner, AccessState, ItemThumb, RarityLabel, useBundle, useBundles } from "./parts";
 import { CATEGORIES, COSMETIC_SLOTS, EMOTE_WHEEL_SIZE, type CatalogItem, type Category, type CosmeticsMe, type Loadout } from "./types";
 import { Viewer3D, useOwnSkin } from "./Viewer3D";
 import { EmoteWheelDialog } from "./EmoteWheel";
@@ -69,18 +71,19 @@ export function CosmeticsPage() {
           {t("cos.creator")}
         </Button>
       </header>
-      {access === "ready" ? <Wardrobe /> : <AccessState access={access} />}
+      {access === "loading" ? <AccessState access={access} /> : <Wardrobe access={access} />}
     </div>
   );
 }
 
 type Filter = Category | "all";
 
-function Wardrobe() {
+function Wardrobe({ access }: { access: Exclude<Access, "loading"> }) {
   const t = useT();
   const lang = useLang((s) => s.lang);
+  const guest = isGuest(access);
   const catQ = useCatalog(true);
-  const meQ = useMe(true);
+  const meQ = useMe(!guest);
   const skin = useOwnSkin();
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
@@ -92,10 +95,15 @@ function Wardrobe() {
 
   const items = useMemo(() => [...(catQ.data?.items ?? [])].sort((a, b) => a.sort - b.sort || itemName(a, lang).localeCompare(itemName(b, lang))), [catQ.data, lang]);
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
-  const owned = useMemo(() => new Set(meQ.data?.owned ?? []), [meQ.data]);
-  const server = meQ.data?.loadout ?? EMPTY;
+  const owned = useMemo(() => new Set(guest ? freeItems(catQ.data) : (meQ.data?.owned ?? [])), [guest, catQ.data, meQ.data]);
+  const server = (!guest && meQ.data?.loadout) || EMPTY;
   const loadout = draft ?? server;
-  const dirty = !!draft && !same(draft, server);
+  const dirty = !guest && !!draft && !same(draft, server);
+
+  // Abgemeldet (oder Vibe aus) -> Entwurf verwerfen, er ließe sich nicht mehr speichern
+  useEffect(() => {
+    if (guest) setDraft(null);
+  }, [guest]);
 
   useEffect(() => {
     if (catQ.data) void prefetchAssets(catQ.data);
@@ -116,11 +124,11 @@ function Wardrobe() {
     const needle = q.trim().toLowerCase();
     return items.filter((i) => {
       if (filter !== "all" && categoryOf(i) !== filter) return false;
-      if (onlyOwned && !owned.has(i.id)) return false;
+      if (onlyOwned && !guest && !owned.has(i.id)) return false;
       if (!needle) return true;
       return [i.name.en, i.name.de ?? "", i.author, i.creator?.name ?? "", ...i.tags].some((s) => s.toLowerCase().includes(needle));
     });
-  }, [items, filter, q, onlyOwned, owned]);
+  }, [items, filter, q, onlyOwned, owned, guest]);
 
   // ---------- Vorschau: Loadout + anprobiertes Item ----------
   const tryOnId = hover ?? selected;
@@ -139,7 +147,7 @@ function Wardrobe() {
   const edit = (fn: (l: Loadout) => Loadout) => setDraft((d) => normalize(fn(normalize(d ?? server))));
   const equipped = (i: CatalogItem) => (i.kind === "emote" ? loadout.emoteWheel.includes(i.id) : !!i.slot && loadout.slots[i.slot] === i.id);
   const toggle = (i: CatalogItem) => {
-    if (!owned.has(i.id)) return;
+    if (guest || !owned.has(i.id)) return;
     if (i.kind === "emote") {
       setWheel({ open: true, arm: i.id });
       return;
@@ -162,15 +170,29 @@ function Wardrobe() {
     },
   });
 
-  if (catQ.isError) return <ErrorState error={catQ.error} onRetry={() => void catQ.refetch()} className="flex-1" />;
-  if (!catQ.data || meQ.isLoading)
+  // Vibe aus und noch nie geladen: keine Verbindung, kein Cache -> nur der Hinweis
+  if (catQ.isError && access === "off") return <AccessState access="off" />;
+  const banner = guest && <AccessBanner access={access} />;
+  if (catQ.isError)
     return (
-      <div className="grid flex-1 place-items-center">
-        <Spinner size={20} className="text-brand" />
-      </div>
+      <>
+        {banner}
+        <ErrorState error={catQ.error} onRetry={() => void catQ.refetch()} className="flex-1" />
+      </>
+    );
+  if (!catQ.data || (!guest && meQ.isLoading))
+    return (
+      <>
+        {banner}
+        <div className="grid flex-1 place-items-center">
+          <Spinner size={20} className="text-brand" />
+        </div>
+      </>
     );
 
   return (
+    <>
+    {banner}
     <div className="flex min-h-0 flex-1">
       {/* Kategorien */}
       <aside className="flex w-52 shrink-0 flex-col border-r border-line bg-black/40">
@@ -191,9 +213,19 @@ function Wardrobe() {
           ))}
         </nav>
         <div className="border-t border-line p-3">
-          <Button className="w-full" icon={<CircleDot size={15} />} onClick={() => setWheel({ open: true, arm: null })}>
-            {t("cos.wheel")}
-          </Button>
+          {guest ? (
+            <Tooltip content={t("cos.guest.wheel_hint")}>
+              <span className="block">
+                <Button className="w-full" disabled icon={<CircleDot size={15} />}>
+                  {t("cos.wheel")}
+                </Button>
+              </span>
+            </Tooltip>
+          ) : (
+            <Button className="w-full" icon={<CircleDot size={15} />} onClick={() => setWheel({ open: true, arm: null })}>
+              {t("cos.wheel")}
+            </Button>
+          )}
         </div>
       </aside>
 
@@ -201,10 +233,12 @@ function Wardrobe() {
       <section className="flex min-w-0 flex-1 flex-col">
         <div className="flex shrink-0 items-center gap-3 border-b border-line px-5 py-3">
           <SearchInput value={q} onChange={setQ} placeholder={t("cos.search")} className="max-w-sm flex-1" />
-          <label className="flex items-center gap-2 text-[13px] text-muted">
-            <Switch checked={onlyOwned} onChange={setOnlyOwned} label={t("cos.only_owned")} />
-            {t("cos.only_owned")}
-          </label>
+          {!guest && (
+            <label className="flex items-center gap-2 text-[13px] text-muted">
+              <Switch checked={onlyOwned} onChange={setOnlyOwned} label={t("cos.only_owned")} />
+              {t("cos.only_owned")}
+            </label>
+          )}
           <div className="ml-auto font-mono text-[12px] text-dim">{t("cos.count", { n: shown.length })}</div>
         </div>
         <div className="scroll min-h-0 flex-1 p-5" onMouseLeave={() => setHover(null)}>
@@ -252,6 +286,7 @@ function Wardrobe() {
           item={sel}
           lang={lang}
           owned={sel ? owned.has(sel.id) : false}
+          guest={guest}
           equipped={sel ? equipped(sel) : false}
           onToggle={() => sel && toggle(sel)}
           onClose={() => setSelected(null)}
@@ -272,6 +307,7 @@ function Wardrobe() {
         onApply={(w) => edit((l) => ({ ...l, emoteWheel: w }))}
       />
     </div>
+    </>
   );
 }
 
@@ -338,6 +374,7 @@ function Details({
   item,
   lang,
   owned,
+  guest,
   equipped,
   onToggle,
   onClose,
@@ -348,6 +385,8 @@ function Details({
   item: CatalogItem | undefined;
   lang: string;
   owned: boolean;
+  /** Ohne Vibe-Login: nur ansehen/anprobieren */
+  guest: boolean;
   equipped: boolean;
   onToggle: () => void;
   onClose: () => void;
@@ -366,7 +405,7 @@ function Details({
           <span className="font-mono text-[12px] text-dim">{t("cos.look_count", { n: worn.length })}</span>
         </div>
         {worn.length === 0 ? (
-          <p className="text-[13px] text-muted">{t("cos.look_empty")}</p>
+          <p className="text-[13px] text-muted">{guest ? t("cos.guest.look_empty") : t("cos.look_empty")}</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {worn.map((id) => {
@@ -380,7 +419,7 @@ function Details({
             })}
           </div>
         )}
-        <p className="mt-3 text-[12px] leading-relaxed text-dim">{t("cos.look_hint")}</p>
+        <p className="mt-3 text-[12px] leading-relaxed text-dim">{guest ? t("cos.guest.equip_hint") : t("cos.look_hint")}</p>
       </div>
     );
   }
@@ -419,6 +458,14 @@ function Details({
             <span className="flex-1">
               <Button className="w-full" disabled icon={<Lock size={14} />}>
                 {t("cos.locked")}
+              </Button>
+            </span>
+          </Tooltip>
+        ) : guest ? (
+          <Tooltip content={t("cos.guest.equip_hint")}>
+            <span className="flex-1">
+              <Button className="w-full" disabled icon={item.kind === "emote" ? <CircleDot size={15} /> : <Check size={15} />}>
+                {item.kind === "emote" ? t("cos.wheel_add") : t("cos.equip")}
               </Button>
             </span>
           </Tooltip>

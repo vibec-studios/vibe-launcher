@@ -1,5 +1,6 @@
 //! Abhängigkeits-Check installierter Mods: fehlende Pflicht-Abhängigkeiten, falsche Versionen, Konflikte
-//! (`breaks`/`incompatible`), falscher Loader / falsche Minecraft-Version, doppelte Mods.
+//! (`breaks`/`incompatible`), falscher Loader / falsche Minecraft-Version, doppelte Mods. Liegt eine fehlende
+//! Abhängigkeit nur deaktiviert (`.disabled`) in `mods/`, heißt die Lösung „aktivieren“ statt „installieren“.
 //!
 //! Versionsbereiche: Fabric/Quilt-Ausdrücke (`>=1.2 <2`, `~1.20.1`, `^1.0`, `1.20.x`, `*`, `a || b`) und
 //! Maven-Bereiche aus mods.toml (`[1.20.1,1.21)`, `[47,)`). Nicht auswertbare Angaben gelten als erfüllt.
@@ -194,6 +195,8 @@ pub fn satisfies(range: &str, version: &str) -> Option<bool> {
 #[serde(rename_all = "snake_case")]
 pub enum IssueKind {
     MissingDependency,
+    /// Pflicht-Abhängigkeit ist installiert, aber deaktiviert
+    DisabledDependency,
     VersionMismatch,
     Incompatible,
     Duplicate,
@@ -211,6 +214,8 @@ pub enum Fix {
     Remove { file_names: Vec<String> },
     /// Mod deaktivieren (`content_set_enabled`)
     Disable { file_name: String },
+    /// Deaktivierte Mod wieder aktivieren (`content_set_enabled`); `title` = Name der Mod
+    Enable { file_name: String, title: String },
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -320,8 +325,12 @@ fn name_of(s: &Scanned) -> String {
 pub async fn check(state: &AppState, instance_id: &str, resolve: bool) -> AppResult<Vec<DepIssue>> {
     let inst = state.instances.get(instance_id)?;
     let (scanned, _idx): (Vec<Scanned>, ContentIndex) = super::local::scan(state, instance_id, ContentKind::Mod).await?;
-    let mods: Vec<ModInfo> = scanned.iter().filter(|s| s.enabled).filter_map(|s| s.meta.mod_id.as_deref().map(|id| ModInfo { s, id })).collect();
-    let mut issues = analyze(&inst, &mods);
+    fn info(s: &Scanned) -> Option<ModInfo<'_>> {
+        s.meta.mod_id.as_deref().map(|id| ModInfo { s, id })
+    }
+    let mods: Vec<ModInfo> = scanned.iter().filter(|s| s.enabled).filter_map(info).collect();
+    let disabled: Vec<ModInfo> = scanned.iter().filter(|s| !s.enabled).filter_map(info).collect();
+    let mut issues = analyze(&inst, &mods, &disabled);
     if resolve {
         // Fehlende Abhängigkeiten: Modrinth-Projekt suchen (gleiche ID nur einmal)
         let mut cache: HashMap<String, Option<(String, String)>> = HashMap::new();
@@ -339,9 +348,20 @@ pub async fn check(state: &AppState, instance_id: &str, resolve: bool) -> AppRes
     Ok(issues)
 }
 
-fn analyze(inst: &Instance, mods: &[ModInfo]) -> Vec<DepIssue> {
+/// `disabled`: deaktivierte Mods (`.disabled`) – nur, um bei fehlenden Abhängigkeiten „aktivieren“ anzubieten.
+fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIssue> {
     let mut issues = Vec::new();
     let builtins = builtin_ids(inst);
+    // ID -> deaktivierte Datei (eigene ID vor bereitgestellten IDs)
+    let mut off: HashMap<&str, &Scanned> = HashMap::new();
+    for m in disabled {
+        off.insert(m.id, m.s);
+    }
+    for m in disabled {
+        for p in &m.s.meta.provides {
+            off.entry(p.as_str()).or_insert(m.s);
+        }
+    }
     // ID -> (Version, Datei) aller aktiven Mods inkl. bereitgestellter IDs
     let mut present: HashMap<&str, (Option<&str>, &Scanned)> = HashMap::new();
     for m in mods {
@@ -412,6 +432,18 @@ fn analyze(inst: &Instance, mods: &[ModInfo]) -> Vec<DepIssue> {
                         continue;
                     }
                     match present.get(id) {
+                        None if off.contains_key(id) => {
+                            let other = off[id];
+                            issues.push(DepIssue {
+                                kind: IssueKind::DisabledDependency,
+                                severity: "error".into(),
+                                file_name: s.file_name.clone(),
+                                mod_name: name.clone(),
+                                target: Some(id.into()),
+                                message: format!("{name} braucht {}, das deaktiviert ist", name_of(other)),
+                                fixes: vec![Fix::Enable { file_name: other.file_name.clone(), title: name_of(other) }, Fix::Disable { file_name: s.file_name.clone() }],
+                            });
+                        }
                         None => issues.push(DepIssue {
                             kind: IssueKind::MissingDependency,
                             severity: "error".into(),
@@ -569,7 +601,7 @@ mod tests {
         let f = scanned("f.jar", "forgemod", "1", "forge", vec![]);
         let all = [&a, &b, &c1, &c2, &f];
         let mods: Vec<ModInfo> = all.iter().map(|s| ModInfo { s, id: s.meta.mod_id.as_deref().unwrap() }).collect();
-        let issues = analyze(&inst, &mods);
+        let issues = analyze(&inst, &mods, &[]);
         let kinds: Vec<IssueKind> = issues.iter().map(|i| i.kind).collect();
         assert!(kinds.contains(&IssueKind::MissingDependency), "{issues:#?}");
         assert!(kinds.contains(&IssueKind::Incompatible));
@@ -581,5 +613,34 @@ mod tests {
         assert!(matches!(&dup.fixes[0], Fix::Remove { file_names } if file_names == &vec!["c-1.jar".to_string()]));
         // ~1.20 erlaubt 1.20.1 -> kein Minecraft-Problem für a
         assert!(!issues.iter().any(|i| i.kind == IssueKind::WrongMinecraft && i.file_name == "a.jar"));
+    }
+
+    #[test]
+    fn disabled_dependency() {
+        let inst: Instance = serde_json::from_value(serde_json::json!({
+            "id": "x", "name": "x", "icon": null, "accent": null, "group": null, "mc_version": "1.21.1",
+            "loader": Loader { kind: LoaderKind::Fabric, version: Some("0.16.9".into()) }, "created_at": 0
+        }))
+        .unwrap();
+        let a = scanned("vibey.jar", "vibey", "1.0", "fabric", vec![d("fabric-api", Some("*"), "required"), d("cloth-config", None, "required")]);
+        let mut api = scanned("fabric-api-0.110.jar.disabled", "fabric-api", "0.110.0", "fabric", vec![]);
+        api.enabled = false;
+        api.meta.name = Some("Fabric API".into());
+        let mods = [ModInfo { s: &a, id: "vibey" }];
+        let off = [ModInfo { s: &api, id: "fabric-api" }];
+        let issues = analyze(&inst, &mods, &off);
+        let dis = issues.iter().find(|i| i.target.as_deref() == Some("fabric-api")).unwrap();
+        assert_eq!(dis.kind, IssueKind::DisabledDependency);
+        assert!(matches!(&dis.fixes[0], Fix::Enable { file_name, title } if file_name == "fabric-api-0.110.jar.disabled" && title == "Fabric API"));
+        // Wirklich fehlende Abhängigkeit bleibt „fehlt“
+        let miss = issues.iter().find(|i| i.target.as_deref() == Some("cloth-config")).unwrap();
+        assert_eq!(miss.kind, IssueKind::MissingDependency);
+        // Bereitgestellte ID einer deaktivierten Mod zählt auch
+        let mut bundle = scanned("bundle.jar.disabled", "bundle", "1", "fabric", vec![]);
+        bundle.enabled = false;
+        bundle.meta.provides = vec!["cloth-config".into()];
+        let off = [ModInfo { s: &api, id: "fabric-api" }, ModInfo { s: &bundle, id: "bundle" }];
+        let issues = analyze(&inst, &mods, &off);
+        assert!(issues.iter().all(|i| i.kind == IssueKind::DisabledDependency), "{issues:#?}");
     }
 }

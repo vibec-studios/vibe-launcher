@@ -1,7 +1,7 @@
 // OWNER: Content-Agent. Abhängigkeits-Check: fehlende/inkompatible/doppelte Mods mit Ein-Klick-Lösungen.
 // Wird in der Hinweiszeile der Instanzseite als Popover gezeigt (früher: eigenes Banner im Inhalte-Tab).
 import { useQuery } from "@tanstack/react-query";
-import { Download, PowerOff, RefreshCw, Trash2 } from "lucide-react";
+import { Download, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Spinner, cn, toast } from "@/components/ui";
 import { startContentInstall } from "@/components/content/install";
@@ -26,7 +26,7 @@ export function DepsPanel({ instanceId }: { instanceId: string }) {
     try {
       if (fix.action === "install") await startContentInstall(instanceId, { source: fix.source, id: fix.project_id, title: fix.title });
       else if (fix.action === "remove") await api.contentRemove(instanceId, "mod", fix.file_names);
-      else await api.contentSetEnabled(instanceId, "mod", fix.file_name, false);
+      else await api.contentSetEnabled(instanceId, "mod", fix.file_name, fix.action === "enable");
       queryClient.invalidateQueries({ queryKey: ["content", instanceId] });
     } catch (e) {
       toast.error(e);
@@ -38,9 +38,11 @@ export function DepsPanel({ instanceId }: { instanceId: string }) {
   const label = (i: DepIssue, f: DepFix) =>
     f.action === "install"
       ? t("deps.fix.install", { title: f.title })
-      : f.action === "remove"
-        ? t("deps.fix.remove")
-        : t("deps.fix.disable", { name: f.file_name === i.file_name ? i.mod_name : f.file_name.replace(/\.jar(\.disabled)?$/, "") });
+      : f.action === "enable"
+        ? t("deps.fix.enable", { name: f.title })
+        : f.action === "remove"
+          ? t("deps.fix.remove")
+          : t("deps.fix.disable", { name: f.file_name === i.file_name ? i.mod_name : f.file_name.replace(/\.jar(\.disabled)?$/, "") });
 
   return (
     <div>
@@ -87,6 +89,8 @@ export function DepsPanel({ instanceId }: { instanceId: string }) {
                         <Spinner size={11} />
                       ) : f.action === "install" ? (
                         <Download size={13} />
+                      ) : f.action === "enable" ? (
+                        <Power size={13} />
                       ) : f.action === "remove" ? (
                         <Trash2 size={13} />
                       ) : (
