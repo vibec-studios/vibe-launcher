@@ -297,6 +297,9 @@ fn hit(key: StoreKey, file: &StoreFile, p: &StoreProject) -> ProjectHit {
         updated,
         game_versions: gv,
         loaders,
+        banner_url: None,
+        color: None,
+        created: None,
     }
 }
 

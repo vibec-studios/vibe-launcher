@@ -148,6 +148,9 @@ pub struct SearchQuery {
     pub sort: SortOrder,
     pub offset: u32,
     pub limit: u32,
+    /// Nur Projekte, die nach diesem Zeitpunkt (Unix-Sekunden) angelegt wurden (Modrinth; „Im Trend“)
+    #[serde(default)]
+    pub created_after: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -167,6 +170,15 @@ pub struct ProjectHit {
     pub updated: Option<String>,
     pub game_versions: Vec<String>,
     pub loaders: Vec<String>,
+    /// Vorschaubild (hervorgehobenes Galerie-Bild bzw. erstes Bild), falls vorhanden
+    #[serde(default)]
+    pub banner_url: Option<String>,
+    /// Markenfarbe des Projekts (RGB als Zahl, Modrinth)
+    #[serde(default)]
+    pub color: Option<u32>,
+    /// ISO-8601, angelegt
+    #[serde(default)]
+    pub created: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

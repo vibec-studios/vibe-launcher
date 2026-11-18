@@ -311,6 +311,7 @@ async fn resolve_modrinth(state: &AppState, id: &str, inst: &Instance) -> Option
         sort: super::SortOrder::Relevance,
         offset: 0,
         limit: 5,
+        created_after: None,
     };
     let norm = |s: &str| s.to_ascii_lowercase().replace(['-', '_', ' '], "");
     let r = mr::search(state, &q).await.ok()?;

@@ -53,6 +53,14 @@ struct MrHit {
     date_modified: Option<String>,
     #[serde(default)]
     versions: Vec<String>,
+    #[serde(default)]
+    featured_gallery: Option<String>,
+    #[serde(default)]
+    gallery: Vec<String>,
+    #[serde(default)]
+    color: Option<u32>,
+    #[serde(default)]
+    date_created: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -103,6 +111,7 @@ pub struct MrProject {
     pub game_versions: Vec<String>,
     pub loaders: Vec<String>,
     pub gallery: Vec<MrGallery>,
+    pub color: Option<u32>,
     pub team: String,
     pub organization: Option<String>,
     pub client_side: Option<String>,
@@ -307,6 +316,14 @@ pub fn project_to_hit(p: &MrProject, author: String) -> ProjectHit {
         updated: p.updated.clone(),
         game_versions: p.game_versions.iter().rev().cloned().collect(),
         loaders: p.loaders.clone(),
+        banner_url: p
+            .gallery
+            .iter()
+            .filter(|g| !g.url.is_empty())
+            .min_by_key(|g| (!g.featured, g.ordering))
+            .map(|g| g.url.clone()),
+        color: p.color,
+        created: p.published.clone(),
     }
 }
 
@@ -336,6 +353,9 @@ pub fn build_facets(q: &SearchQuery) -> String {
         if !c.is_empty() {
             facets.push(vec![format!("categories:{c}")]);
         }
+    }
+    if let Some(ts) = q.created_after {
+        facets.push(vec![format!("created_timestamp>{ts}")]);
     }
     serde_json::to_string(&facets).unwrap_or_else(|_| "[]".into())
 }
@@ -423,6 +443,9 @@ pub async fn search(state: &AppState, q: &SearchQuery) -> AppResult<SearchResult
                 updated: h.date_modified,
                 game_versions: h.versions.into_iter().rev().collect(),
                 loaders,
+                banner_url: h.featured_gallery.filter(|u| !u.is_empty()).or_else(|| h.gallery.into_iter().find(|u| !u.is_empty())),
+                color: h.color,
+                created: h.date_created,
             }
         })
         .collect();
@@ -613,6 +636,7 @@ mod tests {
             sort: SortOrder::Downloads,
             offset: 0,
             limit: 20,
+            created_after: None,
         };
         assert_eq!(
             build_facets(&q),
@@ -620,6 +644,19 @@ mod tests {
         );
         let q2 = SearchQuery { project_type: ProjectType::Shader, loader: Some(LoaderKind::Fabric), categories: vec![], ..q };
         assert_eq!(build_facets(&q2), r#"[["project_type:shader"],["versions:1.20.1"]]"#);
+        let q3 = SearchQuery { game_version: None, created_after: Some(1_757_000_000), ..q2 };
+        assert_eq!(build_facets(&q3), r#"[["project_type:shader"],["created_timestamp>1757000000"]]"#);
+    }
+
+    #[test]
+    fn search_hit_banner() {
+        let h: MrHit = serde_json::from_str(
+            r#"{"project_id":"a","title":"A","gallery":["g1","g2"],"featured_gallery":"f","color":123,"date_created":"2025-01-01T00:00:00Z"}"#,
+        )
+        .unwrap();
+        assert_eq!(h.featured_gallery.as_deref(), Some("f"));
+        assert_eq!(h.gallery.len(), 2);
+        assert_eq!(h.color, Some(123));
     }
 
     #[test]

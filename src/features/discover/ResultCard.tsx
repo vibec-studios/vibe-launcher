@@ -1,20 +1,27 @@
-// Ergebnis-Karte der Entdecken-Seite. memo: Fortschritt abonniert nur der Installieren-Knopf der Karte.
-import { CalendarClock, Check, Copy, Download, ExternalLink, FolderPlus, Heart, PackagePlus, RefreshCw, SquareArrowOutUpRight } from "lucide-react";
-import { memo, type KeyboardEvent, type MouseEvent } from "react";
-import { Button, ContextItem, ContextLabel, ContextMenu, ContextSeparator, ContextSub, Progress, Tag, Tooltip, cn, toast } from "@/components/ui";
+// Ergebnis-Karten der Entdecken-Seite: Zeile (Liste) und Kachel (Raster, mit Galerie-Bild). Beide mit echtem
+// Projekt-Icon, Kennzahlen, Kategorien als Symbole, Kompatibilität zur Ziel-Instanz und „Installieren“ mit Instanzwahl.
+// memo: Fortschritt abonniert nur der Installieren-Knopf der Karte.
+import { AlertTriangle, CalendarClock, Check, Copy, Download, ExternalLink, FolderPlus, Heart, PackagePlus, RefreshCw, SquareArrowOutUpRight } from "lucide-react";
+import { memo, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { ContextItem, ContextLabel, ContextMenu, ContextSeparator, ContextSub, Tooltip, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { errorMessage } from "@/lib/api";
-import { formatCount, formatRelative } from "@/lib/format";
-import { useTask } from "@/lib/queries";
+import { formatCount, formatDate, formatLoader, formatRelative } from "@/lib/format";
 import type { Instance, ProjectHit } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
-import { prettyCategory, prettyLoader } from "@/components/content/Pill";
+import { prettyLoader } from "@/components/content/Pill";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { openInstall } from "@/components/content/InstallDialog";
-import { installKey, packKey, startContentInstall, useInstallTasks } from "@/components/content/install";
+import { startContentInstall } from "@/components/content/install";
 import { compatibility, copyText, openExternal, projectWebUrl } from "@/components/content/util";
+import { CategoryIcon, categoryLabel, fmtNum } from "./categoryIcons";
+import { InstallMenu } from "./InstallMenu";
 
-export const CARD_H = 84;
+/** Höhe einer Listenzeile bzw. einer Kachel (fest, für die Virtualisierung). */
+export const ROW_H = 112;
+export const TILE_H = 292;
+/** Mindestbreite einer Kachel im Raster */
+export const TILE_MIN_W = 250;
 
 export interface CardProps {
   hit: ProjectHit;
@@ -25,63 +32,15 @@ export interface CardProps {
   onOpen: (hit: ProjectHit) => void;
 }
 
-function InstallButton({ hit, target, installed }: { hit: ProjectHit; target: Instance | null; installed: boolean }) {
-  const t = useT();
-  const key = target && hit.project_type !== "modpack" ? installKey(target.id, hit) : packKey(hit);
-  const taskId = useInstallTasks((s) => s.tasks[key]);
-  const task = useTask(taskId);
-  const stop = (e: MouseEvent) => e.stopPropagation();
+const LOADERS = ["fabric", "forge", "neoforge", "quilt"];
 
-  if (task && task.status === "running") {
-    return (
-      <div className="flex w-[112px] flex-col gap-1.5" onClick={stop}>
-        <span className="flex items-center justify-between text-[12px] text-muted">
-          {t("install.installing")}
-          <span>{task.progress != null ? `${Math.round(task.progress * 100)}%` : ""}</span>
-        </span>
-        <Progress value={task.progress} />
-      </div>
-    );
-  }
-  if (installed || task?.status === "done") {
-    return (
-      <span className="inline-flex h-8 items-center gap-1.5 px-2 text-[13px] font-semibold text-ok">
-        <Check size={13} />
-        {t("common.installed")}
-      </span>
-    );
-  }
-  if (target && hit.project_type !== "modpack") {
-    const c = compatibility(hit, target);
-    return (
-      <Tooltip content={c.ok ? null : t("discover.maybe_incompatible")}>
-        <Button
-          size="sm"
-          variant={c.ok ? "accent" : "ghost"}
-          icon={<Download size={13} />}
-          onClick={(e) => {
-            e.stopPropagation();
-            startContentInstall(target.id, hit, null).catch((err) => toast.error(t("install.failed", { name: hit.title }), errorMessage(err)));
-          }}
-        >
-          {t("common.install")}
-        </Button>
-      </Tooltip>
-    );
-  }
-  return (
-    <Button
-      size="sm"
-      variant="ghost"
-      icon={hit.project_type === "modpack" ? <FolderPlus size={13} /> : <Download size={13} />}
-      onClick={(e) => {
-        e.stopPropagation();
-        openInstall({ project: hit });
-      }}
-    >
-      {t("common.install")}
-    </Button>
-  );
+function loadersOf(hit: ProjectHit) {
+  return hit.project_type === "mod" || hit.project_type === "modpack" ? hit.loaders.filter((l) => LOADERS.includes(l)) : [];
+}
+
+/** Markenfarbe als CSS-Farbe (flach, ohne Verlauf). */
+export function hitColor(hit: Pick<ProjectHit, "color">): string | null {
+  return hit.color != null ? `#${hit.color.toString(16).padStart(6, "0")}` : null;
 }
 
 function CardMenu({ hit, instances, onOpen }: { hit: ProjectHit; instances: Instance[]; onOpen: () => void }) {
@@ -137,86 +96,247 @@ function CardMenu({ hit, instances, onOpen }: { hit: ProjectHit; instances: Inst
   );
 }
 
-export const ResultCard = memo(function ResultCard({ hit, target, installed, instances, onOpen }: CardProps) {
+/** Kategorien als kleine Symbol-Etiketten (Symbol + Name), ruhig und einzeilig. */
+export function CategoryTags({ hit, max = 3, iconsOnly }: { hit: ProjectHit; max?: number; iconsOnly?: boolean }) {
+  const loaders = loadersOf(hit);
+  return (
+    <div className="flex min-w-0 items-center gap-x-2.5 gap-y-1 overflow-hidden text-[12px] text-muted">
+      {loaders.length > 0 && <span className="shrink-0 font-medium text-text/90">{loaders.map(prettyLoader).join(" · ")}</span>}
+      {hit.categories.slice(0, max).map((c) =>
+        iconsOnly ? (
+          <Tooltip key={c} content={categoryLabel(c)}>
+            <span className="grid h-5 w-5 shrink-0 place-items-center text-dim">
+              <CategoryIcon id={c} />
+            </span>
+          </Tooltip>
+        ) : (
+          <span key={c} className="flex shrink-0 items-center gap-1">
+            <CategoryIcon id={c} className="text-dim" />
+            {categoryLabel(c)}
+          </span>
+        ),
+      )}
+    </div>
+  );
+}
+
+/** Passt das Projekt zur gewählten Instanz? (nur im Ziel-Instanz-Modus) */
+function CompatNote({ hit, target, installed }: { hit: ProjectHit; target: Instance; installed: boolean }) {
   const t = useT();
+  if (hit.project_type === "modpack") return null;
+  if (installed)
+    return (
+      <span className="flex shrink-0 items-center gap-1 text-[12px] font-medium text-ok">
+        <Check size={12} strokeWidth={2.5} />
+        {t("discover.in_instance", { name: target.name })}
+      </span>
+    );
+  const c = compatibility(hit, target);
+  if (c.ok) return null;
+  return (
+    <span className="flex shrink-0 items-center gap-1 text-[12px] text-warn">
+      <AlertTriangle size={12} />
+      {c.reason === "vanilla"
+        ? t("install.incompat.vanilla")
+        : c.reason === "loader"
+          ? t("install.incompat.loader", { loader: formatLoader(target.loader) })
+          : t("install.incompat.version", { version: target.mc_version })}
+    </span>
+  );
+}
+
+function Stat({ icon, children, tip }: { icon: ReactNode; children: ReactNode; tip?: ReactNode }) {
+  const el = (
+    <span className="flex items-center gap-1.5 tabular-nums">
+      <span className="text-dim">{icon}</span>
+      {children}
+    </span>
+  );
+  return tip ? <Tooltip content={tip}>{el}</Tooltip> : el;
+}
+
+function useOpenProps(hit: ProjectHit, onOpen: (h: ProjectHit) => void) {
   const open = () => onOpen(hit);
-  const loaders = hit.project_type === "mod" || hit.project_type === "modpack" ? hit.loaders.filter((l) => ["fabric", "forge", "neoforge", "quilt"].includes(l)) : [];
+  return {
+    open,
+    props: {
+      role: "link",
+      tabIndex: 0,
+      onClick: open,
+      onKeyDown: (e: KeyboardEvent) => e.key === "Enter" && e.target === e.currentTarget && open(),
+    },
+  };
+}
+
+// ------------------------------------------------------------------ Zeile (Liste)
+
+export const ResultRow = memo(function ResultRow({ hit, target, installed, instances, onOpen }: CardProps) {
+  const t = useT();
+  const { open, props } = useOpenProps(hit, onOpen);
   return (
     <ContextMenu content={<CardMenu hit={hit} instances={instances} onOpen={open} />}>
       <div
-        role="link"
-        tabIndex={0}
-        onClick={open}
-        onKeyDown={(e: KeyboardEvent) => e.key === "Enter" && open()}
+        {...props}
         className={cn(
-          "group flex h-full cursor-pointer items-center gap-3.5 rounded-card px-2 transition-colors duration-100",
-          "hover:bg-white/[.04] data-[state=open]:bg-white/[.04] focus-visible:bg-white/[.04] focus-visible:outline-none",
+          "group flex h-full cursor-pointer items-center gap-4 rounded-card px-3 transition-colors duration-100",
+          "hover:bg-surface data-[state=open]:bg-surface focus-visible:bg-surface focus-visible:outline-none",
         )}
       >
-        <ProjectIcon src={hit.icon_url} size={60} />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex min-w-0 items-baseline gap-1.5">
-            <span className="truncate text-[14.5px] font-semibold text-text">{hit.title}</span>
-            <span className="shrink-0 truncate text-meta text-dim">{t("discover.by", { author: hit.author })}</span>
+        <ProjectIcon src={hit.icon_url} size={80} className="transition-transform duration-150 group-hover:-translate-y-px" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div className="flex min-w-0 items-baseline gap-2">
+            <span className="truncate text-[15.5px] font-bold leading-tight tracking-[-0.005em] text-text">{hit.title}</span>
+            <span className="shrink-0 truncate text-[12.5px] text-dim">{t("discover.by", { author: hit.author })}</span>
           </div>
-          <p className="truncate text-[13px] text-muted" title={hit.description}>
+          <p className="line-clamp-2 text-[13px] leading-[1.45] text-muted" title={hit.description}>
             {hit.description}
           </p>
-          <div className="flex min-w-0 items-center gap-1 overflow-hidden">
-            {loaders.map((l) => (
-              <Tag key={l} className="shrink-0 text-text">
-                {prettyLoader(l)}
-              </Tag>
-            ))}
-            {hit.categories.slice(0, 3).map((c) => (
-              <Tag key={c} className="shrink-0">
-                {prettyCategory(c)}
-              </Tag>
-            ))}
-            <span className="ml-1.5 flex min-w-0 shrink-0 items-center gap-3 text-meta text-dim">
-              <Tooltip content={t("discover.downloads_n", { n: hit.downloads.toLocaleString() })}>
-                <span className="flex items-center gap-1">
-                  <Download size={12} />
-                  {formatCount(hit.downloads)}
-                </span>
-              </Tooltip>
-              {hit.source === "modrinth" && (
-                <span className="flex items-center gap-1">
-                  <Heart size={12} />
-                  {formatCount(hit.follows)}
-                </span>
-              )}
-              {hit.updated && (
-                <span className="flex items-center gap-1">
-                  <CalendarClock size={12} />
-                  {formatRelative(hit.updated)}
-                </span>
-              )}
-            </span>
+          <div className="flex min-w-0 items-center gap-3">
+            <CategoryTags hit={hit} />
+            {target && <CompatNote hit={hit} target={target} installed={installed} />}
           </div>
         </div>
-        <div className="flex shrink-0 items-center pr-1">
-          <InstallButton hit={hit} target={target} installed={installed} />
+        <div className="flex w-[118px] shrink-0 flex-col items-end gap-1 text-[12.5px] text-muted max-[1100px]:hidden">
+          <Stat icon={<Download size={13} />} tip={t("discover.downloads_n", { n: fmtNum(hit.downloads) })}>
+            <span className="font-semibold text-text">{formatCount(hit.downloads)}</span>
+          </Stat>
+          {hit.source === "modrinth" && (
+            <Stat icon={<Heart size={13} />} tip={t("discover.follows_n", { n: fmtNum(hit.follows) })}>
+              {formatCount(hit.follows)}
+            </Stat>
+          )}
+          {hit.updated && (
+            <Stat icon={<CalendarClock size={13} />} tip={t("discover.updated_on", { date: formatDate(hit.updated) })}>
+              {formatRelative(hit.updated)}
+            </Stat>
+          )}
+        </div>
+        <div className="flex w-[124px] shrink-0 justify-end">
+          <InstallMenu project={hit} target={target} installed={installed} />
         </div>
       </div>
     </ContextMenu>
   );
 });
 
-export function ResultSkeleton() {
+export function RowSkeleton() {
   return (
-    <div className="flex h-full items-center gap-3.5 px-2">
-      <div className="skeleton h-[60px] w-[60px] shrink-0 rounded-card" />
+    <div className="flex h-full items-center gap-4 px-3">
+      <div className="skeleton h-20 w-20 shrink-0 rounded-card" />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="skeleton h-4 w-2/5" />
         <div className="skeleton h-3 w-4/5" />
-        <div className="flex gap-1">
-          <div className="skeleton h-5 w-14" />
-          <div className="skeleton h-5 w-16" />
-          <div className="skeleton h-5 w-24" />
+        <div className="skeleton h-3 w-3/5" />
+        <div className="flex gap-2 pt-0.5">
+          <div className="skeleton h-3.5 w-14" />
+          <div className="skeleton h-3.5 w-20" />
+          <div className="skeleton h-3.5 w-16" />
         </div>
       </div>
-      <div className="skeleton mr-1 h-8 w-28 shrink-0" />
+      <div className="flex w-[118px] flex-col items-end gap-2 max-[1100px]:hidden">
+        <div className="skeleton h-3.5 w-14" />
+        <div className="skeleton h-3.5 w-10" />
+      </div>
+      <div className="skeleton h-8 w-[110px] shrink-0" />
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ Kachel (Raster)
+
+/** Vorschaubild: Galerie-Bild, sonst flache Fläche in der (abgedunkelten) Projektfarbe. */
+export function Banner({ hit, className, eager }: { hit: ProjectHit; className?: string; eager?: boolean }) {
+  const [failed, setFailed] = useState(false);
+  const color = hitColor(hit);
+  const bg: CSSProperties = color ? { backgroundColor: `color-mix(in srgb, ${color} 22%, var(--surface-2))` } : {};
+  return (
+    <div className={cn("relative overflow-hidden bg-surface2", className)} style={bg}>
+      {hit.banner_url && !failed ? (
+        <img
+          src={hit.banner_url}
+          alt=""
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+          draggable={false}
+          onError={() => setFailed(true)}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 ease-[var(--ease-snap)] group-hover:scale-[1.03]"
+        />
+      ) : null}
+    </div>
+  );
+}
+
+export const ResultTile = memo(function ResultTile({ hit, target, installed, instances, onOpen }: CardProps) {
+  const t = useT();
+  const { open, props } = useOpenProps(hit, onOpen);
+  return (
+    <ContextMenu content={<CardMenu hit={hit} instances={instances} onOpen={open} />}>
+      <div
+        {...props}
+        className={cn(
+          "group flex h-full cursor-pointer flex-col overflow-hidden rounded-card bg-surface transition-colors duration-150",
+          "hover:bg-surface2 data-[state=open]:bg-surface2 focus-visible:bg-surface2 focus-visible:outline-none",
+        )}
+      >
+        <Banner hit={hit} className="h-[124px] shrink-0" />
+        <div className="relative flex min-h-0 flex-1 flex-col px-3.5 pb-3">
+          <div className="-mt-5 flex items-end gap-2.5">
+            <span className="rounded-card bg-surface p-[3px] transition-colors duration-150 group-hover:bg-surface2">
+              <ProjectIcon src={hit.icon_url} size={56} />
+            </span>
+            <div className="min-w-0 flex-1 pb-0.5">
+              <div className="truncate text-[14.5px] font-bold leading-tight text-text">{hit.title}</div>
+              <div className="truncate text-[12px] text-dim">{t("discover.by", { author: hit.author })}</div>
+            </div>
+          </div>
+          <p className="mt-2 line-clamp-2 text-[12.5px] leading-[1.45] text-muted" title={hit.description}>
+            {hit.description}
+          </p>
+          <div className="mt-2">
+            {target ? <CompatNote hit={hit} target={target} installed={installed} /> : null}
+            {!target || hit.project_type === "modpack" || (!installed && compatibility(hit, target).ok) ? <CategoryTags hit={hit} max={4} iconsOnly /> : null}
+          </div>
+          <div className="mt-auto flex items-center gap-3 pt-2 text-[12px] text-muted">
+            <Stat icon={<Download size={12} />} tip={t("discover.downloads_n", { n: fmtNum(hit.downloads) })}>
+              {formatCount(hit.downloads)}
+            </Stat>
+            {hit.source === "modrinth" && (
+              <Stat icon={<Heart size={12} />} tip={t("discover.follows_n", { n: fmtNum(hit.follows) })}>
+                {formatCount(hit.follows)}
+              </Stat>
+            )}
+            <div className="ml-auto">
+              <InstallMenu project={hit} target={target} installed={installed} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </ContextMenu>
+  );
+});
+
+export function TileSkeleton() {
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-card bg-surface">
+      <div className="skeleton h-[124px] shrink-0 rounded-none" />
+      <div className="flex flex-1 flex-col px-3.5 pb-3">
+        <div className="-mt-5 flex items-end gap-2.5">
+          <div className="rounded-card bg-surface p-[3px]">
+            <div className="skeleton h-14 w-14" />
+          </div>
+          <div className="flex flex-1 flex-col gap-1.5 pb-1">
+            <div className="skeleton h-3.5 w-3/5" />
+            <div className="skeleton h-3 w-2/5" />
+          </div>
+        </div>
+        <div className="skeleton mt-3 h-3 w-full" />
+        <div className="skeleton mt-1.5 h-3 w-4/5" />
+        <div className="mt-auto flex items-center gap-3">
+          <div className="skeleton h-3 w-12" />
+          <div className="skeleton h-3 w-10" />
+          <div className="skeleton ml-auto h-8 w-24" />
+        </div>
+      </div>
     </div>
   );
 }
