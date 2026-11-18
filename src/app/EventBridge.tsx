@@ -4,7 +4,10 @@ import { api } from "@/lib/api";
 import { useEvent } from "@/lib/events";
 import { qk, queryClient, sqk, useGameStore, useServerStore, useTaskStore } from "@/lib/queries";
 import type { Instance, Server } from "@/lib/types";
-import { useLang } from "@/i18n";
+import { t, useLang } from "@/i18n";
+import { toast } from "@/components/ui";
+import { manualArrived } from "@/components/content/install";
+import { navigateTo } from "@/components/content/util";
 import { useServerDialogs } from "@/features/servers/actions";
 
 export function EventBridge() {
@@ -49,6 +52,16 @@ export function EventBridge() {
     queryClient.invalidateQueries({ queryKey: ["content", instance_id] });
     queryClient.invalidateQueries({ queryKey: qk.contentUpdates(instance_id) });
     queryClient.invalidateQueries({ queryKey: qk.worlds(instance_id) });
+  });
+
+  // Manuell geladene CurseForge-Datei aus dem Download-Ordner übernommen
+  useEvent("content://manual-arrived", (m) => {
+    manualArrived(m.instance_id, m.project_id);
+    const inst = queryClient.getQueryData<Instance[]>(qk.instances)?.find((i) => i.id === m.instance_id);
+    toast.success(t("manual.arrived_title", { name: m.project_name }), t("manual.arrived_text", { file: m.file_name, instance: inst?.name ?? m.instance_id }), {
+      label: t("install.go_instance"),
+      onClick: () => navigateTo({ to: "/instances/$id", params: { id: m.instance_id }, search: { tab: "content" } }),
+    });
   });
 
   useEvent("accounts://changed", (accounts) => queryClient.setQueryData(qk.accounts, accounts));

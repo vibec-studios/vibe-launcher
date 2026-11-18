@@ -578,6 +578,10 @@ const handlers: Handlers = {
   content_missing_dismiss: ({ instanceId }) => {
     missingDismissed.add(instanceId as string);
   },
+  content_missing_scan: ({ instanceId }) => ({ found: [], remaining: missingOf(instanceId as string), folder: "C:/Users/steve/Downloads", watching_until: Date.now() + 180_000 }),
+  content_missing_watch: () => Date.now() + 600_000,
+  content_manual_projects: () => [],
+  content_manual_target: ({ projectId }) => ({ page_url: `https://www.curseforge.com/projects/${projectId}`, file_name: "mock.jar", version_id: "1", version_number: "1.0", downloadable: true }),
   modpack_install: ({ source, projectId }) => {
     const h = findHit(source as Source, projectId as string);
     if (!h) throw { kind: "not_found", message: "Modpack nicht gefunden" };

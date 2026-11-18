@@ -14,6 +14,8 @@ pub const GAME_STATE: &str = "game://state";
 pub const GAME_LOG: &str = "game://log";
 /// Payload: `{ instance_id: string }` – Mods/Packs/Welten einer Instanz haben sich geändert
 pub const CONTENT_CHANGED: &str = "content://changed";
+/// Payload: `ManualArrived` – manuell geladene Datei aus dem Download-Ordner übernommen
+pub const CONTENT_MANUAL_ARRIVED: &str = "content://manual-arrived";
 /// Payload: `Account[]`
 pub const ACCOUNTS_CHANGED: &str = "accounts://changed";
 /// Payload: `Settings`

@@ -272,6 +272,7 @@ pub fn convert_version(v: MrVersion) -> ProjectVersion {
                 sha1: f.hashes.sha1,
                 primary: f.primary,
                 sha512: f.hashes.sha512,
+                fingerprint: None,
             })
             .collect(),
         dependencies: v
@@ -324,6 +325,7 @@ pub fn project_to_hit(p: &MrProject, author: String) -> ProjectHit {
             .map(|g| g.url.clone()),
         color: p.color,
         created: p.published.clone(),
+        manual_download: false,
     }
 }
 
@@ -446,6 +448,7 @@ pub async fn search(state: &AppState, q: &SearchQuery) -> AppResult<SearchResult
                 banner_url: h.featured_gallery.filter(|u| !u.is_empty()).or_else(|| h.gallery.into_iter().find(|u| !u.is_empty())),
                 color: h.color,
                 created: h.date_created,
+                manual_download: false,
             }
         })
         .collect();

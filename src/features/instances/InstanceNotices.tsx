@@ -3,7 +3,7 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
-import { AlertTriangle, ArrowUpCircle, Download, RefreshCw } from "lucide-react";
+import { AlertTriangle, ArrowUpCircle, ArrowUpRight, Download, ExternalLink, RefreshCw } from "lucide-react";
 import { forwardRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Tooltip, cn } from "@/components/ui";
 import { DepsPanel, useDepIssues } from "@/features/content/DepsPanel";
@@ -13,7 +13,8 @@ import { markUpdatesChecked, setContentFilter, useContentView } from "@/features
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
-import type { Instance } from "@/lib/types";
+import type { ContentUpdate, Instance } from "@/lib/types";
+import { startManualDownload } from "@/components/content/install";
 
 const route = getRouteApi("/instances/$id");
 
@@ -68,6 +69,38 @@ function PopoverChip({ chip, children, width = 460 }: { chip: ReactNode; childre
   );
 }
 
+/** Manuelle Updates: je Eintrag aktuelle → neue Version und Link zur Dateiseite (öffnet sie und erwartet die Datei). */
+function ManualUpdatesPanel({ instanceId, updates }: { instanceId: string; updates: ContentUpdate[] }) {
+  const t = useT();
+  return (
+    <div>
+      <div className="border-b border-line px-4 py-3">
+        <div className="text-[13.5px] font-semibold text-text">{t("manual.notice_title")}</div>
+        <div className="mt-0.5 text-meta text-muted">{t("manual.notice_text")}</div>
+      </div>
+      <div className="scroll max-h-[260px] px-4 py-1">
+        {updates.map((u) => (
+          <div key={`${u.kind}/${u.file_name}`} className="flex h-10 items-center gap-3 text-[12.5px]">
+            <span className="min-w-0 flex-1" title={u.file_name}>
+              <span className="block truncate font-medium text-text">{u.file_name}</span>
+              <span className="block truncate text-[11.5px] leading-tight text-dim">
+                {u.current_version ?? "?"} → <span className="text-text">{u.new_version.version_number}</span>
+              </span>
+            </span>
+            <button
+              onClick={() => startManualDownload(instanceId, { source: u.source, id: u.project_id, title: u.file_name }, u.new_version.id).catch(() => {})}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-ctl text-[13px] font-semibold text-brand hover:underline"
+            >
+              {t("manual.update")}
+              <ExternalLink size={11} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function InstanceNotices({ instance, tab }: { instance: Instance; tab: string }) {
   const t = useT();
   const nav = route.useNavigate();
@@ -87,6 +120,8 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
   const inContent = tab === "content" || tab === "resourcepacks" || tab === "shaders";
   const updates = inContent && updatesQ.data ? 0 : updatesQ.data ? updatesQ.data.length : (counts.data?.[id] ?? 0);
 
+  // Gesperrte CurseForge-Downloads: eigener Hinweis mit Version und Link zur Dateiseite
+  const manualUpdates = (updatesQ.data ?? []).filter((u) => u.manual);
   const depErrors = deps.filter((d) => d.severity === "error").length;
   const showUpdates = () => {
     markUpdatesChecked(id);
@@ -94,7 +129,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
     nav({ search: { tab: "content" }, replace: true });
   };
 
-  if (!pack && !updates && !deps.length && !missing.length) return null;
+  if (!pack && !updates && !deps.length && !missing.length && !manualUpdates.length) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-2 px-6 pt-4" role="group" aria-label={t("ipage.notices")}>
@@ -139,6 +174,18 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
         <Chip tone="accent" icon={<RefreshCw size={14} />} tip={t("ipage.notice.updates_hint")} onClick={showUpdates}>
           {updates === 1 ? t("ipage.notice.updates_1") : t("ipage.notice.updates", { n: updates })}
         </Chip>
+      )}
+      {manualUpdates.length > 0 && (
+        <PopoverChip
+          width={420}
+          chip={
+            <Chip tone="accent" icon={<ArrowUpRight size={15} />}>
+              {manualUpdates.length === 1 ? t("manual.notice_1") : t("manual.notice", { n: manualUpdates.length })}
+            </Chip>
+          }
+        >
+          {() => <ManualUpdatesPanel instanceId={id} updates={manualUpdates} />}
+        </PopoverChip>
       )}
     </div>
   );

@@ -425,6 +425,8 @@ export interface ProjectHit {
   color?: number | null;
   /** ISO-8601, angelegt */
   created?: string | null;
+  /** CurseForge: Autor erlaubt keine Downloads über andere Launcher -> Datei auf curseforge.com laden */
+  manual_download?: boolean;
 }
 
 export interface SearchResult {
@@ -467,6 +469,8 @@ export interface VersionFile {
   primary: boolean;
   /** nur Modrinth */
   sha512?: string | null;
+  /** CurseForge-Fingerprint */
+  fingerprint?: number | null;
 }
 
 export type DependencyKind = "required" | "optional" | "incompatible" | "embedded";
@@ -528,6 +532,10 @@ export interface ContentUpdate {
   project_id: string;
   current_version: string | null;
   new_version: ProjectVersion;
+  /** Gesperrter CurseForge-Download: nur manuell über `page_url`, „Alle aktualisieren“ überspringt es */
+  manual?: boolean;
+  /** Dateiseite der neuen Version (bei `manual`) */
+  page_url?: string | null;
 }
 
 export interface World {
@@ -581,6 +589,37 @@ export interface MissingDownload {
   project_name: string;
   page_url: string;
   kind: ContentKind;
+  version_number?: string | null;
+  /** Ersetzt beim Eintreffen eine ältere Version (manuelles Update) */
+  is_update?: boolean;
+}
+
+/** Ziel für „Auf CurseForge herunterladen“ */
+export interface ManualTarget {
+  page_url: string;
+  file_name: string;
+  version_id: string;
+  version_number: string;
+  /** Doch automatisch installierbar (freigegeben oder identisch auf Modrinth) */
+  downloadable: boolean;
+}
+
+/** Event `content://manual-arrived` */
+export interface ManualArrived {
+  instance_id: string;
+  project_id: string | null;
+  project_name: string;
+  file_name: string;
+  kind: ContentKind;
+}
+
+export interface MissingScan {
+  found: MissingDownload[];
+  remaining: MissingDownload[];
+  /** Durchsuchter Download-Ordner */
+  folder: string | null;
+  /** ms seit Epoch */
+  watching_until: number | null;
 }
 
 export interface UpdateInfo {

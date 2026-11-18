@@ -656,19 +656,12 @@ pub(crate) async fn resolve_cf(state: &AppState, refs: &[CfRef]) -> AppResult<Re
                 origin: Some((Source::Curseforge, r.project_id.to_string(), r.file_id.to_string())),
                 side: super::sides::from_cf_versions(&f.game_versions),
             }),
-            None => out.missing.push(MissingEntry {
-                info: MissingDownload {
-                    file_name,
-                    project_name: m.map(|m| m.name.clone()).unwrap_or_else(|| format!("Projekt {}", r.project_id)),
-                    page_url: m
-                        .map(|m| cf::file_page_url(m, r.file_id))
-                        .unwrap_or_else(|| format!("https://www.curseforge.com/projects/{}", r.project_id)),
-                    kind,
-                },
-                sha1: f.sha1(),
-                project_id: Some(r.project_id.to_string()),
-                file_id: Some(r.file_id.to_string()),
-            }),
+            None => out.missing.push(super::missing::entry_for_cf_file(
+                f,
+                &m.map(|m| m.name.clone()).unwrap_or_else(|| format!("Projekt {}", r.project_id)),
+                m.map(|m| cf::file_page_url(m, r.file_id)).unwrap_or_else(|| format!("https://www.curseforge.com/projects/{}", r.project_id)),
+                kind,
+            )),
         }
     }
     Ok(out)

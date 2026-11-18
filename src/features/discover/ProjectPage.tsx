@@ -15,6 +15,7 @@ import type { Dependency, Instance, ProjectDetails, Source } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { RichText } from "@/components/content/RichText";
 import { Pill, prettyLoader } from "@/components/content/Pill";
+import { ManualBadge } from "@/components/content/ManualBadge";
 import { compareMc, compatibility, contentKindOf, copyText, openExternal, sourceName, versionRange } from "@/components/content/util";
 import { CategoryIcon, categoryLabel, fmtNum } from "./categoryIcons";
 import { InstallMenu } from "./InstallMenu";
@@ -208,6 +209,7 @@ function Header({ p, target, banner, onBanner }: { p: ProjectDetails; target: In
         </div>
       </div>
       <div className={cn("mt-4 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-muted", showBanner && "px-5")}>
+        {p.manual_download && <ManualBadge />}
         <Tooltip content={t("discover.downloads_n", { n: fmtNum(p.downloads) })}>
           <span className="flex items-center gap-1.5">
             <Download size={14} className="text-dim" />
@@ -398,6 +400,15 @@ function InfoSidebar({ p, target }: { p: ProjectDetails; target: Instance | null
   return (
     <aside className="flex w-[264px] shrink-0 flex-col gap-7 max-[980px]:hidden">
       {target && <TargetFit p={p} target={target} />}
+      {p.manual_download && p.project_type !== "modpack" && (
+        <div className="flex items-start gap-2.5 rounded-card bg-warn/[.08] px-3.5 py-3">
+          <ManualBadge iconOnly className="mt-px" />
+          <div className="min-w-0 text-[12.5px] leading-snug">
+            <div className="font-semibold text-text">{t("manual.badge")}</div>
+            <div className="mt-0.5 text-muted">{t("manual.tip")}</div>
+          </div>
+        </div>
+      )}
       <SideSection title={t("project.side.compat")}>
         <div className="text-[12px] text-dim">Minecraft: Java Edition</div>
         <div className="flex flex-wrap gap-1">

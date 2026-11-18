@@ -11,8 +11,9 @@ import type { Instance, ProjectHit } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { prettyLoader } from "@/components/content/Pill";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
+import { ManualBadge } from "@/components/content/ManualBadge";
 import { openInstall } from "@/components/content/InstallDialog";
-import { startContentInstall } from "@/components/content/install";
+import { startContentInstall, startManualDownload } from "@/components/content/install";
 import { compatibility, copyText, openExternal, projectWebUrl } from "@/components/content/util";
 import { CategoryIcon, categoryLabel, fmtNum } from "./categoryIcons";
 import { InstallMenu } from "./InstallMenu";
@@ -57,13 +58,17 @@ function CardMenu({ hit, instances, onOpen }: { hit: ProjectHit; instances: Inst
           {t("install.as_new_instance")}
         </ContextItem>
       ) : (
-        <ContextSub icon={<PackagePlus size={14} />} label={t("discover.menu.install_in")}>
+        <ContextSub icon={hit.manual_download ? <ExternalLink size={14} /> : <PackagePlus size={14} />} label={hit.manual_download ? `${t("manual.download")} …` : t("discover.menu.install_in")}>
           {sorted.length === 0 && <ContextLabel>{t("install.no_instances")}</ContextLabel>}
           {sorted.map(({ i, ok }) => (
             <ContextItem
               key={i.id}
               icon={<InstanceBadge instance={i} size={14} />}
-              onSelect={() => startContentInstall(i.id, hit, null).catch((e) => toast.error(t("install.failed", { name: hit.title }), errorMessage(e)))}
+              onSelect={() =>
+                hit.manual_download
+                  ? startManualDownload(i.id, hit, null).catch(() => {})
+                  : startContentInstall(i.id, hit, null).catch((e) => toast.error(t("install.failed", { name: hit.title }), errorMessage(e)))
+              }
             >
               <span className={ok ? undefined : "text-dim"}>{i.name}</span>
             </ContextItem>
@@ -192,6 +197,7 @@ export const ResultRow = memo(function ResultRow({ hit, target, installed, insta
             {hit.description}
           </p>
           <div className="flex min-w-0 items-center gap-3">
+            {hit.manual_download && <ManualBadge />}
             <CategoryTags hit={hit} />
             {target && <CompatNote hit={hit} target={target} installed={installed} />}
           </div>
@@ -211,7 +217,7 @@ export const ResultRow = memo(function ResultRow({ hit, target, installed, insta
             </Stat>
           )}
         </div>
-        <div className="flex w-[124px] shrink-0 justify-end">
+        <div className="flex min-w-[124px] shrink-0 justify-end">
           <InstallMenu project={hit} target={target} installed={installed} />
         </div>
       </div>
@@ -278,7 +284,10 @@ export const ResultTile = memo(function ResultTile({ hit, target, installed, ins
           "hover:bg-surface2 data-[state=open]:bg-surface2 focus-visible:bg-surface2 focus-visible:outline-none",
         )}
       >
-        <Banner hit={hit} className="h-[124px] shrink-0" />
+        <div className="relative shrink-0">
+          <Banner hit={hit} className="h-[124px]" />
+          {hit.manual_download && <ManualBadge solid className="absolute left-2 top-2" />}
+        </div>
         <div className="relative flex min-h-0 flex-1 flex-col px-3.5 pb-3">
           <div className="-mt-5 flex items-end gap-2.5">
             <span className="rounded-card bg-surface p-[3px] transition-colors duration-150 group-hover:bg-surface2">

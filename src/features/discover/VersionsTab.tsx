@@ -1,6 +1,6 @@
 // Versionen eines Projekts: filterbar (MC-Version, Loader, Typ), Changelog aufklappbar, bestimmte Version installieren.
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Download, FolderPlus } from "lucide-react";
+import { ChevronDown, Download, ExternalLink, FolderPlus } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import { Button, EmptyState, ErrorState, Segmented, Select, Skeleton, Tag, cn } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -187,13 +187,13 @@ const VersionRow = memo(function VersionRow({
           <Button
             size="sm"
             variant="ghost"
-            icon={isPack ? <FolderPlus size={13} /> : <Download size={13} />}
+            icon={isPack ? <FolderPlus size={13} /> : project.manual_download ? <ExternalLink size={13} /> : <Download size={13} />}
             onClick={(e) => {
               e.stopPropagation();
               openInstall({ project, versionId: v.id, instanceId: isPack ? null : instanceId });
             }}
           >
-            {t("common.install")}
+            {!isPack && project.manual_download ? t("manual.download_short") : t("common.install")}
           </Button>
           <ChevronDown size={14} className={cn("shrink-0 text-dim transition-transform duration-150", open && "rotate-180")} />
         </div>

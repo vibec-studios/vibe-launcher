@@ -223,7 +223,7 @@ export default {
     "content.key.delete": "Entf",
 
     "missing.title": "{n} Datei(en) müssen manuell geladen werden",
-    "missing.text": "Diese CurseForge-Projekte erlauben keinen Download über Launcher. Lade sie im Browser und lege sie in den Ordner.",
+    "missing.text": "Diese CurseForge-Autoren erlauben keine Downloads über andere Launcher. Lade die Dateien im Browser – Vibe übernimmt sie automatisch aus deinem Download-Ordner.",
     "missing.recheck": "Erneut prüfen",
     "missing.dismiss": "Ausblenden",
     "missing.download": "Herunterladen",
@@ -502,7 +502,7 @@ export default {
     "content.key.delete": "Del",
 
     "missing.title": "{n} file(s) need a manual download",
-    "missing.text": "These CurseForge projects don't allow launcher downloads. Download them in your browser and put them into the folder.",
+    "missing.text": "These CurseForge authors don't allow downloads through other launchers. Download the files in your browser – Vibe picks them up from your Downloads folder automatically.",
     "missing.recheck": "Check again",
     "missing.dismiss": "Dismiss",
     "missing.download": "Download",

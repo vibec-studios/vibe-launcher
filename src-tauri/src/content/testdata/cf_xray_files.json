@@ -1,0 +1,123 @@
+{
+ "data": [
+  {
+   "id": 9139602,
+   "gameId": 432,
+   "modId": 226375,
+   "isAvailable": true,
+   "displayName": "Xray_Ultimate_26.X_v5.4.4.zip",
+   "fileName": "Xray_Ultimate_26.X_v5.4.4.zip",
+   "releaseType": 1,
+   "fileStatus": 4,
+   "hashes": [
+    {
+     "value": "62e4da5ca5da24f12902760373c91fcbe0ff036b",
+     "algo": 1
+    },
+    {
+     "value": "537f1cb0e613d0cd70c4ff3fbc7e930d",
+     "algo": 2
+    }
+   ],
+   "fileDate": "2026-10-11T21:50:33.18Z",
+   "fileLength": 1710021,
+   "downloadCount": 35002,
+   "fileSizeOnDisk": 1879045,
+   "downloadUrl": null,
+   "gameVersions": [
+    "1.21.2-Snapshot",
+    "1.21",
+    "1.21.6-snapshot",
+    "1.21.1-Snapshot",
+    "1.21.8",
+    "1.21.5",
+    "1.21.4",
+    "1.21.5-Snapshot",
+    "1.21.1",
+    "1.21.6",
+    "1.21.3",
+    "1.21.7",
+    "1.21-Snapshot",
+    "1.21.4-Snapshot",
+    "1.21.2",
+    "1.21.9-snapshot",
+    "1.21.9",
+    "1.21.10",
+    "1.21.11-snapshot",
+    "1.21.11",
+    "26.1",
+    "26.1.1",
+    "26.1.2",
+    "26.2",
+    "26.3-snapshot",
+    "26.3"
+   ],
+   "dependencies": [],
+   "alternateFileId": 0,
+   "isServerPack": false,
+   "fileFingerprint": 201562264
+  },
+  {
+   "id": 9004201,
+   "gameId": 432,
+   "modId": 226375,
+   "isAvailable": true,
+   "displayName": "Xray_Ultimate_26.X_v5.4.3.zip",
+   "fileName": "Xray_Ultimate_26.X_v5.4.3.zip",
+   "releaseType": 1,
+   "fileStatus": 4,
+   "hashes": [
+    {
+     "value": "5fc146e0a63f25e73d2d38f9f76f20e6563f1fee",
+     "algo": 1
+    },
+    {
+     "value": "529a5cfb1e06f353d6e5e8877a83de9c",
+     "algo": 2
+    }
+   ],
+   "fileDate": "2026-09-28T22:35:35.6Z",
+   "fileLength": 1710021,
+   "downloadCount": 63073,
+   "fileSizeOnDisk": 1879044,
+   "downloadUrl": null,
+   "gameVersions": [
+    "1.21.2-Snapshot",
+    "1.21",
+    "1.21.6-snapshot",
+    "1.21.1-Snapshot",
+    "1.21.8",
+    "1.21.5",
+    "1.21.4",
+    "1.21.5-Snapshot",
+    "1.21.1",
+    "1.21.6",
+    "1.21.3",
+    "1.21.7",
+    "1.21-Snapshot",
+    "1.21.4-Snapshot",
+    "1.21.2",
+    "1.21.9-snapshot",
+    "1.21.9",
+    "1.21.10",
+    "1.21.11-snapshot",
+    "1.21.11",
+    "26.1",
+    "26.1.1",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "dependencies": [],
+   "alternateFileId": 0,
+   "isServerPack": false,
+   "fileFingerprint": 2444552204
+  }
+ ],
+ "pagination": {
+  "index": 0,
+  "pageSize": 2,
+  "resultCount": 2,
+  "totalCount": 59
+ }
+}
