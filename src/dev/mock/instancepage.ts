@@ -1,6 +1,6 @@
-// Mock: Werkzeuge der Instanzseite (Modpack-Update, Abhängigkeits-Check, Mod-Sets, Performance, Backups, Configs,
+// Mock: Werkzeuge der Instanzseite (Modpack-Update, Abhängigkeits-Check, Mod-Sets, Performance, Backups, Dateien,
 // Serverliste). Macht „survival“ zu einer realistisch gefüllten Modpack-Instanz. Nur für VITE_MOCK=1.
-import type { ConfigEntry, DepIssue, Instance, ModSets, PerfCandidate, ProjectVersion, ServerEntry, SnapshotInfo, WorldBackup } from "@/lib/types";
+import type { DepIssue, FileEntry, Instance, ModSets, PerfCandidate, ProjectVersion, ServerEntry, SnapshotInfo, WorldBackup } from "@/lib/types";
 import { instances } from "./core";
 import { fakeTask, type Handlers } from "./util";
 
@@ -69,14 +69,23 @@ const worldBackups: WorldBackup[] = [
   { id: "w1", folder: "Neue Welt", world_name: "Neue Welt", created: now - 3600_000 * 5, size: 182_452_224, auto: true },
   { id: "w2", folder: "Insel", world_name: "Insel", created: now - 86400_000 * 2, size: 52_428_800, auto: false },
 ];
-const configs: ConfigEntry[] = [
-  { path: "config", is_dir: true, size: 0, modified: now, has_backup: false, binary: false },
-  { path: "config/sodium-options.json", is_dir: false, size: 1240, modified: now - 3600_000, has_backup: true, binary: false },
-  { path: "config/cobblemon", is_dir: true, size: 0, modified: now, has_backup: false, binary: false },
-  { path: "config/cobblemon/main.json", is_dir: false, size: 8120, modified: now - 86400_000, has_backup: false, binary: false },
-  { path: "config/iris.properties", is_dir: false, size: 320, modified: now - 86400_000 * 2, has_backup: false, binary: false },
-  { path: "options.txt", is_dir: false, size: 5120, modified: now - 7200_000, has_backup: false, binary: false },
-];
+const fe = (path: string, is_dir: boolean, size = 0, ago = 0, has_backup = false): FileEntry => ({
+  name: path.slice(path.lastIndexOf("/") + 1),
+  path,
+  is_dir,
+  size,
+  modified: now - ago,
+  kind: is_dir ? "dir" : path.endsWith(".png") ? "image" : path.endsWith(".jar") || path.endsWith(".dat") ? "binary" : "text",
+  children: is_dir ? 3 : null,
+  has_backup,
+});
+const files: Record<string, FileEntry[]> = {
+  "": [fe("config", true), fe("mods", true), fe("saves", true), fe("options.txt", false, 5120, 7200_000), fe("servers.dat", false, 412, 86400_000)],
+  config: [fe("config/cobblemon", true), fe("config/iris.properties", false, 320, 86400_000 * 2), fe("config/sodium-options.json", false, 1240, 3600_000, true)],
+  "config/cobblemon": [fe("config/cobblemon/main.json", false, 8120, 86400_000)],
+  mods: [fe("mods/cobblemon-1.6.jar", false, 18_400_000, 86400_000 * 4)],
+  saves: [fe("saves/Neue Welt", true)],
+};
 const servers: ServerEntry[] = [
   { name: "Vibe Craft SMP", ip: "smp.vibecraft.de", icon: null, accept_textures: true, hidden: false },
   { name: "Cobble-Freunde", ip: "192.168.0.24:25565", icon: null, accept_textures: null, hidden: false },
@@ -128,9 +137,26 @@ const handlers: Handlers = {
   snapshot_restore: () => null,
   world_backups_list: ({ instanceId }) => (instanceId === "survival" ? worldBackups : []),
   backups_open_folder: () => null,
-  config_tree: () => configs,
-  config_read: ({ path }) => ({ path, content: `{\n  "example": true\n}\n`, has_backup: false }),
-  config_search: () => [],
+  files_list: ({ dir }) => files[dir as string] ?? [],
+  files_stat: ({ path }) => {
+    const e = Object.values(files).flat().find((f) => f.path === path);
+    if (!e) throw { kind: "not_found", message: "Nicht gefunden" };
+    return e;
+  },
+  files_find: () => ({ entries: [], truncated: false }),
+  files_search: () => ({ hits: [], truncated: false, files_scanned: 0, files_skipped: 0 }),
+  files_read: ({ path }) => ({
+    path,
+    content: `{\n  "example": true\n}\n`,
+    size: 24,
+    modified: now,
+    has_backup: false,
+    kind: "text",
+    language: "json",
+    readonly: false,
+    readonly_reason: null,
+  }),
+  files_validate: () => [],
   instance_servers_list: () => servers,
   instance_servers_save: () => null,
   servers_recent: () => [],

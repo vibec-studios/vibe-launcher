@@ -347,7 +347,10 @@ pub fn write(r: &FileRoot, rel: &str, content: &str) -> AppResult<FileContent> {
         data.insert(0, BOM);
     }
     if old.as_slice() != data.as_bytes() {
-        add_backup(r, &p.rel, &old)?;
+        // Leere Ausgangsdatei (z. B. gerade angelegt) braucht keine Sicherung
+        if !old.is_empty() {
+            add_backup(r, &p.rel, &old)?;
+        }
         write_atomic(&p.abs, data.as_bytes())?;
     }
     drop(_g);

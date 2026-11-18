@@ -273,6 +273,9 @@ fn create_rename_duplicate_delete() {
     let g = game(&t).to_path_buf();
     assert_eq!(create(&t.r, "config", "neu.json", false).unwrap(), "config/neu.json");
     assert!(g.join("config/neu.json").is_file());
+    // Erstes Speichern einer leeren Datei legt keine Sicherung an
+    assert!(!write(&t.r, "config/neu.json", "{}").unwrap().has_backup);
+    std::fs::write(g.join("config/neu.json"), "").unwrap();
     assert!(create(&t.r, "config", "neu.json", false).is_err(), "gibt es schon");
     assert_eq!(create(&t.r, "", "scripts", true).unwrap(), "scripts");
     assert!(g.join("scripts").is_dir());
