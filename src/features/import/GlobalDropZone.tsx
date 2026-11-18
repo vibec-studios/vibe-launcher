@@ -44,26 +44,29 @@ export function GlobalDropZone() {
         const p = ev.payload;
         if (p.type === "enter") {
           current = p.paths;
-          const tgt = hitTarget(p.position.x / dpr(), p.position.y / dpr(), current);
-          useDragState.setState({ paths: current, over: tgt?.id ?? null });
+          const pos = { x: p.position.x / dpr(), y: p.position.y / dpr() };
+          const tgt = hitTarget(pos.x, pos.y, current);
+          useDragState.setState({ paths: current, over: tgt?.id ?? null, pos: tgt ? pos : null });
           setHint(classify(current));
         } else if (p.type === "over") {
-          const tgt = hitTarget(p.position.x / dpr(), p.position.y / dpr(), current);
+          const pos = { x: p.position.x / dpr(), y: p.position.y / dpr() };
+          const tgt = hitTarget(pos.x, pos.y, current);
           const id = tgt?.id ?? null;
-          if (useDragState.getState().over !== id) useDragState.setState({ over: id });
+          if (useDragState.getState().over !== id || tgt) useDragState.setState({ over: id, pos: tgt ? pos : null });
         } else if (p.type === "drop") {
           const dropped = p.paths.length ? p.paths : current;
-          const tgt = hitTarget(p.position.x / dpr(), p.position.y / dpr(), dropped);
-          useDragState.setState({ paths: null, over: null });
+          const pos = { x: p.position.x / dpr(), y: p.position.y / dpr() };
+          const tgt = hitTarget(pos.x, pos.y, dropped);
+          useDragState.setState({ paths: null, over: null, pos: null });
           current = [];
           if (tgt) {
-            tgt.onDrop(dropped);
+            tgt.onDrop(dropped, pos);
             return;
           }
           void handleGlobalDrop(dropped);
         } else {
           current = [];
-          useDragState.setState({ paths: null, over: null });
+          useDragState.setState({ paths: null, over: null, pos: null });
         }
       })
       .then((u) => {

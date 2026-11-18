@@ -56,6 +56,7 @@ semver = "1"
 rusqlite = { version = "0.31", features = ["bundled"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "ico"] }
 tokio-tungstenite = { version = "0.26", default-features = false, features = ["connect", "rustls-tls-webpki-roots"] }
+trash = "5"
 
 [profile.dev.package."*"]
 opt-level = 2

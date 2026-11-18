@@ -19,7 +19,7 @@ import { ServersTab } from "./ServersTab";
 import { DiagnosisCard, DiagnosisDialog, useDiagnosis } from "@/features/logs/Diagnosis";
 import { InstanceSettingsTab } from "./InstanceSettingsTab";
 import { BackupsTab } from "@/features/backups/BackupsTab";
-import { ConfigsTab } from "@/features/configs/ConfigsTab";
+import { InstanceFilesTab } from "@/features/files";
 import { accentVars } from "@/components/instance/accent";
 import { HeaderSkeleton, InstanceHeader } from "./InstanceHeader";
 import { InstanceNotices } from "./InstanceNotices";
@@ -104,7 +104,7 @@ const areaOf: Record<InstanceTab, Area> = {
   servers: "worlds",
   logs: "logs",
   settings: "settings",
-  configs: "settings",
+  files: "settings",
   backups: "settings",
 };
 
@@ -173,7 +173,7 @@ function useSubItems(id: string, vanilla: boolean, area: Area): SubItem[] {
   if (area === "settings")
     return [
       { value: "settings", label: t("ipage.sub.instance") },
-      { value: "configs", label: t("inst.tab.configs") },
+      { value: "files", label: t("inst.tab.files") },
       { value: "backups", label: t("inst.tab.backups") },
     ];
   return [];
@@ -276,8 +276,8 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
           <BackupsTab instance={inst} />
         ) : active === "logs" ? (
           <LogsTab instance={inst} />
-        ) : active === "configs" ? (
-          <ConfigsTab instance={inst} />
+        ) : active === "files" ? (
+          <InstanceFilesTab instance={inst} />
         ) : (
           <InstanceSettingsTab instance={inst} />
         )}

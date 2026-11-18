@@ -255,15 +255,30 @@ export const api = {
   /** Gibt Task-ID zurück */
   worldImportZip: (instanceId: string, path: string) => call<string>("world_import_zip", { instanceId, path }),
   backupsOpenFolder: (instanceId: string, kind: "worlds" | "snapshots") => call<void>("backups_open_folder", { instanceId, kind }),
-  // ---------------------------------------------------------------- Konfigurations-Editor
-  /** config/, defaultconfigs/ (rekursiv) und options*.txt einer Instanz als flache Liste */
-  configTree: (instanceId: string) => call<T.ConfigEntry[]>("config_tree", { instanceId }),
-  configRead: (instanceId: string, path: string) => call<T.ConfigFile>("config_read", { instanceId, path }),
+  // ---------------------------------------------------------------- Dateien (Instanz-/Serverordner, commands/files.rs)
+  /** Direkte Einträge eines Ordners ("" = Hauptordner) */
+  filesList: (scope: T.FileScope, dir: string) => call<T.FileEntry[]>("files_list", { scope, dir }),
+  filesStat: (scope: T.FileScope, path: string) => call<T.FileEntry>("files_stat", { scope, path }),
+  /** Namenssuche im ganzen Ordner (max. 500 Treffer) */
+  filesFind: (scope: T.FileScope, query: string) => call<T.FileFindResult>("files_find", { scope, query }),
+  /** Volltextsuche in Textdateien bis 1 MB (max. 200 Treffer) */
+  filesSearch: (scope: T.FileScope, query: string, dir?: string | null) => call<T.FileSearchResult>("files_search", { scope, query, dir: dir ?? null }),
+  filesRead: (scope: T.FileScope, path: string) => call<T.FileContent>("files_read", { scope, path }),
   /** Sichert die alte Fassung (max. 10 je Datei) und schreibt atomar */
-  configWrite: (instanceId: string, path: string, content: string) => call<T.ConfigFile>("config_write", { instanceId, path, content }),
+  filesWrite: (scope: T.FileScope, path: string, content: string) => call<T.FileContent>("files_write", { scope, path, content }),
   /** Letzte Sicherung zurückspielen (aktuelle Fassung wird selbst gesichert -> rückgängig machbar) */
-  configRestore: (instanceId: string, path: string) => call<T.ConfigFile>("config_restore", { instanceId, path }),
-  configValidate: (path: string, content: string) => call<T.ConfigValidationError[]>("config_validate", { path, content }),
-  /** Volltextsuche in allen Konfigurationsdateien (max. 200 Treffer) */
-  configSearch: (instanceId: string, query: string) => call<T.ConfigSearchHit[]>("config_search", { instanceId, query }),
+  filesRestore: (scope: T.FileScope, path: string) => call<T.FileContent>("files_restore", { scope, path }),
+  filesValidate: (path: string, content: string) => call<T.FileValidationError[]>("files_validate", { path, content }),
+  /** Bildvorschau als data-URL */
+  filesImage: (scope: T.FileScope, path: string) => call<string>("files_image", { scope, path }),
+  /** Liefert den neuen relativen Pfad */
+  filesCreate: (scope: T.FileScope, dir: string, name: string, isDir: boolean) => call<string>("files_create", { scope, dir, name, isDir }),
+  filesRename: (scope: T.FileScope, path: string, newName: string) => call<string>("files_rename", { scope, path, newName }),
+  filesDuplicate: (scope: T.FileScope, path: string) => call<string>("files_duplicate", { scope, path }),
+  /** In den Papierkorb; `permanent` löscht endgültig */
+  filesDelete: (scope: T.FileScope, paths: string[], permanent = false) => call<T.FileDeleteOutcome>("files_delete", { scope, paths, permanent }),
+  /** Externe Dateien/Ordner (absolute Pfade) nach `dir` kopieren; liefert die neuen relativen Pfade */
+  filesImport: (scope: T.FileScope, dir: string, sources: string[]) => call<string[]>("files_import", { scope, dir, sources }),
+  filesAbsPath: (scope: T.FileScope, path: string) => call<string>("files_abs_path", { scope, path }),
+  filesReveal: (scope: T.FileScope, path: string) => call<void>("files_reveal", { scope, path }),
 };

@@ -1,4 +1,4 @@
-// CodeMirror-6-Editor für Konfigurationsdateien. Wird nur per `lazy(() => import("./ConfigEditor"))` geladen,
+// CodeMirror-6-Editor für Textdateien im Datei-Bereich. Wird nur per `lazy(() => import("./CodeEditor"))` geladen,
 // damit CodeMirror nicht im Haupt-Bundle landet. Steuerung von außen über `ref` (Inhalt holen, zu Zeile springen).
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { EditorState, RangeSetBuilder, StateEffect, StateField, type Extension, type Text } from "@codemirror/state";
@@ -14,7 +14,7 @@ import {
   type DecorationSet,
 } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-import { HighlightStyle, StreamLanguage, bracketMatching, foldGutter, foldKeymap, indentOnInput, syntaxHighlighting } from "@codemirror/language";
+import { HighlightStyle, StreamLanguage, type StringStream, bracketMatching, foldGutter, foldKeymap, indentOnInput, syntaxHighlighting } from "@codemirror/language";
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
 import { json } from "@codemirror/lang-json";
 import { toml } from "@codemirror/legacy-modes/mode/toml";
@@ -22,10 +22,10 @@ import { properties } from "@codemirror/legacy-modes/mode/properties";
 import { yaml } from "@codemirror/legacy-modes/mode/yaml";
 import { javascript } from "@codemirror/legacy-modes/mode/javascript";
 import { tags as t } from "@lezer/highlight";
-import type { ConfigLanguage, ConfigValidationError } from "@/lib/types";
+import type { FileLanguage, FileValidationError } from "@/lib/types";
 import { useLang } from "@/i18n";
 
-export interface ConfigEditorHandle {
+export interface CodeEditorHandle {
   getValue: () => string;
   /** Aktuellen Inhalt als „gespeichert“ markieren (Basis für dirty) */
   markClean: () => void;
@@ -33,20 +33,42 @@ export interface ConfigEditorHandle {
   focus: () => void;
 }
 
-export interface ConfigEditorProps {
+export interface CodeEditorProps {
   initial: string;
-  language: ConfigLanguage;
+  language: FileLanguage;
   readOnly?: boolean;
+  /** Beim Öffnen fokussieren (Standard: ja, wenn bearbeitbar) */
+  autoFocus?: boolean;
   /** Beim Öffnen direkt zu dieser Zeile springen */
   initialLine?: number | null;
-  errors: ConfigValidationError[];
+  errors: FileValidationError[];
   onDirty: (dirty: boolean) => void;
   /** Inhalt geändert (entprellt) – für die Prüfung */
   onContent: (content: string) => void;
 }
 
-function languageExt(lang: ConfigLanguage): Extension {
+// Logs: „[12:00:01] [Render thread/WARN]“-Präfixe und Exceptions hervorheben
+const logMode = {
+  name: "log",
+  token(stream: StringStream) {
+    if (stream.match(/^\[[^\]]*\]/)) {
+      const s = stream.current();
+      return /ERROR|FATAL|SEVERE/.test(s) ? "invalid" : /WARN/.test(s) ? "keyword" : "meta";
+    }
+    if (stream.match(/^[\w.$]*(Exception|Error)\b:?/)) return "invalid";
+    if (stream.sol() && stream.match(/^\s+at\s/)) {
+      stream.skipToEnd();
+      return "comment";
+    }
+    stream.next();
+    return null;
+  },
+};
+
+function languageExt(lang: FileLanguage): Extension {
   switch (lang) {
+    case "log":
+      return StreamLanguage.define(logMode);
     case "json":
       return json();
     case "json5":
@@ -60,6 +82,8 @@ function languageExt(lang: ConfigLanguage): Extension {
     case "yaml":
       return StreamLanguage.define(yaml);
     case "javascript":
+    case "snbt":
+      // SNBT ({Name:"x",Count:1b}) ähnelt JS-Objekten – reicht für die Hervorhebung
       return StreamLanguage.define(javascript);
     default:
       return [];
@@ -179,9 +203,9 @@ const phrasesDe: Record<string, string> = {
 };
 
 // Fehlerzeilen als Dekoration (von außen gesetzt)
-const setErrors = StateEffect.define<ConfigValidationError[]>();
+const setErrors = StateEffect.define<FileValidationError[]>();
 
-function buildErrors(doc: Text, errors: ConfigValidationError[]): DecorationSet {
+function buildErrors(doc: Text, errors: FileValidationError[]): DecorationSet {
   const b = new RangeSetBuilder<Decoration>();
   const seen = new Set<number>();
   const sorted = [...errors].sort((a, c) => a.line - c.line || a.column - c.column);
@@ -207,7 +231,7 @@ const errorField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
-const ConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>(function ConfigEditor(props, ref) {
+const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function CodeEditor(props, ref) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const clean = useRef<Text | null>(null);
@@ -285,7 +309,7 @@ const ConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>(function 
     view.current = v;
     clean.current = v.state.doc;
     if (props.initialLine) goto(props.initialLine);
-    else if (!props.readOnly) v.focus();
+    else if (props.autoFocus ?? !props.readOnly) v.focus();
     return () => {
       clearTimeout(timer);
       v.destroy();
@@ -302,4 +326,4 @@ const ConfigEditor = forwardRef<ConfigEditorHandle, ConfigEditorProps>(function 
   return <div ref={host} className="selectable h-full min-h-0 overflow-hidden" />;
 });
 
-export default ConfigEditor;
+export default CodeEditor;

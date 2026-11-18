@@ -1,5 +1,5 @@
 // Detailseite eines Servers: Kopf (Icon, Name, Version, Status, Steuerung) + Tabs
-// (Konsole, Einstellungen, Spieler, Welten & Backups, Verbindung).
+// (Konsole, Einstellungen, Spieler, Welten & Backups, Dateien, Verbindung).
 import { useEffect, useState } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, FolderOpen, Gamepad2, Info, MoreHorizontal, RotateCw, Skull, Wrench, X } from "lucide-react";
@@ -17,6 +17,7 @@ import { ServerSettingsTab } from "./ServerSettingsTab";
 import { PlayersTab } from "./PlayersTab";
 import { ServerWorldsTab } from "./ServerWorldsTab";
 import { ConnectionTab } from "./ConnectionTab";
+import { ServerFilesTab } from "@/features/files";
 
 const route = getRouteApi("/servers/$id");
 const wrap = "w-full px-6";
@@ -210,6 +211,7 @@ export function ServerPage() {
               { value: "settings", label: t("srv.tab.settings") },
               { value: "players", label: t("srv.tab.players") },
               { value: "worlds", label: t("srv.tab.worlds") },
+              { value: "files", label: t("srv.tab.files") },
               { value: "connection", label: t("srv.tab.connection") },
             ]}
           />
@@ -225,6 +227,8 @@ export function ServerPage() {
           <PlayersTab server={server} />
         ) : tab === "worlds" ? (
           <ServerWorldsTab server={server} />
+        ) : tab === "files" ? (
+          <ServerFilesTab server={server} />
         ) : (
           <ConnectionTab server={server} />
         )}
