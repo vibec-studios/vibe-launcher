@@ -6,11 +6,15 @@ import b from "./b";
 import skins from "./skins";
 import servers from "./servers";
 import instancepage from "./instancepage";
+import social from "./social";
+import { withLiveModrinth } from "./modrinth-live";
 import type { Handlers } from "./util";
 
 mockWindows("main");
 
-const handlers: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage };
+const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...social };
+// VITE_MOCK_MODRINTH=live: Entdecken/Projektseite gegen die echte Modrinth-API
+const handlers: Handlers = import.meta.env.VITE_MOCK_MODRINTH === "live" ? withLiveModrinth(base) : base;
 
 mockIPC(
   async (cmd, args) => {

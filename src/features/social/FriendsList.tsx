@@ -24,15 +24,38 @@ import { PlayerHead } from "@/components/PlayerHead";
 import { t as tr, useT } from "@/i18n";
 import type { Friend, FriendRequest, HostSession, PublicUser, UserWithRelationship } from "@/lib/vibe-sdk";
 import { useFriends } from "./hooks";
-import { PresenceDot, usePresenceText } from "./presence";
+import { ActivityIcon, PresenceDot, usePresenceParts, usePresenceText } from "./presence";
+import { ProfilePopover } from "./ProfilePopover";
+import { renderFace, useRender } from "./skinRender";
 import { errText, openDm, openSocial, refreshRequests, removeFriendLocal, requireClient, useSocial, vqk } from "./service";
 import { openInviteAccept, openInviteFriends } from "./dialogs";
 
-export function Avatar({ user, size = 32, presence }: { user: Pick<PublicUser, "id" | "name">; size?: number; presence?: Friend["presence"] | null }) {
+type AvatarUser = Pick<PublicUser, "id" | "name"> & { skin?: { url: string | null } | null };
+
+/** Skin-URL (http -> https, CSP erlaubt nur https). */
+export function skinUrlOf(u: { skin?: { url: string | null } | null } | null | undefined): string | null {
+  return u?.skin?.url ? u.skin.url.replace(/^http:\/\//, "https://") : null;
+}
+
+/** Gesicht + Hut-Schicht aus der Skin-Textur (Canvas, pixelgenau), Fallback: PlayerHead über die UUID. */
+const SkinFace = memo(function SkinFace({ url, size, user }: { url: string; size: number; user: AvatarUser }) {
+  const face = useRender(url, () => renderFace(url));
+  if (face.failed) return <PlayerHead uuid={user.id} name={user.name} size={size} />;
   return (
-    <span className="relative shrink-0" style={{ width: size, height: size }}>
-      <PlayerHead uuid={user.id} name={user.name} size={size} />
-      {presence !== undefined && <PresenceDot presence={presence} className="absolute -bottom-0.5 -right-0.5" />}
+    <span className="relative block shrink-0 overflow-hidden bg-surface2" style={{ width: size, height: size }} aria-hidden>
+      {face.url && <img src={face.url} alt="" draggable={false} className="h-full w-full animate-fade-in [image-rendering:pixelated]" />}
+    </span>
+  );
+});
+
+export function Avatar({ user, size = 32, presence, ring }: { user: AvatarUser; size?: number; presence?: Friend["presence"] | null; ring?: string }) {
+  const skin = skinUrlOf(user);
+  return (
+    <span className="relative block shrink-0" style={{ width: size, height: size }}>
+      {skin ? <SkinFace url={skin} size={size} user={user} /> : <PlayerHead uuid={user.id} name={user.name} size={size} />}
+      {presence !== undefined && (
+        <PresenceDot presence={presence} ring={ring} size={Math.max(8, Math.round(size * 0.28))} className="absolute -bottom-[3px] -right-[3px]" />
+      )}
     </span>
   );
 }
@@ -57,7 +80,7 @@ interface FriendAction {
   onSelect: () => void;
 }
 
-function friendActions(friend: Friend, host?: HostSession): FriendAction[] {
+export function friendActions(friend: Friend, host?: HostSession): FriendAction[] {
   const t = tr;
   const u = friend.user;
   return [
@@ -86,7 +109,7 @@ function friendActions(friend: Friend, host?: HostSession): FriendAction[] {
 }
 
 /** Gleiche Einträge als Kontext- oder Dropdown-Menü. */
-function ActionItems({ actions, kind }: { actions: FriendAction[]; kind: "context" | "dropdown" }) {
+export function ActionItems({ actions, kind }: { actions: FriendAction[]; kind: "context" | "dropdown" }) {
   const Item = kind === "context" ? ContextItem : DropdownItem;
   const Sep = kind === "context" ? ContextSeparator : DropdownSeparator;
   return (
@@ -123,35 +146,59 @@ const isActive = (f: Friend) => f.presence.status !== "offline" && (f.presence.a
 
 // ------------------------------------------------------------------ Zeile auf der Freunde-Seite
 
-/** Zeile: Kopf mit Status, Name, eine Statuszeile. Sichtbar höchstens „Beitreten“ (wenn gehostet) bzw. „Nachricht“
- *  beim Hover; alles Weitere im ⋯-Menü und per Rechtsklick. Doppelklick öffnet den Chat. */
+/** Zeile wie in Discord/Steam: Skin-Kopf mit Status, Name, darunter die Aktivität mit Symbol („spielt X · 1.21.4 ·
+ *  seit 42 Min.“) bzw. „zuletzt online …“. Klick öffnet das Profil, Doppelklick den Chat. Sichtbar höchstens
+ *  „Beitreten“ (wenn gehostet), beim Hover Nachricht/Einladen; alles Weitere im ⋯-Menü und per Rechtsklick. */
 export const FriendListRow = memo(function FriendListRow({ friend, host }: { friend: Friend; host?: HostSession }) {
   const t = useT();
-  const ptext = usePresenceText();
+  const parts = usePresenceParts();
   const offline = friend.presence.status === "offline";
   const active = isActive(friend);
   const actions = friendActions(friend, host);
+  const p = parts(friend.presence);
   return (
     <ContextMenu content={<ActionItems actions={actions} kind="context" />}>
-      <div
-        className="group flex h-12 items-center gap-3 rounded-ctl px-3 transition-colors duration-100 hover:bg-white/[.04] data-[state=open]:bg-white/[.04]"
-        onDoubleClick={() => void startDm(friend.user.id)}
-      >
-        <span className={cn(offline && "opacity-55 transition-opacity duration-100 group-hover:opacity-100")}>
-          <Avatar user={friend.user} size={30} presence={friend.presence} />
+      <div className="group relative flex h-[60px] items-center gap-3.5 rounded-card px-3 transition-colors duration-100 hover:bg-surface data-[state=open]:bg-surface has-[[aria-expanded=true]]:bg-surface">
+        <ProfilePopover friend={friend} host={host}>
+          <button
+            className="absolute inset-0 rounded-card outline-none focus-visible:bg-surface"
+            aria-label={t("social.profile.open", { name: friend.user.name })}
+            onDoubleClick={() => void startDm(friend.user.id)}
+          />
+        </ProfilePopover>
+        <span className={cn("pointer-events-none relative", offline && "opacity-50 grayscale-[.6] transition-[opacity,filter] duration-150 group-hover:opacity-90 group-hover:grayscale-0")}>
+          <Avatar user={friend.user} size={38} presence={friend.presence} />
         </span>
-        <div className="min-w-0 flex-1">
-          <div className={cn("truncate text-[13.5px] font-semibold leading-tight", offline ? "text-muted" : "text-text")}>{friend.user.name}</div>
-          <div className="truncate text-meta leading-tight">
-            <span className={active ? "text-brand" : offline ? "text-dim" : "text-muted"}>{ptext(friend.presence)}</span>
-            {friend.user.statusText && <span className="text-dim"> · „{friend.user.statusText}“</span>}
+        <div className="pointer-events-none relative min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className={cn("truncate text-[14px] font-semibold leading-tight", offline ? "text-muted" : "text-text")}>{friend.user.name}</span>
+            {friend.user.badge !== "user" && <UserBadge badge={friend.user.badge} />}
+          </div>
+          <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12.5px] leading-tight">
+            {active ? (
+              <>
+                <ActivityIcon activity={friend.presence.activity} className="text-brand" />
+                <span className="truncate">
+                  <span className="text-muted">{p.lead} </span>
+                  <span className="font-medium text-text">{p.what}</span>
+                  {p.detail && <span className="text-dim"> · {p.detail}</span>}
+                  {p.when && <span className="text-dim"> · {p.when}</span>}
+                </span>
+              </>
+            ) : (
+              <span className="truncate">
+                <span className={offline ? "text-dim" : "text-muted"}>{offline && p.when ? p.when : p.what}</span>
+                {friend.user.statusText && <span className="text-dim"> · „{friend.user.statusText}“</span>}
+              </span>
+            )}
           </div>
         </div>
-        {host ? (
-          <Button size="sm" variant="ghost" icon={<Play size={13} />} onClick={() => openInviteAccept({ host })}>
-            {t("social.accept.join")}
-          </Button>
-        ) : (
+        <div className="relative flex shrink-0 items-center gap-1">
+          {host ? (
+            <Button size="sm" variant="primary" icon={<Play size={13} />} onClick={() => openInviteAccept({ host })}>
+              {t("social.accept.join")}
+            </Button>
+          ) : null}
           <IconButton
             label={t("social.friend.message")}
             tip
@@ -162,26 +209,54 @@ export const FriendListRow = memo(function FriendListRow({ friend, host }: { fri
           >
             <MessageSquare size={15} />
           </IconButton>
-        )}
-        <DropdownMenu
-          align="end"
-          trigger={
+          {!host && !offline && (
             <IconButton
-              label={t("social.chat.more")}
+              label={t("social.friend.invite")}
+              tip
               variant="ghost"
               size="sm"
-              className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+              className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+              onClick={() => openInviteFriends({ userIds: [friend.user.id] })}
             >
-              <Ellipsis size={15} />
+              <Send size={14} />
             </IconButton>
-          }
-        >
-          <ActionItems actions={actions} kind="dropdown" />
-        </DropdownMenu>
+          )}
+          <DropdownMenu
+            align="end"
+            trigger={
+              <IconButton
+                label={t("social.chat.more")}
+                variant="ghost"
+                size="sm"
+                className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+              >
+                <Ellipsis size={15} />
+              </IconButton>
+            }
+          >
+            <ActionItems actions={actions} kind="dropdown" />
+          </DropdownMenu>
+        </div>
       </div>
     </ContextMenu>
   );
 });
+
+/** Kleines Abzeichen (Unterstützer, Team). */
+export function UserBadge({ badge }: { badge: PublicUser["badge"] }) {
+  const t = useT();
+  if (badge === "user") return null;
+  return (
+    <span
+      className={cn(
+        "inline-flex h-4 shrink-0 items-center rounded-xs px-1.5 text-[10px] font-bold leading-none",
+        badge === "staff" ? "bg-brand/20 text-brand" : "bg-warn/15 text-warn",
+      )}
+    >
+      {t(`social.badge.${badge}`)}
+    </span>
+  );
+}
 
 // ------------------------------------------------------------------ Kompaktes Panel (rechts neben jeder Seite)
 

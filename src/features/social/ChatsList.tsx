@@ -17,6 +17,27 @@ function shortTime(iso: string | undefined, lang: string) {
   return d.toLocaleDateString(lang, { day: "2-digit", month: "2-digit" });
 }
 
+/** Gruppen-Symbol: zwei Köpfe versetzt übereinander. */
+function GroupIcon({ chat, meId }: { chat: Chat; meId: string | undefined }) {
+  const others = chat.members.filter((m) => m.user.id !== meId).map((m) => m.user);
+  if (others.length < 2)
+    return (
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-card bg-surface2 text-muted">
+        <Users size={14} />
+      </span>
+    );
+  return (
+    <span className="relative block h-8 w-8 shrink-0">
+      <span className="absolute left-0 top-0">
+        <Avatar user={others[0]} size={21} />
+      </span>
+      <span className="absolute bottom-0 right-0 shadow-[0_0_0_2px_var(--canvas)]">
+        <Avatar user={others[1]} size={21} />
+      </span>
+    </span>
+  );
+}
+
 const ChatRow = memo(function ChatRow({ chat, active }: { chat: Chat; active: boolean }) {
   const t = useT();
   const meId = useSocial((s) => s.me?.id);
@@ -32,7 +53,7 @@ const ChatRow = memo(function ChatRow({ chat, active }: { chat: Chat; active: bo
       : last.deleted
         ? t("social.chat.deleted")
         : last.kind === "invite"
-          ? `✉ ${last.invite?.title ?? ""}`
+          ? t(last.invite?.kind === "modpack" ? "social.chat.pack_preview" : "social.chat.invite_preview", { title: last.invite?.title ?? "" })
           : last.kind === "system"
             ? t("social.chat.system_preview")
             : `${last.authorId === meId ? t("social.chat.you") + ": " : ""}${last.content}`;
@@ -68,16 +89,14 @@ const ChatRow = memo(function ChatRow({ chat, active }: { chat: Chat; active: bo
         onClick={() => openSocial(chat.id)}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "mx-2 flex h-12 w-[calc(100%-16px)] items-center gap-2.5 rounded-ctl px-2 text-left transition-colors duration-100 data-[state=open]:bg-white/[.04]",
-          active ? "bg-white/[.07]" : "hover:bg-white/[.04]",
+          "mx-2 flex h-[52px] w-[calc(100%-16px)] items-center gap-3 rounded-ctl px-2 text-left transition-colors duration-100 data-[state=open]:bg-white/[.04]",
+          active ? "bg-surface2" : "hover:bg-white/[.04]",
         )}
       >
         {partner ? (
-          <Avatar user={partner} size={30} presence={presence} />
+          <Avatar user={partner} size={32} presence={presence} ring={active ? "var(--surface-2)" : "var(--canvas)"} />
         ) : (
-          <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-card bg-surface2 text-muted">
-            <Users size={14} />
-          </span>
+          <GroupIcon chat={chat} meId={meId} />
         )}
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
