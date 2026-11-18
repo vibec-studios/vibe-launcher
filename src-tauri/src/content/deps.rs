@@ -228,6 +228,9 @@ pub struct DepIssue {
     pub mod_name: String,
     /// Betroffene Mod-ID (Abhängigkeit / Konfliktpartner)
     pub target: Option<String>,
+    /// Datei des Gegenparts (installierte Abhängigkeit mit falscher Version, Konfliktpartner)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub other_file: Option<String>,
     pub message: String,
     pub fixes: Vec<Fix>,
 }
@@ -293,7 +296,7 @@ fn known_project(id: &str) -> Option<&'static str> {
 }
 
 /// Modrinth-Projekt zu einer Mod-ID suchen (bekannte Zuordnung, Slug, Suche).
-async fn resolve_modrinth(state: &AppState, id: &str, inst: &Instance) -> Option<(String, String)> {
+pub(super) async fn resolve_modrinth(state: &AppState, id: &str, inst: &Instance) -> Option<(String, String)> {
     let candidate = known_project(id).map(str::to_string).unwrap_or_else(|| id.replace('_', "-"));
     if let Ok(p) = mr::raw_project(state, &candidate).await {
         if p.project_type == "mod" {
@@ -383,6 +386,7 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
                 file_name: s.file_name.clone(),
                 mod_name: name.clone(),
                 target: None,
+                other_file: None,
                 message: format!("{name} ist eine {}-Mod, die Instanz nutzt {}", loader_label(l), loader_label(inst.loader.kind.as_str())),
                 fixes: vec![Fix::Disable { file_name: s.file_name.clone() }],
             });
@@ -401,6 +405,7 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
                                     file_name: s.file_name.clone(),
                                     mod_name: name.clone(),
                                     target: Some("minecraft".into()),
+                                    other_file: None,
                                     message: format!("{name} braucht Minecraft {r}, die Instanz nutzt {}", inst.mc_version),
                                     fixes: vec![Fix::Disable { file_name: s.file_name.clone() }],
                                 });
@@ -422,6 +427,7 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
                                     file_name: s.file_name.clone(),
                                     mod_name: name.clone(),
                                     target: Some(id.into()),
+                                    other_file: None,
                                     message: format!("{name} braucht {} {r}, installiert ist {lv}", loader_label(inst.loader.kind.as_str())),
                                     fixes: vec![],
                                 });
@@ -441,6 +447,7 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
                                 file_name: s.file_name.clone(),
                                 mod_name: name.clone(),
                                 target: Some(id.into()),
+                                other_file: None,
                                 message: format!("{name} braucht {}, das deaktiviert ist", name_of(other)),
                                 fixes: vec![Fix::Enable { file_name: other.file_name.clone(), title: name_of(other) }, Fix::Disable { file_name: s.file_name.clone() }],
                             });
@@ -451,6 +458,7 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
                             file_name: s.file_name.clone(),
                             mod_name: name.clone(),
                             target: Some(id.into()),
+                            other_file: None,
                             message: format!("{name} braucht „{id}“{}", d.range.as_deref().filter(|r| *r != "*").map(|r| format!(" ({r})")).unwrap_or_default()),
                             fixes: vec![Fix::Disable { file_name: s.file_name.clone() }],
                         }),
@@ -464,6 +472,7 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
                                         file_name: s.file_name.clone(),
                                         mod_name: name.clone(),
                                         target: Some(id.into()),
+                                        other_file: Some(other.file_name.clone()),
                                         message: format!("{name} braucht {} {r}, installiert ist {v}", name_of(other)),
                                         fixes: vec![],
                                     });
@@ -488,6 +497,7 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
                                 file_name: s.file_name.clone(),
                                 mod_name: name.clone(),
                                 target: Some(id.into()),
+                                other_file: Some(other.file_name.clone()),
                                 message: format!("{name} ist nicht mit {} kompatibel", name_of(other)),
                                 fixes: vec![Fix::Disable { file_name: other.file_name.clone() }, Fix::Disable { file_name: s.file_name.clone() }],
                             });
@@ -523,6 +533,7 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
             file_name: keep.file_name.clone(),
             mod_name: name_of(keep),
             target: Some(id.into()),
+            other_file: None,
             message: format!("{} ist {}× installiert ({})", name_of(keep), files.len(), files.iter().map(|s| s.file_name.as_str()).collect::<Vec<_>>().join(", ")),
             fixes: vec![Fix::Remove { file_names: remove }],
         });

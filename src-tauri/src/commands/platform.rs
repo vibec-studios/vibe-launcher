@@ -3,33 +3,11 @@ use crate::error::{AppError, AppResult};
 use crate::platform::{crash, links, optsync, servers, shortcuts, stats, PlatformState};
 use crate::state::AppState;
 use serde::Serialize;
-use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use tauri::State;
 
 fn join_err(e: tokio::task::JoinError) -> AppError {
     AppError::msg(e.to_string())
-}
-
-/// Ende einer Textdatei (max. `max` Bytes).
-fn read_tail(p: &Path, max: u64) -> String {
-    let Ok(mut f) = std::fs::File::open(p) else {
-        return String::new();
-    };
-    let len = f.metadata().map(|m| m.len()).unwrap_or(0);
-    if len > max {
-        let _ = f.seek(SeekFrom::Start(len - max));
-    }
-    let mut b = vec![];
-    let _ = f.read_to_end(&mut b);
-    String::from_utf8_lossy(&b).into_owned()
-}
-
-/// Pfad muss im Spielordner der Instanz liegen.
-fn inside(base: &Path, p: &str) -> Option<PathBuf> {
-    let c = PathBuf::from(p).canonicalize().ok()?;
-    let b = base.canonicalize().ok()?;
-    c.starts_with(&b).then_some(c)
 }
 
 // ------------------------------------------------------------------ Crash-Analyse
@@ -41,34 +19,7 @@ pub async fn crash_analyze(
     crash_report: Option<String>,
     exit_code: Option<i32>,
 ) -> AppResult<Vec<crash::Diagnosis>> {
-    let inst = state.instances.get(&instance_id)?;
-    let game = state.paths.game_dir(&instance_id);
-    let session: String = state
-        .game
-        .session_log(&instance_id)
-        .iter()
-        .map(|l| format!("{}\n", l.text))
-        .collect();
-    let max_mem = inst
-        .java
-        .max_memory_mb
-        .unwrap_or(state.settings().max_memory_mb);
-    tokio::task::spawn_blocking(move || {
-        let mut text = String::new();
-        if let Some(p) = crash_report.as_deref().and_then(|p| {
-            inside(&game, p).or_else(|| inside(&game, &game.join(p).to_string_lossy()))
-        }) {
-            text.push_str(&read_tail(&p, 2 << 20));
-            text.push('\n');
-        }
-        text.push_str(&read_tail(&game.join("logs").join("latest.log"), 1 << 20));
-        text.push('\n');
-        text.push_str(&session);
-        let mods = crash::ModIndex::scan(&game.join("mods"));
-        crash::analyze(&text, exit_code, &mods, max_mem as u32)
-    })
-    .await
-    .map_err(join_err)
+    crash::analyze_instance(&state, &instance_id, crash_report, exit_code).await
 }
 
 // ------------------------------------------------------------------ Server

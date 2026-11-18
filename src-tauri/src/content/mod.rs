@@ -30,6 +30,7 @@ pub mod provider;
 pub mod store;
 pub mod snapshots;
 pub mod deps;
+pub mod autofix;
 pub mod sides;
 pub mod modsets;
 pub mod perf;
