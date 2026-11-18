@@ -269,6 +269,8 @@ pub async fn launch(
     let inst = state.instances.get(id)?;
     gm.launcher_line(id, LogLevel::Launcher, format!("Vibe Launcher {} – {} wird vorbereitet", env!("CARGO_PKG_VERSION"), inst.name));
     // Inhalte automatisch aktualisieren (Content-Modul; schlägt nie fehl)
+    // Vibey Client (falls für die Instanz eingeschaltet) still aktualisieren
+    crate::vibey_client::before_launch(state, id, task).await;
     crate::content::autoupdate::before_launch(state, id, task).await;
     crate::content::worldbackup::before_launch(state, id, task).await;
     task.check()?;
