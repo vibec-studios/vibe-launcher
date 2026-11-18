@@ -236,6 +236,7 @@ export const Snowfall = memo(function Snowfall({
     resize();
     // Kante und Menge gelegentlich nachführen (Seitenleiste breiter, Menge geändert …)
     const timer = setInterval(() => {
+      if (live.current.paused) return;
       fill();
       measureLedge();
     }, 1000);
