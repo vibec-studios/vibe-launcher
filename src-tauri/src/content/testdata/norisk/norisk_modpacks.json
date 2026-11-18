@@ -1,0 +1,33 @@
+{
+  "packs": {
+    "parent": {
+      "displayName": "Parent", "inheritsFrom": null, "excludeMods": null,
+      "loaderPolicy": {"default": {"fabric": {"version": "0.20.1", "min": null, "strategy": null}}, "byMinecraft": {"1.21": {"fabric": {"version": "0.17.0"}}}},
+      "mods": [
+        {"id": "sodium", "displayName": "Sodium", "source": {"type": "modrinth", "projectId": "AANobbMI", "projectSlug": "sodium"},
+         "compatibility": {"26.3": {"fabric": {"identifier": "PARENTVER"}}}},
+        {"id": "lithium", "displayName": "Lithium", "source": {"type": "modrinth", "projectId": "gvQqBUqZ"},
+         "compatibility": {"26.3": {"fabric": {"identifier": "LITH"}}}},
+        {"id": "fabric-api", "displayName": "Fabric API", "source": {"type": "modrinth", "projectId": "P7dR8mSH"},
+         "compatibility": {"26.3": {"fabric": {"identifier": "FAPI263"}}}},
+        {"id": "nrc-client", "displayName": "nrc-client", "source": {"type": "maven", "repositoryRef": "noriskproduction", "groupId": "gg.norisk", "artifactId": "nrc-client"},
+         "compatibility": {"26.3": {"fabric": {"identifier": "26.4.1-working+fabric.26.3"}}}},
+        {"id": "iris", "displayName": "Iris", "source": {"type": "modrinth", "projectId": "YL57xq9U"},
+         "compatibility": {"1.21.11": {"fabric": {"identifier": "IRIS"}}}}
+      ]
+    },
+    "child": {
+      "displayName": "Child", "inheritsFrom": ["parent"], "excludeMods": ["lithium"],
+      "loaderPolicy": {"byMinecraft": {"1.21.*": {"fabric": {"version": "0.18.0"}}}},
+      "mods": [
+        {"id": "sodium", "displayName": "Sodium", "source": {"type": "modrinth", "projectId": "AANobbMI"},
+         "compatibility": {"26.3": {"fabric": {"identifier": "CHILDVER"}}}},
+        {"id": "appleskin", "displayName": "AppleSkin", "source": {"type": "modrinth", "projectId": "EsAfCjCV"},
+         "compatibility": {"26.3": {"fabric": {"identifier": "APPLE"}}}},
+        {"id": "optifine", "displayName": "OptiFine", "source": {"type": "url", "url": "https://example.invalid/optifine.jar"},
+         "compatibility": {"26.3": {"fabric": {"identifier": "x"}}}}
+      ]
+    }
+  },
+  "repositories": {}
+}

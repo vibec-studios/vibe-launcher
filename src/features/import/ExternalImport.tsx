@@ -226,6 +226,12 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
                     </IconButton>
                   )}
                 </div>
+                {l.id === "norisk" && (
+                  <div className="flex items-start gap-1.5 px-2 pb-1.5 text-[12px] text-dim">
+                    <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                    {tr("ext.norisk_hint")}
+                  </div>
+                )}
                 {list.length === 0 ? (
                   <div className="px-2 py-3 text-meta text-dim">{tr("ext.empty_group")}</div>
                 ) : (

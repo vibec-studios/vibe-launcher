@@ -82,11 +82,27 @@ pub async fn skin_apply_library(state: State<'_, AppState>, account_id: Option<S
     let st = state.inner().clone();
     let (png, lib_variant) = st.auth.skins.bytes(&id)?;
     let variant = variant.unwrap_or(lib_variant);
-    let (acc, raw) = with_token(&st, account_id.as_deref(), |c, t| {
+    let (acc, mut raw) = with_token(&st, account_id.as_deref(), |c, t| {
         let png = png.clone();
         async move { skins::upload_skin(&c, &t, variant, png).await }
     })
     .await?;
+    // Zugeordnetes Cape (z. B. aus der Modrinth App) mitsetzen, wenn der Account es besitzt
+    if let Some(cape) = st.auth.skins.get(&id).ok().and_then(|s| s.cape_id) {
+        let owned = raw.capes.iter().any(|c| c.id == cape);
+        let active = raw.capes.iter().any(|c| c.id == cape && c.state.eq_ignore_ascii_case("ACTIVE"));
+        if owned && !active {
+            match with_token(&st, Some(&acc), |c, t| {
+                let cape = cape.clone();
+                async move { skins::set_cape(&c, &t, Some(&cape)).await }
+            })
+            .await
+            {
+                Ok((_, r)) => raw = r,
+                Err(e) => tracing::warn!("Cape {cape} konnte nicht gesetzt werden: {e}"),
+            }
+        }
+    }
     Ok(finish(&st, &acc, raw, true).await)
 }
 
@@ -214,4 +230,27 @@ pub async fn skin_library_reveal(state: State<'_, AppState>, id: String) -> AppR
     {
         crate::util::open_in_explorer(p.parent().unwrap_or(&p))
     }
+}
+
+// ------------------------------------------------------------------ Import aus anderen Launchern
+
+/// Installierte Launcher (Modrinth App, NoRisk, Lunar) nach gespeicherten Skins durchsuchen (nur lesend).
+#[tauri::command]
+pub async fn skin_import_scan(state: State<'_, AppState>) -> AppResult<crate::auth::skin_import::ImportScan> {
+    Ok(crate::auth::skin_import::scan(&state).await)
+}
+
+/// Ausgewählte Skins (`keys`, sonst alle neuen) in die Bibliothek übernehmen.
+#[tauri::command]
+pub async fn skin_import_run(state: State<'_, AppState>, keys: Option<Vec<String>>) -> AppResult<crate::auth::skin_import::ImportResult> {
+    let r = crate::auth::skin_import::import(&state, keys).await?;
+    if r.imported > 0 {
+        library_changed(&state);
+    }
+    Ok(r)
+}
+
+#[tauri::command]
+pub async fn skin_import_set_auto(state: State<'_, AppState>, enabled: bool) -> AppResult<()> {
+    crate::auth::skin_import::set_auto(&state, enabled)
 }

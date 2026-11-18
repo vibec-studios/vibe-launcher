@@ -28,6 +28,7 @@ import { AccentPicker } from "@/features/instances/NewInstanceDialog";
 import { useT } from "@/i18n";
 import { openServerFolder, removeServer, repairServer, resetServerIcon, setServerIcon, useServerTask } from "./actions";
 import { ServerIcon, serverAccent } from "./parts";
+import { PlatformCard } from "./PlatformCard";
 
 const applyServer = (base: Server, p: ServerPatch): Server => ({ ...base, ...p }) as Server;
 const DEFAULT_RAM = 2048;
@@ -329,6 +330,7 @@ export function ServerSettingsTab({ server }: { server: Server }) {
             </SettingsCard>
           </div>
           <div className="flex flex-col gap-5">
+            {server.platform && <PlatformCard server={server} />}
             <PropertiesCard server={server} />
           </div>
         </div>

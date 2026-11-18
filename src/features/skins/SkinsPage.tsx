@@ -54,6 +54,7 @@ import { MsaDialog } from "@/features/accounts/MsaDialog";
 import { useCapeFront, useSkinFront } from "./render";
 import type { ViewerAnimation } from "./SkinViewer3D";
 import { McCapesPanel, McCapeThumb } from "./McCapesPanel";
+import { SkinImportButton, sourceLabels, type ImportSource } from "./SkinImport";
 import { useCapeFrames, useMcCapesEnabled, useMcProfile, type McCapeFrames, type McProfile } from "./minecraftcapes";
 
 const SkinViewer3D = lazy(() => import("./SkinViewer3D"));
@@ -446,11 +447,15 @@ export function SkinsPage() {
                 { value: "library", label: t("skins.library"), badge: libraryQ.data?.length },
                 { value: "mccapes", label: t("mccapes.title"), icon: <Sparkles size={14} /> },
               ]}
+              right={libraryTab ? <SkinImportButton /> : undefined}
             />
           ) : (
             <div className="flex h-9 shrink-0 items-center gap-2 px-1">
               <span className="text-section text-text">{t("skins.library")}</span>
               {libraryQ.data && <span className="text-meta text-dim">{t("skins.library_count", { n: libraryQ.data.length })}</span>}
+              <div className="ml-auto">
+                <SkinImportButton />
+              </div>
             </div>
           )}
           {!libraryTab ? (
@@ -606,6 +611,7 @@ function sourceLabel(src: string | null): string | null {
   const [kind, name] = [src.slice(0, src.indexOf(":")), src.slice(src.indexOf(":") + 1)];
   if (kind === "account") return tt("skins.source_account", { name });
   if (kind === "player") return tt("skins.source_player", { name });
+  if (kind === "import" && name in sourceLabels) return tt("skins.source_import", { app: sourceLabels[name as ImportSource] });
   return null;
 }
 

@@ -100,8 +100,17 @@ pub fn run() {
                 });
             }
             // Lokale Server: Server aus früheren Sitzungen erkennen, Auto-Start
+            let import_state = startup_state.clone();
             tauri::async_runtime::spawn(async move {
                 startup_state.server_mgr.on_startup(&startup_state);
+            });
+            // Skins aus anderen Launchern automatisch übernehmen (nur wenn eingeschaltet)
+            tauri::async_runtime::spawn(async move {
+                match crate::auth::skin_import::auto_import(&import_state).await {
+                    Ok(n) if n > 0 => crate::events::emit(&import_state.app, crate::auth::skins::SKINS_CHANGED, &serde_json::json!({ "scope": "library" })),
+                    Ok(_) => {}
+                    Err(e) => tracing::warn!("Skin-Auto-Import: {e}"),
+                }
             });
             #[cfg(debug_assertions)]
             devlive::start(app.handle());
@@ -177,6 +186,9 @@ pub fn run() {
             commands::skins::skin_library_remove,
             commands::skins::skin_library_export,
             commands::skins::skin_library_reveal,
+            commands::skins::skin_import_scan,
+            commands::skins::skin_import_run,
+            commands::skins::skin_import_set_auto,
             commands::minecraftcapes::mccapes_profile,
             commands::minecraftcapes::mccapes_mod_status,
             commands::minecraftcapes::mccapes_mod_set,
@@ -233,6 +245,16 @@ pub fn run() {
             commands::server::server_backup_restore,
             commands::server::server_open_folder,
             commands::server::server_tunnel_reset,
+            commands::server::server_platform_versions,
+            commands::server::server_platform_builds,
+            commands::server::server_platform_set_build,
+            commands::server::server_addons,
+            commands::server::server_addon_search,
+            commands::server::server_addon_install,
+            commands::server::server_addon_updates,
+            commands::server::server_addon_update,
+            commands::server::server_addon_set_enabled,
+            commands::server::server_addon_remove,
             commands::server::servers_quit,
             // content
             commands::content::curseforge_available,

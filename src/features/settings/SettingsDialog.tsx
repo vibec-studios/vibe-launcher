@@ -49,6 +49,7 @@ import { checkForUpdate } from "@/app/UpdateNotice";
 import { MasterOptSync } from "@/components/instance/OptSync";
 import { useLang, useT } from "@/i18n";
 import { StoresCard } from "./StoresCard";
+import { SkinImportSettings } from "@/features/skins/SkinImport";
 import { VibeTab } from "./VibeCard";
 import { AppearanceTab } from "./AppearanceTab";
 import { SETTINGS_TABS, closeSettings, setSettingsTab, useSettingsDialog, type SettingsTab } from "./store";
@@ -274,6 +275,8 @@ function GeneralTab({ s, update }: TabProps) {
           />
         </SettingRow>
       </SettingsCard>
+
+      <SkinImportSettings />
     </>
   );
 }

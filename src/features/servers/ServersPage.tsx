@@ -10,6 +10,7 @@ import { Button, ContextMenu, DropdownMenu, EmptyState, ErrorState, IconButton, 
 import { accentVars } from "@/components/instance/accent";
 import { useT } from "@/i18n";
 import { openNewServer, serverAddress, useServerTask } from "./actions";
+import { serverSoftware } from "./addonsApi";
 import { AddressChip, ServerContextMenuContent, ServerDropdownContent, ServerIcon, ServerPowerButton, StatusLabel, serverAccent } from "./parts";
 
 const cols = "grid grid-cols-[minmax(0,1fr)_130px_minmax(140px,220px)_auto] items-center gap-4";
@@ -22,7 +23,7 @@ const ServerRow = memo(function ServerRow({ server: s }: { server: Server }) {
   const running = st?.state === "running";
   const address = serverAddress(s, st);
   const open = () => nav({ to: "/servers/$id", params: { id: s.id }, search: { tab: "console" } });
-  const meta = [formatLoader(s.loader), `Minecraft ${s.mc_version}`];
+  const meta = [serverSoftware(s, formatLoader), `Minecraft ${s.mc_version}`];
   if (running) meta.push(t("srv.players_n", { n: st?.players.length ?? 0, max: st?.max_players ?? "–" }));
   return (
     <ContextMenu content={<ServerContextMenuContent server={s} />}>
@@ -93,7 +94,7 @@ export function ServersPage() {
   const q = useDeferredValue(query.trim().toLowerCase());
   const list = data ?? [];
   const sorted = [...list]
-    .filter((s) => !q || s.name.toLowerCase().includes(q) || s.mc_version.includes(q) || s.loader.kind.includes(q))
+    .filter((s) => !q || s.name.toLowerCase().includes(q) || s.mc_version.includes(q) || s.loader.kind.includes(q) || (s.platform?.kind.includes(q) ?? false))
     .sort((a, b) => (b.last_started ?? b.created_at) - (a.last_started ?? a.created_at));
 
   return (

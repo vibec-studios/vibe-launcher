@@ -13,11 +13,19 @@ import { VersionPicker, type VersionValue } from "@/components/instance/VersionP
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { formatMb } from "@/components/instance/forms";
 import { useT } from "@/i18n";
+import { PlatformPicker, type PlatformValue } from "./PlatformPicker";
+import { platformNames } from "./addonsApi";
 
 type Mode = "new" | "instance";
+/** Mod-Loader/Vanilla oder Plugin-Software */
+type Kind = "mods" | "plugins";
 const DEFAULT_PORT = 25565;
 const DEFAULT_RAM = 2048;
 const NEW_WORLD = "__new__";
+
+function suggestPluginName(p: PlatformValue): string {
+  return p.mc ? `${platformNames[p.kind]}-Server ${p.mc}` : "";
+}
 
 function suggestName(v: VersionValue): string {
   if (!v.mc) return "";
@@ -191,6 +199,8 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
 
   const [mode, setMode] = useState<Mode>("new");
   const [ver, setVer] = useState<VersionValue>({ mc: null, loader: "fabric", loaderVersion: null });
+  const [kind, setKind] = useState<Kind>("mods");
+  const [plat, setPlat] = useState<PlatformValue>({ kind: "paper", mc: null, build: null });
   const [instId, setInstId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
@@ -224,13 +234,19 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
   useEffect(() => {
     if (nameTouched) return;
     if (mode === "instance") setName(inst ? t("srv.new.name_from", { name: inst.name }) : "");
+    else if (kind === "plugins") setName(suggestPluginName(plat));
     else setName(suggestName(ver));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, inst?.id, ver.mc, ver.loader, nameTouched]);
+  }, [mode, kind, inst?.id, ver.mc, ver.loader, plat.kind, plat.mc, nameTouched]);
 
   const needsLoaderVersion = ver.loader !== "vanilla";
   const valid =
-    name.trim().length > 0 && (mode === "instance" ? !!inst && !!inst.mc_version : !!ver.mc && (!needsLoaderVersion || !!ver.loaderVersion));
+    name.trim().length > 0 &&
+    (mode === "instance"
+      ? !!inst && !!inst.mc_version
+      : kind === "plugins"
+        ? !!plat.mc && !!plat.build
+        : !!ver.mc && (!needsLoaderVersion || !!ver.loaderVersion));
 
   const submit = async () => {
     if (!valid || busy) return;
@@ -248,13 +264,22 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
             port,
             memory_mb: ram,
           }
-        : {
-            name: name.trim(),
-            mc_version: ver.mc!,
-            loader: { kind: ver.loader, version: needsLoaderVersion ? ver.loaderVersion : null },
-            port,
-            memory_mb: ram,
-          };
+        : kind === "plugins"
+          ? {
+              name: name.trim(),
+              mc_version: plat.mc!,
+              loader: { kind: "vanilla", version: null },
+              platform: { kind: plat.kind, build: plat.build },
+              port,
+              memory_mb: ram,
+            }
+          : {
+              name: name.trim(),
+              mc_version: ver.mc!,
+              loader: { kind: ver.loader, version: needsLoaderVersion ? ver.loaderVersion : null },
+              port,
+              memory_mb: ram,
+            };
     try {
       const res = await api.serverCreate(req);
       onOpenChange(false);
@@ -318,7 +343,42 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
           className="w-full [&>button]:flex-1"
         />
 
-        {mode === "new" ? (
+        {mode === "new" && (
+          <Segmented<Kind>
+            value={kind}
+            onChange={setKind}
+            items={[
+              { value: "mods", label: t("srv.new.kind.mods") },
+              { value: "plugins", label: t("srv.new.kind.plugins") },
+            ]}
+            className="w-full [&>button]:flex-1"
+          />
+        )}
+
+        {mode === "new" && kind === "plugins" ? (
+          <PlatformPicker
+            value={plat}
+            onChange={setPlat}
+            listHeight={262}
+            render={({ platform, list, build, hint }) => (
+              <>
+                {platform}
+                <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-7">
+                  {list}
+                  <div className="flex flex-col gap-5">
+                    {nameField}
+                    {build}
+                    <RamPort ram={ram} setRam={setRam} port={port} setPort={setPort} total={total} />
+                    <div className="flex items-start gap-2 text-dim">
+                      <Info size={13} className="mt-0.5 shrink-0" />
+                      {hint}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          />
+        ) : mode === "new" ? (
           <VersionPicker
             value={ver}
             onChange={setVer}

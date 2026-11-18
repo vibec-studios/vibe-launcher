@@ -21,8 +21,8 @@ export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "
 const instanceTabs: InstanceTab[] = ["content", "resourcepacks", "shaders", "worlds", "servers", "backups", "logs", "files", "settings"];
 /** Frühere Tab-Werte (alte Deep-Links) -> heutiger Tab */
 const instanceTabAliases: Record<string, InstanceTab> = { configs: "files" };
-export type ServerTab = "console" | "settings" | "players" | "worlds" | "files" | "connection";
-const serverTabs: ServerTab[] = ["console", "settings", "players", "worlds", "files", "connection"];
+export type ServerTab = "console" | "settings" | "players" | "addons" | "worlds" | "files" | "connection";
+const serverTabs: ServerTab[] = ["console", "settings", "players", "addons", "worlds", "files", "connection"];
 const projectTypes: ProjectType[] = ["mod", "modpack", "resourcepack", "shader", "datapack"];
 
 export interface DiscoverSearch {

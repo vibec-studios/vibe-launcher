@@ -355,3 +355,92 @@ pub async fn servers_quit(state: State<'_, AppState>, stop: bool) -> AppResult<(
     state.app.exit(0);
     Ok(())
 }
+
+// ------------------------------------------------------------------ Plugin-Software (Paper/Purpur/Folia)
+
+#[tauri::command]
+pub async fn server_platform_versions(state: State<'_, AppState>, kind: server::platform::PlatformKind) -> AppResult<Vec<server::platform::PlatformVersion>> {
+    server::platform::versions(&state, kind).await
+}
+
+#[tauri::command]
+pub async fn server_platform_builds(
+    state: State<'_, AppState>,
+    kind: server::platform::PlatformKind,
+    mc: String,
+) -> AppResult<Vec<server::platform::PlatformBuild>> {
+    server::platform::builds(&state, kind, &mc).await
+}
+
+/// Anderen Build der Server-Software einspielen (Update/Downgrade). `build = None` -> neuester stabiler.
+#[tauri::command]
+pub async fn server_platform_set_build(state: State<'_, AppState>, id: String, build: Option<String>) -> AppResult<String> {
+    let s = state.servers.get(&id)?;
+    if s.platform.is_none() {
+        return Err(AppError::Invalid("Dieser Server nutzt keine Plugin-Software.".into()));
+    }
+    if state.server_mgr.is_active(&id) {
+        return Err(AppError::Invalid("Bitte den Server zuerst stoppen.".into()));
+    }
+    let builds = server::platform::builds(&state, s.platform.as_ref().map(|p| p.kind).unwrap_or(server::platform::PlatformKind::Paper), &s.mc_version).await?;
+    let b = server::platform::pick_build(&builds, build.as_deref()).ok_or_else(|| AppError::Invalid("Build nicht gefunden".into()))?.id.clone();
+    let s = state.servers.modify(&id, |x| {
+        if let Some(p) = x.platform.as_mut() {
+            p.build = Some(b);
+        }
+    })?;
+    Ok(spawn_install(&state, &s, false, None))
+}
+
+// ------------------------------------------------------------------ Plugins / Mods des Servers
+
+use crate::server::plugins::{self, AddonList, AddonSearch, AddonSource, AddonUpdate};
+
+#[tauri::command]
+pub async fn server_addons(state: State<'_, AppState>, id: String) -> AppResult<AddonList> {
+    let s = state.servers.get(&id)?;
+    plugins::list(&state, &s).await
+}
+
+#[tauri::command]
+pub async fn server_addon_search(
+    state: State<'_, AppState>,
+    id: String,
+    source: AddonSource,
+    query: String,
+    sort: Option<String>,
+    offset: Option<u32>,
+) -> AppResult<AddonSearch> {
+    let s = state.servers.get(&id)?;
+    plugins::search(&state, &s, source, &query, sort.as_deref().unwrap_or("relevance"), offset.unwrap_or(0)).await
+}
+
+#[tauri::command]
+pub async fn server_addon_install(state: State<'_, AppState>, id: String, source: AddonSource, project: String) -> AppResult<Vec<String>> {
+    let s = state.servers.get(&id)?;
+    plugins::install(&state, &s, source, &project).await
+}
+
+#[tauri::command]
+pub async fn server_addon_updates(state: State<'_, AppState>, id: String) -> AppResult<Vec<AddonUpdate>> {
+    let s = state.servers.get(&id)?;
+    plugins::updates(&state, &s).await
+}
+
+#[tauri::command]
+pub async fn server_addon_update(state: State<'_, AppState>, id: String, files: Option<Vec<String>>) -> AppResult<usize> {
+    let s = state.servers.get(&id)?;
+    plugins::apply_updates(&state, &s, files).await
+}
+
+#[tauri::command]
+pub async fn server_addon_set_enabled(state: State<'_, AppState>, id: String, file: String, enabled: bool) -> AppResult<String> {
+    let s = state.servers.get(&id)?;
+    plugins::set_enabled(&state, &s, &file, enabled)
+}
+
+#[tauri::command]
+pub async fn server_addon_remove(state: State<'_, AppState>, id: String, file: String) -> AppResult<()> {
+    let s = state.servers.get(&id)?;
+    plugins::remove(&state, &s, &file)
+}

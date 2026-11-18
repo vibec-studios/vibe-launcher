@@ -73,8 +73,10 @@ pub struct LibrarySkin {
     /// Dateiname im Ordner `skins/`
     pub file: String,
     pub added_at: i64,
-    /// Herkunft, z. B. "file", "account:<name>", "player:<name>"
+    /// Herkunft, z. B. "file", "account:<name>", "player:<name>", "import:modrinth"
     pub source: Option<String>,
+    /// Zugeordnetes Mojang-Cape (UUID), z. B. aus der Modrinth App übernommen
+    pub cape_id: Option<String>,
     pub data_url: String,
 }
 
@@ -321,6 +323,8 @@ struct StoredSkin {
     source: Option<String>,
     #[serde(default)]
     sha1: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    cape_id: Option<String>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -365,6 +369,7 @@ impl Library {
             file: s.file.clone(),
             added_at: s.added_at,
             source: s.source.clone(),
+            cape_id: s.cape_id.clone(),
             data_url: data_url(&bytes),
         })
     }
@@ -394,6 +399,16 @@ impl Library {
 
     /// Skin hinzufügen. Gleiche Datei (SHA-1) schon vorhanden -> vorhandenen Eintrag zurückgeben.
     pub fn add(&self, png: &[u8], name: &str, variant: SkinVariant, source: Option<String>) -> AppResult<LibrarySkin> {
+        self.add_with(png, name, variant, source, None)
+    }
+
+    /// SHA-1 aller Bibliotheks-Skins (Duplikaterkennung beim Import).
+    pub fn sha1s(&self) -> std::collections::HashSet<String> {
+        self.items.lock().iter().map(|s| s.sha1.clone()).filter(|s| !s.is_empty()).collect()
+    }
+
+    /// Wie [`add`], optional mit Cape-Zuordnung.
+    pub fn add_with(&self, png: &[u8], name: &str, variant: SkinVariant, source: Option<String>, cape_id: Option<String>) -> AppResult<LibrarySkin> {
         validate_skin_png(png)?;
         let sha = hex::encode(Sha1::digest(png));
         if let Some(existing) = self.items.lock().iter().find(|s| s.sha1 == sha).cloned() {
@@ -404,7 +419,7 @@ impl Library {
         let file = format!("{id}.png");
         std::fs::write(self.dir.join(&file), png)?;
         let name = clean_name(name);
-        let stored = StoredSkin { id: id.clone(), name, variant, file, added_at: now_ms(), source, sha1: sha };
+        let stored = StoredSkin { id: id.clone(), name, variant, file, added_at: now_ms(), source, sha1: sha, cape_id };
         self.items.lock().push(stored);
         self.save()?;
         self.get(&id)

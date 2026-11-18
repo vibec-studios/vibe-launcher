@@ -15,6 +15,8 @@ use tauri::AppHandle;
 
 pub mod backup;
 pub mod install;
+pub mod platform;
+pub mod plugins;
 pub mod players;
 pub mod playit;
 pub mod props;
@@ -53,6 +55,9 @@ pub struct Server {
     pub accent: Option<String>,
     pub mc_version: String,
     pub loader: Loader,
+    /// Plugin-Server-Software (Paper/Purpur/Folia). Gesetzt -> `loader` ist Vanilla und wird ignoriert.
+    #[serde(default)]
+    pub platform: Option<platform::Platform>,
     #[serde(default)]
     pub memory_mb: Option<u32>,
     #[serde(default)]
@@ -84,6 +89,16 @@ pub struct Server {
 }
 
 impl Server {
+    /// Ordner für Erweiterungen (`plugins` bzw. `mods`); Vanilla hat keinen.
+    pub fn addon_dir(&self) -> Option<&'static str> {
+        if self.platform.is_some() {
+            Some("plugins")
+        } else if self.loader.kind != crate::instance::LoaderKind::Vanilla {
+            Some("mods")
+        } else {
+            None
+        }
+    }
     pub fn memory(&self) -> u32 {
         self.memory_mb.unwrap_or(DEFAULT_MEMORY_MB).max(512)
     }
@@ -103,6 +118,8 @@ pub struct ServerCreate {
     pub name: String,
     pub mc_version: String,
     pub loader: Loader,
+    #[serde(default)]
+    pub platform: Option<platform::Platform>,
     #[serde(default)]
     pub from_instance: Option<String>,
     #[serde(default)]
@@ -245,13 +262,16 @@ impl ServerStore {
             id
         };
         let port = req.port.filter(|p| *p > 0).unwrap_or_else(|| self.free_port(None));
+        // Aus einer Instanz übernommene Server sind Mod-Server (Loader der Instanz)
+        let platform = if req.from_instance.is_some() { None } else { req.platform.clone() };
         let s = Server {
             id: id.clone(),
             name: name.to_string(),
             icon: None,
             accent: None,
             mc_version: req.mc_version.trim().to_string(),
-            loader: req.loader.clone(),
+            loader: if platform.is_some() { Loader { kind: crate::instance::LoaderKind::Vanilla, version: None } } else { req.loader.clone() },
+            platform,
             memory_mb: req.memory_mb,
             java_path: None,
             jvm_args: None,

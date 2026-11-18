@@ -1,0 +1,28 @@
+{
+  "skins": [
+    {
+      "id": "b008a9c6-0507-46b3-bebd-75b19751d251",
+      "name": "Henny Slim",
+      "base64_data": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAc0lEQVR42u3QoREAIAwAsY7TEZmYNWADEBUc14i3LxKZuU7NUev2f10AAAAAAAAAAAAAAAAAAAAAAMr9BgIAAAAAAAAAAAAAAAAAAAAA6BcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQoA1jdwZ4VpGU3AAAAABJRU5ErkJggg==",
+      "variant": "slim",
+      "description": "Added on 2026-10-30",
+      "added_at": "2026-10-30T21:29:12.278339600Z"
+    },
+    {
+      "id": "5d1f0e3a-1111-4c2b-9d7e-2a6a1b2c3d4e",
+      "name": "",
+      "base64_data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAeElEQVR42u3QMRUAEBRAUUkkEUwcccTRgAYMf3Acd3jrG27Kpc5do7dQp//tEgAAAAAAAAAAAAAAAAAAAAAg3GsgAAAAAAAAAAAAAAAAAAAAAID/AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD5oAaFAWtJo6Jw9AAAAAElFTkSuQmCC",
+      "variant": "classic",
+      "description": null,
+      "added_at": "2026-10-31T10:00:00Z"
+    },
+    {
+      "id": "broken",
+      "name": "Kaputt",
+      "base64_data": "!!!kein base64!!!",
+      "variant": "classic",
+      "description": null,
+      "added_at": "2026-10-31T10:00:00Z"
+    }
+  ]
+}

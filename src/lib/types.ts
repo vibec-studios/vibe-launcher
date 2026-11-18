@@ -316,8 +316,10 @@ export interface LibrarySkin {
   variant: SkinVariant;
   file: string;
   added_at: number;
-  /** "file" | "account:<name>" | "player:<name>" */
+  /** "file" | "account:<name>" | "player:<name>" | "import:<launcher>" */
   source: string | null;
+  /** Zugeordnetes Mojang-Cape (UUID), z. B. aus der Modrinth App */
+  cape_id?: string | null;
   data_url: string;
 }
 
@@ -592,7 +594,7 @@ export interface UpdateInfo {
 // ------------------------------------------------------------------ Import aus anderen Launchern
 
 /** folder = beliebiger Spielordner (nur über launcherScanDir) */
-export type LauncherKind = "modrinth" | "prism" | "multimc" | "curseforge" | "atlauncher" | "folder";
+export type LauncherKind = "modrinth" | "prism" | "multimc" | "curseforge" | "atlauncher" | "norisk" | "folder";
 
 export interface ExternalInstance {
   /** Instanzordner im fremden Launcher (Kennung für importExternal) */
@@ -739,6 +741,8 @@ export interface Server {
   accent: string | null;
   mc_version: string;
   loader: Loader;
+  /** Plugin-Software (Paper/Purpur/Folia); gesetzt -> loader ist Vanilla */
+  platform?: ServerPlatform | null;
   /** Arbeitsspeicher in MiB (null = Standard 2048) */
   memory_mb: number | null;
   /** Fester Java-Pfad (null = automatisch) */
@@ -811,10 +815,19 @@ export interface ServerModCandidate {
   server_ok: boolean;
 }
 
+export type ServerPlatformKind = "paper" | "purpur" | "folia";
+
+export interface ServerPlatform {
+  kind: ServerPlatformKind;
+  /** Build-Nummer; null = neuester stabiler */
+  build: string | null;
+}
+
 export interface ServerCreate {
   name: string;
   mc_version: string;
   loader: Loader;
+  platform?: ServerPlatform | null;
   /** Aus Instanz erstellen (Version/Loader der Instanz werden übernommen) */
   from_instance?: string | null;
   /** Dateinamen aus mods/ der Instanz, die kopiert werden (null = automatische Auswahl) */
