@@ -1,6 +1,7 @@
 // Verhalten wie eine native App: kein Browser-Kontextmenü, keine Reload-/Zoom-/Druck-Tastenkürzel,
 // kein Ziehen von Bildern/Links, kein Zoom per Strg+Mausrad.
 import { openTextMenu } from "./TextMenu";
+import { goBack, hasBackInterceptor, installMouseNav } from "./backNav";
 
 function isEditable(el: EventTarget | null): boolean {
   if (!(el instanceof HTMLElement)) return false;
@@ -45,6 +46,8 @@ export function installGuards() {
         (e.altKey && (k === "arrowleft" || k === "arrowright") && !isEditable(e.target)) ||
         (k === "backspace" && !isEditable(e.target));
       if (blocked) e.preventDefault();
+      // Alt+Links: nur wenn ein Overlay „Zurück“ selbst behandelt (schließt es bzw. geht darin zurück)
+      if (e.altKey && k === "arrowleft" && !isEditable(e.target) && hasBackInterceptor()) goBack();
     },
     { capture: true },
   );
@@ -63,6 +66,9 @@ export function installGuards() {
     const el = e.target as HTMLElement | null;
     if (!el || !(el.closest?.("[draggable='true']"))) e.preventDefault();
   });
+
+  // Maus-Zurück/-Vor (Button 3/4): eigene History-Navigation, Overlays zuerst
+  installMouseNav();
 
   // Mittlere Maustaste öffnet keine neuen Fenster, Auto-Scroll aus
   document.addEventListener("auxclick", (e) => {

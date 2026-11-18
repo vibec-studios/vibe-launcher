@@ -33,6 +33,7 @@ import {
 import { openExternal } from "@/components/content/util";
 import { useT, t as tt } from "@/i18n";
 import { openServerFolder } from "./actions";
+import { ServerProjectOverlay, type AddonRef } from "./ServerProjectOverlay";
 import { addonApi, aqk, type Addon, type AddonHit, type AddonList, type AddonSource, type AddonUpdate } from "./addonsApi";
 
 function refresh(id: string) {
@@ -220,7 +221,7 @@ function InstalledList({ server, list, updates }: { server: Server; list: AddonL
   );
 }
 
-function SearchPanel({ server, list }: { server: Server; list: AddonList }) {
+function SearchPanel({ server, list, onOpen }: { server: Server; list: AddonList; onOpen: (r: AddonRef) => void }) {
   const t = useT();
   const hangar = !!list.target.hangar;
   const [source, setSource] = useState<AddonSource>("modrinth");
@@ -305,13 +306,15 @@ function SearchPanel({ server, list }: { server: Server; list: AddonList }) {
             const have = installed.has(h.id) || names.has(h.title.toLowerCase());
             return (
               <div key={`${h.source}:${h.id}`} className={rowCls}>
-                <AddonIcon src={h.icon_url} size={36} />
+                <button type="button" className="shrink-0" aria-label={h.title} onClick={() => onOpen({ source: h.source, id: h.id })}>
+                  <AddonIcon src={h.icon_url} size={36} />
+                </button>
                 <div className="min-w-0 flex-1">
                   <div className="flex min-w-0 items-center gap-2">
                     <button
                       type="button"
                       className="truncate text-left text-[13px] font-semibold text-text hover:underline"
-                      onClick={() => openExternal(h.page_url)}
+                      onClick={() => onOpen({ source: h.source, id: h.id })}
                     >
                       {h.title}
                     </button>
@@ -373,9 +376,12 @@ export function ServerAddonsTab({ server }: { server: Server }) {
   const [updating, setUpdating] = useState(false);
   const plugins = !!server.platform;
   const ups = updates.data ?? [];
+  // Projekt-Overlay (Stapel für Abhängigkeiten)
+  const [stack, setStack] = useState<AddonRef[]>([]);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
+      {stack.length > 0 && list.data && <ServerProjectOverlay server={server} list={list.data} stack={stack} onStack={setStack} />}
       <div className="flex h-12 shrink-0 items-center gap-2 px-6">
         <p className="min-w-0 flex-1 truncate text-meta text-dim">
           {running
@@ -437,7 +443,7 @@ export function ServerAddonsTab({ server }: { server: Server }) {
             >
               <InstalledList server={server} list={list.data} updates={ups} />
             </SettingsCard>
-            <SearchPanel server={server} list={list.data} />
+            <SearchPanel server={server} list={list.data} onOpen={(r) => setStack([r])} />
           </div>
         )}
       </div>

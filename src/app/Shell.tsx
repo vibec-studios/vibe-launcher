@@ -2,7 +2,7 @@
 // die Inhaltsfläche liegt eine Stufe heller darin (Ecke oben links folgt der Einstellung „Ecken“).
 // Seitenleiste: Navigation, zuletzt gespielte Instanzen, Einstellungen, Account.
 // Titelleiste: Zurück/Vor, Brotkrumen, laufende Spiele, Aufgaben, Fensterknöpfe.
-import { Outlet, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
+import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ChevronLeft, ChevronRight, Compass, Copy, Home, Images, LibraryBig, Minus, Plus, Server as ServerIcon, Settings as SettingsIcon, Shirt, Sparkles, Square, Users, X } from "lucide-react";
 import { memo, useEffect, useState, type ReactNode } from "react";
@@ -31,6 +31,7 @@ import { useSocialBadge } from "@/features/social/hooks";
 import { SettingsDialog } from "@/features/settings/SettingsDialog";
 import { openSettings, useSettingsDialog } from "@/features/settings/store";
 import { AppearanceHost } from "./AppearanceHost";
+import { goBack, goForward } from "./backNav";
 
 // ------------------------------------------------------------------ Seitenleiste
 // Kompakt (nur Icons, Standard) oder breit mit Beschriftung; Reihenfolge/Sichtbarkeit der Einträge und die
@@ -314,16 +315,15 @@ function WindowControls() {
 
 function Topbar() {
   const t = useT();
-  const router = useRouter();
   const title = usePageTitle();
   const navBtn = "grid h-7 w-7 place-items-center rounded-ctl text-dim transition-colors duration-100 hover:bg-white/[.06] hover:text-text";
   return (
     <header data-tauri-drag-region className="flex h-[var(--titlebar-h)] shrink-0 items-center bg-bg pl-2">
       <div className="flex items-center gap-0.5">
-        <button aria-label={t("common.back")} className={navBtn} onClick={() => router.history.back()}>
+        <button aria-label={t("common.back")} className={navBtn} onClick={goBack}>
           <ChevronLeft size={18} />
         </button>
-        <button aria-label={t("rail.forward")} className={navBtn} onClick={() => router.history.forward()}>
+        <button aria-label={t("rail.forward")} className={navBtn} onClick={goForward}>
           <ChevronRight size={18} />
         </button>
       </div>

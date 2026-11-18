@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { useLang } from "@/i18n";
 import { prettyCategory } from "@/components/content/Pill";
+import type { Category } from "@/lib/types";
 
 const MAP: Record<string, LucideIcon> = {
   // Mods / Modpacks
@@ -141,6 +142,47 @@ const MAP: Record<string, LucideIcon> = {
   "miscellaneous": Package,
   "tinker's construct": Hammer,
   "education": BookOpen,
+  "adventure and rpg": Compass,
+  "biomes": Trees,
+  "dimensions": Moon,
+  "structures": Castle,
+  "ores and resources": Pickaxe,
+  "player transport": TrainFront,
+  "energy": Zap,
+  "energy, fluid, and item transport": Cable,
+  "processing": Cpu,
+  "automation": Cpu,
+  "genetics": Leaf,
+  "farming": Leaf,
+  "addons": Puzzle,
+  "thermal expansion": Zap,
+  "applied energistics 2": Cpu,
+  "crafttweaker": Wrench,
+  "kubejs": ScrollText,
+  "mcreator": Hammer,
+  "bug fixes": Wrench,
+  "fabric": Layers,
+  "hardcore": Skull,
+  "exploration": Compass,
+  "extra large": Boxes,
+  "small / light": Feather,
+  "fps": Zap,
+  "skyblock": Cloud,
+  "sci-fi": Sparkles,
+  "map based": MapIcon,
+  "mini game": Gamepad2,
+  "animated": Sparkles,
+  "font packs": Type,
+  "medieval": Castle,
+  "modern": Box,
+  "photo realistic": Sun,
+  "steampunk": Cpu,
+  "traditional": Brush,
+  "mod support": Puzzle,
+  "data packs": Package,
+  "512x and higher": Grid3x3,
+  "realistic shaders": Sun,
+  "vanilla": Box,
 };
 
 export function categoryIcon(id: string): LucideIcon {
@@ -164,6 +206,21 @@ const DE: Record<string, string> = {
   environment: "Umgebung", fonts: "Schriften", gui: "Oberfläche", items: "Gegenstände", locale: "Sprache", modded: "Für Mods", models: "Modelle",
   simplistic: "Schlicht", themed: "Thematisch", tweaks: "Anpassungen",
 };
+
+/** Kategorie mit numerischer ID (CurseForge): Name statt Nummer anzeigen, Symbol über den Namen. */
+export function isNumericCategory(id: string) {
+  return /^\d+$/.test(id);
+}
+
+/** Anzeigename einer Kategorie aus der Kategorienliste (CurseForge: Name, Modrinth: übersetzte ID). */
+export function catLabel(c: Pick<Category, "id" | "name">): string {
+  return isNumericCategory(c.id) ? c.name : categoryLabel(c.id);
+}
+
+/** Schlüssel für das Symbol einer Kategorie aus der Kategorienliste. */
+export function catIconKey(c: Pick<Category, "id" | "name">): string {
+  return isNumericCategory(c.id) ? c.name.toLowerCase() : c.id;
+}
 
 /** Lesbarer Kategoriename in der UI-Sprache (Deutsch übersetzt, sonst Original). */
 export function categoryLabel(id: string): string {

@@ -11,7 +11,7 @@ import { qk } from "@/lib/queries";
 import type { Category, Instance, ProjectHit, ProjectType, SearchQuery, SortOrder, Source } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { prettyLoader } from "@/components/content/Pill";
-import { CategoryIcon, categoryLabel } from "./categoryIcons";
+import { CategoryIcon, catIconKey, catLabel } from "./categoryIcons";
 import { InstallMenu } from "./InstallMenu";
 import { ResultTile, TILE_H, TILE_MIN_W, TileSkeleton } from "./ResultCard";
 import { TRENDING_DAYS, trendingSince } from "./store";
@@ -160,9 +160,9 @@ function CategoryTiles({ cats, pending, onPick }: { cats: Category[] | undefined
               className="group flex h-[52px] items-center gap-3 rounded-card bg-surface px-3.5 text-left transition-colors duration-100 hover:bg-surface2 focus-visible:bg-surface2"
             >
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-ctl bg-white/[.05] text-muted transition-colors duration-100 group-hover:bg-brand/15 group-hover:text-brand">
-                <CategoryIcon id={c.id} size={16} />
+                <CategoryIcon id={catIconKey(c)} size={16} />
               </span>
-              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-text">{categoryLabel(c.id)}</span>
+              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-text">{catLabel(c)}</span>
             </button>
           ))}
     </div>
