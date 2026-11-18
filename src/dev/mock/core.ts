@@ -3,6 +3,13 @@ import type { Instance, Settings } from "@/lib/types";
 import { mockEmit, tasks, type Handlers } from "./util";
 
 const now = Date.now();
+function mockFlag(k: string): string | null {
+  try {
+    return localStorage.getItem(k);
+  } catch {
+    return null;
+  }
+}
 function inst(id: string, name: string, mc: string, kind: Instance["loader"]["kind"], ver: string | null, extra: Partial<Instance> = {}): Instance {
   return {
     auto_update_content: null,
@@ -67,6 +74,11 @@ let settings: Settings = {
   world_backup_on_launch: false,
   world_backups_keep: 5,
   minecraftcapes: true,
+  // Screenshots: localStorage vl.mock.mode = simple|expert, vl.mock.onboarding = 1 (Erststart)
+  ui_mode: mockFlag("vl.mock.mode") === "simple" ? "simple" : "expert",
+  onboarding_done: mockFlag("vl.mock.onboarding") !== "1",
+  simple_hint_seen: mockFlag("vl.mock.hint") !== "1",
+  simple_tour_done: mockFlag("vl.mock.tour") !== "1",
   appearance: {
     accent: "#8b6cff",
     tone: "dark",

@@ -21,6 +21,8 @@ import { ContinueCard } from "./Continue";
 import { JumpBackIn, RecentInstances } from "./Recent";
 import { FriendsBlock, UpdatesBlock, VibeNews } from "./Side";
 import { PopularPacks, StartHere } from "./Discover";
+import { SimpleHome } from "./SimpleHome";
+import { useSimple } from "@/lib/mode";
 
 const RECENT = 6;
 const SPOTS = 5;
@@ -67,6 +69,11 @@ function Header({ count }: { count: number }) {
 }
 
 export function HomePage() {
+  // Simple-Modus: eigene, ruhige Startseite (großer Spielen-Knopf + „Neues Spiel“-Kacheln)
+  return useSimple() ? <SimpleHome /> : <ExpertHome />;
+}
+
+function ExpertHome() {
   const { data, isLoading } = useInstances();
   const vibe = useVibe();
   const list = useMemo(() => byRecent(data ?? []), [data]);

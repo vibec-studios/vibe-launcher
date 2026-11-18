@@ -16,6 +16,10 @@ import { useT } from "@/i18n";
 import { INSTANCE_SETTINGS_TABS, closeInstanceSettings, setInstanceSettingsTab, useInstanceSettings, type InstanceSettingsTab } from "./store";
 import { AdvancedTab, ClientTab, GeneralTab, JavaTab, LaunchTab, VersionTab, VibeTab, type TabProps } from "./tabs";
 import { useClientPacks } from "./ClientPacks";
+import { useSimple } from "@/lib/mode";
+
+/** Simple-Modus: nur Allgemein (Name, Icon, Löschen) und Client-Pack. */
+const SIMPLE_TABS: InstanceSettingsTab[] = ["general", "client"];
 
 const ICONS: Record<InstanceSettingsTab, ReactNode> = {
   general: <SlidersHorizontal size={16} />,
@@ -65,8 +69,9 @@ function Body({ instance }: { instance: Instance }) {
   const packs = useClientPacks(instance);
   const vibeyOn = !!packs.data?.packs.find((p) => p.id === "vibey")?.installed;
   const stored = useInstanceSettings((s) => s.tab);
+  const simple = useSimple();
   // Vibe-Tab nur bei eingeschalteten Vibe-Diensten
-  const tabs = INSTANCE_SETTINGS_TABS.filter((x) => x !== "vibe" || vibe.enabled);
+  const tabs = INSTANCE_SETTINGS_TABS.filter((x) => (x !== "vibe" || vibe.enabled) && (!simple || SIMPLE_TABS.includes(x)));
   const tab: InstanceSettingsTab = tabs.includes(stored) ? stored : "general";
   const { draft: d, update, local, reset, state } = useAutoSave(instance, apply, (p: InstancePatch) => api.instanceUpdate(instance.id, p));
   const props: TabProps = { instance, d, update, local, reset };

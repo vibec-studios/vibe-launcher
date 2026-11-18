@@ -24,12 +24,13 @@ import appearance from "./appearance";
 import home from "./home";
 import manual from "./manual";
 import clientpacks from "./clientpacks";
+import simple from "./simple";
 
 export type Lang = "de" | "en";
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple];
 const dicts: Record<Lang, Dict> = { de: {}, en: {} };
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);
@@ -38,11 +39,15 @@ for (const b of bundles) {
 
 interface LangState {
   lang: Lang;
+  /** Simple-Modus: Schlüssel mit `simple:`-Variante (src/i18n/simple.ts) nutzen einfache Wörter ohne Fachbegriffe.
+   *  Gesetzt von `ModeHost` (src/lib/mode.tsx). */
+  simple: boolean;
   setLang: (l: Lang) => void;
 }
 
 export const useLang = create<LangState>((set) => ({
   lang: (localStorageGet("lang") as Lang) || "de",
+  simple: localStorageGet("vl.mode") === "simple",
   setLang: (lang) => {
     localStorageSet("lang", lang);
     document.documentElement.lang = lang;
@@ -65,8 +70,8 @@ function localStorageSet(k: string, v: string) {
   }
 }
 
-export function translate(lang: Lang, key: string, vars?: Record<string, string | number>): string {
-  let s = dicts[lang][key] ?? dicts.de[key] ?? dicts.en[key];
+export function translate(lang: Lang, key: string, vars?: Record<string, string | number>, simple = false): string {
+  let s = (simple ? (dicts[lang][`simple:${key}`] ?? dicts.de[`simple:${key}`]) : undefined) ?? dicts[lang][key] ?? dicts.de[key] ?? dicts.en[key];
   if (s === undefined) {
     if (import.meta.env.DEV) console.warn(`[i18n] fehlender Schlüssel: ${key}`);
     s = key;
@@ -78,10 +83,12 @@ export function translate(lang: Lang, key: string, vars?: Record<string, string 
 /** Übersetzungsfunktion für die aktuelle Sprache. */
 export function useT() {
   const lang = useLang((s) => s.lang);
-  return (key: string, vars?: Record<string, string | number>) => translate(lang, key, vars);
+  const simple = useLang((s) => s.simple);
+  return (key: string, vars?: Record<string, string | number>) => translate(lang, key, vars, simple);
 }
 
 /** Außerhalb von React (Toasts etc.). */
 export function t(key: string, vars?: Record<string, string | number>) {
-  return translate(useLang.getState().lang, key, vars);
+  const s = useLang.getState();
+  return translate(s.lang, key, vars, s.simple);
 }

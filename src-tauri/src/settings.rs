@@ -68,6 +68,26 @@ pub struct Settings {
     pub minecraftcapes: bool,
     /// Darstellung: Akzentfarbe, Ton, Ecken, Dichte, Skalierung, Hintergrund
     pub appearance: Appearance,
+    /// Bedienung: "simple" (geführt, ohne Fachbegriffe) | "expert" (alle Funktionen).
+    /// Fehlt das Feld (Einstellungen von vor dem Simple-Modus), gilt "expert".
+    #[serde(default = "legacy_ui_mode")]
+    pub ui_mode: String,
+    /// Einrichtung beim ersten Start abgeschlossen. Fehlt das Feld (bestehende Einstellungen), gilt sie als erledigt –
+    /// nur ganz neue Nutzer sehen das Onboarding.
+    #[serde(default = "legacy_onboarding_done")]
+    pub onboarding_done: bool,
+    /// Hinweis „Neu: Simple-Modus“ (einmalig für bestehende Nutzer) gesehen
+    pub simple_hint_seen: bool,
+    /// Kurze Einführung (Hinweis-Bubbles) im Simple-Modus gesehen
+    pub simple_tour_done: bool,
+}
+
+fn legacy_ui_mode() -> String {
+    "expert".into()
+}
+
+fn legacy_onboarding_done() -> bool {
+    true
 }
 
 /// Darstellungs-Optionen des Launchers (wirken sofort, siehe `src/lib/appearance.ts`).
@@ -368,6 +388,11 @@ impl Default for Settings {
             world_backups_keep: 5,
             minecraftcapes: true,
             appearance: Appearance::default(),
+            // Neue Nutzer wählen den Modus im Onboarding
+            ui_mode: "expert".into(),
+            onboarding_done: false,
+            simple_hint_seen: false,
+            simple_tour_done: false,
         }
     }
 }
@@ -394,6 +419,16 @@ fn default_max_memory() -> u32 {
     v / 512 * 512
 }
 
+/// Gibt es schon Konten oder Instanzen? (Erkennung bestehender Nutzer ohne `settings.json`)
+fn has_existing_data(paths: &crate::paths::Paths) -> bool {
+    if paths.accounts_file().exists() {
+        return true;
+    }
+    std::fs::read_dir(paths.instances())
+        .map(|mut it| it.any(|e| e.map(|e| e.path().join("instance.json").exists()).unwrap_or(false)))
+        .unwrap_or(false)
+}
+
 /// Gesamter Arbeitsspeicher des Systems in MiB (für Regler im Frontend).
 pub fn system_memory_mb() -> u64 {
     let mut sys = sysinfo::System::new();
@@ -406,9 +441,29 @@ impl Settings {
         match std::fs::read(path) {
             Ok(b) => serde_json::from_slice(&b).unwrap_or_else(|e| {
                 tracing::warn!("settings.json unlesbar, Standardwerte: {e}");
-                Settings::default()
+                // Kaputte Datei = bestehender Nutzer: kein Onboarding, Expert bleibt
+                Settings { onboarding_done: true, ..Settings::default() }
             }),
             Err(_) => Settings::default(),
+        }
+    }
+
+    /// Wie `load`, erkennt aber bestehende Nutzer ohne `settings.json` (nie etwas eingestellt, aber schon Konten
+    /// oder Instanzen): für sie gilt das Onboarding als erledigt, der Modus bleibt Expert.
+    pub fn load_for(paths: &crate::paths::Paths) -> Settings {
+        let file = paths.settings_file();
+        let mut s = Settings::load(&file);
+        if !file.exists() && !s.onboarding_done && has_existing_data(paths) {
+            s.onboarding_done = true;
+        }
+        s.sanitize_mode();
+        s
+    }
+
+    /// Unbekannten Modus auf "expert" setzen.
+    pub fn sanitize_mode(&mut self) {
+        if self.ui_mode != "simple" {
+            self.ui_mode = "expert".into();
         }
     }
 
@@ -440,6 +495,49 @@ impl Settings {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn old_settings_are_expert_without_onboarding() {
+        let s: Settings = serde_json::from_str(r#"{"language":"de"}"#).unwrap();
+        assert_eq!(s.ui_mode, "expert");
+        assert!(s.onboarding_done);
+        assert!(!s.simple_hint_seen);
+        assert!(!s.simple_tour_done);
+    }
+
+    #[test]
+    fn fresh_settings_need_onboarding() {
+        let s = Settings::default();
+        assert!(!s.onboarding_done);
+        let back: Settings = serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
+        assert!(!back.onboarding_done, "gespeichertes false bleibt false");
+    }
+
+    #[test]
+    fn existing_data_skips_onboarding() {
+        let dir = std::env::temp_dir().join(format!("vl-onb-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let paths = crate::paths::Paths { root: dir.clone() };
+        assert!(!Settings::load_for(&paths).onboarding_done, "leerer Ordner = neuer Nutzer");
+        std::fs::create_dir_all(paths.instance_dir("a")).unwrap();
+        std::fs::write(paths.instance_json("a"), "{}").unwrap();
+        assert!(Settings::load_for(&paths).onboarding_done, "Instanz vorhanden = bestehender Nutzer");
+        let mut s = Settings::default();
+        s.ui_mode = "simple".into();
+        s.save(&paths.settings_file()).unwrap();
+        let loaded = Settings::load_for(&paths);
+        assert_eq!(loaded.ui_mode, "simple");
+        assert!(!loaded.onboarding_done, "gespeicherte Einstellungen gewinnen");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn unknown_mode_falls_back_to_expert() {
+        let mut s: Settings = serde_json::from_str(r#"{"ui_mode":"wizard"}"#).unwrap();
+        s.sanitize_mode();
+        assert_eq!(s.ui_mode, "expert");
+    }
 
     #[test]
     fn old_settings_get_default_appearance() {

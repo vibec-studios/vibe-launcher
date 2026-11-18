@@ -1,11 +1,11 @@
 // App-Rahmen: Seitenleiste und Titelleiste bilden einen ruhigen, durchgehenden Rahmen (ohne Trennlinien);
 // die Inhaltsfläche liegt eine Stufe heller darin (Ecke oben links folgt der Einstellung „Ecken“).
-// Seitenleiste: Navigation, zuletzt gespielte Instanzen, Einstellungen, Account.
-// Titelleiste: Zurück/Vor, Brotkrumen, laufende Spiele, Aufgaben, Fensterknöpfe.
+// Seitenleiste: Navigation, zuletzt gespielte Instanzen, Einstellungen.
+// Titelleiste: Zurück/Vor, Brotkrumen, laufende Spiele, Aufgaben, Freunde, Konto-Menü, Fensterknöpfe.
+// Simple-Modus (src/lib/mode.tsx): feste, kurze Navigation mit Beschriftung; Onboarding/Einführung hängen hier.
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ChevronLeft, ChevronRight, Compass, Copy, Home, Images, LibraryBig, Minus, Plus, Server as ServerIcon, Settings as SettingsIcon, Shirt, Sparkles, Square, Users, X } from "lucide-react";
-import { memo, useEffect, useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, Compass, Home, Images, LibraryBig, Plus, Server as ServerIcon, Settings as SettingsIcon, Shirt, Sparkles, Square, Users } from "lucide-react";
+import { memo, type ReactNode } from "react";
 import { ContextMenu, Spinner, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { isRunning, useGameStore, useInstance, useInstances, useInstanceTasks, useServer, useServerStore } from "@/lib/queries";
@@ -20,7 +20,11 @@ import { killInstance, openNewInstance } from "@/components/instance/actions";
 import { InstanceDialogs } from "@/features/instances/InstanceDialogs";
 import { TaskDock } from "./TaskDock";
 import { UpdateButton } from "./UpdateNotice";
-import { AccountChip } from "./AccountChip";
+import { AccountMenu } from "./AccountMenu";
+import { ModeHost, useSimple } from "@/lib/mode";
+import { Onboarding } from "@/features/onboarding/Onboarding";
+import { SimpleTour } from "@/features/onboarding/SimpleTour";
+import { SimpleModeHint } from "@/features/onboarding/SimpleModeHint";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useVibe } from "@/lib/vibe";
 import { VibeBridge } from "@/features/social/VibeBridge";
@@ -32,15 +36,32 @@ import { SettingsDialog } from "@/features/settings/SettingsDialog";
 import { openSettings, useSettingsDialog } from "@/features/settings/store";
 import { AppearanceHost } from "./AppearanceHost";
 import { goBack, goForward } from "./backNav";
+import { WindowControls } from "./WindowControls";
 
 // ------------------------------------------------------------------ Seitenleiste
 // Kompakt (nur Icons, Standard) oder breit mit Beschriftung; Reihenfolge/Sichtbarkeit der Einträge und die
 // Instanz-Liste kommen aus der Darstellung (Einstellungen → Darstellung → Seitenleiste).
 
-function RailButton({ label, active, wide, onClick, children }: { label: string; active?: boolean; wide: boolean; onClick: () => void; children: ReactNode }) {
+function RailButton({
+  label,
+  active,
+  wide,
+  onClick,
+  children,
+  tour,
+}: {
+  label: string;
+  active?: boolean;
+  wide: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  /** Ziel für die Einführungs-Bubbles (SimpleTour) */
+  tour?: string;
+}) {
   return (
     <Tooltip content={wide ? null : label} side="right">
       <button
+        data-tour={tour}
         aria-label={label}
         aria-current={active ? "page" : undefined}
         onClick={onClick}
@@ -61,8 +82,9 @@ const RailInstance = memo(function RailInstance({ instance: i, active, wide }: {
   const nav = useNavigate();
   const running = useGameStore((s) => isRunning(s.states[i.id]));
   const busy = useInstanceTasks(i.id).length > 0;
+  const simple = useSimple();
   return (
-    <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
+    <ContextMenu disabled={simple} content={<InstanceContextMenuContent instance={i} />}>
       <div className={wide ? "w-full" : undefined}>
         <Tooltip content={wide ? null : i.name} side="right">
           <button
@@ -107,6 +129,10 @@ const NAV: Record<NavKey, NavDef> = {
   screenshots: { icon: <Images size={20} />, label: "nav.screenshots", go: (nav) => nav({ to: "/screenshots" }), match: (p) => p === "/screenshots" },
 };
 
+/** Simple-Modus: feste, kurze Navigation (Skins übers Konto-Menü; Server, Screenshots und Statistiken nur im
+ *  Expert-Modus – sie setzen Technik voraus oder sind für den Einstieg nicht nötig). */
+const SIMPLE_NAV: NavKey[] = ["home", "instances", "discover", "social", "cosmetics"];
+
 /** Logo oben: 3D-Robbe – im Winter-Theme mit Schal (Maskottchen, Logo3D folgt dem Theme selbst). */
 function RailLogo({ wide }: { wide: boolean }) {
   const nav = useNavigate();
@@ -130,14 +156,17 @@ function Rail() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { data: instances = [] } = useInstances();
   const sidebar = useLiveAppearance((s) => s.a.sidebar);
-  const wide = sidebar.mode === "wide";
+  const simple = useSimple();
+  const wide = sidebar.mode === "wide" || simple;
   const recent = sidebar.instances ? instances.slice(0, 8) : [];
   const at = (p: string) => path === p || path.startsWith(p + "/");
   const serversRunning = useServerStore((s) => Object.values(s.statuses).some((x) => x.state === "running"));
   const vibe = useVibe();
   const socialBadge = useSocialBadge();
   const settingsOpen = useSettingsDialog((s) => s.open);
-  const keys = sidebar.order.filter((k) => !sidebar.hidden.includes(k) && (k !== "social" || vibe.social) && (k !== "cosmetics" || vibe.enabled));
+  const keys = (simple ? SIMPLE_NAV : sidebar.order.filter((k) => !sidebar.hidden.includes(k))).filter(
+    (k) => (k !== "social" || vibe.social) && (k !== "cosmetics" || vibe.enabled),
+  );
   const sep = <div className={cn("my-1.5 h-px shrink-0 bg-line2", wide ? "mx-1.5" : "w-6")} />;
   return (
     <nav className={cn("flex w-[var(--rail-w)] shrink-0 flex-col gap-1 bg-bg py-2", wide ? "items-stretch px-2.5" : "items-center")}>
@@ -145,7 +174,7 @@ function Rail() {
       {keys.map((k) => {
         const n = NAV[k];
         return (
-          <RailButton key={k} wide={wide} label={t(n.label)} active={n.match(path, at)} onClick={() => n.go(nav)}>
+          <RailButton key={k} wide={wide} label={t(n.label)} active={n.match(path, at)} onClick={() => n.go(nav)} tour={k}>
             {n.icon}
             {k === "servers" && serversRunning && (
               <span className={cn("absolute h-2 w-2 rounded-dot bg-ok shadow-[0_0_0_2px_var(--tone-frame)]", wide ? "right-3 top-1/2 -translate-y-1/2" : "bottom-2 right-2")} />
@@ -194,7 +223,6 @@ function Rail() {
       <RailButton wide={wide} label={t("nav.settings")} active={settingsOpen} onClick={() => openSettings()}>
         <SettingsIcon size={20} />
       </RailButton>
-      <AccountChip wide={wide} />
     </nav>
   );
 }
@@ -286,33 +314,6 @@ function RunningGames() {
   );
 }
 
-function WindowControls() {
-  const t = useT();
-  const [max, setMax] = useState(false);
-  useEffect(() => {
-    const w = getCurrentWindow();
-    w.isMaximized().then(setMax).catch(() => {});
-    const un = w.onResized(() => w.isMaximized().then(setMax).catch(() => {}));
-    return () => {
-      un.then((f) => f());
-    };
-  }, []);
-  const btn = "grid h-full w-[46px] place-items-center text-muted transition-colors duration-100 hover:bg-white/[.07] hover:text-text";
-  return (
-    <div className="flex h-full">
-      <button aria-label={t("window.minimize")} className={btn} onClick={() => getCurrentWindow().minimize()}>
-        <Minus size={16} strokeWidth={1.5} />
-      </button>
-      <button aria-label={t("window.maximize")} className={btn} onClick={() => getCurrentWindow().toggleMaximize()}>
-        {max ? <Copy size={13} strokeWidth={1.5} className="-scale-x-100" /> : <Square size={13} strokeWidth={1.5} />}
-      </button>
-      <button aria-label={t("window.close")} className={cn(btn, "hover:bg-[#e81123] hover:text-white")} onClick={() => getCurrentWindow().close()}>
-        <X size={17} strokeWidth={1.5} />
-      </button>
-    </div>
-  );
-}
-
 function Topbar() {
   const t = useT();
   const title = usePageTitle();
@@ -336,6 +337,8 @@ function Topbar() {
         <RunningGames />
         <TaskDock />
         <FriendsPanelToggle />
+        <span className="mx-0.5 h-5 w-px bg-line2" aria-hidden />
+        <AccountMenu />
       </div>
       <WindowControls />
     </header>
@@ -348,6 +351,7 @@ export function Shell() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return (
     <div className="flex h-full">
+      <ModeHost />
       <AppearanceHost />
       <Rail />
       <div className="flex min-w-0 flex-1 flex-col">
@@ -374,6 +378,9 @@ export function Shell() {
       <CosmeticsBridge />
       <SocialDialogs />
       <SettingsDialog />
+      <SimpleModeHint />
+      <SimpleTour />
+      <Onboarding />
     </div>
   );
 }

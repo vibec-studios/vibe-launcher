@@ -21,6 +21,7 @@ import { InstanceOptSync } from "@/components/instance/OptSync";
 import { openSettings } from "@/features/settings/store";
 import { useVibe } from "@/lib/vibe";
 import { useT } from "@/i18n";
+import { useSimple } from "@/lib/mode";
 import { AccentPicker, GroupInput } from "../NewInstanceDialog";
 import { ClientPacks, useClientPacks } from "./ClientPacks";
 import { closeInstanceSettings } from "./store";
@@ -50,7 +51,72 @@ const NO_HOOKS: LaunchHooks = { pre_launch: null, post_exit: null, wrapper: null
 
 // ------------------------------------------------------------------ Allgemein
 
-export function GeneralTab({ instance, d, update, local, reset }: TabProps) {
+/** Simple-Modus: nur Name, Icon und Löschen (RAM, Java usw. stellt der Launcher selbst ein). */
+function SimpleGeneralTab({ instance, d, update, local, reset }: TabProps) {
+  const t = useT();
+  const nav = useNavigate();
+  const actions = useInstanceActions();
+  const { phase } = useRunPhase(instance.id);
+  const running = phase === "running" || phase === "preparing";
+  const accent = instanceAccent(d.id, d.accent);
+  return (
+    <>
+      <SettingsCard title={t("isettings.general")}>
+        <SettingRow title={t("newinst.name")} stacked>
+          <Input
+            value={d.name}
+            maxLength={64}
+            invalid={!d.name.trim()}
+            onChange={(e) => (e.target.value.trim() ? update({ name: e.target.value }, 600) : local({ name: e.target.value }))}
+            onBlur={() => !d.name.trim() && reset()}
+          />
+        </SettingRow>
+        <SettingRow title={t("inst.icon")} description={t("isettings.icon.desc")}>
+          <div className="flex items-center gap-3">
+            <InstanceIcon icon={d.icon} accent={accent} size={44} />
+            <Button size="sm" icon={<ImageIcon size={13} />} onClick={() => setIcon(instance)}>
+              {t("inst.icon.choose")}
+            </Button>
+            {d.icon && (
+              <Tooltip content={t("inst.icon.reset")}>
+                <IconButton label={t("inst.icon.reset")} size="sm" onClick={() => resetIcon(instance)}>
+                  <RotateCcw size={13} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </div>
+        </SettingRow>
+        <SettingRow title={t("inst.accent")} stacked>
+          <AccentPicker value={accent} onChange={(c) => update({ accent: c })} />
+        </SettingRow>
+      </SettingsCard>
+      <p className="px-1 text-[12.5px] text-dim">{t("simple.isd.auto")}</p>
+      <SettingsCard title={t("isettings.danger")} danger>
+        <SettingRow title={t("isettings.delete")} description={t("isettings.delete.desc")}>
+          <Button
+            variant="danger"
+            icon={<Trash2 size={14} />}
+            disabled={running}
+            onClick={() =>
+              actions.remove(instance, () => {
+                closeInstanceSettings();
+                nav({ to: "/instances" });
+              })
+            }
+          >
+            {t("common.delete")}
+          </Button>
+        </SettingRow>
+      </SettingsCard>
+    </>
+  );
+}
+
+export function GeneralTab(props: TabProps) {
+  return useSimple() ? <SimpleGeneralTab {...props} /> : <ExpertGeneralTab {...props} />;
+}
+
+function ExpertGeneralTab({ instance, d, update, local, reset }: TabProps) {
   const t = useT();
   const { data: settings } = useSettings();
   const { data: all = [] } = useInstances();

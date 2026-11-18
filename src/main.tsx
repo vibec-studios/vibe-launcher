@@ -21,6 +21,7 @@ if (import.meta.env.VITE_MOCK === "1") await import("@/dev/mock");
 installGuards();
 applyCachedAppearance();
 document.documentElement.lang = useLang.getState().lang;
+document.documentElement.dataset.mode = useLang.getState().simple ? "simple" : "expert";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

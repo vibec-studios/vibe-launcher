@@ -5,6 +5,7 @@ import { ChevronDown, LayoutGrid, List, PackageOpen, Plus } from "lucide-react";
 import { useInstances } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { loaderNames } from "@/lib/format";
+import { useSimple } from "@/lib/mode";
 import { Button, EmptyState, ErrorState, IconButton, SearchInput, Select, cn } from "@/components/ui";
 import { InstanceCard, InstanceCardSkeleton, InstanceListRow } from "@/components/instance/InstanceCard";
 import { openNewInstance, useInstanceActions } from "@/components/instance/actions";
@@ -62,7 +63,10 @@ export function InstancesPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilterState] = useState<FilterKey>(() => load("vl.inst.filter", "all"));
   const [sort, setSortState] = useState<SortKey>(() => load("vl.inst.sort", "recent"));
-  const [groupBy, setGroupByState] = useState<GroupKey>(() => load("vl.inst.groupby", "group"));
+  const [storedGroupBy, setGroupByState] = useState<GroupKey>(() => load("vl.inst.groupby", "group"));
+  // Simple-Modus: keine Gruppierung nach Loader/Version, Auswahl ausgeblendet
+  const simple = useSimple();
+  const groupBy: GroupKey = simple && (storedGroupBy === "loader" || storedGroupBy === "version") ? "group" : storedGroupBy;
   const [collapsed, setCollapsed] = useState<string[]>(() => load("vl.inst.collapsed", []));
   // Standardansicht aus der Darstellung; eine Umschaltung hier gilt, bis die Einstellung geändert wird
   const [view, setViewState] = useState<ViewKey>(() => load("vl.inst.view", cachedAppearance().library_view));
@@ -146,6 +150,7 @@ export function InstancesPage() {
                   options={SORTS.map((s) => ({ value: s, label: t(`instances.sort.${s}`) }))}
                 />
               </div>
+              {!simple && (
               <div className="w-[150px] max-[1100px]:w-[132px]">
                 <Select<GroupKey>
                   size="sm"
@@ -155,6 +160,7 @@ export function InstancesPage() {
                   options={GROUPS.map((g) => ({ value: g, label: t(`instances.groupby.${g}`) }))}
                 />
               </div>
+              )}
             </>
           )}
           <div className="flex-1" />

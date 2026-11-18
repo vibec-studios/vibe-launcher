@@ -27,6 +27,7 @@ import { HeaderSkeleton, InstanceHeader } from "./InstanceHeader";
 import { InstanceNotices } from "./InstanceNotices";
 import { VibeyClientBadge } from "@/features/cosmetics/VibeyClientSlot";
 import { ToolbarSlot } from "./toolbar";
+import { useSimple } from "@/lib/mode";
 
 const route = getRouteApi("/instances/$id");
 const wrap = "w-full px-6";
@@ -42,7 +43,26 @@ function CrashBanner({ instance }: { instance: Instance }) {
   const crashReport = game?.crash_report ?? null;
   const diag = useDiagnosis(instance.id, crashReport, game?.exit_code ?? null, !!key && dismissed !== key);
   const top = diag.data?.[0];
+  const simple = useSimple();
   if (!key || dismissed === key) return null;
+  if (simple) {
+    // Simple: verständliche Meldung mit „Beheben“ – keine Exit-Codes, Dateinamen, Logs
+    return (
+      <div className="shrink-0 bg-danger/[.08] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-danger)_25%,transparent)] animate-fade-in">
+        <div className={cn(wrap, "flex items-center gap-3 py-3")}>
+          <AlertTriangle size={18} className="shrink-0 text-danger" />
+          <div className="min-w-0 flex-1">
+            <div className="text-[13.5px] font-semibold text-text">{t("simple.crash.title")}</div>
+            <div className="text-[12.5px] text-muted">{t("simple.crash.text")}</div>
+          </div>
+          <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null, launchAfter: true }} size="md" />
+          <IconButton label={t("common.close")} size="sm" className="border-transparent" onClick={() => setDismissed(key)}>
+            <X size={15} />
+          </IconButton>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="shrink-0 bg-danger/[.08] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-danger)_25%,transparent)] animate-fade-in">
       <div className={cn(wrap, "flex items-center gap-3 py-2.5")}>
@@ -180,10 +200,14 @@ export function InstancePage() {
   return <InstanceView key={inst.id} inst={inst} tab={tab} />;
 }
 
+/** Simple-Modus: nur Inhalte und Welten (keine Logs, Dateien, Backups). */
+const SIMPLE_AREAS: Area[] = ["content", "worlds"];
+
 function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
   const t = useT();
   const navTab = route.useNavigate();
-  const active: InstanceTab = tab;
+  const simple = useSimple();
+  const active: InstanceTab = simple && !SIMPLE_AREAS.includes(areaOf[tab]) ? "content" : tab;
   const area = areaOf[active];
   const worldItems = useWorldItems(inst.id, area === "worlds");
   // Aktuelle Unterseite merken (auch wenn sie per Link geöffnet wurde)
@@ -223,13 +247,15 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
             value={area}
             onChange={(a) => a && openArea(a)}
             className="-mx-3 h-11! gap-1 border-b-0"
-            items={[
-              { value: "content", label: t("ipage.tab.content"), icon: <Boxes size={15} /> },
-              { value: "worlds", label: t("ipage.tab.worlds"), icon: <Globe2 size={15} /> },
-              { value: "logs", label: t("ipage.tab.logs"), icon: <SquareTerminal size={15} /> },
-              { value: "files", label: t("inst.tab.files"), icon: <FolderOpen size={15} /> },
-              { value: "backups", label: t("inst.tab.backups"), icon: <Archive size={15} /> },
-            ]}
+            items={(
+              [
+                { value: "content", label: t("ipage.tab.content"), icon: <Boxes size={15} /> },
+                { value: "worlds", label: t("ipage.tab.worlds"), icon: <Globe2 size={15} /> },
+                { value: "logs", label: t("ipage.tab.logs"), icon: <SquareTerminal size={15} /> },
+                { value: "files", label: t("inst.tab.files"), icon: <FolderOpen size={15} /> },
+                { value: "backups", label: t("inst.tab.backups"), icon: <Archive size={15} /> },
+              ] as { value: Area; label: string; icon: React.ReactNode }[]
+            ).filter((it) => !simple || SIMPLE_AREAS.includes(it.value))}
           />
         }
         notices={<InstanceNotices instance={inst} tab={active} />}

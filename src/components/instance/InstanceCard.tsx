@@ -6,6 +6,7 @@ import { ArrowUpCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Instance } from "@/lib/types";
 import { AnimatedNumber, ContextMenu, Progress, cn } from "@/components/ui";
+import { useSimple } from "@/lib/mode";
 import { formatDuration, formatRelative, imageSrc, instanceAccent, loaderNames } from "@/lib/format";
 import { useT } from "@/i18n";
 import { InstanceIcon, PixelBlock } from "./InstanceIcon";
@@ -112,8 +113,10 @@ function IconArea({ instance: i, accent }: { instance: Instance; accent: string 
 /** Raster-Karte der Bibliothek. */
 export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: { instance: Instance; onOpen: (i: Instance) => void }) {
   const accent = instanceAccent(i.id, i.accent);
+  // Simple-Modus: kein Kontextmenü (Ordner, Export …), statt Loader nur die Minecraft-Version
+  const simple = useSimple();
   return (
-    <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
+    <ContextMenu disabled={simple} content={<InstanceContextMenuContent instance={i} />}>
       <div
         role="button"
         tabIndex={0}
@@ -140,7 +143,7 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
             {i.name}
           </div>
           <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12px] text-muted">
-            <span className="truncate">{loaderLine(i)}</span>
+            <span className="truncate">{simple ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>
             <StatusDot instance={i} />
           </div>
         </div>
@@ -179,8 +182,10 @@ export function InstanceCardSkeleton() {
 export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOpen }: { instance: Instance; onOpen: (i: Instance) => void }) {
   const t = useT();
   const accent = instanceAccent(i.id, i.accent);
+  // Simple-Modus: kein Kontextmenü (Ordner, Export …), statt Loader nur die Minecraft-Version
+  const simple = useSimple();
   return (
-    <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
+    <ContextMenu disabled={simple} content={<InstanceContextMenuContent instance={i} />}>
       <div
         role="button"
         tabIndex={0}
@@ -200,7 +205,7 @@ export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOp
           </div>
           {i.source && <div className="truncate text-[11.5px] leading-tight text-dim">{i.source.name ?? t("inst.modpack")}</div>}
         </div>
-        <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{loaderLine(i)}</span>
+        <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{simple ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>
         <span className="hidden truncate text-[12.5px] text-muted @min-[860px]:block">{i.last_played ? formatRelative(i.last_played) : t("inst.never_played")}</span>
         <span className="hidden truncate text-right text-[12.5px] tabular-nums text-dim @min-[860px]:block">{i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : "–"}</span>
         <span className="flex justify-end opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">

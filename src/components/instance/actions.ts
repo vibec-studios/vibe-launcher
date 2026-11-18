@@ -13,13 +13,25 @@ export const FOLDERS = ["", "mods", "config", "saves", "resourcepacks", "shaderp
 
 // ------------------------------------------------------------------ Dialoge, die aus Menüs geöffnet werden
 
+/** Ziel im geführten „Neues Spiel“-Assistenten (Simple-Modus), siehe features/instances/simple/goals.tsx */
+export type NewGameGoal = "vanilla" | "fps" | "mods" | "friends" | "vibey";
+
 interface DialogState {
   exportFor: Instance | null;
   groupFor: Instance | null;
   newOpen: boolean;
+  /** Simple-Modus: Ziel schon gewählt (Kachel auf der Startseite/im Onboarding) */
+  newGoal: NewGameGoal | null;
+  /** Simple-Modus: „Erweitert“ gewählt -> der volle Dialog statt des Assistenten */
+  newExpert: boolean;
 }
-export const useInstanceDialogs = create<DialogState>(() => ({ exportFor: null, groupFor: null, newOpen: false }));
-export const openNewInstance = () => useInstanceDialogs.setState({ newOpen: true });
+export const useInstanceDialogs = create<DialogState>(() => ({ exportFor: null, groupFor: null, newOpen: false, newGoal: null, newExpert: false }));
+/** „Neue Instanz“ – im Simple-Modus der geführte Assistent, sonst der volle Dialog. */
+export const openNewInstance = () => useInstanceDialogs.setState({ newOpen: true, newGoal: null, newExpert: false });
+/** Assistent direkt mit gewähltem Ziel öffnen (Simple-Modus). */
+export const openNewGame = (goal: NewGameGoal | null) => useInstanceDialogs.setState({ newOpen: true, newGoal: goal, newExpert: false });
+/** Vom Assistenten in den vollen Dialog wechseln. */
+export const openExpertNewInstance = () => useInstanceDialogs.setState({ newOpen: true, newGoal: null, newExpert: true });
 export const openExport = (i: Instance) => useInstanceDialogs.setState({ exportFor: i });
 export const openGroupPrompt = (i: Instance) => useInstanceDialogs.setState({ groupFor: i });
 
