@@ -1,0 +1,103 @@
+{
+ "project": "purpur",
+ "version": "26.3",
+ "builds": {
+  "latest": {
+   "project": "purpur",
+   "version": "26.3",
+   "build": "2659",
+   "result": "SUCCESS",
+   "timestamp": 1794859107046,
+   "duration": 522377,
+   "commits": [],
+   "metadata": {},
+   "md5": "e6010134e10554cfeb1952c4b520856c"
+  },
+  "all": [
+   {
+    "project": "purpur",
+    "version": "26.3",
+    "build": "2657",
+    "result": "SUCCESS",
+    "timestamp": 1794019498859,
+    "duration": 478782,
+    "commits": [
+     {
+      "author": "noreply",
+      "email": "dev@example.invalid",
+      "description": "fix burp-delay, remove burp-when-full, configurable burp volume (#1832)\n",
+      "hash": "d66a2d44ade981f4cdf2737c33fd05130b321371",
+      "timestamp": 1793934601000
+     },
+     {
+      "author": "granny",
+      "email": "dev@example.invalid",
+      "description": "[ci skip] minor build file cleanup\n",
+      "hash": "fed80c2c0487a1a13275c5410c0b1704bac33d01",
+      "timestamp": 1794019105000
+     },
+     {
+      "author": "granny",
+      "email": "dev@example.invalid",
+      "description": "Updated Upstream (Paper)\n\nUpstream has released updates that appear to apply and compile correctly\n\nPaper Changes:\nPaperMC/Paper@35a2d155 Fix dimension suggestions for dynamically loaded worlds PaperMC/Paper#14399\n",
+      "hash": "9002a556bab075d2b9ee085bc7f286c4ba912d51",
+      "timestamp": 1794019105000
+     }
+    ],
+    "metadata": {},
+    "md5": "92c4e3ce94e6413c2cc9b1bb5918159b"
+   },
+   {
+    "project": "purpur",
+    "version": "26.3",
+    "build": "2658",
+    "result": "SUCCESS",
+    "timestamp": 1794455508533,
+    "duration": 481667,
+    "commits": [
+     {
+      "author": "granny",
+      "email": "dev@example.invalid",
+      "description": "Updated Upstream (Paper)\n\nUpstream has released updates that appear to apply and compile correctly\n\nPaper Changes:\nPaperMC/Paper@cd1c3b63 Fix SpawnReason for entity when spawning using SPAWN_EGG PaperMC/Paper#13402\nPaperMC/Paper@b31b4b53 Add API for temporary entity invulnerability PaperMC/Paper#14422\nPaperMC/Paper@eb3de386 Fix goals with no flags becoming mutually exclusive PaperMC/Paper#14372\nPaperMC/Paper@0727243c Move MenuType API to utilize \"real\" boolean switch for BlockEntity's PaperMC/Paper#13439\nPaperMC/Paper@1a995d67 Set correct tag registrar cause on reload PaperMC/Paper#14459\n",
+      "hash": "e48fed001c4c4c95c91aa587093258a6cc0abc61",
+      "timestamp": 1794455488000
+     }
+    ],
+    "metadata": {
+     "type": "experimental"
+    },
+    "md5": "54eae68933789d1f984d7ba29fe4b01d"
+   },
+   {
+    "project": "purpur",
+    "version": "26.3",
+    "build": "2659",
+    "result": "SUCCESS",
+    "timestamp": 1794859107046,
+    "duration": 522377,
+    "commits": [
+     {
+      "author": "granny",
+      "email": "dev@example.invalid",
+      "description": "Updated Upstream (Paper)\n\nUpstream has released updates that appear to apply and compile correctly\n\nPaper Changes:\nPaperMC/Paper@f39fa915 Add mob persistence API PaperMC/Paper#14312\nPaperMC/Paper@da964e3d Don't open sign editor when placing signs with existing text PaperMC/Paper#14314\nPaperMC/Paper@5184e9c0 Fire EntityDropItemEvent for hanging entity drops PaperMC/Paper#14486\nPaperMC/Paper@63e41db9 Add World Clock API PaperMC/Paper#14402\n",
+      "hash": "9adcf2b632667209a0d9a279ce9072e40f2fa210",
+      "timestamp": 1794859080000
+     }
+    ],
+    "metadata": {},
+    "md5": "e6010134e10554cfeb1952c4b520856c"
+   },
+   {
+    "project": "purpur",
+    "version": "26.3",
+    "build": "2660",
+    "result": "FAILURE",
+    "timestamp": 1794859107046,
+    "duration": 522377,
+    "commits": [],
+    "metadata": {},
+    "md5": "e6010134e10554cfeb1952c4b520856c"
+   }
+  ]
+ }
+}

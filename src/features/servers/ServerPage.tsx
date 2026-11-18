@@ -18,6 +18,8 @@ import { PlayersTab } from "./PlayersTab";
 import { ServerWorldsTab } from "./ServerWorldsTab";
 import { ConnectionTab } from "./ConnectionTab";
 import { ServerFilesTab } from "@/features/files";
+import { ServerAddonsTab } from "./ServerAddonsTab";
+import { serverSoftware } from "./addonsApi";
 
 const route = getRouteApi("/servers/$id");
 const wrap = "w-full px-6";
@@ -143,7 +145,7 @@ function MetaLine({ server: s }: { server: Server }) {
   const st = useServerStatus(s.id);
   const address = useAddress(s);
   const running = st?.state === "running";
-  const parts: React.ReactNode[] = [`${formatLoader(s.loader)} · Minecraft ${s.mc_version}`];
+  const parts: React.ReactNode[] = [`${serverSoftware(s, formatLoader)} · Minecraft ${s.mc_version}`];
   if (!running) parts.push(s.last_started ? t("srv.meta.last", { when: formatRelative(s.last_started) }) : t("srv.meta.never"));
   return (
     <div className="flex min-w-0 items-center gap-x-2 overflow-hidden whitespace-nowrap text-meta text-muted">
@@ -214,6 +216,9 @@ export function ServerPage() {
               { value: "console", label: t("srv.tab.console") },
               { value: "settings", label: t("srv.tab.settings") },
               { value: "players", label: t("srv.tab.players") },
+              ...(server.platform || server.loader.kind !== "vanilla"
+                ? [{ value: "addons" as const, label: server.platform ? t("srv.tab.plugins") : t("srv.tab.mods") }]
+                : []),
               { value: "worlds", label: t("srv.tab.worlds") },
               { value: "files", label: t("srv.tab.files") },
               { value: "connection", label: t("srv.tab.connection") },
@@ -229,6 +234,8 @@ export function ServerPage() {
           <ServerSettingsTab server={server} />
         ) : tab === "players" ? (
           <PlayersTab server={server} />
+        ) : tab === "addons" ? (
+          <ServerAddonsTab server={server} />
         ) : tab === "worlds" ? (
           <ServerWorldsTab server={server} />
         ) : tab === "files" ? (

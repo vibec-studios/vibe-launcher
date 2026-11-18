@@ -247,7 +247,7 @@ impl ServerManager {
         let done = DONE.get_or_init(|| re(r#"Done \([0-9.,]+s\)! For help, type "help""#));
         let join = JOIN.get_or_init(|| re(r"(?:^|System chat: |\]: )([A-Za-z0-9_]{1,16}) joined the game$"));
         let left = LEFT.get_or_init(|| re(r"(?:^|System chat: |\]: )([A-Za-z0-9_]{1,16}) left the game$"));
-        let list = LIST.get_or_init(|| re(r"There are (\d+) ?(?:of a max of|/) ?(\d+) players online:?(.*)$"));
+        let list = LIST.get_or_init(|| re(r"There are (\d+) ?(?:of a max of|/|out of maximum) ?(\d+) players online\.?:?(.*)$"));
         if done.is_match(text) {
             let max = super::props::get(&server_dir(&self.paths, id).join("server.properties"), "max-players").and_then(|v| v.parse().ok());
             self.update(id, |s| {
@@ -441,6 +441,7 @@ impl ServerManager {
                             let mut parsed = parser.feed(&line);
                             // JVM-Hinweise auf stderr („WARNING: …“) sind keine Fehler
                             for p in parsed.iter_mut() {
+                                paper_line(p);
                                 if p.level == LogLevel::Stderr && p.text.starts_with("WARNING:") {
                                     p.level = LogLevel::Warn;
                                 }
@@ -673,7 +674,13 @@ async fn spawn_process(state: &AppState, id: &str) -> AppResult<()> {
     let java = server_java(state, &s, &spec, None).await?;
     let java = crate::minecraft::java::console_java(&java);
     let mem = s.memory();
-    let mut args: Vec<String> = vec![format!("-Xms{}M", mem.min(1024)), format!("-Xmx{mem}M")];
+    // stdout/stderr als UTF-8 (sonst Systemcodepage unter Windows: „ℹ“ & Co. kommen als „?“ an; Java < 19 ignoriert das)
+    let mut args: Vec<String> = vec![
+        format!("-Xms{}M", mem.min(1024)),
+        format!("-Xmx{mem}M"),
+        "-Dstdout.encoding=UTF-8".into(),
+        "-Dstderr.encoding=UTF-8".into(),
+    ];
     if let Some(a) = &s.jvm_args {
         args.extend(crate::minecraft::launch::split_args(a));
     }
@@ -695,6 +702,50 @@ async fn spawn_process(state: &AppState, id: &str) -> AppResult<()> {
     let _ = state.servers.modify(id, |x| x.last_started = Some(crate::util::now_ms()));
     mgr.attach(state.clone(), id.to_string(), child);
     Ok(())
+}
+
+/// ANSI-Farbcodes entfernen (Paper/Velocity färben die Konsole, falls sie ein Terminal vermuten).
+pub fn strip_ansi(s: &str) -> std::borrow::Cow<'_, str> {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| re(r"\x1b\[[0-9;?]*[ -/]*[@-~]")).replace_all(s, "")
+}
+
+/// Konsolenformat von Paper/Purpur/Folia (`[12:34:56 INFO]: [Plugin] Text`) in Zeit/Level/Logger zerlegen.
+/// Vanilla-Zeilen (`[12:34:56] [Server thread/INFO]: …`) erkennt schon der allgemeine Parser.
+pub fn paper_line(p: &mut Parsed) {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    if !matches!(p.level, LogLevel::Stdout | LogLevel::Stderr) {
+        return;
+    }
+    if p.text.contains('\x1b') {
+        p.text = strip_ansi(&p.text).into_owned();
+    }
+    let rx = RE.get_or_init(|| re(r"^\[(\d{2}:\d{2}:\d{2})(?:[.,]\d+)? (TRACE|DEBUG|INFO|WARN|WARNING|ERROR|SEVERE|FATAL)\]:? ?(.*)$"));
+    let Some(c) = rx.captures(&p.text) else { return };
+    let level = match &c[2] {
+        "TRACE" => LogLevel::Trace,
+        "DEBUG" => LogLevel::Debug,
+        "INFO" => LogLevel::Info,
+        "WARN" | "WARNING" => LogLevel::Warn,
+        "FATAL" => LogLevel::Fatal,
+        _ => LogLevel::Error,
+    };
+    let time = c[1].to_string();
+    let mut text = c[3].to_string();
+    // „[LuckPerms] Lade …“ -> Logger = Plugin (nur ein Wort, damit „[Not Secure] <Bob> …“ Text bleibt)
+    let mut logger = None;
+    if let Some(rest) = text.strip_prefix('[') {
+        if let Some((name, after)) = rest.split_once("] ") {
+            if !name.is_empty() && name.len() <= 40 && !name.contains(' ') && !name.contains(':') {
+                logger = Some(name.to_string());
+                text = after.to_string();
+            }
+        }
+    }
+    p.time = Some(time);
+    p.level = level;
+    p.logger = logger;
+    p.text = text;
 }
 
 /// Tunnel der gewählten Verbindungsart starten (nachdem der Server bereit ist).
@@ -751,5 +802,36 @@ mod tests {
         assert_eq!(&join.captures("Steve joined the game").unwrap()[1], "Steve");
         assert!(join.captures("[Not Secure] <Bob> Alice joined the game").is_none());
         assert!(re(r#"Done \([0-9.,]+s\)! For help, type "help""#).is_match(r#"Done (3.215s)! For help, type "help""#));
+    }
+
+    fn plain(text: &str) -> Parsed {
+        Parsed { time: None, level: LogLevel::Stdout, thread: None, logger: None, text: text.into() }
+    }
+
+    #[test]
+    fn paper_format() {
+        let mut p = plain(r#"[15:42:07 INFO]: Done (6.512s)! For help, type "help""#);
+        paper_line(&mut p);
+        assert_eq!((p.time.as_deref(), p.level, p.logger.as_deref()), (Some("15:42:07"), LogLevel::Info, None));
+        assert_eq!(p.text, r#"Done (6.512s)! For help, type "help""#);
+        let mut p = plain("[15:42:01 WARN]: [LuckPerms] Could not connect");
+        paper_line(&mut p);
+        assert_eq!((p.level, p.logger.as_deref(), p.text.as_str()), (LogLevel::Warn, Some("LuckPerms"), "Could not connect"));
+        let mut p = plain("[15:43:00 INFO]: [Not Secure] <Bob> Alice joined the game");
+        paper_line(&mut p);
+        assert_eq!((p.logger, p.text.as_str()), (None, "[Not Secure] <Bob> Alice joined the game"));
+        let join = re(r"(?:^|System chat: |\]: )([A-Za-z0-9_]{1,16}) joined the game$");
+        assert!(join.captures(&p.text).is_none());
+        let mut p = plain("\x1b[33;1m[15:44:00 ERROR]: Boom\x1b[m");
+        paper_line(&mut p);
+        assert_eq!((p.level, p.text.as_str()), (LogLevel::Error, "Boom"));
+        // Vanilla/andere Zeilen bleiben unverändert
+        let mut p = plain("Starting org.bukkit.craftbukkit.Main");
+        paper_line(&mut p);
+        assert_eq!((p.level, p.time), (LogLevel::Stdout, None));
+        // Paper-`list`-Antwort
+        let list = re(r"There are (\d+) ?(?:of a max of|/|out of maximum) ?(\d+) players online\.?:?(.*)$");
+        let c = list.captures("There are 1 out of maximum 20 players online.").unwrap();
+        assert_eq!((&c[1], &c[2]), ("1", "20"));
     }
 }
