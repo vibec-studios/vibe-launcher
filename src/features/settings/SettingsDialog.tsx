@@ -95,7 +95,7 @@ export function SettingsDialog() {
             "outline-none",
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2",
             "h-[min(780px,calc(100vh-48px))] w-[min(1100px,calc(100vw-48px))] overflow-hidden",
-            "glass rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
+            "rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
         >
           <SettingsBody />

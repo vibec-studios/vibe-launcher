@@ -95,7 +95,7 @@ export function UpdateButton() {
           align="end"
           sideOffset={8}
           collisionPadding={8}
-          className="glass z-[60] w-[360px] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="z-[60] w-[360px] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           <div className="border-b border-line px-4 py-3">
             <div className="text-[15px] font-semibold text-white">{tt("update.title", { version: info.version })}</div>

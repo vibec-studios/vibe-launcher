@@ -64,16 +64,10 @@ export function InstanceHeader({ instance, accent, tabs, notices }: { instance: 
   const navTab = route.useNavigate();
   return (
     <header className="relative shrink-0 border-b border-line">
-      {/* Akzent-Schimmer der Instanz statt Rahmen: gibt der Seite Identität */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{ background: `radial-gradient(55% 160% at 0% 0%, color-mix(in srgb, ${accent} 16%, transparent), transparent 70%)` }}
-      />
       <div className={cn(pageX, "relative flex items-center gap-4 pb-3 pt-4")}>
         <Tooltip content={t("inst.icon.choose")}>
           <button onClick={() => setIcon(instance)} className="shrink-0" aria-label={t("inst.icon.choose")}>
-            <InstanceIcon icon={instance.icon} accent={accent} size={56} className="shadow-e1" />
+            <InstanceIcon icon={instance.icon} accent={accent} size={56} />
           </button>
         </Tooltip>
         <div className="min-w-0 flex-1">

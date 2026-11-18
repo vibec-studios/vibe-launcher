@@ -32,7 +32,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
           aria-describedby={description ? undefined : undefined}
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100vh-80px)] max-w-[calc(100vw-48px)] -translate-x-1/2 -translate-y-1/2 flex-col",
-            "glass rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
+            "rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
             widths[size],
             className,
           )}

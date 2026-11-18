@@ -127,7 +127,8 @@ export interface Settings {
   appearance: Appearance;
 }
 
-export type AppearanceTone = "dark" | "darker" | "oled";
+/** dark = Schwarz (Standard), dim = Dunkelgrau, oled = auch Flächen fast schwarz */
+export type AppearanceTone = "dark" | "dim" | "oled";
 export type AppearanceRadius = "square" | "slight" | "round";
 export type AppearanceDensity = "compact" | "normal";
 export type BackgroundKind = "none" | "gradient" | "image" | "animated";

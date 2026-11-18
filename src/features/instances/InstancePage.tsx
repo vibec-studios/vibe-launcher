@@ -133,7 +133,7 @@ function SubNav({ items, value, onChange, right }: { items: SubItem[]; value: In
               onClick={() => onChange(it.value)}
               className={cn(
                 "flex h-7 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-2.5 text-[13px] font-semibold transition-colors duration-100",
-                active ? "bg-surface3 text-text shadow-e1" : "text-muted hover:text-text",
+                active ? "bg-surface3 text-text" : "text-muted hover:text-text",
               )}
             >
               {it.label}

@@ -61,7 +61,7 @@ function RunningBadge({ id }: { id: string }) {
   const { phase } = useRunPhase(id);
   if (phase !== "running") return null;
   return (
-    <span className="glass absolute left-2 top-2 inline-flex h-6 items-center gap-1.5 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-ok">
+    <span className="absolute left-2 top-2 inline-flex h-6 items-center gap-1.5 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-ok">
       <span className="h-1.5 w-1.5 rounded-dot bg-ok" />
       {t("inst.status.running")}
     </span>
@@ -75,7 +75,7 @@ function UpdatesBadge({ id }: { id: string }) {
   const n = data?.[id] ?? 0;
   if (!n) return null;
   return (
-    <span className="glass absolute right-2 top-2 inline-flex h-6 items-center gap-1 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-accent">
+    <span className="absolute right-2 top-2 inline-flex h-6 items-center gap-1 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-accent">
       <ArrowUpCircle size={12} />
       {n === 1 ? t("instances.updates_badge_1") : t("instances.updates_badge", { n })}
     </span>
@@ -99,11 +99,8 @@ function IconArea({ instance: i, accent }: { instance: Instance; accent: string 
       />
     );
   return (
-    <div
-      className="absolute inset-0 grid place-items-center"
-      style={{ background: `radial-gradient(75% 75% at 50% 35%, color-mix(in srgb, ${accent} 20%, #16161b), #0e0e12)` }}
-    >
-      <PixelBlock color={accent} size={60} className="transition-transform duration-200 group-hover:scale-105" />
+    <div className="absolute inset-0 grid place-items-center bg-surface2">
+      <PixelBlock color={accent} size={60} />
     </div>
   );
 }
@@ -122,10 +119,10 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
         style={accentVars(accent)}
         className={cn(
           "group relative flex min-w-0 flex-col rounded-panel p-1.5 text-left transition-colors duration-100",
-          "hover:bg-white/[.045] data-[state=open]:bg-white/[.045]",
+          "hover:bg-white/[.04] data-[state=open]:bg-white/[.04]",
         )}
       >
-        <div className="relative aspect-[4/3] overflow-hidden rounded-card bg-surface shadow-e1">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-card bg-surface2">
           <IconArea instance={i} accent={accent} />
           <RunningBadge id={i.id} />
           <UpdatesBadge id={i.id} />

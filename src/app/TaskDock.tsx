@@ -94,7 +94,7 @@ export function TaskDock() {
           align="end"
           sideOffset={8}
           collisionPadding={8}
-          className="glass z-[60] w-[380px] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="z-[60] w-[380px] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           <div className="flex h-11 items-center justify-between border-b border-line px-4">
             <span className="label">{t("tasks.title")}</span>

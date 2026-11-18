@@ -16,9 +16,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 // · outline = selten, mit Haarlinie · subtle = nur Text · danger = rot getönt.
 const variants: Record<ButtonVariant, string> = {
   // Globale Akzentfarbe (Einstellung „Akzentfarbe“)
-  primary: "border-transparent bg-brand text-[var(--ui-on-accent)] hover:brightness-110 shadow-e1",
+  primary: "border-transparent bg-brand text-[var(--ui-on-accent)] hover:brightness-110",
   // Akzent der aktuellen Instanz
-  accent: "border-transparent bg-accent text-[var(--on-accent)] hover:brightness-110 shadow-e1",
+  accent: "border-transparent bg-accent text-[var(--on-accent)] hover:brightness-110",
   ghost: "border-transparent bg-surface2 text-text hover:bg-surface3",
   outline: "bg-transparent text-text border-line2 hover:border-white/25 hover:bg-white/[.04]",
   subtle: "border-transparent bg-transparent text-muted hover:text-text hover:bg-white/[.06]",

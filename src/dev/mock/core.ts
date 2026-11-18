@@ -69,7 +69,7 @@ let settings: Settings = {
   appearance: {
     accent: "#8b6cff",
     tone: "dark",
-    radius: "slight",
+    radius: "square",
     density: "normal",
     ui_scale: 100,
     background: { kind: "none", gradient: "accent", animated: "aurora", image: null, video: null, dim: 45, blur: 0 },

@@ -55,10 +55,10 @@ function rand(seed: number) {
 
 function makeParticles(): Painter {
   const r = rand(7);
-  const ps = Array.from({ length: 90 }, () => ({ x: r(), y: r(), s: 1.5 + r() * 2.5, v: 0.006 + r() * 0.018, ph: r() * Math.PI * 2, a: 0.25 + r() * 0.55 }));
+  const ps = Array.from({ length: 70 }, () => ({ x: r(), y: r(), s: 1 + r() * 1.5, v: 0.004 + r() * 0.01, ph: r() * Math.PI * 2, a: 0.12 + r() * 0.3 }));
   return (ctx, w, h, t, accent) => {
     ctx.clearRect(0, 0, w, h);
-    const n = Math.min(ps.length, Math.round((w * h) / 14000));
+    const n = Math.min(ps.length, Math.round((w * h) / 20000));
     ctx.fillStyle = accent;
     for (let i = 0; i < n; i++) {
       const p = ps[i];
@@ -74,20 +74,13 @@ function makeParticles(): Painter {
 
 function makeWaves(): Painter {
   const lines = [
-    { y: 0.62, a: 0.06, f: 1.3, s: 0.12, o: 0.32, wdt: 1.5 },
-    { y: 0.68, a: 0.05, f: 1.8, s: -0.09, o: 0.22, wdt: 1.2 },
-    { y: 0.74, a: 0.07, f: 1.1, s: 0.07, o: 0.16, wdt: 1 },
-    { y: 0.8, a: 0.045, f: 2.2, s: -0.13, o: 0.12, wdt: 1 },
-    { y: 0.86, a: 0.05, f: 1.5, s: 0.1, o: 0.08, wdt: 1 },
+    { y: 0.64, a: 0.05, f: 1.3, s: 0.08, o: 0.16, wdt: 1 },
+    { y: 0.71, a: 0.04, f: 1.8, s: -0.06, o: 0.11, wdt: 1 },
+    { y: 0.78, a: 0.05, f: 1.1, s: 0.05, o: 0.08, wdt: 1 },
+    { y: 0.85, a: 0.035, f: 2.2, s: -0.09, o: 0.06, wdt: 1 },
   ];
   return (ctx, w, h, t, accent) => {
     ctx.clearRect(0, 0, w, h);
-    const g = ctx.createLinearGradient(0, h * 0.55, 0, h);
-    g.addColorStop(0, "transparent");
-    g.addColorStop(1, accent);
-    ctx.globalAlpha = 0.1;
-    ctx.fillStyle = g;
-    ctx.fillRect(0, h * 0.55, w, h * 0.45);
     ctx.strokeStyle = accent;
     for (const l of lines) {
       ctx.globalAlpha = l.o;
@@ -107,7 +100,7 @@ function makeWaves(): Painter {
 
 function makeBlocks(): Painter {
   const r = rand(42);
-  const bs = Array.from({ length: 16 }, () => ({ x: r(), y: r(), s: 36 + r() * 110, v: 0.004 + r() * 0.01, rot: r() * Math.PI, vr: (r() - 0.5) * 0.06, a: 0.04 + r() * 0.06 }));
+  const bs = Array.from({ length: 12 }, () => ({ x: r(), y: r(), s: 36 + r() * 100, v: 0.003 + r() * 0.006, rot: r() * Math.PI, vr: (r() - 0.5) * 0.04, a: 0.02 + r() * 0.03 }));
   return (ctx, w, h, t, accent) => {
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = accent;
@@ -199,7 +192,7 @@ function Aurora({ accent, paused }: { accent: string; paused: boolean }) {
     <div className="absolute rounded-full" style={{ animationPlayState: paused ? "paused" : "running", willChange: "transform", ...style }} />
   );
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{ background: "#07070b" }}>
+    <div className="absolute inset-0 overflow-hidden" style={{ background: "#050506" }}>
       <style>{`
         @keyframes vl-aurora-a { 0% { transform: translate(-10%, -8%) scale(1) rotate(0deg); } 100% { transform: translate(18%, 12%) scale(1.25) rotate(25deg); } }
         @keyframes vl-aurora-b { 0% { transform: translate(12%, 10%) scale(1.15); } 100% { transform: translate(-16%, -6%) scale(.9); } }
@@ -210,8 +203,8 @@ function Aurora({ accent, paused }: { accent: string; paused: boolean }) {
         top: "-30%",
         width: "75%",
         height: "90%",
-        background: `radial-gradient(closest-side, color-mix(in srgb, ${accent} 65%, transparent), transparent)`,
-        animation: "vl-aurora-a 38s ease-in-out infinite alternate",
+        background: `radial-gradient(closest-side, color-mix(in srgb, ${accent} 30%, transparent), transparent)`,
+        animation: "vl-aurora-a 60s ease-in-out infinite alternate",
       })}
       {blob({
         right: "-20%",
@@ -219,8 +212,8 @@ function Aurora({ accent, paused }: { accent: string; paused: boolean }) {
         width: "70%",
         height: "85%",
         background: `radial-gradient(closest-side, color-mix(in oklab, ${accent} 45%, #3fe0c5 55%), transparent)`,
-        opacity: 0.55,
-        animation: "vl-aurora-b 46s ease-in-out infinite alternate",
+        opacity: 0.25,
+        animation: "vl-aurora-b 75s ease-in-out infinite alternate",
       })}
       {blob({
         left: "15%",
@@ -228,8 +221,8 @@ function Aurora({ accent, paused }: { accent: string; paused: boolean }) {
         width: "80%",
         height: "80%",
         background: `radial-gradient(closest-side, color-mix(in oklab, ${accent} 50%, #ff6b9a 50%), transparent)`,
-        opacity: 0.45,
-        animation: "vl-aurora-c 54s ease-in-out infinite alternate",
+        opacity: 0.2,
+        animation: "vl-aurora-c 90s ease-in-out infinite alternate",
       })}
     </div>
   );
@@ -286,7 +279,7 @@ function Media({ a, paused }: { a: Appearance; paused: boolean }) {
     }
     if (b.animated === "aurora") return <Aurora accent={a.accent} paused={paused} />;
     return (
-      <div className="absolute inset-0" style={{ background: GRADIENTS.accent(a.accent) }}>
+      <div className="absolute inset-0" style={{ background: "#050506" }}>
         <CanvasAnim kind={b.animated} accent={a.accent} paused={paused} />
       </div>
     );

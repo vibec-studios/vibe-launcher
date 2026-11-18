@@ -123,7 +123,7 @@ export function InstancesPage() {
                     onClick={() => setFilter(f)}
                     className={cn(
                       "flex h-8 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-3 text-[13px] font-semibold transition-colors duration-100",
-                      filter === f ? "bg-surface3 text-text shadow-e1" : "text-muted hover:text-text",
+                      filter === f ? "bg-surface3 text-text" : "text-muted hover:text-text",
                     )}
                   >
                     {t(`instances.filter.${f}`)}

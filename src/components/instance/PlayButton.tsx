@@ -44,7 +44,7 @@ export const PlayButton = memo(function PlayButton({
               : phase === "idle"
                 ? subtle
                   ? "bg-surface3 text-muted group-hover:bg-accent group-hover:text-[var(--on-accent)]"
-                  : "bg-accent text-[var(--on-accent)] shadow-e2 hover:brightness-110"
+                  : "bg-accent text-[var(--on-accent)] hover:brightness-110"
                 : "bg-black/80 text-accent",
             className,
           )}

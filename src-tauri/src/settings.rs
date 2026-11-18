@@ -76,9 +76,9 @@ pub struct Settings {
 pub struct Appearance {
     /// Akzentfarbe als Hex ("#8b6cff")
     pub accent: String,
-    /// Hintergrund-Ton: "dark" | "darker" | "oled"
+    /// Hintergrund-Ton: "dark" (Schwarz) | "dim" (Dunkelgrau) | "oled"
     pub tone: String,
-    /// Ecken: "square" | "slight" | "round"
+    /// Ecken: "square" (Standard) | "slight" | "round"
     pub radius: String,
     /// Dichte: "compact" | "normal"
     pub density: String,
@@ -112,7 +112,7 @@ impl Default for Appearance {
         Appearance {
             accent: "#8b6cff".into(),
             tone: "dark".into(),
-            radius: "slight".into(),
+            radius: "square".into(),
             density: "normal".into(),
             ui_scale: 100,
             background: Background::default(),
@@ -149,7 +149,7 @@ impl Appearance {
         } else {
             self.accent = format!("#{}", hex.to_ascii_lowercase());
         }
-        pick(&mut self.tone, &["dark", "darker", "oled"], &d.tone);
+        pick(&mut self.tone, &["dark", "dim", "oled"], &d.tone);
         pick(&mut self.radius, &["square", "slight", "round"], &d.radius);
         pick(&mut self.density, &["compact", "normal"], &d.density);
         self.ui_scale = self.ui_scale.clamp(80, 130);

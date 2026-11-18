@@ -41,7 +41,7 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
     <>
       <div className="flex items-end gap-4">
         <MiniPreview a={a} />
-        <div className="flex flex-1 flex-col items-end gap-2 self-stretch">
+        <div className="flex flex-1 flex-col items-end self-stretch">
           <Button
             size="sm"
             variant="subtle"
@@ -53,8 +53,6 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
           >
             {t("ap.reset")}
           </Button>
-          <div className="flex-1" />
-          <p className="max-w-[260px] text-right text-[12px] leading-relaxed text-dim">{t("ap.paused_hint")}</p>
         </div>
       </div>
 
@@ -66,7 +64,7 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
           <Segmented
             value={a.tone}
             onChange={(tone) => set({ tone })}
-            items={(["dark", "darker", "oled"] as const).map((v) => ({ value: v, label: t(`ap.tone.${v}`) }))}
+            items={(["dark", "dim", "oled"] as const).map((v) => ({ value: v, label: t(`ap.tone.${v}`) }))}
           />
         </SettingRow>
       </SettingsCard>
@@ -103,7 +101,7 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
       </SettingsCard>
 
       <SettingsCard title={t("ap.section.background")}>
-        <SettingRow title={t("ap.bg.kind")} description={t("ap.bg.kind.desc")} stacked>
+        <SettingRow title={t("ap.bg.kind")} description={`${t("ap.bg.kind.desc")} ${t("ap.paused_hint")}`} stacked>
           <div className="flex flex-col gap-3">
             <Segmented<BackgroundKind>
               value={b.kind}
@@ -132,10 +130,7 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
                 <div className="flex flex-wrap gap-2">
                   {ANIMATED.map(({ key, icon }) => (
                     <PresetTile key={key} label={t(`ap.anim.${key}`)} active={b.animated === key} onClick={() => setBg({ animated: key })}>
-                      <span
-                        className="absolute inset-0 grid place-items-center text-white/85"
-                        style={{ background: key === "custom" ? "rgb(255 255 255 / .05)" : GRADIENTS.accent(a.accent) }}
-                      >
+                      <span className="absolute inset-0 grid place-items-center bg-white/[.05] text-muted">
                         {icon}
                       </span>
                     </PresetTile>
@@ -181,7 +176,7 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
 function MiniPreview({ a }: { a: Appearance }) {
   const t = useT();
   return (
-    <div className="relative h-[168px] w-[300px] shrink-0 overflow-hidden rounded-card bg-[var(--tone-frame)] shadow-e2" aria-label={t("ap.preview")}>
+    <div className="relative h-[168px] w-[300px] shrink-0 overflow-hidden rounded-card bg-[var(--tone-frame)] shadow-[0_0_0_1px_var(--line-2)]" aria-label={t("ap.preview")}>
       <Backdrop appearance={a} contained />
       <div className="absolute inset-0 flex">
         <div className="flex w-8 flex-col items-center gap-1.5 bg-bg pt-2">
@@ -193,11 +188,8 @@ function MiniPreview({ a }: { a: Appearance }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="h-5 bg-bg" />
           <div className="flex flex-1 flex-col gap-2 rounded-tl-card bg-panel p-2.5">
-            <div
-              className="relative flex items-center gap-2 overflow-hidden rounded-card bg-surface p-2"
-              style={{ backgroundImage: `radial-gradient(70% 140% at 0% 0%, color-mix(in srgb, ${a.accent} 22%, transparent), transparent 65%)` }}
-            >
-              <span className="h-7 w-7 rounded-ctl" style={{ background: `color-mix(in srgb, ${a.accent} 45%, #16161b)` }} />
+            <div className="relative flex items-center gap-2 overflow-hidden rounded-card bg-surface p-2">
+              <span className="h-7 w-7 rounded-ctl bg-surface3" />
               <span className="flex flex-1 flex-col gap-1">
                 <span className="h-2 w-20 rounded-xs bg-white/80" />
                 <span className="h-1.5 w-14 rounded-xs bg-white/25" />
@@ -240,7 +232,7 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (v: string
             onClick={() => onChange(c)}
             className={cn(
               "grid h-8 w-8 place-items-center rounded-ctl transition-transform duration-100 hover:scale-105",
-              active && "shadow-[0_0_0_2px_var(--overlay),0_0_0_4px_rgb(255_255_255/.85)]",
+              active && "outline outline-2 outline-offset-2 outline-white/80",
             )}
             style={{ background: c }}
           >
@@ -252,13 +244,12 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (v: string
       <Tooltip content={t("ap.accent.custom")}>
         <label
           className={cn(
-            "relative grid h-8 w-8 cursor-pointer place-items-center overflow-hidden rounded-ctl bg-[conic-gradient(from_0deg,#ff5470,#ffb547,#7ee07a,#3fe0c5,#5aa9ff,#8b6cff,#e05cff,#ff5470)]",
-            custom && "shadow-[0_0_0_2px_var(--overlay),0_0_0_4px_rgb(255_255_255/.85)]",
+            "relative grid h-8 w-8 cursor-pointer place-items-center rounded-ctl bg-surface3 text-muted hover:text-text",
+            custom && "outline outline-2 outline-offset-2 outline-white/80",
           )}
+          style={custom ? { background: value, color: "rgb(0 0 0 / .7)" } : undefined}
         >
-          <span className="grid h-5 w-5 place-items-center rounded-xs bg-black/55 text-white">
-            <Pipette size={12} />
-          </span>
+          <Pipette size={14} />
           <input
             type="color"
             aria-label={t("ap.accent.custom")}
@@ -317,8 +308,8 @@ function PresetTile({ label, active, onClick, children }: { label: string; activ
     <button onClick={onClick} aria-pressed={active} className="group flex w-[84px] flex-col items-center gap-1.5">
       <span
         className={cn(
-          "relative h-[52px] w-full overflow-hidden rounded-card transition-[box-shadow] duration-100",
-          active ? "shadow-[0_0_0_2px_var(--overlay),0_0_0_4px_var(--ui-accent)]" : "group-hover:shadow-[0_0_0_2px_var(--overlay),0_0_0_3px_rgb(255_255_255/.3)]",
+          "relative h-[52px] w-full overflow-hidden rounded-card",
+          active ? "outline outline-2 outline-offset-2 outline-brand" : "group-hover:outline group-hover:outline-1 group-hover:outline-offset-2 group-hover:outline-white/25",
         )}
       >
         {children}

@@ -49,7 +49,7 @@ export function Switch({ checked, onChange, disabled, label }: { checked: boolea
       aria-label={label}
       className="relative h-5 w-9 shrink-0 rounded-pill bg-white/[.12] transition-colors duration-150 hover:bg-white/[.17] data-[state=checked]:bg-accent disabled:opacity-45"
     >
-      <Sw.Thumb className="block h-3.5 w-3.5 translate-x-[3px] rounded-pill bg-white/75 shadow-e1 transition-transform duration-150 data-[state=checked]:translate-x-[18px] data-[state=checked]:bg-white" />
+      <Sw.Thumb className="block h-3.5 w-3.5 translate-x-[3px] rounded-pill bg-white/75 transition-transform duration-150 data-[state=checked]:translate-x-[18px] data-[state=checked]:bg-white" />
     </Sw.Root>
   );
 }
@@ -84,7 +84,7 @@ export function Slider({
       <Sl.Track className="relative h-1 grow overflow-hidden rounded-pill bg-white/[.12]">
         <Sl.Range className="absolute h-full bg-accent" />
       </Sl.Track>
-      <Sl.Thumb className="block h-4 w-4 rounded-pill bg-white shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_45%,transparent),0_1px_3px_rgb(0_0_0/.5)] outline-none transition-transform duration-100 hover:scale-110 focus-visible:scale-110" />
+      <Sl.Thumb className="block h-3.5 w-3.5 rounded-pill bg-white outline-none focus-visible:outline-2 focus-visible:outline-accent" />
     </Sl.Root>
   );
 }

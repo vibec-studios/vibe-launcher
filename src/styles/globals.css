@@ -1,12 +1,13 @@
 /* Vibe Launcher · Design-System
    Alle Farben, Radien, Abstände und Schatten sind CSS-Variablen. Die Darstellungs-Einstellungen
    (src/lib/appearance.ts) setzen nur Attribute/Variablen an <html>:
-     data-tone="dark|darker|oled"   Hintergrundstufen
+     data-tone="dark|dim|oled"      Hintergrundstufen (dark = Schwarz, Standard)
      data-radius="square|slight|round"
      data-density="normal|compact"  skaliert die Tailwind-Abstands-Skala
      data-bg="on"                   Hintergrundbild/-animation aktiv -> Flächen halbtransparent
      --ui-accent / --ui-on-accent   globale Akzentfarbe
-   Grundsatz: Ebenen über Helligkeit (Elevation) statt Rahmen. Linien nur, wo sie trennen müssen. */
+   Grundsatz: flach und schwarz. Ebenen nur über minimale, neutrale Grautöne statt Rahmen; keine Verläufe,
+   kein Milchglas, kaum Schatten. Linien nur, wo sie trennen müssen. */
 @import "tailwindcss";
 
 @import "@fontsource/inter/400.css";
@@ -116,13 +117,13 @@
   --accent: var(--ui-accent);
   --on-accent: var(--ui-on-accent);
 
-  /* Ton „dunkel“ (Standard) */
-  --tone-frame: #0a0a0d;
-  --tone-canvas: #101014;
-  --tone-s1: #17171c;
-  --tone-s2: #1e1e24;
-  --tone-s3: #26262d;
-  --tone-overlay: #16161b;
+  /* Ton „Schwarz“ (Standard): Rahmen schwarz, Flächen in minimalen neutralen Graustufen */
+  --tone-frame: #000;
+  --tone-canvas: #070708;
+  --tone-s1: #0f0f11;
+  --tone-s2: #161618;
+  --tone-s3: #1d1d20;
+  --tone-overlay: #0e0e10;
 
   /* Deckkraft der Flächen; mit Hintergrundbild kleiner (siehe [data-bg]) */
   --a-frame: 100%;
@@ -136,17 +137,17 @@
   --surface-2: color-mix(in srgb, var(--tone-s2) var(--a-surface), transparent);
   --surface-3: color-mix(in srgb, var(--tone-s3) var(--a-surface), transparent);
   --overlay: color-mix(in srgb, var(--tone-overlay) var(--a-overlay), transparent);
-  --field: rgb(255 255 255 / 0.045);
-  --line-1: rgb(255 255 255 / 0.065);
-  --line-2: rgb(255 255 255 / 0.11);
+  --field: rgb(255 255 255 / 0.05);
+  --line-1: rgb(255 255 255 / 0.07);
+  --line-2: rgb(255 255 255 / 0.12);
 
   --text-1: #f4f4f6;
   --text-2: #a3a3ad;
   --text-3: #6d6d78;
 
-  /* Ecken: Grundwert + abgeleitete Stufen */
-  --r: 4px;
-  --r-dot: 999px;
+  /* Ecken: Grundwert + abgeleitete Stufen (Standard eckig) */
+  --r: 0px;
+  --r-dot: 0px;
   --r-xs: calc(var(--r) * 0.5);
   --r-ctl: var(--r);
   --r-card: calc(var(--r) * 1.5);
@@ -158,10 +159,10 @@
   --titlebar-h: 44px;
   --rail-w: 60px;
 
-  /* Elevation: Schatten + Haarlinie als Ring (statt Rahmen) */
-  --sh-1: 0 1px 2px rgb(0 0 0 / 0.35);
-  --sh-2: 0 0 0 1px rgb(255 255 255 / 0.07), 0 12px 32px -8px rgb(0 0 0 / 0.6);
-  --sh-3: 0 0 0 1px rgb(255 255 255 / 0.08), 0 28px 72px -16px rgb(0 0 0 / 0.75);
+  /* Elevation: e1 = nichts (flach), e2/e3 = feine Kante + dezenter Schatten für Menüs und Dialoge */
+  --sh-1: 0 0 #0000;
+  --sh-2: 0 0 0 1px rgb(255 255 255 / 0.09), 0 6px 20px rgb(0 0 0 / 0.5);
+  --sh-3: 0 0 0 1px rgb(255 255 255 / 0.1), 0 10px 32px rgb(0 0 0 / 0.55);
 
   /* Hintergrund (Abdunklung/Unschärfe) */
   --bg-dim: 0.45;
@@ -172,26 +173,26 @@
   --tt-b2: #28007f;
 }
 
-:root[data-tone="darker"] {
-  --tone-frame: #040405;
-  --tone-canvas: #09090b;
-  --tone-s1: #111114;
-  --tone-s2: #17171b;
-  --tone-s3: #1f1f24;
-  --tone-overlay: #0f0f12;
+:root[data-tone="dim"] {
+  --tone-frame: #0b0b0d;
+  --tone-canvas: #111113;
+  --tone-s1: #18181b;
+  --tone-s2: #1f1f22;
+  --tone-s3: #27272b;
+  --tone-overlay: #17171a;
 }
 :root[data-tone="oled"] {
   --tone-frame: #000;
   --tone-canvas: #000;
-  --tone-s1: #0d0d0f;
-  --tone-s2: #141417;
-  --tone-s3: #1c1c20;
-  --tone-overlay: #0c0c0e;
+  --tone-s1: #09090a;
+  --tone-s2: #111112;
+  --tone-s3: #18181a;
+  --tone-overlay: #0a0a0b;
   --line-1: rgb(255 255 255 / 0.08);
 }
 
-:root[data-radius="square"] { --r: 0px; --r-dot: 0px; --r-pill: 0px; }
-:root[data-radius="round"] { --r: 9px; --r-pill: 999px; --r-xs: 5px; }
+:root[data-radius="slight"] { --r: 4px; --r-dot: 999px; }
+:root[data-radius="round"] { --r: 9px; --r-dot: 999px; --r-pill: 999px; --r-xs: 5px; }
 
 :root[data-density="compact"] {
   --ui-spacing: 0.22rem;
@@ -199,13 +200,12 @@
   --rail-w: 54px;
 }
 
-/* Hintergrundbild/-animation: Flächen werden halbtransparent, Überlagerungen bekommen Unschärfe */
+/* Hintergrundbild/-animation: Flächen leicht transparent (ohne Unschärfe), Menüs/Dialoge bleiben solide */
 :root[data-bg="on"] {
-  --a-frame: 62%;
-  --a-canvas: 0%;
-  --a-surface: 74%;
-  --a-overlay: 88%;
-  --field: rgb(255 255 255 / 0.06);
+  --a-frame: 78%;
+  --a-canvas: 55%;
+  --a-surface: 90%;
+  --field: rgb(255 255 255 / 0.07);
 }
 
 /* ------------------------------------------------------------------ Grundregeln der App-Shell */
@@ -297,9 +297,6 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 /* Fenster-Drag-Bereich der eigenen Titelleiste */
 .drag { -webkit-app-region: drag; app-region: drag; }
 .no-drag { -webkit-app-region: no-drag; app-region: no-drag; }
-
-/* Überlagerungen (Menüs, Dialoge) über einem Hintergrundbild: Milchglas */
-:root[data-bg="on"] .glass { backdrop-filter: blur(18px) saturate(1.2); }
 
 /* Minecraft-Tooltip (wie .mc-tooltip der Website) */
 .mc-tooltip {

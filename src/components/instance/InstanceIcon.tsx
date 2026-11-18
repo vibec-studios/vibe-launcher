@@ -52,7 +52,6 @@ export const InstanceIcon = memo(function InstanceIcon({
         height: size,
         // Ecken wachsen mit der Icon-Größe (bei „eckig“ bleibt es 0)
         borderRadius: `calc(var(--r) * ${Math.max(0.75, Math.min(2.4, size / 36)).toFixed(2)})`,
-        background: showImg ? undefined : `radial-gradient(80% 80% at 50% 30%, color-mix(in srgb, ${accent} 26%, #141419), #0d0d11)`,
       }}
     >
       {showImg ? (

@@ -53,7 +53,7 @@ export function Select<V extends string = string>({
           position="popper"
           sideOffset={4}
           collisionPadding={8}
-          className="glass z-[65] max-h-[min(360px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="z-[65] max-h-[min(360px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           <S.Viewport className="p-1">
             {options.map((o) => (

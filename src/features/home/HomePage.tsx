@@ -27,7 +27,7 @@ import { useWeekPlaytime } from "@/features/stats/StatsPage";
 
 const SLOTS = 9;
 // Hotbar-Optik wie im Spiel: dunkle, eingelassene Slots, ausgewählter Slot mit hellem Rahmen
-const BAR = "hotbar inline-flex border-2 border-[#2b2b34] bg-[#0b0b0f] p-[3px] shadow-[0_8px_28px_rgba(0,0,0,.55)]";
+const BAR = "hotbar inline-flex border-2 border-[#2b2b34] bg-[#0b0b0f] p-[3px]";
 const SLOT =
   "m-px bg-[#17171d] shadow-[inset_2px_2px_0_rgba(0,0,0,.6),inset_-2px_-2px_0_rgba(255,255,255,.07)] transition-colors duration-100 hover:bg-[#1e1e26]";
 const SEL =
@@ -84,7 +84,7 @@ const HotbarSlot = memo(function HotbarSlot({
         onDoubleClick={() => onPlay(i)}
         className={cn(SLOT, "relative grid h-[62px] w-[62px] shrink-0 place-items-center", selected && SEL)}
       >
-        <InstanceIcon icon={i.icon} accent={accent} size={52} className="border-0 bg-transparent" />
+        <InstanceIcon icon={i.icon} accent={accent} size={52} className="bg-transparent!" />
         <span className="absolute left-1.5 top-0.5 font-mono text-[11px] text-white/45">{index + 1}</span>
         {phase === "running" && <span className="absolute bottom-1 right-1 h-2 w-2 bg-ok shadow-[0_0_0_1px_#000]" />}
         {(phase === "busy" || phase === "preparing") && <span className="absolute bottom-1 right-1 h-2 w-2 animate-pulse bg-warn shadow-[0_0_0_1px_#000]" />}
@@ -281,19 +281,12 @@ function SelectedPanel({ instance: i }: { instance: Instance }) {
       <InstanceStatus instance={i} />
     );
 
-  // Bühne: die gewählte Instanz ist das Wichtigste der Seite – größte Schrift, Akzent-Schimmer, ein klarer Spielen-Knopf.
+  // Bühne: die gewählte Instanz ist das Wichtigste der Seite – größte Schrift, ein klarer Spielen-Knopf. Flach.
   return (
-    <section className="relative overflow-hidden rounded-panel bg-surface shadow-e1" style={accentVars(accent)}>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: `radial-gradient(70% 140% at 0% 0%, color-mix(in srgb, ${accent} 20%, transparent), transparent 65%), radial-gradient(40% 90% at 100% 100%, color-mix(in srgb, ${accent} 7%, transparent), transparent 70%)`,
-        }}
-      />
+    <section className="relative overflow-hidden rounded-panel bg-surface" style={accentVars(accent)}>
       <div className="relative flex items-center gap-5 p-5">
         <button onClick={() => open("content")} aria-label={i.name} className="shrink-0">
-          <InstanceIcon icon={i.icon} accent={accent} size={84} className="shadow-e1" />
+          <InstanceIcon icon={i.icon} accent={accent} size={84} />
         </button>
         <div className="min-w-0 flex-1">
           <button onClick={() => open("content")} className="block max-w-full truncate text-left text-hero text-text hover:underline">
@@ -415,7 +408,7 @@ function RecentShots() {
               openShot(s.path);
               nav({ to: "/screenshots", search: {} });
             }}
-            className="group relative aspect-video overflow-hidden rounded-card bg-surface transition-[filter,box-shadow] duration-150 hover:shadow-[0_0_0_2px_rgb(255_255_255/.25)] hover:brightness-110"
+            className="group relative aspect-video overflow-hidden rounded-card bg-surface transition-opacity duration-100 hover:opacity-85"
             title={`${s.file_name} · ${formatRelative(s.taken_at)}`}
           >
             <ShotThumb path={s.path} className="absolute inset-0" />

@@ -63,7 +63,7 @@ const RailInstance = memo(function RailInstance({ instance: i, active }: { insta
             onClick={() => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "content" } })}
             className={cn("relative grid h-10 w-10 place-items-center transition-opacity duration-100", active ? "opacity-100" : "opacity-75 hover:opacity-100")}
           >
-            <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={34} className={cn(active && "shadow-[0_0_0_2px_var(--frame),0_0_0_3.5px_rgb(255_255_255/.35)]")} />
+            <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={34} className={cn(active && "outline outline-1 outline-offset-2 outline-white/40")} />
             {(running || busy) && (
               <span className={cn("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-dot border-2 border-[var(--tone-frame)]", running ? "bg-ok" : "bg-warn")} />
             )}
@@ -219,7 +219,7 @@ function RunningGames() {
               className="flex h-full items-center gap-2 pl-2.5 pr-2.5 text-[13px] font-medium text-text hover:bg-white/[.04]"
               onClick={() => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "logs" } })}
             >
-              {preparing ? <Spinner size={10} className="text-warn" /> : <span className="h-2 w-2 rounded-dot bg-ok shadow-[0_0_8px_var(--color-ok)]" />}
+              {preparing ? <Spinner size={10} className="text-warn" /> : <span className="h-2 w-2 rounded-dot bg-ok" />}
               <span className="max-w-[160px] truncate">{i.name}</span>
             </button>
             <Tooltip content={t("common.stop")} side="bottom">
@@ -303,7 +303,7 @@ export function Shell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
         <div className="flex min-h-0 flex-1">
-          <main className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-tl-panel bg-panel shadow-[inset_1px_1px_0_rgb(255_255_255/.035)]">
+          <main className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-tl-panel bg-panel">
             <ErrorBoundary key={path}>
               <Outlet />
             </ErrorBoundary>

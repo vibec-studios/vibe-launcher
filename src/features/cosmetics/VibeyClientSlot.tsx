@@ -97,7 +97,7 @@ export function VibeyClientSlot({ instance, className }: { instance: Instance; c
 
   const canToggle = !!s && !busy && !running && (s.enabled || (!disabledReason && s.supported !== false));
   return (
-    <div className={cn("flex min-h-11 items-center gap-3 rounded-card bg-[linear-gradient(90deg,color-mix(in_srgb,var(--ui-accent)_13%,transparent),color-mix(in_srgb,var(--ui-accent)_3%,transparent)_60%,transparent)] py-1.5 pl-2 pr-3", className)}>
+    <div className={cn("flex min-h-11 items-center gap-3 rounded-card bg-surface py-1.5 pl-2 pr-3", className)}>
       <div className="grid h-8 w-8 shrink-0 place-items-center rounded-ctl bg-brand/15 text-brand">
         <Sparkles size={16} />
       </div>
