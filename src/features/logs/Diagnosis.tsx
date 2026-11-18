@@ -1,13 +1,14 @@
 // Crash-Diagnose: Ergebnis von `crash_analyze` mit Schuldigem, Klartext und Aktionen.
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cpu, Download, FileWarning, MemoryStick, Power, PowerOff, Stethoscope, UploadCloud } from "lucide-react";
+import { Cpu, Download, FileWarning, MemoryStick, Power, PowerOff, Stethoscope, UploadCloud, Wrench } from "lucide-react";
 import { api, errorMessage } from "@/lib/api";
 import { qk, waitForTask } from "@/lib/queries";
 import type { Diagnosis, DiagnosisAction, Instance, LoaderKind } from "@/lib/types";
 import { Button, Dialog, Skeleton, cn, toast } from "@/components/ui";
 import { useT, t as tt } from "@/i18n";
 import { uploadCrash } from "./LogsTab";
+import { openAutofix } from "@/features/content/AutoFix";
 
 export function useDiagnosis(instanceId: string, crashReport: string | null, exitCode: number | null, enabled = true) {
   return useQuery({
@@ -215,7 +216,27 @@ export function DiagnosisDialog({
   const t = useT();
   const q = useDiagnosis(inst.id, crashReport, exitCode, open);
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} title={t("diag.title")} description={t("diag.desc")} size="lg">
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t("diag.title")}
+      description={t("diag.desc")}
+      size="lg"
+      footer={
+        inst.loader.kind !== "vanilla" || (q.data?.length ?? 0) > 0 ? (
+          <Button
+            variant="accent"
+            icon={<Wrench size={14} />}
+            onClick={() => {
+              onOpenChange(false);
+              openAutofix({ instanceId: inst.id, crashReport, exitCode });
+            }}
+          >
+            {t("fix.button")}
+          </Button>
+        ) : undefined
+      }
+    >
       {q.isLoading ? (
         <div className="flex flex-col gap-3">
           <Skeleton className="h-20" />

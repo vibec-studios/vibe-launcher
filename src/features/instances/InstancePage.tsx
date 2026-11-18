@@ -17,6 +17,7 @@ import { useT } from "@/i18n";
 import { WorldsTab } from "./WorldsTab";
 import { ServersTab } from "./ServersTab";
 import { DiagnosisCard, DiagnosisDialog, useDiagnosis } from "@/features/logs/Diagnosis";
+import { AutofixButton } from "@/features/content/AutoFix";
 import { InstanceSettingsTab } from "./InstanceSettingsTab";
 import { BackupsTab } from "@/features/backups/BackupsTab";
 import { InstanceFilesTab } from "@/features/files";
@@ -52,6 +53,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
             {game?.crash_report && <span className="font-mono text-dim"> · {game.crash_report.split(/[\\/]/).pop()}</span>}
           </div>
         </div>
+        <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null }} />
         <Button size="sm" icon={<Stethoscope size={13} />} onClick={() => setDetails(true)}>
           {t("diag.open")}
           {diag.data && diag.data.length > 0 && <span className="text-[12px] text-muted">{diag.data.length}</span>}

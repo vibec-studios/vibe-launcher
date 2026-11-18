@@ -2,7 +2,7 @@
 // übrige Filter im Store (bleiben beim Zurücknavigieren erhalten). Ohne Suchbegriff/Sortierung/Kategorie eine
 // kuratierte Startansicht (Browse), sonst Ergebnisse als Liste oder Raster – virtualisiert + Endlos-Scrollen.
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
+import { getRouteApi, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowLeft, Check, ChevronDown, Flame, Info, LayoutGrid, List, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -11,11 +11,12 @@ import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { formatLoader } from "@/lib/format";
 import { qk, useGameVersions, useInstances, useSettings, useSystemInfo } from "@/lib/queries";
-import type { Instance, LoaderKind, ProjectHit, ProjectType, SearchQuery, SortOrder, Source } from "@/lib/types";
+import type { Category, Instance, LoaderKind, ProjectHit, ProjectType, SearchQuery, SortOrder, Source } from "@/lib/types";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { compareMc, contentKindOf } from "@/components/content/util";
 import { Browse } from "./Browse";
-import { CategoryIcon, categoryLabel, fmtNum } from "./categoryIcons";
+import { DiscoverProjectOverlay, useProjectOverlayNav } from "./ProjectOverlay";
+import { CategoryIcon, catIconKey, catLabel, fmtNum } from "./categoryIcons";
 import { ROW_H, ResultRow, ResultTile, RowSkeleton, TILE_H, TILE_MIN_W, TileSkeleton } from "./ResultCard";
 import { scrollOffsets, trendingSince, useDiscoverFilters, useDiscoverView, useFilterGroups, viewFor, type ViewMode } from "./store";
 
@@ -37,7 +38,6 @@ export function DiscoverPage() {
   const t = useT();
   const search = route.useSearch();
   const navigate = route.useNavigate();
-  const nav = useNavigate();
   const sys = useSystemInfo();
   const cfAvailable = !!sys.data?.curseforge_available;
   const stores = useQuery({ queryKey: ["stores"], queryFn: api.storesList, staleTime: 5 * 60_000 });
@@ -82,6 +82,7 @@ export function DiscoverPage() {
   // Kuratierte Startansicht, solange nichts gesucht/sortiert/gefiltert wird (Stores: direkt die Liste)
   const browsing =
     !search.q && !text && !filters.categories.length && filters.sort === "relevance" && !filters.trending && (source === "modrinth" || source === "curseforge") && !curseforgeBlocked;
+  const catsQ = useQuery({ queryKey: qk.categories(source, effectiveType), queryFn: () => api.contentCategories(source, effectiveType), staleTime: 60 * 60_000 });
   const views = useDiscoverView((s) => s.views);
   const view = viewFor(views, effectiveType);
 
@@ -117,10 +118,10 @@ export function DiscoverPage() {
   const installed = useMemo(() => new Set((installedQ.data ?? []).map((c) => c.project_id).filter(Boolean) as string[]), [installedQ.data]);
 
   const instanceList = instances.data ?? [];
-  const onOpen = useCallback(
-    (hit: ProjectHit) => nav({ to: "/project/$source/$id", params: { source: hit.source, id: hit.id }, search: { instance: search.instance } }),
-    [nav, search.instance],
-  );
+  // Projekte öffnen sich als Overlay über der Seite (Suche, Filter und Scrollposition bleiben erhalten)
+  const overlay = useProjectOverlayNav();
+  const openOverlay = overlay.open;
+  const onOpen = useCallback((hit: ProjectHit) => openOverlay(hit.source, hit.id), [openOverlay]);
 
   const setType = (v: ProjectType) => {
     useDiscoverFilters.getState().set({ categories: [] });
@@ -172,7 +173,8 @@ export function DiscoverPage() {
   );
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
+      {search.p && <DiscoverProjectOverlay value={search.p} instanceId={search.instance} />}
       {search.instance && <TargetBanner instanceId={search.instance} type={effectiveType} />}
       <div className="flex min-h-0 flex-1">
         <FilterSidebar type={effectiveType} source={source} sourcePicker={sourcePicker} />
@@ -199,6 +201,7 @@ export function DiscoverPage() {
               fetching={results.isFetching && !results.isFetchingNextPage}
               view={view}
               onView={(v) => useDiscoverView.getState().setView(effectiveType, v)}
+              cats={catsQ.data}
               canBrowse={!search.q && (source === "modrinth" || source === "curseforge") && !curseforgeBlocked}
               onBrowse={() => {
                 setText("");
@@ -272,7 +275,10 @@ function ResultsBar({
   onView,
   canBrowse,
   onBrowse,
+  cats,
 }: {
+  /** Kategorienliste (Namen der aktiven Kategorie-Filter) */
+  cats?: Category[];
   total: number | null;
   fetching: boolean;
   view: ViewMode;
@@ -308,7 +314,10 @@ function ResultsBar({
       <span className="shrink-0 text-meta tabular-nums text-dim">{total != null ? t("discover.results", { n: fmtNum(total) }) : ""}</span>
       <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
         {f.trending && chip("trending", <Flame size={12} className="text-warn" />, t("discover.browse.trending"), () => f.set({ trending: false }))}
-        {f.categories.map((c) => chip(c, <CategoryIcon id={c} size={12} className="text-dim" />, categoryLabel(c), () => f.set({ categories: f.categories.filter((x) => x !== c) })))}
+        {f.categories.map((c) => {
+          const cat = cats?.find((x) => x.id === c) ?? { id: c, name: c };
+          return chip(c, <CategoryIcon id={catIconKey(cat)} size={12} className="text-dim" />, catLabel(cat), () => f.set({ categories: f.categories.filter((x) => x !== c) }));
+        })}
         {fetching && <Spinner size={11} className="ml-1 text-brand" />}
       </div>
       <Tooltip content={t("discover.sort")}>
@@ -556,17 +565,19 @@ function FilterGroup({
 }
 
 /** Kompakte Auswahlzeile ohne Kästchen: ausgewählt = hellere Schrift + Fläche + Haken rechts. */
-function CheckRow({ on, label, onClick, radio }: { on: boolean; label: React.ReactNode; onClick: () => void; radio?: boolean }) {
+function CheckRow({ on, label, onClick, radio, icon }: { on: boolean; label: React.ReactNode; onClick: () => void; radio?: boolean; icon?: React.ReactNode }) {
   return (
     <button
       role={radio ? "radio" : "checkbox"}
       aria-checked={on}
       onClick={onClick}
       className={cn(
-        "flex h-7 w-full shrink-0 items-center gap-2 rounded-ctl pl-[26px] pr-2 text-left text-[13px] transition-colors duration-100",
+        "flex h-7 w-full shrink-0 items-center gap-2 rounded-ctl pr-2 text-left text-[13px] transition-colors duration-100",
+        icon ? "pl-[9px]" : "pl-[26px]",
         on ? "bg-white/[.06] text-text" : "text-muted hover:bg-white/[.04] hover:text-text",
       )}
     >
+      {icon && <span className={cn("grid w-[14px] shrink-0 place-items-center", on ? "text-brand" : "text-dim")}>{icon}</span>}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {on && <Check size={13} strokeWidth={2.5} className="shrink-0 text-brand" />}
     </button>
@@ -662,7 +673,8 @@ function FilterSidebar({ type, source, sourcePicker }: { type: ProjectType; sour
                 <CheckRow
                   key={c.id}
                   on={on}
-                  label={categoryLabel(c.id)}
+                  icon={<CategoryIcon id={catIconKey(c)} size={14} />}
+                  label={catLabel(c)}
                   onClick={() => f.set({ categories: on ? f.categories.filter((x) => x !== c.id) : [...f.categories, c.id] })}
                 />
               );

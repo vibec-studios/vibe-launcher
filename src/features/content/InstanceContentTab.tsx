@@ -7,6 +7,7 @@
 //      Drag & Drop (.jar -> Mods, .zip -> Resourcepacks bzw. Shader im Shader-Filter).
 // Hinweise (Modpack-Update, Abhängigkeiten, manuelle Downloads) zeigt die Hinweiszeile der Instanzseite.
 import { useQueries, useQuery } from "@tanstack/react-query";
+import { discoverSearchFor } from "@/app/router";
 import { useNavigate } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -399,7 +400,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
       },
       remove: (items) => void remove(items),
       openProject: (item) =>
-        item.source && item.project_id && navigate({ to: "/project/$source/$id", params: { source: item.source, id: item.project_id }, search: { instance: id } }),
+        item.source && item.project_id && navigate({ to: "/discover", search: discoverSearchFor(item.source, item.project_id, id, item.kind === "resourcepack" ? "resourcepack" : item.kind === "shader" ? "shader" : item.kind === "datapack" ? "datapack" : "mod") }),
       openFolder,
       hasUpdate: (item) => state.current.updates.has(keyOf(item)),
       isManualUpdate: (item) => !!state.current.updates.get(keyOf(item))?.manual,

@@ -141,6 +141,13 @@ export const api = {
   /** Gibt Task-ID zurück (vorher automatischer Snapshot). */
   modpackUpdate: (instanceId: string, versionId?: string | null) => call<string>("modpack_update", { instanceId, versionId: versionId ?? null }),
   contentCheckDeps: (instanceId: string) => call<T.DepIssue[]>("content_check_deps", { instanceId }),
+  autofixPlan: (instanceId: string, crashReport?: string | null, exitCode?: number | null) =>
+    call<T.FixPlan>("autofix_plan", { instanceId, crashReport: crashReport ?? null, exitCode: exitCode ?? null }),
+  /** Task-ID; Ergebnis danach über autofixLast */
+  autofixApply: (instanceId: string, actions: T.FixAction[]) => call<string>("autofix_apply", { instanceId, actions }),
+  autofixLast: (instanceId: string) => call<T.FixReport | null>("autofix_last", { instanceId }),
+  autofixUndo: (instanceId: string) => call<string>("autofix_undo", { instanceId }),
+  autofixQuick: (instanceId: string) => call<T.QuickCheck>("autofix_quick", { instanceId }),
   contentSides: (instanceId: string) => call<T.SideInfo[]>("content_sides", { instanceId }),
   modsetsList: (instanceId: string) => call<T.ModSets>("modsets_list", { instanceId }),
   modsetCreate: (instanceId: string, name: string) => call<T.ModSets>("modset_create", { instanceId, name }),

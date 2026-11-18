@@ -575,6 +575,65 @@ pub fn analyze(
     out
 }
 
+/// Ende einer Textdatei (max. `max` Bytes).
+fn read_tail(p: &Path, max: u64) -> String {
+    use std::io::{Read, Seek, SeekFrom};
+    let Ok(mut f) = std::fs::File::open(p) else {
+        return String::new();
+    };
+    let len = f.metadata().map(|m| m.len()).unwrap_or(0);
+    if len > max {
+        let _ = f.seek(SeekFrom::Start(len - max));
+    }
+    let mut b = vec![];
+    let _ = f.read_to_end(&mut b);
+    String::from_utf8_lossy(&b).into_owned()
+}
+
+/// Pfad muss im Spielordner der Instanz liegen.
+fn inside(base: &Path, p: &str) -> Option<std::path::PathBuf> {
+    let c = std::path::PathBuf::from(p).canonicalize().ok()?;
+    let b = base.canonicalize().ok()?;
+    c.starts_with(&b).then_some(c)
+}
+
+/// Crash-Report (falls angegeben), `latest.log` und Sitzungs-Log einer Instanz auswerten.
+pub async fn analyze_instance(
+    state: &crate::state::AppState,
+    instance_id: &str,
+    crash_report: Option<String>,
+    exit_code: Option<i32>,
+) -> crate::error::AppResult<Vec<Diagnosis>> {
+    let inst = state.instances.get(instance_id)?;
+    let game = state.paths.game_dir(instance_id);
+    let session: String = state
+        .game
+        .session_log(instance_id)
+        .iter()
+        .map(|l| format!("{}\n", l.text))
+        .collect();
+    let max_mem = inst
+        .java
+        .max_memory_mb
+        .unwrap_or(state.settings().max_memory_mb);
+    tokio::task::spawn_blocking(move || {
+        let mut text = String::new();
+        if let Some(p) = crash_report.as_deref().and_then(|p| {
+            inside(&game, p).or_else(|| inside(&game, &game.join(p).to_string_lossy()))
+        }) {
+            text.push_str(&read_tail(&p, 2 << 20));
+            text.push('\n');
+        }
+        text.push_str(&read_tail(&game.join("logs").join("latest.log"), 1 << 20));
+        text.push('\n');
+        text.push_str(&session);
+        let mods = ModIndex::scan(&game.join("mods"));
+        analyze(&text, exit_code, &mods, max_mem as u32)
+    })
+    .await
+    .map_err(|e| crate::error::AppError::msg(e.to_string()))
+}
+
 /// Vorschlag für mehr RAM: +50 %, auf 1024 gerundet, mindestens 4 GB, höchstens 16 GB.
 pub fn suggest_ram(current: u32) -> u32 {
     let v = ((current as f64 * 1.5) / 1024.0).ceil() as u32 * 1024;

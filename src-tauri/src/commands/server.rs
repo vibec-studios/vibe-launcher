@@ -415,6 +415,12 @@ pub async fn server_addon_search(
     plugins::search(&state, &s, source, &query, sort.as_deref().unwrap_or("relevance"), offset.unwrap_or(0)).await
 }
 
+/// Projektdetails für das Overlay: Hangar über die Hangar-API (Modrinth nutzt `content_project`).
+#[tauri::command]
+pub async fn server_addon_project(state: State<'_, AppState>, project: String) -> AppResult<plugins::AddonProject> {
+    plugins::hangar_project(&state, &project).await
+}
+
 #[tauri::command]
 pub async fn server_addon_install(state: State<'_, AppState>, id: String, source: AddonSource, project: String) -> AppResult<Vec<String>> {
     let s = state.servers.get(&id)?;

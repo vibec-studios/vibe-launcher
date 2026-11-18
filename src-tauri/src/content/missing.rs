@@ -87,6 +87,17 @@ pub fn add(paths: &Paths, instance_id: &str, entries: Vec<MissingEntry>) -> AppR
     save(paths, instance_id, &list)
 }
 
+/// Erwartete Dateien (nach Dateiname) wieder austragen, z. B. beim Rückgängigmachen von „Probleme beheben“.
+pub fn forget(paths: &Paths, instance_id: &str, file_names: &[String]) -> AppResult<()> {
+    let mut list = load(paths, instance_id);
+    let n = list.len();
+    list.retain(|x| !file_names.contains(&x.info.file_name));
+    if list.len() == n {
+        return Ok(());
+    }
+    save(paths, instance_id, &list)
+}
+
 pub fn dismiss(paths: &Paths, instance_id: &str) -> AppResult<()> {
     save(paths, instance_id, &[])
 }

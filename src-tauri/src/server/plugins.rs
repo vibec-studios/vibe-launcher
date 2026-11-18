@@ -564,6 +564,172 @@ pub async fn search(state: &AppState, s: &Server, source: AddonSource, query: &s
     }
 }
 
+// ------------------------------------------------------------------ Projektdetails (Overlay)
+
+/// Details eines Hangar-Projekts im Format der Projektseite (`ProjectDetails` im Frontend).
+#[derive(Debug, Clone, Serialize)]
+pub struct AddonProject {
+    pub source: AddonSource,
+    pub id: String,
+    pub slug: String,
+    pub title: String,
+    pub description: String,
+    pub author: String,
+    pub icon_url: Option<String>,
+    pub downloads: u64,
+    /// Sterne
+    pub follows: u64,
+    pub categories: Vec<String>,
+    pub project_type: &'static str,
+    pub updated: Option<String>,
+    pub created: Option<String>,
+    pub published: Option<String>,
+    pub game_versions: Vec<String>,
+    pub loaders: Vec<String>,
+    pub body: String,
+    pub body_format: &'static str,
+    pub gallery: Vec<crate::content::GalleryImage>,
+    pub links: crate::content::ProjectLinks,
+    pub license: Option<String>,
+    pub page_url: String,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+struct HangarFull {
+    name: String,
+    namespace: Option<HangarNamespace>,
+    description: String,
+    avatar_url: Option<String>,
+    last_updated: Option<String>,
+    created_at: Option<String>,
+    published_at: Option<String>,
+    category: Option<String>,
+    stats: HangarFullStats,
+    settings: HangarSettings,
+    supported_platforms: HashMap<String, Vec<String>>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct HangarFullStats {
+    downloads: u64,
+    stars: u64,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct HangarSettings {
+    links: Vec<HangarLinkSection>,
+    tags: Vec<String>,
+    license: Option<HangarLicense>,
+    keywords: Vec<String>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct HangarLinkSection {
+    links: Vec<HangarLink>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct HangarLink {
+    name: String,
+    url: String,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct HangarLicense {
+    name: Option<String>,
+    #[serde(rename = "type")]
+    kind: Option<String>,
+}
+
+/// Hangar-Projekt (JSON von `/projects/{slug}`) + Hauptseite (Markdown) umwandeln.
+pub fn parse_hangar_project(b: &[u8], page: Option<String>) -> AppResult<AddonProject> {
+    let p: HangarFull = http::parse(b, "Hangar")?;
+    let ns = p.namespace.unwrap_or(HangarNamespace { owner: String::new(), slug: p.name.clone() });
+    let full = format!("{}/{}", ns.owner, ns.slug);
+    let mut links = crate::content::ProjectLinks::default();
+    for l in p.settings.links.iter().flat_map(|s| s.links.iter()) {
+        if !l.url.starts_with("https://") && !l.url.starts_with("http://") {
+            continue;
+        }
+        let n = l.name.to_ascii_lowercase();
+        let u = Some(l.url.clone());
+        if n.contains("issue") || n.contains("bug") {
+            links.issues = links.issues.or(u);
+        } else if n.contains("source") || n.contains("github") || n.contains("code") {
+            links.source = links.source.or(u);
+        } else if n.contains("wiki") || n.contains("doc") {
+            links.wiki = links.wiki.or(u);
+        } else if l.url.contains("discord.") {
+            links.discord = links.discord.or(u);
+        } else if links.website.is_none() && !n.contains("donat") && !n.contains("sponsor") {
+            links.website = u;
+        }
+    }
+    // Versionen der Server-Software (Paper), neueste zuerst
+    let mut game_versions: Vec<String> = p.supported_platforms.get("PAPER").cloned().unwrap_or_default();
+    game_versions.sort_by(|a, b| version_key(b).cmp(&version_key(a)));
+    let mut loaders: Vec<String> = p.supported_platforms.keys().map(|k| k.to_ascii_lowercase()).collect();
+    loaders.sort();
+    if p.settings.tags.iter().any(|t| t == "SUPPORTS_FOLIA") && !loaders.iter().any(|l| l == "folia") {
+        loaders.push("folia".into());
+    }
+    let mut categories: Vec<String> = p.category.into_iter().map(|c| c.replace('_', "-")).collect();
+    categories.extend(p.settings.keywords.into_iter().take(4));
+    let license = p.settings.license.and_then(|l| l.name.filter(|n| !n.is_empty()).or(l.kind));
+    let body = page.filter(|b| !b.trim().is_empty()).unwrap_or_else(|| p.description.clone());
+    Ok(AddonProject {
+        source: AddonSource::Hangar,
+        id: full.clone(),
+        slug: ns.slug,
+        title: p.name,
+        description: p.description,
+        author: ns.owner,
+        icon_url: p.avatar_url.filter(|u| !u.contains("/avatars/default/")),
+        downloads: p.stats.downloads,
+        follows: p.stats.stars,
+        categories,
+        project_type: "plugin",
+        updated: p.last_updated,
+        created: p.created_at,
+        published: p.published_at,
+        game_versions,
+        loaders,
+        body,
+        body_format: "markdown",
+        gallery: vec![],
+        links,
+        license,
+        page_url: hangar_page(&full),
+    })
+}
+
+/// „1.21.11“ -> [1, 21, 11] zum Sortieren.
+fn version_key(v: &str) -> Vec<u32> {
+    v.split('.').map(|p| p.parse().unwrap_or(0)).collect()
+}
+
+pub async fn hangar_project(state: &AppState, project: &str) -> AppResult<AddonProject> {
+    let slug = project.rsplit('/').next().unwrap_or(project);
+    if slug.is_empty() || slug.contains(['?', '#', '\\']) {
+        return Err(AppError::Invalid("Ungültiges Hangar-Projekt".into()));
+    }
+    let enc = urlencoding::encode(slug);
+    let purl = format!("{HANGAR}/projects/{enc}");
+    let b = http::cached(state, purl.clone(), state.net.client.get(&purl), "Hangar").await?;
+    let page_url = format!("{HANGAR}/pages/main/{enc}");
+    let page = http::cached(state, page_url.clone(), state.net.client.get(&page_url), "Hangar")
+        .await
+        .ok()
+        .map(|b| String::from_utf8_lossy(&b).into_owned());
+    parse_hangar_project(&b, page)
+}
+
 // ------------------------------------------------------------------ Versionen + Installation
 
 /// Eine konkrete Datei, die installiert werden soll.
@@ -971,6 +1137,34 @@ mod tests {
         assert_eq!(pick_modrinth(&list, &t).unwrap().id, "rel-new");
         assert_eq!(pick_modrinth(&list[..1], &t).unwrap().id, "beta-new");
         assert!(pick_modrinth(&list[1..2], &t).is_none());
+    }
+
+    #[test]
+    fn hangar_project_parse() {
+        let b = br#"{"name":"ViaVersion","namespace":{"owner":"ViaVersion","slug":"ViaVersion"},"stats":{"downloads":532062,"stars":478},
+            "category":"misc","description":"Allow newer versions","lastUpdated":"2026-11-07T09:38:30Z","createdAt":"2022-12-31T20:04:25Z",
+            "settings":{"links":[{"id":0,"type":"top","links":[{"id":1,"name":"Issues","url":"https://github.com/ViaVersion/ViaVersion/issues"},
+            {"id":2,"name":"Source","url":"https://github.com/ViaVersion/ViaVersion/"},{"id":3,"name":"Support","url":"https://discord.gg/ViaVersion"},
+            {"id":4,"name":"Wiki","url":"https://docs.viaversion.com/"},{"id":5,"name":"Donate","url":"https://github.com/sponsors/x"},
+            {"id":6,"name":"Evil","url":"javascript:alert(1)"}]}],
+            "tags":["SUPPORTS_FOLIA"],"license":{"name":"GPL","url":"https://x","type":"GPL"},"keywords":["via","protocol"]},
+            "supportedPlatforms":{"PAPER":["1.20.6","1.21.11","1.21.2"],"VELOCITY":["3.4"]},
+            "avatarUrl":"https://hangarcdn.papermc.io/avatars/project/31.webp?v=1"}"#;
+        let p = super::parse_hangar_project(b, Some("# Hallo".into())).unwrap();
+        assert_eq!(p.id, "ViaVersion/ViaVersion");
+        assert_eq!(p.follows, 478);
+        assert_eq!(p.body, "# Hallo");
+        assert_eq!(p.links.issues.as_deref(), Some("https://github.com/ViaVersion/ViaVersion/issues"));
+        assert_eq!(p.links.discord.as_deref(), Some("https://discord.gg/ViaVersion"));
+        assert_eq!(p.links.wiki.as_deref(), Some("https://docs.viaversion.com/"));
+        assert_eq!(p.links.website, None, "Spenden-/javascript-Links nicht als Webseite");
+        assert_eq!(p.game_versions, vec!["1.21.11", "1.21.2", "1.20.6"]);
+        assert!(p.loaders.contains(&"folia".to_string()) && p.loaders.contains(&"paper".to_string()));
+        assert_eq!(p.license.as_deref(), Some("GPL"));
+        assert_eq!(p.page_url, "https://hangar.papermc.io/ViaVersion/ViaVersion");
+        // Ohne Hauptseite: Kurzbeschreibung
+        let p = super::parse_hangar_project(b, None).unwrap();
+        assert_eq!(p.body, "Allow newer versions");
     }
 
     #[test]

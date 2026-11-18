@@ -431,12 +431,17 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 @keyframes vl-menu-out { to { opacity: 0; scale: 0.98; } }
 @keyframes vl-fade-out { to { opacity: 0; } }
 @keyframes vl-check { 0% { scale: 0.4; } 60% { scale: 1.18; } 100% { scale: 1; } }
+@keyframes vl-sheet-in { from { opacity: 0; translate: 28px 0; } }
 
 .vl-page { height: 100%; width: 100%; }
 
 @media (prefers-reduced-motion: no-preference) {
   /* Normal: nur ein ganz kurzes Einblenden beim Seitenwechsel */
   html:not([data-reduce-motion="true"])[data-nav="on"] .vl-page { animation: vl-page-fade 0.14s ease-out; }
+  /* Projekt-Overlay: Panel gleitet von rechts herein (reduziert: sofort da) */
+  html:not([data-reduce-motion="true"]) .vl-sheet { animation: vl-sheet-in 0.18s var(--ease-out); }
+  html:not([data-reduce-motion="true"]) .vl-sheet-backdrop { animation: fade-in 0.16s ease-out; }
+  html:not([data-reduce-motion="true"])[data-motion="more"] .vl-sheet { animation-duration: 0.3s; }
 
   html:not([data-reduce-motion="true"])[data-motion="more"] {
     --motion-num: 450ms;

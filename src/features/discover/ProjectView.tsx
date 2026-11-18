@@ -1,114 +1,42 @@
-// Projektseite: großer Kopf (Galerie-Banner, Icon, Titel, Kennzahlen, Installieren mit Instanzwahl, Links),
-// klebende Tab-Leiste Beschreibung / Versionen / Galerie, rechts Infospalte (Passt zur Instanz, Kompatibilität,
-// Abhängigkeiten, Kategorien, Links, Details).
+// Projektansicht (nach dem Vorbild von Modrinth): Kopf mit Icon, Name, Autor, Kennzahlen, Loader/Versionen und
+// auffälligem Installieren-Knopf, Reiter Beschreibung / Galerie / Versionen, rechts eine Seitenleiste mit Details.
+// Wird im Overlay über „Entdecken“ und im Server-Plugin-Overlay genutzt (Installieren-Knopf kommt als Slot).
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, BookOpen, Bug, CalendarClock, Check, Code2, Copy, Download, ExternalLink, Globe, Heart, Images, MessageCircle, MoreHorizontal, Scale } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
-import { DropdownItem, DropdownMenu, DropdownSeparator, ErrorState, IconButton, Skeleton, Tabs, Tooltip, cn, toast } from "@/components/ui";
+import { AlertTriangle, BookOpen, Bug, CalendarClock, Check, Code2, Copy, Download, ExternalLink, Globe, Heart, Images, MessageCircle, MoreHorizontal, Scale, Star } from "lucide-react";
+import { useMemo, useState, type MouseEvent, type ReactNode } from "react";
+import { DropdownItem, DropdownMenu, DropdownSeparator, IconButton, Skeleton, Tabs, Tooltip, cn, toast } from "@/components/ui";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { formatCount, formatDate, formatLoader, formatRelative } from "@/lib/format";
-import { qk, useInstances } from "@/lib/queries";
+import { qk } from "@/lib/queries";
 import type { Dependency, Instance, ProjectDetails, Source } from "@/lib/types";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { RichText } from "@/components/content/RichText";
 import { Pill, prettyLoader } from "@/components/content/Pill";
 import { ManualBadge } from "@/components/content/ManualBadge";
-import { compareMc, compatibility, contentKindOf, copyText, openExternal, sourceName, versionRange } from "@/components/content/util";
+import { compareMc, compatibility, contentKindOf, copyText, openExternal, versionRange } from "@/components/content/util";
 import { CategoryIcon, categoryLabel, fmtNum } from "./categoryIcons";
-import { InstallMenu } from "./InstallMenu";
 import { hitColor } from "./ResultCard";
 import { VersionsTab } from "./VersionsTab";
 
-const route = getRouteApi("/project/$source/$id");
+/** Quelle der Ansicht: Inhalte-Quellen plus Hangar (Server-Plugins). */
+export type ViewSource = Source | "hangar";
+/** Projektdaten der Ansicht (Hangar liefert dasselbe Format). */
+export type ViewProject = Omit<ProjectDetails, "source" | "project_type"> & { source: ViewSource; project_type: ProjectDetails["project_type"] | "plugin" };
 
-type Tab = "description" | "versions" | "gallery";
+type Tab = "description" | "gallery" | "versions";
 
-export function ProjectPage() {
-  const t = useT();
-  const params = route.useParams();
-  const search = route.useSearch();
-  const decoded = decodeURIComponent(params.source);
-  const source: Source = decoded === "curseforge" ? "curseforge" : decoded.startsWith("store:") ? (decoded as Source) : "modrinth";
-  const q = useQuery({
-    queryKey: qk.project(source, params.id),
-    queryFn: () => api.contentProject(source, params.id),
-    staleTime: 5 * 60_000,
-    placeholderData: undefined,
-  });
-  const [tab, setTab] = useState<Tab>("description");
-  const [lightbox, setLightbox] = useState<number | null>(null);
-  const p = q.data;
-  const { data: instances } = useInstances();
-  const target = search.instance ? (instances?.find((i) => i.id === search.instance) ?? null) : null;
-  const images = useMemo(() => (p ? [...p.gallery].sort((a, b) => Number(b.featured) - Number(a.featured)) : []), [p]);
+const MODRINTH_LINK = /^https?:\/\/(?:www\.)?modrinth\.com\/(?:mod|plugin|resourcepack|shader|datapack|modpack|project)\/([\w.-]+)\/?(?:[?#].*)?$/i;
 
-  return (
-    <div className="scroll h-full">
-      <div className="mx-auto w-full max-w-[1180px] px-6 pb-12 pt-4">
-        {q.isError ? (
-          <ErrorState error={q.error} onRetry={() => q.refetch()} className="rounded-card bg-surface" />
-        ) : !p ? (
-          <HeaderSkeleton />
-        ) : (
-          <Header p={p} target={target} banner={images[0]?.url ?? null} onBanner={() => setLightbox(0)} />
-        )}
-        {p && (
-          <>
-            <div className="sticky top-0 z-10 mt-4 bg-panel">
-              <Tabs
-                value={tab}
-                onChange={setTab}
-                className="-mx-3 h-11"
-                items={[
-                  { value: "description", label: t("project.tab.description") },
-                  { value: "versions", label: t("project.tab.versions") },
-                  { value: "gallery", label: t("project.tab.gallery"), badge: p.gallery.length || undefined },
-                ]}
-              />
-            </div>
-            <div className="flex items-start gap-10 pt-6">
-              <div className="min-w-0 flex-1">
-                {tab === "description" && <Description p={p} />}
-                {tab === "gallery" && <Gallery images={images} onOpen={setLightbox} />}
-                {tab === "versions" && <VersionsTab project={p} instanceId={search.instance} />}
-              </div>
-              {tab !== "versions" && <InfoSidebar p={p} target={target} />}
-            </div>
-            <Lightbox
-              images={images}
-              index={lightbox}
-              onIndexChange={setLightbox}
-              onClose={() => setLightbox(null)}
-              labels={{ prev: t("project.prev"), next: t("project.next"), close: t("common.close") }}
-            />
-          </>
-        )}
-        {!p && !q.isError && (
-          <div className="mt-8 flex gap-10">
-            <div className="flex flex-1 flex-col gap-3">
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-11/12" />
-              <Skeleton className="h-4 w-4/5" />
-              <Skeleton className="mt-3 h-48 w-full rounded-card" />
-            </div>
-            <div className="flex w-[264px] shrink-0 flex-col gap-3 max-[980px]:hidden">
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-16" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-24" />
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+function viewSourceName(s: ViewSource): string {
+  if (s === "modrinth") return "Modrinth";
+  if (s === "curseforge") return "CurseForge";
+  if (s === "hangar") return "Hangar";
+  return s.replace(/^store:/, "");
 }
 
-function linkList(p: ProjectDetails, t: ReturnType<typeof useT>) {
+function linkList(p: ViewProject, t: ReturnType<typeof useT>) {
   const l = p.links;
   return [
     l.website && { key: "website", href: l.website, icon: <Globe size={15} />, label: t("project.link.website") },
@@ -119,10 +47,86 @@ function linkList(p: ProjectDetails, t: ReturnType<typeof useT>) {
   ].filter(Boolean) as { key: string; href: string; icon: ReactNode; label: string }[];
 }
 
-function Header({ p, target, banner, onBanner }: { p: ProjectDetails; target: Instance | null; banner: string | null; onBanner: () => void }) {
+export interface ProjectViewProps {
+  p: ViewProject;
+  /** Ziel-Instanz (Kompatibilität, Versionen vorfiltern) */
+  target: Instance | null;
+  /** Installieren-Knopf (mit Zielwahl) */
+  install: ReactNode;
+  /** Anderes Projekt in derselben Ansicht öffnen (Abhängigkeiten, Modrinth-Links in der Beschreibung) */
+  onOpenProject?: (source: Source, id: string) => void;
+  /** Versionen-Reiter (Installieren bestimmter Versionen in Instanzen) */
+  versions?: boolean;
+  /** Abhängigkeiten in der Seitenleiste (nur Modrinth/CurseForge/Stores) */
+  deps?: boolean;
+  /** Zusätzlicher Hinweis oben in der Seitenleiste */
+  sideNote?: ReactNode;
+}
+
+export function ProjectView({ p, target, install, onOpenProject, versions = true, deps, sideNote }: ProjectViewProps) {
+  const t = useT();
+  const [tab, setTab] = useState<Tab>("description");
+  const [lightbox, setLightbox] = useState<number | null>(null);
+  const images = useMemo(() => [...p.gallery].sort((a, b) => Number(b.featured) - Number(a.featured)), [p]);
+  const manual = !!p.manual_download && p.project_type !== "modpack";
+
+  // Links auf andere Modrinth-Projekte in der Beschreibung im Overlay öffnen statt im Browser
+  const onDescClick = (e: MouseEvent) => {
+    if (!onOpenProject) return;
+    const a = (e.target as HTMLElement).closest?.("a");
+    const m = a && MODRINTH_LINK.exec(a.getAttribute("href") ?? "");
+    if (!m) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onOpenProject("modrinth", m[1]);
+  };
+
+  return (
+    <div className="@container">
+      <Header p={p} install={install} banner={images[0]?.url ?? null} onBanner={() => setLightbox(0)} />
+      {manual && (
+        <div className="mt-4 flex items-start gap-2.5 rounded-card bg-warn/[.08] px-3.5 py-3 @min-[880px]:hidden">
+          <ManualBadge iconOnly className="mt-px" />
+          <div className="min-w-0 text-[12.5px] leading-snug">
+            <span className="font-semibold text-text">{t("manual.badge")}</span> <span className="text-muted">{t("manual.tip")}</span>
+          </div>
+        </div>
+      )}
+      <div className="sticky top-0 z-10 mt-4 bg-panel">
+        <Tabs
+          value={tab}
+          onChange={setTab}
+          className="-mx-3 h-11"
+          items={[
+            { value: "description", label: t("project.tab.description") },
+            { value: "gallery", label: t("project.tab.gallery"), badge: p.gallery.length || undefined },
+            ...(versions ? [{ value: "versions" as Tab, label: t("project.tab.versions") }] : []),
+          ]}
+        />
+      </div>
+      <div className="flex items-start gap-8 pt-6">
+        <div className="min-w-0 flex-1" onClickCapture={onDescClick}>
+          {tab === "description" && <Description p={p} />}
+          {tab === "gallery" && <Gallery images={images} onOpen={setLightbox} />}
+          {tab === "versions" && versions && <VersionsTab project={p as ProjectDetails} instanceId={target?.id} />}
+        </div>
+        {tab !== "versions" && <InfoSidebar p={p} target={target} deps={deps ?? versions} onOpenProject={onOpenProject} note={sideNote} />}
+      </div>
+      <Lightbox
+        images={images}
+        index={lightbox}
+        onIndexChange={setLightbox}
+        onClose={() => setLightbox(null)}
+        labels={{ prev: t("project.prev"), next: t("project.next"), close: t("common.close") }}
+      />
+    </div>
+  );
+}
+
+function Header({ p, install, banner, onBanner }: { p: ViewProject; install: ReactNode; banner: string | null; onBanner: () => void }) {
   const t = useT();
   const [bannerFailed, setBannerFailed] = useState(false);
-  const loaders = p.loaders.filter((l) => ["fabric", "forge", "neoforge", "quilt"].includes(l));
+  const loaders = p.loaders.filter((l) => l !== "minecraft" && (p.project_type === "plugin" || ["fabric", "forge", "neoforge", "quilt"].includes(l)));
   const range = versionRange(p.game_versions);
   const links = linkList(p, t);
   const color = hitColor(p);
@@ -134,7 +138,7 @@ function Header({ p, target, banner, onBanner }: { p: ProjectDetails; target: In
         <button
           onClick={onBanner}
           aria-label={t("project.tab.gallery")}
-          className="group relative block h-[220px] w-full overflow-hidden rounded-card bg-surface2 max-[1100px]:h-[180px]"
+          className="group relative block h-[180px] w-full overflow-hidden rounded-card bg-surface2 @max-[760px]:h-[140px]"
         >
           <img
             src={banner!}
@@ -153,24 +157,59 @@ function Header({ p, target, banner, onBanner }: { p: ProjectDetails; target: In
       ) : (
         color && <div className="h-1.5 w-full rounded-pill" style={{ backgroundColor: color }} />
       )}
-      <div className={cn("flex items-end gap-5", showBanner ? "-mt-10 px-5" : "mt-4")}>
+      <div className={cn("flex items-start gap-5", showBanner ? "-mt-9 px-5" : "mt-4")}>
         <span className={cn("shrink-0 rounded-card", showBanner && "bg-panel p-1")}>
-          <ProjectIcon src={p.icon_url} size={104} eager />
+          <ProjectIcon src={p.icon_url} size={96} eager />
         </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-1 pb-1">
-          <div className="flex min-w-0 items-baseline gap-2.5">
-            <h1 className="selectable truncate text-[26px] font-bold leading-tight tracking-[-0.02em] text-text" title={p.title}>
-              {p.title}
-            </h1>
-            {p.author && <span className="shrink-0 truncate text-[13px] text-dim">{t("discover.by", { author: p.author })}</span>}
-          </div>
-          <p className="selectable line-clamp-2 max-w-[760px] text-[14px] leading-snug text-muted" title={p.description}>
+        <div className={cn("flex min-w-0 flex-1 flex-col gap-1", showBanner ? "pt-11" : "pt-1")}>
+          <h1 className="selectable truncate text-[26px] font-bold leading-tight tracking-[-0.02em] text-text" title={p.title}>
+            {p.title}
+          </h1>
+          {p.author && <span className="truncate text-[13px] text-muted">{t("discover.by", { author: p.author })}</span>}
+          <p className="selectable mt-1 line-clamp-2 max-w-[720px] text-[14px] leading-snug text-muted" title={p.description}>
             {p.description}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5 pb-1.5">
-          <InstallMenu project={p} target={target && p.project_type !== "modpack" ? target : null} size="md" wide />
-          {links.slice(0, 3).map((l) => (
+      </div>
+      <div className={cn("mt-4 flex flex-wrap items-center gap-x-5 gap-y-3", showBanner && "px-5")}>
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-muted">
+          {p.manual_download && <ManualBadge />}
+          <Tooltip content={t("discover.downloads_n", { n: fmtNum(p.downloads) })}>
+            <span className="flex items-center gap-1.5">
+              <Download size={14} className="text-dim" />
+              <b className="font-semibold tabular-nums text-text">{formatCount(p.downloads)}</b> {t("project.downloads_lc")}
+            </span>
+          </Tooltip>
+          {(p.source === "modrinth" || p.source === "hangar") && (
+            <Tooltip content={p.source === "hangar" ? t("project.stars_n", { n: fmtNum(p.follows) }) : t("discover.follows_n", { n: fmtNum(p.follows) })}>
+              <span className="flex items-center gap-1.5">
+                {p.source === "hangar" ? <Star size={14} className="text-dim" /> : <Heart size={14} className="text-dim" />}
+                <b className="font-semibold tabular-nums text-text">{formatCount(p.follows)}</b> {p.source === "hangar" ? t("project.stars_lc") : t("project.follows_lc")}
+              </span>
+            </Tooltip>
+          )}
+          {p.updated && (
+            <Tooltip content={formatDate(p.updated)}>
+              <span className="flex items-center gap-1.5">
+                <CalendarClock size={14} className="text-dim" />
+                {t("project.updated_ago", { time: formatRelative(p.updated) })}
+              </span>
+            </Tooltip>
+          )}
+          {(loaders.length > 0 || range) && (
+            <span className="flex flex-wrap items-center gap-1.5">
+              {loaders.slice(0, 5).map((l) => (
+                <Pill key={l} className="text-text">
+                  {prettyLoader(l)}
+                </Pill>
+              ))}
+              {range && <Pill className="font-mono text-[11.5px] text-text">{range}</Pill>}
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {install}
+          {links.slice(0, 2).map((l) => (
             <IconButton key={l.key} label={l.label} tip variant="ghost" onClick={() => void openExternal(l.href)}>
               {l.icon}
             </IconButton>
@@ -182,9 +221,9 @@ function Header({ p, target, banner, onBanner }: { p: ProjectDetails; target: In
               </IconButton>
             }
           >
-            {links.length > 3 && (
+            {links.length > 2 && (
               <>
-                {links.slice(3).map((l) => (
+                {links.slice(2).map((l) => (
                   <DropdownItem key={l.key} icon={l.icon} onSelect={() => void openExternal(l.href)}>
                     {l.label}
                   </DropdownItem>
@@ -193,7 +232,7 @@ function Header({ p, target, banner, onBanner }: { p: ProjectDetails; target: In
               </>
             )}
             <DropdownItem icon={<ExternalLink size={14} />} onSelect={() => void openExternal(p.page_url)}>
-              {t("project.open_on", { source: sourceName(p.source) })}
+              {t("project.open_on", { source: viewSourceName(p.source) })}
             </DropdownItem>
             <DropdownItem
               icon={<Copy size={14} />}
@@ -208,63 +247,45 @@ function Header({ p, target, banner, onBanner }: { p: ProjectDetails; target: In
           </DropdownMenu>
         </div>
       </div>
-      <div className={cn("mt-4 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-muted", showBanner && "px-5")}>
-        {p.manual_download && <ManualBadge />}
-        <Tooltip content={t("discover.downloads_n", { n: fmtNum(p.downloads) })}>
-          <span className="flex items-center gap-1.5">
-            <Download size={14} className="text-dim" />
-            <b className="font-semibold tabular-nums text-text">{formatCount(p.downloads)}</b> {t("project.downloads_lc")}
-          </span>
-        </Tooltip>
-        {p.source === "modrinth" && (
-          <Tooltip content={t("discover.follows_n", { n: fmtNum(p.follows) })}>
-            <span className="flex items-center gap-1.5">
-              <Heart size={14} className="text-dim" />
-              <b className="font-semibold tabular-nums text-text">{formatCount(p.follows)}</b> {t("project.follows_lc")}
-            </span>
-          </Tooltip>
-        )}
-        {p.updated && (
-          <Tooltip content={formatDate(p.updated)}>
-            <span className="flex items-center gap-1.5">
-              <CalendarClock size={14} className="text-dim" />
-              {t("project.updated_ago", { time: formatRelative(p.updated) })}
-            </span>
-          </Tooltip>
-        )}
-        {(loaders.length > 0 || range) && (
-          <span className="flex items-center gap-1.5">
-            {loaders.map((l) => (
-              <Pill key={l} className="text-text">
-                {prettyLoader(l)}
-              </Pill>
-            ))}
-            {range && <Pill className="font-mono text-[11.5px] text-text">{range}</Pill>}
-          </span>
-        )}
-      </div>
     </div>
   );
 }
 
-function HeaderSkeleton() {
+export function ProjectViewSkeleton() {
   return (
     <div>
-      <Skeleton className="h-[220px] w-full rounded-card max-[1100px]:h-[180px]" />
-      <div className="-mt-10 flex items-end gap-5 px-5">
+      <Skeleton className="h-[180px] w-full rounded-card" />
+      <div className="-mt-9 flex items-start gap-5 px-5">
         <div className="rounded-card bg-panel p-1">
-          <Skeleton className="h-[104px] w-[104px] rounded-card" />
+          <Skeleton className="h-[96px] w-[96px] rounded-card" />
         </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-2 pb-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-2 pt-11">
           <Skeleton className="h-7 w-2/5" />
+          <Skeleton className="h-4 w-1/4" />
           <Skeleton className="h-4 w-3/5" />
         </div>
-        <Skeleton className="mb-1.5 h-9 w-[150px] shrink-0" />
       </div>
-      <div className="mt-4 flex gap-5 px-5">
+      <div className="mt-5 flex items-center gap-5 px-5">
         <Skeleton className="h-4 w-28" />
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-4 w-36" />
+        <div className="flex-1" />
+        <Skeleton className="h-9 w-[150px]" />
+      </div>
+      <div className="mt-10 flex gap-8">
+        <div className="flex flex-1 flex-col gap-3">
+          <Skeleton className="h-6 w-1/3" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-11/12" />
+          <Skeleton className="h-4 w-4/5" />
+          <Skeleton className="mt-3 h-48 w-full rounded-card" />
+        </div>
+        <div className="flex w-[248px] shrink-0 flex-col gap-3">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-16" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-24" />
+        </div>
       </div>
     </div>
   );
@@ -295,7 +316,7 @@ function SideLink({ href, icon, children }: { href: string; icon: ReactNode; chi
   );
 }
 
-/** Passt das Projekt zur Ziel-Instanz? (oben in der Infospalte, nur im Ziel-Instanz-Modus) */
+/** Passt das Projekt zur Ziel-Instanz? */
 function TargetFit({ p, target }: { p: ProjectDetails; target: Instance }) {
   const t = useT();
   const kind = contentKindOf(p.project_type);
@@ -322,10 +343,9 @@ function TargetFit({ p, target }: { p: ProjectDetails; target: Instance }) {
 
 const DEP_ORDER: Record<string, number> = { required: 0, optional: 1, incompatible: 2, embedded: 3 };
 
-/** Abhängigkeiten der neuesten (zur Ziel-Instanz passenden) Version, mit Icon und Namen. */
-function Dependencies({ p, target }: { p: ProjectDetails; target: Instance | null }) {
+/** Abhängigkeiten der neuesten (zur Ziel-Instanz passenden) Version; Klick öffnet sie in derselben Ansicht. */
+function Dependencies({ p, target, onOpenProject }: { p: ProjectDetails; target: Instance | null; onOpenProject?: (s: Source, id: string) => void }) {
   const t = useT();
-  const nav = useNavigate();
   const vq = useQuery({
     queryKey: qk.versions(p.source, p.id, null, null),
     queryFn: () => api.contentVersions(p.source, p.id, null, null),
@@ -369,7 +389,7 @@ function Dependencies({ p, target }: { p: ProjectDetails; target: Instance | nul
           return (
             <button
               key={d.project_id}
-              onClick={() => nav({ to: "/project/$source/$id", params: { source: src, id: d.project_id }, search: { instance: target?.id } })}
+              onClick={() => onOpenProject?.(src, d.project_id)}
               className="group flex h-11 items-center gap-2.5 rounded-ctl px-2 text-left transition-colors hover:bg-white/[.05]"
             >
               {dp ? <ProjectIcon src={dp.icon_url} size={28} /> : <Skeleton className="h-7 w-7 shrink-0" />}
@@ -388,7 +408,19 @@ function Dependencies({ p, target }: { p: ProjectDetails; target: Instance | nul
   );
 }
 
-function InfoSidebar({ p, target }: { p: ProjectDetails; target: Instance | null }) {
+function InfoSidebar({
+  p,
+  target,
+  deps,
+  onOpenProject,
+  note,
+}: {
+  p: ViewProject;
+  target: Instance | null;
+  deps: boolean;
+  onOpenProject?: (s: Source, id: string) => void;
+  note?: ReactNode;
+}) {
   const t = useT();
   const links = linkList(p, t);
   const versions = useMemo(() => {
@@ -397,9 +429,11 @@ function InfoSidebar({ p, target }: { p: ProjectDetails; target: Instance | null
   }, [p.game_versions]);
   const shown = versions.slice(0, 12);
   const platforms = p.loaders.filter((x) => x !== "minecraft");
+  const content = p.source !== "hangar" ? (p as ProjectDetails) : null;
   return (
-    <aside className="flex w-[264px] shrink-0 flex-col gap-7 max-[980px]:hidden">
-      {target && <TargetFit p={p} target={target} />}
+    <aside className="flex w-[248px] shrink-0 flex-col gap-7 @max-[880px]:hidden">
+      {note}
+      {target && content && <TargetFit p={content} target={target} />}
       {p.manual_download && p.project_type !== "modpack" && (
         <div className="flex items-start gap-2.5 rounded-card bg-warn/[.08] px-3.5 py-3">
           <ManualBadge iconOnly className="mt-px" />
@@ -410,7 +444,7 @@ function InfoSidebar({ p, target }: { p: ProjectDetails; target: Instance | null
         </div>
       )}
       <SideSection title={t("project.side.compat")}>
-        <div className="text-[12px] text-dim">Minecraft: Java Edition</div>
+        <div className="text-[12px] text-dim">{p.source === "hangar" ? "Paper" : "Minecraft: Java Edition"}</div>
         <div className="flex flex-wrap gap-1">
           {shown.map((v) => (
             <Pill key={v} className={cn("font-mono text-[11.5px]", target?.mc_version === v ? "bg-ok/15 text-ok" : "text-text")}>
@@ -433,7 +467,7 @@ function InfoSidebar({ p, target }: { p: ProjectDetails; target: Instance | null
           </>
         )}
       </SideSection>
-      <Dependencies p={p} target={target} />
+      {deps && content && <Dependencies p={content} target={target} onOpenProject={onOpenProject} />}
       {p.categories.length > 0 && (
         <SideSection title={t("discover.filter.categories")}>
           <div className="flex flex-wrap gap-1">
@@ -478,14 +512,14 @@ function InfoSidebar({ p, target }: { p: ProjectDetails; target: Instance | null
             </>
           )}
           <dt className="text-dim">{t("project.source")}</dt>
-          <dd className="text-text">{sourceName(p.source)}</dd>
+          <dd className="text-text">{viewSourceName(p.source)}</dd>
         </dl>
       </SideSection>
     </aside>
   );
 }
 
-function Description({ p }: { p: ProjectDetails }) {
+function Description({ p }: { p: ViewProject }) {
   const t = useT();
   if (!p.body.trim()) return <p className="text-[13px] text-dim">{t("project.no_description")}</p>;
   return (
@@ -499,7 +533,7 @@ function Gallery({ images, onOpen }: { images: ProjectDetails["gallery"]; onOpen
   const t = useT();
   if (!images.length) return <p className="text-[13px] text-dim">{t("project.no_gallery")}</p>;
   return (
-    <div className="grid grid-cols-2 gap-3 animate-fade-in xl:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 animate-fade-in @min-[1000px]:grid-cols-3">
       {images.map((g, i) => (
         <button
           key={g.url}

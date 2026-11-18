@@ -1,6 +1,7 @@
 // Plugin-Server-Software (Paper/Purpur/Folia) und Erweiterungen (plugins/ bzw. mods/) eines Servers.
 import { invoke } from "@tauri-apps/api/core";
 import type { Server, ServerPlatformKind } from "@/lib/types";
+import type { ViewProject } from "@/features/discover/ProjectView";
 
 export interface PlatformVersion {
   id: string;
@@ -108,6 +109,8 @@ export const addonApi = {
       offset,
     }),
   install: (id: string, source: AddonSource, project: string) => invoke<string[]>("server_addon_install", { id, source, project }),
+  /** Hangar-Projektdetails im Format der Projektansicht */
+  project: (project: string) => invoke<ViewProject>("server_addon_project", { project }),
   updates: (id: string) => invoke<AddonUpdate[]>("server_addon_updates", { id }),
   update: (id: string, files: string[] | null) => invoke<number>("server_addon_update", { id, files }),
   setEnabled: (id: string, file: string, enabled: boolean) => invoke<string>("server_addon_set_enabled", { id, file, enabled }),

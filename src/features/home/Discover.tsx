@@ -1,5 +1,6 @@
 // Beliebte Modpacks (Modrinth) als ruhige Kartenreihe, und der Einstieg für neue Nutzer ohne Instanz.
 import { useState } from "react";
+import { discoverSearchFor } from "@/app/router";
 import { useNavigate } from "@tanstack/react-router";
 import { Compass, Download, HardDriveDownload, Package, Plus } from "lucide-react";
 import type { ProjectHit } from "@/lib/types";
@@ -28,7 +29,7 @@ function PackCard({ hit }: { hit: ProjectHit }) {
   const nav = useNavigate();
   return (
     <button
-      onClick={() => nav({ to: "/project/$source/$id", params: { source: hit.source, id: hit.id }, search: {} })}
+      onClick={() => nav({ to: "/discover", search: discoverSearchFor(hit.source, hit.id, undefined, hit.project_type) })}
       className="flex min-w-0 gap-3 rounded-panel bg-surface p-3 text-left transition-colors duration-100 hover:bg-surface2"
     >
       <PackIcon hit={hit} size={52} />

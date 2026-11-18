@@ -6,7 +6,6 @@ import { HomePage } from "@/features/home/HomePage";
 import { InstancesPage } from "@/features/instances/InstancesPage";
 import { InstancePage } from "@/features/instances/InstancePage";
 import { DiscoverPage } from "@/features/discover/DiscoverPage";
-import { ProjectPage } from "@/features/discover/ProjectPage";
 import { AccountsPage } from "@/features/accounts/AccountsPage";
 import { isSettingsTab, openSettings, type SettingsTab } from "@/features/settings/store";
 import { SkinsPage } from "@/features/skins/SkinsPage";
@@ -31,6 +30,8 @@ export interface DiscoverSearch {
   q?: string;
   /** Ziel-Instanz: Installieren geht direkt in diese Instanz, Filter passen sich an */
   instance?: string;
+  /** Geöffnetes Projekt-Overlay: `quelle:id` */
+  p?: string;
 }
 
 export interface ProjectSearch {
@@ -66,17 +67,31 @@ const discoverRoute = createRoute({
     type: projectTypes.includes(s.type as ProjectType) ? (s.type as ProjectType) : undefined,
     q: typeof s.q === "string" ? s.q : undefined,
     instance: typeof s.instance === "string" ? s.instance : undefined,
+    p: typeof s.p === "string" && s.p.length <= 200 ? s.p : undefined,
   }),
 });
 
+// Frühere Projektseite: öffnet heute das Overlay über „Entdecken“ (Direktlinks und alte Verweise bleiben gültig)
 const projectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/project/$source/$id",
-  component: ProjectPage,
   validateSearch: (s: Record<string, unknown>): ProjectSearch => ({
     instance: typeof s.instance === "string" ? s.instance : undefined,
   }),
+  beforeLoad: ({ params, search }) => {
+    throw redirect({ to: "/discover", search: discoverSearchFor(decodeURIComponent(params.source) as Source, params.id, search.instance), replace: true });
+  },
 });
+
+/** Search-Params für „Projekt über Entdecken öffnen“ (von überall: Instanz, Startseite, alte Links). */
+export function discoverSearchFor(source: Source, id: string, instance?: string, type?: ProjectType): DiscoverSearch {
+  return {
+    source: source === "modrinth" ? undefined : source,
+    type: type && type !== "mod" ? type : undefined,
+    instance,
+    p: `${source}:${id}`,
+  };
+}
 
 const accountsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/accounts", component: AccountsPage });
 // Einstellungen sind ein Popup: `/settings?tab=…` öffnet es und bleibt auf der aktuellen Seite

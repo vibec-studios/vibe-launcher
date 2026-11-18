@@ -3,10 +3,11 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
-import { AlertTriangle, ArrowUpCircle, ArrowUpRight, Download, ExternalLink, RefreshCw } from "lucide-react";
+import { AlertTriangle, ArrowUpCircle, ArrowUpRight, Download, ExternalLink, RefreshCw, Wrench } from "lucide-react";
 import { forwardRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Tooltip, cn } from "@/components/ui";
 import { DepsPanel, useDepIssues } from "@/features/content/DepsPanel";
+import { openAutofix } from "@/features/content/AutoFix";
 import { MissingPanel, useMissingDownloads } from "@/features/content/MissingPanel";
 import { ModpackUpdateDialog, useModpackUpdate } from "@/features/content/ModpackUpdate";
 import { markUpdatesChecked, setContentFilter, useContentView } from "@/features/content/contentView";
@@ -158,6 +159,11 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
         >
           {() => <DepsPanel instanceId={id} />}
         </PopoverChip>
+      )}
+      {deps.length > 0 && (
+        <Chip tone="accent" icon={<Wrench size={14} />} tip={t("fix.button_hint")} onClick={() => openAutofix({ instanceId: id })} className="text-accent">
+          {t("fix.button")}
+        </Chip>
       )}
       {missing.length > 0 && (
         <PopoverChip

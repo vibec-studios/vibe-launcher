@@ -37,7 +37,7 @@ fn primary_file(v: &ProjectVersion) -> Option<VersionFile> {
 }
 
 /// Neueste kompatible Version eines Projekts.
-async fn best_version(state: &AppState, inst: &Instance, source: Source, project_id: &str) -> AppResult<Option<ProjectVersion>> {
+pub(super) async fn best_version(state: &AppState, inst: &Instance, source: Source, project_id: &str) -> AppResult<Option<ProjectVersion>> {
     let (list, pref, _) = provider::versions_for(state, source, project_id, Some(&inst.mc_version), Some(inst.loader.kind)).await?;
     Ok(provider::pick_best(&list, pref.as_deref()))
 }

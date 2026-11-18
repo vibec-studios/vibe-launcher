@@ -302,6 +302,44 @@ pub async fn content_check_deps(state: State<'_, AppState>, instance_id: String)
     deps::check(&state, &instance_id, true).await
 }
 
+// ---------------------------------------------------------------- Probleme beheben (Autofix)
+
+/// Behebbare Probleme der Instanz als Plan (Abhängigkeiten, Konflikte, letzte Crash-Analyse).
+#[tauri::command]
+pub async fn autofix_plan(state: State<'_, AppState>, instance_id: String, crash_report: Option<String>, exit_code: Option<i32>) -> AppResult<autofix::FixPlan> {
+    autofix::plan(&state, &instance_id, crash_report, exit_code).await
+}
+
+/// Gewählte Schritte ausführen (vorher Snapshot). Gibt die Task-ID zurück; Ergebnis über `autofix_last`.
+#[tauri::command]
+pub async fn autofix_apply(state: State<'_, AppState>, instance_id: String, actions: Vec<autofix::FixAction>) -> AppResult<String> {
+    state.instances.get(&instance_id)?;
+    let st = state.inner().clone();
+    let iid = instance_id.clone();
+    Ok(state.tasks.spawn("autofix", "Probleme beheben", Some(instance_id), move |task| autofix::run_apply(st, task, iid, actions)))
+}
+
+#[tauri::command]
+pub async fn autofix_last(state: State<'_, AppState>, instance_id: String) -> AppResult<Option<autofix::FixReport>> {
+    state.instances.get(&instance_id)?;
+    Ok(autofix::last_report(&state, &instance_id))
+}
+
+/// Letzten Durchlauf rückgängig machen (Snapshot wiederherstellen, Java/RAM zurück). Gibt die Task-ID zurück.
+#[tauri::command]
+pub async fn autofix_undo(state: State<'_, AppState>, instance_id: String) -> AppResult<String> {
+    state.instances.get(&instance_id)?;
+    let st = state.inner().clone();
+    let iid = instance_id.clone();
+    Ok(state.tasks.spawn("autofix", "Probleme beheben rückgängig machen", Some(instance_id), move |task| autofix::run_undo(st, task, iid)))
+}
+
+/// Schnelle Prüfung ohne Netz (vor dem Start).
+#[tauri::command]
+pub async fn autofix_quick(state: State<'_, AppState>, instance_id: String) -> AppResult<autofix::QuickCheck> {
+    autofix::quick(&state, &instance_id).await
+}
+
 /// Client/Server-Einordnung aller Inhalte (lädt fehlende Angaben nach).
 #[tauri::command]
 pub async fn content_sides(state: State<'_, AppState>, instance_id: String) -> AppResult<Vec<sides::SideInfo>> {
