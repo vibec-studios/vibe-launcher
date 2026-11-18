@@ -1,7 +1,7 @@
 # Releases & Update-Kanäle
 
 Der Launcher aktualisiert sich selbst (Tauri-Updater, signierte NSIS-Installer). Es gibt zwei Kanäle,
-umschaltbar unter *Einstellungen → Über & Updates → Update-Kanal*:
+umschaltbar unter *Einstellungen → Updates → Update-Kanal*:
 
 | Kanal | Quelle | Workflow | Updater-Endpoint |
 |---|---|---|---|
