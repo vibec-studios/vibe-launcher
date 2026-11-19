@@ -25,6 +25,8 @@ import { PackIcon } from "@/features/home/Discover";
 import { usePopularModpacks } from "@/features/home/data";
 import { useT } from "@/i18n";
 import { ClientPackPicker, installPackAfterCreate } from "./settings/ClientPacks";
+import { SetPicker, installSetsAfterCreate, useSetCheck } from "@/features/modsets/SetPicker";
+import { useSets } from "@/features/modsets/api";
 
 export function suggestName(v: VersionValue): string {
   if (!v.mc) return "";
@@ -371,6 +373,10 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
   const [group, setGroup] = useState("");
   const [icon, setIcon] = useState<string | null>(null);
   const [pack, setPack] = useState<string | null>(null);
+  // „Mit Mod-Sets starten“: nach dem Anlegen alles Passende aus diesen Sets installieren
+  const [setIds, setSetIds] = useState<string[]>([]);
+  const setCheck = useSetCheck(setIds, ver.mc, ver.loader);
+  const setTotal = (useSets().data ?? []).filter((s) => setIds.includes(s.id)).reduce((n, s) => n + s.entries.length, 0);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -410,6 +416,7 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
       installInstance(inst.id);
       // Client-Pack (falls gewählt) parallel zur Spiel-Installation in mods/ legen
       if (pack && needsLv) void installPackAfterCreate(t, inst.id, pack);
+      if (setIds.length) void installSetsAfterCreate(t, inst.id, setIds);
     } catch (e) {
       toast.error(e, t("newinst.failed"));
       setBusy(false);
@@ -461,6 +468,7 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
               <ClientPackPicker mc={ver.mc} loader={ver.loader} value={pack} onChange={setPack} />
             </div>
           )}
+
         </div>
 
         {/* Rechts: Minecraft-Version (+ Loader-Version) */}
@@ -488,6 +496,13 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
               </div>
             </div>
           )}
+          {/* Mit Mod-Sets starten: nach dem Anlegen alles Passende aus den gewählten Sets installieren */}
+          <div className="mt-2 flex items-start gap-3">
+            <span className="label shrink-0 pt-2">{t("newinst.sets")}</span>
+            <div className="min-w-0 flex-1">
+              <SetPicker mc={ver.mc} loader={ver.loader} value={setIds} onChange={setSetIds} />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -500,7 +515,13 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
                 : t("newinst.summary", { mc: ver.mc })
               : "…"}
           </div>
-          <div className="truncate text-[12px] text-muted">{pack && needsLv ? t("cp.new.after", { name: t(`cp.${pack}.name`) }) : t("newinst.after")}</div>
+          <div className="truncate text-[12px] text-muted">
+            {pack && needsLv
+              ? t("cp.new.after", { name: t(`cp.${pack}.name`) })
+              : setIds.length
+                ? t("newinst.sets_after", { n: setCheck.data?.available ?? setTotal })
+                : t("newinst.after")}
+          </div>
         </div>
         <Button variant="subtle" onClick={onDone} disabled={busy}>
           {t("common.cancel")}

@@ -14,6 +14,7 @@ import { StatsPage } from "@/features/stats/StatsPage";
 import { ServersPage } from "@/features/servers/ServersPage";
 import { ServerPage } from "@/features/servers/ServerPage";
 import { SocialPage } from "@/features/social/SocialPage";
+import { ModSetsPage } from "@/features/modsets/ModSetsPage";
 import type { ProjectType, Source } from "@/lib/types";
 
 export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "servers" | "backups" | "logs" | "files" | "settings";
@@ -93,6 +94,21 @@ export function discoverSearchFor(source: Source, id: string, instance?: string,
   };
 }
 
+// Mod-Sets (Bibliothek → Mod-Sets): Übersicht, `?set=<id>` öffnet den Editor (`add`: Ansicht „Hinzufügen“)
+export interface ModSetsSearch {
+  set?: string;
+  add?: "search" | "paste" | "instance";
+}
+const modsetsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/modsets",
+  component: ModSetsPage,
+  validateSearch: (s: Record<string, unknown>): ModSetsSearch => ({
+    set: typeof s.set === "string" && s.set.length <= 64 ? s.set : undefined,
+    add: s.add === "paste" || s.add === "instance" || s.add === "search" ? s.add : undefined,
+  }),
+});
+
 const accountsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/accounts", component: AccountsPage });
 // Einstellungen sind ein Popup: `/settings?tab=…` öffnet es und bleibt auf der aktuellen Seite
 const settingsRoute = createRoute({
@@ -150,6 +166,7 @@ const routeTree = rootRoute.addChildren([
   homeRoute,
   instancesRoute,
   instanceRoute,
+  modsetsRoute,
   serversRoute,
   serverRoute,
   discoverRoute,

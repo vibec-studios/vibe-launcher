@@ -633,7 +633,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
           {/* Neu prüfen: Ordner neu einlesen, Updates ohne Cache, Probleme (auch Loader) – auch per F5. Behält seinen Text;
               Mod-Sets/Werkzeuge zeigen ihren erst ab 1240px, damit die Leiste bei 1280er-Fenstern einzeilig bleibt */}
           <RefreshButton instanceId={id} />
-          {!vanilla && !simple && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1240px]:inline" />}
+          {!simple && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1240px]:inline" />}
           {!simple && (
           <DropdownMenu
             trigger={

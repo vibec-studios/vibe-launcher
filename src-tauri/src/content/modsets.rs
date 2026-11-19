@@ -1,7 +1,11 @@
-//! Mod-Sets: benannte Zustände „welche Inhalte sind aktiv“ je Instanz (`instances/<id>/modsets.json`).
-//! Umschalten aktiviert/deaktiviert Dateien (`.disabled`). Dateien, die das Set nicht kennt (später
-//! hinzugefügt), bleiben unverändert.
-use super::index;
+//! Profile einer Instanz (früher „Mod-Sets“): benannte Zustände „welche Inhalte sind aktiv“ je Instanz
+//! (`instances/<id>/modsets.json`, Dateiname bleibt aus Kompatibilitätsgründen). Umschalten aktiviert/deaktiviert
+//! Dateien (`.disabled`). Dateien, die das Profil nicht kennt (später hinzugefügt), bleiben unverändert.
+//!
+//! Die heutigen Mod-Sets sind instanzübergreifende Wunschlisten (`content/sets.rs`). Ein Profil lässt sich mit
+//! [`to_global_set`] als Mod-Set übernehmen (aktive Inhalte mit bekannter Herkunft).
+use super::index::{self, ContentIndex};
+use super::sets::{self, SetEntry};
 use super::{local, ContentKind};
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
@@ -179,4 +183,96 @@ pub async fn apply(state: &AppState, id: &str, set_id: &str) -> AppResult<ModSet
         return Err(AppError::msg(format!("Einige Dateien konnten nicht umgeschaltet werden (läuft das Spiel?): {}", errors.join("; "))));
     }
     list(state, id).await
+}
+
+/// Aktive Inhalte eines Profils als Set-Einträge (nur Dateien mit bekannter Herkunft). Gibt (Name, Einträge,
+/// Anzahl übersprungener Dateien ohne Herkunft) zurück.
+fn profile_entries(f: &SetsFile, idx: &ContentIndex, profile_id: &str) -> Option<(String, Vec<SetEntry>, usize)> {
+    let p = f.sets.iter().find(|s| s.id == profile_id)?;
+    let mut out: Vec<SetEntry> = Vec::new();
+    let mut skipped = 0;
+    for key in &p.enabled {
+        match sets::entry_for_key(idx, key, None) {
+            Some((e, _)) => {
+                if !out.iter().any(|x| x.key() == e.key()) {
+                    out.push(e);
+                }
+            }
+            None => skipped += 1,
+        }
+    }
+    Some((p.name.clone(), out, skipped))
+}
+
+/// Profil als neues (globales) Mod-Set übernehmen. Das Profil selbst bleibt unverändert.
+pub async fn to_global_set(state: &AppState, id: &str, profile_id: &str) -> AppResult<(sets::ModSet, usize)> {
+    state.instances.get(id)?;
+    // Ordner einlesen, damit der Index aktuell ist
+    for k in ContentKind::ALL {
+        local::scan(state, id, k).await?;
+    }
+    let f = load(state, id);
+    let idx = ContentIndex::load(&state.paths, id);
+    let (name, mut entries, skipped) = profile_entries(&f, &idx, profile_id).ok_or_else(|| AppError::NotFound("Profil".into()))?;
+    if entries.is_empty() {
+        return Err(AppError::Invalid("Dieses Profil enthält keine Inhalte von Modrinth oder CurseForge".into()));
+    }
+    sets::enrich_icons(state, &mut entries).await;
+    Ok((sets::create(&state.paths, &name, None, entries)?, skipped))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::content::index::IndexEntry;
+    use crate::content::{ProjectType, Source};
+
+    fn ie(source: Source, pid: &str, title: Option<&str>) -> IndexEntry {
+        IndexEntry {
+            source,
+            project_id: pid.into(),
+            version_id: "v".into(),
+            sha1: None,
+            sha512: None,
+            title: title.map(str::to_string),
+            icon_url: None,
+            version_number: None,
+            url: None,
+            size: None,
+            date: None,
+            release_type: None,
+            side: None,
+        }
+    }
+
+    #[test]
+    fn legacy_file_becomes_set() {
+        // So hat die alte Version modsets.json geschrieben
+        let old = r#"{
+          "active": "pvp",
+          "sets": [
+            { "id": "pvp", "name": "PvP-Abend", "created": 1700000000000,
+              "enabled": ["mods/sodium.jar", "mods/own.jar", "shaderpacks/bsl.zip", "mods/sodium-dup.jar"],
+              "disabled": ["mods/minimap.jar"] }
+          ]
+        }"#;
+        let f: SetsFile = serde_json::from_str(old).unwrap();
+        assert_eq!(f.active.as_deref(), Some("pvp"));
+        assert_eq!(info(&f.sets[0]).enabled_count, 4);
+        let mut idx = ContentIndex::default();
+        idx.files.insert("mods/sodium.jar".into(), ie(Source::Modrinth, "AANobbMI", Some("Sodium")));
+        idx.files.insert("mods/sodium-dup.jar".into(), ie(Source::Modrinth, "AANobbMI", Some("Sodium")));
+        idx.files.insert("mods/minimap.jar".into(), ie(Source::Modrinth, "minimap", Some("Minimap")));
+        idx.files.insert("shaderpacks/bsl.zip".into(), ie(Source::Curseforge, "123", Some("BSL")));
+        let (name, entries, skipped) = profile_entries(&f, &idx, "pvp").unwrap();
+        assert_eq!(name, "PvP-Abend");
+        // deaktivierte Datei nicht, eigene Datei (ohne Herkunft) übersprungen, doppelte nur einmal
+        assert_eq!(entries.iter().map(|e| e.title.as_str()).collect::<Vec<_>>(), vec!["Sodium", "BSL"]);
+        assert_eq!(entries[1].project_type, ProjectType::Shader);
+        assert_eq!(skipped, 1);
+        assert!(profile_entries(&f, &idx, "nope").is_none());
+        // Kaputte/leere Datei -> leer statt Fehler
+        let empty: SetsFile = serde_json::from_str("{}").unwrap();
+        assert!(empty.sets.is_empty());
+    }
 }

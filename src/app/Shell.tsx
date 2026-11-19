@@ -37,6 +37,7 @@ import { useSocialBadge } from "@/features/social/hooks";
 import { SettingsDialog } from "@/features/settings/SettingsDialog";
 import { openSettings, useSettingsDialog } from "@/features/settings/store";
 import { AppearanceHost } from "./AppearanceHost";
+import { ModSetsHost } from "@/features/modsets/dialogs";
 import { goBack, goForward } from "./backNav";
 import { WindowControls } from "./WindowControls";
 
@@ -122,7 +123,7 @@ type NavDef = { icon: ReactNode; label: string; go: (nav: ReturnType<typeof useN
 
 const NAV: Record<NavKey, NavDef> = {
   home: { icon: <Home size={20} />, label: "nav.home", go: (nav) => nav({ to: "/" }), match: (p) => p === "/" },
-  instances: { icon: <LibraryBig size={20} />, label: "nav.instances", go: (nav) => nav({ to: "/instances" }), match: (p) => p === "/instances" },
+  instances: { icon: <LibraryBig size={20} />, label: "nav.instances", go: (nav) => nav({ to: "/instances" }), match: (p) => p === "/instances" || p === "/modsets" },
   servers: { icon: <ServerIcon size={20} />, label: "nav.servers", go: (nav) => nav({ to: "/servers" }), match: (_, at) => at("/servers") },
   social: { icon: <Users size={20} />, label: "nav.social", go: (nav) => nav({ to: "/social", search: {} }), match: (_, at) => at("/social") },
   discover: { icon: <Compass size={20} />, label: "nav.discover", go: (nav) => nav({ to: "/discover" }), match: (_, at) => at("/discover") || at("/project") },
@@ -240,6 +241,14 @@ function usePageTitle(): ReactNode {
   const { data: server } = useServer(serverId);
   if (path === "/") return t("nav.home");
   if (path === "/instances") return t("nav.instances");
+  if (path === "/modsets")
+    return (
+      <>
+        <span className="font-medium text-muted">{t("nav.instances")}</span>
+        <ChevronRight size={13} className="shrink-0 text-dim" />
+        <span className="truncate">{t("nav.modsets")}</span>
+      </>
+    );
   if (path === "/servers") return t("nav.servers");
   if (serverId)
     return (
@@ -355,6 +364,7 @@ export function Shell() {
     <div className="flex h-full">
       <ModeHost />
       <AppearanceHost />
+      <ModSetsHost />
       <Rail />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
