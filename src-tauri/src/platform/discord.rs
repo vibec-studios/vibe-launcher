@@ -22,7 +22,7 @@ pub fn app_id() -> Option<&'static str> {
 /// Asset-Key des Vibe-Logos (Standard für das große Bild)
 pub const ASSET_LOGO: &str = "logo";
 /// Website für den Knopf „Vibe Launcher“
-pub const WEBSITE: &str = "https://vibec-studios.github.io/";
+pub const WEBSITE: &str = crate::domains::WEBSITE;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Activity {

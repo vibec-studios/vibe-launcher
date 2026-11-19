@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { WEBSITE, WEBSITE_LABEL } from "@/lib/domains";
 import { qk, useSettings, useSystemInfo, useTask, waitForTask } from "@/lib/queries";
 import type { JavaInstall, LaunchBehavior, Settings } from "@/lib/types";
 import {
@@ -73,7 +74,6 @@ const ICONS: Record<SettingsTab, ReactNode> = {
   about: <Info size={16} />,
 };
 const JAVA_MAJORS = [8, 17, 21, 25];
-const WEBSITE = "https://vibec-studios.github.io/";
 const GITHUB = "https://github.com/vibec-studios/vibe-launcher";
 
 type Update = (p: Partial<Settings>, delay?: number) => void;
@@ -668,7 +668,7 @@ function AboutTab() {
         </div>
       </section>
       <SettingsCard title={t("settings.section.links")}>
-        <LinkRow href={WEBSITE} icon={<Globe size={15} />} title={t("settings.website")} text="vibec-studios.github.io" />
+        <LinkRow href={WEBSITE} icon={<Globe size={15} />} title={t("settings.website")} text={WEBSITE_LABEL} />
         <LinkRow href={GITHUB} icon={<GitBranch size={15} />} title="GitHub" text={t("settings.about.opensource")} />
       </SettingsCard>
     </>

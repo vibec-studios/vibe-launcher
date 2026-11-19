@@ -131,7 +131,8 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   (sha1/sha256) funktionieren wie bei Modrinth. Die Datei wird mit ETag/If-Modified-Since geladen, ~10 min im
   Speicher und unter `cache/stores/<id>.json` gehalten (Offline-Fallback); die Suche läuft clientseitig.
 - `Settings.stores: StoreConfig[]`; der Standard-Store **Vibe Craft Studios**
-  (`https://vibec-studios.github.io/data/store.json`) ist immer enthalten und nur deaktivierbar.
+  (`https://vibe.axolite.app/api/v1/store.json`, `domains::STORE_URL`; alte GitHub-Pages-Adresse wird beim Laden der
+  Einstellungen umgestellt) ist immer enthalten und nur deaktivierbar.
 - Commands: `stores_list() -> StoreInfo[]` (lädt aktivierte Stores, liefert Name/Icon/Projektanzahl/Fehler),
   `store_add(url)` (laden + prüfen; ID/Name/Icon aus der Datei), `store_remove(id)`, `store_set_enabled(id, enabled)`.
 

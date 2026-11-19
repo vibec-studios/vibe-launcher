@@ -26,6 +26,14 @@ pub const INVITE_HOST: &str = "axolite.cc";
 /// Status-API.
 pub const STATUS_URL: &str = "https://status.axolite.app";
 
+/// Website von Vibe (Einstellungen → Über, Discord-Knopf).
+pub const WEBSITE: &str = "https://vibe.axolite.app/";
+
+/// Offizieller Vibe Store (Vibe Craft Studios), ausgeliefert vom Backend.
+pub const STORE_URL: &str = "https://vibe.axolite.app/api/v1/store.json";
+/// Alte Adresse des offiziellen Stores (GitHub Pages, bis Launcher 1.0.0-beta.3 fest eingebaut).
+pub const LEGACY_STORE_URL: &str = "https://vibec-studios.github.io/data/store.json";
+
 fn norm(s: &str) -> String {
     s.trim().trim_end_matches('/').to_ascii_lowercase()
 }
@@ -34,6 +42,21 @@ fn norm(s: &str) -> String {
 pub fn migrate_api_url(saved: &str) -> String {
     if norm(saved) == LEGACY_API_URL {
         API_URL.to_string()
+    } else {
+        saved.to_string()
+    }
+}
+
+/// Ist `url` der offizielle Vibe Store (neue oder alte Adresse)?
+pub fn is_official_store(url: &str) -> bool {
+    let n = norm(url);
+    n == STORE_URL || n == LEGACY_STORE_URL
+}
+
+/// Gespeicherte Store-Adresse: genau die alte Standardadresse → neue, alles andere (eigene Stores) bleibt.
+pub fn migrate_store_url(saved: &str) -> String {
+    if norm(saved) == LEGACY_STORE_URL {
+        STORE_URL.to_string()
     } else {
         saved.to_string()
     }
@@ -124,6 +147,20 @@ mod tests {
         assert_eq!(migrate_api_url("https://vibe.henny.dev:8443"), "https://vibe.henny.dev:8443");
         assert_eq!(migrate_api_url("http://vibe.henny.dev"), "http://vibe.henny.dev");
         assert_eq!(migrate_api_url(API_URL), API_URL);
+    }
+
+    #[test]
+    fn store_url_migration() {
+        assert_eq!(migrate_store_url(LEGACY_STORE_URL), STORE_URL);
+        assert_eq!(migrate_store_url(" https://VIBEC-STUDIOS.github.io/data/store.json/ "), STORE_URL);
+        assert_eq!(migrate_store_url(STORE_URL), STORE_URL);
+        // Eigene Stores bleiben, auch andere Dateien derselben Seite
+        assert_eq!(migrate_store_url("https://example.org/store.json"), "https://example.org/store.json");
+        assert_eq!(migrate_store_url("https://vibec-studios.github.io/data/other.json"), "https://vibec-studios.github.io/data/other.json");
+        assert_eq!(migrate_store_url("http://vibec-studios.github.io/data/store.json"), "http://vibec-studios.github.io/data/store.json");
+        assert!(is_official_store(STORE_URL) && is_official_store(LEGACY_STORE_URL) && is_official_store("https://vibe.axolite.app/api/v1/store.json/"));
+        assert!(!is_official_store("https://example.org/store.json"));
+        assert!(STORE_URL.starts_with(API_URL) && WEBSITE.starts_with(API_URL));
     }
 
     #[test]

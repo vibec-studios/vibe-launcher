@@ -31,7 +31,7 @@ merkt spätestens nach 60 s, wenn Discord neu gestartet wurde.
 2. **New Application** → Name `Vibe Launcher` (dieser Name steht in Discord als „Spielt Vibe Launcher“).
    Den Nutzungsbedingungen zustimmen, **Create**.
 3. Unter **General Information** die **Application ID** kopieren (nur Ziffern, nicht geheim).
-   Optional: App-Icon = `docs/discord-assets/logo.png`, Beschreibung, Website `https://vibec-studios.github.io/`.
+   Optional: App-Icon = `docs/discord-assets/logo.png`, Beschreibung, Website `https://vibe.axolite.app/`.
 4. Links **Rich Presence → Art Assets** öffnen und mit **Add Image(s)** diese Dateien aus `docs/discord-assets/`
    hochladen. Der Dateiname ohne `.png` ist der Key. Die Keys müssen genau so heißen:
 

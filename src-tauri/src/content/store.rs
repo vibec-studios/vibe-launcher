@@ -12,7 +12,8 @@ use std::path::PathBuf;
 
 pub const DEFAULT_ID: &str = "vibe-craft-studios";
 pub const DEFAULT_NAME: &str = "Vibe Craft Studios";
-pub const DEFAULT_URL: &str = "https://vibec-studios.github.io/data/store.json";
+/// Offizieller Store (docs/DOMAINS.md); die alte Adresse auf GitHub Pages wird beim Laden der Einstellungen umgestellt.
+pub const DEFAULT_URL: &str = crate::domains::STORE_URL;
 const TTL: Duration = Duration::from_secs(10 * 60);
 
 pub fn default_stores() -> Vec<StoreConfig> {
@@ -167,8 +168,13 @@ fn disk_paths(state: &AppState, id: &str) -> (PathBuf, PathBuf) {
 }
 
 /// Datei laden (bedingt, mit Cache). `force` ignoriert die Frist.
+/// Gleiche Store-Datei? Der offizielle Store gilt unter alter und neuer Adresse als derselbe (Cache bleibt gültig).
+fn same_url(a: &str, b: &str) -> bool {
+    a == b || (crate::domains::is_official_store(a) && crate::domains::is_official_store(b))
+}
+
 async fn fetch(state: &AppState, id: &str, url: &str, force: bool) -> AppResult<Arc<StoreFile>> {
-    let cached = state.content.stores.lock().get(id).cloned().filter(|c| c.url == url);
+    let cached = state.content.stores.lock().get(id).cloned().filter(|c| same_url(&c.url, url));
     if let Some(c) = &cached {
         if !force && c.fetched.elapsed() < TTL {
             return Ok(c.data.clone());
@@ -177,7 +183,7 @@ async fn fetch(state: &AppState, id: &str, url: &str, force: bool) -> AppResult<
     // Plattencache als Grundlage für bedingte Anfragen / Offline
     let (data_p, meta_p) = disk_paths(state, id);
     let disk: Option<(DiskMeta, Arc<StoreFile>)> = if cached.is_none() {
-        let m = std::fs::read(&meta_p).ok().and_then(|b| serde_json::from_slice::<DiskMeta>(&b).ok()).filter(|m| m.url == url);
+        let m = std::fs::read(&meta_p).ok().and_then(|b| serde_json::from_slice::<DiskMeta>(&b).ok()).filter(|m| same_url(&m.url, url));
         let d = std::fs::read(&data_p).ok().and_then(|b| serde_json::from_slice::<StoreFile>(&b).ok());
         m.zip(d).map(|(m, d)| (m, Arc::new(d)))
     } else {
@@ -641,8 +647,8 @@ pub async fn add(state: &AppState, url: &str) -> AppResult<StoreInfo> {
     let _ = std::fs::remove_file(m);
     let file = file?;
     let mut stores = configured(&state.settings());
-    if let Some(existing) = stores.iter().find(|s| s.url == url || s.id == file.id) {
-        if existing.url == url {
+    if let Some(existing) = stores.iter().find(|s| same_url(&s.url, url) || s.id == file.id) {
+        if same_url(&existing.url, url) {
             return Err(AppError::Invalid(format!("Der Store „{}“ ist bereits eingetragen", existing.name)));
         }
         return Err(AppError::Invalid(format!("Ein Store mit der ID „{}“ ist bereits eingetragen", file.id)));
@@ -691,6 +697,14 @@ mod tests {
            "dependencies":[{"source":"modrinth","project_id":"P7dR8mSH","kind":"required"},{"source":"self","project_id":"core"}]},
           {"id":"v1-neo","version_number":"1.0","release_type":"beta","date":"2026-01-01","game_versions":["1.21.1"],"loaders":["neoforge"],"files":[{"url":"https://x/b.jar","size":3}]}
         ]}]}"#;
+
+    #[test]
+    fn official_store_same_under_old_and_new_url() {
+        assert_eq!(DEFAULT_URL, "https://vibe.axolite.app/api/v1/store.json");
+        assert!(same_url(DEFAULT_URL, crate::domains::LEGACY_STORE_URL));
+        assert!(same_url("https://example.org/a.json", "https://example.org/a.json"));
+        assert!(!same_url(DEFAULT_URL, "https://example.org/a.json"));
+    }
 
     #[test]
     fn parse_and_convert() {
