@@ -13,3 +13,4 @@ pub mod backups;
 pub mod files;
 pub mod vibe;
 pub mod play;
+pub mod feedback;

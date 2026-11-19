@@ -17,6 +17,7 @@ import {
   GitBranch,
   Globe,
   Info,
+  MessageSquareWarning,
   Palette,
   RefreshCw,
   SlidersHorizontal,
@@ -53,6 +54,7 @@ import { useLang, useT } from "@/i18n";
 import { StoresCard } from "./StoresCard";
 import { SkinImportSettings } from "@/features/skins/SkinImport";
 import { VibeTab } from "./VibeCard";
+import { openFeedback } from "@/features/feedback/store";
 import { AppearanceTab } from "./AppearanceTab";
 import { SETTINGS_TABS, closeSettings, setSettingsTab, useSettingsDialog, type SettingsTab } from "./store";
 import { setMode, useSimple, type UiMode } from "@/lib/mode";
@@ -678,6 +680,21 @@ function AboutTab() {
       <SettingsCard title={t("settings.section.links")}>
         <LinkRow href={WEBSITE} icon={<Globe size={15} />} title={t("settings.website")} text={WEBSITE_LABEL} />
         <LinkRow href={GITHUB} icon={<GitBranch size={15} />} title="GitHub" text={t("settings.about.opensource")} />
+      </SettingsCard>
+      <SettingsCard title={t("fb.button")}>
+        <SettingRow title={t("fb.title")} description={t("fb.desc")}>
+          <Button
+            size="sm"
+            icon={<MessageSquareWarning size={13} />}
+            onClick={() => {
+              closeSettings();
+              // erst nach der Schließ-Animation, damit der Fenster-Screenshot den Launcher zeigt
+              setTimeout(() => void openFeedback({ source: "settings" }), 220);
+            }}
+          >
+            {t("fb.button")}
+          </Button>
+        </SettingRow>
       </SettingsCard>
     </>
   );

@@ -18,6 +18,7 @@ import { WorldsTab } from "./WorldsTab";
 import { ServersTab } from "./ServersTab";
 import { DiagnosisCard, DiagnosisDialog, useDiagnosis } from "@/features/logs/Diagnosis";
 import { AutofixButton } from "@/features/content/AutoFix";
+import { ReportProblemButton } from "@/features/feedback/FeedbackDialog";
 import { InstanceSettingsDialog } from "./settings/InstanceSettingsDialog";
 import { openInstanceSettings, useInstanceSettings } from "./settings/store";
 import { BackupsTab } from "@/features/backups/BackupsTab";
@@ -59,6 +60,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
             <div className="text-[12.5px] text-muted">{t("simple.crash.text")}</div>
           </div>
           <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null, launchAfter: true }} size="md" />
+          <ReportProblemButton instanceId={instance.id} size="md" />
           <IconButton label={t("common.close")} size="sm" className="border-transparent" onClick={() => setDismissed(key)}>
             <X size={15} />
           </IconButton>
@@ -106,6 +108,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
         >
           {t("logs.upload")}
         </Button>
+        <ReportProblemButton instanceId={instance.id} />
         <IconButton label={t("common.close")} size="sm" className="border-transparent" onClick={() => setDismissed(key)}>
           <X size={15} />
         </IconButton>
