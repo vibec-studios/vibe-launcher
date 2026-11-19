@@ -336,4 +336,13 @@ export const api = {
   filesImport: (scope: T.FileScope, dir: string, sources: string[]) => call<string[]>("files_import", { scope, dir, sources }),
   filesAbsPath: (scope: T.FileScope, path: string) => call<string>("files_abs_path", { scope, path }),
   filesReveal: (scope: T.FileScope, path: string) => call<void>("files_reveal", { scope, path }),
+  // ---------------------------------------------------------------- Feedback (commands/feedback.rs)
+  /** Screenshot des Launcher-Fensters (nur im Speicher, bis gesendet/verworfen) */
+  feedbackCapture: () => call<T.FeedbackImage>("feedback_capture"),
+  /** Öffnet den Datei-Dialog in Rust; liefert angenommene Bilder + Fehler für abgelehnte Dateien */
+  feedbackPickScreenshots: (title: string) => call<{ images: T.FeedbackImage[]; errors: string[] }>("feedback_pick_screenshots", { title }),
+  feedbackDiscard: (ids: string[]) => call<void>("feedback_discard", { ids }),
+  feedbackLogs: (instanceId: string | null) => call<T.FeedbackAvailableLog[]>("feedback_logs", { instanceId }),
+  feedbackPreview: (draft: T.FeedbackDraft) => call<T.FeedbackPreview>("feedback_preview", { draft }),
+  feedbackSend: (token: string) => call<T.FeedbackSendResult>("feedback_send", { token }),
 };

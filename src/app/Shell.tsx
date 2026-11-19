@@ -1,7 +1,7 @@
 // App-Rahmen: Seitenleiste und Titelleiste bilden einen ruhigen, durchgehenden Rahmen (ohne Trennlinien);
 // die Inhaltsfläche liegt eine Stufe heller darin (Ecke oben links folgt der Einstellung „Ecken“).
 // Seitenleiste: Navigation, zuletzt gespielte Instanzen, Einstellungen.
-// Titelleiste: Zurück/Vor, Brotkrumen, laufende Spiele, Aufgaben, Freunde, Konto-Menü, Fensterknöpfe.
+// Titelleiste: Zurück/Vor, Brotkrumen, laufende Spiele, Aufgaben, Feedback, Freunde, Konto-Menü, Fensterknöpfe.
 // Simple-Modus (src/lib/mode.tsx): feste, kurze Navigation mit Beschriftung; Onboarding/Einführung hängen hier.
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { BEDROCK_COLOR } from "@/features/bedrock/parts";
@@ -41,6 +41,7 @@ import { AppearanceHost } from "./AppearanceHost";
 import { ModSetsHost } from "@/features/modsets/dialogs";
 import { goBack, goForward } from "./backNav";
 import { WindowControls } from "./WindowControls";
+import { FeedbackButton, FeedbackDialog } from "@/features/feedback/FeedbackDialog";
 
 // ------------------------------------------------------------------ Seitenleiste
 // Kompakt (nur Icons, Standard) oder breit mit Beschriftung; Reihenfolge/Sichtbarkeit der Einträge und die
@@ -353,6 +354,7 @@ function Topbar() {
         <UpdateButton />
         <RunningGames />
         <TaskDock />
+        <FeedbackButton />
         <FriendsPanelToggle />
         <span className="mx-0.5 h-5 w-px bg-line2" aria-hidden />
         <AccountMenu />
@@ -401,6 +403,9 @@ export function Shell() {
       <CosmeticsBridge />
       <SocialDialogs />
       <SettingsDialog />
+      <ErrorBoundary>
+        <FeedbackDialog />
+      </ErrorBoundary>
       <SimpleModeHint />
       <ErrorBoundary>
         <ImportSettingsHint />

@@ -9,6 +9,7 @@ pub mod content;
 pub mod domains;
 pub mod error;
 pub mod events;
+pub mod feedback;
 pub mod files;
 pub mod instance;
 pub mod minecraft;
@@ -215,6 +216,13 @@ pub fn run() {
             commands::game::instance_log_files,
             commands::game::instance_log_read,
             commands::game::mclogs_upload,
+            // feedback
+            commands::feedback::feedback_capture,
+            commands::feedback::feedback_pick_screenshots,
+            commands::feedback::feedback_discard,
+            commands::feedback::feedback_logs,
+            commands::feedback::feedback_preview,
+            commands::feedback::feedback_send,
             // screenshots
             commands::screenshots::screenshots_list,
             commands::screenshots::screenshot_thumb,
