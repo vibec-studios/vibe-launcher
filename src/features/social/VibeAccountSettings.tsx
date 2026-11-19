@@ -88,7 +88,6 @@ export function VibeAccountCard() {
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <div className="text-caption font-semibold text-dim">{t("vibe.account.minecraft")}</div>
           <div className="truncate text-[15px] font-semibold leading-tight text-text">{name ?? t("social.conn.no_account_title")}</div>
           <div className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{subline}</div>
         </div>

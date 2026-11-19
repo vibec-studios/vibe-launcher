@@ -147,7 +147,7 @@ export default {
     // Vibe-Dienste
     "settings.section.vibe": "Online-Dienste",
     "vibe.enabled": "Vibe-Funktionen nutzen",
-    "vibe.enabled.desc": "Freunde, Chats, Einladungen und geteilte Modpacks über die Server von Vibe Craft Studios. Aus = der Launcher verbindet sich nie mit Vibe.",
+    "vibe.enabled.desc": "Freunde, Chats, Einladungen und geteilte Modpacks über die Server von Vibe Craft Studios. Ausgeschaltet verbindet sich der Launcher gar nicht mit Vibe.",
     "vibe.social": "Freunde & Einladungen",
     "vibe.social.desc": "Freundesliste, Nachrichten und Einladungen in Welten.",
     "vibe.presence": "Online-Status teilen",
@@ -160,7 +160,7 @@ export default {
     "vibe.discord.desc": "Zeigt in Discord, was du spielst. Hostest du eine Welt, können Freunde direkt über „Beitreten“ mitspielen. Funktioniert, wenn die Discord-App läuft.",
     "vibe.discord.unavailable": "In diesem Build nicht verfügbar.",
     "vibe.discord.details": "Server und Welt anzeigen",
-    "vibe.discord.details.desc": "Zeigt den Servernamen bzw. den Namen deiner gehosteten Welt. Aus = nur „Im Mehrspieler“ bzw. „Hostet eine Welt“. Server können ihren Namen selbst verbergen.",
+    "vibe.discord.details.desc": "Zeigt den Servernamen bzw. den Namen deiner gehosteten Welt. Ausgeschaltet steht dort nur „Im Mehrspieler“ bzw. „Hostet eine Welt“. Server können ihren Namen selbst verbergen.",
 
     // Aktionen von außen
     "action.source_hint": "Diese Anfrage kam von außerhalb des Launchers (Link oder Verknüpfung).",
@@ -317,7 +317,7 @@ export default {
 
     "settings.section.vibe": "Online services",
     "vibe.enabled": "Use Vibe features",
-    "vibe.enabled.desc": "Friends, chats, invites and shared modpacks via Vibe Craft Studios' servers. Off = the launcher never connects to Vibe.",
+    "vibe.enabled.desc": "Friends, chats, invites and shared modpacks via Vibe Craft Studios' servers. When off, the launcher never connects to Vibe.",
     "vibe.social": "Friends & invites",
     "vibe.social.desc": "Friend list, messages and world invites.",
     "vibe.presence": "Share online status",
@@ -330,7 +330,7 @@ export default {
     "vibe.discord.desc": "Shows in Discord what you're playing. When you host a world, friends can join right away via “Join”. Works while the Discord app is running.",
     "vibe.discord.unavailable": "Not available in this build.",
     "vibe.discord.details": "Show server and world",
-    "vibe.discord.details.desc": "Shows the server name or the name of the world you host. Off = just “In multiplayer” or “Hosting a world”. Servers can hide their name themselves.",
+    "vibe.discord.details.desc": "Shows the server name or the name of the world you host. When off, it only says “In multiplayer” or “Hosting a world”. Servers can hide their name themselves.",
 
     "action.source_hint": "This request came from outside the launcher (link or shortcut).",
     "action.install.title": "Install content?",

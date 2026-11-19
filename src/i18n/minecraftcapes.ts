@@ -39,7 +39,7 @@ export default {
     "mccapes.error.remove": "Entfernen fehlgeschlagen",
     "mccapes.running": "Läuft gerade – nach dem Beenden ändern",
     "settings.minecraftcapes": "MinecraftCapes anzeigen",
-    "settings.minecraftcapes.desc": "Zeigt auf der Skins-Seite Cape und Ohren deines Accounts von minecraftcapes.net. Aus: keine Anfragen an MinecraftCapes.",
+    "settings.minecraftcapes.desc": "Zeigt auf der Skins-Seite Cape und Ohren deines Accounts von minecraftcapes.net. Ausgeschaltet fragt der Launcher dort nichts ab.",
   },
   en: {
     "mccapes.title": "MinecraftCapes",
@@ -80,6 +80,6 @@ export default {
     "mccapes.error.remove": "Removing failed",
     "mccapes.running": "Running – change after it exits",
     "settings.minecraftcapes": "Show MinecraftCapes",
-    "settings.minecraftcapes.desc": "Shows your account's cape and ears from minecraftcapes.net on the Skins page. Off: no requests to MinecraftCapes.",
+    "settings.minecraftcapes.desc": "Shows your account's cape and ears from minecraftcapes.net on the Skins page. When off, the launcher never contacts MinecraftCapes.",
   },
 };

@@ -28,6 +28,8 @@ export default {
     "mode.onboarding.desc": "Die Schritte vom ersten Start noch einmal durchgehen.",
     "mode.onboarding.start": "Einrichtung starten",
     "mode.tour": "Einführung zeigen",
+    "mode.tour.title": "Kurze Einführung",
+    "mode.tour.desc": "Zeigt dir in einer Minute, wo du was im Launcher findest.",
 
     // ---------------------------------------------------------------- Onboarding
     "onb.aria": "Einrichtung",
@@ -285,6 +287,8 @@ export default {
     "mode.onboarding.desc": "Go through the first-start steps again.",
     "mode.onboarding.start": "Start setup",
     "mode.tour": "Show tour",
+    "mode.tour.title": "Quick tour",
+    "mode.tour.desc": "Shows you in a minute where to find things in the launcher.",
 
     // ---------------------------------------------------------------- Onboarding
     "onb.aria": "Setup",

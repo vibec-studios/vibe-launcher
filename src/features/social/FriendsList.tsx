@@ -194,11 +194,6 @@ export const FriendListRow = memo(function FriendListRow({ friend, host }: { fri
           </div>
         </div>
         <div className="relative flex shrink-0 items-center gap-1">
-          {host ? (
-            <Button size="sm" variant="primary" icon={<Play size={13} />} onClick={() => openInviteAccept({ host })}>
-              {t("social.accept.join")}
-            </Button>
-          ) : null}
           <IconButton
             label={t("social.friend.message")}
             tip
@@ -236,6 +231,12 @@ export const FriendListRow = memo(function FriendListRow({ friend, host }: { fri
           >
             <ActionItems actions={actions} kind="dropdown" />
           </DropdownMenu>
+          {/* Immer sichtbar und ganz rechts – die Hover-Symbole davor schieben ihn nicht nach innen */}
+          {host ? (
+            <Button size="sm" variant="ghost" className="ml-1" icon={<Play size={13} />} onClick={() => openInviteAccept({ host })}>
+              {t("social.accept.join")}
+            </Button>
+          ) : null}
         </div>
       </div>
     </ContextMenu>
@@ -245,7 +246,8 @@ export const FriendListRow = memo(function FriendListRow({ friend, host }: { fri
 /** Kleines Abzeichen (Unterstützer, Team). */
 export function UserBadge({ badge }: { badge: PublicUser["badge"] }) {
   const t = useT();
-  if (badge === "user") return null;
+  // Ohne Abzeichen (oder unbekannt/leer vom Server) nichts zeigen – nie einen rohen Übersetzungsschlüssel
+  if (!badge || badge === "user") return null;
   return (
     <span
       className={cn(

@@ -17,6 +17,7 @@ import { compareMc, compatibility, contentKindOf } from "@/components/content/ut
 import { useSimple } from "@/lib/mode";
 import { byRecent } from "@/features/home/data";
 import { openNewGame } from "@/components/instance/actions";
+import { LoaderIcon } from "@/components/instance/LoaderIcon";
 import { Browse } from "./Browse";
 import { DiscoverProjectOverlay, useProjectOverlayNav } from "./ProjectOverlay";
 import { CategoryIcon, catIconKey, catLabel, fmtNum } from "./categoryIcons";
@@ -157,11 +158,11 @@ export function DiscoverPage() {
   const sourceValue: Source = storeSource ?? (search.source === "curseforge" ? "curseforge" : "modrinth");
 
   const sourcePicker = (
-    <div className="flex items-center gap-1 pl-[18px]">
+    <div className="flex items-center gap-1">
       <div className="min-w-0 flex-1">
         <Select<Source>
           size="sm"
-          variant="ghost"
+          className="px-2"
           value={sourceValue}
           onChange={(v) => navigate({ search: (s) => ({ ...s, source: v === "modrinth" ? undefined : v }), replace: true })}
           options={[
@@ -616,12 +617,12 @@ function FilterGroup({
   const collapsed = useFilterGroups((s) => !!s.collapsed[id]);
   const toggle = useFilterGroups((s) => s.toggle);
   return (
-    <section className="flex flex-col gap-0.5 pb-3">
+    <section className="flex flex-col gap-1 pb-4">
       <div className="flex h-8 items-center gap-1">
         <button aria-expanded={!collapsed} onClick={() => toggle(id)} className="group flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-ctl px-2 text-left">
-          <ChevronDown size={13} className={cn("shrink-0 text-dim transition-transform duration-150 group-hover:text-text", collapsed && "-rotate-90")} />
           <span className="truncate text-[12.5px] font-semibold text-muted group-hover:text-text">{title}</span>
-          {!!count && <span className="text-caption text-dim">{count}</span>}
+          {!!count && <span className="grid h-4 min-w-4 place-items-center rounded-pill bg-brand/20 px-1 text-[10.5px] font-semibold text-brand">{count}</span>}
+          <ChevronDown size={13} className={cn("ml-auto shrink-0 text-dim opacity-0 transition-[transform,opacity] duration-150 group-hover:opacity-100 group-focus-visible:opacity-100", collapsed && "-rotate-90 opacity-100")} />
         </button>
         {!collapsed && right}
       </div>
@@ -638,12 +639,11 @@ function CheckRow({ on, label, onClick, radio, icon }: { on: boolean; label: Rea
       aria-checked={on}
       onClick={onClick}
       className={cn(
-        "flex h-7 w-full shrink-0 items-center gap-2 rounded-ctl pr-2 text-left text-[13px] transition-colors duration-100",
-        icon ? "pl-[9px]" : "pl-[26px]",
+        "flex h-7 w-full shrink-0 items-center gap-2 rounded-ctl px-2 text-left text-[13px] transition-colors duration-100",
         on ? "bg-white/[.06] text-text" : "text-muted hover:bg-white/[.04] hover:text-text",
       )}
     >
-      {icon && <span className={cn("grid w-[14px] shrink-0 place-items-center", on ? "text-brand" : "text-dim")}>{icon}</span>}
+      {icon && <span className={cn("grid w-[14px] shrink-0 place-items-center [&>svg[shape-rendering]]:opacity-70", on ? "text-brand [&>svg[shape-rendering]]:opacity-100" : "text-dim")}>{icon}</span>}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {on && <Check size={13} strokeWidth={2.5} className="shrink-0 text-brand" />}
     </button>
@@ -675,7 +675,7 @@ function FilterSidebar({ type, source, sourcePicker, simple }: { type: ProjectTy
 
   return (
     <aside className="scroll flex w-[220px] shrink-0 flex-col px-3 pb-6 pt-3">
-      <div className="flex h-9 shrink-0 items-center gap-2 pl-2">
+      <div className="mb-1 flex h-9 shrink-0 items-center gap-2 pl-2">
         <span className="flex-1 text-section text-text">{t("discover.filters")}</span>
         {active && (
           <IconButton label={t("discover.reset")} tip variant="ghost" size="sm" onClick={() => f.reset()}>
@@ -689,10 +689,10 @@ function FilterSidebar({ type, source, sourcePicker, simple }: { type: ProjectTy
         {sourcePicker}
       </FilterGroup>
       <FilterGroup id="version" title={t("discover.filter.version")} count={f.version ? 1 : 0}>
-        <div className="pl-[18px]">
+        <div>
           <Select
             size="sm"
-            variant="ghost"
+            className="px-2"
             value={f.version ?? ALL}
             onChange={(v) => f.set({ version: v === ALL ? null : v })}
             options={[{ value: ALL, label: t("discover.filter.all_versions") }, ...versions.map((v) => ({ value: v, label: v }))]}
@@ -703,7 +703,7 @@ function FilterSidebar({ type, source, sourcePicker, simple }: { type: ProjectTy
         <FilterGroup id="loader" title={t("discover.filter.loader")} count={f.loader ? 1 : 0}>
           <div className="flex flex-col gap-px" role="radiogroup" aria-label={t("discover.filter.loader")}>
             {LOADERS.map((l) => (
-              <CheckRow key={l} radio on={f.loader === l} label={formatLoader({ kind: l, version: null })} onClick={() => f.set({ loader: f.loader === l ? null : l })} />
+              <CheckRow key={l} radio on={f.loader === l} icon={<LoaderIcon loader={l} size={14} />} label={formatLoader({ kind: l, version: null })} onClick={() => f.set({ loader: f.loader === l ? null : l })} />
             ))}
           </div>
         </FilterGroup>
@@ -726,13 +726,13 @@ function FilterSidebar({ type, source, sourcePicker, simple }: { type: ProjectTy
         }
       >
         {cats.isPending ? (
-          <div className="flex flex-col gap-2 py-1 pl-[26px]">
+          <div className="flex flex-col gap-2 px-2 py-1">
             {[70, 90, 60, 84, 66, 78].map((w, i) => (
               <Skeleton key={i} className="h-4" style={{ width: `${w}%` }} />
             ))}
           </div>
         ) : cats.isError ? (
-          <button className="pl-[26px] pr-2 text-left text-[12px] text-dim hover:text-text" onClick={() => cats.refetch()}>
+          <button className="px-2 text-left text-[12px] text-dim hover:text-text" onClick={() => cats.refetch()}>
             {t("discover.filter.cats_error")}
           </button>
         ) : (

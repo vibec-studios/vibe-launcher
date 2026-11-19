@@ -50,6 +50,10 @@ export function CreatorTools({ online }: { online: boolean }) {
   const step1Done = !!s?.blockbench;
   const step2Done = !!s?.plugin_present;
   const step3Done = s?.registered === true;
+  // Alles eingerichtet: Schritte einklappen (bleiben über „Schritte anzeigen“ erreichbar)
+  const allDone = step1Done && step2Done && step3Done;
+  const [showSteps, setShowSteps] = useState(false);
+  const stepsOpen = !allDone || showSteps;
 
   return (
     <div className="mx-auto flex max-w-[980px] flex-col gap-5 p-6">
@@ -67,14 +71,24 @@ export function CreatorTools({ online }: { online: boolean }) {
       <section className="flex flex-col gap-2">
         <header className="flex items-center gap-3 px-1">
           <h2 className="text-section text-text">{t("cre.setup")}</h2>
-          <span className="truncate text-meta text-dim">{t("cre.setup_hint")}</span>
-          <IconButton label={t("cre.refresh")} tip variant="ghost" size="sm" className="ml-auto" onClick={() => void bb.refetch()}>
-            {bb.isFetching ? <Spinner size={13} /> : <RefreshCw size={14} />}
-          </IconButton>
+          <span className="truncate text-meta text-dim">{allDone ? t("cre.setup_done") : t("cre.setup_hint")}</span>
+          <span className="ml-auto flex items-center gap-1">
+            {allDone && (
+              <Button size="sm" variant="subtle" onClick={() => setShowSteps(!showSteps)}>
+                {showSteps ? t("cre.setup_hide") : t("cre.setup_show")}
+              </Button>
+            )}
+            <IconButton label={t("cre.refresh")} tip variant="ghost" size="sm" onClick={() => void bb.refetch()}>
+              {bb.isFetching ? <Spinner size={13} /> : <RefreshCw size={14} />}
+            </IconButton>
+          </span>
         </header>
+        {stepsOpen && (
         <ol className="divide-y divide-line overflow-hidden rounded-card bg-surface">
           <Step n={1} done={step1Done} title={t("cre.s1.title")} art={<ArtDownload />}>
-            <p className="[overflow-wrap:anywhere]">{s?.blockbench ? t("cre.s1.found", { path: s.blockbench }) : t("cre.s1.text")}</p>
+            <p className="[overflow-wrap:anywhere]" title={s?.blockbench ?? undefined}>
+              {s?.blockbench ? t("cre.s1.found") : t("cre.s1.text")}
+            </p>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {s?.blockbench ? (
                 <Button size="sm" icon={<Play size={14} />} onClick={() => vapi.blockbenchOpen().catch((e) => toast.error(e))}>
@@ -137,6 +151,7 @@ export function CreatorTools({ online }: { online: boolean }) {
             <p className="mt-2 text-dim">{t("cre.s4.updates")}</p>
           </Step>
         </ol>
+        )}
       </section>
 
       <section className="flex flex-col gap-2">

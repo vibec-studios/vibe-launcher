@@ -174,7 +174,7 @@ const user = (id: string, name: string, statusText: string | null = null) => ({
   name,
   skin: null as never,
   statusText,
-  badge: null as never,
+  badge: "user" as never,
   createdAt: new Date(now - 90 * D).toISOString(),
 });
 const friend = (u: ReturnType<typeof user>, status: Friend["presence"]["status"], activity: Friend["presence"]["activity"]): Friend => ({
@@ -211,7 +211,7 @@ const host: HostSession = {
 
 /** Sitzung „verbunden“ setzen – auch erneut, falls der echte Verbindungsaufbau (ohne Backend) sie zurücksetzt. */
 function seedSocial() {
-  if (flag("vl.mock.vibe") === "0") return;
+  if (flag("vl.mock.vibe") === "0" || flag("vl.mock.vibeauth") === "0") return;
   useSocial.setState({
     conn: "ready",
     friends: Object.fromEntries(friends.map((f) => [f.user.id, f])),

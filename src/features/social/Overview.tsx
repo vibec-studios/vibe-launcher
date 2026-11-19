@@ -3,7 +3,7 @@
 // Freundesliste (spielt gerade / online / offline). Rechts das eigene Profil (Skin, Status, Statustext) und das
 // Hosting-Kontingent.
 import { useQuery } from "@tanstack/react-query";
-import { Check, Mail, Pencil, Play, Radio, UserPlus, X } from "lucide-react";
+import { Check, Mail, Megaphone, Pencil, Play, Radio, UserPlus, X } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { Button, IconButton, SearchInput, Select, Skeleton, Spinner, Tooltip, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -308,11 +308,7 @@ function HostingCard() {
     <section className="rounded-card bg-surface px-4 py-3.5">
       <div className="flex items-baseline justify-between">
         <h3 className="text-[13px] font-semibold text-text">{t("social.hosting.title")}</h3>
-        {l && (
-          <span className="text-[12px] tabular-nums text-muted">
-            {l.active} / {l.maxHosts}
-          </span>
-        )}
+        {l && <span className="text-[12px] tabular-nums text-muted">{t("social.hosting.card_count", { active: l.active, max: l.maxHosts })}</span>}
       </div>
       {!l ? (
         <Skeleton className="mt-3 h-4 w-40" />
@@ -324,7 +320,10 @@ function HostingCard() {
               <span key={i} className={cn("h-1.5 flex-1 rounded-pill", i < l.active ? "bg-brand" : "bg-surface3")} />
             ))}
           </div>
-          <p className="mt-2 text-[12px] text-dim">{l.maxPlayersPerHost ? t("social.hosting.players", { n: l.maxPlayersPerHost }) : t("social.hosting.players_any")}</p>
+          <p className="mt-2 text-[12px] leading-relaxed text-dim">
+            {t("social.hosting.explain", { max: l.maxHosts })}{" "}
+            {l.maxPlayersPerHost ? t("social.hosting.card_players", { n: l.maxPlayersPerHost }) : t("social.hosting.card_players_any")}
+          </p>
         </>
       )}
     </section>
@@ -362,7 +361,13 @@ export function Overview() {
       <div className="scroll min-h-0 flex-1">
         <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-6 pb-12 pt-1 min-[1180px]:grid-cols-[minmax(0,1fr)_288px]">
           <div className="flex min-w-0 flex-col gap-7">
-            {motd && <div className="rounded-card bg-warn/10 px-4 py-2.5 text-[13px] text-warn">{motd}</div>}
+            {motd && (
+              // Ankündigung von Vibe: ruhig wie auf der Startseite, nicht als Warnung
+              <div className="flex items-start gap-3 rounded-card bg-surface px-4 py-3 text-[13px] leading-relaxed text-muted">
+                <Megaphone size={15} className="mt-0.5 shrink-0 text-brand" />
+                <p className="min-w-0 flex-1">{motd}</p>
+              </div>
+            )}
             {hostList.length > 0 && !q && (
               <section>
                 <h2 className="mb-2.5 text-[15px] font-bold tracking-[-0.01em] text-text">{t("social.hosts.title")}</h2>

@@ -267,6 +267,18 @@ export function Banner({ hit, className, eager }: { hit: ProjectHit; className?:
           onError={() => setFailed(true)}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 ease-[var(--ease-snap)] group-hover:scale-[1.03]"
         />
+      ) : !color && hit.icon_url ? (
+        // Ohne Galerie-Bild und Markenfarbe: das Icon stark vergrößert und abgedunkelt als ruhige Farbfläche,
+        // statt einer leeren grauen Box
+        <img
+          src={hit.icon_url}
+          alt=""
+          aria-hidden
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+          draggable={false}
+          className="absolute inset-0 h-full w-full scale-125 object-cover opacity-35 blur-2xl saturate-150"
+        />
       ) : null}
     </div>
   );
@@ -306,15 +318,18 @@ export const ResultTile = memo(function ResultTile({ hit, target, installed, ins
             {!target || hit.project_type === "modpack" || (!installed && compatibility(hit, target).ok) ? <CategoryTags hit={hit} max={4} iconsOnly /> : null}
           </div>
           <div className="mt-auto flex items-center gap-3 pt-2 text-[12px] text-muted">
-            <Stat icon={<Download size={12} />} tip={t("discover.downloads_n", { n: fmtNum(hit.downloads) })}>
-              {formatCount(hit.downloads)}
-            </Stat>
-            {hit.source === "modrinth" && (
-              <Stat icon={<Heart size={12} />} tip={t("discover.follows_n", { n: fmtNum(hit.follows) })}>
-                {formatCount(hit.follows)}
+            {/* Passt eine Kennzahl nicht mehr, rutscht sie in die (unsichtbare) zweite Zeile statt angeschnitten zu werden */}
+            <div className="flex h-5 min-w-0 flex-wrap items-center gap-x-3 overflow-hidden">
+              <Stat icon={<Download size={12} />} tip={t("discover.downloads_n", { n: fmtNum(hit.downloads) })}>
+                {formatCount(hit.downloads)}
               </Stat>
-            )}
-            <div className="ml-auto">
+              {hit.source === "modrinth" && (
+                <Stat icon={<Heart size={12} />} tip={t("discover.follows_n", { n: fmtNum(hit.follows) })}>
+                  {formatCount(hit.follows)}
+                </Stat>
+              )}
+            </div>
+            <div className="ml-auto shrink-0">
               <InstallMenu project={hit} target={target} installed={installed} />
             </div>
           </div>

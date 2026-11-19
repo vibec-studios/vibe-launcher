@@ -22,6 +22,7 @@ import {
   Textarea,
   ErrorState,
   toast,
+  Tooltip,
 } from "@/components/ui";
 import { JavaPathField, SaveIndicator, formatMb, useAutoSave } from "@/components/instance/forms";
 import { AccentPicker } from "@/features/instances/NewInstanceDialog";
@@ -272,7 +273,11 @@ function PropertiesCard({ server }: { server: Server }) {
 
   return (
     <SettingsCard
-      title="server.properties"
+      title={
+        <Tooltip content="server.properties">
+          <span>{t("srv.settings.props")}</span>
+        </Tooltip>
+      }
       right={<Segmented value={mode} onChange={setMode} items={[{ value: "form", label: t("srv.prop.form") }, { value: "raw", label: t("srv.prop.raw") }]} />}
     >
       <div className={`flex items-center gap-2 border-b border-line px-4 py-2 text-[12px] ${active ? "text-warn" : "text-dim"}`}>

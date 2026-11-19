@@ -24,6 +24,7 @@ export function SettingRow({
   children,
   className,
   stacked,
+  icon,
 }: {
   title: ReactNode;
   description?: ReactNode;
@@ -31,13 +32,25 @@ export function SettingRow({
   className?: string;
   /** Steuerung unter statt neben dem Text (für breite Eingaben) */
   stacked?: boolean;
+  /** Optionales Bild/Symbol links neben Titel und Beschreibung (z. B. Avatar) */
+  icon?: ReactNode;
 }) {
+  const text = (
+    <div className="min-w-0 flex-1">
+      <div className="text-[13.5px] font-medium text-text">{title}</div>
+      {description && <div className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{description}</div>}
+    </div>
+  );
   return (
     <div className={cn("flex gap-x-8 gap-y-2.5 border-line px-4 py-3 [&+&]:border-t", stacked ? "flex-col" : "items-center", className)}>
-      <div className="min-w-0 flex-1">
-        <div className="text-[13.5px] font-medium text-text">{title}</div>
-        {description && <div className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{description}</div>}
-      </div>
+      {icon ? (
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="shrink-0">{icon}</div>
+          {text}
+        </div>
+      ) : (
+        text
+      )}
       {children !== undefined && <div className={cn("min-w-0", stacked ? "w-full" : "shrink-0")}>{children}</div>}
     </div>
   );
