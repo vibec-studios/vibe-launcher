@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod bedrock;
 pub mod content;
 pub mod sets;
 pub mod core;

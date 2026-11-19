@@ -4,6 +4,7 @@
 // Titelleiste: Zurück/Vor, Brotkrumen, laufende Spiele, Aufgaben, Freunde, Konto-Menü, Fensterknöpfe.
 // Simple-Modus (src/lib/mode.tsx): feste, kurze Navigation mit Beschriftung; Onboarding/Einführung hängen hier.
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { BEDROCK_COLOR } from "@/features/bedrock/parts";
 import { ChevronLeft, ChevronRight, Compass, Home, Images, LibraryBig, Plus, Server as ServerIcon, Settings as SettingsIcon, Shirt, Sparkles, Square, Users } from "lucide-react";
 import { memo, type ReactNode } from "react";
 import { ContextMenu, Spinner, Tooltip, cn } from "@/components/ui";
@@ -89,7 +90,7 @@ const RailInstance = memo(function RailInstance({ instance: i, active, wide }: {
   return (
     <ContextMenu disabled={simple} content={<InstanceContextMenuContent instance={i} />}>
       <div className={wide ? "w-full" : undefined}>
-        <Tooltip content={wide ? null : i.name} side="right">
+        <Tooltip content={wide ? null : i.bedrock ? `${i.name} · Bedrock` : i.name} side="right">
           <button
             aria-label={i.name}
             onClick={() => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "content" } })}
@@ -112,6 +113,11 @@ const RailInstance = memo(function RailInstance({ instance: i, active, wide }: {
               )}
             </span>
             {wide && <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text">{i.name}</span>}
+            {wide && i.bedrock && (
+              <span className="shrink-0 text-[10.5px] font-bold tracking-wide" style={{ color: BEDROCK_COLOR }} title="Minecraft Bedrock">
+                BE
+              </span>
+            )}
           </button>
         </Tooltip>
       </div>

@@ -88,7 +88,7 @@ export function ContinueCard({ instance: i, spot }: { instance: Instance; spot: 
   const open = () => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "content" } });
   const loader = i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]} ${i.loader.version ?? ""}`.trim();
   const meta = [
-    `${loader} · Minecraft ${i.mc_version}`,
+    i.bedrock ? (i.bedrock.channel === "preview" ? "Minecraft Bedrock Preview" : "Minecraft Bedrock") : `${loader} · Minecraft ${i.mc_version}`,
     i.last_played ? formatRelative(i.last_played) : t("home.never"),
     i.play_time_secs >= 60 ? t("home.played", { time: formatDuration(i.play_time_secs) }) : null,
   ].filter(Boolean);

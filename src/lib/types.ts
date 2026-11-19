@@ -69,6 +69,16 @@ export interface Instance {
   notes: string | null;
   /** Inhalte vor dem Start aktualisieren; null = globale Einstellung (Modpacks: aus) */
   auto_update_content: boolean | null;
+  /** Gesetzt = Minecraft-Bedrock-Instanz (Loader/Java/Fenster ohne Bedeutung). Fehlt bei älteren Daten = Java. */
+  bedrock?: BedrockOptions | null;
+}
+
+export type BedrockChannel = "release" | "preview";
+/** isolated = eigene Welten/Packs/Einstellungen (Tausch vor dem Start), shared = normale Bedrock-Daten */
+export type BedrockProfile = "isolated" | "shared";
+export interface BedrockOptions {
+  channel: BedrockChannel;
+  profile: BedrockProfile;
 }
 
 export interface CreateInstance {
@@ -82,6 +92,8 @@ export interface CreateInstance {
 
 /** Nur gesetzte Felder werden übernommen. `null` bei optionalen Feldern = zurücksetzen. */
 export interface InstancePatch {
+  /** Nur bei Bedrock-Instanzen wirksam */
+  bedrock?: BedrockOptions;
   name?: string;
   icon?: string | null;
   accent?: string | null;

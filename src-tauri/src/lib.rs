@@ -1,5 +1,6 @@
 //! Vibe Launcher – Backend.
 pub mod auth;
+pub mod bedrock;
 pub mod client_packs;
 pub mod commands;
 #[cfg(debug_assertions)]
@@ -104,6 +105,9 @@ pub fn run() {
                     platform::handle_urls(&h, ev.urls().iter().map(|u| u.to_string()).collect());
                 });
             }
+            // Bedrock: offenen Profil-Tausch nach Absturz/Neustart abschließen bzw. laufende Sitzung aufnehmen
+            let bedrock_state = startup_state.clone();
+            tauri::async_runtime::spawn_blocking(move || bedrock::game::on_startup(&bedrock_state));
             // Lokale Server: Server aus früheren Sitzungen erkennen, Auto-Start
             let import_state = startup_state.clone();
             tauri::async_runtime::spawn(async move {
@@ -218,6 +222,29 @@ pub fn run() {
             commands::screenshots::screenshot_copy,
             commands::screenshots::screenshot_open_folder,
             commands::game::java_list,
+            // Bedrock
+            commands::bedrock::bedrock_status,
+            commands::bedrock::bedrock_home_summary,
+            commands::bedrock::bedrock_create,
+            commands::bedrock::bedrock_packs,
+            commands::bedrock::bedrock_pack_remove,
+            commands::bedrock::bedrock_pack_export,
+            commands::bedrock::bedrock_import_files,
+            commands::bedrock::bedrock_worlds,
+            commands::bedrock::bedrock_can_import_worlds,
+            commands::bedrock::bedrock_world_delete,
+            commands::bedrock::bedrock_world_export,
+            commands::bedrock::bedrock_world_pack_set,
+            commands::bedrock::bedrock_backups,
+            commands::bedrock::bedrock_backup_create,
+            commands::bedrock::bedrock_backup_restore,
+            commands::bedrock::bedrock_backup_delete,
+            commands::bedrock::bedrock_open_folder,
+            commands::bedrock::bedrock_recover,
+            commands::bedrock::bedrock_open_store,
+            commands::bedrock::bedrock_cf_classes,
+            commands::bedrock::bedrock_cf_search,
+            commands::bedrock::bedrock_cf_install,
             commands::game::java_test,
             commands::game::java_install,
             // lokale Server

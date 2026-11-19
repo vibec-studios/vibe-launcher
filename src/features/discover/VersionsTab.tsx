@@ -6,7 +6,7 @@ import { Button, EmptyState, ErrorState, Segmented, Select, Skeleton, Tag, cn } 
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { formatBytes, formatCount, formatDate, formatLoader } from "@/lib/format";
-import { qk, useInstances } from "@/lib/queries";
+import { qk, useJavaInstances } from "@/lib/queries";
 import type { ProjectDetails, ProjectVersion } from "@/lib/types";
 import { RichText } from "@/components/content/RichText";
 import { Pill, prettyLoader } from "@/components/content/Pill";
@@ -20,7 +20,7 @@ const COLS = "grid-cols-[minmax(0,1fr)_110px_96px_84px_136px] @min-[900px]:grid-
 
 export function VersionsTab({ project, instanceId }: { project: ProjectDetails; instanceId?: string }) {
   const t = useT();
-  const { data: instances } = useInstances();
+  const { data: instances } = useJavaInstances();
   const target = instanceId ? instances?.find((i) => i.id === instanceId) : undefined;
   const q = useQuery({
     queryKey: qk.versions(project.source, project.id, null, null),

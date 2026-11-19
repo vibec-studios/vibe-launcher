@@ -62,7 +62,7 @@ impl GameManager {
         self.sessions.lock().get(instance_id).is_some_and(|s| s.state.state == RunState::Running)
     }
 
-    fn any_running(&self) -> bool {
+    pub(crate) fn any_running(&self) -> bool {
         self.sessions.lock().values().any(|s| s.state.state == RunState::Running)
     }
 
@@ -215,6 +215,44 @@ impl GameManager {
         Ok(())
     }
 
+    /// Nicht selbst gestarteten Prozess (Bedrock) als laufend melden. Die Sitzung muss mit `begin` angelegt sein.
+    pub fn mark_running(&self, instance_id: &str, pid: Option<u32>, started_ms: i64) {
+        let st = {
+            let mut map = self.sessions.lock();
+            map.get_mut(instance_id).map(|s| {
+                s.state.state = RunState::Running;
+                s.state.pid = pid;
+                s.state.started_at = Some(started_ms);
+                s.state.clone()
+            })
+        };
+        if let Some(st) = st {
+            self.emit_state(&st);
+        }
+    }
+
+    /// Externe Sitzung beendet (Bedrock). Meldung kommt ins Log.
+    pub fn mark_stopped(&self, instance_id: &str, crashed: bool, msg: String) {
+        self.launcher_line(instance_id, if crashed { LogLevel::Error } else { LogLevel::Launcher }, msg);
+        self.flush();
+        let st = {
+            let mut map = self.sessions.lock();
+            map.get_mut(instance_id).map(|s| {
+                s.state.state = RunState::Stopped;
+                s.state.crashed = crashed;
+                s.state.clone()
+            })
+        };
+        if let Some(st) = st {
+            self.emit_state(&st);
+        }
+    }
+
+    /// Wurde die Sitzung über „Stoppen“ beendet?
+    pub fn was_killed(&self, instance_id: &str) -> bool {
+        self.sessions.lock().get(instance_id).is_some_and(|s| s.killed)
+    }
+
     /// Gestarteten Prozess übernehmen: Ausgabe lesen, auf Ende warten, Zustand melden.
     pub fn attach(&self, state: AppState, instance_id: String, mut child: tokio::process::Child) {
         let pid = child.id();
@@ -365,7 +403,7 @@ pub fn kill_tree(pid: u32) {
 }
 
 /// `settings.launch_behavior`: Launcher während des Spiels minimieren/verstecken, danach zeigen.
-fn apply_launch_behavior(state: &AppState, started: bool) {
+pub(crate) fn apply_launch_behavior(state: &AppState, started: bool) {
     use crate::settings::LaunchBehavior;
     let behavior = state.settings().launch_behavior;
     if behavior == LaunchBehavior::Keep {

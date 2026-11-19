@@ -29,7 +29,7 @@ import {
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { useT } from "@/i18n";
 import { instanceAccent } from "@/lib/format";
-import { useInstances } from "@/lib/queries";
+import { useJavaInstances } from "@/lib/queries";
 import { useVibe } from "@/lib/vibe";
 import { parseInviteCode } from "@/lib/domains";
 import { enqueueAppAction } from "@/lib/appActions";
@@ -255,7 +255,7 @@ function BlockedDialog() {
 
 function SharePackDialog() {
   const t = useT();
-  const { data: instances = [], isLoading } = useInstances();
+  const { data: instances = [], isLoading } = useJavaInstances();
   const [q, setQ] = useState("");
   const list = instances.filter((i) => !q.trim() || i.name.toLowerCase().includes(q.trim().toLowerCase()));
   return (

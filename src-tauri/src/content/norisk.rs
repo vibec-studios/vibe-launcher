@@ -694,6 +694,7 @@ pub async fn run_import(
         play_time_secs: f.info.play_time_secs.unwrap_or(0),
         notes: None,
         auto_update_content: None,
+        bedrock: None,
     };
     let (prepared, java_note) = super::extsettings::prepare(&state.settings(), &f.settings, &inst.mc_version, keys.contains("java")).await;
     super::extsettings::apply(&mut inst, &prepared, &keys);

@@ -12,7 +12,7 @@ import { ErrorState, IconButton, Tooltip, cn } from "@/components/ui";
 import { interceptBack } from "@/app/backNav";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
-import { qk, useInstances } from "@/lib/queries";
+import { qk, useJavaInstances } from "@/lib/queries";
 import type { Source } from "@/lib/types";
 import { openExternal } from "@/components/content/util";
 import { InstallMenu } from "./InstallMenu";
@@ -175,7 +175,7 @@ export function DiscoverProjectOverlay({ value, instanceId }: { value: string; i
   const t = useT();
   const nav = useProjectOverlayNav();
   const parsed = parseProjectParam(value);
-  const { data: instances } = useInstances();
+  const { data: instances } = useJavaInstances();
   const target = instanceId ? (instances?.find((i) => i.id === instanceId) ?? null) : null;
   const q = useQuery({
     queryKey: qk.project(parsed?.source ?? "modrinth", parsed?.id ?? ""),

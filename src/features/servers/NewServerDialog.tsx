@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, Info } from "lucide-react";
 import { api } from "@/lib/api";
-import { qk, sqk, useInstances, useServers, useSystemInfo } from "@/lib/queries";
+import { qk, sqk, useServers, useSystemInfo, useJavaInstances } from "@/lib/queries";
 import type { Instance, ModSide, ServerCreate, ServerModCandidate } from "@/lib/types";
 import { formatLoader, instanceAccent, loaderNames } from "@/lib/format";
 import { Button, Checkbox, Dialog, ErrorState, Field, Input, NumberInput, Segmented, Select, Skeleton, Slider, Switch, Tag, Tooltip, cn, toast } from "@/components/ui";
@@ -192,7 +192,7 @@ function FromInstance({
 export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: boolean; fromInstance: string | null; onOpenChange: (o: boolean) => void }) {
   const t = useT();
   const nav = useNavigate();
-  const { data: instances = [] } = useInstances();
+  const { data: instances = [] } = useJavaInstances();
   const { data: servers = [] } = useServers();
   const { data: sys } = useSystemInfo();
   const total = sys?.total_memory_mb ?? 8192;

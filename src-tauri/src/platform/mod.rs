@@ -176,7 +176,13 @@ pub fn update_presence(app: &AppHandle) {
             let play_link = session.as_ref().and_then(|s| s.play_link.clone()).filter(|u| crate::play::is_play_link_url(&base, u));
             presence::PresenceInput {
                 instance_name: Some(inst.as_ref().map(|i| i.name.clone()).unwrap_or_else(|| id.clone())),
-                loader: inst.as_ref().map(|i| (i.loader.kind.as_str().to_string(), format!("{} · Minecraft {}", loader_name(&i.loader.kind), i.mc_version))),
+                loader: inst.as_ref().map(|i| {
+                    if i.is_bedrock() {
+                        ("vanilla".to_string(), "Minecraft Bedrock".to_string())
+                    } else {
+                        (i.loader.kind.as_str().to_string(), format!("{} · Minecraft {}", loader_name(&i.loader.kind), i.mc_version))
+                    }
+                }),
                 session,
                 launch_world: a.ctx.world.clone(),
                 launch_server: a.ctx.server.clone(),

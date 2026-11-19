@@ -1,7 +1,7 @@
 // Verbindet Einstellungen/Account mit dem Vibe-Service (einmal in der Shell eingebunden, rendert nichts).
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useAccounts, useInstances, useServers } from "@/lib/queries";
+import { useAccounts, useServers, useJavaInstances } from "@/lib/queries";
 import { useVibe } from "@/lib/vibe";
 import { toast } from "@/components/ui";
 import { openSettings } from "@/features/settings/store";
@@ -15,7 +15,7 @@ export function VibeBridge() {
   const nav = useNavigate();
   const { data: accounts } = useAccounts();
   const active = accounts?.find((a) => a.active)?.id ?? accounts?.[0]?.id ?? "";
-  const { data: instances = [] } = useInstances();
+  const { data: instances = [] } = useJavaInstances();
   const { data: servers = [] } = useServers();
 
   // Einstellungen / Account -> Client + Gateway

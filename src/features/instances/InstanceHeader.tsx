@@ -16,6 +16,7 @@ import { useSimple } from "@/lib/mode";
 import { AutofixButton } from "@/features/content/AutoFix";
 import { formatDuration, formatRelative, loaderNames } from "@/lib/format";
 import type { Instance } from "@/lib/types";
+import { bedrockLine } from "@/features/bedrock/parts";
 
 export const pageX = "px-6";
 
@@ -43,7 +44,13 @@ function MetaLine({ instance: i }: { instance: Instance }) {
   return (
     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-muted">
       {/* Simple: nur die Minecraft-Version, kein Mod-Unterbau/keine Loader-Version */}
-      <Meta icon={<Box size={15} />}>{simple ? `Minecraft ${i.mc_version}` : `${loader} · Minecraft ${i.mc_version}`}</Meta>
+      <Meta icon={<Box size={15} />}>
+        {i.bedrock
+          ? `${bedrockLine(i, t)} · ${t(i.bedrock.profile === "shared" ? "bedrock.profile.shared" : "bedrock.profile.isolated")}`
+          : simple
+            ? `Minecraft ${i.mc_version}`
+            : `${loader} · Minecraft ${i.mc_version}`}
+      </Meta>
       {i.play_time_secs >= 60 && <Meta icon={<Timer size={15} />}>{t("inst.meta.played", { time: formatDuration(i.play_time_secs) })}</Meta>}
       <Meta icon={<Clock size={15} />}>
         {!i.last_played

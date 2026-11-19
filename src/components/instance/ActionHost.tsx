@@ -5,7 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Link2, ShieldAlert } from "lucide-react";
 import { api } from "@/lib/api";
-import { useInstances } from "@/lib/queries";
+import { useJavaInstances } from "@/lib/queries";
 import type { AppAction, Instance } from "@/lib/types";
 import { instanceAccent } from "@/lib/format";
 import { useVibe } from "@/lib/vibe";
@@ -127,7 +127,7 @@ function InstanceLine({ i }: { i: Instance }) {
 
 function ActionDialog({ a, onDone }: { a: AppAction; onDone: () => void }) {
   const t = useT();
-  const { data: instances = [] } = useInstances();
+  const { data: instances = [] } = useJavaInstances();
   const { launch } = useInstanceActions();
   const recent = useMemo(() => instances.slice().sort((x, y) => (y.last_played ?? 0) - (x.last_played ?? 0)), [instances]);
   const [pick, setPick] = useState<string | null>(a.kind === "join" ? (a.instance_id ?? null) : null);

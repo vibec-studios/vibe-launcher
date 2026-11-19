@@ -35,12 +35,16 @@ pub async fn instance_delete(state: State<'_, AppState>, id: String) -> AppResul
     if state.game.is_running(&id) {
         return Err(AppError::Invalid("Die Instanz läuft gerade".into()));
     }
+    if let Ok(inst) = state.instances.get(&id) {
+        crate::bedrock::guard_idle(&state.paths, &inst)?;
+    }
     let store = state.instances.clone();
     tokio::task::spawn_blocking(move || store.delete(&id)).await?
 }
 
 #[tauri::command]
 pub async fn instance_duplicate(state: State<'_, AppState>, id: String, name: Option<String>) -> AppResult<Instance> {
+    crate::bedrock::guard_idle(&state.paths, &state.instances.get(&id)?)?;
     let store = state.instances.clone();
     tokio::task::spawn_blocking(move || store.duplicate(&id, name)).await?
 }

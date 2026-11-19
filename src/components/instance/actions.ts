@@ -110,7 +110,7 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
       if (s?.open_log_on_launch) open(i, "logs");
     } catch (e) {
       const kind = (e as { kind?: string })?.kind;
-      if (kind === "auth" || kind === "not_configured") {
+      if (!i.bedrock && (kind === "auth" || kind === "not_configured")) {
         toast.info(t("inst.need_account"), errorMessage(e), { label: t("nav.accounts"), onClick: () => nav({ to: "/accounts" }) });
       } else toast.error(e, t("inst.launch_failed"));
     }

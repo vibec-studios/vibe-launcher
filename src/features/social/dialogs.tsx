@@ -8,7 +8,7 @@ import { Check, Copy, Link2, PackageOpen, Server as ServerIcon, Share2 } from "l
 import { useEffect, useMemo, useState } from "react";
 import { create } from "zustand";
 import { api, errorMessage, isCancelled } from "@/lib/api";
-import { sqk, useInstances, useServers, useServerStore, waitForTask } from "@/lib/queries";
+import { sqk, useServers, useServerStore, waitForTask, useJavaInstances } from "@/lib/queries";
 import type { Instance, LoaderKind, Server } from "@/lib/types";
 import { useVibe } from "@/lib/vibe";
 import type { HostSession, Invite, Pack, PackVisibility } from "@/lib/vibe-sdk";
@@ -280,7 +280,7 @@ function AcceptDialog({ req, onClose }: { req: AcceptReq; onClose: () => void })
   const t = useT();
   const ready = useReady();
   const vibe = useVibe();
-  const { data: instances = [] } = useInstances();
+  const { data: instances = [] } = useJavaInstances();
   const { launch } = useInstanceActions();
   const stored = useSocial((s) => s.invites);
   const [tgt, setTgt] = useState<JoinTarget | null>(null);
@@ -477,7 +477,7 @@ function InstancePreview({ i }: { i: Instance | undefined }) {
 function ShareDialog({ instanceId, onClose }: { instanceId: string; onClose: () => void }) {
   const t = useT();
   const ready = useReady();
-  const { data: instances = [] } = useInstances();
+  const { data: instances = [] } = useJavaInstances();
   const inst = instances.find((i) => i.id === instanceId);
   const link = useQuery({ queryKey: ["vibe", "share-link", instanceId], queryFn: () => api.vibePackLink(instanceId), staleTime: 0 });
   const [visibility, setVisibility] = useState<PackVisibility>("unlisted");

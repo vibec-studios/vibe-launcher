@@ -6,7 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { listen } from "@tauri-apps/api/event";
 import { AlertTriangle, FolderOpen, Info, RefreshCcw, ShieldCheck, Upload } from "lucide-react";
 import { api } from "@/lib/api";
-import { isRunning, useGameState, useInstances } from "@/lib/queries";
+import { isRunning, useGameState, useJavaInstances } from "@/lib/queries";
 import type { Instance, OptSyncCategory, OptSyncInfo, SyncArea, SyncKey } from "@/lib/types";
 import { formatBytes, formatRelative } from "@/lib/format";
 import { Button, Checkbox, IconButton, Select, SettingRow, SettingsCard, Switch, cn, toast } from "@/components/ui";
@@ -284,7 +284,7 @@ export function SyncOverview() {
   const nav = useNavigate();
   const qc = useQueryClient();
   const q = useOptSync();
-  const { data: instances = [] } = useInstances();
+  const { data: instances = [] } = useJavaInstances();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const info = q.data;
@@ -381,7 +381,7 @@ export function MasterOptSync() {
   const t = useT();
   const qc = useQueryClient();
   const q = useOptSync();
-  const { data: instances = [] } = useInstances();
+  const { data: instances = [] } = useJavaInstances();
   const [from, setFrom] = useState<string | null>(null);
   const [cats, setCats] = useState<OptSyncCategory[]>(ALL);
   const [busy, setBusy] = useState(false);

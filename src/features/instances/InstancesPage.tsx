@@ -103,7 +103,17 @@ export function InstancesPage() {
     );
     list.sort(sorters[sort]);
     const keyOf = (i: Instance) =>
-      groupBy === "group" ? (i.group ?? "") : groupBy === "loader" ? loaderNames[i.loader.kind] : groupBy === "version" ? i.mc_version : "";
+      groupBy === "group"
+        ? (i.group ?? "")
+        : groupBy === "loader"
+          ? i.bedrock
+            ? "Bedrock"
+            : loaderNames[i.loader.kind]
+          : groupBy === "version"
+            ? i.bedrock
+              ? "Bedrock"
+              : i.mc_version
+            : "";
     const map = new Map<string, Instance[]>();
     for (const i of list) {
       const g = keyOf(i);

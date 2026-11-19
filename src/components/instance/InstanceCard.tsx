@@ -8,6 +8,7 @@ import type { Instance } from "@/lib/types";
 import { AnimatedNumber, ContextMenu, Progress, cn } from "@/components/ui";
 import { useSimple } from "@/lib/mode";
 import { formatDuration, formatRelative, imageSrc, instanceAccent, loaderNames } from "@/lib/format";
+import { BedrockTag } from "@/features/bedrock/parts";
 import { useT } from "@/i18n";
 import { InstanceIcon, PixelBlock } from "./InstanceIcon";
 import { InstanceContextMenuContent } from "./InstanceMenu";
@@ -17,6 +18,7 @@ import { accentVars } from "./accent";
 
 /** "Fabric 1.21.4" bzw. "Vanilla 1.21.4" */
 export function loaderLine(i: Instance): string {
+  if (i.bedrock) return i.bedrock.channel === "preview" ? "Bedrock Preview" : "Bedrock";
   return `${loaderNames[i.loader.kind]} ${i.mc_version}`;
 }
 
@@ -158,7 +160,7 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
           </div>
           <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12px] text-muted">
             {/* Version bleibt ganz lesbar, ein Status dahinter kürzt sich zuerst */}
-            <span className="shrink-0">{simple ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>
+            {i.bedrock ? <BedrockTag instance={i} /> : <span className="shrink-0">{simple ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>}
             <StatusDot instance={i} />
           </div>
         </div>
@@ -245,6 +247,7 @@ export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOp
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-[13.5px] font-semibold text-text">{i.name}</span>
+            <BedrockTag instance={i} />
             <span className="flex min-w-0 items-center gap-1.5 truncate text-[12px] font-normal empty:hidden">
               <StatusDot instance={i} notInstalled />
             </span>
@@ -257,7 +260,7 @@ export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOp
             </div>
           )}
         </div>
-        <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{simple ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>
+        <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{simple && !i.bedrock ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>
         <span className="hidden truncate text-[12.5px] text-muted @min-[860px]:block">{i.last_played ? formatRelative(i.last_played) : t("inst.never_played")}</span>
         <span className="hidden truncate text-right text-[12.5px] tabular-nums text-muted @min-[860px]:block">{i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : <span className="text-dim">–</span>}</span>
         <span className="flex justify-end opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
