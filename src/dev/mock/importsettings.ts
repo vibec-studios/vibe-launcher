@@ -1,6 +1,6 @@
 // Mock: Einstellungen aus anderen Launchern (Import-Dialog „Übernimmt …“, Hinweis unten links, Liste „Ansehen“).
 // Screenshots: localStorage vl.mock.isx = 0 -> keine abweichenden Instanzen (Hinweis erscheint nicht).
-import type { ExtSettings, ExternalInstance, ExternalLauncher, SettingsOffer } from "@/lib/types";
+import type { DataEntry, ExtSettings, ExternalInstance, ExternalLauncher, SettingsOffer } from "@/lib/types";
 import { instances } from "./core";
 import type { Handlers } from "./util";
 
@@ -103,6 +103,37 @@ const launchers: ExternalLauncher[] = [
   },
 ];
 
+const MB = 1024 * 1024;
+const entry = (path: string, kind: DataEntry["kind"], status: DataEntry["status"], size: number, p: Partial<DataEntry> = {}): DataEntry => {
+  const missing = status === "missing" || status === "removed";
+  return {
+    path,
+    kind,
+    name: null,
+    status,
+    size,
+    missing_files: missing ? (kind === "file" ? 1 : 12) : 0,
+    missing_size: missing ? size : 0,
+    overwrite_files: missing ? 0 : kind === "file" ? 1 : 3,
+    overwrite_size: missing ? 0 : size,
+    default_on: status === "missing" || status === "partial",
+    ...p,
+  };
+};
+
+/** NoRisk-Import aus v1.0.0-beta.4: Mod-Daten und neue Welt fehlen. */
+const NORISK = "C:\Users\steve\AppData\Roaming\norisk\NoRiskClientV3\data\profiles\noriskclient\new";
+const noriskData: DataEntry[] = [
+  entry("XaeroWaypoints", "dir", "missing", 1.2 * MB, { missing_files: 38 }),
+  entry("journeymap", "dir", "missing", 46 * MB, { missing_files: 912 }),
+  entry("xaero", "dir", "missing", 3.4 * MB, { missing_files: 64 }),
+  entry("schematics", "dir", "partial", 0.8 * MB, { missing_files: 2, missing_size: 0.2 * MB, overwrite_files: 1, overwrite_size: 0.1 * MB }),
+  entry("options.txt", "file", "changed", 6_120),
+  entry("screenshots", "dir", "removed", 22 * MB, { missing_files: 31 }),
+  entry("saves/Bedwars Map", "world", "missing", 18 * MB, { name: "Bedwars Map", missing_files: 140 }),
+  entry("saves/Neue Welt", "world", "newer", 312 * MB, { name: "Survival mit Freunden", overwrite_files: 2140 }),
+];
+
 const offers = (): SettingsOffer[] =>
   flag("vl.mock.isx") === "0"
     ? []
@@ -120,10 +151,7 @@ const offers = (): SettingsOffer[] =>
             { key: "jvm_args", old: null, new: "-XX:+UseG1GC", default_on: true, inherited: true },
             { key: "hooks", old: { pre_launch: null, post_exit: null, wrapper: null }, new: { pre_launch: "%INST_DIR%\\backup.bat", post_exit: null, wrapper: null }, default_on: false, inherited: false },
           ],
-          files: [
-            { key: "options", items: ["options.txt", "optionsof.txt"], changed: 1 },
-            { key: "config", items: ["config"], changed: 14 },
-          ],
+          data: [entry("config", "dir", "changed", 2.1 * MB, { overwrite_files: 14 }), entry("options.txt", "file", "changed", 5_210)],
           notes: [],
         },
         {
@@ -137,8 +165,18 @@ const offers = (): SettingsOffer[] =>
             { key: "env", old: {}, new: { MESA_GLTHREAD: "true" }, default_on: true, inherited: false },
             { key: "group", old: null, new: "Survival", default_on: true, inherited: false },
           ],
-          files: [],
+          data: [],
           notes: ["Java 8 passt nicht zu Minecraft 1.21.4 – Vibe wählt Java automatisch."],
+        },
+        {
+          instance_id: "hh-armors",
+          instance_name: instances.get("hh-armors")?.name ?? "H&H Armors Test",
+          launcher: "norisk",
+          launcher_name: "NoRisk Client",
+          source_path: `${NORISK}#p-main`,
+          changes: [],
+          data: noriskData,
+          notes: [],
         },
       ];
 
@@ -146,11 +184,11 @@ let applied = new Set<string>();
 
 const handlers: Handlers = {
   launchers_detect: () => launchers,
-  import_settings_pending: () => offers().filter((o) => !applied.has(o.instance_id)).map((o) => ({ ...o, files: [] })),
+  import_settings_pending: () => offers().filter((o) => !applied.has(o.instance_id)),
   import_settings_offer: ({ instanceId }) => {
     const o = offers().find((x) => x.instance_id === instanceId);
     if (!o) return null;
-    return applied.has(o.instance_id) ? { ...o, changes: [], files: [] } : o;
+    return applied.has(o.instance_id) ? { ...o, changes: [], data: [] } : o;
   },
   import_settings_apply: ({ instanceId }) => {
     applied = new Set([...applied, String(instanceId)]);

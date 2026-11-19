@@ -15,6 +15,7 @@ use tauri::AppHandle;
 pub mod curseforge;
 pub mod export;
 pub mod external;
+pub mod gamedata;
 pub mod extsettings;
 pub mod http;
 pub mod import;

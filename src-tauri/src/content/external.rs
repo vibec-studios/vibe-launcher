@@ -777,6 +777,16 @@ pub(crate) struct ExternalMark {
     pub launcher: LauncherKind,
     pub source_path: String,
     pub imported_at: i64,
+    /// Beim Import übernommene Einträge der obersten Ebene des Spielordners (für den Nachimport: in Vibe
+    /// gelöschte Einträge nicht erneut vorschlagen). Fehlt bei älteren Importen.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub copied: Option<Vec<String>>,
+}
+
+impl ExternalMark {
+    pub fn prior(&self) -> super::gamedata::Prior {
+        super::gamedata::Prior { launcher: Some(self.launcher), imported_at: self.imported_at, copied: self.copied.clone() }
+    }
 }
 
 pub(crate) fn read_mark(state: &AppState, instance_id: &str) -> Option<ExternalMark> {
@@ -784,10 +794,10 @@ pub(crate) fn read_mark(state: &AppState, instance_id: &str) -> Option<ExternalM
     serde_json::from_slice(&std::fs::read(p).ok()?).ok()
 }
 
-pub(crate) fn write_mark(state: &AppState, instance_id: &str, launcher: LauncherKind, source_path: &str) -> AppResult<()> {
+pub(crate) fn write_mark(state: &AppState, instance_id: &str, launcher: LauncherKind, source_path: &str, copied: Vec<String>) -> AppResult<()> {
     crate::util::write_json_atomic(
         &state.paths.instance_dir(instance_id).join("external.json"),
-        &ExternalMark { launcher, source_path: source_path.to_string(), imported_at: crate::util::now_ms() },
+        &ExternalMark { launcher, source_path: source_path.to_string(), imported_at: crate::util::now_ms(), copied: Some(copied) },
     )
 }
 
@@ -835,11 +845,13 @@ fn fmt_size(b: u64) -> String {
     }
 }
 
-/// Zu kopierende Dateien + Gesamtgröße.
-/// `skip`: Dateinamen auf oberster Ebene, die nicht mitkommen (Metadaten des fremden Launchers).
+/// Zu kopierende Dateien + Gesamtgröße nach den gemeinsamen Regeln ([`super::gamedata::skip_top`]: ohne Logs,
+/// Caches, Launcher-Interna; Konten/Tokens auf keiner Ebene).
 /// Verlinkte Dateien (z. B. eine geteilte `options.txt`) werden mit ihrem Inhalt kopiert, verlinkte Ordner nur
 /// auf oberster Ebene (z. B. `config`, `saves`) – darin wird keinen weiteren Ordner-Links gefolgt (keine Schleifen).
-fn plan_copy(src: &Path, skip: &[&str]) -> (Vec<(PathBuf, PathBuf, u64)>, u64) {
+/// ATLauncher: deaktivierte Mods (`disabledmods/*.jar`) kommen als `mods/<name>.disabled`.
+fn plan_copy(src: &Path, kind: LauncherKind) -> (Vec<(PathBuf, PathBuf, u64)>, u64) {
+    use super::gamedata::{skip_inner, skip_top, Purpose};
     let mut files = Vec::new();
     let mut total = 0;
     let mut add = |path: &Path, rel: &Path, ft: std::fs::FileType, top: bool, files: &mut Vec<(PathBuf, PathBuf, u64)>| {
@@ -862,18 +874,35 @@ fn plan_copy(src: &Path, skip: &[&str]) -> (Vec<(PathBuf, PathBuf, u64)>, u64) {
             _ => false,
         }
     };
-    for e in walkdir::WalkDir::new(src).follow_links(false).into_iter().flatten() {
+    let keep = |e: &walkdir::DirEntry| {
+        let n = e.file_name().to_string_lossy();
+        if e.depth() == 1 {
+            !skip_top(kind, Purpose::Import, &n)
+        } else {
+            e.depth() == 0 || !skip_inner(&n)
+        }
+    };
+    for e in walkdir::WalkDir::new(src).follow_links(false).into_iter().filter_entry(keep).flatten() {
         let Ok(rel) = e.path().strip_prefix(src) else { continue };
         if rel.as_os_str().is_empty() {
             continue;
         }
-        if e.depth() == 1 && skip.iter().any(|s| rel.as_os_str().eq_ignore_ascii_case(s)) {
-            continue;
-        }
         if add(e.path(), rel, e.file_type(), e.depth() == 1, &mut files) {
-            for w in walkdir::WalkDir::new(e.path()).follow_links(false).min_depth(1).into_iter().flatten() {
+            for w in walkdir::WalkDir::new(e.path()).follow_links(false).min_depth(1).into_iter().filter_entry(|w| !skip_inner(&w.file_name().to_string_lossy())).flatten() {
                 let Ok(inner) = w.path().strip_prefix(e.path()) else { continue };
                 add(w.path(), &rel.join(inner), w.file_type(), false, &mut files);
+            }
+        }
+    }
+    if kind == LauncherKind::Atlauncher {
+        if let Ok(rd) = std::fs::read_dir(src.join("disabledmods")) {
+            for d in rd.flatten() {
+                let n = d.file_name().to_string_lossy().to_string();
+                let Ok(m) = d.metadata() else { continue };
+                if m.is_file() && n.to_ascii_lowercase().ends_with(".jar") && !src.join("mods").join(&n).exists() {
+                    total += m.len();
+                    files.push((d.path(), Path::new("mods").join(format!("{n}.disabled")), m.len()));
+                }
             }
         }
     }
@@ -908,12 +937,8 @@ pub async fn run_import(
     task.set_title(format!("{name} übernehmen"));
     let src_game = f.game_dir.clone();
     task.check()?;
-    let skip: &'static [&'static str] = match kind {
-        LauncherKind::Curseforge => &["minecraftinstance.json"],
-        LauncherKind::Atlauncher => &["instance.json", "instance.png"],
-        _ => &[],
-    };
-    let (files, total) = tokio::task::spawn_blocking(move || plan_copy(&src_game, skip)).await?;
+    let (files, total) = tokio::task::spawn_blocking(move || plan_copy(&src_game, kind)).await?;
+    let copied = super::gamedata::top_names(files.iter().map(|f| f.1.as_path()));
 
     let mut inst = Instance {
         id: String::new(),
@@ -953,10 +978,7 @@ pub async fn run_import(
     task.set_instance(inst.id.clone());
 
     let res: AppResult<()> = async {
-        crate::util::write_json_atomic(
-            &state.paths.instance_dir(&inst.id).join("external.json"),
-            &ExternalMark { launcher: kind, source_path: source_path.clone(), imported_at: crate::util::now_ms() },
-        )?;
+        write_mark(&state, &inst.id, kind, &source_path, copied)?;
         task.stage(format!("Kopiere {} Dateien …", files.iter().filter(|f| f.2 != u64::MAX).count()), Some(0.0));
         let dst = state.paths.game_dir(&inst.id);
         let t2 = task.clone();
@@ -1329,6 +1351,57 @@ mod tests {
         std::fs::remove_dir_all(&root).ok();
     }
 
+    /// Gemeinsame Regeln je Launcher: Mod-Daten kommen mit, Logs/Launcher-Interna/Konten nicht.
+    #[test]
+    fn plan_copy_rules_per_launcher() {
+        let root = tmp();
+        let game = root.join("game");
+        for f in [
+            "mods/a.jar",
+            "config/a.toml",
+            "xaero/minimap/x.txt",
+            "XaeroWaypoints/w.txt",
+            "journeymap/data/a.dat",
+            "schematics/haus.litematic",
+            "saves/Welt/level.dat",
+            "options.txt",
+            "servers.dat",
+            "logs/latest.log",
+            "crash-reports/c.txt",
+            "accounts.json",
+            "essential/microsoft_accounts.json",
+            "essential/settings.json",
+            "minecraftinstance.json",
+            "instance.json",
+            "disabledmods/off.jar",
+            "profile.json",
+            "versions/1.21/1.21.jar",
+            "launcher_accounts.json",
+        ] {
+            let p = game.join(f);
+            std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+            std::fs::write(&p, "x").unwrap();
+        }
+        let rels = |k: LauncherKind| -> Vec<String> { plan_copy(&game, k).0.iter().filter(|f| f.2 != u64::MAX).map(|f| f.1.to_string_lossy().replace('\\', "/")).collect() };
+        for k in [LauncherKind::Prism, LauncherKind::Modrinth, LauncherKind::Curseforge, LauncherKind::Atlauncher, LauncherKind::Folder] {
+            let r = rels(k);
+            for keep in ["mods/a.jar", "config/a.toml", "xaero/minimap/x.txt", "XaeroWaypoints/w.txt", "journeymap/data/a.dat", "schematics/haus.litematic", "saves/Welt/level.dat", "options.txt", "servers.dat", "essential/settings.json"] {
+                assert!(r.contains(&keep.to_string()), "{k:?}: {keep} fehlt in {r:?}");
+            }
+            for skip in ["logs/latest.log", "crash-reports/c.txt", "accounts.json", "essential/microsoft_accounts.json", "versions/1.21/1.21.jar", "launcher_accounts.json"] {
+                assert!(!r.contains(&skip.to_string()), "{k:?}: {skip} darf nicht mit");
+            }
+        }
+        assert!(!rels(LauncherKind::Curseforge).contains(&"minecraftinstance.json".to_string()));
+        let atl = rels(LauncherKind::Atlauncher);
+        assert!(!atl.contains(&"instance.json".to_string()) && !atl.contains(&"disabledmods/off.jar".to_string()));
+        assert!(atl.contains(&"mods/off.jar.disabled".to_string()), "deaktivierte ATLauncher-Mods: {atl:?}");
+        assert!(!rels(LauncherKind::Modrinth).contains(&"profile.json".to_string()));
+        assert!(rels(LauncherKind::Prism).contains(&"minecraftinstance.json".to_string()), "nur bei CurseForge Launcher-intern");
+        assert_eq!(super::super::gamedata::top_names(rels(LauncherKind::Prism).iter().map(Path::new)).iter().filter(|n| *n == "xaero").count(), 1);
+        std::fs::remove_dir_all(&root).ok();
+    }
+
     #[test]
     fn copy_follows_file_links() {
         let root = tmp();
@@ -1347,7 +1420,7 @@ mod tests {
             std::fs::remove_dir_all(&root).ok();
             return;
         }
-        let (files, total) = plan_copy(&src, &[]);
+        let (files, total) = plan_copy(&src, LauncherKind::Folder);
         let rels: Vec<String> = files.iter().filter(|f| f.2 != u64::MAX).map(|f| f.1.to_string_lossy().replace('\\', "/")).collect();
         assert!(rels.contains(&"options.txt".to_string()), "{rels:?}");
         assert!(rels.contains(&"config/a.toml".to_string()), "{rels:?}");

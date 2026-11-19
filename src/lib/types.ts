@@ -733,10 +733,25 @@ export interface SettingsChange {
   inherited: boolean;
 }
 
-export interface SettingsFileOffer {
-  key: "options" | "config";
-  items: string[];
-  changed: number;
+/** Ordner/Datei der Quelle, die in Vibe fehlt oder in der Quelle neuer ist (Backend: content/gamedata.rs). */
+export interface DataEntry {
+  /** relativ zum Spielordner, z. B. "xaero", "options.txt", "saves/Meine Welt" */
+  path: string;
+  kind: "file" | "dir" | "world";
+  /** Weltname aus level.dat */
+  name: string | null;
+  status: "missing" | "partial" | "newer" | "changed" | "removed";
+  size: number;
+  missing_files: number;
+  missing_size: number;
+  overwrite_files: number;
+  overwrite_size: number;
+  default_on: boolean;
+}
+
+export interface DataPick {
+  path: string;
+  overwrite: boolean;
 }
 
 export interface SettingsOffer {
@@ -746,7 +761,7 @@ export interface SettingsOffer {
   launcher_name: string;
   source_path: string;
   changes: SettingsChange[];
-  files: SettingsFileOffer[];
+  data: DataEntry[];
   notes: string[];
 }
 
