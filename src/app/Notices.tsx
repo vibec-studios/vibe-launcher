@@ -1,8 +1,7 @@
-// Hinweis-Leiste oben über dem Inhalt: eingebauter, einmaliger Hinweis zum Domain-Umzug und Ankündigungen des
-// Backends (`GET /api/v1/announcements`, docs/DOMAINS.md). Abruf beim Start und alle 30 min, nur mit eingeschaltetem
-// Vibe-Hauptschalter; Fehler bleiben still. Jede `id` lässt sich wegklicken und bleibt dann ausgeblendet
-// (`settings.dismissed_notices`). Der eingebaute Hinweis hat dieselbe ID wie die Ankündigung `domain-move-2026-11` –
-// er erscheint also nie doppelt.
+// Hinweis-Leiste oben über dem Inhalt: Ankündigungen des Backends (`GET /api/v1/announcements`, docs/DOMAINS.md).
+// Abruf beim Start und alle 30 min, nur mit eingeschaltetem Vibe-Hauptschalter; Fehler bleiben still. Jede `id` lässt
+// sich wegklicken und bleibt dann ausgeblendet (`settings.dismissed_notices`). Der früher eingebaute Hinweis zum
+// Domain-Umzug ist seit 1.0.0-beta.4 entfernt.
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { AlertTriangle, ArrowUpRight, Info, X } from "lucide-react";
@@ -11,7 +10,6 @@ import type { Announcement } from "@/lib/types";
 import { useSettings } from "@/lib/queries";
 import { useVibe } from "@/lib/vibe";
 import { patchSettings } from "@/lib/mode";
-import { DOMAIN_MOVE_NOTICE } from "@/lib/domains";
 import { openExternal } from "@/components/content/util";
 import { useOnboarding } from "@/features/onboarding/store";
 import { cn } from "@/components/ui";
@@ -49,7 +47,7 @@ function useAnnouncementPoll() {
   }, [on, ready, lang]);
 }
 
-/** Sichtbare Hinweise: eingebauter Umzugs-Hinweis zuerst, dann Ankündigungen (ohne Doppelte, ohne weggeklickte). */
+/** Sichtbare Hinweise: eingebaute zuerst, dann Ankündigungen (ohne Doppelte, ohne weggeklickte). */
 export function mergeNotices(builtin: Announcement[], remote: Announcement[], dismissed: readonly string[]): Announcement[] {
   const out: Announcement[] = [];
   for (const n of [...builtin, ...remote]) {
@@ -69,10 +67,7 @@ export function NoticeBar() {
   const [hidden, setHidden] = useState<string[]>([]);
   if (!settings || onboarding) return null;
 
-  const builtin: Announcement[] = [
-    { id: DOMAIN_MOVE_NOTICE, level: "info", title: t("notice.move.title"), body: t("notice.move.body"), url: null },
-  ];
-  const list = mergeNotices(builtin, remote, [...(settings.dismissed_notices ?? []), ...hidden]).slice(0, 3);
+  const list = mergeNotices([], remote, [...(settings.dismissed_notices ?? []), ...hidden]).slice(0, 3);
   if (!list.length) return null;
 
   const dismiss = (id: string) => {

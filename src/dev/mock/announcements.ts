@@ -1,5 +1,5 @@
 // Mock: Ankündigungen des Backends (`vibe_announcements`, docs/DOMAINS.md).
-// Standard: nur `domain-move-2026-11` – dieselbe ID wie der eingebaute Hinweis, erscheint also nur einmal.
+// Standard: nur `domain-move-2026-11` (das Backend schickt sie seit Migration 0008 nur noch an den Client).
 // Screenshots: localStorage vl.mock.announcements = "demo" -> zusätzlich eine Warnung mit Link, "none" -> leer,
 // "error" -> Abruf schlägt fehl (bleibt still).
 import type { Announcement } from "@/lib/types";

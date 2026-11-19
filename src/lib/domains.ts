@@ -16,9 +16,6 @@ export const RELAY_DOMAIN = "axolite.cc";
 /** Alte Domain der Relay-Adressen (`<name>.vibey.henny.dev`) */
 export const LEGACY_RELAY_DOMAIN = "vibey.henny.dev";
 
-/** Eingebauter Hinweis zum Umzug – dieselbe ID wie die Ankündigung des Backends (erscheint nur einmal). */
-export const DOMAIN_MOVE_NOTICE = "domain-move-2026-11";
-
 /** Hosts, unter denen Einladungslinks des offiziellen Backends liegen (neu und alt). */
 const INVITE_HOSTS = ["axolite.cc", "vibe.axolite.app", "vibe.henny.dev"];
 const CODE = /^[23456789abcdefghjkmnpqrstuvwxyz]{6,8}$/;

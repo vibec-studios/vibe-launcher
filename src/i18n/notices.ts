@@ -1,15 +1,10 @@
-// Hinweis-Leiste (src/app/Notices.tsx): eingebauter Hinweis zum Domain-Umzug (docs/DOMAINS.md) und Ankündigungen.
+// Hinweis-Leiste (src/app/Notices.tsx): Ankündigungen des Backends (docs/DOMAINS.md).
 // Dazu der Hinweis in der Serverliste einer Instanz für alte Relay-Adressen (*.vibey.henny.dev).
 export default {
   de: {
     "notice.region": "Hinweise",
     "notice.dismiss": "Ausblenden",
     "notice.more": "Mehr erfahren",
-    "notice.move.title": "Vibe zieht um",
-    "notice.move.body":
-      "Vibe ist jetzt unter vibe.axolite.app erreichbar, die alten Adressen funktionieren vorerst weiter. Hast du Vibe-Server in Minecraft gespeichert, ändere deren Endung auf .axolite.cc.",
-    "simple:notice.move.body":
-      "Vibe hat eine neue Internet-Adresse. Alles funktioniert weiter wie bisher. Wenn du Freunde über Vibe besuchst, nutze ab jetzt Adressen mit .axolite.cc.",
 
     "notice.servers.title": "Alte Adresse in der Serverliste",
     "notice.servers.text_one": "Ein Server nutzt noch die alte Adresse .vibey.henny.dev. Sie funktioniert vorerst weiter – stell sie auf .axolite.cc um (gleicher Name, neue Domain).",
@@ -22,11 +17,6 @@ export default {
     "notice.region": "Notices",
     "notice.dismiss": "Dismiss",
     "notice.more": "Learn more",
-    "notice.move.title": "Vibe is moving",
-    "notice.move.body":
-      "Vibe now lives at vibe.axolite.app, the old addresses keep working for now. If you saved Vibe servers in Minecraft, change their ending to .axolite.cc.",
-    "simple:notice.move.body":
-      "Vibe has a new internet address. Everything keeps working as before. When you visit friends through Vibe, use addresses ending in .axolite.cc from now on.",
 
     "notice.servers.title": "Old address in the server list",
     "notice.servers.text_one": "One server still uses the old address .vibey.henny.dev. It keeps working for now – switch it to .axolite.cc (same name, new domain).",

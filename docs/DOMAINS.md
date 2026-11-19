@@ -42,7 +42,9 @@ Infrastruktur (erledigt):
 - Clients zeigen jede `id` als Banner bzw. Hinweis an. Der Nutzer kann ihn wegklicken, danach bleibt er pro `id` ausgeblendet.
 - Ist der Abruf nicht möglich, wird nichts angezeigt.
 - Erste Ankündigung `domain-move-2026-11`: „Vibe zieht um: neue Adressen vibe.axolite.app und *.axolite.cc. Alte Adressen funktionieren vorerst weiter. Bitte Launcher und Vibey Client aktuell halten und gespeicherte Server-Adressen auf .axolite.cc umstellen.“
-- Zusätzlich hat jede neue Version diesen Hinweis **fest eingebaut** (einmalig, wegklickbar). So erscheint er auch ohne Backend.
+- Zusätzlich hatten die ersten neuen Versionen diesen Hinweis **fest eingebaut** (einmalig, wegklickbar). Im Launcher
+  ist er seit 1.0.0-beta.4 entfernt, und das Backend schickt `domain-move-2026-11` nur noch an den Vibey Client
+  (Migration `0008`). Der Hinweis in der Serverliste für alte `*.vibey.henny.dev`-Adressen bleibt.
 
 ## Launcher (umgesetzt)
 
@@ -64,8 +66,8 @@ Infrastruktur (erledigt):
 - **Gespeicherte Werte:** Vibe-Tokens im Schlüsselbund, die noch für `https://vibe.henny.dev` gespeichert sind, werden
   beim ersten Lesen auf die neue Adresse umgeschrieben (kein Abmelden). Debug-Overrides (`VIBE_API_URL`, `VIBE_RELAY`),
   die genau der alten Standardadresse entsprechen, zeigen auf die neue. Eigene Adressen bleiben unverändert.
-- **Hinweise:** Leiste oben über dem Inhalt (auch im Simple-Modus, dort mit einfachen Worten). Der eingebaute Hinweis
-  hat die ID `domain-move-2026-11`; die Ankündigung mit derselben ID erscheint deshalb nicht doppelt. Ankündigungen
+- **Hinweise:** Leiste oben über dem Inhalt (auch im Simple-Modus). Der eingebaute Umzugs-Hinweis ist seit
+  1.0.0-beta.4 entfernt. Ankündigungen
   holt Rust (`vibe_announcements`, nur mit Hauptschalter) beim Start und alle 30 min mit
   `?app=launcher&version=<Launcher-Version>&lang=<UI-Sprache>`; geprüft werden ID, Länge, `until`, `apps`,
   `max_version` und `https`-Links, höchstens 5. Fehler bleiben still. Weggeklickte IDs stehen in
