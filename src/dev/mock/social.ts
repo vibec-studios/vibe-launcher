@@ -455,7 +455,17 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
 
 // ------------------------------------------------------------------ IPC-Handler
 
-let tokens: VibeTokens | null = { accessToken: "mock-access", refreshToken: "mock-refresh", expiresAt: Date.now() + 365 * 86400_000, sessionId: "mock-session" };
+// Screenshots: localStorage vl.mock.vibeauth = "0" -> bei Vibe abgemeldet
+const loggedOut = (() => {
+  try {
+    return localStorage.getItem("vl.mock.vibeauth") === "0";
+  } catch {
+    return false;
+  }
+})();
+let tokens: VibeTokens | null = loggedOut
+  ? null
+  : { accessToken: "mock-access", refreshToken: "mock-refresh", expiresAt: Date.now() + 365 * 86400_000, sessionId: "mock-session" };
 
 const handlers: Handlers = {
   vibe_status: (): VibeStatus => ({
