@@ -9,6 +9,7 @@ Not covered by that license – see https://github.com/vibec-studios/.github/blo
       branding/**, public/logo.png, public/logo-seal.png, src-tauri/icons/**,
       the seal character built by src/components/seal3d.ts,
       cosmetics loaded from the Vibe services
-  - access to the Vibe online services (vibe.henny.dev, vibey.henny.dev) – SERVICES.md.
+  - access to the Vibe online services (vibe.axolite.app, relay.axolite.cc / *.axolite.cc;
+    formerly vibe.henny.dev, vibey.henny.dev) – SERVICES.md.
 
 Forks must use their own name, their own artwork and their own backend services.

@@ -4,9 +4,9 @@ Stand 2026-11-18. Gilt für Vibe-Backend, Vibe Launcher und Vibey Client. Änder
 
 ## 1. Ablauf
 
-1. Spieler A hostet seine Welt mit dem Vibey Client übers Relay (`<slot>.vibey.henny.dev`).
+1. Spieler A hostet seine Welt mit dem Vibey Client übers Relay (`<slot>.axolite.cc`, früher `<slot>.vibey.henny.dev`).
 2. Der Client erstellt einen Spiel-Link beim Backend (§3) und zeigt „Einladungslink kopieren“ an. Dazu kommen die vorhandenen Einladungen an Freunde.
-3. Spieler B öffnet `https://vibe.henny.dev/j/<code>`. Die Seite zeigt Host, Spiel und Modpack und hat den Knopf „Im Vibe Launcher öffnen“ (`vibelauncher://join/<code>`), mit Fallback „Vibe Launcher herunterladen“.
+3. Spieler B öffnet `https://axolite.cc/j/<code>` (alte Links `https://vibe.henny.dev/j/<code>` gelten weiter, siehe DOMAINS.md). Die Seite zeigt Host, Spiel und Modpack und hat den Knopf „Im Vibe Launcher öffnen“ (`vibelauncher://join/<code>`), mit Fallback „Vibe Launcher herunterladen“.
 4. Der Launcher von B lädt die Details (§3) und fragt nach („Henny lädt dich ein: Cobblemon Abenteuer“). Dann:
    - Er nimmt eine passende vorhandene Instanz (gleiches Modpack, gleiche Version) oder legt eine an und installiert Modpack bzw. Mods.
    - Er startet direkt in die Welt (`--quickPlayMultiplayer <relay_host>`, bei alten Versionen `--server`).
@@ -45,7 +45,7 @@ Stand 2026-11-18. Gilt für Vibe-Backend, Vibe Launcher und Vibey Client. Änder
 
 ```json
 { "schema": 1, "state": "menu|singleplayer|hosting|multiplayer", "server": "hypixel.net", "world": "Neue Welt",
-  "play_link": "https://vibe.henny.dev/j/k3x9q2", "players": 3, "max_players": 8, "updated_at": 1795040000 }
+  "play_link": "https://axolite.cc/j/k3x9q2", "players": 3, "max_players": 8, "updated_at": 1795040000 }
 ```
 
 - `server` nur bei `multiplayer`. Ein Server darf das über die Server-Regeln (§5) verbergen.
@@ -76,7 +76,7 @@ Auth: die Vibe-Session (wie in VIBE-API-2.md), für Client und Launcher.
   *(Backend, umgesetzt:)* Das Relay hat keine Status-Abfrage je Adresse (`/status` ist nur eine öffentliche Übersicht).
   `active` kommt deshalb aus den Relay-Ereignissen (`host_online`/`host_offline` → `host_sessions`): laufende Session des
   Hosts mit dieser Adresse → `true`, nur beendete → `false`, Adresse nie gemeldet → `true` bis zum Ablauf.
-  Zusätzlich in der Antwort: `url`, `created_at`. `relay_host` muss unter `vibey.henny.dev` liegen
+  Zusätzlich in der Antwort: `url`, `created_at`. `relay_host` muss unter `axolite.cc` oder (alt) `vibey.henny.dev` liegen
   (`PLAY_LINK_RELAY_DOMAINS`). Codes: 6 Zeichen aus `23456789abcdefghjkmnpqrstuvwxyz` (bei Kollision 8).
 - **Ergänzt von vibey-client:** `relay_host` ist die volle Relay-Adresse, mit `:port`, wenn das Relay nicht auf 25565
   läuft (so wie sie `--quickPlayMultiplayer` braucht). `expires_at` ist ISO-8601 (der Client nimmt auch Unix-Sekunden).

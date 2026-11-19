@@ -323,6 +323,42 @@ pub fn write_servers(path: &Path, servers: &[ServerEntry]) -> AppResult<()> {
     Ok(())
 }
 
+/// Domain-Umzug: Relay-Adressen `name.vibey.henny.dev[:port]` auf `name.axolite.cc[:port]` umstellen (gleicher Name,
+/// neue Domain). Alle anderen Felder bleiben unverändert. Liefert die Anzahl geänderter Einträge.
+pub fn modernize_relay_addresses(root: &mut Nbt) -> usize {
+    let Nbt::Compound(fields) = root else { return 0 };
+    let Some((_, Nbt::List(_, list))) = fields.iter_mut().find(|(n, _)| n == "servers") else { return 0 };
+    let mut n = 0;
+    for entry in list.iter_mut() {
+        let Nbt::Compound(f) = entry else { continue };
+        if let Some((_, Nbt::String(ip))) = f.iter_mut().find(|(k, _)| k == "ip") {
+            if let Some(new) = crate::domains::modern_server_address(ip) {
+                *ip = new;
+                n += 1;
+            }
+        }
+    }
+    n
+}
+
+/// `servers.dat` einer Instanz umstellen (siehe [`modernize_relay_addresses`]). Ohne Treffer bleibt die Datei unberührt.
+pub fn modernize_servers_file(path: &Path) -> AppResult<usize> {
+    let b = match std::fs::read(path) {
+        Ok(b) if !b.is_empty() => b,
+        Ok(_) => return Ok(0),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+        Err(e) => return Err(e.into()),
+    };
+    let mut root = nbt_read(&b)?;
+    let n = modernize_relay_addresses(&mut root);
+    if n > 0 {
+        let tmp = path.with_extension("dat_tmp");
+        std::fs::write(&tmp, nbt_write(&root))?;
+        std::fs::rename(&tmp, path)?;
+    }
+    Ok(n)
+}
+
 // ------------------------------------------------------------------ Adressen
 
 /// "host", "host:port", "[ipv6]:port" -> (host, port). Prüft auf erlaubte Zeichen.
@@ -604,6 +640,38 @@ async fn ping_inner(address: &str) -> AppResult<ServerStatus> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn relay_addresses_move_to_new_domain() {
+        let dir = std::env::temp_dir().join(format!("vl-servers-move-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("servers.dat");
+        let entry = |ip: &str| {
+            Nbt::Compound(vec![
+                ("ip".into(), Nbt::String(ip.into())),
+                ("name".into(), Nbt::String("Welt".into())),
+                ("preventsChatReports".into(), Nbt::Byte(1)),
+            ])
+        };
+        let root = Nbt::Compound(vec![(
+            "servers".into(),
+            Nbt::List(10, vec![entry("mossy-otter-27.vibey.henny.dev"), entry("play.example.net"), entry("a.vibey.henny.dev:25570")]),
+        )]);
+        std::fs::write(&p, nbt_write(&root)).unwrap();
+        assert_eq!(modernize_servers_file(&p).unwrap(), 2);
+        let list = read_servers(&p).unwrap();
+        let ips: Vec<&str> = list.iter().map(|s| s.ip.as_str()).collect();
+        assert_eq!(ips, vec!["mossy-otter-27.axolite.cc", "play.example.net", "a.axolite.cc:25570"]);
+        assert_eq!(list[0].name, "Welt");
+        // Unbekannte Felder bleiben erhalten
+        let back = nbt_read(&std::fs::read(&p).unwrap()).unwrap();
+        let Some(Nbt::List(_, l)) = back.get("servers") else { panic!() };
+        assert_eq!(l[0].get("preventsChatReports"), Some(&Nbt::Byte(1)));
+        // Zweiter Lauf: nichts mehr zu tun, fehlende Datei ist kein Fehler
+        assert_eq!(modernize_servers_file(&p).unwrap(), 0);
+        assert_eq!(modernize_servers_file(&dir.join("fehlt.dat")).unwrap(), 0);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn servers_roundtrip_keeps_unknown_fields() {

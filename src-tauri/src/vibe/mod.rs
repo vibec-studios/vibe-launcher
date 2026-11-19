@@ -7,6 +7,7 @@
 //! - **HTTP und WebSocket** zum Backend (CSP der Webview, kein CORS) –
 //!   und damit die harte Sperre: Ist `settings.vibe.enabled` aus, gibt es keine Verbindung.
 //! - **Modpacks teilen/importieren** (Export, Multipart-Upload, Overrides mit Zip-Slip-Prüfung).
+pub mod announcements;
 pub mod packs;
 pub mod ws;
 
@@ -31,7 +32,9 @@ pub enum Feature {
 
 /// Offizielles Backend von Vibe Craft Studios. Nutzer können keine eigene Adresse einstellen.
 /// Nur für offizielle Builds von Vibe Craft Studios. Forks müssen eigene Dienste verwenden (github.com/vibec-studios/.github/blob/main/SERVICES.md).
-pub const DEFAULT_API_URL: &str = "https://vibe.henny.dev";
+/// Seit dem Domain-Umzug `https://vibe.axolite.app`; die alte Adresse `https://vibe.henny.dev` wird weiter angenommen
+/// (siehe `crate::domains`, docs/DOMAINS.md).
+pub const DEFAULT_API_URL: &str = crate::domains::API_URL;
 
 /// Basis-URL des Backends: immer [`DEFAULT_API_URL`]. Nur Debug-Builds dürfen sie für die lokale Entwicklung per
 /// Env `VIBE_API_URL` überschreiben (z. B. `http://127.0.0.1:3000`); Release-Builds ignorieren die Variable.
@@ -40,7 +43,8 @@ pub fn api_base(_state: &AppState) -> String {
 }
 
 fn effective_api_url(over: Option<String>) -> String {
-    over.unwrap_or_else(|| DEFAULT_API_URL.to_string())
+    // Alte Standardadresse -> neue; eigene Adressen bleiben
+    over.map(|o| crate::domains::migrate_api_url(&o)).unwrap_or_else(|| DEFAULT_API_URL.to_string())
 }
 
 /// Wert einer Entwickler-Umgebungsvariable – nur in Debug-Builds, in Release immer `None`.
@@ -173,8 +177,39 @@ pub fn tokens_get(state: &AppState) -> Option<VibeTokens> {
             loaded
         }
     };
-    // Tokens einer anderen Backend-Instanz nie mitschicken
-    entry.filter(|e| normalize_base(&e.api_url) == base).map(|e| e.tokens)
+    let entry = entry?;
+    match token_match(&entry.api_url, &base)? {
+        TokenMatch::Same => Some(entry.tokens),
+        TokenMatch::Migrate => {
+            // Einmalig umschreiben, danach ist es ein normaler Treffer
+            let fixed = StoredVibeCache { api_url: base.clone(), tokens: entry.tokens };
+            token_cache().lock().insert(id.scope.clone(), Some(fixed.clone()));
+            if let Ok(json) = serde_json::to_string(&StoredVibe { api_url: fixed.api_url.clone(), tokens: fixed.tokens.clone() }) {
+                if let Err(e) = store(state).save(&secret_id(&id.scope), &json) {
+                    tracing::warn!("Vibe-Tokens nicht umgeschrieben: {e}");
+                }
+            }
+            Some(fixed.tokens)
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum TokenMatch {
+    /// Gespeichert für genau diese Adresse
+    Same,
+    /// Gespeichert für die alte Standardadresse, aktuelle Adresse ist die neue -> umschreiben
+    Migrate,
+}
+
+/// Gehören Tokens, die für `saved` gespeichert wurden, zum Backend `base`? Tokens einer anderen Backend-Instanz nie
+/// mitschicken. Domain-Umzug: Die alte Standardadresse ist dasselbe Backend (gleiche Datenbank) wie die neue.
+fn token_match(saved: &str, base: &str) -> Option<TokenMatch> {
+    let saved_n = normalize_base(saved);
+    if saved_n == base {
+        return Some(TokenMatch::Same);
+    }
+    (normalize_base(&crate::domains::migrate_api_url(&saved_n)) == base).then_some(TokenMatch::Migrate)
 }
 
 /// Tokens speichern (`None` = abmelden).
@@ -282,10 +317,13 @@ pub struct HttpResponse {
 }
 
 /// Prüft, dass eine URL zum konfigurierten Backend gehört (gleiches Schema/Host/Port, Pfad unter `/api/`).
+/// Beim offiziellen Backend gelten neue und alte Adresse (`vibe.axolite.app`, `vibe.henny.dev`) als dasselbe Backend,
+/// damit Downloads aus Antworten mit der alten Adresse weiter funktionieren.
 pub fn check_api_url(base: &str, url: &str) -> AppResult<url::Url> {
     let b = url::Url::parse(base).map_err(|_| AppError::Invalid("Ungültige Vibe-Server-Adresse".into()))?;
     let u = url::Url::parse(url).map_err(|_| AppError::Invalid("Ungültige Adresse".into()))?;
-    let same = u.scheme() == b.scheme() && u.host_str() == b.host_str() && u.port_or_known_default() == b.port_or_known_default();
+    let host_ok = u.host_str().is_some_and(|h| crate::domains::backend_hosts(base).iter().any(|x| x.eq_ignore_ascii_case(h)));
+    let same = u.scheme() == b.scheme() && host_ok && u.port_or_known_default() == b.port_or_known_default();
     let prefix = format!("{}/api/", b.path().trim_end_matches('/'));
     if !same || !u.path().starts_with(&prefix) || u.path().split('/').any(|s| s == "..") {
         return Err(AppError::Invalid("Anfrage an eine fremde Adresse abgelehnt".into()));
@@ -341,28 +379,58 @@ mod tests {
 
     #[test]
     fn api_url_check() {
-        let base = "https://vibe.henny.dev";
-        assert!(check_api_url(base, "https://vibe.henny.dev/api/v1/meta").is_ok());
-        assert!(check_api_url(base, "https://vibe.henny.dev:443/api/v1/friends?x=1").is_ok());
+        let base = "https://vibe.axolite.app";
+        assert!(check_api_url(base, "https://vibe.axolite.app/api/v1/meta").is_ok());
+        assert!(check_api_url(base, "https://vibe.axolite.app:443/api/v1/friends?x=1").is_ok());
         assert!(check_api_url(base, "https://evil.example/api/v1/meta").is_err());
+        assert!(check_api_url(base, "http://vibe.axolite.app/api/v1/meta").is_err());
+        assert!(check_api_url(base, "https://vibe.axolite.app/admin/api/users").is_err());
+        assert!(check_api_url(base, "https://vibe.axolite.app.evil.example/api/v1").is_err());
+        // Alte Adresse = dasselbe Backend (Downloads aus Antworten mit der alten Adresse)
+        assert!(check_api_url(base, "https://vibe.henny.dev/api/v1/client/files/a/b.jar").is_ok());
+        assert!(check_api_url(base, "https://VIBE.HENNY.DEV/api/v1/meta").is_ok());
         assert!(check_api_url(base, "http://vibe.henny.dev/api/v1/meta").is_err());
         assert!(check_api_url(base, "https://vibe.henny.dev/admin/api/users").is_err());
         assert!(check_api_url(base, "https://vibe.henny.dev.evil.example/api/v1").is_err());
+        assert!(check_api_url(base, "https://axolite.app/api/v1/meta").is_err());
+        assert!(check_api_url(base, "https://api.axolite.app/api/v1/meta").is_err());
+        assert!(check_api_url("https://vibe.henny.dev", "https://vibe.axolite.app/api/v1/meta").is_ok());
         let local = "http://127.0.0.1:3917";
         assert!(check_api_url(local, "http://127.0.0.1:3917/api/v1/packs/ABC/versions/1/overrides.zip").is_ok());
         assert!(check_api_url(local, "http://127.0.0.1:3000/api/v1/meta").is_err());
+        // Lokales Backend: die offiziellen Hosts gelten dort nicht
+        assert!(check_api_url(local, "https://vibe.axolite.app/api/v1/meta").is_err());
     }
 
     #[test]
     fn api_url_is_fixed() {
         assert_eq!(effective_api_url(None), DEFAULT_API_URL);
+        assert_eq!(DEFAULT_API_URL, "https://vibe.axolite.app");
         assert_eq!(effective_api_url(Some("http://127.0.0.1:3000".into())), "http://127.0.0.1:3000");
+        // Alte Standardadresse -> neue
+        assert_eq!(effective_api_url(Some("https://vibe.henny.dev".into())), DEFAULT_API_URL);
         // Release-Builds lesen keine Env-Variablen
         #[cfg(not(debug_assertions))]
         {
             std::env::set_var("VIBE_API_URL", "https://evil.example");
             assert!(debug_override("VIBE_API_URL").is_none());
         }
+    }
+
+    #[test]
+    fn stored_tokens_follow_domain_move() {
+        let new = DEFAULT_API_URL;
+        assert_eq!(token_match("https://vibe.axolite.app", new), Some(TokenMatch::Same));
+        assert_eq!(token_match("https://vibe.axolite.app/", new), Some(TokenMatch::Same));
+        // Alte Standardadresse -> einmalig umstellen statt abmelden
+        assert_eq!(token_match("https://vibe.henny.dev", new), Some(TokenMatch::Migrate));
+        assert_eq!(token_match("https://vibe.henny.dev/", new), Some(TokenMatch::Migrate));
+        // Eigene/andere Adressen bleiben getrennt
+        assert_eq!(token_match("http://127.0.0.1:3917", new), None);
+        assert_eq!(token_match("https://evil.example", new), None);
+        assert_eq!(token_match("https://vibe.axolite.app", "http://127.0.0.1:3917"), None);
+        assert_eq!(token_match("https://vibe.henny.dev", "http://127.0.0.1:3917"), None);
+        assert_eq!(token_match("http://127.0.0.1:3917", "http://127.0.0.1:3917"), Some(TokenMatch::Same));
     }
 
     #[test]

@@ -80,6 +80,8 @@ let settings: Settings = {
   onboarding_done: mockFlag("vl.mock.onboarding") !== "1",
   simple_hint_seen: mockFlag("vl.mock.hint") !== "1",
   simple_tour_done: mockFlag("vl.mock.tour") !== "1",
+  // Screenshots: localStorage vl.mock.notices = 1 -> Umzugs-Hinweis schon weggeklickt
+  dismissed_notices: mockFlag("vl.mock.notices") === "1" ? ["domain-move-2026-11"] : [],
   appearance: {
     accent: "#8b6cff",
     tone: "dark",

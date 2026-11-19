@@ -19,7 +19,7 @@ merkt spätestens nach 60 s, wenn Discord neu gestartet wurde.
 
 - Großes Bild: Modrinth-Icon des Modpacks (öffentliche URL), sonst Asset `logo`. Kleines Bild: Loader (`fabric` …).
 - Startzeit: Start des Spiels bzw. des Launchers.
-- Den Spiel-Link zeigt der Launcher nur, wenn er auf das Vibe-Backend zeigt (`https://vibe.henny.dev/j/<code>`).
+- Den Spiel-Link zeigt der Launcher nur, wenn er auf das Vibe-Backend zeigt (`https://axolite.cc/j/<code>`; alte Links `https://vibe.henny.dev/j/<code>` älterer Clients gelten weiter).
 - `session.json` liest der Launcher alle 10 s, solange ein Spiel läuft. Älter als 60 s = veraltet (wird ignoriert).
 - Texte auf Deutsch oder Englisch, je nach Launcher-Sprache.
 - Einstellungen → Vibe & Konto → Discord: „Discord-Status“ (an/aus, Standard an) und im Expert-Modus „Server und Welt

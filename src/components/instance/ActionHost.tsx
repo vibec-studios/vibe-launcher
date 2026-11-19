@@ -18,6 +18,7 @@ import { useInstanceActions } from "./actions";
 import { ServerStatusLine } from "./motd";
 import { openInviteAccept, openPackImport } from "@/features/social/dialogs";
 import { PlayJoinDialog } from "@/features/play/PlayJoinDialog";
+import { onAppAction } from "@/lib/appActions";
 
 function InstallBody({ a, onDone }: { a: Extract<AppAction, { kind: "install" }>; onDone: () => void }) {
   const t = useT();
@@ -235,8 +236,10 @@ export function ActionHost() {
         .catch(() => {});
     take();
     const un = listen("app://actions", take);
+    const unLocal = onAppAction((a) => setQueue((q) => [...q, a]));
     return () => {
       dead = true;
+      unLocal();
       un.then((f) => f()).catch(() => {});
     };
   }, []);

@@ -232,6 +232,8 @@ export const api = {
     call<T.Diagnosis[]>("crash_analyze", { instanceId, crashReport: crashReport ?? null, exitCode: exitCode ?? null }),
   instanceServersList: (instanceId: string) => call<T.ServerEntry[]>("instance_servers_list", { instanceId }),
   instanceServersSave: (instanceId: string, servers: T.ServerEntry[]) => call<void>("instance_servers_save", { instanceId, servers }),
+  /** Domain-Umzug: Adressen `*.vibey.henny.dev` auf `*.axolite.cc` umstellen. Anzahl geänderter Einträge */
+  instanceServersModernize: (instanceId: string) => call<number>("instance_servers_modernize", { instanceId }),
   serverPing: (address: string) => call<T.ServerPing>("server_ping", { address }),
   serversRecent: (limit?: number) => call<T.RecentServer[]>("servers_recent", { limit: limit ?? null }),
   playtimeSessions: (since?: number | null) => call<T.PlaySession[]>("playtime_sessions", { since: since ?? null }),
@@ -252,6 +254,8 @@ export const api = {
   discordAvailable: () => call<boolean>("discord_available"),
   // ---------------------------------------------------------------- Vibe-Dienste (Netzwerk nur, wenn settings.vibe.enabled)
   vibeStatus: () => call<T.VibeStatus>("vibe_status"),
+  /** Ankündigungen (Banner). Nur mit Hauptschalter; Fehler zeigt der Aufrufer nicht an */
+  vibeAnnouncements: (lang: string) => call<T.Announcement[]>("vibe_announcements", { lang }),
   vibeTokensGet: () => call<T.VibeTokens | null>("vibe_tokens_get"),
   vibeTokensSet: (tokens: T.VibeTokens | null) => call<void>("vibe_tokens_set", { tokens }),
   /** Mojang-Join mit dem Token des aktiven Accounts (bleibt in Rust) – liefert den Minecraft-Namen */

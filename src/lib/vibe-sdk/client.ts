@@ -60,7 +60,7 @@ export class MemoryTokenStore implements TokenStore {
 }
 
 export interface VibeClientOptions {
-  /** z. B. "https://vibe.henny.dev" */
+  /** z. B. "https://vibe.axolite.app" */
   baseUrl: string;
   tokens?: TokenStore;
   /** eigene fetch-Implementierung (z. B. Tauri-HTTP-Plugin) */

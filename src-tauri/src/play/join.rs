@@ -359,7 +359,7 @@ mod tests {
     #[test]
     fn names() {
         let mut l: PlayLink = serde_json::from_value(serde_json::json!({
-            "code": "k3x9q2", "url": "u", "host": { "uuid": "u", "name": "Henny" }, "relay_host": "a.vibey.henny.dev",
+            "code": "k3x9q2", "url": "u", "host": { "uuid": "u", "name": "Henny" }, "relay_host": "a.axolite.cc",
             "mc_version": "1.21.1", "loader": { "kind": "fabric" }, "world_name": "Neue Welt", "expires_at": "x"
         }))
         .unwrap();

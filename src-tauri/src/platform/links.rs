@@ -41,7 +41,11 @@ fn decode(s: &str) -> Option<String> {
 }
 
 /// `vibelauncher://install/modrinth/AANobbMI?version=abc` usw. -> Aktion (None = ungültig/unbekannt).
+/// Dazu Einladungslinks des offiziellen Backends (`https://axolite.cc/j/<code>`, alt `https://vibe.henny.dev/j/<code>`).
 pub fn parse_url(raw: &str) -> Option<AppAction> {
+    if let Some(code) = crate::domains::official_invite_code(raw) {
+        return Some(AppAction::PlayLink { code });
+    }
     let url = url::Url::parse(raw.trim()).ok()?;
     if url.scheme() != SCHEME {
         return None;
@@ -122,7 +126,7 @@ pub fn parse_args<I: IntoIterator<Item = String>>(args: I) -> Vec<AppAction> {
                     instance_id: id.to_string(),
                 });
             }
-        } else if a.starts_with(&format!("{SCHEME}:")) {
+        } else if a.starts_with(&format!("{SCHEME}:")) || a.starts_with("https://") {
             if let Some(act) = parse_url(a) {
                 out.push(act);
             }
@@ -182,6 +186,12 @@ mod tests {
             parse_url("vibelauncher://invite/abc"),
             Some(AppAction::Invite { id: "abc".into() })
         );
+        // Einladungslinks (neu und alt) als https-Adresse
+        assert_eq!(parse_url("https://axolite.cc/j/k3x9q2"), Some(AppAction::PlayLink { code: "k3x9q2".into() }));
+        assert_eq!(parse_url(" https://vibe.henny.dev/j/k3x9q2 "), Some(AppAction::PlayLink { code: "k3x9q2".into() }));
+        assert_eq!(parse_url("https://vibe.axolite.app/j/k3x9q2"), Some(AppAction::PlayLink { code: "k3x9q2".into() }));
+        assert_eq!(parse_url("https://evil.example/j/k3x9q2"), None);
+        assert_eq!(parse_url("http://axolite.cc/j/k3x9q2"), None);
         // Ungültiges
         assert_eq!(parse_url("vibelauncher://install/evil/../../x"), None);
         assert_eq!(parse_url("vibelauncher://launch/a%20b"), None);
@@ -217,5 +227,7 @@ mod tests {
             ]
         );
         assert!(parse_args(["exe", "--launch", "../böse"].map(String::from)).is_empty());
+        assert_eq!(parse_args(["exe", "https://vibe.henny.dev/j/k3x9q2"].map(String::from)), vec![AppAction::PlayLink { code: "k3x9q2".into() }]);
+        assert!(parse_args(["exe", "https://evil.example/j/k3x9q2"].map(String::from)).is_empty());
     }
 }

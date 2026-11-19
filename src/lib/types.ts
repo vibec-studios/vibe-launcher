@@ -146,6 +146,8 @@ export interface Settings {
   simple_hint_seen: boolean;
   /** Einführungs-Bubbles im Simple-Modus gesehen */
   simple_tour_done: boolean;
+  /** Weggeklickte Hinweise/Ankündigungen (je `id`, z. B. "domain-move-2026-11"; docs/DOMAINS.md) */
+  dismissed_notices: string[];
 }
 
 export type UiMode = "simple" | "expert";
@@ -1236,6 +1238,16 @@ export interface VibeStatus {
   gateway_url: string;
   identity: VibeIdentity | null;
   logged_in: boolean;
+}
+
+/** Ankündigung des Backends (`GET /api/v1/announcements`, in Rust geprüft; docs/DOMAINS.md) */
+export interface Announcement {
+  id: string;
+  level: "info" | "warn";
+  title: string;
+  body: string;
+  /** Nur https */
+  url: string | null;
 }
 
 /** Wie `StoredTokens` im SDK */

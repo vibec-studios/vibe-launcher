@@ -33,7 +33,8 @@ pub const EV_LOG: &str = "server://log";
 pub const EV_CLOSE_REQUESTED: &str = "servers://close-requested";
 
 pub const DEFAULT_MEMORY_MB: u32 = 2048;
-pub const DEFAULT_RELAY: &str = "vibey.henny.dev:25565";
+/// Offizieller Relay-Host (seit dem Domain-Umzug `relay.axolite.cc`, gleicher Port; siehe `crate::domains`).
+pub const DEFAULT_RELAY: &str = crate::domains::RELAY;
 const META_FILE: &str = "vibe-server.json";
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -110,7 +111,8 @@ impl Server {
 }
 
 fn relay_address(over: Option<String>) -> String {
-    over.unwrap_or_else(|| DEFAULT_RELAY.to_string())
+    // Alter Standard-Host -> neuer; eigene Adressen bleiben
+    over.map(|o| crate::domains::migrate_relay(&o)).unwrap_or_else(|| DEFAULT_RELAY.to_string())
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -357,6 +359,9 @@ mod tests {
     #[test]
     fn relay_is_fixed() {
         assert_eq!(super::relay_address(None), super::DEFAULT_RELAY);
+        assert_eq!(super::DEFAULT_RELAY, "relay.axolite.cc:25565");
+        assert_eq!(super::relay_address(Some("vibey.henny.dev:25565".into())), super::DEFAULT_RELAY);
+        assert_eq!(super::relay_address(Some("127.0.0.1:25599".into())), "127.0.0.1:25599");
         // Alte Server-Dateien mit eigener Relay-Adresse laden weiter, die Adresse wird verworfen
         let json = r#"{"id":"a","name":"A","mc_version":"1.21.1","loader":{"kind":"vanilla","version":null},"port":25565,
             "relay_address":"evil.example:25565","created_at":0}"#;

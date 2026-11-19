@@ -273,7 +273,7 @@ mod tests {
             small_image: Some("fabric".into()),
             small_text: Some("Fabric · Minecraft 1.21.1".into()),
             buttons: vec![
-                ("Beitreten".into(), "https://vibe.henny.dev/j/k3x9q2".into()),
+                ("Beitreten".into(), "https://axolite.cc/j/k3x9q2".into()),
                 ("Vibe Launcher".into(), WEBSITE.into()),
                 ("Dritter".into(), "https://x.example".into()),
             ],
@@ -282,7 +282,7 @@ mod tests {
         assert_eq!(v["timestamps"]["start"], 1_795_040_000);
         assert_eq!(v["assets"]["large_image"], "https://cdn.modrinth.com/data/abc/icon.png");
         assert_eq!(v["buttons"].as_array().unwrap().len(), 2);
-        assert_eq!(v["buttons"][0]["url"], "https://vibe.henny.dev/j/k3x9q2");
+        assert_eq!(v["buttons"][0]["url"], "https://axolite.cc/j/k3x9q2");
         let plain = activity_json(&Activity { details: "Im Launcher".into(), ..Default::default() });
         assert_eq!(plain["assets"]["large_image"], ASSET_LOGO);
         assert!(plain.get("buttons").is_none());

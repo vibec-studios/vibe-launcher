@@ -40,6 +40,20 @@ pub async fn instance_servers_list(
         .map_err(join_err)?
 }
 
+/// Domain-Umzug: Adressen `*.vibey.henny.dev` in `servers.dat` auf `*.axolite.cc` umstellen. Anzahl geänderter Einträge.
+#[tauri::command]
+pub async fn instance_servers_modernize(state: State<'_, AppState>, instance_id: String) -> AppResult<usize> {
+    if state.game.is_running(&instance_id) {
+        return Err(AppError::Invalid("Die Serverliste kann nicht geändert werden, solange das Spiel läuft".into()));
+    }
+    let p = servers_path(&state, &instance_id)?;
+    let n = tokio::task::spawn_blocking(move || servers::modernize_servers_file(&p)).await.map_err(join_err)??;
+    if n > 0 {
+        crate::events::emit(&state.app, crate::events::CONTENT_CHANGED, &serde_json::json!({ "instance_id": instance_id }));
+    }
+    Ok(n)
+}
+
 #[tauri::command]
 pub async fn instance_servers_save(
     state: State<'_, AppState>,

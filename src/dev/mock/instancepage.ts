@@ -89,6 +89,8 @@ const files: Record<string, FileEntry[]> = {
 const servers: ServerEntry[] = [
   { name: "Vibe Craft SMP", ip: "smp.vibecraft.de", icon: null, accept_textures: true, hidden: false },
   { name: "Cobble-Freunde", ip: "192.168.0.24:25565", icon: null, accept_textures: null, hidden: false },
+  // Alte Relay-Adresse (Domain-Umzug): zeigt den Hinweis „Auf .axolite.cc umstellen“
+  { name: "Hennys Welt", ip: "mossy-otter-27.vibey.henny.dev", icon: null, accept_textures: null, hidden: false },
 ];
 
 const perf: PerfCandidate[] = [
@@ -190,8 +192,20 @@ const handlers: Handlers = {
     readonly_reason: null,
   }),
   files_validate: () => [],
-  instance_servers_list: () => servers,
+  instance_servers_list: () => [...servers],
   instance_servers_save: () => null,
+  instance_servers_modernize: () => {
+    let n = 0;
+    servers.forEach((e, i) => {
+      const m = e.ip.match(/^(.+)\.vibey\.henny\.dev(:\d+)?$/i);
+      if (m) {
+        // Neues Objekt wie bei echter IPC (sonst rendert die memoisierte Zeile nicht neu)
+        servers[i] = { ...e, ip: `${m[1].toLowerCase()}.axolite.cc${m[2] ?? ""}` };
+        n++;
+      }
+    });
+    return n;
+  },
   servers_recent: () => [],
   playtime_sessions: () => [],
   optsync_get: () => ({ config: { master: {}, source: null, updated_at: null, instances: {} }, categories: [], counts: {} }),

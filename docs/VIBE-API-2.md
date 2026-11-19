@@ -1,6 +1,6 @@
 # Vibe-Backend – Erweiterungen Runde 2 (Vertrag zwischen Backend, Launcher, Client, Website)
 
-Stand 2026-11-18 (Backend-Ergänzungen *kursiv markiert*, live auf vibe.henny.dev). Basis: `https://vibe.henny.dev`. Alle Nutzer-Routen mit dem bestehenden Bearer-Token
+Stand 2026-11-18 (Backend-Ergänzungen *kursiv markiert*, live auf vibe.axolite.app, parallel weiter unter vibe.henny.dev – siehe DOMAINS.md). Basis: `https://vibe.axolite.app`. Alle Nutzer-Routen mit dem bestehenden Bearer-Token
 (Login über Mojang `hasJoined`, wie bisher). Fehlerformat wie bisher (`{ error: { code, message } }`).
 Wer etwas ändert, passt diese Datei an und sagt es den anderen.
 
@@ -25,7 +25,7 @@ Wer etwas ändert, passt diese Datei an und sagt es den anderen.
     "version": "0.2.0", "channel": "release", "publishedAt": "…", "changelog": "Markdown",
     "files": [
       { "loader": "fabric", "mcVersions": ["1.21.1"], "file": "vibeyclient-fabric-1.21.1-0.2.0.jar",
-        "size": 123, "sha256": "…", "url": "https://vibe.henny.dev/api/v1/client/files/<sha256>/<file>",
+        "size": 123, "sha256": "…", "url": "https://vibe.axolite.app/api/v1/client/files/<sha256>/<file>",
         "requires": [ { "modrinth": "P7dR8mSH", "name": "Fabric API" } ] }
     ],
     "blockbench": { "version": "0.2.0", "file": "vibey.js", "size": 1, "sha256": "…", "url": "…" }
@@ -77,7 +77,7 @@ Wer etwas ändert, passt diese Datei an und sagt es den anderen.
   `Authorization: Bearer <CLIENT_PUBLISH_TOKEN>`, multipart: `manifest` (JSON wie oben ohne url; `sha256`/`size` optional, werden geprüft) + alle
   Jars + `vibey.js`. Gleiche Version zweimal = 409. Admin-UI: Seite „Client“ mit Releases, Kanal ändern,
   zurückziehen.
-  *(Backend, ergänzt – wichtig für die CI:)* Vor `vibe.henny.dev` liegt **Cloudflare mit 100 MB pro Anfrage**; ein
+  *(Backend, ergänzt – wichtig für die CI:)* Vor `vibe.axolite.app` (wie vor `vibe.henny.dev`) liegt **Cloudflare mit 100 MB pro Anfrage**; ein
   Release mit ~20 Jars à 15 MB passt nicht in eine Anfrage. Deshalb zusätzlich `POST /internal/client/v1/files`
   (gleicher Bearer, multipart, eine oder mehrere Dateien, Dateiname = `file`, Gruppen < 100 MB) →
   `201 { files: [{ file, sha256, size }] }`; danach im Manifest je Datei optional `sha256` angeben und die Datei im

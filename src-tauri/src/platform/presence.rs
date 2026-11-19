@@ -108,13 +108,13 @@ mod tests {
     fn hosting_with_link() {
         let mut i = base();
         i.session = Some(session("hosting"));
-        i.play_link = Some("https://vibe.henny.dev/j/k3x9q2".into());
+        i.play_link = Some("https://axolite.cc/j/k3x9q2".into());
         i.icon_url = Some("https://cdn.modrinth.com/x.png".into());
         let a = build_activity(&i);
         assert_eq!(a.details, "Spielt Cobblemon Abenteuer");
         assert_eq!(a.state.as_deref(), Some("Hostet Neue Welt (3/8)"));
         assert_eq!(a.buttons.len(), 2);
-        assert_eq!(a.buttons[0], ("Beitreten".to_string(), "https://vibe.henny.dev/j/k3x9q2".to_string()));
+        assert_eq!(a.buttons[0], ("Beitreten".to_string(), "https://axolite.cc/j/k3x9q2".to_string()));
         assert_eq!(a.buttons[1].0, "Vibe Launcher");
         assert_eq!(a.large_image.as_deref(), Some("https://cdn.modrinth.com/x.png"));
         assert_eq!(a.small_image.as_deref(), Some("fabric"));
@@ -149,7 +149,7 @@ mod tests {
         assert_eq!(build_activity(&i).state.as_deref(), Some("Im Mehrspieler"));
         // Spiel-Link nur beim Hosten
         i.session = Some(session("multiplayer"));
-        i.play_link = Some("https://vibe.henny.dev/j/k3x9q2".into());
+        i.play_link = Some("https://axolite.cc/j/k3x9q2".into());
         assert!(build_activity(&i).buttons.iter().all(|b| b.0 != "Beitreten"));
     }
 }

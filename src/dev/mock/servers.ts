@@ -170,7 +170,7 @@ function tunnelFor(s: Server): TunnelStatus | null {
 }
 
 const claimed = new Set<string>();
-const relayAddr = new Map<string, string>([["kreativ", "vibey.henny.dev:41237"]]);
+const relayAddr = new Map<string, string>([["kreativ", "relay.axolite.cc:41237"]]);
 
 function startTunnel(id: string) {
   const s = servers.get(id);
@@ -186,7 +186,7 @@ function startTunnel(id: string) {
     } else if (s.connection === "playit") {
       setStatus(id, { tunnel: { kind: "playit", state: "online", address: "dragon-lamp.gl.joinmc.link", claim_url: null, message: null } });
     } else {
-      const addr = relayAddr.get(id) ?? `vibey.henny.dev:${40000 + Math.floor(Math.random() * 9999)}`;
+      const addr = relayAddr.get(id) ?? `relay.axolite.cc:${40000 + Math.floor(Math.random() * 9999)}`;
       relayAddr.set(id, addr);
       setStatus(id, { tunnel: { kind: "relay", state: "online", address: addr, claim_url: null, message: null } });
       log(id, `Relay verbunden: ${addr}`, "launcher");

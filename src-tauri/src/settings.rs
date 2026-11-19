@@ -82,6 +82,8 @@ pub struct Settings {
     pub simple_hint_seen: bool,
     /// Kurze Einführung (Hinweis-Bubbles) im Simple-Modus gesehen
     pub simple_tour_done: bool,
+    /// Weggeklickte Hinweise/Ankündigungen (je `id`, z. B. "domain-move-2026-11"; docs/DOMAINS.md)
+    pub dismissed_notices: Vec<String>,
 }
 
 fn legacy_ui_mode() -> String {
@@ -396,6 +398,7 @@ impl Default for Settings {
             onboarding_done: false,
             simple_hint_seen: false,
             simple_tour_done: false,
+            dismissed_notices: Vec::new(),
         }
     }
 }
@@ -461,6 +464,22 @@ impl Settings {
         }
         s.sanitize_mode();
         s
+    }
+
+    /// Weggeklickte Hinweise: nur gültige IDs, ohne Doppelte, höchstens 200 (die neuesten).
+    pub fn sanitize_notices(&mut self) {
+        let mut out: Vec<String> = Vec::new();
+        for id in &self.dismissed_notices {
+            let id = id.trim();
+            if crate::vibe::announcements::valid_id(id) && !out.iter().any(|x| x == id) {
+                out.push(id.to_string());
+            }
+        }
+        let n = out.len();
+        if n > 200 {
+            out.drain(..n - 200);
+        }
+        self.dismissed_notices = out;
     }
 
     /// Unbekannten Modus auf "expert" setzen.
@@ -533,6 +552,19 @@ mod tests {
         assert_eq!(loaded.ui_mode, "simple");
         assert!(!loaded.onboarding_done, "gespeicherte Einstellungen gewinnen");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn dismissed_notices() {
+        let old: Settings = serde_json::from_str(r#"{"language":"de"}"#).unwrap();
+        assert!(old.dismissed_notices.is_empty(), "alte Einstellungen: nichts weggeklickt");
+        let mut s: Settings = serde_json::from_str(r#"{"dismissed_notices":["domain-move-2026-11","domain-move-2026-11"," x ","böse id",""]}"#).unwrap();
+        s.sanitize_notices();
+        assert_eq!(s.dismissed_notices, vec!["domain-move-2026-11".to_string(), "x".to_string()]);
+        s.dismissed_notices = (0..250).map(|i| format!("n{i}")).collect();
+        s.sanitize_notices();
+        assert_eq!(s.dismissed_notices.len(), 200);
+        assert_eq!(s.dismissed_notices[0], "n50");
     }
 
     #[test]

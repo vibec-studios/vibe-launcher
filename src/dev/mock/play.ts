@@ -13,9 +13,9 @@ const exp = () => new Date(Date.now() + 11 * 3600_000).toISOString();
 function link(code: string): PlayLink {
   const base: PlayLink = {
     code,
-    url: `https://vibe.henny.dev/j/${code}`,
+    url: `https://axolite.cc/j/${code}`,
     host: HOST,
-    relay_host: "mossy-otter-27.vibey.henny.dev",
+    relay_host: "mossy-otter-27.axolite.cc",
     mc_version: "1.21.1",
     loader: { kind: "fabric", version: "0.16.9" },
     pack: { source: "modrinth", project_id: "Jkb29YJU", version_id: "def", title: "Cobblemon Official" },
@@ -94,7 +94,7 @@ const handlers: Handlers = {
           state: "hosting",
           server: null,
           world: "Neue Welt",
-          play_link: "https://vibe.henny.dev/j/k3x9q2",
+          play_link: "https://axolite.cc/j/k3x9q2",
           players: 2,
           max_players: 8,
           updated_at: Math.floor(Date.now() / 1000),

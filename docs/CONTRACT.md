@@ -314,7 +314,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   Weiterlaufende Server werden beim nächsten Start über `.vibe-pid` erkannt (`detached`: keine Konsole, Stopp = Beenden).
 - Verbindungen: `local` (localhost + LAN-IP), `relay` (nur wenn `settings.vibe.enabled && hosting`; Vibey-Relay-Protokoll
   mit `hello` + `slot` (≥ 1), `kind: "server"`, `client: "launcher"`; Account über `auth.launch_account`; Adresse
-  fest `vibey.henny.dev:25565` – keine eigene Relay-Adresse je Server; nur Debug-Builds: Env `VIBE_RELAY`), `playit` (offizieller `playitd`-Agent,
+  fest `relay.axolite.cc:25565` (früher `vibey.henny.dev:25565`, docs/DOMAINS.md) – keine eigene Relay-Adresse je Server; nur Debug-Builds: Env `VIBE_RELAY`), `playit` (offizieller `playitd`-Agent,
   SHA-256 aus der GitHub-API geprüft; Claim-Link -> `TunnelStatus.claim_url`, danach Adresse aus `/v1/agents/rundata`).
 - Mod-Einordnung (Client/Server) über `server::sides::classify` (Heuristik über fabric.mod.json/quilt.mod.json/mods.toml
   + Liste bekannter Client-Mods) – Einstiegspunkt für eine spätere Einordnung aus dem Content-Modul.
@@ -379,7 +379,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 
 ## Vibe-Dienste (Freunde, Chats, Presence, Einladungen, geteilte Modpacks)
 
-Backend: `https://vibe.henny.dev` (Repo `vibe-backend`, Protokoll REST `/api/v1/*` + Gateway `/ws`). Der Client ist das
+Backend: `https://vibe.axolite.app` (früher `https://vibe.henny.dev`, siehe docs/DOMAINS.md; Repo `vibe-backend`, Protokoll REST `/api/v1/*` + Gateway `/ws`). Der Client ist das
 **vendored SDK** `src/lib/vibe-sdk/` (`@vibe-craft/sdk` 0.1.0, MIT: `client.ts`, `gateway.ts`, `emitter.ts` unverändert bis
 auf Importe; `types.ts` = öffentliche API-Typen aus `@vibe-craft/shared` als reine TS-Typen, ohne Admin-/Relay-Interna).
 
@@ -388,7 +388,7 @@ auf Importe; `types.ts` = öffentliche API-Typen aus `@vibe-craft/shared` als re
   `ws(s)://<host>/ws` der eingestellten Adresse). Grund: CSP der Webview, frei wählbare `api_url`, kein CORS – und
   **`settings.vibe.enabled = false` sperrt jede Verbindung in Rust** (Commands liefern `not_configured`, offene WebSockets
   werden beim Speichern der Einstellungen geschlossen).
-- **Adresse**: fest `https://vibe.henny.dev` – Nutzer können keine eigene Backend-Adresse einstellen (eine alte
+- **Adresse**: fest `https://vibe.axolite.app` – Nutzer können keine eigene Backend-Adresse einstellen (eine alte
   `settings.vibe.api_url` wird ignoriert). Nur Debug-Builds (`cfg(debug_assertions)`) lesen für die lokale Entwicklung
   die Env `VIBE_API_URL` (z. B. `http://127.0.0.1:3917`).
 - **Login** (Mojang-hasJoined): SDK `auth.challenge` -> `vibe_mojang_join(serverId)` (Rust ruft
