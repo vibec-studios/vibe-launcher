@@ -466,6 +466,8 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
         </SettingRow>
       </SettingsCard>
 
+      <AppIconCard a={a} set={set} />
+
       <SettingsCard title={t("ap.section.more")}>
         <SettingRow title={t("settings.minecraftcapes")} description={t("settings.minecraftcapes.desc")}>
           <Switch checked={s.minecraftcapes} onChange={(minecraftcapes) => update({ minecraftcapes })} label={t("settings.minecraftcapes")} />
@@ -478,6 +480,74 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
 }
 
 // ------------------------------------------------------------------ Bausteine
+
+/** App-Icon: Motiv (Robbe, Pinguin, eigenes Bild), Kachelfarbe und Live-Vorschau. */
+function AppIconCard({ a, set }: { a: Appearance; set: (p: Partial<Appearance>, delay?: number) => void }) {
+  const t = useT();
+  const [preview, setPreview] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    api
+      .appIconPreview(a.app_icon, a.app_icon_color, a.app_icon_image, 128)
+      .then((u) => alive && setPreview(u))
+      .catch(() => alive && setPreview(null));
+    return () => {
+      alive = false;
+    };
+  }, [a.app_icon, a.app_icon_color, a.app_icon_image]);
+  const pick = async () => {
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const file = await open({ multiple: false, directory: false, filters: [{ name: t("ap.app_icon.filter"), extensions: ["png", "jpg", "jpeg"] }] });
+    if (typeof file !== "string") return;
+    setBusy(true);
+    try {
+      set({ app_icon: "custom", app_icon_image: await api.appIconImport(file) });
+    } catch (e) {
+      toast.error(e, t("ap.app_icon.failed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <SettingsCard title={t("ap.app_icon")}>
+      <div className="flex items-start gap-5 px-4 py-4">
+        <div className="flex shrink-0 flex-col items-center gap-2">
+          <span className="grid h-[72px] w-[72px] place-items-center rounded-card bg-field">
+            {preview ? <img src={preview} alt={t("ap.app_icon")} className="h-14 w-14 [image-rendering:pixelated]" /> : <span className="h-14 w-14 rounded-ctl bg-surface2" />}
+          </span>
+          <span className="flex items-end gap-1.5" aria-hidden>
+            {preview && [16, 24, 32].map((px) => <img key={px} src={preview} alt="" style={{ width: px, height: px }} className="[image-rendering:pixelated]" />)}
+          </span>
+        </div>
+        <div className="min-w-0 flex-1 space-y-4">
+          <p className="text-meta text-muted">{t("ap.app_icon.desc")}</p>
+          <Segmented
+            value={a.app_icon}
+            onChange={(app_icon) => (app_icon === "custom" && !a.app_icon_image ? void pick() : set({ app_icon }))}
+            items={[
+              { value: "seal", label: t("ap.app_icon.seal") },
+              { value: "penguin", label: t("ap.app_icon.penguin") },
+              { value: "custom", label: t("ap.app_icon.custom") },
+            ]}
+          />
+          {a.app_icon === "custom" && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" onClick={pick} disabled={busy}>
+                {a.app_icon_image ? t("ap.app_icon.change") : t("ap.app_icon.choose")}
+              </Button>
+              <span className="text-meta text-dim">{t("ap.app_icon.custom_hint")}</span>
+            </div>
+          )}
+          <div>
+            <div className="mb-2 text-[13px] font-medium text-text">{t("ap.app_icon.color")}</div>
+            <AccentPicker value={a.app_icon_color} onChange={(app_icon_color, d) => set({ app_icon_color }, d)} />
+          </div>
+        </div>
+      </div>
+    </SettingsCard>
+  );
+}
 
 /**
  * Live-Vorschau: verkleinerter Launcher (Rahmen, Seitenleiste, Bühne, Kacheln). Liest dieselben CSS-Variablen wie

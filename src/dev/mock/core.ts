@@ -132,6 +132,12 @@ const handlers: Handlers = {
   instance_open_folder: () => null,
   settings_get: () => settings,
   appearance_import_background: ({ path }) => path as string,
+  app_icon_import: ({ path }) => path as string,
+  app_icon_preview: ({ motif, color }) =>
+    "data:image/svg+xml," +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" rx="1.4" fill="${color}"/><rect x="4" y="4" width="8" height="8" fill="${motif === "penguin" ? "#2c3342" : motif === "custom" ? "#ffffff" : "#8f9aa6"}"/></svg>`,
+    ),
   settings_set: ({ settings: s }) => {
     settings = s as Settings;
     mockEmit("settings://changed", settings);

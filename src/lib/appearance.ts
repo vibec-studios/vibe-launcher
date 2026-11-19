@@ -34,6 +34,9 @@ export const DEFAULT_APPEARANCE: Appearance = {
   status: STATUS_DEFAULT,
   motion: "normal",
   nav_animations: true,
+  app_icon: "seal",
+  app_icon_color: "#8b6cff",
+  app_icon_image: null,
   effects: { snow: true, snow_amount: 50, snow_settle: true, mascot: true, frost: true },
 };
 

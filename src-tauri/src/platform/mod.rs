@@ -3,6 +3,7 @@
 //!
 //! Anbindung an den Rest: `init()` in `lib.rs` (setup), `on_launch()` in `instance_launch`.
 //! Laufzeitzustände kommen über das Backend-Event `game://state` – der Spiel-Code bleibt unberührt.
+pub mod app_icon;
 pub mod crash;
 pub mod discord;
 pub mod links;

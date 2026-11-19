@@ -86,14 +86,50 @@ pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> App
         s.language = "de".into();
     }
     s.appearance.sanitize();
+    // Eigenes App-Icon nur aus dem eigenen Ordner (dorthin kopiert `app_icon_import`)
+    let icon_dir = state.paths.root.join("app-icon");
+    if s.appearance.app_icon_image.as_deref().is_some_and(|p| !std::path::Path::new(p).starts_with(&icon_dir)) {
+        s.appearance.app_icon_image = None;
+    }
     s.sanitize_mode();
     s.sanitize_notices();
     s.save(&state.paths.settings_file())?;
+    let icon_key = |a: &crate::settings::Appearance| (a.app_icon.clone(), a.app_icon_color.clone(), a.app_icon_image.clone());
+    let icon_changed = icon_key(&state.settings().appearance) != icon_key(&s.appearance);
     state.net.set_concurrency(s.concurrent_downloads as usize);
     *state.settings.write() = s.clone();
     crate::vibe::on_settings_changed(&state);
     events::emit(&state.app, events::SETTINGS_CHANGED, &s);
+    if icon_changed {
+        crate::platform::app_icon::apply(&state.app, &s.appearance);
+    }
     Ok(s)
+}
+
+/// Eigenes Bild fürs App-Icon übernehmen; gibt den gespeicherten Pfad zurück.
+#[tauri::command]
+pub async fn app_icon_import(state: State<'_, AppState>, path: String) -> AppResult<String> {
+    let root = state.paths.root.clone();
+    let p = tokio::task::spawn_blocking(move || crate::platform::app_icon::import_image(&root, std::path::Path::new(&path)))
+        .await
+        .map_err(|e| AppError::msg(e.to_string()))??;
+    Ok(p.to_string_lossy().to_string())
+}
+
+/// Vorschau des App-Icons als data:-URL (PNG).
+#[tauri::command]
+pub async fn app_icon_preview(state: State<'_, AppState>, motif: String, color: String, image: Option<String>, size: Option<u32>) -> AppResult<String> {
+    use base64::Engine;
+    let icon_dir = state.paths.root.join("app-icon");
+    let image = image.filter(|p| std::path::Path::new(p).starts_with(&icon_dir));
+    let size = size.unwrap_or(128).clamp(16, 256);
+    let png = tokio::task::spawn_blocking(move || {
+        let spec = crate::platform::app_icon::IconSpec::new(&motif, &color, image.as_deref());
+        crate::platform::app_icon::png_bytes(&spec, size)
+    })
+    .await
+    .map_err(|e| AppError::msg(e.to_string()))??;
+    Ok(format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(png)))
 }
 
 /// Eigenes Hintergrundbild/-video in `<daten>/backgrounds/` kopieren (dort deckt der Asset-Scope es ab).
