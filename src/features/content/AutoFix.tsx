@@ -4,6 +4,7 @@
 // zeigt je Ursache „behoben“ / „nicht automatisch lösbar“ und bietet „Testen“ (erneute Prüfung ohne den alten Absturz).
 // Außerdem die Rückfrage vor dem Start („Trotzdem starten“ / „Beheben und starten“). Global eingebunden (InstanceDialogs).
 import { useQuery } from "@tanstack/react-query";
+import { ReportProblemButton } from "@/features/feedback/FeedbackDialog";
 import {
   AlertTriangle,
   ArrowUpCircle,
@@ -239,6 +240,7 @@ function NextStep({ d, instanceId, crashReport }: { d: Diagnosis; instanceId: st
       >
         {t("fix.share_log")}
       </Button>
+      <ReportProblemButton instanceId={instanceId} source="autofix" />
     </div>
   );
 }

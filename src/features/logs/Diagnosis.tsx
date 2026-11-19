@@ -39,12 +39,19 @@ const KNOWN = [
   "exit_code",
 ];
 
+/** Versionsbereich aus dem Log („15.0.140 or later“, „>=0.16.10“) in der UI-Sprache. */
+export function localRange(range: string | undefined, t: (k: string, v?: Record<string, string | number>) => string): string {
+  const r = (range ?? "").trim();
+  const m = r.match(/^(?:>=?\s*)?(\S+?)\s+or\s+(?:later|above|newer|higher)$/i) ?? r.match(/^>=?\s*(\S+)$/);
+  return m ? t("diag.range.min", { v: m[1] }) : r;
+}
+
 /** Klartext-Titel/Erklärung einer Diagnose. */
 export function diagText(d: Diagnosis, t: (k: string, v?: Record<string, string | number>) => string) {
   const id = KNOWN.includes(d.id) ? d.id : "exit_code";
   const mod = d.culprit?.name || d.culprit?.mod_id || d.culprit?.file || t("diag.some_mod");
   const other = d.params.other_name || d.params.other_id || d.params.other_file?.replace(/\.jar$/, "") || t("diag.some_mod");
-  const vars = { mod, other, range: "", present: "?", ...d.params };
+  const vars = { mod, other, present: "?", ...d.params, range: localRange(d.params.range, t), required: localRange(d.params.required, t) };
   // Abhängigkeit ist da, nur deaktiviert
   const off = id === "missing_dependency" && !!d.params.disabled_file;
   let key = off ? "diag.missing_dependency.text_disabled" : `diag.${id}.text`;

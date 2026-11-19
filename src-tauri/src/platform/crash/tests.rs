@@ -397,3 +397,25 @@ fn sources_skip_logs_of_older_launches() {
     assert!(collect_sources(&dir, Some("../../etc/passwd"), None, "").iter().all(|x| x.name != "crash-report"));
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn real_crash_report_vibey_0_3_0_with_centered_crosshair() {
+    // Echter Crash-Report (mclo.gs, anonymisiert, gekürzt): Vibey Client 0.3.0 + Centered Crosshair 1.4.0 auf 1.21.11.
+    // Ohne Konflikt-Warnung im Log – nur „Critical injection failure … from mod vibeyclient“.
+    let mut mods = idx(&[
+        ("centered-crosshair", "centered-crosshair-1.4.0+1.21.11.jar", Some("Centered Crosshair"), Some("1.4.0")),
+        ("crosshairindicator", "crosshair-indicator-1.0.3.jar", Some("Crosshair Indicator"), Some("1.0.3")),
+        ("vibeyclient", "vibeyclient-fabric-1.21.11-0.3.0.jar", Some("Vibey Client"), Some("0.3.0")),
+        ("fabric-api", "fabric-api-0.141.6+1.21.11.jar", Some("Fabric API"), None),
+    ]);
+    mods.mixins.insert("vibeyclient.pvp.mixins.json".into(), "vibeyclient".into());
+    let c = Ctx { crash_report: true, ..ctx("fabric", "1.21.11") };
+    let d = run(&["real-vibey-0.3.0-centered-crosshair.txt"], &c, &mods);
+    assert!(!d.is_empty(), "echter Absturz muss erkannt werden");
+    // Das bekannte Paar wird angeboten – mit Centered Crosshair als abschaltbarer Mod
+    let k = d.iter().find(|x| x.id == "known_conflict" || x.id == "mixin_conflict").unwrap_or_else(|| panic!("Paar fehlt: {d:#?}"));
+    let files: Vec<String> = [k.culprit.as_ref().and_then(|c| c.file.clone()), k.params.get("other_file").cloned()].into_iter().flatten().collect();
+    assert!(files.iter().any(|f| f.starts_with("centered-crosshair")), "{d:#?}");
+    assert!(files.iter().any(|f| f.starts_with("vibeyclient")), "{d:#?}");
+}
+
