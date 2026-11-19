@@ -87,6 +87,7 @@ pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> App
     }
     s.appearance.sanitize();
     s.sanitize_mode();
+    s.sanitize_notices();
     s.save(&state.paths.settings_file())?;
     state.net.set_concurrency(s.concurrent_downloads as usize);
     *state.settings.write() = s.clone();

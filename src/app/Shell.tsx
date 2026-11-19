@@ -20,6 +20,7 @@ import { killInstance, openNewInstance } from "@/components/instance/actions";
 import { InstanceDialogs } from "@/features/instances/InstanceDialogs";
 import { TaskDock } from "./TaskDock";
 import { UpdateButton } from "./UpdateNotice";
+import { NoticeBar } from "./Notices";
 import { AccountMenu } from "./AccountMenu";
 import { ModeHost, useSimple } from "@/lib/mode";
 import { Onboarding } from "@/features/onboarding/Onboarding";
@@ -357,13 +358,18 @@ export function Shell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
         <div className="flex min-h-0 flex-1">
-          <main className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-tl-panel bg-panel">
-            <ErrorBoundary key={path}>
-              {/* Seitenwechsel-Animation (globals.css, „Bewegung“) – je Route neu gemountet */}
-              <div className="vl-page">
-                <Outlet />
-              </div>
+          <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-tl-panel bg-panel">
+            <ErrorBoundary>
+              <NoticeBar />
             </ErrorBoundary>
+            <div className="relative min-h-0 flex-1">
+              <ErrorBoundary key={path}>
+                {/* Seitenwechsel-Animation (globals.css, „Bewegung“) – je Route neu gemountet */}
+                <div className="vl-page">
+                  <Outlet />
+                </div>
+              </ErrorBoundary>
+            </div>
           </main>
           {path !== "/social" && (
             <ErrorBoundary>

@@ -31,6 +31,8 @@ import { useT } from "@/i18n";
 import { instanceAccent } from "@/lib/format";
 import { useInstances } from "@/lib/queries";
 import { useVibe } from "@/lib/vibe";
+import { parseInviteCode } from "@/lib/domains";
+import { enqueueAppAction } from "@/lib/appActions";
 import type { Invite, Pack } from "@/lib/vibe-sdk";
 import { openSettings } from "@/features/settings/store";
 import { AddFriendSearch, Avatar, BlockedList, GroupLabel, RequestRow } from "./FriendsList";
@@ -381,7 +383,7 @@ function PackRow({ pack: p, onDeleted }: { pack: Pack; onDeleted: () => void }) 
 }
 
 
-/** Code aus Eingabe: „K7QX2M9P“, „https://vibe.henny.dev/p/K7QX2M9P“ oder „vibelauncher://pack/K7QX2M9P“. */
+/** Code aus Eingabe: „K7QX2M9P“, „https://vibe.axolite.app/p/K7QX2M9P“ (auch alte Adresse) oder „vibelauncher://pack/K7QX2M9P“. */
 export function parsePackCode(v: string): string {
   const m = v.trim().match(/(?:\/p\/|pack\/)?([A-Za-z0-9]{4,16})\/?$/);
   return m ? m[1].toUpperCase() : "";
@@ -390,8 +392,15 @@ export function parsePackCode(v: string): string {
 function ImportPackDialog() {
   const t = useT();
   const [code, setCode] = useState("");
-  const c = parsePackCode(code);
+  // Eingefügter Einladungslink (https://axolite.cc/j/…, alt https://vibe.henny.dev/j/…) -> Spiel beitreten
+  const join = parseInviteCode(code);
+  const c = join ? "" : parsePackCode(code);
   const submit = () => {
+    if (join) {
+      close();
+      enqueueAppAction({ kind: "play_link", code: join });
+      return;
+    }
     if (!c) return;
     close();
     openPackImport(c);
@@ -408,7 +417,7 @@ function ImportPackDialog() {
           <Button variant="subtle" onClick={close}>
             {t("common.cancel")}
           </Button>
-          <Button variant="primary" icon={<ArrowRight size={14} />} disabled={!c} onClick={submit}>
+          <Button variant="primary" icon={<ArrowRight size={14} />} disabled={!c && !join} onClick={submit}>
             {t("social.import.next")}
           </Button>
         </>
@@ -420,7 +429,7 @@ function ImportPackDialog() {
           submit();
         }}
       >
-        <Field label={t("social.import.label")} hint={c ? t("social.import.detected", { code: c }) : t("social.import.hint")}>
+        <Field label={t("social.import.label")} hint={join ? t("social.import.detected_join", { code: join }) : c ? t("social.import.detected", { code: c }) : t("social.import.hint")}>
           <Input
             value={code}
             onChange={(e) => setCode(e.target.value)}

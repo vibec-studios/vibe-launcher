@@ -94,7 +94,7 @@ const hostLumi: HostSession = {
   kind: "world",
   client: "launcher",
   slot: 1,
-  address: "vibey.henny.dev:41237",
+  address: "relay.axolite.cc:41237",
   mcVersion: "1.21.4",
   status: "online",
   players: [
@@ -426,7 +426,7 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
       const inv = invites.find((x) => x.id === b);
       invites = invites.filter((x) => x.id !== b);
       if (b === "inv-pack") return ok({ invite: { ...inviteWorld, id: b, kind: "modpack", status: "accepted" }, connection: null, packCode: "KAICREATE" });
-      return ok({ invite: { ...(inv ?? inviteWorld), status: "accepted" }, connection: { type: "relay", address: "vibey.henny.dev", port: 41237 }, packCode: null });
+      return ok({ invite: { ...(inv ?? inviteWorld), status: "accepted" }, connection: { type: "relay", address: "relay.axolite.cc", port: 41237 }, packCode: null });
     }
     case "POST invites/:id/decline":
       invites = invites.filter((x) => x.id !== b);

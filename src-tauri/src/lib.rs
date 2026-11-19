@@ -5,6 +5,7 @@ pub mod commands;
 #[cfg(debug_assertions)]
 mod devlive;
 pub mod content;
+pub mod domains;
 pub mod error;
 pub mod events;
 pub mod files;
@@ -298,6 +299,7 @@ pub fn run() {
             commands::platform::crash_analyze,
             commands::platform::instance_servers_list,
             commands::platform::instance_servers_save,
+            commands::platform::instance_servers_modernize,
             commands::platform::server_ping,
             commands::platform::servers_recent,
             commands::platform::playtime_sessions,
@@ -361,6 +363,7 @@ pub fn run() {
             commands::files::files_reveal,
             // Vibe-Dienste
             commands::vibe::vibe_status,
+            commands::vibe::vibe_announcements,
             commands::vibe::vibe_tokens_get,
             commands::vibe::vibe_tokens_set,
             commands::vibe::vibe_mojang_join,

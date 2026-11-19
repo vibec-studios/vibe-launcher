@@ -41,3 +41,24 @@ Infrastruktur (erledigt):
 - Ist der Abruf nicht möglich, wird nichts angezeigt.
 - Erste Ankündigung `domain-move-2026-11`: „Vibe zieht um: neue Adressen vibe.axolite.app und *.axolite.cc. Alte Adressen funktionieren vorerst weiter. Bitte Launcher und Vibey Client aktuell halten und gespeicherte Server-Adressen auf .axolite.cc umstellen.“
 - Zusätzlich hat jede neue Version diesen Hinweis **fest eingebaut** (einmalig, wegklickbar). So erscheint er auch ohne Backend.
+
+## Launcher (umgesetzt)
+
+- Alle Adressen stehen zentral in `src-tauri/src/domains.rs` (Frontend: `src/lib/domains.ts`). Backend
+  `https://vibe.axolite.app`, Relay `relay.axolite.cc:25565`, Einladungslinks `https://axolite.cc/j/<code>`.
+- **Alte Adressen werden angenommen:** `vibe::check_api_url` behandelt `vibe.henny.dev` und `vibe.axolite.app` als
+  dasselbe Backend (Downloads, Icons, Manifeste). Spiel-Links `https://axolite.cc/j/…`, `https://vibe.axolite.app/j/…`
+  und `https://vibe.henny.dev/j/…` gelten in `session.json`, als Kommandozeilen-Argument und eingefügt in „Code oder
+  Link eingeben“. Deep-Links `vibelauncher://…` sind unverändert.
+- **Gespeicherte Werte:** Vibe-Tokens im Schlüsselbund, die noch für `https://vibe.henny.dev` gespeichert sind, werden
+  beim ersten Lesen auf die neue Adresse umgeschrieben (kein Abmelden). Debug-Overrides (`VIBE_API_URL`, `VIBE_RELAY`),
+  die genau der alten Standardadresse entsprechen, zeigen auf die neue. Eigene Adressen bleiben unverändert.
+- **Hinweise:** Leiste oben über dem Inhalt (auch im Simple-Modus, dort mit einfachen Worten). Der eingebaute Hinweis
+  hat die ID `domain-move-2026-11`; die Ankündigung mit derselben ID erscheint deshalb nicht doppelt. Ankündigungen
+  holt Rust (`vibe_announcements`, nur mit Hauptschalter) beim Start und alle 30 min mit
+  `?app=launcher&version=<Launcher-Version>&lang=<UI-Sprache>`; geprüft werden ID, Länge, `until`, `apps`,
+  `max_version` und `https`-Links, höchstens 5. Fehler bleiben still. Weggeklickte IDs stehen in
+  `settings.dismissed_notices`.
+- **Serverliste:** Hat `servers.dat` einer Instanz Adressen `*.vibey.henny.dev`, zeigt der Tab „Server“ einen Hinweis
+  mit „Auf .axolite.cc umstellen“ (`instance_servers_modernize`: gleicher Name, neue Domain, Port und alle anderen
+  Felder bleiben).

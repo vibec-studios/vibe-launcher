@@ -156,7 +156,7 @@ draft release created by GitHub Actions. See [docs/RELEASE.md](docs/RELEASE.md).
   eigene Logos – [TRADEMARKS.md](https://github.com/vibec-studios/.github/blob/main/TRADEMARKS.md).
 - **Grafiken und Modelle** (Branding, Icons, Robbe, Cosmetics): alle Rechte vorbehalten –
   [ASSETS-POLICY.md](https://github.com/vibec-studios/.github/blob/main/ASSETS-POLICY.md); Pfade in [NOTICE](NOTICE).
-- **Vibe-Dienste** (Backend `vibe.henny.dev`, Relay `vibey.henny.dev`): nur für offizielle Builds –
+- **Vibe-Dienste** (Backend `vibe.axolite.app`, Relay `relay.axolite.cc`; früher `vibe.henny.dev`/`vibey.henny.dev`, siehe [docs/DOMAINS.md](docs/DOMAINS.md)): nur für offizielle Builds –
   [SERVICES.md](https://github.com/vibec-studios/.github/blob/main/SERVICES.md).
 
 *English:* the code is Apache-2.0. Our names and logos, the seal, artwork and models, and the Vibe online services are

@@ -31,6 +31,12 @@ pub async fn vibe_status(state: State<'_, AppState>) -> AppResult<VibeStatus> {
     })
 }
 
+/// Ankündigungen des Backends (Banner). Hauptschalter aus -> `not_configured`, ohne Verbindung.
+#[tauri::command]
+pub async fn vibe_announcements(state: State<'_, AppState>, lang: String) -> AppResult<Vec<vibe::announcements::Announcement>> {
+    vibe::announcements::fetch(&state, &lang).await
+}
+
 /// Tokens des aktiven Accounts (für den TokenStore des SDK).
 #[tauri::command]
 pub async fn vibe_tokens_get(state: State<'_, AppState>) -> AppResult<Option<VibeTokens>> {

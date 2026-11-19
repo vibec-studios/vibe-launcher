@@ -228,7 +228,12 @@ pub fn read_session(state: &AppState, id: &str) -> Option<Session> {
 }
 
 /// Ist `url` ein Spiel-Link unseres Backends (`<base>/j/<code>`)? Nur solche Links zeigen wir an.
+/// Beim offiziellen Backend zählen auch `https://axolite.cc/j/<code>` und die alte Adresse
+/// `https://vibe.henny.dev/j/<code>` (ältere Vibey Clients schreiben sie in `session.json`).
 pub fn is_play_link_url(api_base: &str, url: &str) -> bool {
+    if crate::domains::is_official(api_base) && crate::domains::official_invite_code(url).is_some() {
+        return true;
+    }
     let (Ok(b), Ok(u)) = (url::Url::parse(api_base), url::Url::parse(url)) else { return false };
     let scheme_ok = u.scheme() == "https" || (u.scheme() == "http" && b.scheme() == "http");
     let code = u.path().strip_prefix("/j/").unwrap_or("");
@@ -311,8 +316,8 @@ mod tests {
 
     fn link(pack: bool) -> PlayLink {
         serde_json::from_value(serde_json::json!({
-            "code": "k3x9q2", "url": "https://vibe.henny.dev/j/k3x9q2",
-            "host": { "uuid": "u", "name": "Henny" }, "relay_host": "mossy-otter-27.vibey.henny.dev",
+            "code": "k3x9q2", "url": "https://axolite.cc/j/k3x9q2",
+            "host": { "uuid": "u", "name": "Henny" }, "relay_host": "mossy-otter-27.axolite.cc",
             "mc_version": "1.21.1", "loader": { "kind": "fabric", "version": "0.16.9" },
             "pack": if pack { serde_json::json!({ "source": "modrinth", "project_id": "abc", "version_id": "def", "title": "Cobblemon Official" }) } else { serde_json::Value::Null },
             "mods": [ { "source": "modrinth", "project_id": "AANobbMI", "version_id": "xyz", "kind": "mod" } ],
@@ -351,7 +356,7 @@ mod tests {
     #[test]
     fn session_parse() {
         let now = 1_795_040_030;
-        let ok = br#"{ "schema": 1, "state": "hosting", "world": "Neue Welt", "play_link": "https://vibe.henny.dev/j/k3x9q2", "players": 3, "max_players": 8, "updated_at": 1795040000 }"#;
+        let ok = br#"{ "schema": 1, "state": "hosting", "world": "Neue Welt", "play_link": "https://axolite.cc/j/k3x9q2", "players": 3, "max_players": 8, "updated_at": 1795040000 }"#;
         let s = parse_session(ok, now).unwrap();
         assert_eq!(s.state, "hosting");
         assert_eq!(s.players, Some(3));
@@ -372,13 +377,20 @@ mod tests {
         assert!(!valid_code("k3x9q"));
         assert!(!valid_code("k3x9q0"));
         assert!(!valid_code("K3X9Q2"));
-        let base = "https://vibe.henny.dev";
+        let base = "https://vibe.axolite.app";
+        assert!(is_play_link_url(base, "https://axolite.cc/j/k3x9q2"));
+        assert!(is_play_link_url(base, "https://vibe.axolite.app/j/k3x9q2"));
+        // Alte Links (ältere Clients) gelten weiter
         assert!(is_play_link_url(base, "https://vibe.henny.dev/j/k3x9q2"));
+        assert!(!is_play_link_url(base, "http://axolite.cc/j/k3x9q2"));
         assert!(!is_play_link_url(base, "http://vibe.henny.dev/j/k3x9q2"));
         assert!(!is_play_link_url(base, "https://evil.example/j/k3x9q2"));
-        assert!(!is_play_link_url(base, "https://vibe.henny.dev/p/k3x9q2"));
+        assert!(!is_play_link_url(base, "https://axolite.cc/p/k3x9q2"));
+        assert!(!is_play_link_url(base, "https://axolite.cc/j/k3x9q2?x=1"));
         assert!(!is_play_link_url(base, "https://vibe.henny.dev/j/k3x9q2?x=1"));
         assert!(is_play_link_url("http://127.0.0.1:3000", "http://127.0.0.1:3000/j/k3x9q2"));
+        // Lokales Test-Backend: keine Links des echten Backends
+        assert!(!is_play_link_url("http://127.0.0.1:3000", "https://axolite.cc/j/k3x9q2"));
     }
 
     #[test]

@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn urls() {
-        assert_eq!(gateway_url("https://vibe.henny.dev/"), "wss://vibe.henny.dev/ws");
+        assert_eq!(gateway_url("https://vibe.axolite.app/"), "wss://vibe.axolite.app/ws");
         assert_eq!(gateway_url("http://127.0.0.1:3917"), "ws://127.0.0.1:3917/ws");
         assert!(valid_id("gw-1a2b"));
         assert!(!valid_id("../x"));

@@ -1,4 +1,4 @@
-//! Vibey-Relay-Client: macht einen lokalen Server über eine feste Adresse (z. B. `mossy-otter-27.vibey.henny.dev`)
+//! Vibey-Relay-Client: macht einen lokalen Server über eine feste Adresse (z. B. `mossy-otter-27.axolite.cc`)
 //! erreichbar. Protokoll siehe `relay/README.md` in vibec-studios/vibey-multiplayer:
 //! Magic `00 56 42 59`, danach zeilenweises JSON. Control: hello -> challenge -> (Mojang join) -> auth -> ready.
 //! Je Spieler `open` -> eigene Data-Verbindung `{"t":"data",…}` + Rohbytes, gespleißt mit `127.0.0.1:<port>`.
@@ -267,7 +267,7 @@ async fn data_stream(host: &str, port: u16, sid: u64, key: &str, local_port: u16
 mod tests {
     #[test]
     fn host_port() {
-        assert_eq!(super::split_host_port("vibey.henny.dev:25565"), ("vibey.henny.dev".into(), 25565));
+        assert_eq!(super::split_host_port("relay.axolite.cc:25565"), ("relay.axolite.cc".into(), 25565));
         assert_eq!(super::split_host_port("localhost"), ("localhost".into(), 25565));
         assert_eq!(super::split_host_port("127.0.0.1:25599"), ("127.0.0.1".into(), 25599));
     }

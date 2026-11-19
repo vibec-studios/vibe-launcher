@@ -243,7 +243,7 @@ mod tests {
             "version": "0.2.0", "channel": "release", "publishedAt": "2026-11-18T10:00:00Z", "changelog": "x",
             "files": [
                 { "loader": "fabric", "mcVersions": ["1.21.1", "1.21.4"], "file": "vibeyclient-fabric-1.21.1-0.2.0.jar", "size": 3,
-                  "sha256": "a".repeat(64), "url": "https://vibe.henny.dev/api/v1/client/files/x/y.jar",
+                  "sha256": "a".repeat(64), "url": "https://vibe.axolite.app/api/v1/client/files/x/y.jar",
                   "requires": [{ "modrinth": "P7dR8mSH", "name": "Fabric API" }] },
                 { "loader": "neoforge", "mcVersions": ["1.21.1"], "file": "vibeyclient-neoforge-1.21.1-0.2.0.jar", "size": 3,
                   "sha256": "b".repeat(64), "url": "/api/v1/client/files/x/z.jar" }
@@ -276,8 +276,10 @@ mod tests {
 
     #[test]
     fn urls() {
-        let base = "https://vibe.henny.dev";
-        assert_eq!(resolve_url(base, "/api/v1/client/files/a/b.jar").unwrap(), "https://vibe.henny.dev/api/v1/client/files/a/b.jar");
+        let base = "https://vibe.axolite.app";
+        assert_eq!(resolve_url(base, "/api/v1/client/files/a/b.jar").unwrap(), "https://vibe.axolite.app/api/v1/client/files/a/b.jar");
+        assert!(resolve_url(base, "https://vibe.axolite.app/api/v1/client/files/a/b.jar").is_ok());
+        // Manifeste mit der alten Adresse laden weiter (gleiches Backend)
         assert!(resolve_url(base, "https://vibe.henny.dev/api/v1/client/files/a/b.jar").is_ok());
         assert!(resolve_url(base, "https://evil.example/api/v1/client/files/a/b.jar").is_err());
         assert!(resolve_url(base, "/admin/x").is_err());
