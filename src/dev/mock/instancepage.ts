@@ -33,6 +33,24 @@ const version = (n: string): ProjectVersion => ({
 
 const deps: DepIssue[] = [
   {
+    kind: "version_mismatch",
+    severity: "error",
+    file_name: "create-fabric-0.5.1.jar",
+    mod_name: "Create",
+    target: "fabricloader",
+    message: "Create braucht Fabric >=0.16.10, installiert ist 0.16.9",
+    fixes: [],
+  },
+  {
+    kind: "wrong_loader",
+    severity: "error",
+    file_name: "waystones-forge-1.21.4-21.4.2.jar",
+    mod_name: "Waystones",
+    target: null,
+    message: "Waystones ist eine Forge-Mod, die Instanz nutzt Fabric",
+    fixes: [{ action: "disable", file_name: "waystones-forge-1.21.4-21.4.2.jar" }],
+  },
+  {
     kind: "missing_dependency",
     severity: "error",
     file_name: "create-fabric-0.5.1.jar",
@@ -102,16 +120,34 @@ const perf: PerfCandidate[] = [
 const fixPlan: FixPlan = {
   crash: false,
   steps: [
-    { id: "s1", reason: "duplicate", name: "Sodium", required_by: [], action: { kind: "disable", file_name: "sodium-0.5.11.jar" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false },
-    { id: "s2", reason: "wrong_minecraft", name: "Xaero's Minimap", required_by: [], action: { kind: "replace", file_name: "xaerominimap-24.5.0-1.21.1.jar", source: "modrinth", project_id: "xaeros-minimap", version_id: "x2", title: "Xaero's Minimap", from_version: "24.5.0", to_version: "25.2.6", manual: false }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false },
-    { id: "s3", reason: "missing_dependency", name: "Porting Lib", required_by: ["Create", "Create Deco"], action: { kind: "install", source: "modrinth", project_id: "porting-lib", title: "Porting Lib" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false },
-    { id: "s4", reason: "disabled_dependency", name: "Cloth Config", required_by: ["Mod Menu"], action: { kind: "enable", file_name: "cloth-config-15.0.140.jar.disabled" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false },
-    { id: "s5", reason: "java_version", name: "Java 21", required_by: [], action: { kind: "set_java", major: 21, path: null }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: true },
-    { id: "s6", reason: "known_conflict", name: "OptiFabric", required_by: [], action: { kind: "disable", file_name: "optifabric-1.14.3.jar" }, alt: { kind: "disable", file_name: "sodium-0.6.0.jar" }, alt_name: "Sodium", confirm: true, selected: false, from_crash: false },
+    // Loader: Create und Cobblemon verlangen ein neueres Fabric als installiert
+    { id: "l1", reason: "loader_too_old", name: "Fabric", required_by: ["Create", "Cobblemon"], action: { kind: "set_loader", loader: "fabric", from: "0.16.9", to: "0.16.14" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false, detail: "Create >=0.16.10, Cobblemon >=0.16.12" },
+    // Forge-Mod in der Fabric-Instanz: deaktivieren und die Fabric-Version holen
+    { id: "w1", reason: "wrong_loader", name: "Waystones", required_by: [], action: { kind: "disable", file_name: "waystones-forge-1.21.4-21.4.2.jar" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false, detail: "forge" },
+    { id: "w2", reason: "wrong_loader", name: "Waystones", required_by: [], action: { kind: "install", source: "modrinth", project_id: "waystones", title: "Waystones" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false, detail: "forge" },
+    { id: "s1", reason: "duplicate", name: "Sodium", required_by: [], action: { kind: "disable", file_name: "sodium-0.5.11.jar" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false, detail: null },
+    { id: "s2", reason: "wrong_minecraft", name: "Xaero's Minimap", required_by: [], action: { kind: "replace", file_name: "xaerominimap-24.5.0-1.21.1.jar", source: "modrinth", project_id: "xaeros-minimap", version_id: "x2", title: "Xaero's Minimap", from_version: "24.5.0", to_version: "25.2.6", manual: false }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false, detail: null },
+    { id: "s3", reason: "missing_dependency", name: "Porting Lib", required_by: ["Create", "Create Deco"], action: { kind: "install", source: "modrinth", project_id: "porting-lib", title: "Porting Lib" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false, detail: null },
+    { id: "s4", reason: "disabled_dependency", name: "Cloth Config", required_by: ["Mod Menu"], action: { kind: "enable", file_name: "cloth-config-15.0.140.jar.disabled" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false, detail: null },
+    { id: "s5", reason: "java_version", name: "Java 21", required_by: [], action: { kind: "set_java", major: 21, path: null }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: true, detail: null },
+    { id: "s6", reason: "known_conflict", name: "OptiFabric", required_by: [], action: { kind: "disable", file_name: "optifabric-1.14.3.jar" }, alt: { kind: "disable", file_name: "sodium-0.6.0.jar" }, alt_name: "Sodium", confirm: true, selected: false, from_crash: false, detail: null },
   ],
-  unfixable: [{ reason: "loader_version", name: "Create", detail: "Create braucht Fabric >=0.16.10, installiert ist 0.16.9" }],
+  unfixable: [],
 };
+
+// Zweite Instanz: Loader-Installation beschädigt (abgebrochener Download) -> neu installieren
+const repairPlan: FixPlan = {
+  crash: false,
+  steps: [
+    { id: "r1", reason: "loader_files_broken", name: "Fabric", required_by: [], action: { kind: "repair_loader", loader: "fabric", version: "0.17.2" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false, detail: "3" },
+  ],
+  unfixable: [{ reason: "loader_version", name: "Fabric", detail: "Old Combat >=0.15 <0.16, Armor HUD >=0.17.0" }],
+};
+const repairDeps: DepIssue[] = [
+  { kind: "loader_files", severity: "error", file_name: "", mod_name: "Fabric", target: "fabric", message: "Fabric 0.17.2: Die Installation ist beschädigt (3 Datei(en))", fixes: [] },
+];
 let fixReport: FixReport | null = null;
+let repaired = false;
 
 const handlers: Handlers = {
   modpack_check: ({ instanceId }) =>
@@ -135,17 +171,27 @@ const handlers: Handlers = {
     legacy: false,
   }),
   modpack_update: ({ instanceId }) => fakeTask("modpack_update", "Modpack aktualisieren", instanceId as string, 2500),
-  autofix_quick: ({ instanceId }) => ({ errors: instanceId === "survival" && (!fixReport || fixReport.undone) ? 3 : 0, warnings: 0, crashed: false }),
-  autofix_plan: ({ instanceId }) => (instanceId === "survival" && (!fixReport || fixReport.undone) ? fixPlan : { crash: false, steps: [], unfixable: [] }),
+  autofix_quick: ({ instanceId }) => ({ errors: instanceId === "survival" && (!fixReport || fixReport.undone) ? 3 : instanceId === "hh-armors" && !repaired ? 1 : 0, warnings: 0, crashed: false }),
+  autofix_plan: ({ instanceId }) =>
+    instanceId === "survival" && (!fixReport || fixReport.undone)
+      ? fixPlan
+      : instanceId === "hh-armors" && !repaired
+        ? repairPlan
+        : { crash: false, steps: [], unfixable: [] },
   autofix_apply: ({ instanceId, actions }) =>
     fakeTask("autofix", "Probleme beheben", instanceId as string, 2200, () => {
       const list = actions as FixReport["results"][number]["action"][];
+      if (instanceId === "hh-armors") repaired = true;
+      const loader = list.find((a) => a.kind === "set_loader");
+      const inst = instances.get(instanceId as string);
+      if (loader && inst) instances.set(inst.id, { ...inst, loader: { ...inst.loader, version: loader.to } });
       fixReport = {
         created: Date.now(),
         snapshot_id: "fix-1",
         results: list.map((action) => ({ action, ok: true, error: null })),
         manual: [{ file_name: "better-end-4.0.jar", project_name: "Better End", page_url: "https://www.curseforge.com/minecraft/mc-mods/betterend/files/1", kind: "mod", version_number: "4.0.11", is_update: true }],
         prev_java: null,
+        prev_loader: loader && inst ? inst.loader : null,
         undone: false,
       };
     }),
@@ -154,7 +200,8 @@ const handlers: Handlers = {
     fakeTask("autofix", "Rückgängig", instanceId as string, 1200, () => {
       if (fixReport) fixReport = { ...fixReport, undone: true };
     }),
-  content_check_deps: ({ instanceId }) => (instanceId === "survival" && (!fixReport || fixReport.undone) ? deps : []),
+  content_check_deps: ({ instanceId }) =>
+    instanceId === "survival" && (!fixReport || fixReport.undone) ? deps : instanceId === "hh-armors" && !repaired ? repairDeps : [],
   content_sides: () => [],
   content_set_pinned: () => null,
   content_update_counts: () => ({ survival: 3 }),

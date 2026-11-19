@@ -270,14 +270,13 @@ pub async fn run_setup(state: AppState, task: TaskHandle, link: PlayLink, instan
                 let src = source_of(&pack.source).ok_or_else(|| AppError::Invalid("Unbekannte Modpack-Quelle".into()))?;
                 let before: std::collections::HashSet<String> = state.instances.list().into_iter().map(|i| i.id).collect();
                 import::run_modpack_install(state.clone(), task.clone(), src, pack.project_id.clone(), Some(pack.version_id.clone())).await?;
-                let created = state
+                state
                     .instances
                     .list()
                     .into_iter()
                     .filter(|i| !before.contains(&i.id))
                     .max_by_key(|i| i.created_at)
-                    .ok_or_else(|| AppError::msg("Die neue Instanz wurde nicht gefunden"))?;
-                created
+                    .ok_or_else(|| AppError::msg("Die neue Instanz wurde nicht gefunden"))?
             }
             None => {
                 task.stage("Lege das Spiel an …", None);

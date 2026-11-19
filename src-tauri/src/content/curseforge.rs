@@ -155,7 +155,7 @@ impl CfFile {
     }
     /// Download über Drittanbieter gesperrt (keine `downloadUrl`)?
     pub fn locked(&self) -> bool {
-        self.download_url.as_deref().is_none_or(str::is_empty)
+        self.download_url.as_deref().map_or(true, str::is_empty)
     }
 }
 

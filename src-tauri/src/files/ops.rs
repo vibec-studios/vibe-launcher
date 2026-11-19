@@ -494,7 +494,7 @@ pub fn delete(r: &FileRoot, rels: &[String], permanent: bool) -> AppResult<Delet
         targets.push(r.sandbox.existing(rel, false)?);
     }
     // Ordner und darin enthaltene Einträge nicht doppelt löschen
-    targets.sort_by(|a, b| a.rel.len().cmp(&b.rel.len()));
+    targets.sort_by_key(|a| a.rel.len());
     let mut uniq: Vec<Resolved> = Vec::new();
     for t in targets {
         if !uniq.iter().any(|u| t.rel == u.rel || t.rel.starts_with(&format!("{}/", u.rel))) {

@@ -673,7 +673,7 @@ pub fn parse_hangar_project(b: &[u8], page: Option<String>) -> AppResult<AddonPr
     }
     // Versionen der Server-Software (Paper), neueste zuerst
     let mut game_versions: Vec<String> = p.supported_platforms.get("PAPER").cloned().unwrap_or_default();
-    game_versions.sort_by(|a, b| version_key(b).cmp(&version_key(a)));
+    game_versions.sort_by_key(|v| std::cmp::Reverse(version_key(v)));
     let mut loaders: Vec<String> = p.supported_platforms.keys().map(|k| k.to_ascii_lowercase()).collect();
     loaders.sort();
     if p.settings.tags.iter().any(|t| t == "SUPPORTS_FOLIA") && !loaders.iter().any(|l| l == "folia") {
@@ -836,8 +836,11 @@ struct HangarFileInfo {
     sha256_hash: Option<String>,
 }
 
+/// Gewählte Hangar-Version: (Versionsname, Download-URL, Dateiname, Größe, SHA-256).
+pub type HangarPick = (String, String, String, Option<u64>, Option<String>);
+
 /// Hangar-Versionen: „Release“-Kanal bevorzugt, sonst neueste. Externe Downloads gehen nicht.
-pub fn pick_hangar(b: &[u8], platform: &str) -> AppResult<Option<(String, String, String, Option<u64>, Option<String>)>> {
+pub fn pick_hangar(b: &[u8], platform: &str) -> AppResult<Option<HangarPick>> {
     let p: HangarPage<HangarVersion> = http::parse(b, "Hangar")?;
     let mut list: Vec<&HangarVersion> = p.result.iter().filter(|v| v.downloads.contains_key(platform)).collect();
     list.sort_by(|a, b| {
@@ -1053,7 +1056,7 @@ pub async fn apply_updates(state: &AppState, s: &Server, files: Option<Vec<Strin
     let t = target(s).ok_or_else(|| AppError::Invalid("Vanilla-Server haben keine Plugins oder Mods.".into()))?;
     let ups = updates(state, s).await?;
     let mut n = 0;
-    for u in ups.iter().filter(|u| files.as_ref().is_none_or(|f| f.contains(&u.file_name))) {
+    for u in ups.iter().filter(|u| files.as_ref().map_or(true, |f| f.contains(&u.file_name))) {
         let r = match u.source {
             AddonSource::Modrinth => resolve_modrinth(state, &t, &u.project_id).await?,
             AddonSource::Hangar => resolve_hangar(state, &t, &u.project_id, true).await?,

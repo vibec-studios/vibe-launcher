@@ -245,7 +245,7 @@ pub fn parse_fill_builds(b: &[u8]) -> AppResult<Vec<PlatformBuild>> {
             ))
         })
         .collect();
-    out.sort_by(|a, b| b.0.cmp(&a.0));
+    out.sort_by_key(|x| std::cmp::Reverse(x.0));
     Ok(out.into_iter().map(|(_, b)| b).collect())
 }
 
@@ -339,7 +339,7 @@ pub fn parse_purpur_builds(b: &[u8]) -> AppResult<Vec<PlatformBuild>> {
             )
         })
         .collect();
-    out.sort_by(|a, b| b.0.cmp(&a.0));
+    out.sort_by_key(|x| std::cmp::Reverse(x.0));
     Ok(out.into_iter().map(|(_, b)| b).collect())
 }
 

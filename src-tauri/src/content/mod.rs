@@ -31,6 +31,8 @@ pub mod store;
 pub mod snapshots;
 pub mod deps;
 pub mod autofix;
+pub mod loaderfix;
+pub mod refresh;
 pub mod sides;
 pub mod modsets;
 pub mod perf;
@@ -597,6 +599,12 @@ impl ContentState {
             }
         }
         map.insert(key, (Instant::now(), value));
+    }
+
+    /// Kurzzeit-Cache der Plattform-APIs und geladene Store-Dateien verwerfen („Neu prüfen“).
+    pub(crate) fn clear_api_cache(&self) {
+        self.cache.lock().clear();
+        self.stores.lock().clear();
     }
 
     /// Sperre für Lese-Ändere-Schreibe-Zyklen an `content.json` einer Instanz.

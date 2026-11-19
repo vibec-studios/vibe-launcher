@@ -334,6 +334,12 @@ pub async fn autofix_undo(state: State<'_, AppState>, instance_id: String) -> Ap
     Ok(state.tasks.spawn("autofix", "Probleme beheben rückgängig machen", Some(instance_id), move |task| autofix::run_undo(st, task, iid)))
 }
 
+/// „Neu prüfen“: Ordner neu einlesen, Updates ohne Cache prüfen, Probleme (inkl. Loader) neu berechnen.
+#[tauri::command]
+pub async fn instance_refresh(state: State<'_, AppState>, instance_id: String) -> AppResult<crate::content::refresh::RefreshReport> {
+    crate::content::refresh::run(&state, &instance_id).await
+}
+
 /// Schnelle Prüfung ohne Netz (vor dem Start).
 #[tauri::command]
 pub async fn autofix_quick(state: State<'_, AppState>, instance_id: String) -> AppResult<autofix::QuickCheck> {

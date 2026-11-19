@@ -19,6 +19,12 @@ pub struct Paths {
     pub root: PathBuf,
 }
 
+impl Default for Paths {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Paths {
     pub fn new() -> Self {
         let root = std::env::var_os("VIBE_LAUNCHER_HOME")
