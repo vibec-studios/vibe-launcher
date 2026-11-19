@@ -81,7 +81,7 @@ pub fn add(paths: &Paths, instance_id: &str, entries: Vec<MissingEntry>) -> AppR
     let mut list = load(paths, instance_id);
     for e in entries {
         let same_project = |x: &MissingEntry| e.project_id.is_some() && x.project_id == e.project_id && x.info.kind == e.info.kind;
-        list.retain(|x| !(x.info.file_name == e.info.file_name && x.info.kind == e.info.kind) && !same_project(x));
+        list.retain(|x| !(same_project(x) || (x.info.file_name == e.info.file_name && x.info.kind == e.info.kind)));
         list.push(e);
     }
     save(paths, instance_id, &list)
@@ -160,9 +160,13 @@ fn is_partial(name: &str) -> bool {
 }
 
 /// Hash-Werte einer Datei, gecacht nach (Pfad, Größe, Änderungszeit) – große Dateien nicht in jedem Takt neu lesen.
+/// Pfad, Größe, Änderungszeit -> (SHA-1, Murmur2)
+type HashKey = (PathBuf, u64, SystemTime);
+type HashVal = (Option<String>, Option<u32>);
+
 #[derive(Default)]
 pub struct HashCache {
-    map: HashMap<(PathBuf, u64, SystemTime), (Option<String>, Option<u32>)>,
+    map: HashMap<HashKey, HashVal>,
 }
 
 impl HashCache {

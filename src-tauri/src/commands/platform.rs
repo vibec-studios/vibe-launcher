@@ -227,7 +227,7 @@ pub async fn optsync_capture(
     let p = optsync::config_path(&state.paths.root);
     let mut cfg = optsync::SyncConfig::load(&p);
     cfg.master
-        .retain(|k, _| optsync::category_of(k).is_none_or(|c| !categories.iter().any(|x| x == c)));
+        .retain(|k, _| optsync::category_of(k).map_or(true, |c| !categories.iter().any(|x| x == c)));
     optsync::capture(&text, &mut cfg.master, &categories);
     cfg.source = Some(instance_id);
     cfg.updated_at = Some(chrono::Utc::now().timestamp_millis());

@@ -268,7 +268,7 @@ pub async fn status(state: &AppState) -> BlockbenchStatus {
     if state.settings().vibe.enabled {
         match latest_plugin(state, false).await {
             Ok(bb) => {
-                out.update_available = present && meta.as_ref().is_none_or(|m| m.sha256 != bb.sha256);
+                out.update_available = present && meta.as_ref().map_or(true, |m| m.sha256 != bb.sha256);
                 out.latest_version = Some(bb.version);
                 out.min_client = bb.min_client;
                 out.notes = bb.notes;

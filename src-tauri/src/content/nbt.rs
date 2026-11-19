@@ -171,6 +171,7 @@ pub fn parse_maybe_gzip(b: &[u8]) -> R<Tag> {
 #[cfg(test)]
 pub mod writer {
     //! Kleiner NBT-Schreiber nur für Tests.
+    #[derive(Default)]
     pub struct W(pub Vec<u8>);
     impl W {
         pub fn new() -> Self {

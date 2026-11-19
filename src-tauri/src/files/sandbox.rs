@@ -131,7 +131,7 @@ impl Sandbox {
     /// Verborgener Eintrag direkt in der Wurzel?
     pub fn is_hidden_top(&self, name: &str) -> bool {
         let n = name.to_lowercase();
-        self.hidden.iter().any(|h| *h == n)
+        self.hidden.contains(&n)
     }
 
     pub fn canon_root(&self) -> AppResult<PathBuf> {

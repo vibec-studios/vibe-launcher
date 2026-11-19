@@ -378,7 +378,7 @@ impl Library {
     pub fn list(&self) -> Vec<LibrarySkin> {
         let items = self.items.lock().clone();
         let mut out: Vec<LibrarySkin> = items.iter().filter_map(|s| self.to_public(s)).collect();
-        out.sort_by(|a, b| b.added_at.cmp(&a.added_at));
+        out.sort_by_key(|s| std::cmp::Reverse(s.added_at));
         out
     }
 

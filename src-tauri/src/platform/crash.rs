@@ -157,12 +157,12 @@ fn read_mod_ids(jar: &Path) -> Vec<(String, Option<String>)> {
             }
         }
     }
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| Regex::new(r#"(?m)^\s*modId\s*=\s*"([^"]+)""#).unwrap());
     for name in ["META-INF/neoforge.mods.toml", "META-INF/mods.toml"] {
         if let Ok(mut e) = z.by_name(name) {
             let mut s = String::new();
             if std::io::Read::read_to_string(&mut e, &mut s).is_ok() {
-                static RE: OnceLock<Regex> = OnceLock::new();
-                let re = RE.get_or_init(|| Regex::new(r#"(?m)^\s*modId\s*=\s*"([^"]+)""#).unwrap());
                 for c in re.captures_iter(&s) {
                     out.push((c[1].to_string(), None));
                 }
@@ -231,7 +231,7 @@ fn rules() -> &'static Rules {
     })
 }
 
-fn line_of<'a>(text: &'a str, start: usize) -> &'a str {
+fn line_of(text: &str, start: usize) -> &str {
     let s = text[..start].rfind('\n').map(|i| i + 1).unwrap_or(0);
     let e = text[start..]
         .find('\n')
@@ -571,7 +571,7 @@ pub fn analyze(
         }
         d.actions.push(Action::Upload);
     }
-    out.sort_by(|a, b| b.confidence.cmp(&a.confidence));
+    out.sort_by_key(|d| std::cmp::Reverse(d.confidence));
     out
 }
 
@@ -628,7 +628,7 @@ pub async fn analyze_instance(
         text.push('\n');
         text.push_str(&session);
         let mods = ModIndex::scan(&game.join("mods"));
-        analyze(&text, exit_code, &mods, max_mem as u32)
+        analyze(&text, exit_code, &mods, max_mem)
     })
     .await
     .map_err(|e| crate::error::AppError::msg(e.to_string()))

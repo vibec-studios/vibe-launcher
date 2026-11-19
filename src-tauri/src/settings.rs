@@ -556,8 +556,7 @@ mod tests {
         std::fs::create_dir_all(paths.instance_dir("a")).unwrap();
         std::fs::write(paths.instance_json("a"), "{}").unwrap();
         assert!(Settings::load_for(&paths).onboarding_done, "Instanz vorhanden = bestehender Nutzer");
-        let mut s = Settings::default();
-        s.ui_mode = "simple".into();
+        let s = Settings { ui_mode: "simple".into(), ..Default::default() };
         s.save(&paths.settings_file()).unwrap();
         let loaded = Settings::load_for(&paths);
         assert_eq!(loaded.ui_mode, "simple");
