@@ -25,21 +25,32 @@ use std::path::{Path, PathBuf};
 
 pub const WARN_NRC: &str = "NoRisk-Client-Mods werden nicht übernommen – sie laufen nur im NoRisk-Launcher.";
 
-/// Dateien/Ordner im Spielordner, die übernommen werden (Rest gehört dem NoRisk-Launcher bzw. dessen Mods).
-const COPY: &[&str] = &[
-    "config",
-    "defaultconfigs",
-    "saves",
-    "resourcepacks",
-    "shaderpacks",
-    "screenshots",
-    "schematics",
-    "options.txt",
-    "optionsof.txt",
-    "optionsshaders.txt",
-    "servers.dat",
-    "hotbar.nbt",
+/// Einträge auf oberster Ebene des Spielordners, die NICHT übernommen werden: NoRisk-eigene Daten (laufen nur im
+/// NoRisk-Launcher), Mods (kommen über Modrinth bzw. als passende lose JARs) und Laufzeit-Reste.
+/// Alles andere (Configs, Welten, Packs, Optionen, Daten anderer Mods wie `xaero/`, `journeymap/` …) kommt mit.
+const SKIP: &[&str] = &[
+    "mods",
+    "custom_mods",
+    "NoRiskClient",
+    "optionsNRC.json",
+    "logs",
+    "crash-reports",
+    "debug",
+    "cache",
+    "downloads",
+    "backups",
+    "usercache.json",
+    "realms_persistence.json",
+    "command_history.txt",
+    ".fabric",
+    ".mixin.out",
 ];
+
+/// Wird dieser Eintrag (oberste Ebene) beim Import übersprungen?
+fn skip_top(name: &str) -> bool {
+    let l = name.to_ascii_lowercase();
+    SKIP.iter().any(|s| s.eq_ignore_ascii_case(name)) || (l.starts_with("hs_err_pid") && l.ends_with(".log")) || l.ends_with(".dat_old")
+}
 
 /// Wurzelordner des NoRisk-Launchers (je OS).
 pub fn default_root() -> Option<PathBuf> {
@@ -704,7 +715,7 @@ pub async fn run_import(
     let res: AppResult<Vec<String>> = async {
         super::external::write_mark(&state, &inst.id, super::LauncherKind::Norisk, &source_path)?;
         let dst = state.paths.game_dir(&inst.id);
-        // 1. Spieldaten (Whitelist) + lose JARs kopieren
+        // 1. Spieldaten (alles außer SKIP) + lose JARs kopieren
         task.stage("Kopiere Spieldaten …", Some(0.0));
         let src = f.game_dir.clone();
         let jars = plan.jars.clone();
@@ -712,10 +723,16 @@ pub async fn run_import(
         let d2 = dst.clone();
         let copied = tokio::task::spawn_blocking(move || -> AppResult<u64> {
             let mut files: Vec<(PathBuf, PathBuf)> = Vec::new();
-            for e in COPY {
-                let p = src.join(e);
+            let mut top: Vec<std::fs::DirEntry> = std::fs::read_dir(&src)?.flatten().collect();
+            top.sort_by_key(|e| e.file_name());
+            for e in top {
+                let name = e.file_name().to_string_lossy().to_string();
+                if skip_top(&name) {
+                    continue;
+                }
+                let p = e.path();
                 if p.is_file() {
-                    files.push((p, PathBuf::from(e)));
+                    files.push((p, PathBuf::from(&name)));
                 } else if p.is_dir() {
                     for w in walkdir::WalkDir::new(&p).follow_links(false).into_iter().flatten().filter(|w| w.file_type().is_file()) {
                         if let Ok(rel) = w.path().strip_prefix(&src) {
@@ -889,6 +906,16 @@ mod tests {
         assert_eq!(game_dir(pd, &p), pd.join("noriskclient").join("hypixel"));
         p.path = "../../evil".into();
         assert_eq!(game_dir(pd, &p), pd.join("evil"));
+    }
+
+    #[test]
+    fn copies_mod_data_but_not_norisk_internals() {
+        for keep in ["config", "saves", "xaero", "journeymap", "options.txt", "servers.dat", "data", "schematics"] {
+            assert!(!skip_top(keep), "{keep} muss mitkommen");
+        }
+        for skip in ["mods", "custom_mods", "NoRiskClient", "noriskclient", "optionsNRC.json", "logs", "crash-reports", "hs_err_pid31768.log", "servers.dat_old", "usercache.json"] {
+            assert!(skip_top(skip), "{skip} darf nicht mitkommen");
+        }
     }
 
     #[test]
