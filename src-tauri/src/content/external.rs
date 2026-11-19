@@ -3,7 +3,8 @@
 //!
 //! Fremde Ordner werden **nur gelesen**. Die SQLite-Datenbank der Modrinth App (WAL-Modus, App läuft
 //! evtl.) wird vor dem Lesen samt `-wal`/`-shm` nach `cache/tmp/` kopiert.
-use super::import::{loader_from_cf_id, prism_info, PrismSettings};
+use super::extsettings::{self, ExtSettings};
+use super::import::{loader_from_cf_id, parse_ini, prism_info};
 use super::{ExternalInstance, ExternalLauncher, LauncherKind};
 use crate::error::{AppError, AppResult};
 use crate::instance::{InstallState, Instance, Loader, LoaderKind, PackSource, PackSourceKind};
@@ -24,12 +25,13 @@ pub struct Found {
     pub game_dir: PathBuf,
     pub icon_path: Option<PathBuf>,
     pub pack: Option<PackSource>,
-    pub prism: Option<PrismSettings>,
+    /// Einstellungen der Instanz im fremden Launcher (siehe [`super::extsettings`])
+    pub settings: ExtSettings,
     /// NoRisk: was übernommen/installiert wird
     pub norisk: Option<super::norisk::Plan>,
 }
 
-fn launcher_name(k: LauncherKind) -> &'static str {
+pub(crate) fn launcher_name(k: LauncherKind) -> &'static str {
     match k {
         LauncherKind::Modrinth => "Modrinth App",
         LauncherKind::Prism => "Prism Launcher",
@@ -98,11 +100,12 @@ pub(crate) fn found(name: String, game_dir: PathBuf, source_path: &Path, mc: Str
             size: None,
             warning: None,
             imported_as: None,
+            settings: None,
         },
         game_dir,
         icon_path,
         pack: None,
-        prism: None,
+        settings: ExtSettings::default(),
         norisk: None,
     }
 }
@@ -364,6 +367,7 @@ fn modrinth_scan(root: &Path, tmp: &Path) -> Vec<Found> {
         .map(PathBuf::from)
         .filter(|p| p.join("profiles").is_dir());
     let base = custom.unwrap_or_else(|| root.to_path_buf());
+    let settings: HashMap<String, ExtSettings> = conn.as_ref().map(extsettings::modrinth_all).unwrap_or_default();
     let by_path: HashMap<String, MrRow> = rows.into_iter().map(|r| (r.path.to_lowercase(), r)).collect();
     let Ok(rd) = std::fs::read_dir(base.join("profiles")) else { return vec![] };
     let dirs: Vec<PathBuf> = rd.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
@@ -371,12 +375,22 @@ fn modrinth_scan(root: &Path, tmp: &Path) -> Vec<Found> {
     let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(2, 8);
     let chunk = dirs.len().div_ceil(n).max(1);
     std::thread::scope(|sc| {
-        let handles: Vec<_> = dirs.chunks(chunk).map(|c| sc.spawn(|| c.iter().map(|d| modrinth_profile(d, &by_path)).collect::<Vec<_>>())).collect();
+        let handles: Vec<_> = dirs.chunks(chunk).map(|c| sc.spawn(|| c.iter().map(|d| modrinth_profile(d, &by_path, &settings)).collect::<Vec<_>>())).collect();
         handles.into_iter().flat_map(|h| h.join().unwrap_or_default()).collect()
     })
 }
 
-fn modrinth_profile(dir: &Path, by_path: &HashMap<String, MrRow>) -> Found {
+fn modrinth_profile(dir: &Path, by_path: &HashMap<String, MrRow>, settings: &HashMap<String, ExtSettings>) -> Found {
+    let mut f = modrinth_profile_inner(dir, by_path);
+    let key = dir.file_name().map(|n| n.to_string_lossy().to_lowercase()).unwrap_or_default();
+    f.settings = match settings.get(&key) {
+        Some(s) => s.clone(),
+        None => std::fs::read(dir.join("profile.json")).ok().and_then(|b| serde_json::from_slice::<Value>(&b).ok()).map(|v| extsettings::modrinth_profile_json(&v)).unwrap_or_default(),
+    };
+    f
+}
+
+fn modrinth_profile_inner(dir: &Path, by_path: &HashMap<String, MrRow>) -> Found {
     let dir = dir.to_path_buf();
     let folder = dir.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
     {
@@ -438,7 +452,32 @@ fn prism_icons_dir(root: &Path) -> PathBuf {
     root.join("icons")
 }
 
+/// Globale Standardwerte, die eine Prism-Instanz erbt (nur diese Schlüssel; API-Schlüssel, Proxy-Passwort usw.
+/// der Launcher-Konfiguration werden verworfen).
+const PRISM_GLOBAL_KEYS: &[&str] =
+    &["MinMemAlloc", "MaxMemAlloc", "JvmArgs", "MinecraftWinWidth", "MinecraftWinHeight", "PreLaunchCommand", "WrapperCommand", "PostExitCommand", "Env"];
+
+/// `prismlauncher.cfg`/`polymc.cfg`/`multimc.cfg` der Wurzel (angegeben oder oberhalb des Instanzordners).
+fn prism_global(dir: &Path, root: Option<&Path>) -> HashMap<String, String> {
+    let mut cands: Vec<&Path> = root.into_iter().collect();
+    cands.extend(dir.ancestors().skip(1).take(2));
+    for c in cands {
+        for cfg in ["prismlauncher.cfg", "polymc.cfg", "multimc.cfg"] {
+            if let Ok(t) = std::fs::read_to_string(c.join(cfg)) {
+                let mut m = parse_ini(&t);
+                m.retain(|k, _| PRISM_GLOBAL_KEYS.contains(&k.as_str()));
+                return m;
+            }
+        }
+    }
+    HashMap::new()
+}
+
 pub fn prism_one(dir: &Path, icons_dir: Option<&Path>) -> Option<(Found, LauncherKind)> {
+    prism_one_in(dir, icons_dir, None)
+}
+
+fn prism_one_in(dir: &Path, icons_dir: Option<&Path>, root: Option<&Path>) -> Option<(Found, LauncherKind)> {
     let cfg = std::fs::read_to_string(dir.join("instance.cfg")).ok()?;
     let pack = std::fs::read(dir.join("mmc-pack.json")).ok();
     let info = prism_info(&cfg, pack.as_deref());
@@ -457,7 +496,11 @@ pub fn prism_one(dir: &Path, icons_dir: Option<&Path>) -> Option<(Found, Launche
     let mut f = found(name, game_dir, dir, info.mc_version.clone(), info.loader.clone(), icon);
     f.info.last_played = info.last_launch;
     f.info.play_time_secs = info.total_time.filter(|t| *t > 0);
-    f.prism = Some(info.settings.clone());
+    let map = parse_ini(&cfg);
+    let folder = dir.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+    let group = dir.parent().and_then(|p| extsettings::prism_group(p, &folder));
+    f.settings = extsettings::prism(&map, &prism_global(dir, root), group);
+    f.pack = extsettings::prism_pack(&map);
     if f.info.mc_version.is_empty() {
         f = with_guess(f);
     }
@@ -465,11 +508,11 @@ pub fn prism_one(dir: &Path, icons_dir: Option<&Path>) -> Option<(Found, Launche
     Some((f, kind))
 }
 
-fn prism_scan(instances: &Path, icons: Option<&Path>) -> Vec<Found> {
+fn prism_scan(instances: &Path, icons: Option<&Path>, root: Option<&Path>) -> Vec<Found> {
     let Ok(rd) = std::fs::read_dir(instances) else { return vec![] };
     rd.flatten()
         .filter(|e| !e.file_name().to_string_lossy().starts_with('_') && !e.file_name().to_string_lossy().starts_with('.'))
-        .filter_map(|e| prism_one(&e.path(), icons).map(|(f, _)| f))
+        .filter_map(|e| prism_one_in(&e.path(), icons, root).map(|(f, _)| f))
         .collect()
 }
 
@@ -494,6 +537,7 @@ pub fn curseforge_one(dir: &Path) -> Option<Found> {
     let loader = st(v.get("baseModLoader").and_then(|b| b.get("name"))).map(|id| loader_from_cf_id(&id, &mc)).unwrap_or_else(vanilla);
     let icon = st(v.get("profileImagePath")).map(PathBuf::from).filter(|p| p.is_file());
     let mut f = found(name, dir.to_path_buf(), dir, mc, loader, icon);
+    f.settings = extsettings::curseforge(&v);
     f.info.last_played = st(v.get("lastPlayed")).and_then(|s| chrono::DateTime::parse_from_rfc3339(&s).ok()).map(|d| d.timestamp_millis()).filter(|v| *v > 0);
     if let Some(mp) = v.get("installedModpack").filter(|m| !m.is_null()) {
         let pid = mp.get("addonID").and_then(|x| x.as_u64()).map(|x| x.to_string());
@@ -532,6 +576,8 @@ pub fn atlauncher_one(dir: &Path) -> Option<Found> {
     let mut f = found(name, dir.to_path_buf(), dir, mc, loader, icon);
     f.info.last_played = l.get("lastPlayed").and_then(|x| x.as_i64().or_else(|| x.as_str().and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok()).map(|d| d.timestamp_millis()))).filter(|v| *v > 0).map(ms);
     f.info.play_time_secs = l.get("totalPlayTime").and_then(|x| x.as_u64()).filter(|v| *v > 0);
+    f.settings = extsettings::atlauncher(l, extsettings::atlauncher_global(dir).as_ref());
+    f.pack = extsettings::atlauncher_pack(l);
     if f.info.mc_version.is_empty() {
         f = with_guess(f);
     }
@@ -567,7 +613,14 @@ fn sort(v: &mut [Found]) {
 
 fn launcher(id: LauncherKind, path: &Path, mut found: Vec<Found>) -> (ExternalLauncher, Vec<Found>) {
     sort(&mut found);
-    (ExternalLauncher { id, name: launcher_name(id).into(), path: s(path), instances: found.iter().map(|f| f.info.clone()).collect() }, found)
+    (ExternalLauncher { id, name: launcher_name(id).into(), path: s(path), instances: found.iter().map(info_of).collect() }, found)
+}
+
+/// Anzeige-Daten einer Instanz inkl. gefundener Einstellungen.
+fn info_of(f: &Found) -> ExternalInstance {
+    let mut i = f.info.clone();
+    i.settings = Some(f.settings.clone()).filter(|s| !s.is_empty());
+    i
 }
 
 /// Alle bekannten Launcher an den Standardorten (blockierend).
@@ -579,7 +632,7 @@ pub fn detect_blocking(tmp: &Path) -> Vec<(ExternalLauncher, Vec<Found>)> {
     for (k, r) in prism_roots() {
         let icons = prism_icons_dir(&r);
         let inst = prism_instances_dir(&r);
-        out.push(launcher(k, &r, prism_scan(&inst, Some(&icons))));
+        out.push(launcher(k, &r, prism_scan(&inst, Some(&icons), Some(&r))));
     }
     for r in curseforge_roots() {
         out.push(launcher(LauncherKind::Curseforge, &r, curseforge_scan(&r)));
@@ -628,7 +681,7 @@ pub fn scan_dir_blocking(path: &Path, tmp: &Path) -> AppResult<(ExternalLauncher
     for (cfg, kind) in [("prismlauncher.cfg", LauncherKind::Prism), ("polymc.cfg", LauncherKind::Prism), ("multimc.cfg", LauncherKind::Multimc)] {
         if path.join(cfg).is_file() {
             let icons = prism_icons_dir(path);
-            return Ok(launcher(kind, path, prism_scan(&prism_instances_dir(path), Some(&icons))));
+            return Ok(launcher(kind, path, prism_scan(&prism_instances_dir(path), Some(&icons), Some(path))));
         }
     }
     // Einzelne Instanz
@@ -649,7 +702,7 @@ pub fn scan_dir_blocking(path: &Path, tmp: &Path) -> AppResult<(ExternalLauncher
     let has = |f: &str| subdirs.iter().any(|d| d.join(f).is_file());
     if has("instance.cfg") {
         let icons = path.parent().map(|r| r.join("icons"));
-        let list = prism_scan(path, icons.as_deref());
+        let list = prism_scan(path, icons.as_deref(), None);
         let kind = if list.is_empty() { LauncherKind::Prism } else { subdirs.iter().find_map(|d| prism_one(d, None).map(|(_, k)| k)).unwrap_or(LauncherKind::Prism) };
         return Ok(launcher(kind, path, list));
     }
@@ -694,12 +747,41 @@ fn describe_blocking(kind: LauncherKind, source: &Path, tmp: &Path) -> AppResult
     f.ok_or_else(|| AppError::NotFound(format!("Instanz {}", source.display())))
 }
 
+/// Mehrere Instanzen einlesen; Modrinth- und NoRisk-Wurzeln werden dabei nur einmal gelesen.
+/// `None`, wenn die Quelle nicht mehr vorhanden ist.
+pub(crate) fn describe_many(reqs: &[(LauncherKind, String)], tmp: &Path) -> Vec<Option<Found>> {
+    let mut cache: HashMap<String, Vec<Found>> = HashMap::new();
+    reqs.iter()
+        .map(|(kind, source)| {
+            let me = norm(source);
+            let from = |list: &[Found]| list.iter().find(|f| norm(&f.info.source_path) == me).cloned();
+            match kind {
+                LauncherKind::Modrinth => {
+                    let mut roots: Vec<PathBuf> = Path::new(source).parent().and_then(|p| p.parent()).map(Path::to_path_buf).into_iter().collect();
+                    roots.retain(|r| r.join("app.db").is_file() || r.join("profiles").is_dir());
+                    roots.extend(modrinth_roots());
+                    roots.iter().find_map(|r| from(cache.entry(format!("mr|{}", norm(&s(r)))).or_insert_with(|| modrinth_scan(r, tmp))))
+                }
+                LauncherKind::Norisk => super::norisk::roots_for(source)
+                    .iter()
+                    .find_map(|r| from(cache.entry(format!("nr|{}", norm(&s(r)))).or_insert_with(|| super::norisk::scan(r, tmp, &icons_of(tmp))))),
+                k => describe_blocking(*k, Path::new(source), tmp).ok(),
+            }
+        })
+        .collect()
+}
+
 /// Merker: aus welchem Ordner wurde eine Instanz importiert (`instances/<id>/external.json`).
 #[derive(serde::Serialize, serde::Deserialize)]
-struct ExternalMark {
-    launcher: LauncherKind,
-    source_path: String,
-    imported_at: i64,
+pub(crate) struct ExternalMark {
+    pub launcher: LauncherKind,
+    pub source_path: String,
+    pub imported_at: i64,
+}
+
+pub(crate) fn read_mark(state: &AppState, instance_id: &str) -> Option<ExternalMark> {
+    let p = state.paths.instance_dir(instance_id).join("external.json");
+    serde_json::from_slice(&std::fs::read(p).ok()?).ok()
 }
 
 pub(crate) fn write_mark(state: &AppState, instance_id: &str, launcher: LauncherKind, source_path: &str) -> AppResult<()> {
@@ -712,8 +794,7 @@ pub(crate) fn write_mark(state: &AppState, instance_id: &str, launcher: Launcher
 fn imported_map(state: &AppState) -> HashMap<String, String> {
     let mut m = HashMap::new();
     for inst in state.instances.list() {
-        let p = state.paths.instance_dir(&inst.id).join("external.json");
-        if let Some(mark) = std::fs::read(&p).ok().and_then(|b| serde_json::from_slice::<ExternalMark>(&b).ok()) {
+        if let Some(mark) = read_mark(state, &inst.id) {
             m.insert(norm(&mark.source_path), inst.id.clone());
         }
     }
@@ -754,11 +835,33 @@ fn fmt_size(b: u64) -> String {
     }
 }
 
-/// Zu kopierende Dateien + Gesamtgröße (Symlinks werden nicht verfolgt).
+/// Zu kopierende Dateien + Gesamtgröße.
 /// `skip`: Dateinamen auf oberster Ebene, die nicht mitkommen (Metadaten des fremden Launchers).
+/// Verlinkte Dateien (z. B. eine geteilte `options.txt`) werden mit ihrem Inhalt kopiert, verlinkte Ordner nur
+/// auf oberster Ebene (z. B. `config`, `saves`) – darin wird keinen weiteren Ordner-Links gefolgt (keine Schleifen).
 fn plan_copy(src: &Path, skip: &[&str]) -> (Vec<(PathBuf, PathBuf, u64)>, u64) {
     let mut files = Vec::new();
     let mut total = 0;
+    let mut add = |path: &Path, rel: &Path, ft: std::fs::FileType, top: bool, files: &mut Vec<(PathBuf, PathBuf, u64)>| {
+        if ft.is_dir() {
+            files.push((path.to_path_buf(), rel.to_path_buf(), u64::MAX));
+            return false;
+        }
+        let meta = if ft.is_symlink() { std::fs::metadata(path) } else { path.symlink_metadata() };
+        match meta {
+            Ok(m) if m.is_file() => {
+                total += m.len();
+                files.push((path.to_path_buf(), rel.to_path_buf(), m.len()));
+                false
+            }
+            // verlinkter Ordner auf oberster Ebene -> Inhalt übernehmen
+            Ok(m) if m.is_dir() && top => {
+                files.push((path.to_path_buf(), rel.to_path_buf(), u64::MAX));
+                true
+            }
+            _ => false,
+        }
+    };
     for e in walkdir::WalkDir::new(src).follow_links(false).into_iter().flatten() {
         let Ok(rel) = e.path().strip_prefix(src) else { continue };
         if rel.as_os_str().is_empty() {
@@ -767,12 +870,11 @@ fn plan_copy(src: &Path, skip: &[&str]) -> (Vec<(PathBuf, PathBuf, u64)>, u64) {
         if e.depth() == 1 && skip.iter().any(|s| rel.as_os_str().eq_ignore_ascii_case(s)) {
             continue;
         }
-        if e.file_type().is_dir() {
-            files.push((e.path().to_path_buf(), rel.to_path_buf(), u64::MAX));
-        } else if e.file_type().is_file() {
-            let size = e.metadata().map(|m| m.len()).unwrap_or(0);
-            total += size;
-            files.push((e.path().to_path_buf(), rel.to_path_buf(), size));
+        if add(e.path(), rel, e.file_type(), e.depth() == 1, &mut files) {
+            for w in walkdir::WalkDir::new(e.path()).follow_links(false).min_depth(1).into_iter().flatten() {
+                let Ok(inner) = w.path().strip_prefix(e.path()) else { continue };
+                add(w.path(), &rel.join(inner), w.file_type(), false, &mut files);
+            }
         }
     }
     (files, total)
@@ -787,13 +889,15 @@ pub async fn run_import(
     name: Option<String>,
     mc_version: Option<String>,
     loader: Option<Loader>,
+    settings: Option<Vec<String>>,
 ) -> AppResult<()> {
     task.stage("Lese Instanz …", None);
+    let keys: std::collections::HashSet<String> = settings.unwrap_or_else(extsettings::default_keys).into_iter().collect();
     let tmp = state.paths.tmp();
     let sp = PathBuf::from(&source_path);
     let f = tokio::task::spawn_blocking(move || describe_blocking(kind, &sp, &tmp)).await??;
     if kind == LauncherKind::Norisk {
-        return super::norisk::run_import(state, task, f, source_path, name, mc_version, loader).await;
+        return super::norisk::run_import(state, task, f, source_path, name, mc_version, loader, keys).await;
     }
     let mc = mc_version.filter(|v| !v.trim().is_empty()).unwrap_or_else(|| f.info.mc_version.clone());
     if mc.trim().is_empty() {
@@ -842,12 +946,8 @@ pub async fn run_import(
         notes: None,
         auto_update_content: None,
     };
-    if let Some(p) = &f.prism {
-        inst.java.min_memory_mb = p.min_memory_mb;
-        inst.java.max_memory_mb = p.max_memory_mb;
-        inst.java.jvm_args = p.jvm_args.clone();
-        inst.notes = p.notes.clone();
-    }
+    let (prepared, java_note) = extsettings::prepare(&state.settings(), &f.settings, &inst.mc_version, keys.contains("java")).await;
+    extsettings::apply(&mut inst, &prepared, &keys);
     let inst = state.instances.insert_new(inst)?;
     task.set_instance(inst.id.clone());
 
@@ -890,7 +990,10 @@ pub async fn run_import(
     .await;
     match res {
         Ok(()) => {
-            task.message(format!("{} übernommen", fmt_size(total)));
+            task.message(match &java_note {
+                Some(n) => format!("{} übernommen · {n}", fmt_size(total)),
+                None => format!("{} übernommen", fmt_size(total)),
+            });
             state.content.emit_changed(&inst.id);
             Ok(())
         }
@@ -1039,6 +1142,215 @@ mod tests {
         assert_eq!(f[0].info.name, "Altes Profil");
         assert_eq!(f[0].info.loader.kind, LoaderKind::Fabric);
         assert_eq!(f[0].info.mc_version, "1.20.1");
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    // ---------------------------------------------------------------- Einstellungen (Fixtures je Launcher)
+
+    fn vibe_instance(mc: &str) -> Instance {
+        serde_json::from_value(serde_json::json!({
+            "id": "imp", "name": "Importiert", "icon": null, "accent": null, "group": null, "mc_version": mc,
+            "loader": {"kind": "forge", "version": "47.2.0"}, "created_at": 0
+        }))
+        .unwrap()
+    }
+
+    fn keys(k: &[&str]) -> std::collections::HashSet<String> {
+        k.iter().map(|s| s.to_string()).collect()
+    }
+
+    /// Prism-Wurzel: globale Standards (inkl. API-Schlüssel, der nie übernommen wird), Gruppe, Modpack-Herkunft.
+    fn prism_root() -> (PathBuf, PathBuf) {
+        let root = tmp();
+        let inst = root.join("instances").join("ATM9");
+        std::fs::create_dir_all(inst.join(".minecraft/config")).unwrap();
+        std::fs::write(
+            root.join("prismlauncher.cfg"),
+            "[General]\nInstanceDir=instances\nMaxMemAlloc=4096\nMinMemAlloc=512\nJvmArgs=-XX:+UseG1GC\nMinecraftWinWidth=854\nMinecraftWinHeight=480\nCFKeyOverride=geheim\nWrapperCommand=gamemoderun\n",
+        )
+        .unwrap();
+        std::fs::write(root.join("instances/instgroups.json"), r#"{"formatVersion":"1","groups":{"Modpacks":{"hidden":false,"instances":["ATM9"]}}}"#).unwrap();
+        std::fs::write(
+            inst.join("instance.cfg"),
+            "[General]\nname=All the Mods 9\nOverrideMemory=true\nMinMemAlloc=2048\nMaxMemAlloc=8192\nOverrideWindow=true\nMinecraftWinWidth=1920\nMinecraftWinHeight=1080\n\
+             OverrideCommands=true\nPreLaunchCommand=echo $INST_NAME\nOverrideEnv=true\nEnv={\"FOO\":\"bar\"}\nnotes=\"Erste Zeile\\nZweite\"\n\
+             ManagedPack=true\nManagedPackType=flame\nManagedPackID=715572\nManagedPackVersionID=5000\nManagedPackName=All the Mods 9\ntotalTimePlayed=7200\n",
+        )
+        .unwrap();
+        std::fs::write(inst.join("mmc-pack.json"), r#"{"components":[{"uid":"net.minecraft","version":"1.20.1"},{"uid":"net.minecraftforge","version":"47.2.0"}]}"#).unwrap();
+        std::fs::write(inst.join(".minecraft/options.txt"), "fov:0.8\nkey_key.jump:key.keyboard.space\n").unwrap();
+        std::fs::write(inst.join(".minecraft/config/jei.toml"), "a=1").unwrap();
+        (root, inst)
+    }
+
+    #[test]
+    fn prism_settings_read() {
+        let (root, inst) = prism_root();
+        let (l, f) = scan_dir_blocking(&root, &root.join("tmp")).unwrap();
+        let s = &f[0].settings;
+        assert_eq!((s.min_memory_mb, s.max_memory_mb), (Some(2048), Some(8192)));
+        assert_eq!((s.width, s.height), (Some(1920), Some(1080)));
+        assert_eq!(s.jvm_args.as_deref(), Some("-XX:+UseG1GC"), "globale JVM-Argumente (geerbt)");
+        assert!(s.inherited.contains(&"jvm_args".to_string()));
+        assert!(s.pre_launch.as_deref().unwrap().contains("INST_NAME"));
+        // Instanz überschreibt die Befehle -> globaler Wrapper zählt nicht
+        assert!(s.wrapper.is_none());
+        assert_eq!(s.env.get("FOO").map(String::as_str), Some("bar"));
+        assert_eq!(s.notes.as_deref(), Some("Erste Zeile\nZweite"));
+        assert_eq!(s.group.as_deref(), Some("Modpacks"));
+        let pack = f[0].pack.as_ref().unwrap();
+        assert_eq!((pack.kind, pack.project_id.as_deref()), (PackSourceKind::Curseforge, Some("715572")));
+        assert!(l.instances[0].settings.is_some(), "Einstellungen gehen an den Import-Dialog");
+        // Nur bekannte Schlüssel der globalen Konfiguration
+        let g = prism_global(&inst, Some(&root));
+        assert!(!g.contains_key("CFKeyOverride") && !g.contains_key("InstanceDir"));
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn modrinth_settings_read() {
+        let root = tmp();
+        std::fs::create_dir_all(root.join("profiles/Eigen/mods")).unwrap();
+        std::fs::create_dir_all(root.join("meta")).unwrap();
+        {
+            let c = rusqlite::Connection::open(root.join("app.db")).unwrap();
+            c.execute_batch(
+                "CREATE TABLE settings (id INTEGER, custom_dir TEXT, extra_launch_args TEXT, custom_env_vars TEXT, mc_memory_max INTEGER, mc_force_fullscreen INTEGER,
+                    mc_game_resolution_x INTEGER, mc_game_resolution_y INTEGER, hook_pre_launch TEXT, hook_wrapper TEXT, hook_post_exit TEXT);
+                 INSERT INTO settings VALUES (0,NULL,'[]','[]',2048,0,854,480,NULL,NULL,NULL);
+                 CREATE TABLE profiles (path TEXT, name TEXT, icon_path TEXT, game_version TEXT, mod_loader TEXT, mod_loader_version TEXT, last_played INTEGER,
+                    submitted_time_played INTEGER, recent_time_played INTEGER, linked_project_id TEXT, linked_version_id TEXT, groups TEXT,
+                    override_java_path TEXT, override_extra_launch_args TEXT, override_custom_env_vars TEXT, override_mc_memory_max INTEGER,
+                    override_mc_force_fullscreen INTEGER, override_mc_game_resolution_x INTEGER, override_mc_game_resolution_y INTEGER,
+                    override_hook_pre_launch TEXT, override_hook_wrapper TEXT, override_hook_post_exit TEXT);
+                 INSERT INTO profiles VALUES ('Eigen','Eigenes Profil',NULL,'1.21.1','fabric','0.16.9',1700000000,600,0,NULL,NULL,'[\"Survival\"]',
+                    NULL,'[\"-Xss4M\"]','[[\"MESA_GLTHREAD\",\"true\"]]',6144,1,NULL,NULL,NULL,'prime-run',NULL);",
+            )
+            .unwrap();
+        }
+        let (l, f) = scan_dir_blocking(&root, &root.join("tmp")).unwrap();
+        assert_eq!(l.id, LauncherKind::Modrinth);
+        let s = &f[0].settings;
+        assert_eq!(s.max_memory_mb, Some(6144));
+        assert_eq!(s.jvm_args.as_deref(), Some("-Xss4M"));
+        assert_eq!(s.env.get("MESA_GLTHREAD").map(String::as_str), Some("true"));
+        assert_eq!(s.fullscreen, Some(true));
+        assert_eq!((s.width, s.height), (Some(854), Some(480)), "Auflösung aus den App-Standards");
+        assert_eq!(s.wrapper.as_deref(), Some("prime-run"));
+        assert_eq!(s.group.as_deref(), Some("Survival"));
+        // Kopie der DB wird gelesen, das Original bleibt unverändert
+        assert!(root.join("tmp").read_dir().unwrap().next().is_some());
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn curseforge_settings_read() {
+        let root = tmp();
+        let cf = root.join("Instances").join("Pack");
+        std::fs::create_dir_all(cf.join("mods")).unwrap();
+        std::fs::write(
+            cf.join("minecraftinstance.json"),
+            r#"{"name":"Pack","gameVersion":"1.20.1","baseModLoader":{"name":"forge-47.2.0"},"isMemoryOverride":true,"allocatedMemory":10240,"javaArgsOverride":"-XX:+UseZGC"}"#,
+        )
+        .unwrap();
+        let (_, f) = scan_dir_blocking(&cf, &root.join("tmp")).unwrap();
+        assert_eq!(f[0].settings.max_memory_mb, Some(10240));
+        assert_eq!(f[0].settings.jvm_args.as_deref(), Some("-XX:+UseZGC"));
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn atlauncher_settings_read() {
+        let root = tmp();
+        let inst = root.join("instances").join("FO");
+        std::fs::create_dir_all(inst.join("mods")).unwrap();
+        std::fs::create_dir_all(root.join("configs")).unwrap();
+        std::fs::write(
+            root.join("configs/ATLauncher.json"),
+            r#"{"initialMemory":512,"maximumMemory":4096,"windowWidth":1600,"windowHeight":900,"javaParameters":"-XX:+UseG1GC","proxyHost":"x","enableCommands":true,"wrapperCommand":"gamemoderun"}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            inst.join("instance.json"),
+            r#"{"id":"1.20.4","launcher":{"name":"Fabulously","maximumMemory":6144,"loaderVersion":{"type":"Fabric","version":"0.15.7"},"totalPlayTime":3600,
+                "modrinthProject":{"id":"1KVo5zza"},"modrinthVersion":{"id":"VER"}}}"#,
+        )
+        .unwrap();
+        let (_, f) = scan_dir_blocking(&inst, &root.join("tmp")).unwrap();
+        let s = &f[0].settings;
+        assert_eq!(s.max_memory_mb, Some(6144));
+        assert_eq!((s.width, s.height), (Some(1600), Some(900)));
+        assert!(s.inherited.contains(&"window".to_string()));
+        assert_eq!(s.wrapper.as_deref(), Some("gamemoderun"));
+        assert!(s.inherited.contains(&"hooks".to_string()));
+        assert_eq!(f[0].pack.as_ref().unwrap().project_id.as_deref(), Some("1KVo5zza"));
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    /// Nachträglich übernehmen: nur Instanz-Daten, Spielordner (Quelle wie Ziel) bleibt unangetastet.
+    #[test]
+    fn retro_apply_only_settings() {
+        let (root, inst_dir) = prism_root();
+        let tmpd = root.join("tmp");
+        // Wie bei einer schon importierten Instanz: per Kennung erneut einlesen
+        let found = describe_many(&[(LauncherKind::Prism, s(&inst_dir))], &tmpd).pop().flatten().unwrap();
+        assert!(describe_many(&[(LauncherKind::Prism, s(&root.join("instances/weg")))], &tmpd)[0].is_none(), "Quelle fehlt -> kein Angebot");
+        let vibe_game = root.join("vibe-game");
+        std::fs::create_dir_all(&vibe_game).unwrap();
+        std::fs::write(vibe_game.join("options.txt"), "fov:0.5\n").unwrap();
+
+        let mut i = vibe_instance("1.20.1");
+        i.java.max_memory_mb = Some(12288); // eigener Wert in Vibe
+        let vibe = crate::settings::Settings::default();
+        let prepared = found.settings.clone().effective(&vibe);
+        let changes = super::extsettings::diff(&i, &prepared);
+        let by = |k: &str| changes.iter().find(|c| c.key == k).cloned().unwrap();
+        assert!(!by("memory").default_on, "eigener RAM-Wert in Vibe -> nicht vorausgewählt");
+        assert!(by("window").default_on);
+        assert!(!by("hooks").default_on);
+        // Übernehmen wie vom Hinweis vorgeschlagen (Standard-Auswahl) + Spielzeit/Herkunft
+        let mut chosen: Vec<&str> = changes.iter().filter(|c| c.default_on).map(|c| c.key.as_str()).collect();
+        chosen.extend(["playtime", "pack"]);
+        super::extsettings::apply_found(&mut i, &prepared, &found, &keys(&chosen));
+        assert_eq!(i.java.max_memory_mb, Some(12288), "nicht gewählt -> unverändert");
+        assert_eq!((i.window.width, i.window.height), (Some(1920), Some(1080)));
+        assert_eq!(i.java.env.get("FOO").map(String::as_str), Some("bar"));
+        assert!(i.hooks.pre_launch.is_none(), "Start-Befehle nur nach ausdrücklicher Wahl");
+        assert_eq!(i.group.as_deref(), Some("Modpacks"));
+        assert_eq!(i.play_time_secs, 7200);
+        assert_eq!(i.source.as_ref().unwrap().project_id.as_deref(), Some("715572"));
+        // Keine Dateien angefasst
+        assert_eq!(std::fs::read_to_string(vibe_game.join("options.txt")).unwrap(), "fov:0.5\n");
+        assert!(std::fs::read_to_string(inst_dir.join(".minecraft/options.txt")).unwrap().starts_with("fov:0.8"));
+        // Danach: keine Unterschiede mehr in den übernommenen Bereichen
+        let again = super::extsettings::diff(&i, &prepared);
+        assert!(again.iter().all(|c| !chosen.contains(&c.key.as_str())), "{again:?}");
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn copy_follows_file_links() {
+        let root = tmp();
+        let (src, shared) = (root.join("game"), root.join("shared"));
+        std::fs::create_dir_all(&src).unwrap();
+        std::fs::create_dir_all(shared.join("cfg")).unwrap();
+        std::fs::write(shared.join("options.txt"), "fov:1").unwrap();
+        std::fs::write(shared.join("cfg/a.toml"), "x").unwrap();
+        #[cfg(windows)]
+        let linked = std::os::windows::fs::symlink_file(shared.join("options.txt"), src.join("options.txt")).is_ok()
+            && std::os::windows::fs::symlink_dir(shared.join("cfg"), src.join("config")).is_ok();
+        #[cfg(unix)]
+        let linked = std::os::unix::fs::symlink(shared.join("options.txt"), src.join("options.txt")).is_ok() && std::os::unix::fs::symlink(shared.join("cfg"), src.join("config")).is_ok();
+        if !linked {
+            // Ohne Recht auf Symlinks (Windows ohne Entwicklermodus) nicht prüfbar
+            std::fs::remove_dir_all(&root).ok();
+            return;
+        }
+        let (files, total) = plan_copy(&src, &[]);
+        let rels: Vec<String> = files.iter().filter(|f| f.2 != u64::MAX).map(|f| f.1.to_string_lossy().replace('\\', "/")).collect();
+        assert!(rels.contains(&"options.txt".to_string()), "{rels:?}");
+        assert!(rels.contains(&"config/a.toml".to_string()), "{rels:?}");
+        assert_eq!(total, 6);
         std::fs::remove_dir_all(&root).ok();
     }
 }

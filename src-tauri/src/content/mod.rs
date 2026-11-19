@@ -15,6 +15,7 @@ use tauri::AppHandle;
 pub mod curseforge;
 pub mod export;
 pub mod external;
+pub mod extsettings;
 pub mod http;
 pub mod import;
 pub mod index;
@@ -511,6 +512,8 @@ pub struct ExternalInstance {
     pub warning: Option<String>,
     /// ID der Vibe-Instanz, falls diese Instanz schon importiert wurde
     pub imported_as: Option<String>,
+    /// Einstellungen der Instanz im fremden Launcher (RAM, Java, Fenster …), `None` = keine gefunden
+    pub settings: Option<extsettings::ExtSettings>,
 }
 
 #[derive(Debug, Clone, Serialize)]

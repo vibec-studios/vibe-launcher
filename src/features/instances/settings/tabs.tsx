@@ -25,6 +25,7 @@ import { useSimple } from "@/lib/mode";
 import { AccentPicker, GroupInput } from "../NewInstanceDialog";
 import { ClientPacks, useClientPacks } from "./ClientPacks";
 import { closeInstanceSettings } from "./store";
+import { ImportSettingsRow } from "@/features/import/SettingsOffer";
 
 export interface TabProps {
   instance: Instance;
@@ -91,6 +92,7 @@ function SimpleGeneralTab({ instance, d, update, local, reset }: TabProps) {
         </SettingRow>
       </SettingsCard>
       <p className="px-1 text-[12.5px] text-dim">{t("simple.isd.auto")}</p>
+      <ImportSettingsRow instance={instance} />
       <SettingsCard title={t("isettings.danger")} danger>
         <SettingRow title={t("isettings.delete")} description={t("isettings.delete.desc")}>
           <Button
@@ -192,6 +194,8 @@ function ExpertGeneralTab({ instance, d, update, local, reset }: TabProps) {
           />
         </SettingRow>
       </SettingsCard>
+
+      <ImportSettingsRow instance={instance} />
 
       <SettingsCard title={t("isd.section.shortcut")}>
         <SettingRow title={t("inst.shortcut")} description={t("inst.shortcut.desc")}>

@@ -1,7 +1,7 @@
 // OWNER: Content-Agent. Import-Dialog, Modus "Aus anderem Launcher": erkannte Launcher mit ihren Instanzen,
 // Auswahl, eigener Ordner, Import je Instanz (`importExternal`) mit Fortschritt, danach `instanceInstall`.
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Check, FolderOpen, FolderSearch, Upload, X } from "lucide-react";
+import { AlertTriangle, Check, FolderOpen, FolderSearch, Terminal, Upload, X } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { create } from "zustand";
 import { Button, EmptyState, IconButton, Input, Progress, SearchInput, Skeleton, Spinner, cn, toast } from "@/components/ui";
@@ -13,7 +13,8 @@ import { api, errorMessage } from "@/lib/api";
 import { formatLoader, formatRelative, loaderNames } from "@/lib/format";
 import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
 import { useSimple } from "@/lib/mode";
-import type { ExternalInstance, ExternalLauncher, LauncherKind } from "@/lib/types";
+import type { ExtSettingKey, ExternalInstance, ExternalLauncher, LauncherKind } from "@/lib/types";
+import { DEFAULT_KEYS, SETTING_KEYS, hasKey, hookLines, summary } from "./settingsFormat";
 
 // ------------------------------------------------------------------ Laufende Importe (überleben Schließen des Dialogs)
 
@@ -42,7 +43,7 @@ interface Pick {
 
 const PARALLEL = 2;
 
-async function runImports(picks: Pick[]) {
+async function runImports(picks: Pick[], keys: ExtSettingKey[]) {
   useJobs.setState((s) => ({
     batch: picks.map((p) => p.inst.source_path),
     jobs: { ...s.jobs, ...Object.fromEntries(picks.map((p) => [p.inst.source_path, { name: p.inst.name, status: "queued" as JobStatus }])) },
@@ -55,7 +56,7 @@ async function runImports(picks: Pick[]) {
       const key = p.inst.source_path;
       try {
         setJob(key, { status: "running" });
-        const taskId = await api.importExternal(p.launcher, key, null, p.mcVersion);
+        const taskId = await api.importExternal(p.launcher, key, null, p.mcVersion, null, keys);
         setJob(key, { taskId });
         const done = await waitForTask(taskId);
         setJob(key, { status: "done", instanceId: done.instance_id });
@@ -96,6 +97,8 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
   const [query, setQuery] = useState("");
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+  /** Mitzunehmende Einstellungs-Bereiche (für alle gewählten Instanzen) */
+  const [keys, setKeys] = useState<ExtSettingKey[]>(DEFAULT_KEYS);
   const { jobs, batch } = useJobs();
   const busy = batch.some((k) => jobs[k]?.status === "queued" || jobs[k]?.status === "running");
   const showProgress = batch.length > 0;
@@ -121,6 +124,9 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
   const needsVersion = (i: ExternalInstance) => !i.mc_version && !(versions[i.source_path] ?? "").trim();
   const chosen = allInstances.filter((i) => selected[i.source_path] && !needsVersion(i));
   const allVisibleSelected = visible.length > 0 && visible.every((i) => selected[i.source_path]);
+  // Bereiche, die bei mindestens einer Instanz vorkommen (nur die werden zur Wahl gestellt)
+  const offered = SETTING_KEYS.filter((k) => allInstances.some((i) => i.settings && hasKey(i.settings, k)));
+  const toggleKey = (k: ExtSettingKey) => setKeys((ks) => (ks.includes(k) ? ks.filter((x) => x !== k) : [...ks, k]));
   const someVisibleSelected = visible.some((i) => selected[i.source_path]);
 
   const toggle = (key: string, on?: boolean) => setSelected((s) => ({ ...s, [key]: on ?? !s[key] }));
@@ -146,7 +152,7 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
   const start = () => {
     const picks: Pick[] = chosen.map((i) => ({ launcher: kindOf.get(i.source_path) ?? "folder", inst: i, mcVersion: i.mc_version ? null : versions[i.source_path]?.trim() || null }));
     setSelected({});
-    void runImports(picks);
+    void runImports(picks, keys);
   };
 
   // ---------------------------------------------------------------- Ansichten
@@ -200,6 +206,7 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
             {scanning ? <Spinner /> : <FolderOpen size={16} />}
           </IconButton>
         </div>
+        {offered.length > 0 && <SettingsBar offered={offered} keys={keys} onToggle={toggleKey} />}
         <div className="scroll -mx-1 flex max-h-[calc(100vh-430px)] min-h-[180px] flex-col gap-4 overflow-y-auto px-1">
           {launchers.map((l) => {
             const list = l.instances.filter(matches);
@@ -246,6 +253,7 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
                       onToggle={() => toggle(i.source_path)}
                       version={versions[i.source_path] ?? ""}
                       onVersion={(v) => setVersions((s) => ({ ...s, [i.source_path]: v }))}
+                      keys={keys}
                     />
                   ))
                 )}
@@ -302,6 +310,43 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
   return { body, footer, busy, progressView: showProgress };
 }
 
+// ------------------------------------------------------------------ Einstellungen mitnehmen
+
+/** Bereiche zum An-/Abwählen (gelten für alle gewählten Instanzen). Start-Befehle sind aus, bis man sie wählt. */
+function SettingsBar({ offered, keys, onToggle }: { offered: ExtSettingKey[]; keys: ExtSettingKey[]; onToggle: (k: ExtSettingKey) => void }) {
+  const tr = useT();
+  const hooksOn = keys.includes("hooks") && offered.includes("hooks");
+  return (
+    <div className="flex flex-col gap-2 rounded-card bg-white/[.03] px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 text-[12.5px] font-semibold text-text" title={tr("ext.set.hint")}>
+          {tr("ext.set.title")}
+        </span>
+        {offered.map((k) => {
+          const on = keys.includes(k);
+          return (
+            <button
+              key={k}
+              role="checkbox"
+              aria-checked={on}
+              onClick={() => onToggle(k)}
+              className={cn(
+                "flex h-7 items-center gap-1.5 rounded-pill px-2.5 text-[12.5px] font-medium transition-colors duration-100",
+                on ? "bg-brand/15 text-text hover:bg-brand/20" : "bg-white/[.04] text-dim hover:bg-white/[.07] hover:text-muted",
+                k === "hooks" && on && "bg-warn/15 hover:bg-warn/20",
+              )}
+            >
+              {on ? <Check size={12} strokeWidth={3} className={k === "hooks" ? "text-warn" : "text-brand"} /> : k === "hooks" ? <Terminal size={12} /> : <span className="h-3 w-3 rounded-xs border border-white/25" />}
+              {tr(`ext.set.key.${k}`)}
+            </button>
+          );
+        })}
+      </div>
+      <p className={cn("text-[12px] leading-snug", hooksOn ? "text-warn" : "text-dim")}>{hooksOn ? tr("ext.set.hooks_warn") : tr("ext.set.hint")}</p>
+    </div>
+  );
+}
+
 // ------------------------------------------------------------------ Zeilen
 
 function InstanceRow({
@@ -310,14 +355,18 @@ function InstanceRow({
   onToggle,
   version,
   onVersion,
+  keys,
 }: {
   inst: ExternalInstance;
   selected: boolean;
   onToggle: () => void;
   version: string;
   onVersion: (v: string) => void;
+  keys: ExtSettingKey[];
 }) {
   const tr = useT();
+  const takes = summary(inst.settings, keys);
+  const hooks = keys.includes("hooks") && inst.settings ? hookLines(inst.settings) : [];
   const loader = formatLoader(inst.loader);
   const sub = [
     inst.mc_version ? `${loaderNames[inst.loader.kind]} ${inst.mc_version}` : loader,
@@ -348,6 +397,20 @@ function InstanceRow({
           {inst.imported_as && <span className="shrink-0 rounded-xs bg-white/[.06] px-1.5 py-px text-caption text-muted">{tr("ext.imported")}</span>}
         </div>
         <div className="truncate text-meta text-dim">{sub.join(" · ")}</div>
+        {takes.length > 0 && (
+          <div className="mt-0.5 truncate text-[12px] text-muted" title={takes.join(" · ")}>
+            {tr("ext.set.takes", { list: takes.join(" · ") })}
+          </div>
+        )}
+        {hooks.map((h) => (
+          <div key={h.label} className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12px] text-warn">
+            <Terminal size={12} className="shrink-0" />
+            <span className="shrink-0">{h.label}:</span>
+            <code className="selectable min-w-0 truncate font-mono text-[11.5px]" title={h.cmd}>
+              {h.cmd}
+            </code>
+          </div>
+        ))}
         {inst.warning && (
           <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-warn">
             <AlertTriangle size={12} className="shrink-0" />

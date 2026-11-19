@@ -26,6 +26,7 @@ import { ModeHost, useSimple } from "@/lib/mode";
 import { Onboarding } from "@/features/onboarding/Onboarding";
 import { SimpleTour } from "@/features/onboarding/SimpleTour";
 import { SimpleModeHint } from "@/features/onboarding/SimpleModeHint";
+import { ImportSettingsHint, SettingsReviewDialog } from "@/features/import/SettingsOffer";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useVibe } from "@/lib/vibe";
 import { VibeBridge } from "@/features/social/VibeBridge";
@@ -385,6 +386,10 @@ export function Shell() {
       <SocialDialogs />
       <SettingsDialog />
       <SimpleModeHint />
+      <ErrorBoundary>
+        <ImportSettingsHint />
+        <SettingsReviewDialog />
+      </ErrorBoundary>
       <SimpleTour />
       <Onboarding />
     </div>
