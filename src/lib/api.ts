@@ -246,6 +246,17 @@ export const api = {
   screenshotCopy: (path: string) => call<void>("screenshot_copy", { path }),
   screenshotOpenFolder: (path: string) => call<void>("screenshot_open_folder", { path }),
 
+  // ---------------------------------------------------------------- Clips (Vibey Client)
+  clipsList: (instanceId?: string | null) => call<T.Clip[]>("clips_list", { instanceId: instanceId ?? null }),
+  /** Nur kept/title/tags; gibt den neu gelesenen Clip zurück */
+  clipUpdate: (instanceId: string, id: string, patch: T.ClipPatch) =>
+    call<T.Clip>("clip_update", { instanceId, id, kept: patch.kept ?? null, title: patch.title ?? null, tags: patch.tags ?? null }),
+  clipDelete: (instanceId: string, id: string) => call<void>("clip_delete", { instanceId, id }),
+  /** Mit id: Video im Explorer markieren, sonst den Clip-Ordner öffnen */
+  clipOpenFolder: (instanceId: string, id?: string | null) => call<void>("clip_open_folder", { instanceId, id: id ?? null }),
+  /** Ordner-Polling an (verlängert ~25 s) bzw. aus; sendet dann `clips://changed` */
+  clipsWatch: (active: boolean) => call<void>("clips_watch", { active }),
+
   // ---------------------------------------------------------------- Plattform (Crash-Analyse, Server, Statistik …)
   crashAnalyze: (instanceId: string, crashReport?: string | null, exitCode?: number | null) =>
     call<T.Diagnosis[]>("crash_analyze", { instanceId, crashReport: crashReport ?? null, exitCode: exitCode ?? null }),

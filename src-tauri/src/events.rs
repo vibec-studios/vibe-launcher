@@ -20,6 +20,9 @@ pub const CONTENT_MANUAL_ARRIVED: &str = "content://manual-arrived";
 pub const ACCOUNTS_CHANGED: &str = "accounts://changed";
 /// Payload: `Settings`
 pub const SETTINGS_CHANGED: &str = "settings://changed";
+/// Payload: `{ instance_ids: string[] }` – Clips (Vibey Client) dazugekommen/geändert/gelöscht; nur solange
+/// `clips_watch(true)` läuft (Clips-Seite offen)
+pub const CLIPS_CHANGED: &str = "clips://changed";
 
 pub fn emit<S: Serialize + Clone>(app: &AppHandle, event: &str, payload: &S) {
     if let Err(e) = app.emit(event, payload.clone()) {

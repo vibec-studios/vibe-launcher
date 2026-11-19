@@ -67,6 +67,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
 | Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, sets_list, sets_create, sets_update, sets_delete, sets_duplicate, sets_add_entries, sets_remove_entries, sets_parse_list, sets_import_text, sets_import_file, sets_export_file, sets_export_code, sets_export_links, sets_instance_candidates, sets_from_profile, sets_preview, sets_apply, sets_install_new, sets_check, sets_compat, sets_news, sets_dismiss_news, perf_preview, perf_install, files_list, files_stat, files_find, files_search, files_read, files_write, files_restore, files_validate, files_image, files_create, files_rename, files_duplicate, files_delete, files_import, files_abs_path, files_reveal |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
+| Clips | clips_list, clip_update, clip_delete, clip_open_folder, clips_watch (`commands/clips.rs`, Videoclips des Vibey Clients) |
 | Plattform | crash_analyze, instance_servers_list, instance_servers_save, server_ping, servers_recent, playtime_sessions, optsync_get, optsync_set_instance, optsync_capture, optsync_apply_all, shortcut_create, app_actions_take, discord_available (`commands/platform.rs`, Logik in `platform/`, OWNER Frontend-Agent A) |
 | Backups | snapshots_list, snapshot_create, snapshot_restore, snapshot_delete, world_backups_list, world_backup_create, world_backup_restore, world_backup_delete, world_copy, world_import_zip, backups_open_folder (`commands/backups.rs`) |
 | Vibe-Dienste | vibe_status, vibe_tokens_get, vibe_tokens_set, vibe_mojang_join, vibe_http, vibe_ws_open, vibe_ws_send, vibe_ws_close, vibe_pack_share, vibe_pack_link, vibe_pack_install (`commands/vibe.rs`, Logik in `vibe/`, Frontend `features/social`) |
@@ -228,6 +229,24 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   `screenshot_thumb(path)` erzeugt/cached ein JPEG-Vorschaubild (max. 480×360, `cache/thumbs/<sha1>.jpg`) und gibt
   dessen Pfad zurück; `screenshot_copy` legt das Bild in die Zwischenablage, `screenshot_open_folder` markiert die
   Datei im Explorer. Alle Pfade müssen in `instances/<id>/minecraft/screenshots/` liegen.
+- **Clips** (Videoclips des Vibey Clients; verbindlicher Datei-Vertrag: Vibey Client `docs/CLIPS.md` §10, schema 1):
+  Ordner `instances/<id>/minecraft/vibeyclient/clips/`, ein Clip = `<id>.mp4` + `<id>.jpg` (optional) + `<id>.json`,
+  id-Regex `^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_[a-z]+(_\d+)?$`. Ein Clip existiert genau dann, wenn `<id>.json`
+  parst (schema 1, höhere werden übersprungen) und seine `video`-Datei existiert; Dotfiles, `.tmp/`, `.buffer/`
+  werden ignoriert, nicht lesbare JSON einmal nach 200 ms erneut gelesen, dann übersprungen (nie gelöscht).
+  - `clips_list(instance_id?) -> Clip[]` (alle Instanzen, neueste zuerst; `video_path`/`thumbnail_path` absolut,
+    `thumbnail_path: null` -> Platzhalter, `created_at` in ms).
+  - `clip_update(instance_id, id, kept?, title?, tags?) -> Clip`: ändert **nur** diese Felder (Titel ≤ 100, ≤ 16 Tags
+    à ≤ 32 Zeichen; leerer Titel/leere Tags entfernen das Feld), alles andere inkl. unbekannter Felder bleibt;
+    atomar über `.<id>.json.tmp` + Umbenennen. Die Schlüsselreihenfolge der JSON kann sich dabei ändern.
+  - `clip_delete(instance_id, id)`: nur auf Wunsch des Nutzers; `<id>.json` zuerst, dann MP4/JPG (gesperrte Dateien
+    räumt das Spiel später als Waisen auf). Der Launcher löscht nie automatisch.
+  - `clip_open_folder(instance_id, id?)`: Clip-Ordner öffnen bzw. das Video im Explorer markieren.
+  - `clips_watch(active)`: leichtes Ordner-Polling (1 s, ~500 ms entprellt) mit Lease von ~25 s, das die Seite
+    alle 10 s verlängert; sendet `clips://changed`. Kein Dauer-Watcher, solange die Galerie zu ist.
+  - Datenschutz (§10.4): nichts hochladen, fehlendes `server` nie aus `session.json` ergänzen.
+  - Abspielen im WebView über das Asset-Protokoll (`convertFileSrc`; der Datenordner wird beim Start per
+    `asset_protocol_scope().allow_directory` freigegeben, CSP `media-src` erlaubt `asset:`/`http://asset.localhost`).
 - **Accounts**: nur Microsoft (`AccountKind = "microsoft"`, keine Offline-Accounts). Login: `auth_msa_begin` -> Code
   anzeigen -> `auth_msa_wait` (liefert den Account) bzw. `auth_msa_cancel`. Tokens liegen im Windows-Schlüsselbund,
   `accounts.json` enthält keine Geheimnisse. `launch_account` erneuert den Minecraft-Token automatisch (< 5 min Rest);
@@ -286,6 +305,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | `content://changed` | {instance_id} | Mods/Packs/Shader/Welten geändert |
 | `accounts://changed` | Account[] | Accounts geändert |
 | `settings://changed` | Settings | Einstellungen gespeichert |
+| `clips://changed` | {instance_ids: string[]} | Clips dazugekommen/geändert/gelöscht (nur während `clips_watch`) |
 | `skins://changed` | {scope: "library"} \| {scope: "profile", account_id} | Skin-Bibliothek bzw. Skin/Cape eines Accounts geändert |
 | `vibe://ws` | {type: "open" \| "message" \| "close", id, data?, code?, reason?} | WebSocket-Brücke des Vibe-Gateways |
 
@@ -356,6 +376,8 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 `VITE_MOCK=1 pnpm vite --port <PORT>` startet das Frontend im normalen Browser mit simuliertem Backend
 (`src/dev/mock/*`, wird im Produktions-Build nie geladen). Handler je Bereich: `src/dev/mock/a.ts` (Frontend A),
 `src/dev/mock/b.ts` (Frontend B). Screenshots z. B. mit playwright-core + `chromium.launch({ channel: "msedge" })`.
+Clips: `src/dev/mock/clips.ts` mit einem kleinen Test-Video (`src/dev/mock/assets/clips/`, FFmpeg `testsrc2`, nur
+im Mock-Build); Galerie unter `#/screenshots?tab=clips`, Leerzustand mit `localStorage vl.mock.clips = "empty"`.
 
 ## Prüfen
 

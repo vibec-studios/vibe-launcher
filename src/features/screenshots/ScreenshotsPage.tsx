@@ -1,7 +1,7 @@
 // OWNER: Frontend-Agent A. Screenshots aller Instanzen: Werkzeugleiste (Instanz-Filter, Anzahl, Ordner, Neu laden) über einem
 // virtualisierten, rahmenlosen Raster nach Datum gruppiert (neueste zuerst), Lightbox, Kontextmenü (Kopieren, im Ordner
 // zeigen, Löschen). Lädt nur Vorschaubilder. Leer mit Filter: Weg zurück zu allen Instanzen bzw. in den Ordner.
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { getRouteApi } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -10,10 +10,11 @@ import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
 import type { Screenshot } from "@/lib/types";
 import { formatBytes, formatDate, imageSrc } from "@/lib/format";
-import { Button, ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, Select, Skeleton, cn, confirm, toast } from "@/components/ui";
+import { Button, ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, Segmented, Select, Skeleton, cn, confirm, toast } from "@/components/ui";
 import { t as tt, useLang, useT } from "@/i18n";
 import { Lightbox } from "@/components/ui/Lightbox";
-import { ShotThumb, useScreenshots, useShotFocus } from "./shots";
+import { ShotThumb, bucket, useScreenshots, useShotFocus } from "./shots";
+import { ClipsView } from "./ClipsView";
 
 const route = getRouteApi("/screenshots");
 const GAP = 8;
@@ -23,20 +24,6 @@ const PAD = 24;
 const ALL = "__all";
 
 type Row = { kind: "head"; label: string; count: number } | { kind: "tiles"; items: Screenshot[]; start: number };
-
-function bucket(ts: number, now: Date): { key: string; label: (t: (k: string) => string, lang: string) => string } {
-  const d = new Date(ts);
-  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diff = Math.round((day(now) - day(d)) / 86400000);
-  if (diff <= 0) return { key: "today", label: (t) => t("shots.today") };
-  if (diff === 1) return { key: "yesterday", label: (t) => t("shots.yesterday") };
-  if (diff < 7) return { key: "week", label: (t) => t("shots.week") };
-  const key = `${d.getFullYear()}-${d.getMonth()}`;
-  return {
-    key,
-    label: (_t, lang) => d.toLocaleDateString(lang === "en" ? "en-US" : "de-DE", { month: "long", year: "numeric" }),
-  };
-}
 
 const Tile = memo(function Tile({
   shot,
@@ -98,7 +85,26 @@ async function copyShot(s: Screenshot) {
   }
 }
 
+/** Galerie: Umschalter „Screenshots | Clips“ (Clips = Videos des Vibey Clients). Instanz-Filter gilt für beide. */
 export function ScreenshotsPage() {
+  const t = useT();
+  const { instance, tab } = route.useSearch();
+  const nav = route.useNavigate();
+  const switcher = (
+    <Segmented<"shots" | "clips">
+      value={tab === "clips" ? "clips" : "shots"}
+      onChange={(v) => nav({ search: { instance, tab: v === "clips" ? "clips" : undefined }, replace: true })}
+      items={[
+        { value: "shots", label: t("gallery.tab.screenshots") },
+        { value: "clips", label: t("gallery.tab.clips") },
+      ]}
+    />
+  );
+  if (tab === "clips") return <ClipsView switcher={switcher} instance={instance} setInstance={(id) => nav({ search: { instance: id, tab: "clips" }, replace: true })} />;
+  return <ShotsView switcher={switcher} />;
+}
+
+function ShotsView({ switcher }: { switcher: ReactNode }) {
   const t = useT();
   const lang = useLang((s) => s.lang);
   const qc = useQueryClient();
@@ -215,6 +221,7 @@ export function ScreenshotsPage() {
     <div className="flex h-full flex-col">
       {/* Werkzeugleiste wie in der Bibliothek: Filter links, Anzahl als Einordnung, Aktionen rechts */}
       <div className="flex shrink-0 items-center gap-3 px-6 pb-1 pt-4">
+        {switcher}
         <div className="w-[240px]">
           <Select<string>
             size="sm"

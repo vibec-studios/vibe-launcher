@@ -14,6 +14,8 @@ export interface EventMap {
   "content://manual-arrived": ManualArrived;
   "accounts://changed": Account[];
   "settings://changed": Settings;
+  /** Clips (Vibey Client) geändert – nur solange `clipsWatch(true)` läuft */
+  "clips://changed": { instance_ids: string[] };
   /** Skin-Bibliothek oder Skin/Cape eines Accounts geändert */
   "skins://changed": { scope: "library" } | { scope: "profile"; account_id: string };
   /** Server angelegt/geändert (vollständig) */

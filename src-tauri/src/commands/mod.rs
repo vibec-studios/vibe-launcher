@@ -9,6 +9,7 @@ pub mod skins;
 pub mod minecraftcapes;
 pub mod platform;
 pub mod screenshots;
+pub mod clips;
 pub mod backups;
 pub mod files;
 pub mod vibe;
