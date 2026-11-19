@@ -17,7 +17,6 @@ import { VersionPicker, type VersionValue } from "@/components/instance/VersionP
 import { JavaPathField, MemoryField } from "@/components/instance/forms";
 import { createShortcut, installInstance, openExport, openFolder, repairInstance, resetIcon, setIcon, useInstanceActions } from "@/components/instance/actions";
 import { useRunPhase } from "@/components/instance/status";
-import { InstanceOptSync } from "@/components/instance/OptSync";
 import { openSettings } from "@/features/settings/store";
 import { useVibe } from "@/lib/vibe";
 import { useT } from "@/i18n";
@@ -378,7 +377,7 @@ export function JavaTab({ instance, d, update }: TabProps) {
 
 // ------------------------------------------------------------------ Fenster & Start
 
-export function LaunchTab({ instance, d, update }: TabProps) {
+export function LaunchTab({ d, update }: TabProps) {
   const t = useT();
   const { data: settings } = useSettings();
   const { data: sys } = useSystemInfo();
@@ -445,10 +444,6 @@ export function LaunchTab({ instance, d, update }: TabProps) {
         <div className="border-t border-line px-4 py-2.5 text-[12px] text-dim">
           <span className="font-mono">{t("isd.hooks.vars", { vars })}</span>
         </div>
-      </SettingsCard>
-
-      <SettingsCard title={t("isd.section.game_options")}>
-        <InstanceOptSync instance={instance} />
       </SettingsCard>
     </>
   );

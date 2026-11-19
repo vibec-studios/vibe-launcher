@@ -153,14 +153,35 @@ pub async fn playtime_sessions(
     Ok(list)
 }
 
-// ------------------------------------------------------------------ Optionen-Sync
+// ------------------------------------------------------------------ Synchronisieren (Optionen, Ordner, Server)
+
+#[derive(Serialize)]
+pub struct SharedFolder {
+    /// resourcepacks | shaderpacks | screenshots | servers
+    pub area: String,
+    pub count: usize,
+    pub size: u64,
+}
+
+#[derive(Serialize)]
+pub struct InstanceSyncState {
+    pub last_sync: Option<i64>,
+    pub conflicts: Vec<optsync::ConflictNote>,
+    pub errors: Vec<String>,
+}
 
 #[derive(Serialize)]
 pub struct OptSyncInfo {
     pub config: optsync::SyncConfig,
+    /// Bereiche aus options.txt
     pub categories: Vec<String>,
+    /// Weitere Bereiche (Ordner, Server-Liste)
+    pub areas: Vec<String>,
     /// Anzahl Master-Schlüssel je Kategorie
     pub counts: std::collections::BTreeMap<String, usize>,
+    pub shared: Vec<SharedFolder>,
+    /// Abgleichstand je Instanz (nur synchronisierte)
+    pub states: std::collections::BTreeMap<String, InstanceSyncState>,
 }
 
 fn optsync_info(root: &Path) -> OptSyncInfo {
@@ -171,26 +192,52 @@ fn optsync_info(root: &Path) -> OptSyncInfo {
             *counts.entry(c.to_string()).or_insert(0) += 1;
         }
     }
+    if let Some(p) = &config.resource_packs {
+        counts.insert("resourcepacks".into(), p.iter().filter(|x| x.starts_with("file/")).count());
+    }
+    let mut shared: Vec<SharedFolder> = ["resourcepacks", "shaderpacks", "screenshots"]
+        .iter()
+        .map(|a| {
+            let (count, size) = crate::platform::syncdir::summary(&optsync::shared_dir(root, a));
+            SharedFolder { area: a.to_string(), count, size }
+        })
+        .collect();
+    shared.push(SharedFolder { area: "servers".into(), count: crate::platform::syncservers::count(&optsync::shared_servers(root)), size: 0 });
+    let states = config
+        .instances
+        .iter()
+        .filter(|(_, s)| s.enabled)
+        .map(|(id, _)| {
+            let st = optsync::InstanceState::load(root, id);
+            (id.clone(), InstanceSyncState { last_sync: st.last_sync, conflicts: st.conflicts, errors: st.errors })
+        })
+        .collect();
     OptSyncInfo {
         config,
         categories: optsync::CATEGORIES.iter().map(|s| s.to_string()).collect(),
+        areas: optsync::AREAS.iter().map(|s| s.to_string()).collect(),
         counts,
+        shared,
+        states,
     }
 }
 
 #[tauri::command]
 pub async fn optsync_get(state: State<'_, AppState>) -> AppResult<OptSyncInfo> {
-    Ok(optsync_info(&state.paths.root))
+    let root = state.paths.root.clone();
+    tokio::task::spawn_blocking(move || optsync_info(&root)).await.map_err(join_err)
 }
 
 fn check_categories(c: &[String]) -> AppResult<()> {
-    if c.iter().all(|x| optsync::CATEGORIES.contains(&x.as_str())) {
+    if c.iter().all(|x| optsync::known_area(x)) {
         Ok(())
     } else {
-        Err(AppError::Invalid("Unbekannte Kategorie".into()))
+        Err(AppError::Invalid("Unbekannter Bereich".into()))
     }
 }
 
+/// Einstellungen einer Instanz speichern. Neu gewählte Ordner-/Server-Bereiche werden gleich abgeglichen, wenn die
+/// Instanz nicht läuft (sonst nach dem Beenden).
 #[tauri::command]
 pub async fn optsync_set_instance(
     state: State<'_, AppState>,
@@ -198,65 +245,131 @@ pub async fn optsync_set_instance(
     enabled: bool,
     categories: Vec<String>,
 ) -> AppResult<OptSyncInfo> {
-    state.instances.get(&instance_id)?;
+    let inst = state.instances.get(&instance_id)?;
     check_categories(&categories)?;
-    let p = optsync::config_path(&state.paths.root);
-    let mut cfg = optsync::SyncConfig::load(&p);
-    cfg.instances.insert(
-        instance_id,
-        optsync::InstanceSync {
-            enabled,
-            categories,
-        },
-    );
-    cfg.save(&p)?;
-    Ok(optsync_info(&state.paths.root))
+    let root = state.paths.root.clone();
+    let game = state.paths.game_dir(&instance_id);
+    let running = state.game.is_running(&instance_id);
+    tokio::task::spawn_blocking(move || -> AppResult<OptSyncInfo> {
+        let added = optsync::set_instance(&root, &instance_id, enabled, categories)?;
+        if !added.is_empty() && !running {
+            optsync::sync_now(&root, &game, &instance_id, &inst.name);
+        }
+        Ok(optsync_info(&root))
+    })
+    .await
+    .map_err(join_err)?
 }
 
-/// Master-Profil aus einer Instanz übernehmen (ersetzt die Werte der gewählten Kategorien).
+/// Master-Profil aus einer Instanz übernehmen (ersetzt die Werte der gewählten Bereiche).
 #[tauri::command]
 pub async fn optsync_capture(
     state: State<'_, AppState>,
     instance_id: String,
     categories: Vec<String>,
 ) -> AppResult<OptSyncInfo> {
-    state.instances.get(&instance_id)?;
+    let inst = state.instances.get(&instance_id)?;
     check_categories(&categories)?;
-    let text = std::fs::read_to_string(state.paths.game_dir(&instance_id).join("options.txt"))
-        .map_err(|_| AppError::NotFound("Diese Instanz hat noch keine options.txt – einmal starten und Einstellungen vornehmen".into()))?;
-    let p = optsync::config_path(&state.paths.root);
-    let mut cfg = optsync::SyncConfig::load(&p);
-    cfg.master
-        .retain(|k, _| optsync::category_of(k).map_or(true, |c| !categories.iter().any(|x| x == c)));
-    optsync::capture(&text, &mut cfg.master, &categories);
-    cfg.source = Some(instance_id);
-    cfg.updated_at = Some(chrono::Utc::now().timestamp_millis());
-    cfg.save(&p)?;
-    Ok(optsync_info(&state.paths.root))
+    let root = state.paths.root.clone();
+    let game = state.paths.game_dir(&instance_id);
+    tokio::task::spawn_blocking(move || -> AppResult<OptSyncInfo> {
+        optsync::capture_from(&root, &game, &instance_id, &inst.mc_version, &categories)?;
+        Ok(optsync_info(&root))
+    })
+    .await
+    .map_err(join_err)?
 }
 
 /// Master-Profil sofort auf alle aktivierten (nicht laufenden) Instanzen anwenden. Gibt die Anzahl zurück.
 #[tauri::command]
 pub async fn optsync_apply_all(state: State<'_, AppState>) -> AppResult<usize> {
     let cfg = optsync::SyncConfig::load(&optsync::config_path(&state.paths.root));
-    let mut n = 0;
-    for (id, s) in &cfg.instances {
-        if !s.enabled || state.game.is_running(id) {
-            continue;
-        }
-        if let Ok(inst) = state.instances.get(id) {
-            if optsync::apply(
-                &state.paths.root,
-                &state.paths.game_dir(id),
-                id,
-                &inst.mc_version,
-            )? > 0
-            {
-                n += 1;
+    let targets: Vec<(String, PathBuf, String)> = cfg
+        .instances
+        .iter()
+        .filter(|(id, s)| s.enabled && !state.game.is_running(id))
+        .filter_map(|(id, _)| state.instances.get(id).ok().map(|i| (id.clone(), state.paths.game_dir(id), i.mc_version)))
+        .collect();
+    let root = state.paths.root.clone();
+    tokio::task::spawn_blocking(move || optsync::apply_all(&root, &targets)).await.map_err(join_err)?
+}
+
+#[derive(Serialize)]
+pub struct SyncAllResult {
+    pub instances: usize,
+    pub changes: usize,
+    pub conflicts: usize,
+    pub errors: Vec<String>,
+    /// Übersprungen, weil sie gerade laufen (Namen)
+    pub running: Vec<String>,
+}
+
+/// Ordner, Server-Liste und Screenshots jetzt abgleichen – eine Instanz (`instance_id`) oder alle synchronisierten,
+/// die nicht laufen. Bei allen zwei Durchgänge, damit jede Instanz auch die Änderungen der anderen bekommt.
+#[tauri::command]
+pub async fn optsync_sync_now(state: State<'_, AppState>, instance_id: Option<String>) -> AppResult<SyncAllResult> {
+    let cfg = optsync::SyncConfig::load(&optsync::config_path(&state.paths.root));
+    let ids: Vec<String> = match &instance_id {
+        Some(id) => {
+            state.instances.get(id)?;
+            if state.game.is_running(id) {
+                return Err(AppError::Invalid("Die Instanz läuft gerade – abgeglichen wird nach dem Beenden.".into()));
             }
+            vec![id.clone()]
+        }
+        None => cfg.instances.iter().filter(|(_, s)| s.enabled).map(|(id, _)| id.clone()).collect(),
+    };
+    let mut running = vec![];
+    let mut targets = vec![];
+    for id in ids {
+        let Ok(inst) = state.instances.get(&id) else { continue };
+        if state.game.is_running(&id) {
+            running.push(inst.name);
+        } else {
+            targets.push((id.clone(), state.paths.game_dir(&id), inst.name));
         }
     }
-    Ok(n)
+    let root = state.paths.root.clone();
+    let passes = if instance_id.is_some() { 1 } else { 2 };
+    tokio::task::spawn_blocking(move || {
+        let mut r = SyncAllResult { instances: targets.len(), changes: 0, conflicts: 0, errors: vec![], running };
+        for pass in 0..passes {
+            for (id, game, name) in &targets {
+                let s = optsync::sync_now(&root, game, id, name);
+                r.changes += s.changes + s.screenshots;
+                r.conflicts += s.conflicts.len();
+                if pass + 1 == passes {
+                    r.errors.extend(s.errors.into_iter().map(|e| format!("{name}: {e}")));
+                }
+            }
+        }
+        r
+    })
+    .await
+    .map_err(join_err)
+}
+
+/// Gemeinsamen Ordner im Explorer öffnen (resourcepacks | shaderpacks | screenshots).
+#[tauri::command]
+pub async fn optsync_open_folder(state: State<'_, AppState>, area: String) -> AppResult<()> {
+    if !["resourcepacks", "shaderpacks", "screenshots"].contains(&area.as_str()) {
+        return Err(AppError::Invalid("Unbekannter Bereich".into()));
+    }
+    let dir = optsync::shared_dir(&state.paths.root, &area);
+    std::fs::create_dir_all(&dir)?;
+    crate::util::open_in_explorer(&dir)
+}
+
+/// Konfliktmeldungen einer Instanz ausblenden.
+#[tauri::command]
+pub async fn optsync_clear_conflicts(state: State<'_, AppState>, instance_id: String) -> AppResult<OptSyncInfo> {
+    let root = state.paths.root.clone();
+    tokio::task::spawn_blocking(move || -> AppResult<OptSyncInfo> {
+        optsync::clear_conflicts(&root, &instance_id)?;
+        Ok(optsync_info(&root))
+    })
+    .await
+    .map_err(join_err)?
 }
 
 // ------------------------------------------------------------------ Verknüpfungen, externe Aktionen

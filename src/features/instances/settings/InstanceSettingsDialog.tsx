@@ -3,7 +3,7 @@
 // zurück. Öffnen: `openInstanceSettings(id, tab)`.
 import * as D from "@radix-ui/react-dialog";
 import { useEffect, useState, type ReactNode } from "react";
-import { Cloud, Coffee, Layers, MonitorPlay, Package, SlidersHorizontal, Sparkles, Wrench, X } from "lucide-react";
+import { Cloud, Coffee, Layers, MonitorPlay, Package, RefreshCcw, SlidersHorizontal, Sparkles, Wrench, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { instanceAccent } from "@/lib/format";
 import type { Instance, InstancePatch } from "@/lib/types";
@@ -16,10 +16,11 @@ import { useT } from "@/i18n";
 import { INSTANCE_SETTINGS_TABS, closeInstanceSettings, setInstanceSettingsTab, useInstanceSettings, type InstanceSettingsTab } from "./store";
 import { AdvancedTab, ClientTab, GeneralTab, JavaTab, LaunchTab, VersionTab, VibeTab, type TabProps } from "./tabs";
 import { useClientPacks } from "./ClientPacks";
+import { InstanceSyncTab } from "@/components/instance/OptSync";
 import { useSimple } from "@/lib/mode";
 
-/** Simple-Modus: nur Allgemein (Name, Icon, Löschen) und Client-Pack. */
-const SIMPLE_TABS: InstanceSettingsTab[] = ["general", "client"];
+/** Simple-Modus: nur Allgemein (Name, Icon, Löschen), Client-Pack und Synchronisieren. */
+const SIMPLE_TABS: InstanceSettingsTab[] = ["general", "client", "sync"];
 
 const ICONS: Record<InstanceSettingsTab, ReactNode> = {
   general: <SlidersHorizontal size={16} />,
@@ -27,6 +28,7 @@ const ICONS: Record<InstanceSettingsTab, ReactNode> = {
   client: <Package size={16} />,
   java: <Coffee size={16} />,
   launch: <MonitorPlay size={16} />,
+  sync: <RefreshCcw size={16} />,
   vibe: <Cloud size={16} />,
   advanced: <Wrench size={16} />,
 };
@@ -148,6 +150,8 @@ function TabContent({ tab, ...p }: TabProps & { tab: InstanceSettingsTab }) {
       return <JavaTab {...p} />;
     case "launch":
       return <LaunchTab {...p} />;
+    case "sync":
+      return <InstanceSyncTab instance={p.instance} />;
     case "vibe":
       return <VibeTab {...p} />;
     case "advanced":

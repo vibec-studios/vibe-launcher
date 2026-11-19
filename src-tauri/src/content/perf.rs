@@ -130,9 +130,12 @@ pub async fn run_install(state: AppState, task: TaskHandle, instance_id: String,
     if project_ids.is_empty() {
         return Ok(());
     }
-    task.stage("Sicherung wird erstellt …", None);
-    if let Err(e) = super::snapshots::create(&state, &instance_id, "Vor Performance-Mods", true, None).await {
-        tracing::warn!("Snapshot vor Performance-Mods fehlgeschlagen: {e}");
+    // Gleiche Sicherungs-Einstellung wie „Probleme beheben“ (installiert ebenfalls nur Mods)
+    if let Some(scopes) = super::snapshots::fix_backup_scopes(&state.settings().fix_backup) {
+        task.stage("Sicherung wird erstellt …", None);
+        if let Err(e) = super::snapshots::create_scoped(&state, &instance_id, "Vor Performance-Mods", true, &scopes, None).await {
+            tracing::warn!("Snapshot vor Performance-Mods fehlgeschlagen: {e}");
+        }
     }
     task.check()?;
     task.stage("Löse Abhängigkeiten auf …", None);

@@ -156,7 +156,7 @@ export const api = {
   autofixPlan: (instanceId: string, crashReport?: string | null, exitCode?: number | null) =>
     call<T.FixPlan>("autofix_plan", { instanceId, crashReport: crashReport ?? null, exitCode: exitCode ?? null }),
   /** Task-ID; Ergebnis danach über autofixLast */
-  autofixApply: (instanceId: string, actions: T.FixAction[]) => call<string>("autofix_apply", { instanceId, actions }),
+  autofixApply: (instanceId: string, actions: T.FixAction[], backup?: T.FixBackup | null) => call<string>("autofix_apply", { instanceId, actions, backup: backup ?? null }),
   autofixLast: (instanceId: string) => call<T.FixReport | null>("autofix_last", { instanceId }),
   autofixUndo: (instanceId: string) => call<string>("autofix_undo", { instanceId }),
   autofixQuick: (instanceId: string) => call<T.QuickCheck>("autofix_quick", { instanceId }),
@@ -244,10 +244,14 @@ export const api = {
   serversRecent: (limit?: number) => call<T.RecentServer[]>("servers_recent", { limit: limit ?? null }),
   playtimeSessions: (since?: number | null) => call<T.PlaySession[]>("playtime_sessions", { since: since ?? null }),
   optsyncGet: () => call<T.OptSyncInfo>("optsync_get"),
-  optsyncSetInstance: (instanceId: string, enabled: boolean, categories: T.OptSyncCategory[]) =>
+  optsyncSetInstance: (instanceId: string, enabled: boolean, categories: T.SyncKey[]) =>
     call<T.OptSyncInfo>("optsync_set_instance", { instanceId, enabled, categories }),
-  optsyncCapture: (instanceId: string, categories: T.OptSyncCategory[]) => call<T.OptSyncInfo>("optsync_capture", { instanceId, categories }),
+  optsyncCapture: (instanceId: string, categories: T.SyncKey[]) => call<T.OptSyncInfo>("optsync_capture", { instanceId, categories }),
   optsyncApplyAll: () => call<number>("optsync_apply_all"),
+  /** Ordner/Server/Screenshots abgleichen: eine Instanz oder alle (null) */
+  optsyncSyncNow: (instanceId?: string | null) => call<T.SyncAllResult>("optsync_sync_now", { instanceId: instanceId ?? null }),
+  optsyncOpenFolder: (area: T.SyncArea) => call<void>("optsync_open_folder", { area }),
+  optsyncClearConflicts: (instanceId: string) => call<T.OptSyncInfo>("optsync_clear_conflicts", { instanceId }),
   shortcutCreate: (instanceId: string, location: "desktop" | "start_menu") => call<string>("shortcut_create", { instanceId, location }),
   appActionsTake: () => call<T.AppAction[]>("app_actions_take"),
   // ---------------------------------------------------------------- Spiel-Links

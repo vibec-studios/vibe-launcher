@@ -312,11 +312,11 @@ pub async fn autofix_plan(state: State<'_, AppState>, instance_id: String, crash
 
 /// Gewählte Schritte ausführen (vorher Snapshot). Gibt die Task-ID zurück; Ergebnis über `autofix_last`.
 #[tauri::command]
-pub async fn autofix_apply(state: State<'_, AppState>, instance_id: String, actions: Vec<autofix::FixAction>) -> AppResult<String> {
+pub async fn autofix_apply(state: State<'_, AppState>, instance_id: String, actions: Vec<autofix::FixAction>, backup: Option<crate::settings::FixBackup>) -> AppResult<String> {
     state.instances.get(&instance_id)?;
     let st = state.inner().clone();
     let iid = instance_id.clone();
-    Ok(state.tasks.spawn("autofix", "Probleme beheben", Some(instance_id), move |task| autofix::run_apply(st, task, iid, actions)))
+    Ok(state.tasks.spawn("autofix", "Probleme beheben", Some(instance_id), move |task| autofix::run_apply(st, task, iid, actions, backup)))
 }
 
 #[tauri::command]

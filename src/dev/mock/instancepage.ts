@@ -1,6 +1,6 @@
 // Mock: Werkzeuge der Instanzseite (Modpack-Update, Abhängigkeits-Check, Mod-Sets, Performance, Backups, Dateien,
 // Serverliste). Macht „survival“ zu einer realistisch gefüllten Modpack-Instanz. Nur für VITE_MOCK=1.
-import type { DepIssue, FileEntry, FixPlan, FixReport, Instance, ModSets, PerfCandidate, ProjectVersion, ServerEntry, SnapshotInfo, WorldBackup } from "@/lib/types";
+import type { DepIssue, FileEntry, FixBackup, FixPlan, FixReport, Instance, ModSets, OptSyncInfo, PerfCandidate, ProjectVersion, ServerEntry, SnapshotInfo, SnapshotScope, SyncKey, WorldBackup } from "@/lib/types";
 import { instances } from "./core";
 import { fakeTask, type Handlers } from "./util";
 
@@ -80,6 +80,7 @@ let modsets: ModSets = {
 };
 
 const snapshots: SnapshotInfo[] = [
+  { id: "s0", name: "Vor „Probleme beheben“", created: now - 3600_000 * 6, auto: true, file_count: 214, size: 389_021_696, scopes: ["mods", "configs", "options"] },
   { id: "s1", name: "Vor Modpack-Update 1.4.2", created: now - 86400_000 * 3, auto: true, file_count: 412, size: 734_003_200 },
   { id: "s2", name: "Stabiler Stand", created: now - 86400_000 * 11, auto: false, file_count: 398, size: 702_545_920 },
 ];
@@ -149,6 +150,71 @@ const repairDeps: DepIssue[] = [
 let fixReport: FixReport | null = null;
 let repaired = false;
 
+// Synchronisieren: zwei Instanzen mit Packs/Servern, ein Konflikt (Screenshots: localStorage vl.mock.sync = "empty")
+const ALL_SCOPES: SnapshotScope[] = ["mods", "configs", "resourcepacks", "shaderpacks", "datapacks", "options"];
+function mockScopes(b: FixBackup | null | undefined): SnapshotScope[] {
+  switch (b?.mode ?? "recommended") {
+    case "none":
+      return [];
+    case "mods":
+      return ["mods"];
+    case "all":
+      return ALL_SCOPES;
+    case "custom":
+      return ALL_SCOPES.filter((s) => b!.areas.includes(s));
+    default:
+      return ["mods", "configs", "options"];
+  }
+}
+const syncEmpty = (() => {
+  try {
+    return localStorage.getItem("vl.mock.sync") === "empty";
+  } catch {
+    return false;
+  }
+})();
+const MB = 1024 * 1024;
+let sync: OptSyncInfo = {
+  config: {
+    master: syncEmpty ? {} : Object.fromEntries([...Array(48)].map((_, i) => [`key_key.mock${i}`, "key.keyboard.a"]).concat([["lang", "de_de"], ["forceUnicodeFont", "false"], ["soundCategory_music", "0.3"]])),
+    source: syncEmpty ? null : "survival",
+    updated_at: syncEmpty ? null : now - 3600_000 * 2,
+    instances: syncEmpty
+      ? {}
+      : {
+          survival: { enabled: true, categories: ["controls", "sound", "language", "accessibility", "resourcepacks", "servers", "screenshots"] },
+          vanilla: { enabled: true, categories: ["controls", "sound", "language", "resourcepacks", "servers"] },
+          "old-forge": { enabled: true, categories: ["controls", "resourcepacks"] },
+        },
+    resource_packs: syncEmpty ? null : ["vanilla", "file/Faithful 32x.zip", "file/Fresh Animations.zip"],
+    shader: syncEmpty ? null : { pack: "ComplementaryReimagined_r5.4.zip", enabled: true },
+    optifine: {},
+  },
+  categories: ["controls", "sound", "video", "language", "accessibility"],
+  areas: ["resourcepacks", "shaderpacks", "servers", "screenshots"],
+  counts: syncEmpty ? {} : { controls: 48, sound: 1, language: 2, resourcepacks: 2 },
+  shared: syncEmpty
+    ? [
+        { area: "resourcepacks", count: 0, size: 0 },
+        { area: "shaderpacks", count: 0, size: 0 },
+        { area: "screenshots", count: 0, size: 0 },
+        { area: "servers", count: 0, size: 0 },
+      ]
+    : [
+        { area: "resourcepacks", count: 4, size: 87 * MB },
+        { area: "shaderpacks", count: 2, size: 41 * MB },
+        { area: "screenshots", count: 37, size: 92 * MB },
+        { area: "servers", count: 6, size: 0 },
+      ],
+  states: syncEmpty
+    ? {}
+    : {
+        survival: { last_sync: now - 50 * 60_000, conflicts: [{ at: now - 50 * 60_000, area: "resourcepacks", name: "Faithful 32x.zip", renamed: "Faithful 32x (Cobblemon Abenteuer).zip" }], errors: [] },
+        vanilla: { last_sync: now - 86400_000, conflicts: [], errors: [] },
+        "old-forge": { last_sync: null, conflicts: [], errors: [] },
+      },
+};
+
 const handlers: Handlers = {
   modpack_check: ({ instanceId }) =>
     instanceId === "survival" ? { source: "modrinth", project_id: "cobble-pack", current_version: "1.4.2", current_version_id: "v1", latest: version("1.5.0") } : null,
@@ -178,16 +244,18 @@ const handlers: Handlers = {
       : instanceId === "hh-armors" && !repaired
         ? repairPlan
         : { crash: false, steps: [], unfixable: [] },
-  autofix_apply: ({ instanceId, actions }) =>
+  autofix_apply: ({ instanceId, actions, backup }) =>
     fakeTask("autofix", "Probleme beheben", instanceId as string, 2200, () => {
       const list = actions as FixReport["results"][number]["action"][];
       if (instanceId === "hh-armors") repaired = true;
       const loader = list.find((a) => a.kind === "set_loader");
       const inst = instances.get(instanceId as string);
       if (loader && inst) instances.set(inst.id, { ...inst, loader: { ...inst.loader, version: loader.to } });
+      const scopes = mockScopes(backup as FixBackup | null);
       fixReport = {
         created: Date.now(),
-        snapshot_id: "fix-1",
+        snapshot_id: scopes.length ? "fix-1" : null,
+        snapshot_scopes: scopes.length && scopes.length < ALL_SCOPES.length ? scopes : null,
         results: list.map((action) => ({ action, ok: true, error: null })),
         manual: [{ file_name: "better-end-4.0.jar", project_name: "Better End", page_url: "https://www.curseforge.com/minecraft/mc-mods/betterend/files/1", kind: "mod", version_number: "4.0.11", is_update: true }],
         prev_java: null,
@@ -255,7 +323,29 @@ const handlers: Handlers = {
   },
   servers_recent: () => [],
   playtime_sessions: () => [],
-  optsync_get: () => ({ config: { master: {}, source: null, updated_at: null, instances: {} }, categories: [], counts: {} }),
+  optsync_get: () => sync,
+  optsync_set_instance: ({ instanceId, enabled, categories }) => {
+    const id = instanceId as string;
+    sync = {
+      ...sync,
+      config: { ...sync.config, instances: { ...sync.config.instances, [id]: { enabled: !!enabled, categories: categories as SyncKey[] } } },
+      states: enabled ? { ...sync.states, [id]: sync.states[id] ?? { last_sync: Date.now(), conflicts: [], errors: [] } } : sync.states,
+    };
+    return sync;
+  },
+  optsync_capture: () => (sync = { ...sync, config: { ...sync.config, updated_at: Date.now() } }),
+  optsync_apply_all: () => Object.values(sync.config.instances).filter((x) => x.enabled).length,
+  optsync_sync_now: ({ instanceId }) => {
+    const ids = instanceId ? [instanceId as string] : Object.keys(sync.config.instances).filter((k) => sync.config.instances[k].enabled);
+    sync = { ...sync, states: { ...sync.states, ...Object.fromEntries(ids.map((k) => [k, { ...(sync.states[k] ?? { conflicts: [], errors: [] }), last_sync: Date.now() }])) } };
+    return { instances: ids.length, changes: 3, conflicts: 0, errors: [], running: [] };
+  },
+  optsync_open_folder: () => null,
+  optsync_clear_conflicts: ({ instanceId }) => {
+    const id = instanceId as string;
+    sync = { ...sync, states: { ...sync.states, [id]: { ...sync.states[id], conflicts: [], errors: [] } } };
+    return sync;
+  },
   screenshots_list: () => [],
   crash_analyze: () => [],
 };

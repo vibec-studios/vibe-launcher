@@ -12,6 +12,8 @@ pub mod presence;
 pub mod servers;
 pub mod shortcuts;
 pub mod stats;
+pub mod syncdir;
+pub mod syncservers;
 
 use crate::state::AppState;
 use parking_lot::Mutex;
@@ -20,6 +22,8 @@ use tauri::{AppHandle, Emitter, Listener, Manager};
 
 /// Event an das Frontend: neue externe Aktionen liegen bereit (`app_actions_take`).
 pub const ACTIONS_EVENT: &str = "app://actions";
+/// Event an das Frontend: Synchronisieren hat etwas geändert (Payload: Instanz-ID).
+pub const SYNC_EVENT: &str = "sync://changed";
 
 #[derive(Debug, Clone, Default)]
 struct LaunchCtx {
@@ -81,11 +85,8 @@ pub fn on_launch(state: &AppState, id: &str, world: Option<String>, server: Opti
         tracing::warn!(".vibe/instance.json für {id} nicht geschrieben: {e}");
     }
     if let Ok(inst) = state.instances.get(id) {
-        match optsync::apply(&state.paths.root, &state.paths.game_dir(id), id, &inst.mc_version) {
-            Ok(n) if n > 0 => tracing::info!("Optionen-Sync: {n} Einstellungen in {id} übernommen"),
-            Ok(_) => {}
-            Err(e) => tracing::warn!("Optionen-Sync für {id} fehlgeschlagen: {e}"),
-        }
+        // Synchronisieren: gemeinsame Ordner, Server-Liste, Optionen (blockiert kurz; große Dateien sind Hardlinks)
+        optsync::before_launch(&state.paths.root, &state.paths.game_dir(id), id, &inst.name, &inst.mc_version);
     }
 }
 
@@ -137,14 +138,19 @@ fn on_game_state(app: &AppHandle, v: &serde_json::Value) {
         }
         Some("stopped") => {
             p.launch_ctx.lock().remove(id);
+            let mut since = None;
             if let Some(a) = p.active.lock().remove(id) {
+                since = Some(a.start);
                 let s = stats::Session { instance_id: id.to_string(), start: a.start, end: now, world: a.ctx.world, server: a.ctx.server };
                 if let Err(e) = stats::append(&state.paths.root, &s) {
                     tracing::warn!("Spielzeit konnte nicht gespeichert werden: {e}");
                 }
             }
-            if let Err(e) = optsync::pull(&state.paths.root, &state.paths.game_dir(id), id) {
-                tracing::warn!("Optionen-Sync (Übernahme) fehlgeschlagen: {e}");
+            if let Ok(inst) = state.instances.get(id) {
+                let s = optsync::after_exit(&state.paths.root, &state.paths.game_dir(id), id, &inst.name, &inst.mc_version, since);
+                if !s.conflicts.is_empty() || s.changes > 0 {
+                    let _ = app.emit(SYNC_EVENT, id);
+                }
             }
         }
         _ => {}

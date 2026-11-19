@@ -134,6 +134,8 @@ export interface Settings {
   world_backup_on_launch: boolean;
   /** Aufbewahrte automatische Backups je Welt */
   world_backups_keep: number;
+  /** Sicherung vor „Probleme beheben“ und Performance-Mods */
+  fix_backup: FixBackup;
   /** MinecraftCapes-Cape/Ohren anzeigen (aus = keine Anfragen an api.minecraftcapes.net) */
   minecraftcapes: boolean;
   /** Darstellung (Akzent, Ton, Ecken, Dichte, Skalierung, Hintergrund) */
@@ -779,16 +781,55 @@ export interface PlaySession {
 }
 
 export type OptSyncCategory = "controls" | "sound" | "video" | "language" | "accessibility";
+/** Weitere Sync-Bereiche (gemeinsame Ordner, Server-Liste) */
+export type SyncArea = "resourcepacks" | "shaderpacks" | "servers" | "screenshots";
+export type SyncKey = OptSyncCategory | SyncArea;
+
+export interface SyncConflict {
+  at: number;
+  area: SyncArea;
+  /** Name, der den gemeinsamen Stand behält */
+  name: string;
+  /** Neuer Name der abweichenden Fassung aus der Instanz */
+  renamed: string;
+}
 
 export interface OptSyncInfo {
   config: {
     master: Record<string, string>;
     source: string | null;
     updated_at: number | null;
-    instances: Record<string, { enabled: boolean; categories: OptSyncCategory[] }>;
+    instances: Record<string, { enabled: boolean; categories: SyncKey[] }>;
+    /** Aktive Resourcepacks (Reihenfolge wie in options.txt) */
+    resource_packs?: string[] | null;
+    shader?: { pack: string; enabled: boolean } | null;
+    optifine?: Record<string, string>;
   };
   categories: OptSyncCategory[];
-  counts: Partial<Record<OptSyncCategory, number>>;
+  areas: SyncArea[];
+  counts: Partial<Record<SyncKey, number>>;
+  /** Gemeinsame Ordner (servers: Anzahl Server, size 0) */
+  shared: { area: SyncArea; count: number; size: number }[];
+  states: Record<string, { last_sync: number | null; conflicts: SyncConflict[]; errors: string[] }>;
+}
+
+export interface SyncAllResult {
+  instances: number;
+  changes: number;
+  conflicts: number;
+  errors: string[];
+  /** Übersprungen, weil sie laufen (Namen) */
+  running: string[];
+}
+
+/** Bereiche eines Teil-Snapshots */
+export type SnapshotScope = "mods" | "configs" | "resourcepacks" | "shaderpacks" | "datapacks" | "options";
+
+/** Sicherung vor automatischen Mod-Änderungen */
+export interface FixBackup {
+  mode: "recommended" | "mods" | "all" | "custom" | "none";
+  /** Nur bei "custom" */
+  areas: SnapshotScope[];
 }
 
 /** Aktion von außen (Kommandozeile `--launch`, Deep-Link `vibelauncher://…`) – Frontend fragt immer nach. */
@@ -1150,6 +1191,8 @@ export interface SnapshotInfo {
   auto: boolean;
   file_count: number;
   size: number;
+  /** Teil-Snapshot: enthaltene Bereiche (null = vollständig) */
+  scopes?: SnapshotScope[] | null;
 }
 
 /** ZIP-Backup einer Welt. `id` = "<weltordner>/<zeitstempel>" */
@@ -1384,6 +1427,8 @@ export interface FixPlan {
 export interface FixReport {
   created: number;
   snapshot_id: string | null;
+  /** Bereiche der Sicherung (null = vollständig oder keine Sicherung) */
+  snapshot_scopes?: SnapshotScope[] | null;
   results: { action: FixAction; ok: boolean; error: string | null }[];
   manual: MissingDownload[];
   prev_java: JavaOptions | null;
