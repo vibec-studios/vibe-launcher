@@ -1,0 +1,7 @@
+[19:43:55] [main/INFO]: Loading Minecraft 1.21.4 with Fabric Loader 0.16.9
+[19:43:55] [main/INFO]: Loading 52 mods:
+	- centered-crosshair 1.3.1+1.21.4
+	- vibeyclient 0.3.0+1.21.4
+[19:44:01] [Render thread/WARN]: @Redirect conflict. Skipping centeredcrosshair.mixins.json:InGameHudMixin from mod centered-crosshair->@Redirect::redirectCrosshair(Lnet/minecraft/class_332;Lnet/minecraft/class_2960;IIII)V with priority 1000, already redirected by vibeyclient.mixins.json:hud.InGameHudMixin from mod vibeyclient->@Redirect::vibey$crosshair(Lnet/minecraft/class_332;Lnet/minecraft/class_2960;IIII)V with priority 1000
+[19:44:02] [Render thread/ERROR]: Mixin apply for mod centered-crosshair failed centeredcrosshair.mixins.json:InGameHudMixin from mod centered-crosshair -> net.minecraft.class_329: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException Critical injection failure: Redirector redirectCrosshair(...) in centeredcrosshair.mixins.json:InGameHudMixin from mod centered-crosshair failed injection check, (0/1) succeeded. Scanned 1 target(s).
+[19:44:02] [Render thread/INFO]: Crash report saved to C:\Users\<user>\AppData\Roaming\VibeLauncher\instances\<instance>\minecraft\crash-reports\crash-2026-11-18_19.44.02-client.txt

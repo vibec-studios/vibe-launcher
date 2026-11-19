@@ -1,0 +1,3 @@
+[10:00:00] [main/INFO]: Loading Minecraft 1.20.4 with Fabric Loader 0.16.9
+net.fabricmc.loader.impl.FormattedException: net.fabricmc.loader.impl.discovery.ModResolutionException: Mods share ID sodium, may only load one of them: [sodium-fabric-0.5.8+mc1.20.4.jar, sodium-fabric-0.5.3+mc1.20.1.jar]
+	at net.fabricmc.loader.impl.FabricLoaderImpl.load(FabricLoaderImpl.java:203)

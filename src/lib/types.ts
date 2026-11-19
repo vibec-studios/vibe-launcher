@@ -787,20 +787,30 @@ export type DiagnosisAction =
   /** Deaktivierte Abhängigkeit wieder aktivieren */
   | { kind: "enable_mod"; file: string; name: string | null }
   | { kind: "install_dependency"; mod_id: string; name: string | null }
+  /** Installierte Mod auf passende Version tauschen (über „Probleme beheben“) */
+  | { kind: "update_mod"; file: string; mod_id: string }
+  /** Kaputte Config-Datei sichern und zurücksetzen (über „Probleme beheben“) */
+  | { kind: "reset_config"; path: string }
   | { kind: "set_java"; major: number }
   | { kind: "increase_ram"; suggest_mb: number }
   | { kind: "update_drivers" }
   | { kind: "upload" };
 
 export interface Diagnosis {
-  /** missing_dependency | wrong_minecraft | mixin | java_version | out_of_memory | heap_reserve | duplicate_mod |
-   *  graphics | suspected_mod | exit_code */
+  /** missing_dependency | outdated_dependency | wrong_minecraft | wrong_loader | loader_version | mixin |
+   *  mixin_conflict | mod_conflict | known_conflict | java_version | out_of_memory | heap_reserve | duplicate_mod |
+   *  broken_config | graphics | suspected_mod | exit_code */
   id: string;
   confidence: number;
   culprit: { mod_id: string | null; name: string | null; file: string | null } | null;
   params: Record<string, string>;
   actions: DiagnosisAction[];
   evidence: string | null;
+  /** Fundstelle: Datei (`logs/latest.log`, `crash-reports/…`, `console`) und Zeile */
+  source?: string | null;
+  line?: number | null;
+  /** Regel aus patterns.toml */
+  rule?: string | null;
 }
 
 export interface ServerEntry {
@@ -1437,7 +1447,9 @@ export type FixAction =
   /** Loader-Version umstellen und installieren */
   | { kind: "set_loader"; loader: LoaderKind; from: string | null; to: string }
   /** Loader in der eingestellten Version neu installieren */
-  | { kind: "repair_loader"; loader: LoaderKind; version: string | null };
+  | { kind: "repair_loader"; loader: LoaderKind; version: string | null }
+  /** Kaputte Config-Datei (config/…) sichern und zurücksetzen */
+  | { kind: "reset_config"; path: string };
 
 export type FixReason =
   | "missing_dependency"
@@ -1457,7 +1469,12 @@ export type FixReason =
   | "loader_unknown"
   | "loader_files_missing"
   | "loader_files_broken"
-  | "loader_install_failed";
+  | "loader_install_failed"
+  | "mixin_conflict"
+  | "mod_conflict"
+  | "known_conflict"
+  | "known_pair"
+  | "broken_config";
 
 export interface FixStep {
   id: string;
@@ -1472,20 +1489,26 @@ export interface FixStep {
   confirm: boolean;
   selected: boolean;
   from_crash: boolean;
-  /** Zusatzangabe je Grund: wrong_loader -> Loader der Mod ("forge"), loader_too_* -> Anforderungen, loader_files_* -> Anzahl */
+  /** Zugehörige Absturzursache (Index in FixPlan.causes) */
+  cause?: number | null;
+  /** Zusatzangabe je Grund: wrong_loader -> Loader der Mod ("forge"), loader_too_* -> Anforderungen, loader_files_* -> Anzahl,
+   *  known_pair -> Quelle */
   detail: string | null;
 }
 
 export interface Unfixable {
-  reason: "loader_version" | "loader_offline" | "version_mismatch" | "no_version" | "dep_not_found" | "graphics" | "heap_reserve";
+  reason: "loader_version" | "loader_offline" | "version_mismatch" | "no_version" | "dep_not_found" | "graphics" | "heap_reserve" | "ram_limit";
   name: string;
   detail: string | null;
+  cause?: number | null;
 }
 
 export interface FixPlan {
   steps: FixStep[];
   unfixable: Unfixable[];
   crash: boolean;
+  /** Absturzursachen (sicherste zuerst) mit Erklärung und Fundstelle */
+  causes?: Diagnosis[];
 }
 
 export interface FixReport {
@@ -1498,6 +1521,8 @@ export interface FixReport {
   prev_java: JavaOptions | null;
   /** Loader vor dem Durchlauf (nur wenn umgestellt) */
   prev_loader?: Loader | null;
+  /** Zurückgesetzte Config-Dateien mit Sicherung */
+  config_backups?: { path: string; backup: string }[];
   undone: boolean;
 }
 

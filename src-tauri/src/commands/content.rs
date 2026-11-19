@@ -324,9 +324,16 @@ pub async fn content_check_deps(state: State<'_, AppState>, instance_id: String)
 // ---------------------------------------------------------------- Probleme beheben (Autofix)
 
 /// Behebbare Probleme der Instanz als Plan (Abhängigkeiten, Konflikte, letzte Crash-Analyse).
+/// `ignore_crash`: nur statisch prüfen (Nachprüfung nach dem Beheben).
 #[tauri::command]
-pub async fn autofix_plan(state: State<'_, AppState>, instance_id: String, crash_report: Option<String>, exit_code: Option<i32>) -> AppResult<autofix::FixPlan> {
-    autofix::plan(&state, &instance_id, crash_report, exit_code).await
+pub async fn autofix_plan(
+    state: State<'_, AppState>,
+    instance_id: String,
+    crash_report: Option<String>,
+    exit_code: Option<i32>,
+    ignore_crash: Option<bool>,
+) -> AppResult<autofix::FixPlan> {
+    autofix::plan(&state, &instance_id, crash_report, exit_code, ignore_crash.unwrap_or(false)).await
 }
 
 /// Gewählte Schritte ausführen (vorher Snapshot). Gibt die Task-ID zurück; Ergebnis über `autofix_last`.

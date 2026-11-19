@@ -71,6 +71,9 @@ pub enum FixAction {
         #[serde(default)]
         version: Option<String>,
     },
+    /// Kaputte Config-Datei (relativ zum Spielordner, `config/…`) sichern und zurücksetzen – die Mod legt sie beim
+    /// nächsten Start mit Standardwerten neu an
+    ResetConfig { path: String },
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -78,7 +81,8 @@ pub struct FixStep {
     pub id: String,
     /// Grund: missing_dependency | disabled_dependency | version_mismatch | incompatible | known_conflict | duplicate |
     /// wrong_loader | wrong_minecraft | crash_suspect | dep_not_found | java_version | out_of_memory |
-    /// loader_too_old | loader_too_new | loader_unknown | loader_files_missing | loader_files_broken | loader_install_failed
+    /// loader_too_old | loader_too_new | loader_unknown | loader_files_missing | loader_files_broken | loader_install_failed |
+    /// mixin_conflict | mod_conflict | known_conflict (aus dem Absturz) | known_pair (Liste) | broken_config
     pub reason: String,
     /// Betroffene Mod (Anzeigename)
     pub name: String,
@@ -94,18 +98,22 @@ pub struct FixStep {
     pub selected: bool,
     /// Aus der Crash-Analyse
     pub from_crash: bool,
+    /// Zugehörige Absturzursache (Index in `FixPlan::causes`)
+    pub cause: Option<usize>,
     /// Zusatzangabe je Grund (sprachneutral): wrong_loader -> Loader der Mod ("forge"), loader_too_* -> Anforderungen
-    /// („Create >=0.16.10“), loader_files_* -> Anzahl Dateien
+    /// („Create >=0.16.10“), loader_files_* -> Anzahl Dateien, known_pair -> Quelle
     pub detail: Option<String>,
 }
 
 /// Erkannt, aber nicht automatisch behebbar.
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Unfixable {
-    /// loader_version | loader_offline | no_version | dep_not_found | graphics | heap_reserve
+    /// loader_version | loader_offline | no_version | dep_not_found | graphics | heap_reserve | ram_limit
     pub reason: String,
     pub name: String,
     pub detail: Option<String>,
+    /// Zugehörige Absturzursache (Index in `FixPlan::causes`)
+    pub cause: Option<usize>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -114,6 +122,8 @@ pub struct FixPlan {
     pub unfixable: Vec<Unfixable>,
     /// Die letzte Sitzung ist abgestürzt und wurde mit ausgewertet
     pub crash: bool,
+    /// Absturzursachen (sicherste zuerst) mit Erklärung und Fundstelle; Schritte verweisen per `cause` darauf
+    pub causes: Vec<Diagnosis>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -139,8 +149,19 @@ pub struct FixReport {
     /// Loader vor dem Durchlauf (nur wenn die Loader-Version umgestellt wurde)
     #[serde(default)]
     pub prev_loader: Option<Loader>,
+    /// Zurückgesetzte Config-Dateien mit ihrer Sicherung
+    #[serde(default)]
+    pub config_backups: Vec<ConfigBackup>,
     #[serde(default)]
     pub undone: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ConfigBackup {
+    /// Relativ zum Spielordner (`config/…`)
+    pub path: String,
+    /// Absoluter Pfad der Sicherung (`instances/<id>/autofix-config/<zeit>/…`)
+    pub backup: String,
 }
 
 /// Schnelle Prüfung ohne Netz (vor dem Start).
@@ -154,18 +175,21 @@ pub struct QuickCheck {
 
 // ------------------------------------------------------------------ 1. Bedarf (rein)
 
+/// `cause`: Index der Absturzursache in [`FixPlan::causes`], aus der der Bedarf (auch) stammt.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Need {
     /// Fehlende Abhängigkeit (Mod-ID) suchen und installieren
-    Install { dep_id: String, required_by: Vec<String>, required_files: Vec<String>, from_crash: bool },
-    Enable { file: String, name: String, required_by: Vec<String>, from_crash: bool },
-    Disable { file: String, name: String, reason: String, confirm: bool, alt: Option<(String, String)>, from_crash: bool },
+    Install { dep_id: String, required_by: Vec<String>, required_files: Vec<String>, cause: Option<usize> },
+    Enable { file: String, name: String, required_by: Vec<String>, cause: Option<usize> },
+    Disable { file: String, name: String, reason: String, confirm: bool, alt: Option<(String, String)>, cause: Option<usize> },
     /// Passende Version suchen (falscher Loader / falsche MC-Version), sonst deaktivieren
-    Swap { file: String, name: String, reason: String, from_crash: bool },
+    Swap { file: String, name: String, reason: String, cause: Option<usize> },
     /// Installierte Abhängigkeit hat eine unpassende Version -> passende Version suchen
-    Update { file: String, name: String, required_by: String },
-    Java { major: u32 },
-    Ram { mb: u32 },
+    Update { file: String, name: String, required_by: String, cause: Option<usize> },
+    /// Kaputte Config-Datei sichern und zurücksetzen (nur nach Rückfrage)
+    ResetConfig { path: String, name: String, cause: Option<usize> },
+    Java { major: u32, cause: Option<usize> },
+    Ram { mb: u32, cause: Option<usize> },
     Unfixable(Unfixable),
 }
 
@@ -197,28 +221,68 @@ struct Acc {
     swapped: HashSet<String>,
 }
 
+fn need_cause(n: &mut Need) -> Option<&mut Option<usize>> {
+    match n {
+        Need::Install { cause, .. }
+        | Need::Enable { cause, .. }
+        | Need::Disable { cause, .. }
+        | Need::Swap { cause, .. }
+        | Need::Update { cause, .. }
+        | Need::ResetConfig { cause, .. }
+        | Need::Java { cause, .. }
+        | Need::Ram { cause, .. } => Some(cause),
+        Need::Unfixable(u) => Some(&mut u.cause),
+    }
+}
+
 impl Acc {
     fn gone(&self, f: &str) -> bool {
         self.off.contains(f) || self.swapped.contains(f)
     }
-    fn disable(&mut self, file: &str, name: String, reason: &str, confirm: bool, alt: Option<(String, String)>, from_crash: bool) {
+    /// Bereits vorhandenen Bedarf für eine Datei der Absturzursache zuordnen (falls noch ohne).
+    fn tag_file(&mut self, file: &str, c: Option<usize>) {
+        if c.is_none() {
+            return;
+        }
+        for n in self.out.iter_mut() {
+            let hit = matches!(n, Need::Disable { file: f, .. } | Need::Swap { file: f, .. } | Need::Update { file: f, .. } if f == file);
+            if hit {
+                if let Some(slot) = need_cause(n) {
+                    slot.get_or_insert(c.unwrap_or_default());
+                }
+                return;
+            }
+        }
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn disable(&mut self, file: &str, name: String, reason: &str, confirm: bool, alt: Option<(String, String)>, cause: Option<usize>) {
         if self.gone(file) {
+            self.tag_file(file, cause);
             return;
         }
         self.off.insert(file.to_string());
-        self.out.push(Need::Disable { file: file.into(), name, reason: reason.into(), confirm, alt, from_crash });
+        self.out.push(Need::Disable { file: file.into(), name, reason: reason.into(), confirm, alt, cause });
     }
-    fn swap(&mut self, file: &str, name: String, reason: &str, from_crash: bool) {
+    fn swap(&mut self, file: &str, name: String, reason: &str, cause: Option<usize>) {
         if self.gone(file) {
+            self.tag_file(file, cause);
             return;
         }
         self.swapped.insert(file.to_string());
-        self.out.push(Need::Swap { file: file.into(), name, reason: reason.into(), from_crash });
+        self.out.push(Need::Swap { file: file.into(), name, reason: reason.into(), cause });
     }
-    fn install(&mut self, dep_id: &str, by: Option<(&str, &str)>, from_crash: bool) {
+    fn update(&mut self, file: &str, name: String, required_by: &str, cause: Option<usize>) {
+        if self.gone(file) {
+            self.tag_file(file, cause);
+            return;
+        }
+        self.swapped.insert(file.to_string());
+        self.out.push(Need::Update { file: file.into(), name, required_by: required_by.into(), cause });
+    }
+    fn install(&mut self, dep_id: &str, by: Option<(&str, &str)>, cause: Option<usize>) {
         let dep = dep_id.to_ascii_lowercase();
         for n in self.out.iter_mut() {
-            if let Need::Install { dep_id, required_by, required_files, .. } = n {
+            if let Need::Install { dep_id, required_by, required_files, cause: c } = n {
                 if *dep_id == dep {
                     if let Some((name, file)) = by {
                         if !required_by.iter().any(|x| x == name) {
@@ -228,6 +292,9 @@ impl Acc {
                             required_files.push(file.into());
                         }
                     }
+                    if c.is_none() {
+                        *c = cause;
+                    }
                     return;
                 }
             }
@@ -236,33 +303,37 @@ impl Acc {
             Some((n, f)) => (vec![n.to_string()], if f.is_empty() { vec![] } else { vec![f.to_string()] }),
             None => (vec![], vec![]),
         };
-        self.out.push(Need::Install { dep_id: dep, required_by, required_files, from_crash });
+        self.out.push(Need::Install { dep_id: dep, required_by, required_files, cause });
     }
-    fn enable(&mut self, file: &str, name: String, by: Option<&str>, from_crash: bool) {
+    fn enable(&mut self, file: &str, name: String, by: Option<&str>, cause: Option<usize>) {
         for n in self.out.iter_mut() {
-            if let Need::Enable { file: f, required_by, .. } = n {
+            if let Need::Enable { file: f, required_by, cause: c, .. } = n {
                 if f == file {
                     if let Some(b) = by {
                         if !required_by.iter().any(|x| x == b) {
                             required_by.push(b.into());
                         }
                     }
+                    if c.is_none() {
+                        *c = cause;
+                    }
                     return;
                 }
             }
         }
-        self.out.push(Need::Enable { file: file.into(), name, required_by: by.map(|b| vec![b.to_string()]).unwrap_or_default(), from_crash });
+        self.out.push(Need::Enable { file: file.into(), name, required_by: by.map(|b| vec![b.to_string()]).unwrap_or_default(), cause });
     }
-    fn unfixable(&mut self, reason: &str, name: &str, detail: Option<String>) {
-        let u = Unfixable { reason: reason.into(), name: name.into(), detail };
-        if !self.out.iter().any(|n| matches!(n, Need::Unfixable(x) if *x == u)) {
+    fn unfixable(&mut self, reason: &str, name: &str, detail: Option<String>, cause: Option<usize>) {
+        let u = Unfixable { reason: reason.into(), name: name.into(), detail, cause };
+        if !self.out.iter().any(|n| matches!(n, Need::Unfixable(x) if x.reason == u.reason && x.name == u.name && x.detail == u.detail)) {
             self.out.push(Need::Unfixable(u));
         }
     }
 }
 
 /// Probleme (Abhängigkeits-Check + Crash-Diagnosen) in einen widerspruchsfreien Bedarf übersetzen.
-/// `names`: Dateiname -> Anzeigename der installierten Mods.
+/// `names`: Dateiname -> Anzeigename der installierten Mods. Die Position einer Diagnose in `diags` ist ihr
+/// `cause`-Index.
 pub fn needs(issues: &[DepIssue], diags: &[Diagnosis], names: &HashMap<String, String>) -> Vec<Need> {
     let name = |f: &str| names.get(f).cloned().unwrap_or_else(|| display_name(f));
     let mut a = Acc { out: vec![], off: HashSet::new(), swapped: HashSet::new() };
@@ -273,14 +344,14 @@ pub fn needs(issues: &[DepIssue], diags: &[Diagnosis], names: &HashMap<String, S
         for f in &i.fixes {
             if let Fix::Remove { file_names } = f {
                 for n in file_names {
-                    a.disable(n, i.mod_name.clone(), "duplicate", false, None, false);
+                    a.disable(n, i.mod_name.clone(), "duplicate", false, None, None);
                 }
             }
         }
     }
     // Falscher Loader / falsche Minecraft-Version: passende Version, sonst deaktivieren
     for i in issues.iter().filter(|i| matches!(i.kind, IssueKind::WrongLoader | IssueKind::WrongMinecraft)) {
-        a.swap(&i.file_name, i.mod_name.clone(), kind_str(i.kind), false);
+        a.swap(&i.file_name, i.mod_name.clone(), kind_str(i.kind), None);
     }
     // Deaktivierte Pflicht-Abhängigkeit: wieder aktivieren
     for i in of(IssueKind::DisabledDependency) {
@@ -288,7 +359,7 @@ pub fn needs(issues: &[DepIssue], diags: &[Diagnosis], names: &HashMap<String, S
             continue;
         }
         if let Some(Fix::Enable { file_name, title }) = i.fixes.iter().find(|f| matches!(f, Fix::Enable { .. })) {
-            a.enable(file_name, title.clone(), Some(&i.mod_name), false);
+            a.enable(file_name, title.clone(), Some(&i.mod_name), None);
         }
     }
     // Fehlende Pflicht-Abhängigkeit: installieren (gleiche ID nur einmal)
@@ -297,7 +368,7 @@ pub fn needs(issues: &[DepIssue], diags: &[Diagnosis], names: &HashMap<String, S
             continue;
         }
         if let Some(t) = &i.target {
-            a.install(t, Some((&i.mod_name, &i.file_name)), false);
+            a.install(t, Some((&i.mod_name, &i.file_name)), None);
         }
     }
     // Unpassende Version einer Abhängigkeit: Abhängigkeit tauschen (Loader-Version: siehe loaderfix)
@@ -308,13 +379,12 @@ pub fn needs(issues: &[DepIssue], diags: &[Diagnosis], names: &HashMap<String, S
         match (&i.target, &i.other_file) {
             (Some(t), _) if LOADER_IDS.contains(&t.as_str()) => {}
             (_, Some(o)) => {
-                if a.gone(o) || a.out.iter().any(|n| matches!(n, Need::Update { file, .. } if file == o)) {
+                if a.gone(o) {
                     continue;
                 }
-                a.swapped.insert(o.clone());
-                a.out.push(Need::Update { file: o.clone(), name: name(o), required_by: i.mod_name.clone() });
+                a.update(o, name(o), &i.mod_name, None);
             }
-            _ => a.unfixable("version_mismatch", &i.mod_name, Some(i.message.clone())),
+            _ => a.unfixable("version_mismatch", &i.mod_name, Some(i.message.clone()), None),
         }
     }
     // Konflikte: nur nach Rückfrage, wahlweise die eine oder andere Mod
@@ -328,13 +398,15 @@ pub fn needs(issues: &[DepIssue], diags: &[Diagnosis], names: &HashMap<String, S
         if !pairs.insert(key) {
             continue;
         }
-        a.disable(o, name(o), "incompatible", true, Some((i.file_name.clone(), i.mod_name.clone())), false);
+        a.disable(o, name(o), "incompatible", true, Some((i.file_name.clone(), i.mod_name.clone())), None);
     }
 
-    // Letzte Crash-Analyse
-    for d in diags {
+    // Absturzursachen (Reihenfolge = Sicherheit der Regel)
+    for (ci, d) in diags.iter().enumerate() {
+        let cause = Some(ci);
         let culprit_file = d.culprit.as_ref().and_then(|c| c.file.clone());
         let culprit_name = d.culprit.as_ref().and_then(|c| c.name.clone().or_else(|| c.mod_id.clone()));
+        let p = |k: &str| d.params.get(k).cloned();
         match d.id.as_str() {
             "missing_dependency" => {
                 if culprit_file.as_deref().is_some_and(|f| a.gone(f)) {
@@ -344,53 +416,92 @@ pub fn needs(issues: &[DepIssue], diags: &[Diagnosis], names: &HashMap<String, S
                     match act {
                         CrashAction::InstallDependency { mod_id, .. } => {
                             let by = culprit_name.as_deref().map(|n| (n, culprit_file.as_deref().unwrap_or("")));
-                            a.install(mod_id, by, true)
+                            a.install(mod_id, by, cause)
                         }
                         CrashAction::EnableMod { file, name: n } => {
                             let n = n.clone().unwrap_or_else(|| name(file));
-                            a.enable(file, n, culprit_name.as_deref(), true)
+                            a.enable(file, n, culprit_name.as_deref(), cause)
                         }
                         _ => {}
                     }
+                }
+            }
+            "outdated_dependency" => {
+                let by = culprit_name.clone().unwrap_or_default();
+                let mut any = false;
+                for act in &d.actions {
+                    if let CrashAction::UpdateMod { file, .. } = act {
+                        let n = if p("dependency_file").as_deref() == Some(file.as_str()) { p("dependency_name").unwrap_or_else(|| name(file)) } else { culprit_name.clone().unwrap_or_else(|| name(file)) };
+                        a.update(file, n, &by, cause);
+                        any = true;
+                    }
+                }
+                if !any {
+                    a.unfixable("no_version", &p("dependency_name").unwrap_or_default(), Some(by), cause);
                 }
             }
             "java_version" => {
                 for act in &d.actions {
                     if let CrashAction::SetJava { major } = act {
                         if !a.out.iter().any(|n| matches!(n, Need::Java { .. })) {
-                            a.out.push(Need::Java { major: *major });
+                            a.out.push(Need::Java { major: *major, cause });
                         }
                     }
                 }
             }
             "out_of_memory" => {
+                let mut any = false;
                 for act in &d.actions {
                     if let CrashAction::IncreaseRam { suggest_mb } = act {
+                        any = true;
                         if !a.out.iter().any(|n| matches!(n, Need::Ram { .. })) {
-                            a.out.push(Need::Ram { mb: *suggest_mb });
+                            a.out.push(Need::Ram { mb: *suggest_mb, cause });
                         }
                     }
+                }
+                if !any {
+                    a.unfixable("ram_limit", "", p("current"), cause);
                 }
             }
             "duplicate_mod" => {
                 for act in &d.actions {
                     if let CrashAction::DisableMod { file } = act {
-                        a.disable(file, culprit_name.clone().unwrap_or_else(|| name(file)), "duplicate", false, None, true);
+                        a.disable(file, culprit_name.clone().unwrap_or_else(|| name(file)), "duplicate", false, None, cause);
                     }
                 }
             }
-            "wrong_minecraft" => {
+            "wrong_minecraft" | "wrong_loader" => {
                 if let Some(f) = &culprit_file {
-                    a.swap(f, culprit_name.clone().unwrap_or_else(|| name(f)), "wrong_minecraft", true);
+                    a.swap(f, culprit_name.clone().unwrap_or_else(|| name(f)), &d.id, cause);
+                }
+            }
+            "mixin_conflict" | "mod_conflict" | "known_conflict" => {
+                // Beide Seiten anbieten: vorgeschlagen ist die Mod, deren Mixin scheitert bzw. die markiert wurde
+                if let Some(f) = &culprit_file {
+                    let alt = p("other_file").filter(|o| o != f && !a.gone(o)).map(|o| {
+                        let n = p("other_name").unwrap_or_else(|| name(&o));
+                        (o, n)
+                    });
+                    let reason = if d.id == "known_conflict" { "known_pair" } else { d.id.as_str() };
+                    a.disable(f, culprit_name.clone().unwrap_or_else(|| name(f)), reason, true, alt, cause);
                 }
             }
             "mixin" | "suspected_mod" => {
                 if let Some(f) = &culprit_file {
-                    a.disable(f, culprit_name.clone().unwrap_or_else(|| name(f)), "crash_suspect", true, None, true);
+                    a.disable(f, culprit_name.clone().unwrap_or_else(|| name(f)), "crash_suspect", true, None, cause);
                 }
             }
-            "graphics" => a.unfixable("graphics", "", d.params.get("dll").cloned()),
-            "heap_reserve" => a.unfixable("heap_reserve", "", d.params.get("current").cloned()),
+            "broken_config" => {
+                for act in &d.actions {
+                    if let CrashAction::ResetConfig { path } = act {
+                        if !a.out.iter().any(|n| matches!(n, Need::ResetConfig { path: x, .. } if x == path)) {
+                            a.out.push(Need::ResetConfig { path: path.clone(), name: culprit_name.clone().unwrap_or_default(), cause });
+                        }
+                    }
+                }
+            }
+            "graphics" => a.unfixable("graphics", "", p("dll"), cause),
+            "heap_reserve" => a.unfixable("heap_reserve", "", p("current"), cause),
             _ => {}
         }
     }
@@ -454,7 +565,7 @@ impl Builder {
         action: FixAction,
         alt: Option<(FixAction, String)>,
         confirm: bool,
-        from_crash: bool,
+        cause: Option<usize>,
     ) -> Option<&mut FixStep> {
         if self.steps.iter().any(|s| s.action == action) {
             return None;
@@ -473,7 +584,8 @@ impl Builder {
             alt_name,
             confirm,
             selected: !confirm,
-            from_crash,
+            from_crash: cause.is_some(),
+            cause,
             detail: None,
         });
         self.steps.last_mut()
@@ -481,12 +593,19 @@ impl Builder {
 }
 
 /// Vollständiger Plan für eine Instanz. `crash_report`/`exit_code`: ausdrücklich gewählter Absturz (Crash-Dialog);
-/// sonst wird die letzte Sitzung ausgewertet, falls sie abgestürzt ist.
-pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<String>, exit_code: Option<i32>) -> AppResult<FixPlan> {
+/// sonst wird die letzte Sitzung ausgewertet, falls sie abgestürzt ist. `ignore_crash`: nur statisch prüfen
+/// (Nachprüfung nach dem Beheben – der alte Absturz ist dann kein Maßstab mehr).
+pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<String>, exit_code: Option<i32>, ignore_crash: bool) -> AppResult<FixPlan> {
     let inst = state.instances.get(instance_id)?;
     let modded = inst.loader.kind != LoaderKind::Vanilla;
     let issues = if modded { deps::check(state, instance_id, false).await? } else { vec![] };
-    let crash_src = if crash_report.is_some() || exit_code.is_some() { Some((crash_report, exit_code)) } else { last_crash(state, instance_id) };
+    let crash_src = if ignore_crash {
+        None
+    } else if crash_report.is_some() || exit_code.is_some() {
+        Some((crash_report, exit_code))
+    } else {
+        last_crash(state, instance_id)
+    };
     let crash = crash_src.is_some();
     let diags = match crash_src {
         Some((r, c)) => crash::analyze_instance(state, instance_id, r, c).await.unwrap_or_default(),
@@ -511,14 +630,14 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
 
     for n in need {
         match n {
-            Need::Disable { file, name, reason, confirm, alt, from_crash } => {
+            Need::Disable { file, name, reason, confirm, alt, cause } => {
                 let alt = alt.map(|(f, n)| (FixAction::Disable { file_name: f }, n));
-                b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, alt, confirm, from_crash);
+                b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, alt, confirm, cause);
             }
-            Need::Enable { file, name, required_by, from_crash } => {
-                b.step("disabled_dependency", &name, required_by, FixAction::Enable { file_name: file }, None, false, from_crash);
+            Need::Enable { file, name, required_by, cause } => {
+                b.step("disabled_dependency", &name, required_by, FixAction::Enable { file_name: file }, None, false, cause);
             }
-            Need::Swap { file, name, reason, from_crash } => {
+            Need::Swap { file, name, reason, cause } => {
                 // Bei falschem Loader: für welchen Loader die Mod gebaut ist (Anzeige)
                 let mod_loader = by_file.get(file.as_str()).and_then(|s| s.meta.loader.clone()).filter(|_| reason == "wrong_loader");
                 let o = origin(&file);
@@ -546,13 +665,13 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
                             },
                             None,
                             false,
-                            from_crash,
+                            cause,
                         ) {
                             s.detail = mod_loader.clone();
                         }
                         if manual {
                             // Bis die Datei von Hand geladen ist: alte (unpassende) Datei deaktivieren
-                            if let Some(s) = b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, from_crash) {
+                            if let Some(s) = b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, cause) {
                                 s.detail = mod_loader;
                             }
                         }
@@ -567,23 +686,23 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
                             },
                             None => None,
                         };
-                        if let Some(s) = b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, from_crash) {
+                        if let Some(s) = b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, cause) {
                             s.detail = mod_loader.clone();
                         }
                         if let Some((pid, title)) = variant {
-                            if let Some(s) = b.step(&reason, &title, vec![], FixAction::Install { source: Source::Modrinth, project_id: pid, title: title.clone() }, None, false, from_crash) {
+                            if let Some(s) = b.step(&reason, &title, vec![], FixAction::Install { source: Source::Modrinth, project_id: pid, title: title.clone() }, None, false, cause) {
                                 s.detail = mod_loader;
                             }
                         }
                     }
                     _ => {
-                        if let Some(s) = b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, from_crash) {
+                        if let Some(s) = b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, cause) {
                             s.detail = mod_loader;
                         }
                     }
                 }
             }
-            Need::Update { file, name, required_by } => {
+            Need::Update { file, name, required_by, cause } => {
                 let o = origin(&file);
                 let v = match &o {
                     Some(o) => best(state, &inst, o.source, &o.project_id).await.filter(|v| v.id != o.version_id),
@@ -608,13 +727,13 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
                             },
                             None,
                             false,
-                            false,
+                            cause,
                         );
                     }
-                    _ => b.unfixable.push(Unfixable { reason: "no_version".into(), name, detail: Some(required_by) }),
+                    _ => b.unfixable.push(Unfixable { reason: "no_version".into(), name, detail: Some(required_by), cause }),
                 }
             }
-            Need::Install { dep_id, required_by, required_files, from_crash } => {
+            Need::Install { dep_id, required_by, required_files, cause } => {
                 let found = deps::resolve_modrinth(state, &dep_id, &inst).await;
                 let ok = match &found {
                     Some((pid, _)) => !idx.has_project(Source::Modrinth, pid) && best(state, &inst, Source::Modrinth, pid).await.is_some(),
@@ -629,20 +748,20 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
                             FixAction::Install { source: Source::Modrinth, project_id: pid, title: title.clone() },
                             None,
                             false,
-                            from_crash,
+                            cause,
                         );
                     }
                     Some((pid, _)) if idx.has_project(Source::Modrinth, &pid) => {}
                     _ => {
-                        b.unfixable.push(Unfixable { reason: "dep_not_found".into(), name: dep_id.clone(), detail: Some(required_by.join(", ")) });
+                        b.unfixable.push(Unfixable { reason: "dep_not_found".into(), name: dep_id.clone(), detail: Some(required_by.join(", ")), cause });
                         // Ersatzweise (nur nach Rückfrage): die Mods deaktivieren, die die Abhängigkeit brauchen
                         for f in required_files.iter().filter(|f| !gone.contains(*f)) {
-                            b.step("dep_not_found", &names.get(f).cloned().unwrap_or_else(|| display_name(f)), vec![], FixAction::Disable { file_name: f.clone() }, None, true, from_crash);
+                            b.step("dep_not_found", &names.get(f).cloned().unwrap_or_else(|| display_name(f)), vec![], FixAction::Disable { file_name: f.clone() }, None, true, cause);
                         }
                     }
                 }
             }
-            Need::Java { major } => {
+            Need::Java { major, cause } => {
                 let all = crate::minecraft::java::list(state).await;
                 let path = all.iter().filter(|j| j.major == major).max_by_key(|j| j.managed).map(|j| j.path.clone());
                 let current_ok = match inst.java.path.as_deref() {
@@ -650,11 +769,16 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
                     None => false,
                 };
                 if !current_ok {
-                    b.step("java_version", &format!("Java {major}"), vec![], FixAction::SetJava { major, path }, None, false, true);
+                    b.step("java_version", &format!("Java {major}"), vec![], FixAction::SetJava { major, path }, None, false, cause);
                 }
             }
-            Need::Ram { mb } => {
-                b.step("out_of_memory", "", vec![], FixAction::SetRam { mb }, None, false, true);
+            Need::Ram { mb, cause } => {
+                b.step("out_of_memory", "", vec![], FixAction::SetRam { mb }, None, false, cause);
+            }
+            Need::ResetConfig { path, name, cause } => {
+                if config_file(state, instance_id, &path).is_some_and(|p| p.is_file()) {
+                    b.step("broken_config", &name, vec![], FixAction::ResetConfig { path }, None, true, cause);
+                }
             }
             Need::Unfixable(u) => b.unfixable.push(u),
         }
@@ -678,14 +802,57 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
         loader_steps(&inst, loaderfix::loader_needs(&inst, &files, &reqs, available.as_deref()), &mut b);
     }
 
-    // Bekannte Konflikte laut Modrinth (Abhängigkeitstyp „incompatible“ der installierten Version)
+    // Bekannte unverträgliche Paare (gepflegte Liste) und Konflikte laut Modrinth
     if modded {
+        known_pair_steps(&scanned, &gone, &mut b);
         if let Err(e) = known_conflicts(state, &scanned, &idx, &names, &gone, &mut b).await {
             tracing::warn!("Autofix {instance_id}: bekannte Konflikte nicht geprüft: {e}");
         }
     }
 
-    Ok(FixPlan { steps: b.steps, unfixable: b.unfixable, crash })
+    // Loader-Schritte der Absturzursache „Loader-Version“ zuordnen
+    if let Some(ci) = diags.iter().position(|d| d.id == "loader_version") {
+        for s in b.steps.iter_mut().filter(|s| matches!(s.action, FixAction::SetLoader { .. }) && s.cause.is_none()) {
+            s.cause = Some(ci);
+            s.from_crash = true;
+        }
+    }
+
+    Ok(FixPlan { steps: b.steps, unfixable: b.unfixable, crash, causes: diags })
+}
+
+/// Index der aktiven Mods für die Paarliste (`conflicts.toml`).
+fn mod_index(scanned: &[local::Scanned], gone: &HashSet<String>) -> crash::ModIndex {
+    let mut m = crash::ModIndex::default();
+    for s in scanned.iter().filter(|s| s.enabled && !gone.contains(&s.file_name)) {
+        let e = crash::ModEntry { file: s.file_name.clone(), name: s.meta.name.clone(), version: s.meta.version.clone() };
+        match &s.meta.mod_id {
+            Some(id) => m.add(id, e),
+            None => m.files.push(s.file_name.clone()),
+        }
+    }
+    m
+}
+
+/// Bekannte unverträgliche Paare als Schritt „eine von beiden deaktivieren“ (nur nach Rückfrage).
+fn known_pair_steps(scanned: &[local::Scanned], gone: &HashSet<String>, b: &mut Builder) {
+    for h in crash::known_pairs(&mod_index(scanned, gone)) {
+        let taken = b.steps.iter().any(|s| matches!(&s.action, FixAction::Disable { file_name } if file_name == &h.a_file || file_name == &h.b_file));
+        if taken {
+            continue;
+        }
+        if let Some(s) = b.step(
+            "known_pair",
+            &h.a_name,
+            vec![],
+            FixAction::Disable { file_name: h.a_file.clone() },
+            Some((FixAction::Disable { file_name: h.b_file.clone() }, h.b_name.clone())),
+            true,
+            None,
+        ) {
+            s.detail = Some(h.source);
+        }
+    }
 }
 
 /// Loader-Bedarf als Schritte bzw. Hinweise.
@@ -695,16 +862,16 @@ fn loader_steps(inst: &Instance, need: Vec<LoaderNeed>, b: &mut Builder) {
     for n in need {
         match n {
             LoaderNeed::Set { from, to, reason, required_by, detail } => {
-                if let Some(s) = b.step(reason, label, required_by, FixAction::SetLoader { loader: kind, from, to }, None, false, false) {
+                if let Some(s) = b.step(reason, label, required_by, FixAction::SetLoader { loader: kind, from, to }, None, false, None) {
                     s.detail = detail;
                 }
             }
             LoaderNeed::Repair { version, reason, detail } => {
-                if let Some(s) = b.step(reason, label, vec![], FixAction::RepairLoader { loader: kind, version }, None, false, false) {
+                if let Some(s) = b.step(reason, label, vec![], FixAction::RepairLoader { loader: kind, version }, None, false, None) {
                     s.detail = detail;
                 }
             }
-            LoaderNeed::Unfixable { reason, detail } => b.unfixable.push(Unfixable { reason: reason.into(), name: label.into(), detail }),
+            LoaderNeed::Unfixable { reason, detail } => b.unfixable.push(Unfixable { reason: reason.into(), name: label.into(), detail, cause: None }),
         }
     }
 }
@@ -749,7 +916,7 @@ async fn known_conflicts(
             FixAction::Disable { file_name: other.clone() },
             Some((FixAction::Disable { file_name: me.clone() }, name(&me))),
             true,
-            false,
+            None,
         );
     }
     Ok(())
@@ -796,6 +963,7 @@ pub fn order(actions: &mut [FixAction]) {
     let rank = |a: &FixAction| match a {
         FixAction::Disable { .. } => 0,
         FixAction::Enable { .. } => 1,
+        FixAction::ResetConfig { .. } => 1,
         FixAction::Replace { .. } => 2,
         FixAction::Install { .. } => 3,
         FixAction::SetJava { .. } => 4,
@@ -837,8 +1005,10 @@ pub async fn run_apply(state: AppState, task: TaskHandle, instance_id: String, m
         manual: vec![],
         prev_java: None,
         prev_loader: None,
+        config_backups: vec![],
         undone: false,
     };
+    let stamp = crate::util::now_ms();
     let n = actions.len().max(1) as f64;
     let mut java = inst.java.clone();
     let mut java_changed = false;
@@ -911,6 +1081,12 @@ pub async fn run_apply(state: AppState, task: TaskHandle, instance_id: String, m
                         }
                     }
                 }
+                FixAction::ResetConfig { path } => {
+                    task.stage(format!("Setze {path} zurück …"), Some(from));
+                    let b = reset_config(&state, &instance_id, path, stamp)?;
+                    report.config_backups.push(b);
+                    Ok(())
+                }
                 FixAction::RepairLoader { loader, .. } => {
                     let cur = state.instances.get(&instance_id)?;
                     if cur.loader.kind != *loader {
@@ -972,9 +1148,55 @@ async fn install_one(
 
 // ------------------------------------------------------------------ 4. Rückgängig
 
-/// Lässt sich etwas zurückstellen? Ohne Sicherung nur Java/RAM, Loader und vorgemerkte Downloads.
+/// Lässt sich etwas zurückstellen? Ohne Sicherung nur Java/RAM, Loader, Configs und vorgemerkte Downloads.
 pub fn can_undo(r: &FixReport) -> bool {
-    r.snapshot_id.is_some() || r.prev_java.is_some() || r.prev_loader.is_some() || !r.manual.is_empty()
+    r.snapshot_id.is_some() || r.prev_java.is_some() || r.prev_loader.is_some() || !r.manual.is_empty() || !r.config_backups.is_empty()
+}
+
+/// Config-Datei der Instanz (nur unter `config/`, ohne `..`).
+fn config_file(state: &AppState, instance_id: &str, rel: &str) -> Option<std::path::PathBuf> {
+    let rel = rel.replace('\\', "/");
+    let inner = rel.strip_prefix("config/")?;
+    if inner.is_empty() || inner.split('/').any(|p| p.is_empty() || p == ".." || p == "." || p.contains(':')) {
+        return None;
+    }
+    Some(state.paths.game_dir(instance_id).join("config").join(inner))
+}
+
+fn config_backup_dir(state: &AppState, instance_id: &str, stamp: i64) -> std::path::PathBuf {
+    state.paths.instance_dir(instance_id).join("autofix-config").join(stamp.to_string())
+}
+
+/// Nur diese eine Datei sichern (unter `instances/<id>/autofix-config/<zeit>/`) und entfernen – die Mod legt sie mit
+/// Standardwerten neu an.
+fn reset_config(state: &AppState, instance_id: &str, rel: &str, stamp: i64) -> AppResult<ConfigBackup> {
+    let src = config_file(state, instance_id, rel).ok_or_else(|| AppError::Invalid(format!("Ungültiger Config-Pfad: {rel}")))?;
+    if !src.is_file() {
+        return Err(AppError::NotFound(format!("{rel} gibt es nicht mehr")));
+    }
+    let dst = config_backup_dir(state, instance_id, stamp).join(rel.replace('\\', "/"));
+    if let Some(parent) = dst.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::copy(&src, &dst)?;
+    std::fs::remove_file(&src)?;
+    Ok(ConfigBackup { path: rel.to_string(), backup: dst.to_string_lossy().into_owned() })
+}
+
+fn restore_configs(state: &AppState, instance_id: &str, list: &[ConfigBackup]) -> AppResult<()> {
+    let root = state.paths.instance_dir(instance_id).join("autofix-config");
+    for b in list {
+        let (Some(dst), backup) = (config_file(state, instance_id, &b.path), std::path::PathBuf::from(&b.backup)) else { continue };
+        // Nur Sicherungen aus dem eigenen Ordner zurückspielen
+        if !backup.starts_with(&root) || !backup.is_file() {
+            continue;
+        }
+        if let Some(parent) = dst.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::copy(&backup, &dst)?;
+    }
+    Ok(())
 }
 
 pub async fn run_undo(state: AppState, task: TaskHandle, instance_id: String) -> AppResult<()> {
@@ -989,6 +1211,8 @@ pub async fn run_undo(state: AppState, task: TaskHandle, instance_id: String) ->
         task.stage("Stand vor dem Beheben wird wiederhergestellt …", Some(0.0));
         snapshots::restore(&state, &instance_id, s, Some(&task.sub(0.0, 0.95))).await?;
     }
+    // Nach dem Snapshot: zurückgesetzte Configs wiederherstellen (auch wenn der Snapshot keine Configs enthielt)
+    restore_configs(&state, &instance_id, &r.config_backups)?;
     if let Some(j) = r.prev_java.clone() {
         state.instances.patch(&instance_id, InstancePatch { java: Some(j), ..Default::default() })?;
     }
@@ -1040,6 +1264,9 @@ mod tests {
             params: BTreeMap::new(),
             actions,
             evidence: None,
+            source: None,
+            line: None,
+            rule: None,
         }
     }
 
@@ -1112,12 +1339,72 @@ mod tests {
             diag("graphics", None, None, vec![CrashAction::UpdateDrivers]),
         ];
         let n = needs(&issues, &diags, &HashMap::new());
-        let installs: Vec<_> = n.iter().filter_map(|x| if let Need::Install { dep_id, from_crash, .. } = x { Some((dep_id.as_str(), *from_crash)) } else { None }).collect();
-        assert_eq!(installs, vec![("fabric-api", false), ("cloth-config", true)]);
-        assert_eq!(n.iter().filter(|x| matches!(x, Need::Java { major: 21 })).count(), 1);
-        assert!(!n.iter().any(|x| matches!(x, Need::Java { major: 17 })));
+        let installs: Vec<_> = n.iter().filter_map(|x| if let Need::Install { dep_id, cause, .. } = x { Some((dep_id.as_str(), cause.is_some())) } else { None }).collect();
+        // fabric-api fand schon der Abhängigkeits-Check – der Absturz bestätigt es (Zuordnung zur Ursache)
+        assert_eq!(installs, vec![("fabric-api", true), ("cloth-config", true)]);
+        assert_eq!(n.iter().filter(|x| matches!(x, Need::Java { major: 21, cause: Some(2) })).count(), 1);
+        assert!(!n.iter().any(|x| matches!(x, Need::Java { major: 17, .. })));
         assert!(n.iter().any(|x| matches!(x, Need::Disable { file, reason, confirm: true, .. } if file == "weird.jar" && reason == "crash_suspect")));
         assert!(n.iter().any(|x| matches!(x, Need::Unfixable(u) if u.reason == "graphics")));
+    }
+
+    fn with(mut d: Diagnosis, params: &[(&str, &str)]) -> Diagnosis {
+        for (k, v) in params {
+            d.params.insert((*k).into(), (*v).into());
+        }
+        d
+    }
+
+    #[test]
+    fn crash_causes_become_confirmed_choices_and_updates() {
+        let diags = vec![
+            // Vibey Client + Centered Crosshair: eine von beiden deaktivieren (Rückfrage, Alternative)
+            with(
+                diag("mixin_conflict", Some("cc.jar"), Some("Centered Crosshair"), vec![CrashAction::DisableMod { file: "cc.jar".into() }]),
+                &[("other_file", "vibey.jar"), ("other_name", "Vibey Client")],
+            ),
+            with(
+                diag("outdated_dependency", Some("rei.jar"), Some("REI"), vec![CrashAction::UpdateMod { file: "cloth.jar".into(), mod_id: "cloth-config".into() }]),
+                &[("dependency_file", "cloth.jar"), ("dependency_name", "Cloth Config")],
+            ),
+            diag("broken_config", None, Some("jei"), vec![CrashAction::ResetConfig { path: "config/jei-client.toml".into() }]),
+            with(diag("out_of_memory", None, None, vec![]), &[("current", "6144")]),
+            diag("known_conflict", Some("cc.jar"), Some("Centered Crosshair"), vec![CrashAction::DisableMod { file: "cc.jar".into() }]),
+        ];
+        let n = needs(&[], &diags, &HashMap::new());
+        assert!(n.iter().any(|x| matches!(x, Need::Disable { file, reason, confirm: true, alt: Some((af, an)), cause: Some(0), .. }
+            if file == "cc.jar" && reason == "mixin_conflict" && af == "vibey.jar" && an == "Vibey Client")), "{n:#?}");
+        assert!(n.iter().any(|x| matches!(x, Need::Update { file, name, required_by, cause: Some(1) } if file == "cloth.jar" && name == "Cloth Config" && required_by == "REI")));
+        assert!(n.iter().any(|x| matches!(x, Need::ResetConfig { path, cause: Some(2), .. } if path == "config/jei-client.toml")));
+        // Mehr RAM gibt das System nicht her -> Hinweis statt Schritt
+        assert!(n.iter().any(|x| matches!(x, Need::Unfixable(u) if u.reason == "ram_limit" && u.cause == Some(3))));
+        // Bekanntes Paar für dieselbe Datei: kein zweiter Schritt
+        assert_eq!(n.iter().filter(|x| matches!(x, Need::Disable { file, .. } if file == "cc.jar")).count(), 1);
+    }
+
+    #[test]
+    fn static_findings_are_linked_to_the_crash_cause() {
+        // Abhängigkeits-Check findet die fehlende Abhängigkeit schon – der Absturz bestätigt sie
+        let issues = vec![
+            issue(IssueKind::MissingDependency, "a.jar", "A", Some("fabric-api"), None, vec![]),
+            issue(IssueKind::Duplicate, "s2.jar", "Sodium", Some("sodium"), None, vec![Fix::Remove { file_names: vec!["s1.jar".into()] }]),
+        ];
+        let diags = vec![
+            diag("missing_dependency", Some("a.jar"), Some("A"), vec![CrashAction::InstallDependency { mod_id: "fabric-api".into(), name: None }]),
+            diag("duplicate_mod", None, Some("Sodium"), vec![CrashAction::DisableMod { file: "s1.jar".into() }]),
+        ];
+        let n = needs(&issues, &diags, &HashMap::new());
+        assert!(n.iter().any(|x| matches!(x, Need::Install { dep_id, cause: Some(0), .. } if dep_id == "fabric-api")), "{n:#?}");
+        assert!(n.iter().any(|x| matches!(x, Need::Disable { file, cause: Some(1), .. } if file == "s1.jar")), "{n:#?}");
+        assert_eq!(n.len(), 2);
+    }
+
+    #[test]
+    fn report_with_config_backups_can_be_undone() {
+        let rep: FixReport = serde_json::from_str(r#"{"created":1,"snapshot_id":null,"results":[],"manual":[],"prev_java":null,"config_backups":[{"path":"config/a.json","backup":"x"}]}"#).unwrap();
+        assert!(can_undo(&rep));
+        let a: FixAction = serde_json::from_str(r#"{"kind":"reset_config","path":"config/a.json"}"#).unwrap();
+        assert_eq!(a, FixAction::ResetConfig { path: "config/a.json".into() });
     }
 
     #[test]
@@ -1214,6 +1501,6 @@ mod tests {
         assert_eq!(s.detail.as_deref(), Some("Create >=0.16.10"));
         assert!(matches!(&s.action, FixAction::SetLoader { loader: LoaderKind::Fabric, to, .. } if to == "0.16.14"));
         assert!(matches!(&b.steps[1].action, FixAction::RepairLoader { .. }));
-        assert_eq!(b.unfixable, vec![Unfixable { reason: "loader_offline".into(), name: "Fabric".into(), detail: None }]);
+        assert_eq!(b.unfixable, vec![Unfixable { reason: "loader_offline".into(), name: "Fabric".into(), detail: None, cause: None }]);
     }
 }

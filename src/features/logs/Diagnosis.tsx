@@ -1,7 +1,7 @@
 // Crash-Diagnose: Ergebnis von `crash_analyze` mit Schuldigem, Klartext und Aktionen.
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cpu, Download, FileWarning, MemoryStick, Power, PowerOff, Stethoscope, UploadCloud, Wrench } from "lucide-react";
+import { Cpu, Download, FileWarning, MapPin, MemoryStick, Power, PowerOff, Stethoscope, UploadCloud, Wrench } from "lucide-react";
 import { api, errorMessage } from "@/lib/api";
 import { qk, waitForTask } from "@/lib/queries";
 import type { Diagnosis, DiagnosisAction, Instance, LoaderKind } from "@/lib/types";
@@ -21,8 +21,15 @@ export function useDiagnosis(instanceId: string, crashReport: string | null, exi
 
 const KNOWN = [
   "missing_dependency",
+  "outdated_dependency",
   "wrong_minecraft",
+  "wrong_loader",
+  "loader_version",
   "mixin",
+  "mixin_conflict",
+  "mod_conflict",
+  "known_conflict",
+  "broken_config",
   "java_version",
   "out_of_memory",
   "heap_reserve",
@@ -35,13 +42,45 @@ const KNOWN = [
 /** Klartext-Titel/Erklärung einer Diagnose. */
 export function diagText(d: Diagnosis, t: (k: string, v?: Record<string, string | number>) => string) {
   const id = KNOWN.includes(d.id) ? d.id : "exit_code";
-  const mod = d.culprit?.name || d.culprit?.mod_id || t("diag.some_mod");
-  const vars = { mod, ...d.params };
+  const mod = d.culprit?.name || d.culprit?.mod_id || d.culprit?.file || t("diag.some_mod");
+  const other = d.params.other_name || d.params.other_id || d.params.other_file?.replace(/\.jar$/, "") || t("diag.some_mod");
+  const vars = { mod, other, range: "", present: "?", ...d.params };
   // Abhängigkeit ist da, nur deaktiviert
   const off = id === "missing_dependency" && !!d.params.disabled_file;
-  let text = t(off ? "diag.missing_dependency.text_disabled" : `diag.${id}.text`, vars);
+  let key = off ? "diag.missing_dependency.text_disabled" : `diag.${id}.text`;
+  // Andere Richtung: zu neue Java-Version bzw. die anfragende Mod ist zu alt
+  if ((id === "java_version" || id === "outdated_dependency") && d.params.direction === "older") key = `diag.${id}.text_older`;
+  if (id === "out_of_memory" && d.params.limit) key = "diag.out_of_memory.text_limit";
+  let text = t(key, vars);
   if (id === "exit_code") text = t(`diag.exit.${d.params.hint ?? "exit_code"}`, vars);
   return { title: t(off ? "diag.missing_dependency.title_disabled" : `diag.${id}.title`, vars), text };
+}
+
+/** Fundstelle „logs/latest.log, Zeile 12“ (ohne Datei: null). */
+export function diagWhere(d: Diagnosis, t: (k: string, v?: Record<string, string | number>) => string): string | null {
+  if (!d.source) return null;
+  const source = d.source === "console" ? t("logs.live") : d.source;
+  return d.line ? t("diag.where", { source, line: d.line }) : source;
+}
+
+/** Fundstelle mit der gefundenen Zeile. */
+export function Evidence({ d, className }: { d: Diagnosis; className?: string }) {
+  const t = useT();
+  const where = diagWhere(d, t);
+  if (!d.evidence && !where) return null;
+  return (
+    <div className={cn("mt-2 flex flex-col gap-1", className)}>
+      {where && (
+        <span className="inline-flex items-center gap-1 text-[11.5px] text-dim">
+          <MapPin size={11} className="shrink-0" />
+          <span className="truncate">{where}</span>
+        </span>
+      )}
+      {d.evidence && (
+        <pre className="selectable overflow-hidden text-ellipsis whitespace-pre-wrap break-all rounded-xs bg-black/20 px-2 py-1 font-mono text-[11px] leading-snug text-muted">{d.evidence}</pre>
+      )}
+    </div>
+  );
 }
 
 async function resolveDependency(inst: Instance, modId: string, name: string | null): Promise<{ id: string; title: string } | null> {
@@ -106,6 +145,11 @@ async function runAction(a: DiagnosisAction, inst: Instance, crashReport: string
     case "upload":
       await uploadCrash(inst.id, crashReport);
       return;
+    case "update_mod":
+    case "reset_config":
+      // Tauschen/Zurücksetzen nur über „Probleme beheben“ (Vorschau, Sicherung, Rückgängig)
+      openAutofix({ instanceId: inst.id, crashReport });
+      return;
     case "update_drivers":
       return;
   }
@@ -122,6 +166,8 @@ function ActionButton({ a, inst, crashReport, onDone }: { a: DiagnosisAction; in
         ? t("diag.act.enable", { mod: a.name ?? a.file.replace(/\.jar\.disabled$/, "") })
         : a.kind === "install_dependency"
         ? t("diag.act.install", { mod: a.name ?? a.mod_id })
+        : a.kind === "update_mod" || a.kind === "reset_config"
+        ? t("diag.act.fix")
         : a.kind === "set_java"
           ? t("diag.act.java", { major: a.major })
           : a.kind === "increase_ram"
@@ -138,6 +184,8 @@ function ActionButton({ a, inst, crashReport, onDone }: { a: DiagnosisAction; in
       <Cpu size={13} />
     ) : a.kind === "increase_ram" ? (
       <MemoryStick size={13} />
+    ) : a.kind === "update_mod" || a.kind === "reset_config" ? (
+      <Wrench size={13} />
     ) : (
       <UploadCloud size={13} />
     );
@@ -151,7 +199,7 @@ function ActionButton({ a, inst, crashReport, onDone }: { a: DiagnosisAction; in
         setBusy(true);
         try {
           await runAction(a, inst, crashReport);
-          if (a.kind !== "upload") onDone();
+          if (a.kind !== "upload" && a.kind !== "update_mod" && a.kind !== "reset_config") onDone();
         } catch (e) {
           toast.error(errorMessage(e), t("diag.err.action"));
         } finally {
@@ -185,9 +233,7 @@ export function DiagnosisCard({ d, inst, crashReport, compact }: { d: Diagnosis;
               <span className="truncate font-mono text-text">{d.culprit.file}</span>
             </div>
           )}
-          {!compact && d.evidence && (
-            <pre className="selectable mt-2 overflow-hidden text-ellipsis whitespace-pre-wrap break-all font-mono text-[11px] text-dim">{d.evidence}</pre>
-          )}
+          {!compact && <Evidence d={d} />}
         </div>
       </div>
       <div className="flex flex-wrap gap-2 pl-[26px]">

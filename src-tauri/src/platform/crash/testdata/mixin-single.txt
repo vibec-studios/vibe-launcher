@@ -1,0 +1,9 @@
+---- Minecraft Crash Report ----
+Description: Initializing game
+
+java.lang.RuntimeException: Mixin transformation of net.minecraft.class_761 failed
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.getPostMixinClassByteArray(KnotClassDelegate.java:427)
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.MixinTransformerError: An unexpected critical error was encountered
+Caused by: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException: Critical injection failure: @Inject annotation on renderSky could not find any targets matching 'Lnet/minecraft/class_761;method_3257' in net.minecraft.class_761. Using refmap betterclouds-refmap.json [PREINJECT Applicator Phase -> betterclouds.mixins.json:MixinWorldRenderer from mod betterclouds -> Prepare Injections -> handler$zza000$betterclouds$renderSky(Lnet/minecraft/class_4587;FLorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V -> Parse]
+	at org.spongepowered.asm.mixin.injection.struct.InjectionInfo.validateTargets(InjectionInfo.java:656) [from mod betterclouds]
+	at net.minecraft.class_310.<init>(class_310.java:500) [from mod fabric-rendering-v1]

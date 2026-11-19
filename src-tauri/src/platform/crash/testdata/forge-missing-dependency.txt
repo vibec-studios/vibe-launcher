@@ -1,0 +1,7 @@
+[18Nov2026 20:14:03.511] [main/INFO] [net.minecraftforge.fml.loading.FMLLoader/CORE]: Detected Minecraft 1.20.1, Forge 47.3.0
+[18Nov2026 20:14:07.102] [main/ERROR] [net.minecraftforge.fml.loading.ModSorter/LOADING]: Missing or unsupported mandatory dependencies:
+	Mod ID: 'architectury', Requested by: 'roughlyenoughitems', Expected range: '[9.1.12,)', Actual version: '[MISSING]'
+	Mod ID: 'balm', Requested by: 'waystones', Expected range: '[7.3.0,)', Actual version: '7.1.4'
+	Mod ID: 'minecraft', Requested by: 'oldmod', Expected range: '[1.19.2,1.19.3)', Actual version: '1.20.1'
+	Mod ID: 'forge', Requested by: 'create', Expected range: '[47.3.7,)', Actual version: '47.3.0'
+[18Nov2026 20:14:09.884] [main/FATAL] [net.minecraftforge.fml.ModLoader/LOADING]: Failed to complete lifecycle event CONSTRUCT, 4 errors found

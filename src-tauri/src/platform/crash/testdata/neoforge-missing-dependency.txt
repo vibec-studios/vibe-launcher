@@ -1,0 +1,7 @@
+[18Nov2026 21:02:11.002] [main/INFO] [net.neoforged.fml.loading.FMLLoader/CORE]: Loading Minecraft 1.21.1 with NeoForge 21.1.77
+[18Nov2026 21:02:15.774] [main/ERROR] [net.neoforged.fml.loading.ModLoader/LOADING]: Loading errors encountered:
+	- Mod §eSodium Extras§r requires §6sodium§r §60.6.0 or above§r
+		§7Currently, §6sodium§r§7 is not installed§r
+	- Mod §eCreate§r requires §6flywheel§r §61.0.1 or above§r
+		§7Currently, §6flywheel§r§7 is §61.0.0§r
+net.neoforged.fml.ModLoadingException: Loading errors encountered:

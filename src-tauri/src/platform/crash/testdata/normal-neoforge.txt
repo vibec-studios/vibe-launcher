@@ -1,0 +1,7 @@
+[18Nov2026 18:00:00.001] [main/INFO] [net.neoforged.fml.loading.FMLLoader/CORE]: Loading Minecraft 1.21.1 with NeoForge 21.1.77
+[18Nov2026 18:00:02.442] [main/WARN] [net.neoforged.fml.loading.moddiscovery.ModDiscoverer/SCAN]: Found 2 mods for first modid jei, selecting most recent based on version data
+[18Nov2026 18:00:03.120] [main/WARN] [mixin/]: Error loading class: com/simibubi/create/content/Foo (java.lang.ClassNotFoundException: com/simibubi/create/content/Foo)
+[18Nov2026 18:00:05.900] [main/WARN] [net.neoforged.fml.config.ConfigTracker/CONFIG]: Configuration file C:\Users\<user>\AppData\Roaming\VibeLauncher\instances\<instance>\minecraft\config\jei-client.toml is not correct. Correcting
+[18Nov2026 18:00:06.000] [main/WARN] [net.neoforged.fml.config.ConfigTracker/CONFIG]: Incorrect key general.debugMode was corrected from null to its default, false.
+[18Nov2026 18:00:09.120] [Render thread/WARN] [net.minecraft.client.renderer.ShaderManager/]: Shader rendertype_entity_translucent could not find sampler named Sampler2
+[18Nov2026 18:00:12.000] [Render thread/INFO] [net.minecraft.client.Minecraft/]: Stopping!

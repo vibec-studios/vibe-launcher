@@ -1,0 +1,4 @@
+[18Nov2026 21:30:01.122] [main/INFO] [net.neoforged.fml.loading.FMLLoader/CORE]: Loading Minecraft 1.21.1 with NeoForge 21.1.77
+[18Nov2026 21:30:03.410] [main/ERROR] [net.neoforged.fml.loading.ModLoader/LOADING]: Loading errors encountered:
+	- File C:\Users\<user>\AppData\Roaming\VibeLauncher\instances\<instance>\minecraft\mods\sodium-fabric-0.6.0+mc1.21.1.jar is a Fabric mod and cannot be loaded
+net.neoforged.fml.ModLoadingException: Loading errors encountered:

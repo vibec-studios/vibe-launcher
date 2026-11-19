@@ -1,0 +1,7 @@
+---- Minecraft Crash Report ----
+Description: Initializing game
+
+java.lang.NoClassDefFoundError: dev/architectury/event/events/common/LifecycleEvent
+	at me.shedaniel.rei.RoughlyEnoughItemsCore.onInitialize(RoughlyEnoughItemsCore.java:120) [from mod roughlyenoughitems]
+Caused by: java.lang.ClassNotFoundException: dev.architectury.event.events.common.LifecycleEvent
+	at net.fabricmc.loader.impl.launch.knot.KnotClassDelegate.loadClass(KnotClassDelegate.java:226)

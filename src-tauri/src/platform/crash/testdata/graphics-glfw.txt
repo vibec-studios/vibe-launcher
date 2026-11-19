@@ -1,0 +1,4 @@
+[16:00:00] [main/INFO]: Loading Minecraft 1.21.1 with Fabric Loader 0.16.9
+[16:00:03] [Render thread/ERROR]: GLFW error 65542: WGL: The driver does not appear to support OpenGL
+[16:00:03] [Render thread/FATAL]: Unreported exception thrown!
+java.lang.IllegalStateException: GLFW error before init: [0x10007]WGL: The driver does not appear to support OpenGL
