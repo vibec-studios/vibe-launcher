@@ -697,10 +697,13 @@ const LibraryTile = memo(function LibraryTile({
           <span className="truncate text-[12.5px] font-semibold text-text" title={s.name}>
             {s.name}
           </span>
-          <span className="truncate text-[11.5px] text-dim">
-            {s.variant === "slim" ? t("skins.slim") : t("skins.classic")}
-            {src ? ` · ${src}` : ""}
-          </span>
+          {/* Modell und Herkunft je eine Zeile – sonst schneidet die schmale Kachel die Herkunft ab */}
+          <span className="truncate text-[11.5px] text-muted">{s.variant === "slim" ? t("skins.slim") : t("skins.classic")}</span>
+          {src && (
+            <span className="truncate text-[11.5px] text-dim" title={src}>
+              {src}
+            </span>
+          )}
         </div>
       </button>
     </ContextMenu>

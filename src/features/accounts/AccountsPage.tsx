@@ -1,5 +1,5 @@
 // OWNER: Frontend-Agent B. Minecraft-Konten (nur Microsoft): flache Liste, aktiv setzen, auffrischen, entfernen, Anmeldung.
-import { AlertTriangle, Copy, LogIn, MoreHorizontal, RefreshCw, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
+import { AlertTriangle, Copy, Gamepad2, LogIn, MoreHorizontal, RefreshCw, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
 import { Fragment, memo, useState, type ReactNode } from "react";
 import {
   Button,
@@ -101,12 +101,25 @@ export function AccountsPage() {
           )}
         </div>
 
-        <p className="mt-4 flex items-start gap-2 px-1 text-[12.5px] leading-relaxed text-dim">
-          <ShieldCheck size={14} className="mt-0.5 shrink-0" />
-          {t("accounts.info.secure_text")} {t("accounts.info.java_text")}
-        </p>
+        {/* Zwei kurze Hinweise statt eines Textblocks */}
+        <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-4 px-1 min-[760px]:grid-cols-2">
+          <InfoNote icon={<ShieldCheck size={15} />} title={t("accounts.info.secure")} text={t("accounts.info.secure_text")} />
+          <InfoNote icon={<Gamepad2 size={15} />} title={t("accounts.info.java")} text={t("accounts.info.java_text")} />
+        </div>
       </div>
       <MsaDialog open={msa} onOpenChange={setMsa} />
+    </div>
+  );
+}
+
+function InfoNote({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="mt-0.5 shrink-0 text-dim">{icon}</span>
+      <div className="min-w-0">
+        <div className="text-[12.5px] font-semibold text-muted">{title}</div>
+        <p className="mt-0.5 text-[12.5px] leading-relaxed text-dim">{text}</p>
+      </div>
     </div>
   );
 }
@@ -183,10 +196,12 @@ const AccountRow = memo(function AccountRow({ account: a, onRelogin }: { account
               {t("accounts.needs_relogin")}
             </div>
           ) : (
-            <div className="mt-0.5 truncate text-meta text-dim">
-              Microsoft
-              {a.expires_at ? ` · ${a.expires_at > Date.now() ? t("accounts.expires", { time: formatRelative(a.expires_at) }) : t("accounts.expired_refresh")}` : ""}
-              <span className="selectable ml-2 font-mono text-[11px]">{formatUuid(a.uuid)}</span>
+            // Kurz und menschlich; Sitzungsdetails nur im Tooltip, die UUID über das ⋯-Menü kopieren
+            <div
+              className="mt-0.5 truncate text-meta text-dim"
+              title={a.expires_at ? (a.expires_at > Date.now() ? t("accounts.expires", { time: formatRelative(a.expires_at) }) : t("accounts.expired_refresh")) : undefined}
+            >
+              {t("accounts.signed_in")}
             </div>
           )}
         </div>
