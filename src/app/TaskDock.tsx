@@ -101,6 +101,8 @@ export function TaskDock() {
         <Popover.Content
           align="end"
           sideOffset={8}
+          // Kein Autofokus auf „Erledigte entfernen“ (sonst steht sofort dessen Tooltip + Fokusrahmen da)
+          onOpenAutoFocus={(e) => e.preventDefault()}
           collisionPadding={8}
           className="z-[60] w-[380px] overflow-hidden rounded-card bg-overlay shadow-e2 data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >

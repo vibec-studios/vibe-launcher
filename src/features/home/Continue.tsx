@@ -50,6 +50,8 @@ function Notice({ instance: i }: { instance: Instance }) {
   const pack = useModpackUpdate(i);
   const n = counts.data?.[i.id] ?? 0;
   const go = () => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "content" } });
+  // Startet/läuft/lädt: Fortschritt und Status zeigt schon der Spielen-Knopf darunter – nicht doppelt
+  if (phase === "preparing" || phase === "busy") return null;
   if (phase !== "idle" || i.install_state === "failed" || i.install_state === "installing")
     return (
       <span className="min-w-0 truncate px-2 text-meta">
@@ -113,7 +115,8 @@ export function ContinueCard({ instance: i, spot }: { instance: Instance; spot: 
         </ContextMenu>
         <div className="mt-4 flex min-w-0 flex-wrap items-center gap-2">
           <PlayButton instance={i} size="lg" />
-          {spot && (
+          {/* Direkteinstieg nur im Ruhezustand – während des Starts ist er ohnehin gesperrt und würde umbrechen */}
+          {spot && phase === "idle" && (
             <Tooltip content={spot.kind === "world" ? t("home.continue.world_hint") : t("home.continue.server_hint")}>
               <button
                 disabled={phase !== "idle"}
