@@ -2,40 +2,43 @@
 import * as Sw from "@radix-ui/react-switch";
 import * as Sl from "@radix-ui/react-slider";
 import type { ReactNode } from "react";
-import { AlertTriangle, Check } from "lucide-react";
+import { AlertTriangle, Check, Minus } from "lucide-react";
 import { cn } from "./cn";
 import { Button } from "./Button";
 import { t } from "@/i18n";
 
-/** Checkbox (Akzentfarbe). */
+/** Checkbox (Akzentfarbe). `mixed`: teilweise gewählt (Strich statt Haken); ein Klick wählt dann alles. */
 export function Checkbox({
   checked,
   onChange,
   disabled,
   label,
   className,
+  mixed,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   disabled?: boolean;
   label?: string;
   className?: string;
+  mixed?: boolean;
 }) {
+  const part = !!mixed && !checked;
   return (
     <button
       type="button"
       role="checkbox"
-      aria-checked={checked}
+      aria-checked={part ? "mixed" : checked}
       aria-label={label}
       disabled={disabled}
-      onClick={() => onChange(!checked)}
+      onClick={() => onChange(part ? true : !checked)}
       className={cn(
         "grid h-[18px] w-[18px] shrink-0 place-items-center rounded-xs border transition-colors duration-100 disabled:opacity-45",
-        checked ? "border-accent bg-accent text-[var(--on-accent)]" : "border-white/20 hover:border-white/40",
+        checked || part ? "border-accent bg-accent text-[var(--on-accent)]" : "border-white/20 hover:border-white/40",
         className,
       )}
     >
-      {checked && <Check size={12} strokeWidth={3} />}
+      {checked ? <Check size={12} strokeWidth={3} /> : part && <Minus size={12} strokeWidth={3} />}
     </button>
   );
 }

@@ -50,7 +50,7 @@ export function NewBedrockTab({ onDone, onBusy }: { onDone: () => void; onBusy: 
   const firstBedrock = !instances.some(isBedrock);
 
   const [channel, setChannel] = useState<BedrockChannel>("release");
-  const [profile, setProfile] = useState<BedrockProfile>("isolated");
+  const [profile, setProfile] = useState<BedrockProfile>("shared");
   const [adopt, setAdopt] = useState(firstBedrock);
   const [name, setName] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
@@ -153,8 +153,10 @@ export function NewBedrockTab({ onDone, onBusy }: { onDone: () => void; onBusy: 
             <div className="mb-1 flex items-center gap-2 text-[13px] font-semibold text-text">
               <Layers size={14} className="text-accent" />
               {t("bedrock.new.what_title")}
+              <span className="rounded-full bg-warn/15 px-2 py-px text-[11px] font-medium text-warn">{t("bedrock.experimental")}</span>
             </div>
             {t("bedrock.new.what_text")}
+            <span className="mt-1.5 block text-dim">{t("bedrock.experimental_text")}</span>
           </div>
         </div>
 
@@ -188,19 +190,19 @@ export function NewBedrockTab({ onDone, onBusy }: { onDone: () => void; onBusy: 
             <span className="label">{t("bedrock.new.profile")}</span>
             <div className="flex gap-2" role="radiogroup">
               <Card
-                on={profile === "isolated"}
-                onClick={() => setProfile("isolated")}
-                icon={<FolderSync size={16} />}
-                title={t("bedrock.profile.isolated")}
-                text={t("bedrock.profile.isolated_text")}
-                disabled={disabled}
-              />
-              <Card
                 on={profile === "shared"}
                 onClick={() => setProfile("shared")}
                 icon={<Copy size={16} />}
                 title={t("bedrock.profile.shared")}
                 text={t("bedrock.profile.shared_text")}
+                disabled={disabled}
+              />
+              <Card
+                on={profile === "isolated"}
+                onClick={() => setProfile("isolated")}
+                icon={<FolderSync size={16} />}
+                title={t("bedrock.profile.isolated")}
+                text={t("bedrock.profile.isolated_text")}
                 disabled={disabled}
               />
             </div>

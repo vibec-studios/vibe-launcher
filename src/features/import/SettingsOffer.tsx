@@ -268,11 +268,12 @@ function OfferCard({
 }) {
   const t = useT();
   const all = o.changes.length > 0 && o.changes.every((c) => keys.includes(c.key));
+  const some = !all && o.changes.some((c) => keys.includes(c.key));
   return (
     <section className="flex flex-col rounded-card bg-white/[.03]">
       {!single && (
         <header className="flex items-center gap-3 px-3 pb-1 pt-3">
-          <Checkbox checked={all} onChange={onAll} label={o.instance_name} />
+          <Checkbox checked={all} mixed={some} onChange={onAll} label={o.instance_name} />
           <InstanceIcon icon={instance?.icon ?? null} accent={instanceAccent(o.instance_id, instance?.accent ?? null)} size={28} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13.5px] font-semibold text-text">{o.instance_name}</div>
