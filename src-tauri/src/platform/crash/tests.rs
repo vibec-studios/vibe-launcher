@@ -48,6 +48,20 @@ fn tables_compile_and_examples_match() {
 }
 
 #[test]
+fn crlf_logs_give_the_same_results() {
+    // Echte Windows-Logs (und die Fixtures nach dem Auschecken mit autocrlf) haben CRLF
+    for f in ["forge-missing-dependency.txt", "mixin-conflict-vibey-crosshair.log.txt", "broken-config-fabric.txt"] {
+        let lf = fixture(f).text.replace("\r\n", "\n");
+        let crlf = lf.replace('\n', "\r\n");
+        let c = Ctx { crash_report: true, ..ctx("forge", "1.20.1") };
+        let a = analyze(&[LogText::new(f, &lf)], &c, &ModIndex::default());
+        let b = analyze(&[LogText::new(f, &crlf)], &c, &ModIndex::default());
+        assert!(!a.is_empty(), "{f}");
+        assert_eq!(a, b, "{f}");
+    }
+}
+
+#[test]
 fn normal_logs_have_no_findings() {
     let none = ModIndex::default();
     for f in ["normal-fabric.txt", "normal-neoforge.txt"] {

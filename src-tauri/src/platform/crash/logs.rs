@@ -27,7 +27,9 @@ pub struct LogText {
 
 impl LogText {
     pub fn new(name: impl Into<String>, text: &str) -> LogText {
-        LogText { name: name.into(), text: strip_codes(text), lines: vec![] }
+        // Windows-Zeilenenden vereinheitlichen (Zeilennummern bleiben gleich)
+        let text = if text.contains('\r') { text.replace("\r\n", "\n") } else { text.to_string() };
+        LogText { name: name.into(), text: strip_codes(&text), lines: vec![] }
     }
 
     /// Zeilennummer (ab 1) zur Byte-Position im Text.
@@ -153,6 +155,13 @@ mod tests {
         assert_eq!(t.line_no(pos), 123_456);
         assert!(t.text.contains("level 'ServerLevel[World]' 200000"), "Ende bleibt erhalten");
         assert!(t.text.contains("level 'ServerLevel[World]' 1\n"), "Anfang bleibt erhalten");
+    }
+
+    #[test]
+    fn windows_line_endings() {
+        let t = LogText::new("x", "a\r\nb\r\nMod ID: 'x'\r\n");
+        assert_eq!(t.text, "a\nb\nMod ID: 'x'\n");
+        assert_eq!(t.line_no(t.text.find("Mod").unwrap()), 3);
     }
 
     #[test]
