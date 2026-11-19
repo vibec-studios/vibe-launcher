@@ -775,7 +775,7 @@ pub async fn run_apply(state: AppState, task: TaskHandle, instance_id: String, s
 // ------------------------------------------------------------------ Kompatibilitätsübersicht
 
 pub const MATRIX_LOADERS: [LoaderKind; 4] = [LoaderKind::Fabric, LoaderKind::Quilt, LoaderKind::Forge, LoaderKind::Neoforge];
-const POPULAR_MC: &[&str] = &["1.20.1", "1.19.2", "1.18.2", "1.16.5", "1.12.2"];
+const POPULAR_MC: &[&str] = &["1.21.11", "1.21.1", "1.21.4", "1.20.1", "1.19.2", "1.18.2", "1.16.5", "1.12.2"];
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct CompatCell {
@@ -827,14 +827,17 @@ pub fn support_of(versions: &[ProjectVersion], pt: ProjectType) -> Support {
 pub fn pick_mc_columns(supports: &[Support], own: &[String]) -> Vec<String> {
     let mut all: Vec<String> = supports.iter().flat_map(|s| s.iter().map(|(g, _)| g.clone())).collect::<BTreeSet<_>>().into_iter().collect();
     sort_mc_desc(&mut all);
-    let mut cols: Vec<String> = all.iter().take(4).cloned().collect();
-    for p in POPULAR_MC.iter().map(|s| s.to_string()).chain(own.iter().cloned()) {
+    // Vorrang: die 3 neuesten, dann Versionen eigener Instanzen, dann verbreitete; erst danach nach Version sortieren
+    let mut cols: Vec<String> = all.iter().take(3).cloned().collect();
+    for p in own.iter().cloned().chain(POPULAR_MC.iter().map(|s| s.to_string())) {
+        if cols.len() >= 10 {
+            break;
+        }
         if all.contains(&p) && !cols.contains(&p) {
             cols.push(p);
         }
     }
     sort_mc_desc(&mut cols);
-    cols.truncate(10);
     cols
 }
 
@@ -1120,6 +1123,20 @@ mod tests {
         assert!(dep_infos(&a[..1]).is_empty());
         let merged = merge_plans(vec![a, b, vec![planned("sodium", "Sodium")]]);
         assert_eq!(merged.iter().map(|p| p.brief.id.as_str()).collect::<Vec<_>>(), vec!["modmenu", "fabric-api", "iris", "sodium"]);
+    }
+
+    #[test]
+    fn compat_columns_keep_1_21_and_own() {
+        // Wie im Echttest (Sodium & Co.): viele neue 26.x-Versionen dürfen 1.21.x nicht verdrängen
+        let gs = ["26.3", "26.2", "26.1.2", "26.1.1", "26.1", "1.21.11", "1.21.10", "1.21.4", "1.21.1", "1.20.1", "1.19.2", "1.18.2", "1.16.5", "1.12.2", "1.8.9"];
+        let s: Support = gs.iter().map(|g| (g.to_string(), LoaderKind::Fabric)).collect();
+        let cols = pick_mc_columns(&[s], &["1.8.9".to_string()]);
+        assert_eq!(cols.len(), 10);
+        for want in ["26.3", "1.21.11", "1.21.1", "1.21.4", "1.8.9"] {
+            assert!(cols.contains(&want.to_string()), "{want} fehlt in {cols:?}");
+        }
+        assert_eq!(cols.first().map(String::as_str), Some("26.3"));
+        assert_eq!(cols.last().map(String::as_str), Some("1.8.9"));
     }
 
     #[test]
