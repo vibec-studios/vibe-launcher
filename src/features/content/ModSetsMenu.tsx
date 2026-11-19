@@ -55,12 +55,12 @@ export function ModSetsMenu({ instanceId, labelClassName }: { instanceId: string
             variant="subtle"
             icon={<Layers size={14} />}
             loading={busy}
-            title={active ? `${t("modsets.button")}: ${active.name}${data?.active_modified ? " *" : ""}` : t("modsets.button")}
+            title={active ? `${t("modsets.button")}: ${active.name}${data?.active_modified ? ` (${t("modsets.modified")})` : ""}` : t("modsets.button")}
             className="data-[state=open]:bg-white/[.07] data-[state=open]:text-text"
           >
-            <span className={cn("max-w-[140px] truncate", labelClassName)}>
-              {active ? `${active.name}${data?.active_modified ? " *" : ""}` : t("modsets.button")}
-            </span>
+            <span className={cn("max-w-[140px] truncate", labelClassName)}>{active ? active.name : t("modsets.button")}</span>
+            {/* Geändert seit dem Speichern: kleiner Punkt statt „ *“ */}
+            {active && data?.active_modified && <span className="h-1.5 w-1.5 shrink-0 rounded-dot bg-warn" aria-label={t("modsets.modified")} />}
           </Button>
         }
       >

@@ -75,7 +75,7 @@ export function MissingPanel({ instanceId, onDismissed }: { instanceId: string; 
   return (
     <div>
       <div className="border-b border-line px-4 py-3">
-        <div className="text-[13.5px] font-semibold text-text">{t("missing.title", { n: items.length })}</div>
+        <div className="text-[13.5px] font-semibold text-text">{t(items.length === 1 ? "missing.head_1" : "missing.head", { n: items.length })}</div>
         <div className="mt-0.5 text-meta text-muted">{t("missing.text")}</div>
       </div>
       <div className="scroll max-h-[240px] px-4 py-1">
@@ -98,18 +98,12 @@ export function MissingPanel({ instanceId, onDismissed }: { instanceId: string; 
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-3 border-t border-line px-3 py-2">
-        <Button size="sm" variant="ghost" icon={<Search size={13} />} loading={scanning} onClick={search}>
+      {/* Eine Fußzeile statt zwei: links die Hauptaktion, rechts Ordner/Neu prüfen/Ausblenden */}
+      <div className="flex items-center gap-1 border-t border-line px-3 py-2">
+        <Button size="sm" variant="subtle" icon={<Search size={13} />} loading={scanning} onClick={search}>
           {t("missing.search")}
         </Button>
-        {watching && (
-          <span className="flex min-w-0 items-center gap-1.5 truncate text-[12px] text-dim" title={t("missing.watching_tip")}>
-            <Spinner size={10} />
-            <span className="truncate">{t("missing.watching")}</span>
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-1 border-t border-line px-3 py-2">
+        <div className="flex-1" />
         <IconButton
           label={t("common.open_folder")}
           tip
@@ -123,11 +117,16 @@ export function MissingPanel({ instanceId, onDismissed }: { instanceId: string; 
         <IconButton label={t("missing.recheck")} tip tipSide="top" variant="ghost" size="sm" disabled={q.isFetching} onClick={recheck}>
           {q.isFetching ? <Spinner size={12} /> : <RefreshCw size={15} />}
         </IconButton>
-        <div className="flex-1" />
-        <Button size="sm" variant="subtle" onClick={dismiss}>
+        <Button size="sm" variant="ghost" onClick={dismiss}>
           {t("missing.dismiss")}
         </Button>
       </div>
+      {watching && (
+        <div className="-mt-1 flex min-w-0 items-center gap-1.5 px-4 pb-2.5 text-[12px] text-dim" title={t("missing.watching_tip")}>
+          <Spinner size={10} />
+          <span className="truncate">{t("missing.watching")}</span>
+        </div>
+      )}
     </div>
   );
 }

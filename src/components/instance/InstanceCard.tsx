@@ -2,7 +2,7 @@
 // Klick öffnet, Rechtsklick = Aktionsmenü, Spielen-Knopf erscheint beim Hover über dem Bild.
 import { memo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpCircle } from "lucide-react";
+import { ArrowUpCircle, Download } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Instance } from "@/lib/types";
 import { AnimatedNumber, ContextMenu, Progress, cn } from "@/components/ui";
@@ -73,6 +73,19 @@ function RunningBadge({ id }: { id: string }) {
   );
 }
 
+/** „Nicht installiert“ als ruhiges Abzeichen auf der Kachel (wird beim ersten Spielen nachgeholt). */
+function NotInstalledBadge({ instance: i }: { instance: Instance }) {
+  const t = useT();
+  const { phase } = useRunPhase(i.id);
+  if (phase !== "idle" || i.install_state !== "not_installed") return null;
+  return (
+    <span className="absolute left-2 top-2 inline-flex h-6 items-center gap-1 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-muted">
+      <Download size={12} />
+      {t("inst.status.not_installed")}
+    </span>
+  );
+}
+
 /** „N Updates“ (Hintergrundprüfung im Backend, höchstens alle 30 min). OWNER Badge: Content-Agent. */
 function UpdatesBadge({ id }: { id: string }) {
   const t = useT();
@@ -132,6 +145,7 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
         <div className="vl-zoom relative aspect-[4/3] overflow-hidden rounded-card bg-surface2">
           <IconArea instance={i} accent={accent} />
           <RunningBadge id={i.id} />
+          <NotInstalledBadge instance={i} />
           <UpdatesBadge id={i.id} />
           <div className="absolute bottom-2 right-2 translate-y-1 opacity-0 transition-[opacity,transform] duration-150 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100">
             <PlayButton instance={i} size="icon" />
@@ -143,7 +157,8 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
             {i.name}
           </div>
           <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12px] text-muted">
-            <span className="truncate">{simple ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>
+            {/* Version bleibt ganz lesbar, ein Status dahinter kürzt sich zuerst */}
+            <span className="shrink-0">{simple ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>
             <StatusDot instance={i} />
           </div>
         </div>
@@ -153,9 +168,20 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
 });
 
 /** Kleiner Hinweis hinter der Versionszeile (nur wenn nicht „installiert & bereit“). */
-function StatusDot({ instance: i }: { instance: Instance }) {
+function StatusDot({ instance: i, notInstalled }: { instance: Instance; notInstalled?: boolean }) {
   const { phase } = useRunPhase(i.id);
-  if (phase === "running" || (phase === "idle" && (i.install_state === "installed" || i.install_state === "not_installed"))) return null;
+  const t = useT();
+  if (phase === "running" || (phase === "idle" && i.install_state === "installed")) return null;
+  // „Nicht installiert“ ist kein Fehler (wird beim ersten Spielen nachgeholt) – ruhig statt orange.
+  // Kachel: als Abzeichen auf dem Bild (hier kein Platz), Liste: als Text hinter dem Namen.
+  if (phase === "idle" && i.install_state === "not_installed" && !notInstalled) return null;
+  if (phase === "idle" && i.install_state === "not_installed")
+    return (
+      <>
+        <span className="text-dim">·</span>
+        <span className="min-w-0 truncate text-dim">{t("inst.status.not_installed")}</span>
+      </>
+    );
   return (
     <>
       <span className="text-dim">·</span>
@@ -178,6 +204,26 @@ export function InstanceCardSkeleton() {
   );
 }
 
+/** Spalten der Listenansicht (Zeilen und Kopfzeile teilen sich das Raster; Container-Query auf dem Listen-Wrapper). */
+export const listCols =
+  "grid min-w-0 grid-cols-[32px_minmax(0,1fr)_36px] items-center gap-3 px-2 @min-[640px]:grid-cols-[32px_minmax(0,1fr)_150px_36px] @min-[860px]:grid-cols-[32px_minmax(0,1fr)_150px_130px_90px_36px]";
+
+/** Spaltenköpfe der Listenansicht, damit die Zahlen rechts nicht ohne Bedeutung dastehen. */
+export function InstanceListHeader() {
+  const t = useT();
+  const simple = useSimple();
+  return (
+    <div className={cn(listCols, "h-8 text-[12px] font-medium text-dim")} aria-hidden>
+      <span />
+      <span>{t("instances.col.name")}</span>
+      <span className="hidden @min-[640px]:block">{simple ? t("instances.col.version_simple") : t("instances.col.version")}</span>
+      <span className="hidden @min-[860px]:block">{t("inst.last_played")}</span>
+      <span className="hidden text-right @min-[860px]:block">{t("inst.play_time")}</span>
+      <span />
+    </div>
+  );
+}
+
 /** Kompakte Zeile der Bibliothek (Listenansicht): Icon, Name, Loader/Version, zuletzt gespielt, Spielzeit, Spielen. */
 export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOpen }: { instance: Instance; onOpen: (i: Instance) => void }) {
   const t = useT();
@@ -193,21 +239,27 @@ export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOp
         onClick={() => onOpen(i)}
         onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(i)}
         style={accentVars(accent)}
-        className="group relative grid h-11 min-w-0 grid-cols-[32px_minmax(0,1fr)_36px] items-center gap-3 overflow-hidden rounded-ctl px-2 transition-colors duration-100 hover:bg-white/[.04] data-[state=open]:bg-white/[.04] @min-[640px]:grid-cols-[32px_minmax(0,1fr)_150px_36px] @min-[860px]:grid-cols-[32px_minmax(0,1fr)_150px_130px_90px_36px]"
+        className={cn("group relative h-12 overflow-hidden rounded-ctl transition-colors duration-100 hover:bg-white/[.04] data-[state=open]:bg-white/[.04]", listCols)}
       >
         <InstanceIcon icon={i.icon} accent={accent} size={32} />
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-[13.5px] font-semibold text-text">{i.name}</span>
-            <span className="min-w-0 truncate text-[12px] empty:hidden">
-              <StatusHint instance={i} />
+            <span className="flex min-w-0 items-center gap-1.5 truncate text-[12px] font-normal empty:hidden">
+              <StatusDot instance={i} notInstalled />
             </span>
           </div>
-          {i.source && <div className="truncate text-[11.5px] leading-tight text-dim">{i.source.name ?? t("inst.modpack")}</div>}
+          {/* Zweite Zeile nur, wenn sie etwas sagt: Modpack-Name (wenn anders als der Instanzname) bzw. „Modpack“ */}
+          {i.source && (
+            <div className="truncate text-[12px] leading-tight text-dim">
+              {i.source.name && i.source.name !== i.name ? i.source.name : t("inst.modpack")}
+              {i.source.version_name ? ` ${i.source.version_name}` : ""}
+            </div>
+          )}
         </div>
         <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{simple ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>
         <span className="hidden truncate text-[12.5px] text-muted @min-[860px]:block">{i.last_played ? formatRelative(i.last_played) : t("inst.never_played")}</span>
-        <span className="hidden truncate text-right text-[12.5px] tabular-nums text-dim @min-[860px]:block">{i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : "–"}</span>
+        <span className="hidden truncate text-right text-[12.5px] tabular-nums text-muted @min-[860px]:block">{i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : <span className="text-dim">–</span>}</span>
         <span className="flex justify-end opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
           <PlayButton instance={i} size="icon" subtle />
         </span>

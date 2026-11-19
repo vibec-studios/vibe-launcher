@@ -711,18 +711,18 @@ export function FilesBrowser({ scope, running, runningText, initialExpanded = []
               />
               <div className="flex-1" />
               <Tooltip content={t("files.act.new_file")}>
-                <IconButton label={t("files.act.new_file")} size="sm" className="border-transparent" onClick={() => actions.newItem("file", targetDir(selEntry))}>
+                <IconButton label={t("files.act.new_file")} size="sm" variant="ghost" onClick={() => actions.newItem("file", targetDir(selEntry))}>
                   <FilePlus size={14} />
                 </IconButton>
               </Tooltip>
               <Tooltip content={t("files.act.new_folder")}>
-                <IconButton label={t("files.act.new_folder")} size="sm" className="border-transparent" onClick={() => actions.newItem("folder", targetDir(selEntry))}>
+                <IconButton label={t("files.act.new_folder")} size="sm" variant="ghost" onClick={() => actions.newItem("folder", targetDir(selEntry))}>
                   <FolderPlus size={14} />
                 </IconButton>
               </Tooltip>
               <DropdownMenu
                 trigger={
-                  <IconButton label={t("files.act.import")} size="sm" className="border-transparent">
+                  <IconButton label={t("files.act.import")} tip size="sm" variant="ghost" className="data-[state=open]:bg-white/[.07]">
                     <FolderInput size={14} />
                   </IconButton>
                 }
@@ -735,12 +735,12 @@ export function FilesBrowser({ scope, running, runningText, initialExpanded = []
                 </DropdownItem>
               </DropdownMenu>
               <Tooltip content={t("files.collapse_all")}>
-                <IconButton label={t("files.collapse_all")} size="sm" className="border-transparent" onClick={() => setExpanded(new Set())}>
+                <IconButton label={t("files.collapse_all")} size="sm" variant="ghost" onClick={() => setExpanded(new Set())}>
                   <ChevronsDownUp size={14} />
                 </IconButton>
               </Tooltip>
               <Tooltip content={t("files.reload")}>
-                <IconButton label={t("files.reload")} size="sm" className="border-transparent" onClick={() => void refresh()}>
+                <IconButton label={t("files.reload")} size="sm" variant="ghost" onClick={() => void refresh()}>
                   <RefreshCw size={14} className={cn(anyFetching && "animate-spin")} />
                 </IconButton>
               </Tooltip>

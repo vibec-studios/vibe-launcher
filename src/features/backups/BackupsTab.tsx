@@ -14,7 +14,6 @@ import {
   DropdownItem,
   DropdownMenu,
   DropdownSeparator,
-  EmptyState,
   ErrorState,
   Field,
   IconButton,
@@ -26,7 +25,6 @@ import {
   toast,
 } from "@/components/ui";
 import { runBackupTask } from "./worldActions";
-import { PageTools } from "@/features/instances/toolbar";
 
 export const backupKeys = {
   snapshots: (id: string) => ["content", id, "snapshots"] as const,
@@ -46,6 +44,32 @@ function AutoTag() {
         <Tag color="#5aa9ff">{t("backups.auto")}</Tag>
       </span>
     </Tooltip>
+  );
+}
+
+/** Abschnittskopf: Titel + kurze Erklärung links, Aktionen rechts. */
+function SectionHead({ title, desc, actions }: { title: string; desc: string; actions?: React.ReactNode }) {
+  return (
+    <div className="flex items-end gap-3 px-6 pb-2">
+      <div className="min-w-0 flex-1">
+        <h3 className="text-section text-text">{title}</h3>
+        <p className="text-[12.5px] text-muted">{desc}</p>
+      </div>
+      {actions && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
+    </div>
+  );
+}
+
+/** Kompakter Leerzustand innerhalb eines Abschnitts (statt zwei riesiger, zentrierter Leerzustände untereinander). */
+function SectionEmpty({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+  return (
+    <div className="mx-6 mt-1 flex items-center gap-3.5 rounded-card border border-dashed border-line2 px-4 py-3.5">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl bg-surface2 text-dim">{icon}</span>
+      <div className="min-w-0">
+        <div className="text-[13.5px] font-semibold text-text">{title}</div>
+        <div className="text-[12.5px] text-muted">{text}</div>
+      </div>
+    </div>
   );
 }
 
@@ -153,10 +177,12 @@ const WorldBackupRow = memo(function WorldBackupRow({ instance, b, busy }: { ins
   };
   return (
     <div className="group flex h-9 items-center gap-3 pl-[52px] pr-6 transition-colors duration-100 hover:bg-white/[.03]">
-      <div className="min-w-0 flex-1 truncate text-[13px] text-text">
-        {dateTime(b.created)} <span className="text-dim">· {formatRelative(b.created)} · {formatBytes(b.size)}</span>
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="truncate text-[13px] text-text">
+          {dateTime(b.created)} <span className="text-dim">· {formatRelative(b.created)} · {formatBytes(b.size)}</span>
+        </span>
+        {b.auto && <AutoTag />}
       </div>
-      {b.auto && <AutoTag />}
       <div className="flex shrink-0 items-center gap-0.5">
         <IconButton label={t("backups.snapshot.restore")} tip size="sm" variant="ghost" disabled={busy} onClick={restore} className="opacity-60 group-hover:opacity-100">
           <RotateCcw size={14} />
@@ -242,34 +268,27 @@ export function BackupsTab({ instance }: { instance: Instance }) {
   }, [wb.data]);
   const existing = useMemo(() => new Set((worlds.data ?? []).map((w) => w.folder)), [worlds.data]);
 
+  const openFolder = (kind: "snapshots" | "worlds") => api.backupsOpenFolder(instance.id, kind).catch((e) => toast.error(e));
+
+  // Jede Liste hat ihren eigenen Kopf mit den passenden Aktionen (statt eines unbeschrifteten „+“ über allem)
   return (
     <div className="scroll h-full">
-      <PageTools>
-        <div className="flex-1" />
-        <DropdownMenu
-          trigger={
-            <IconButton label={t("backups.open_folder")} tip variant="ghost" className="data-[state=open]:bg-white/[.07]">
-              <FolderOpen size={16} />
-            </IconButton>
-          }
-        >
-          <DropdownItem icon={<History size={14} />} onSelect={() => api.backupsOpenFolder(instance.id, "snapshots").catch((e) => toast.error(e))}>
-            {t("backups.snapshots")}
-          </DropdownItem>
-          <DropdownItem icon={<Globe2 size={14} />} onSelect={() => api.backupsOpenFolder(instance.id, "worlds").catch((e) => toast.error(e))}>
-            {t("backups.worlds")}
-          </DropdownItem>
-        </DropdownMenu>
-        <IconButton label={t("backups.snapshot.create")} tip variant="accent" disabled={busy} onClick={() => setCreating(true)}>
-          <Plus size={17} />
-        </IconButton>
-      </PageTools>
-      <div className="flex flex-col gap-6 pb-8 pt-1">
+      <div className="flex flex-col gap-7 pb-8 pt-5">
         <section>
-          <div className="px-6 pb-1">
-            <h3 className="text-section text-text">{t("backups.snapshots")}</h3>
-            <p className="text-[12px] text-dim">{t("backups.snapshots.desc")}</p>
-          </div>
+          <SectionHead
+            title={t("backups.snapshots")}
+            desc={t("backups.snapshots.desc")}
+            actions={
+              <>
+                <IconButton label={t("backups.open_folder")} tip variant="ghost" size="sm" onClick={() => openFolder("snapshots")}>
+                  <FolderOpen size={15} />
+                </IconButton>
+                <Button size="sm" variant="accent" icon={<Plus size={15} />} disabled={busy} onClick={() => setCreating(true)}>
+                  {t("backups.snapshot.create")}
+                </Button>
+              </>
+            }
+          />
           {snaps.isError && !snaps.data ? (
             <ErrorState error={snaps.error} onRetry={() => snaps.refetch()} />
           ) : !snaps.data ? (
@@ -278,7 +297,7 @@ export function BackupsTab({ instance }: { instance: Instance }) {
               <RowSkeleton />
             </>
           ) : snaps.data.length === 0 ? (
-            <EmptyState className="py-8" icon={<History size={26} />} title={t("backups.snapshot.empty")} text={t("backups.snapshot.empty_text")} />
+            <SectionEmpty icon={<History size={18} />} title={t("backups.snapshot.empty")} text={t("backups.snapshot.empty_text")} />
           ) : (
             <div>
               {snaps.data.map((s) => (
@@ -289,10 +308,15 @@ export function BackupsTab({ instance }: { instance: Instance }) {
         </section>
 
         <section>
-          <div className="px-6 pb-1">
-            <h3 className="text-section text-text">{t("backups.worlds")}</h3>
-            <p className="text-[12px] text-dim">{t("backups.worlds.desc")}</p>
-          </div>
+          <SectionHead
+            title={t("backups.worlds")}
+            desc={t("backups.worlds.desc")}
+            actions={
+              <IconButton label={t("backups.open_folder")} tip variant="ghost" size="sm" onClick={() => openFolder("worlds")}>
+                <FolderOpen size={15} />
+              </IconButton>
+            }
+          />
           {wb.isError && !wb.data ? (
             <ErrorState error={wb.error} onRetry={() => wb.refetch()} />
           ) : !wb.data ? (
@@ -301,23 +325,20 @@ export function BackupsTab({ instance }: { instance: Instance }) {
               <RowSkeleton />
             </>
           ) : groups.length === 0 ? (
-            <EmptyState className="py-8" icon={<Globe2 size={26} />} title={t("backups.worlds.empty")} text={t("backups.worlds.empty_text")} />
+            <SectionEmpty icon={<Globe2 size={18} />} title={t("backups.worlds.empty")} text={t("backups.worlds.empty_text")} />
           ) : (
             <div>
               {groups.map((g) => (
                 <div key={g.folder} className="pb-1">
-                  <div className="flex h-11 items-center gap-3 px-6">
+                  <div className="flex h-11 items-center gap-3 px-6" title={`saves/${g.folder}`}>
                     <Globe2 size={15} className="shrink-0 text-[#5fbf4a]" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13.5px] font-semibold text-text">{g.name}</div>
                       <div className="truncate text-[12px] leading-tight text-dim">
-                        <span className="font-mono text-[11px]">saves/{g.folder}</span>
-                        {worlds.data && !existing.has(g.folder) && <span className="ml-2 text-warn">· {t("backups.world.missing")}</span>}
+                        {g.list.length === 1 ? t("backups.worlds.count_1") : t("backups.worlds.count", { n: g.list.length })}
+                        {worlds.data && !existing.has(g.folder) && <span className="text-warn"> · {t("backups.world.missing")}</span>}
                       </div>
                     </div>
-                    <span className="text-[12px] text-dim">
-                      {g.list.length === 1 ? t("backups.worlds.count_1") : t("backups.worlds.count", { n: g.list.length })}
-                    </span>
                   </div>
                   {g.list.map((b) => (
                     <WorldBackupRow key={b.id} instance={instance} b={b} busy={busy} />

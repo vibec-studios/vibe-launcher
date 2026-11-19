@@ -287,7 +287,6 @@ export function ServersTab({ instance }: { instance: Instance }) {
   return (
     <div className="scroll h-full">
       <PageTools>
-        <span className="text-[12.5px] text-dim">{q.data ? t("servers.count", { n: list.length }) : ""}</span>
         {locked && (
           <Tooltip content={t("servers.locked")}>
             <span className="grid h-8 w-8 place-items-center text-warn" aria-label={t("servers.locked")}>
@@ -299,9 +298,12 @@ export function ServersTab({ instance }: { instance: Instance }) {
         <IconButton label={t("servers.refresh")} tip variant="ghost" onClick={() => qc.invalidateQueries({ queryKey: ["server-ping"] })}>
           <RefreshCw size={16} />
         </IconButton>
-        <IconButton label={t("servers.add")} tip variant="accent" disabled={locked} onClick={() => setEditing(-1)}>
-          <Plus size={17} />
-        </IconButton>
+        {/* Leer: „Server hinzufügen“ steht groß im Leerzustand */}
+        {list.length > 0 && (
+          <Button size="sm" variant="accent" icon={<Plus size={15} />} disabled={locked} onClick={() => setEditing(-1)}>
+            {t("servers.add")}
+          </Button>
+        )}
       </PageTools>
       <div className="pb-6">
         {q.isError && !q.data ? (

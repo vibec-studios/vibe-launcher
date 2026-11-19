@@ -61,7 +61,7 @@ function SimpleGeneralTab({ instance, d, update, local, reset }: TabProps) {
   const accent = instanceAccent(d.id, d.accent);
   return (
     <>
-      <SettingsCard title={t("isettings.general")}>
+      <SettingsCard title={t("isd.section.identity")}>
         <SettingRow title={t("newinst.name")} stacked>
           <Input
             value={d.name}
@@ -124,7 +124,7 @@ function ExpertGeneralTab({ instance, d, update, local, reset }: TabProps) {
   const accent = instanceAccent(d.id, d.accent);
   return (
     <>
-      <SettingsCard title={t("isettings.general")}>
+      <SettingsCard title={t("isd.section.identity")}>
         <SettingRow title={t("newinst.name")} stacked>
           <Input
             value={d.name}
@@ -242,10 +242,10 @@ export function VersionTab({ instance: i }: TabProps) {
   };
 
   return (
-    <SettingsCard
-      title={t("isettings.version")}
-      right={
-        !editing && (
+    <SettingsCard title={t("isd.section.installed")}>
+      {!editing ? (
+        // „Ändern“ gehört zur Zeile, nicht in die Abschnitts-Überschrift
+        <SettingRow title={`Minecraft ${i.mc_version}`} description={i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]} ${i.loader.version ?? ""}`}>
           <Button
             size="sm"
             disabled={phase !== "idle"}
@@ -256,11 +256,7 @@ export function VersionTab({ instance: i }: TabProps) {
           >
             {t("isettings.version.change")}
           </Button>
-        )
-      }
-    >
-      {!editing ? (
-        <SettingRow title={`Minecraft ${i.mc_version}`} description={i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]} ${i.loader.version ?? ""}`} />
+        </SettingRow>
       ) : (
         <div className="flex flex-col gap-5 px-4 py-5">
           <div className="flex items-start gap-3 border border-warn/30 bg-warn/[.06] px-4 py-3 text-[13px] text-warn">
@@ -310,13 +306,13 @@ export function JavaTab({ instance, d, update }: TabProps) {
   const total = sys?.total_memory_mb ?? 8192;
   return (
     <>
-      <SettingsCard title={t("isettings.java")}>
+      <SettingsCard title={t("isd.section.java")}>
         <SettingRow title={t("isettings.java.path")} description={t("isettings.java.path.desc")} stacked>
           <JavaPathField value={d.java.path} onChange={(path, delay) => java({ path }, delay)} />
         </SettingRow>
       </SettingsCard>
 
-      <SettingsCard title={t("settings.section.memory")}>
+      <SettingsCard title={t("isd.section.performance")}>
         <SettingRow
           title={t("isettings.ram")}
           description={
@@ -473,7 +469,7 @@ export function VibeTab({ instance }: TabProps) {
           <ClientPacks instance={instance} only={["vibey"]} compact />
         </div>
       </SettingsCard>
-      <SettingsCard title={t("isd.vibe.cosmetics")}>
+      <SettingsCard title={t("isd.section.vibe_services")}>
         <SettingRow
           title={t("isd.vibe.cosmetics")}
           description={
@@ -494,8 +490,6 @@ export function VibeTab({ instance }: TabProps) {
             {t("isd.vibe.wardrobe")}
           </Button>
         </SettingRow>
-      </SettingsCard>
-      <SettingsCard title={t("isd.vibe.relay")}>
         <SettingRow
           title={t("isd.vibe.relay")}
           description={
@@ -562,14 +556,14 @@ export function AdvancedTab({ instance, d, update }: TabProps) {
   const running = phase === "running" || phase === "preparing";
   return (
     <>
-      <SettingsCard title={t("isettings.env")}>
+      <SettingsCard title={t("isd.section.process")}>
         <SettingRow title={t("isettings.env")} description={t("isettings.env.desc")} stacked>
           <EnvEditor env={d.java.env} onChange={(env, delay) => update({ java: { ...d.java, env } }, delay)} />
         </SettingRow>
       </SettingsCard>
 
       <SettingsCard title={t("isd.adv.manage")}>
-        <SettingRow title={t("inst.export")} description={t("isd.adv.export.desc")}>
+        <SettingRow title={t("isd.adv.export")} description={t("isd.adv.export.desc")}>
           <Button
             size="sm"
             icon={<Upload size={13} />}
@@ -591,14 +585,15 @@ export function AdvancedTab({ instance, d, update }: TabProps) {
             {t("common.open_folder")}
           </Button>
         </SettingRow>
-      </SettingsCard>
-
-      <SettingsCard title={t("isettings.danger")} danger>
+        {/* Reparieren ist nicht gefährlich -> zu den normalen Aktionen statt in die Gefahrenzone */}
         <SettingRow title={t("inst.repair")} description={t("isettings.repair.desc")}>
-          <Button icon={<Wrench size={14} />} disabled={running || phase === "busy"} onClick={() => repairInstance(instance)}>
+          <Button size="sm" icon={<Wrench size={13} />} disabled={running || phase === "busy"} onClick={() => repairInstance(instance)}>
             {t("inst.repair")}
           </Button>
         </SettingRow>
+      </SettingsCard>
+
+      <SettingsCard title={t("isettings.danger")} danger>
         <SettingRow title={t("isettings.delete")} description={t("isettings.delete.desc")}>
           <Button
             variant="danger"
