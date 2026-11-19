@@ -184,10 +184,10 @@ function SettingsBody() {
         </div>
       </aside>
 
-      <section className="flex min-w-0 flex-1 flex-col">
+      <section className="flex min-w-0 flex-1 flex-col bg-[var(--tone-canvas)]">
         <header className="flex h-[64px] shrink-0 items-center gap-4 pl-7 pr-4">
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[16px] font-semibold text-text">{t(`settings.tab.${tab}`)}</h2>
+            <h2 className="truncate text-title text-text">{t(`settings.tab.${tab}`)}</h2>
             <p className="truncate text-[12.5px] text-muted">{t(`settings.tab.${tab}.desc`)}</p>
           </div>
           <D.Close aria-label={t("common.close")} className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text">
@@ -195,7 +195,7 @@ function SettingsBody() {
           </D.Close>
         </header>
         <div key={tab} className="scroll min-h-0 flex-1">
-          <div className="vl-settings flex flex-col gap-5 px-7 pb-10 pt-1 animate-fade-in">
+          <div className="vl-settings mx-auto flex w-full max-w-[860px] flex-col gap-6 px-7 pb-10 pt-2 animate-fade-in">
             {!s ? <LoadingCards /> : <TabContent tab={tab} s={s} update={update} />}
           </div>
         </div>
@@ -251,11 +251,12 @@ function LoadingCards() {
 // ------------------------------------------------------------------ Tabs
 
 /** Bedienung: Simple/Expert, Einrichtung bzw. Einführung erneut starten (in beiden Modi). */
-function ModeCard() {
+function ModeCard({ language }: { language: ReactNode }) {
   const t = useT();
   const simple = useSimple();
   return (
-    <SettingsCard title={t("mode.section")}>
+    <SettingsCard title={t("settings.section.general")}>
+      {language}
       <SettingRow title={t("mode.title")} description={simple ? t("mode.simple.desc") : t("mode.expert.desc")}>
         <Segmented<UiMode>
           value={simple ? "simple" : "expert"}
@@ -266,30 +267,29 @@ function ModeCard() {
           ]}
         />
       </SettingRow>
-      <SettingRow title={t("mode.onboarding")} description={t("mode.onboarding.desc")}>
-        <div className="flex gap-2">
-          {simple && (
-            <Button
-              size="sm"
-              variant="subtle"
-              onClick={() => {
-                closeSettings();
-                startTour();
-              }}
-            >
-              {t("mode.tour")}
-            </Button>
-          )}
+      {simple && (
+        <SettingRow title={t("mode.tour.title")} description={t("mode.tour.desc")}>
           <Button
             size="sm"
             onClick={() => {
               closeSettings();
-              restartOnboarding();
+              startTour();
             }}
           >
-            {t("mode.onboarding.start")}
+            {t("mode.tour")}
           </Button>
-        </div>
+        </SettingRow>
+      )}
+      <SettingRow title={t("mode.onboarding")} description={t("mode.onboarding.desc")}>
+        <Button
+          size="sm"
+          onClick={() => {
+            closeSettings();
+            restartOnboarding();
+          }}
+        >
+          {t("mode.onboarding.start")}
+        </Button>
       </SettingRow>
     </SettingsCard>
   );
@@ -304,12 +304,8 @@ function AccountCard() {
   return (
     <SettingsCard title={t("simple.settings.account")}>
       <SettingRow
-        title={
-          <span className="flex items-center gap-2.5">
-            {active && <PlayerHead uuid={active.uuid} name={active.username} size={22} />}
-            {active ? active.username : t("rail.no_account")}
-          </span>
-        }
+        icon={active ? <PlayerHead uuid={active.uuid} name={active.username} size={32} /> : undefined}
+        title={active ? active.username : t("rail.no_account")}
         description={active ? t("acct.microsoft") : t("acct.sign_in_hint")}
       >
         <Button
@@ -332,23 +328,23 @@ function GeneralTab({ s, update }: TabProps) {
   const sys = useSystemInfo();
   return (
     <>
-      <SettingsCard title={t("settings.section.general")}>
-        <SettingRow title={t("settings.language")} description={t("settings.language.desc")}>
-          <Segmented
-            value={s.language}
-            onChange={(language) => {
-              useLang.getState().setLang(language);
-              update({ language });
-            }}
-            items={[
-              { value: "de", label: "Deutsch" },
-              { value: "en", label: "English" },
-            ]}
-          />
-        </SettingRow>
-      </SettingsCard>
-
-      <ModeCard />
+      <ModeCard
+        language={
+          <SettingRow title={t("settings.language")} description={t("settings.language.desc")}>
+            <Segmented
+              value={s.language}
+              onChange={(language) => {
+                useLang.getState().setLang(language);
+                update({ language });
+              }}
+              items={[
+                { value: "de", label: "Deutsch" },
+                { value: "en", label: "English" },
+              ]}
+            />
+          </SettingRow>
+        }
+      />
 
       {simple ? (
         <AccountCard />

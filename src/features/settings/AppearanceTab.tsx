@@ -144,9 +144,11 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
             </div>
             <p className="text-[12.5px] leading-relaxed text-muted">{t(`ap.theme.${shown.theme}.desc`)}</p>
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" variant="subtle" icon={<RotateCcw size={13} />} disabled={!isThemeModified(a)} onClick={() => set(applyTheme(a, a.theme))}>
-                {t("ap.theme.reset", { name: t(`ap.theme.${a.theme}`) })}
-              </Button>
+              {isThemeModified(a) && (
+                <Button size="sm" variant="subtle" icon={<RotateCcw size={13} />} onClick={() => set(applyTheme(a, a.theme))}>
+                  {t("ap.theme.reset", { name: t(`ap.theme.${a.theme}`) })}
+                </Button>
+              )}
               {seasonalActive && (
                 <Tag className="h-6 gap-1.5 px-2 text-[12px]">
                   <Snowflake size={12} /> {t("ap.seasonal.active")}
@@ -511,40 +513,39 @@ function AppIconCard({ a, set }: { a: Appearance; set: (p: Partial<Appearance>, 
   };
   return (
     <SettingsCard title={t("ap.app_icon")}>
-      <div className="flex items-start gap-5 px-4 py-4">
-        <div className="flex shrink-0 flex-col items-center gap-2">
+      {/* Vorschau in groß und in den echten Taskleisten-Größen, daneben die Motivwahl */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
+        <div className="flex shrink-0 items-end gap-3">
           <span className="grid h-[72px] w-[72px] place-items-center rounded-card bg-field">
             {preview ? <img src={preview} alt={t("ap.app_icon")} className="h-14 w-14 [image-rendering:pixelated]" /> : <span className="h-14 w-14 rounded-ctl bg-surface2" />}
           </span>
-          <span className="flex items-end gap-1.5" aria-hidden>
-            {preview && [16, 24, 32].map((px) => <img key={px} src={preview} alt="" style={{ width: px, height: px }} className="[image-rendering:pixelated]" />)}
+          <span className="flex items-end gap-2 pb-0.5" aria-hidden>
+            {preview
+              ? [32, 24, 16].map((px) => <img key={px} src={preview} alt="" style={{ width: px, height: px }} className="[image-rendering:pixelated]" />)
+              : [32, 24, 16].map((px) => <span key={px} style={{ width: px, height: px }} className="rounded-xs bg-surface2" />)}
           </span>
         </div>
-        <div className="min-w-0 flex-1 space-y-4">
-          <p className="text-meta text-muted">{t("ap.app_icon.desc")}</p>
-          <Segmented
-            value={a.app_icon}
-            onChange={(app_icon) => (app_icon === "custom" && !a.app_icon_image ? void pick() : set({ app_icon }))}
-            items={[
-              { value: "seal", label: t("ap.app_icon.seal") },
-              { value: "penguin", label: t("ap.app_icon.penguin") },
-              { value: "custom", label: t("ap.app_icon.custom") },
-            ]}
-          />
-          {a.app_icon === "custom" && (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" variant="outline" onClick={pick} disabled={busy}>
-                {a.app_icon_image ? t("ap.app_icon.change") : t("ap.app_icon.choose")}
-              </Button>
-              <span className="text-meta text-dim">{t("ap.app_icon.custom_hint")}</span>
-            </div>
-          )}
-          <div>
-            <div className="mb-2 text-[13px] font-medium text-text">{t("ap.app_icon.color")}</div>
-            <AccentPicker value={a.app_icon_color} onChange={(app_icon_color, d) => set({ app_icon_color }, d)} />
-          </div>
-        </div>
+        <p className="min-w-[220px] flex-1 text-[12.5px] leading-relaxed text-muted">{t("ap.app_icon.desc")}</p>
+        <Segmented
+          value={a.app_icon}
+          onChange={(app_icon) => (app_icon === "custom" && !a.app_icon_image ? void pick() : set({ app_icon }))}
+          items={[
+            { value: "seal", label: t("ap.app_icon.seal") },
+            { value: "penguin", label: t("ap.app_icon.penguin") },
+            { value: "custom", label: t("ap.app_icon.custom") },
+          ]}
+        />
       </div>
+      {a.app_icon === "custom" && (
+        <SettingRow className="border-t" title={t("ap.app_icon.custom")} description={t("ap.app_icon.custom_hint")}>
+          <Button size="sm" onClick={pick} loading={busy}>
+            {a.app_icon_image ? t("ap.app_icon.change") : t("ap.app_icon.choose")}
+          </Button>
+        </SettingRow>
+      )}
+      <SettingRow className="border-t" title={t("ap.app_icon.color")} description={t("ap.app_icon.color.desc")} stacked>
+        <AccentPicker value={a.app_icon_color} onChange={(app_icon_color, d) => set({ app_icon_color }, d)} />
+      </SettingRow>
     </SettingsCard>
   );
 }
