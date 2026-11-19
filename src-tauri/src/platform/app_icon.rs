@@ -232,6 +232,12 @@ pub fn apply(app: &AppHandle, a: &Appearance) {
         if let Err(e) = win.set_icon(icon.clone()) {
             tracing::warn!("Fenster-Icon nicht setzbar: {e}");
         }
+        // Tauri setzt unter Windows nur ICON_SMALL (Titelleiste); die Taskleiste zeigt ICON_BIG
+        #[cfg(windows)]
+        match win.hwnd() {
+            Ok(hwnd) => win32::set_window_icons(hwnd.0, &spec),
+            Err(e) => tracing::warn!("Fenster-Handle nicht verfügbar: {e}"),
+        }
     }
     #[cfg(windows)]
     {
@@ -246,6 +252,44 @@ pub fn apply(app: &AppHandle, a: &Appearance) {
                     tracing::warn!("Verknüpfungs-Icons nicht aktualisiert: {e}");
                 }
             });
+        }
+    }
+}
+
+/// Win32: großes und kleines Fenster-Icon in der passenden Pixelgröße (scharf, DPI-genau) setzen.
+#[cfg(windows)]
+mod win32 {
+    use super::{render, IconSpec};
+    use windows_sys::Win32::UI::HiDpi::{GetDpiForWindow, GetSystemMetricsForDpi};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        CreateIcon, SendMessageW, HICON, ICON_BIG, ICON_SMALL, SM_CXICON, SM_CXSMICON, WM_SETICON,
+    };
+
+    fn hicon(spec: &IconSpec, size: u32) -> HICON {
+        let img = render(spec, size);
+        // CreateIcon erwartet BGRA (32 bpp) plus AND-Maske (bei Alpha-Bitmaps egal, aber nötig)
+        let mut bgra = img.into_raw();
+        for px in bgra.chunks_exact_mut(4) {
+            px.swap(0, 2);
+        }
+        let mask = vec![0u8; (size * size / 8) as usize];
+        unsafe { CreateIcon(std::ptr::null_mut(), size as i32, size as i32, 1, 32, mask.as_ptr(), bgra.as_ptr()) }
+    }
+
+    pub fn set_window_icons(hwnd: *mut core::ffi::c_void, spec: &IconSpec) {
+        unsafe {
+            let dpi = GetDpiForWindow(hwnd).max(96);
+            let big = GetSystemMetricsForDpi(SM_CXICON, dpi).clamp(16, 256) as u32;
+            let small = GetSystemMetricsForDpi(SM_CXSMICON, dpi).clamp(16, 256) as u32;
+            for (kind, size) in [(ICON_BIG, big), (ICON_SMALL, small)] {
+                let h = hicon(spec, size);
+                if h.is_null() {
+                    tracing::warn!("App-Icon ({size} px) konnte nicht erzeugt werden");
+                    continue;
+                }
+                // Das vorherige Icon nicht freigeben: das erste gehört Tauri/tao (würde dort doppelt freigegeben)
+                SendMessageW(hwnd, WM_SETICON, kind as usize, h as isize);
+            }
         }
     }
 }

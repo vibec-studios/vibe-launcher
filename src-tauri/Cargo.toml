@@ -66,3 +66,7 @@ codegen-units = 1
 lto = true
 opt-level = 3
 strip = true
+
+[target.'cfg(windows)'.dependencies]
+# Großes Fenster-Icon (Taskleiste) setzen – Tauri setzt nur das kleine
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_UI_HiDpi"] }
