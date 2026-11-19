@@ -71,6 +71,11 @@ Auth: die Vibe-Session (wie in VIBE-API-2.md), für Client und Launcher.
 - Rate-Limit: 10 neue Links pro Stunde und Nutzer. Ablauf nach höchstens 12 h.
 - Die Mod-Liste wird beim Anlegen geprüft: Es sind nur `modrinth` und `curseforge` mit IDs erlaubt, höchstens 500 Einträge.
 - Ob der Link noch aktiv ist, prüft das Backend beim Relay (vorhandene Admin-/Status-Schnittstelle), sonst über das Ablaufdatum.
+  *(Backend, umgesetzt:)* Das Relay hat keine Status-Abfrage je Adresse (`/status` ist nur eine öffentliche Übersicht).
+  `active` kommt deshalb aus den Relay-Ereignissen (`host_online`/`host_offline` → `host_sessions`): laufende Session des
+  Hosts mit dieser Adresse → `true`, nur beendete → `false`, Adresse nie gemeldet → `true` bis zum Ablauf.
+  Zusätzlich in der Antwort: `url`, `created_at`. `relay_host` muss unter `vibey.henny.dev` liegen
+  (`PLAY_LINK_RELAY_DOMAINS`). Codes: 6 Zeichen aus `23456789abcdefghjkmnpqrstuvwxyz` (bei Kollision 8).
 - **Ergänzt von vibey-client:** `relay_host` ist die volle Relay-Adresse, mit `:port`, wenn das Relay nicht auf 25565
   läuft (so wie sie `--quickPlayMultiplayer` braucht). `expires_at` ist ISO-8601 (der Client nimmt auch Unix-Sekunden).
   Antwort auf `POST` mit `201`. Der Client legt den Link neu an, wenn sich die Relay-Adresse ändert und 2 min vor

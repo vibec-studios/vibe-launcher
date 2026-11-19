@@ -92,7 +92,7 @@ function loaderVersions(loader: LoaderKind, mc: string) {
 
 // ------------------------------------------------------------------ Spiel-Simulation
 
-const states = new Map<string, GameState>();
+export const states = new Map<string, GameState>();
 const session = new Map<string, LogLine[]>();
 const timers = new Map<string, ReturnType<typeof setInterval>>();
 const seqs = new Map<string, number>();

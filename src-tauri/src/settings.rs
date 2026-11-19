@@ -46,6 +46,8 @@ pub struct Settings {
     pub vibe: VibeServices,
     /// Discord Rich Presence
     pub discord_rpc: bool,
+    /// Discord: Servernamen und Welt anzeigen (sonst nur „Im Mehrspieler“ usw.)
+    pub discord_details: bool,
     /// Update-Kanal: "release" (nur GitHub-Releases) oder "dev" (jeder Commit)
     pub update_channel: String,
     /// Wrapper-Befehl vor java (z. B. "prime-run"), optional
@@ -378,6 +380,7 @@ impl Default for Settings {
             update_channel: crate::updater::default_channel(),
             vibe: VibeServices::default(),
             discord_rpc: true,
+            discord_details: true,
             wrapper_command: None,
             open_log_on_launch: false,
             reduce_motion: false,

@@ -25,6 +25,7 @@ import { InstanceFilesTab } from "@/features/files";
 import { accentVars } from "@/components/instance/accent";
 import { HeaderSkeleton, InstanceHeader } from "./InstanceHeader";
 import { InstanceNotices } from "./InstanceNotices";
+import { PlayLinkBar } from "@/features/play/SharePlayLink";
 import { VibeyClientBadge } from "@/features/cosmetics/VibeyClientSlot";
 import { ToolbarSlot } from "./toolbar";
 import { useSimple } from "@/lib/mode";
@@ -261,6 +262,7 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
         notices={<InstanceNotices instance={inst} tab={active} />}
       />
       <CrashBanner instance={inst} />
+      <PlayLinkBar instanceId={inst.id} className="border-b border-line" />
       <div className="relative min-h-0 flex-1">
         {area === "content" ? (
           <InstanceContentTab instance={inst} initialType={initialType} />

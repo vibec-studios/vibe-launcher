@@ -25,6 +25,8 @@ pub enum AppAction {
     },
     /// Einladung (Vibe-Backend, kommt später)
     Invite { id: String },
+    /// „Spiel mit mir“-Link (`vibelauncher://join/<code>`, docs/PLAY-LINKS.md)
+    PlayLink { code: String },
 }
 
 fn ok_id(s: &str, max: usize) -> bool {
@@ -78,6 +80,10 @@ pub fn parse_url(raw: &str) -> Option<AppAction> {
         }),
         ("launch", 2) => ok_id(&parts[1], 128).then(|| AppAction::Launch {
             instance_id: parts[1].clone(),
+        }),
+        // Spiel-Link-Codes (6–8 Zeichen, ohne Punkt/Port) gehen vor Serveradressen ohne Domain
+        ("join", 2) if crate::play::valid_code(&parts[1].to_ascii_lowercase()) => Some(AppAction::PlayLink {
+            code: parts[1].to_ascii_lowercase(),
         }),
         ("join", 2) => {
             let address = parts[1].clone();
@@ -152,6 +158,19 @@ mod tests {
                 address: "play.example.net:25566".into(),
                 instance_id: Some("abc".into())
             })
+        );
+        assert_eq!(
+            parse_url("vibelauncher://join/k3x9q2"),
+            Some(AppAction::PlayLink { code: "k3x9q2".into() })
+        );
+        assert_eq!(
+            parse_url("vibelauncher://join/K3X9Q2/"),
+            Some(AppAction::PlayLink { code: "k3x9q2".into() })
+        );
+        // Adresse ohne Domain, die kein Code ist, bleibt ein Server
+        assert_eq!(
+            parse_url("vibelauncher://join/localhost"),
+            Some(AppAction::Join { address: "localhost".into(), instance_id: None })
         );
         assert_eq!(
             parse_url("vibelauncher://pack/XyZ12"),

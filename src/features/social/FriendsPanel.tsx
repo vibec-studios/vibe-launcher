@@ -5,6 +5,7 @@ import { IconButton, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { useVibe } from "@/lib/vibe";
 import { FriendsTab } from "./FriendsList";
+import { PlayLinkBar } from "@/features/play/SharePlayLink";
 import { Gate } from "./Gate";
 import { useSocialBadge } from "./hooks";
 import { setPanelOpen, useSocial } from "./service";
@@ -31,6 +32,7 @@ export function FriendsPanel() {
         </IconButton>
       </div>
 
+      <PlayLinkBar compact className="border-b border-line" />
       <div className="flex min-h-0 flex-1 flex-col">
         <Gate compact>
           <FriendsTab compact />

@@ -9,12 +9,13 @@ import instancepage from "./instancepage";
 import home from "./home";
 import social from "./social";
 import clientpacks from "./clientpacks";
+import play from "./play";
 import { withLiveModrinth } from "./modrinth-live";
 import type { Handlers } from "./util";
 
 mockWindows("main");
 
-const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks };
+const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks, ...play };
 // VITE_MOCK_MODRINTH=live: Entdecken/Projektseite gegen die echte Modrinth-API
 const handlers: Handlers = import.meta.env.VITE_MOCK_MODRINTH === "live" ? withLiveModrinth(base) : base;
 

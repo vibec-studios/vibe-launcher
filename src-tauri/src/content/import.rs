@@ -326,6 +326,42 @@ fn json_of<T: serde::de::DeserializeOwned>(bytes: &[u8], what: &str) -> AppResul
     serde_json::from_slice(bytes).map_err(|e| AppError::Invalid(format!("{what} ist fehlerhaft: {e}")))
 }
 
+/// Dateien eines Modpacks ohne Installation (Vorschau bei Spiel-Links): mrpack -> Größen je Datei,
+/// CurseForge -> (Projekt-ID, Datei-ID) der Pflicht-Dateien. Dazu die Größe der Overrides im Archiv.
+#[derive(Debug, Default)]
+pub struct PackListing {
+    pub mr_sizes: Vec<Option<u64>>,
+    pub cf_files: Vec<(u64, u64)>,
+    pub overrides_bytes: u64,
+}
+
+pub fn pack_listing(bytes: &[u8]) -> AppResult<PackListing> {
+    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|_| AppError::Invalid("Das Modpack ist kein gültiges ZIP-Archiv".into()))?;
+    let mut out = PackListing::default();
+    if let Some(b) = read_zip_file(&mut zip, "modrinth.index.json") {
+        let idx: MrIndex = json_of(&b, "modrinth.index.json")?;
+        out.mr_sizes = idx
+            .files
+            .iter()
+            .filter(|f| !f.env.as_ref().and_then(|e| e.get("client")).is_some_and(|c| c == "unsupported"))
+            .map(|f| f.file_size)
+            .collect();
+    } else if let Some(b) = read_zip_file(&mut zip, "manifest.json") {
+        let m: CfManifest = json_of(&b, "manifest.json")?;
+        out.cf_files = m.files.iter().filter(|f| f.required).map(|f| (f.project_id, f.file_id)).collect();
+    } else {
+        return Err(AppError::Invalid("Unbekanntes Modpack-Format".into()));
+    }
+    for i in 0..zip.len() {
+        if let Ok(f) = zip.by_index_raw(i) {
+            if f.name().contains("overrides/") {
+                out.overrides_bytes += f.size();
+            }
+        }
+    }
+    Ok(out)
+}
+
 /// Datei analysieren (blockierend).
 pub fn analyze(path: &Path) -> AppResult<PackPlan> {
     let f = std::fs::File::open(path).map_err(|e| AppError::NotFound(format!("{} ({e})", path.display())))?;

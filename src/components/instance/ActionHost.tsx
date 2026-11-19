@@ -17,6 +17,7 @@ import { InstanceIcon } from "./InstanceIcon";
 import { useInstanceActions } from "./actions";
 import { ServerStatusLine } from "./motd";
 import { openInviteAccept, openPackImport } from "@/features/social/dialogs";
+import { PlayJoinDialog } from "@/features/play/PlayJoinDialog";
 
 function InstallBody({ a, onDone }: { a: Extract<AppAction, { kind: "install" }>; onDone: () => void }) {
   const t = useT();
@@ -132,6 +133,7 @@ function ActionDialog({ a, onDone }: { a: AppAction; onDone: () => void }) {
   const joinTarget = instances.find((i) => i.id === pick) ?? recent[0];
 
   if (a.kind === "install") return <InstallBody a={a} onDone={onDone} />;
+  if (a.kind === "play_link") return <PlayJoinDialog code={a.code} onDone={onDone} />;
 
   if (a.kind === "launch") {
     const i = instances.find((x) => x.id === a.instance_id);

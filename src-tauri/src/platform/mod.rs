@@ -7,6 +7,7 @@ pub mod crash;
 pub mod discord;
 pub mod links;
 pub mod optsync;
+pub mod presence;
 pub mod servers;
 pub mod shortcuts;
 pub mod stats;
@@ -37,6 +38,8 @@ pub struct PlatformState {
     active: Mutex<HashMap<String, Active>>,
     pending: Mutex<Vec<links::AppAction>>,
     opened_at: i64,
+    /// Öffentliche Icon-URLs von Modrinth-Modpacks (Projekt-ID -> URL), für das große Discord-Bild
+    icons: Mutex<HashMap<String, Option<String>>>,
 }
 
 impl PlatformState {
@@ -51,7 +54,13 @@ pub fn push_actions(app: &AppHandle, actions: Vec<links::AppAction>) {
         return;
     }
     if let Some(p) = app.try_state::<PlatformState>() {
-        p.pending.lock().extend(actions);
+        // Gleiche Aktion nicht doppelt (Deep-Link kann beim Kaltstart über Argument und Plugin ankommen)
+        let mut pending = p.pending.lock();
+        for a in actions {
+            if !pending.contains(&a) {
+                pending.push(a);
+            }
+        }
     }
     let _ = app.emit(ACTIONS_EVENT, ());
     if let Some(w) = app.get_webview_window("main") {
@@ -65,6 +74,10 @@ pub fn push_actions(app: &AppHandle, actions: Vec<links::AppAction>) {
 pub fn on_launch(state: &AppState, id: &str, world: Option<String>, server: Option<String>) {
     if let Some(p) = state.app.try_state::<PlatformState>() {
         p.launch_ctx.lock().insert(id.to_string(), LaunchCtx { world, server });
+    }
+    // Vertrag mit dem Vibey Client: `.vibe/instance.json` vor jedem Start (docs/PLAY-LINKS.md §2)
+    if let Err(e) = crate::play::write_instance_file(state, id) {
+        tracing::warn!(".vibe/instance.json für {id} nicht geschrieben: {e}");
     }
     if let Ok(inst) = state.instances.get(id) {
         match optsync::apply(&state.paths.root, &state.paths.game_dir(id), id, &inst.mc_version) {
@@ -82,8 +95,24 @@ pub fn init(app: &AppHandle) {
         active: Mutex::new(HashMap::new()),
         pending: Mutex::new(links::parse_args(std::env::args().skip(1))),
         opened_at: chrono::Utc::now().timestamp_millis(),
+        icons: Mutex::new(HashMap::new()),
     };
+    let rpc = p.discord.available();
     app.manage(p);
+    // `session.json` der laufenden Instanzen regelmäßig nachlesen (der Vibey Client aktualisiert sie)
+    if rpc {
+        let h = app.clone();
+        std::thread::Builder::new()
+            .name("presence-poll".into())
+            .spawn(move || loop {
+                std::thread::sleep(std::time::Duration::from_secs(10));
+                let busy = h.try_state::<PlatformState>().is_some_and(|p| !p.active.lock().is_empty());
+                if busy {
+                    update_presence(&h);
+                }
+            })
+            .ok();
+    }
 
     let h = app.clone();
     app.listen(crate::events::GAME_STATE, move |ev| {
@@ -125,34 +154,61 @@ fn on_game_state(app: &AppHandle, v: &serde_json::Value) {
 /// Discord-Anzeige aus dem aktuellen Zustand ableiten.
 pub fn update_presence(app: &AppHandle) {
     let (Some(state), Some(p)) = (app.try_state::<AppState>(), app.try_state::<PlatformState>()) else { return };
-    if !state.settings().discord_rpc {
+    let settings = state.settings();
+    if !settings.discord_rpc || !p.discord.available() {
         p.discord.set(None);
         return;
     }
+    let english = settings.language.starts_with("en");
     let active = p.active.lock().iter().max_by_key(|(_, a)| a.start).map(|(id, a)| (id.clone(), a.clone()));
-    let act = match active {
+    let input = match active {
         Some((id, a)) => {
             let inst = state.instances.get(&id).ok();
-            let name = inst.as_ref().map(|i| i.name.clone()).unwrap_or(id);
-            let loader = inst.as_ref().map(|i| {
-                (i.loader.kind.as_str().to_string(), format!("{} · Minecraft {}", loader_name(&i.loader.kind), i.mc_version))
-            });
-            let state_line = match (&a.ctx.server, &a.ctx.world) {
-                (Some(s), _) => Some(format!("Auf Server {s}")),
-                (_, Some(w)) => Some(format!("Einzelspieler: {w}")),
-                _ => loader.as_ref().map(|l| l.1.clone()),
-            };
-            discord::Activity {
-                details: format!("Spielt {name}"),
-                state: state_line,
-                start: Some(a.start),
-                small_image: loader.as_ref().map(|l| l.0.clone()),
-                small_text: loader.map(|l| l.1),
+            let session = crate::play::read_session(&state, &id);
+            let base = crate::vibe::api_base(&state);
+            let play_link = session.as_ref().and_then(|s| s.play_link.clone()).filter(|u| crate::play::is_play_link_url(&base, u));
+            presence::PresenceInput {
+                instance_name: Some(inst.as_ref().map(|i| i.name.clone()).unwrap_or_else(|| id.clone())),
+                loader: inst.as_ref().map(|i| (i.loader.kind.as_str().to_string(), format!("{} · Minecraft {}", loader_name(&i.loader.kind), i.mc_version))),
+                session,
+                launch_world: a.ctx.world.clone(),
+                launch_server: a.ctx.server.clone(),
+                details: settings.discord_details,
+                english,
+                start: a.start,
+                icon_url: inst.as_ref().and_then(|i| icon_url(app, &p, i)),
+                play_link,
             }
         }
-        None => discord::Activity { details: "Im Launcher".into(), state: None, start: Some(p.opened_at), small_image: None, small_text: None },
+        None => presence::PresenceInput { english, start: p.opened_at, details: settings.discord_details, ..Default::default() },
     };
-    p.discord.set(Some(act));
+    p.discord.set(Some(presence::build_activity(&input)));
+}
+
+/// Öffentliche Icon-URL eines Modrinth-Modpacks (einmal im Hintergrund laden, dann aus dem Speicher).
+fn icon_url(app: &AppHandle, p: &PlatformState, inst: &crate::instance::Instance) -> Option<String> {
+    let src = inst.source.as_ref().filter(|s| s.kind == crate::instance::PackSourceKind::Modrinth)?;
+    let pid = src.project_id.clone()?;
+    if let Some(v) = p.icons.lock().get(&pid) {
+        return v.clone();
+    }
+    p.icons.lock().insert(pid.clone(), None);
+    let h = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let Some(state) = h.try_state::<AppState>() else { return };
+        let url = crate::content::provider::brief(&state, crate::content::Source::Modrinth, &pid)
+            .await
+            .ok()
+            .and_then(|b| b.icon_url)
+            .filter(|u| u.starts_with("https://"));
+        if url.is_some() {
+            if let Some(p) = h.try_state::<PlatformState>() {
+                p.icons.lock().insert(pid, url);
+            }
+            update_presence(&h);
+        }
+    });
+    None
 }
 
 fn loader_name(k: &crate::instance::LoaderKind) -> &'static str {
