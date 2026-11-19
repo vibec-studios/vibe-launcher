@@ -28,6 +28,9 @@ pub async fn loader_versions(state: State<'_, AppState>, loader: LoaderKind, mc_
 #[tauri::command]
 pub async fn instance_install(state: State<'_, AppState>, id: String, force: Option<bool>) -> AppResult<String> {
     let inst = state.instances.get(&id)?;
+    if inst.is_bedrock() {
+        return Err(AppError::Invalid("Bedrock wird über den Microsoft Store installiert und aktualisiert.".into()));
+    }
     if state.game.is_running(&id) {
         return Err(AppError::Invalid("Die Instanz läuft gerade – bitte zuerst beenden.".into()));
     }
@@ -50,6 +53,10 @@ pub async fn instance_launch(
     server: Option<String>,
 ) -> AppResult<String> {
     let inst = state.instances.get(&id)?;
+    // Bedrock: eigener Ablauf (kein Java, kein Account – das Spiel meldet sich selbst bei Xbox an)
+    if inst.is_bedrock() {
+        return crate::bedrock::game::start(&state, &id);
+    }
     // Quick Play: nur ein Ordnername unter saves/, nichts anderes
     let world = world.filter(|w| !w.trim().is_empty());
     if let Some(w) = &world {
@@ -84,6 +91,9 @@ pub async fn instance_launch(
 
 #[tauri::command]
 pub async fn instance_kill(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    if state.instances.get(&id).is_ok_and(|i| i.is_bedrock()) {
+        return crate::bedrock::game::kill(&state, &id);
+    }
     state.game.kill(&state, &id)
 }
 

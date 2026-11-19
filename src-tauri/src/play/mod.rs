@@ -278,7 +278,7 @@ pub fn missing_mods<'a>(link: &'a PlayLink, idx: &ContentIndex) -> Vec<&'a LinkM
 /// Beste passende Instanz (wenigste fehlende Inhalte, zuletzt gespielt).
 pub fn find_match(state: &AppState, link: &PlayLink) -> Option<Instance> {
     let mut best: Option<(usize, i64, Instance)> = None;
-    for inst in state.instances.list() {
+    for inst in state.instances.list().into_iter().filter(|i| !i.is_bedrock()) {
         let idx = ContentIndex::load(&state.paths, &inst.id);
         let Some(missing) = match_score(link, &inst, &idx) else { continue };
         let played = inst.last_played.unwrap_or(0);

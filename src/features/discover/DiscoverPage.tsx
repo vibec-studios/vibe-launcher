@@ -10,7 +10,7 @@ import { Button, EmptyState, ErrorState, IconButton, Segmented, Select, SearchIn
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { formatLoader } from "@/lib/format";
-import { qk, useGameVersions, useInstances, useSettings, useSystemInfo } from "@/lib/queries";
+import { qk, useGameVersions, useSettings, useSystemInfo, useJavaInstances } from "@/lib/queries";
 import type { Category, Instance, LoaderKind, ProjectHit, ProjectType, SearchQuery, SortOrder, Source } from "@/lib/types";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { compareMc, compatibility, contentKindOf } from "@/components/content/util";
@@ -50,7 +50,7 @@ export function DiscoverPage() {
   const enabledStores = (stores.data ?? []).filter((s) => s.enabled && !s.error);
   const storeSource = !simple && search.source?.startsWith("store:") && enabledStores.some((s) => `store:${s.id}` === search.source) ? search.source : null;
   const source: Source = storeSource ?? (search.source === "curseforge" && cfAvailable ? "curseforge" : "modrinth");
-  const instances = useInstances();
+  const instances = useJavaInstances();
   const target = useMemo(() => (search.instance ? (instances.data?.find((i) => i.id === search.instance) ?? null) : null), [instances.data, search.instance]);
   const rawType: ProjectType = search.type ?? "mod";
   const type: ProjectType = simple && rawType === "datapack" ? "mod" : rawType;
@@ -558,7 +558,7 @@ function SimpleTargetBar({ target, options }: { target: Instance | null; options
 function TargetBanner({ instanceId, type }: { instanceId: string; type: ProjectType }) {
   const t = useT();
   const navigate = route.useNavigate();
-  const { data: instances, isPending } = useInstances();
+  const { data: instances, isPending } = useJavaInstances();
   const inst = instances?.find((i) => i.id === instanceId);
   return (
     <div className="flex h-11 shrink-0 items-center gap-2.5 border-b border-line px-6">

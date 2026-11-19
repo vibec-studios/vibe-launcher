@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCcw, Upload } from "lucide-react";
 import { api } from "@/lib/api";
-import { useInstances } from "@/lib/queries";
+import { useJavaInstances } from "@/lib/queries";
 import type { Instance, OptSyncCategory, OptSyncInfo } from "@/lib/types";
 import { formatRelative } from "@/lib/format";
 import { Button, Select, SettingRow, Switch, cn, toast } from "@/components/ui";
@@ -104,7 +104,7 @@ export function MasterOptSync() {
   const t = useT();
   const qc = useQueryClient();
   const q = useOptSync();
-  const { data: instances = [] } = useInstances();
+  const { data: instances = [] } = useJavaInstances();
   const [from, setFrom] = useState<string | null>(null);
   const [cats, setCats] = useState<OptSyncCategory[]>(ALL);
   const [busy, setBusy] = useState(false);

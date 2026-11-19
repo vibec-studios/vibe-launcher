@@ -9,7 +9,7 @@ import { Button, Dialog, Progress, Select, Skeleton, Switch, Tag, Tooltip, cn } 
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatLoader, formatRelative } from "@/lib/format";
-import { qk, useInstances, useTask } from "@/lib/queries";
+import { qk, useTask, useJavaInstances } from "@/lib/queries";
 import type { Instance, ProjectHit, ProjectVersion } from "@/lib/types";
 import { InstanceBadge } from "./InstanceBadge";
 import { startContentInstall, startManualDownload, startModpackInstall } from "./install";
@@ -242,7 +242,7 @@ function versionOptions(t: ReturnType<typeof useT>, versions: ProjectVersion[]) 
 function ContentSelect({ target, onStart, onError }: { target: InstallTarget; onStart: (taskId: string) => void; onError: (m: string) => void }) {
   const t = useT();
   const { project } = target;
-  const instancesQ = useInstances();
+  const instancesQ = useJavaInstances();
   const kind = contentKindOf(project.project_type);
 
   const sorted = useMemo(() => {

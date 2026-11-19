@@ -57,6 +57,8 @@ import {
   useInstanceActions,
 } from "./actions";
 import { useRunPhase } from "./status";
+import { bedrockApi } from "@/features/bedrock/api";
+import { toast } from "@/components/ui";
 
 interface Kit {
   Item: (p: MenuItemProps) => ReactNode;
@@ -90,6 +92,8 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
   const accent = instanceAccent(i.id, i.accent);
   const running = phase === "running" || phase === "preparing";
   const vibe = useVibe();
+  // Bedrock: keine Java-Ordner, kein Export als Modpack, kein Teilen/Hosting/Reparieren
+  const bedrock = !!i.bedrock;
 
   return (
     <>
@@ -107,21 +111,29 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
           {t("inst.open")}
         </Item>
       )}
-      <Sub icon={<FolderOpen size={14} />} label={t("common.open_folder")}>
-        {FOLDERS.map((f) => (
-          <Item key={f || "root"} icon={f ? <FolderTree size={14} /> : <FolderOpen size={14} />} onSelect={() => openFolder(i, f)}>
-            {f ? <span>{f}</span> : t("inst.folder.game")}
-          </Item>
-        ))}
-      </Sub>
+      {bedrock ? (
+        <Item icon={<FolderOpen size={14} />} onSelect={() => bedrockApi.openFolder(i.id).catch((e) => toast.error(e))}>
+          {t("common.open_folder")}
+        </Item>
+      ) : (
+        <Sub icon={<FolderOpen size={14} />} label={t("common.open_folder")}>
+          {FOLDERS.map((f) => (
+            <Item key={f || "root"} icon={f ? <FolderTree size={14} /> : <FolderOpen size={14} />} onSelect={() => openFolder(i, f)}>
+              {f ? <span>{f}</span> : t("inst.folder.game")}
+            </Item>
+          ))}
+        </Sub>
+      )}
       <Sep />
-      <Item icon={<Copy size={14} />} onSelect={() => actions.duplicate(i)}>
+      <Item icon={<Copy size={14} />} disabled={bedrock && running} onSelect={() => actions.duplicate(i)}>
         {t("inst.duplicate")}
       </Item>
-      <Item icon={<Upload size={14} />} onSelect={() => openExport(i)}>
-        {t("inst.export")}
-      </Item>
-      {vibe.sharing && (
+      {!bedrock && (
+        <Item icon={<Upload size={14} />} onSelect={() => openExport(i)}>
+          {t("inst.export")}
+        </Item>
+      )}
+      {vibe.sharing && !bedrock && (
         <Item icon={<Share2 size={14} />} onSelect={() => openShare(i.id)}>
           {t("social.share.menu")}
         </Item>
@@ -134,9 +146,11 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
           {t("inst.shortcut.start_menu")}
         </Item>
       </Sub>
-      <Item icon={<ServerIcon size={14} />} onSelect={() => openNewServer(i.id)}>
-        {t("srv.host_instance")}
-      </Item>
+      {!bedrock && (
+        <Item icon={<ServerIcon size={14} />} onSelect={() => openNewServer(i.id)}>
+          {t("srv.host_instance")}
+        </Item>
+      )}
       <Sep />
       {onEdit ? (
         <Item icon={<SlidersHorizontal size={14} />} onSelect={onEdit}>
@@ -181,9 +195,11 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
         </>
       )}
       <Sep />
-      <Item icon={<Wrench size={14} />} disabled={running || phase === "busy"} onSelect={() => repairInstance(i)}>
-        {t("inst.repair")}
-      </Item>
+      {!bedrock && (
+        <Item icon={<Wrench size={14} />} disabled={running || phase === "busy"} onSelect={() => repairInstance(i)}>
+          {t("inst.repair")}
+        </Item>
+      )}
       <Item icon={<Trash2 size={14} />} danger disabled={running} onSelect={() => actions.remove(i, onDeleted)}>
         {t("common.delete")}
       </Item>

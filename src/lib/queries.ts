@@ -42,6 +42,12 @@ export function useInstances() {
   return useQuery({ queryKey: qk.instances, queryFn: api.instancesList, staleTime: Infinity });
 }
 
+const selectJava = (list: Instance[]) => list.filter((i) => !i.bedrock);
+/** Nur Java-Instanzen – für Auswahllisten von Mods, Modpacks, Servern, Teilen usw. (Bedrock passt dort nicht). */
+export function useJavaInstances() {
+  return useQuery({ queryKey: qk.instances, queryFn: api.instancesList, staleTime: Infinity, select: selectJava });
+}
+
 /** Einzelne Instanz – nimmt sofort den Eintrag aus der Liste, falls vorhanden. */
 export function useInstance(id: string) {
   return useQuery({

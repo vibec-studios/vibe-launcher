@@ -679,6 +679,7 @@ pub async fn run_import(state: AppState, task: TaskHandle, f: Found, source_path
         play_time_secs: f.info.play_time_secs.unwrap_or(0),
         notes: plan.description.clone().filter(|d| !d.trim().is_empty()),
         auto_update_content: None,
+        bedrock: None,
     };
     inst.java.min_memory_mb = mem("min");
     inst.java.max_memory_mb = mem("max");

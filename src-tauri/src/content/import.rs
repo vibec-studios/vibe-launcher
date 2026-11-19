@@ -642,6 +642,7 @@ fn new_instance(name: String, plan: &PackPlan, source: Option<PackSource>) -> In
         play_time_secs: 0,
         notes: None,
         auto_update_content: None,
+        bedrock: None,
     };
     if let Some(p) = &plan.prism {
         inst.java.min_memory_mb = p.min_memory_mb;

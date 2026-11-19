@@ -25,6 +25,7 @@ import { PackIcon } from "@/features/home/Discover";
 import { usePopularModpacks } from "@/features/home/data";
 import { useT } from "@/i18n";
 import { ClientPackPicker, installPackAfterCreate } from "./settings/ClientPacks";
+import { NewBedrockTab } from "@/features/bedrock/NewBedrockTab";
 
 export function suggestName(v: VersionValue): string {
   if (!v.mc) return "";
@@ -83,12 +84,12 @@ export function GroupInput({ value, onChange, groups, autoFocus }: { value: stri
   );
 }
 
-type Tab = "custom" | "modpack" | "import";
+type Tab = "custom" | "modpack" | "bedrock" | "import";
 type Filter = "release" | "snapshot" | "old";
 
 // ------------------------------------------------------------------ Icon + Farbe (Popover)
 
-function IconPicker({
+export function IconPicker({
   icon,
   accent,
   onIcon,
@@ -154,7 +155,7 @@ function IconPicker({
 
 // ------------------------------------------------------------------ Gruppe (freier Text + vorhandene Gruppen)
 
-function GroupField({ value, onChange, groups }: { value: string; onChange: (v: string) => void; groups: string[] }) {
+export function GroupField({ value, onChange, groups }: { value: string; onChange: (v: string) => void; groups: string[] }) {
   const t = useT();
   return (
     <Input
@@ -728,6 +729,7 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
   const tabs: { value: Tab; label: string }[] = [
     { value: "custom", label: t("newinst.tab.custom") },
     { value: "modpack", label: t("newinst.tab.modpack") },
+    { value: "bedrock", label: t("bedrock.newinst.tab") },
     { value: "import", label: t("newinst.tab.import") },
   ];
 
@@ -777,7 +779,15 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
               </D.Close>
             )}
           </header>
-          {tab === "custom" ? <CustomTab onDone={close} onBusy={setBusy} /> : tab === "modpack" ? <ModpackTab onDone={close} /> : <ImportTab onDone={close} />}
+          {tab === "custom" ? (
+            <CustomTab onDone={close} onBusy={setBusy} />
+          ) : tab === "modpack" ? (
+            <ModpackTab onDone={close} />
+          ) : tab === "bedrock" ? (
+            <NewBedrockTab onDone={close} onBusy={setBusy} />
+          ) : (
+            <ImportTab onDone={close} />
+          )}
         </D.Content>
       </D.Portal>
     </D.Root>

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Copy } from "lucide-react";
 import { api, isCancelled } from "@/lib/api";
-import { useInstances, waitForTask } from "@/lib/queries";
+import { waitForTask, useJavaInstances } from "@/lib/queries";
 import type { Instance, World } from "@/lib/types";
 import { Button, Dialog, Field, Select, toast } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
@@ -36,7 +36,7 @@ export async function importWorldZip(instance: Instance) {
 /** Dialog: Ziel-Instanz wählen und Welt dorthin kopieren. */
 export function CopyWorldDialog({ instance, world, onClose }: { instance: Instance; world: World | null; onClose: () => void }) {
   const tr = useT();
-  const all = useInstances();
+  const all = useJavaInstances();
   const targets = useMemo(() => (all.data ?? []).filter((i) => i.id !== instance.id).sort((a, b) => a.name.localeCompare(b.name)), [all.data, instance.id]);
   const [target, setTarget] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

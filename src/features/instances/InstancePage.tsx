@@ -30,6 +30,7 @@ import { PlayLinkBar } from "@/features/play/SharePlayLink";
 import { VibeyClientBadge } from "@/features/cosmetics/VibeyClientSlot";
 import { ToolbarSlot } from "./toolbar";
 import { useSimple } from "@/lib/mode";
+import { BedrockInstanceView } from "@/features/bedrock/BedrockInstanceView";
 
 const route = getRouteApi("/instances/$id");
 const wrap = "w-full px-6";
@@ -200,6 +201,7 @@ export function InstancePage() {
     );
   }
   // Eigener Baum je Instanz: Abfragen behalten sonst (placeholderData) kurz die Daten der vorigen Instanz
+  if (inst.bedrock) return <BedrockInstanceView key={inst.id} inst={inst} tab={tab} />;
   return <InstanceView key={inst.id} inst={inst} tab={tab} />;
 }
 

@@ -10,7 +10,7 @@ import { Button, DropdownItem, DropdownMenu, Progress, Spinner, Tooltip, cn, toa
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatLoader } from "@/lib/format";
-import { qk, useInstances, useTask } from "@/lib/queries";
+import { qk, useTask, useJavaInstances } from "@/lib/queries";
 import type { Instance, ProjectHit } from "@/lib/types";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { ManualBadge } from "@/components/content/ManualBadge";
@@ -210,7 +210,7 @@ function InstancePicker({ project, size, wide }: { project: P; size: "sm" | "md"
 
 function PickerList({ project, close }: { project: P; close: () => void }) {
   const t = useT();
-  const { data: instances, isPending } = useInstances();
+  const { data: instances, isPending } = useJavaInstances();
   const kind = contentKindOf(project.project_type);
   const list = useMemo(
     () =>

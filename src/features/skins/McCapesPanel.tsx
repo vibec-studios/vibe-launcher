@@ -8,7 +8,7 @@ import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { useT, t as tt } from "@/i18n";
 import { useEvent } from "@/lib/events";
 import { loaderNames } from "@/lib/format";
-import { isRunning, queryClient, useGameStore, useInstances, waitForTask } from "@/lib/queries";
+import { isRunning, queryClient, useGameStore, waitForTask, useJavaInstances } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { MCCAPES_SITE, mcApi, mcq, useCapeFronts, useFrameIndex, type McCapeFrames, type McModStatus, type McProfile } from "./minecraftcapes";
 
@@ -159,7 +159,7 @@ export function McCapesPanel({
 
 function ModList() {
   const t = useT();
-  const instancesQ = useInstances();
+  const instancesQ = useJavaInstances();
   const statusQ = useQuery({ queryKey: mcq.mods, queryFn: mcApi.modStatus, staleTime: 60_000 });
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const instances = instancesQ.data ?? [];

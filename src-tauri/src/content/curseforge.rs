@@ -456,7 +456,7 @@ pub fn available(state: &AppState) -> bool {
     state.settings().curseforge_key().is_some()
 }
 
-async fn get<T: serde::de::DeserializeOwned>(state: &AppState, path_and_query: &str) -> AppResult<T> {
+pub(crate) async fn get<T: serde::de::DeserializeOwned>(state: &AppState, path_and_query: &str) -> AppResult<T> {
     let key = key(state)?;
     let url = format!("{API}{path_and_query}");
     let rb = state.net.client.get(&url).header("x-api-key", key).header("Accept", "application/json");

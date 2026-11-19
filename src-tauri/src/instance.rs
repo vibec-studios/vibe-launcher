@@ -115,6 +115,43 @@ pub enum InstallState {
     Failed,
 }
 
+/// Bedrock-Kanal: normale Version oder Preview (Beta).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum BedrockChannel {
+    #[default]
+    Release,
+    Preview,
+}
+
+impl BedrockChannel {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            BedrockChannel::Release => "release",
+            BedrockChannel::Preview => "preview",
+        }
+    }
+}
+
+/// Welche Spieldaten eine Bedrock-Instanz benutzt (siehe docs/BEDROCK.md).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum BedrockProfile {
+    /// Eigene Welten/Packs/Einstellungen; vor dem Start in den echten Ordner getauscht
+    #[default]
+    Isolated,
+    /// Kein Tausch: direkt die normalen Bedrock-Daten des Nutzers
+    Shared,
+}
+
+/// Einstellungen einer Bedrock-Instanz. `Instance::bedrock == Some(..)` heißt: Bedrock statt Java.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(default)]
+pub struct BedrockOptions {
+    pub channel: BedrockChannel,
+    pub profile: BedrockProfile,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Instance {
     pub id: String,
@@ -150,6 +187,19 @@ pub struct Instance {
     /// (bei Modpack-Instanzen dann aus), `Some(..)` = explizit für diese Instanz
     #[serde(default)]
     pub auto_update_content: Option<bool>,
+    /// Minecraft Bedrock statt Java (fehlt in älteren Dateien -> Java). Loader/Java/Fenster/Hooks
+    /// werden bei Bedrock-Instanzen ignoriert, `mc_version` ist dann [`BEDROCK_VERSION`].
+    #[serde(default)]
+    pub bedrock: Option<BedrockOptions>,
+}
+
+/// Platzhalter in `mc_version` von Bedrock-Instanzen (passt zu keiner Java-Version).
+pub const BEDROCK_VERSION: &str = "bedrock";
+
+impl Instance {
+    pub fn is_bedrock(&self) -> bool {
+        self.bedrock.is_some()
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -182,6 +232,8 @@ pub struct InstancePatch {
     pub notes: Option<Option<String>>,
     #[serde(deserialize_with = "double_option")]
     pub auto_update_content: Option<Option<bool>>,
+    /// Nur bei Bedrock-Instanzen wirksam (Kanal/Profil ändern)
+    pub bedrock: Option<BedrockOptions>,
 }
 
 /// `null` -> `Some(None)` (Feld leeren), fehlendes Feld -> `None` (unverändert).
@@ -310,12 +362,44 @@ impl InstanceStore {
             play_time_secs: 0,
             notes: None,
             auto_update_content: None,
+            bedrock: None,
         };
         std::fs::create_dir_all(self.paths.game_dir(&id))?;
         self.persist(&inst)?;
         self.map.write().insert(id, inst.clone());
         events::emit(&self.app, events::INSTANCE_CHANGED, &inst);
         Ok(inst)
+    }
+
+    /// Neue Bedrock-Instanz (ohne Java-Teile). Der Profilordner entsteht erst beim ersten Bedarf.
+    pub fn create_bedrock(&self, name: &str, opts: BedrockOptions, icon: Option<String>, accent: Option<String>, group: Option<String>) -> AppResult<Instance> {
+        let name = name.trim();
+        if name.is_empty() {
+            return Err(AppError::Invalid("Name darf nicht leer sein".into()));
+        }
+        let inst = Instance {
+            id: String::new(),
+            name: name.to_string(),
+            icon,
+            accent,
+            group: group.filter(|g| !g.trim().is_empty()),
+            mc_version: BEDROCK_VERSION.into(),
+            loader: Loader { kind: LoaderKind::Vanilla, version: None },
+            java: Default::default(),
+            window: Default::default(),
+            hooks: Default::default(),
+            source: None,
+            // Bedrock wird nicht vom Launcher installiert
+            install_state: InstallState::Installed,
+            version_id: None,
+            created_at: now_ms(),
+            last_played: None,
+            play_time_secs: 0,
+            notes: None,
+            auto_update_content: Some(false),
+            bedrock: Some(opts),
+        };
+        self.insert_new(inst)
     }
 
     /// Beliebige Änderung an einer Instanz (persistiert + Event).
@@ -354,6 +438,7 @@ impl InstanceStore {
             if let Some(v) = p.hooks { i.hooks = v; }
             if let Some(v) = p.notes { i.notes = v; }
             if let Some(v) = p.auto_update_content { i.auto_update_content = v; }
+            if let (Some(v), true) = (p.bedrock, i.bedrock.is_some()) { i.bedrock = Some(v); }
         })
     }
 
@@ -442,6 +527,34 @@ mod tests {
         assert_eq!(p.accent, Some(None));
         assert_eq!(p.auto_update_content, Some(Some(true)));
         assert_eq!(p.group, None);
+    }
+
+    /// Instanzdateien älterer Versionen (ohne `bedrock`) bleiben Java-Instanzen; neue Felder überstehen die Rundreise.
+    #[test]
+    fn serde_old_files_and_bedrock() {
+        let old = r#"{"id":"x","name":"Alt","icon":null,"accent":null,"group":null,"mc_version":"1.20.1",
+            "loader":{"kind":"fabric","version":"0.15.0"},"created_at":1}"#;
+        let i: super::Instance = serde_json::from_str(old).unwrap();
+        assert!(!i.is_bedrock());
+        assert_eq!(i.bedrock, None);
+        assert_eq!(i.install_state, super::InstallState::NotInstalled);
+
+        let mut b = i.clone();
+        b.bedrock = Some(super::BedrockOptions { channel: super::BedrockChannel::Preview, profile: super::BedrockProfile::Shared });
+        let json = serde_json::to_string(&b).unwrap();
+        assert!(json.contains(r#""bedrock":{"channel":"preview","profile":"shared"}"#));
+        let back: super::Instance = serde_json::from_str(&json).unwrap();
+        assert!(back.is_bedrock());
+        assert_eq!(back.bedrock, b.bedrock);
+
+        // Teilweise Angaben -> Standardwerte (Release, eigenes Profil)
+        let partial = old.replace(r#""created_at":1"#, r#""created_at":1,"bedrock":{}"#);
+        let p: super::Instance = serde_json::from_str(&partial).unwrap();
+        assert_eq!(p.bedrock, Some(super::BedrockOptions::default()));
+        assert_eq!(p.bedrock.unwrap().profile, super::BedrockProfile::Isolated);
+        // Patch mit Bedrock-Optionen
+        let patch: super::InstancePatch = serde_json::from_str(r#"{"bedrock":{"channel":"preview"}}"#).unwrap();
+        assert_eq!(patch.bedrock.unwrap().channel, super::BedrockChannel::Preview);
     }
 
     #[test]
