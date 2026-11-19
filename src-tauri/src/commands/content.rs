@@ -227,6 +227,7 @@ pub async fn import_external(
     name: Option<String>,
     mc_version: Option<String>,
     loader: Option<crate::instance::Loader>,
+    settings: Option<Vec<String>>,
 ) -> AppResult<String> {
     // NoRisk-Profile: Kennung `<spielordner>#<profil-id>`; der Ordner fehlt bei nie gestarteten Profilen
     if source != LauncherKind::Norisk && !std::path::Path::new(&source_path).is_dir() {
@@ -234,7 +235,25 @@ pub async fn import_external(
     }
     let st = state.inner().clone();
     let title = std::path::Path::new(&source_path).file_name().map(|n| format!("{} übernehmen", n.to_string_lossy())).unwrap_or_else(|| "Instanz übernehmen".into());
-    Ok(state.tasks.spawn("import", title, None, move |task| external::run_import(st, task, source, source_path, name, mc_version, loader)))
+    Ok(state.tasks.spawn("import", title, None, move |task| external::run_import(st, task, source, source_path, name, mc_version, loader, settings)))
+}
+
+/// Importierte Instanzen, deren Einstellungen im Ursprungs-Launcher abweichen (für den Hinweis „Einstellungen übernehmen“).
+#[tauri::command]
+pub async fn import_settings_pending(state: State<'_, AppState>) -> AppResult<Vec<extsettings::SettingsOffer>> {
+    extsettings::pending(&state).await
+}
+
+/// Einstellungen + Dateien, die sich für eine importierte Instanz übernehmen ließen (`null`: keine Quelle).
+#[tauri::command]
+pub async fn import_settings_offer(state: State<'_, AppState>, instance_id: String) -> AppResult<Option<extsettings::SettingsOffer>> {
+    extsettings::offer(&state, &instance_id).await
+}
+
+/// Gewählte Einstellungen (`keys`) übernehmen; `files` ("options", "config") kopiert Dateien erneut (vorher Snapshot).
+#[tauri::command]
+pub async fn import_settings_apply(state: State<'_, AppState>, instance_id: String, keys: Vec<String>, files: Vec<String>) -> AppResult<crate::instance::Instance> {
+    extsettings::apply_offer(&state, &instance_id, keys, files).await
 }
 
 /// Version eines Inhalts fixieren (kein Auto-Update, nicht bei „Alle aktualisieren“) oder lösen.

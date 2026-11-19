@@ -684,6 +684,58 @@ export interface ExternalInstance {
   warning: string | null;
   /** Vibe-Instanz-ID, falls schon importiert */
   imported_as: string | null;
+  /** Einstellungen im fremden Launcher (null = keine gefunden) */
+  settings?: ExtSettings | null;
+}
+
+/** Bereiche, die aus einem anderen Launcher übernommen werden können (Import und nachträglich). */
+export type ExtSettingKey = "memory" | "java" | "jvm_args" | "env" | "window" | "hooks" | "notes" | "group";
+/** Nur nachträglich: Spielzeit, Icon, Modpack-Herkunft */
+export type ExtExtraKey = "playtime" | "icon" | "pack";
+
+export interface ExtSettings {
+  min_memory_mb: number | null;
+  max_memory_mb: number | null;
+  java_path: string | null;
+  java_version: string | null;
+  jvm_args: string | null;
+  env: Record<string, string>;
+  width: number | null;
+  height: number | null;
+  fullscreen: boolean | null;
+  pre_launch: string | null;
+  post_exit: string | null;
+  wrapper: string | null;
+  notes: string | null;
+  group: string | null;
+  /** Bereiche, die aus den Standard-Einstellungen des fremden Launchers stammen */
+  inherited: ExtSettingKey[];
+}
+
+/** Abweichung Vibe-Instanz ↔ fremder Launcher (Werte je Bereich, siehe extsettings.rs `part`). */
+export interface SettingsChange {
+  key: ExtSettingKey | ExtExtraKey;
+  old: unknown;
+  new: unknown;
+  default_on: boolean;
+  inherited: boolean;
+}
+
+export interface SettingsFileOffer {
+  key: "options" | "config";
+  items: string[];
+  changed: number;
+}
+
+export interface SettingsOffer {
+  instance_id: string;
+  instance_name: string;
+  launcher: LauncherKind;
+  launcher_name: string;
+  source_path: string;
+  changes: SettingsChange[];
+  files: SettingsFileOffer[];
+  notes: string[];
 }
 
 export interface ExternalLauncher {

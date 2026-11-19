@@ -229,7 +229,9 @@ fn check_rel(path: &str) -> AppResult<()> {
     Ok(())
 }
 
-fn parse_ini(text: &str) -> HashMap<String, String> {
+/// `instance.cfg`/`prismlauncher.cfg` lesen. Werte wie Qt/Prism sie schreiben: ggf. in Anführungszeichen,
+/// Escapes `\n`, `\t`, `\\`, `\"`, `\#` (MultiMC).
+pub(crate) fn parse_ini(text: &str) -> HashMap<String, String> {
     text.lines()
         .filter_map(|l| {
             let l = l.trim();
@@ -237,9 +239,37 @@ fn parse_ini(text: &str) -> HashMap<String, String> {
                 return None;
             }
             let (k, v) = l.split_once('=')?;
-            Some((k.trim().to_string(), v.trim().to_string()))
+            Some((k.trim().to_string(), ini_unescape(v.trim())))
         })
         .collect()
+}
+
+fn ini_unescape(v: &str) -> String {
+    let v = if v.len() >= 2 && v.starts_with('"') && v.ends_with('"') { &v[1..v.len() - 1] } else { v };
+    if !v.contains('\\') {
+        return v.to_string();
+    }
+    let mut out = String::with_capacity(v.len());
+    let mut it = v.chars();
+    while let Some(c) = it.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match it.next() {
+            Some('n') => out.push('\n'),
+            Some('t') => out.push('\t'),
+            Some('r') => {}
+            Some(c @ ('\\' | '"' | '#' | ';' | '\'')) => out.push(c),
+            // Unbekannt (z. B. Windows-Pfad mit einfachem Backslash): unverändert lassen
+            Some(c) => {
+                out.push('\\');
+                out.push(c);
+            }
+            None => out.push('\\'),
+        }
+    }
+    out
 }
 
 #[derive(Deserialize)]

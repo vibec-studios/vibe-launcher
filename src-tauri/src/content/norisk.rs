@@ -3,14 +3,14 @@
 //! - Wurzel: Windows `%APPDATA%\norisk\NoRiskClientV3`, macOS `~/Library/Application Support/gg.norisk.NoRiskClientV3`,
 //!   Linux `~/.local/share/noriskclientv3` (`directories::ProjectDirs("gg","norisk","NoRiskClientV3")`).
 //! - Profile: SQLite `meta/app.db` (Tabellen `profiles`, `profile_mods`, `profile_disabled_norisk_mods`),
-//!   Ã¤ltere Versionen `profiles.json` (JSON-Liste). Die DB wird vor dem Lesen samt WAL kopiert.
+//!   ältere Versionen `profiles.json` (JSON-Liste). Die DB wird vor dem Lesen samt WAL kopiert.
 //! - Spielordner: `<profiles>/<profile.path>`; mit `use_shared_minecraft_folder` (nicht in den Gruppen
 //!   SERVER/MODPACKS) der Gruppenordner `noriskclient/new|legacy` bzw. `groups/<gruppe>`.
 //!   `<profiles>` = `data/profiles` (Windows) bzw. `profiles`, oder `<custom_game_directory>/profiles`.
-//! - Inhalte: Mods der Profil-Mod-Liste (Modrinth-Quelle) und des gewÃ¤hlten NoRisk-Packs
+//! - Inhalte: Mods der Profil-Mod-Liste (Modrinth-Quelle) und des gewählten NoRisk-Packs
 //!   (`norisk_modpacks.json`, `compatibility[mc][loader].identifier` = Modrinth-Versions-ID, mit
 //!   `inheritsFrom`/`excludeMods`) werden per Modrinth installiert. Pack-Mods aus dem NoRisk-Maven bzw.
-//!   per URL (NoRisk-Client-Mods, OptiFine) laufen nur im NoRisk-Launcher und werden nicht Ã¼bernommen.
+//!   per URL (NoRisk-Client-Mods, OptiFine) laufen nur im NoRisk-Launcher und werden nicht übernommen.
 //!   Lose JARs aus `mods/` und `custom_mods/` werden kopiert, wenn sie zu Version/Loader passen.
 //! - `accounts.json` (Tokens) wird nie gelesen.
 use super::external::{norm, Found};
@@ -23,11 +23,12 @@ use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-pub const WARN_NRC: &str = "NoRisk-Client-Mods werden nicht Ã¼bernommen â€“ sie laufen nur im NoRisk-Launcher.";
+pub const WARN_NRC: &str = "NoRisk-Client-Mods werden nicht übernommen – sie laufen nur im NoRisk-Launcher.";
 
-/// Dateien/Ordner im Spielordner, die Ã¼bernommen werden (Rest gehÃ¶rt dem NoRisk-Launcher bzw. dessen Mods).
+/// Dateien/Ordner im Spielordner, die übernommen werden (Rest gehört dem NoRisk-Launcher bzw. dessen Mods).
 const COPY: &[&str] = &[
     "config",
+    "defaultconfigs",
     "saves",
     "resourcepacks",
     "shaderpacks",
@@ -208,7 +209,7 @@ fn str_of(v: Option<&Value>) -> Option<String> {
     v.and_then(|x| x.as_str()).map(str::to_string).filter(|s| !s.is_empty())
 }
 
-/// Ã„ltere Launcher-Versionen: `profiles.json` (Liste oder `{ profiles: {...} }`).
+/// Ältere Launcher-Versionen: `profiles.json` (Liste oder `{ profiles: {...} }`).
 pub fn read_json(b: &[u8]) -> AppResult<Vec<NrProfile>> {
     let v: Value = serde_json::from_slice(b).map_err(|e| AppError::msg(format!("NoRisk-Profile unlesbar: {e}")))?;
     let items: Vec<Value> = match &v {
@@ -332,7 +333,7 @@ pub fn game_dir(profiles: &Path, p: &NrProfile) -> PathBuf {
 
 // ------------------------------------------------------------------ Packs
 
-/// Pack-Mod: installierbar (Modrinth-Version) oder nicht (NoRisk-Maven, URL â€¦).
+/// Pack-Mod: installierbar (Modrinth-Version) oder nicht (NoRisk-Maven, URL …).
 #[derive(Debug, Clone, PartialEq)]
 pub enum PackMod {
     Modrinth { id: String, name: String, project_id: String, version_id: String },
@@ -368,7 +369,7 @@ fn resolve_pack(packs: &serde_json::Map<String, Value>, id: &str, visited: &mut 
     map.into_iter().map(|(_, m)| m).collect()
 }
 
-/// Mods eines NoRisk-Packs fÃ¼r Version + Loader (ohne vom Profil deaktivierte).
+/// Mods eines NoRisk-Packs für Version + Loader (ohne vom Profil deaktivierte).
 pub fn pack_mods(packs_json: &Value, p: &NrProfile) -> Vec<PackMod> {
     let Some(pack_id) = &p.pack_id else { return vec![] };
     let Some(packs) = packs_json.get("packs").and_then(|x| x.as_object()) else { return vec![] };
@@ -386,7 +387,7 @@ pub fn pack_mods(packs_json: &Value, p: &NrProfile) -> Vec<PackMod> {
             continue;
         }
         let name = m.get("displayName").and_then(|x| x.as_str()).unwrap_or(&id).to_string();
-        // Gibt es diesen Mod fÃ¼r Version + Loader?
+        // Gibt es diesen Mod für Version + Loader?
         let Some(compat) = m.get("compatibility").and_then(|c| c.get(&p.game_version)).and_then(|c| c.get(&loader)) else { continue };
         let src = m.get("source").cloned().unwrap_or(Value::Null);
         let ident = compat.get("identifier").and_then(|x| x.as_str()).map(str::to_string);
@@ -406,7 +407,7 @@ pub struct Plan {
     pub profile_id: String,
     /// (project_id, version_id, enabled)
     pub modrinth: Vec<(String, String, bool)>,
-    /// Nicht Ã¼bernommene NoRisk-eigene Mods (Namen)
+    /// Nicht übernommene NoRisk-eigene Mods (Namen)
     pub skipped: Vec<String>,
     /// Lose JARs (Quelle, Zielname)
     pub jars: Vec<(PathBuf, String)>,
@@ -514,7 +515,7 @@ fn read_packs(root: &Path) -> Value {
     std::fs::read(root.join("norisk_modpacks.json")).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or(Value::Null)
 }
 
-/// `loaderPolicy` eines Packs samt Eltern (Kind Ã¼berschreibt Eltern), wie `resolve_loader_policy_for_pack`.
+/// `loaderPolicy` eines Packs samt Eltern (Kind überschreibt Eltern), wie `resolve_loader_policy_for_pack`.
 fn merged_policy(packs: &serde_json::Map<String, Value>, id: &str, visited: &mut HashSet<String>) -> (HashMap<String, Value>, HashMap<String, HashMap<String, Value>>) {
     let mut default: HashMap<String, Value> = HashMap::new();
     let mut by_mc: HashMap<String, HashMap<String, Value>> = HashMap::new();
@@ -545,7 +546,7 @@ fn merged_policy(packs: &serde_json::Map<String, Value>, id: &str, visited: &mut
     (default, by_mc)
 }
 
-/// Loader-Version laut Pack-Policy: exakte MC-Version, dann `x.y.*`, dann PrÃ¤fix, dann `default`.
+/// Loader-Version laut Pack-Policy: exakte MC-Version, dann `x.y.*`, dann Präfix, dann `default`.
 pub fn pack_loader_version(packs_json: &Value, pack_id: &str, mc: &str, loader: &str) -> Option<String> {
     let packs = packs_json.get("packs")?.as_object()?;
     let (default, by_mc) = merged_policy(packs, pack_id, &mut HashSet::new());
@@ -624,6 +625,7 @@ pub fn scan(root: &Path, tmp: &Path, icons: &Path) -> Vec<Found> {
             if !plan.skipped.is_empty() {
                 f.info.warning = Some(format!("{WARN_NRC} ({})", plan.skipped.len()));
             }
+            f.settings = super::extsettings::norisk(&plan.settings, plan.group.clone(), plan.description.clone());
             f.norisk = Some(plan);
             f
         })
@@ -633,8 +635,13 @@ pub fn scan(root: &Path, tmp: &Path, icons: &Path) -> Vec<Found> {
 /// Ein Profil anhand seiner Kennung erneut lesen.
 pub fn describe(source: &str, tmp: &Path, icons: &Path) -> Option<Found> {
     let me = norm(source);
+    roots_for(source).iter().find_map(|r| scan(r, tmp, icons).into_iter().find(|f| norm(&f.info.source_path) == me))
+}
+
+/// Mögliche Wurzeln zu einer Profil-Kennung (aus dem Pfad abgeleitet, dann der Standardort).
+pub fn roots_for(source: &str) -> Vec<PathBuf> {
     let mut roots = roots();
-    // Wurzel aus dem Pfad ableiten (â€¦\data\profiles\â€¦ bzw. â€¦\profiles\â€¦)
+    // Wurzel aus dem Pfad ableiten (…\data\profiles\… bzw. …\profiles\…)
     let (dir, _) = split_source(source);
     let mut cur = Path::new(dir).parent();
     while let Some(c) = cur {
@@ -643,29 +650,37 @@ pub fn describe(source: &str, tmp: &Path, icons: &Path) -> Option<Found> {
         }
         cur = c.parent();
     }
-    roots.iter().find_map(|r| scan(r, tmp, icons).into_iter().find(|f| norm(&f.info.source_path) == me))
+    roots
 }
 
 // ------------------------------------------------------------------ Import
 
-pub async fn run_import(state: AppState, task: TaskHandle, f: Found, source_path: String, name: Option<String>, mc_version: Option<String>, loader: Option<Loader>) -> AppResult<()> {
+#[allow(clippy::too_many_arguments)]
+pub async fn run_import(
+    state: AppState,
+    task: TaskHandle,
+    f: Found,
+    source_path: String,
+    name: Option<String>,
+    mc_version: Option<String>,
+    loader: Option<Loader>,
+    keys: HashSet<String>,
+) -> AppResult<()> {
     let plan = f.norisk.clone().unwrap_or_default();
     let mc = mc_version.filter(|v| !v.trim().is_empty()).unwrap_or_else(|| f.info.mc_version.clone());
     if mc.trim().is_empty() {
-        return Err(AppError::Invalid(format!("{}: Minecraft-Version unbekannt â€“ bitte angeben", f.info.name)));
+        return Err(AppError::Invalid(format!("{}: Minecraft-Version unbekannt – bitte angeben", f.info.name)));
     }
     let loader = loader.unwrap_or_else(|| f.info.loader.clone());
     let name = name.filter(|n| !n.trim().is_empty()).unwrap_or_else(|| f.info.name.clone());
-    task.set_title(format!("{name} Ã¼bernehmen"));
+    task.set_title(format!("{name} übernehmen"));
 
-    let s = &plan.settings;
-    let mem = |k: &str| s.get("memory").and_then(|m| m.get(k)).and_then(|v| v.as_u64()).map(|v| v as u32).filter(|v| *v >= 256);
     let mut inst = Instance {
         id: String::new(),
         name: name.clone(),
         icon: None,
         accent: None,
-        group: plan.group.clone().filter(|g| !g.trim().is_empty()),
+        group: None,
         mc_version: mc,
         loader,
         java: Default::default(),
@@ -677,22 +692,11 @@ pub async fn run_import(state: AppState, task: TaskHandle, f: Found, source_path
         created_at: crate::util::now_ms(),
         last_played: f.info.last_played,
         play_time_secs: f.info.play_time_secs.unwrap_or(0),
-        notes: plan.description.clone().filter(|d| !d.trim().is_empty()),
+        notes: None,
         auto_update_content: None,
     };
-    inst.java.min_memory_mb = mem("min");
-    inst.java.max_memory_mb = mem("max");
-    inst.java.jvm_args = str_of(s.get("custom_jvm_args"));
-    if s.get("use_custom_java_path").and_then(|x| x.as_bool()) == Some(true) {
-        inst.java.path = str_of(s.get("java_path"));
-    }
-    if let Some(r) = s.get("resolution").filter(|r| r.is_object()) {
-        inst.window.width = r.get("width").and_then(|v| v.as_u64()).map(|v| v as u32);
-        inst.window.height = r.get("height").and_then(|v| v.as_u64()).map(|v| v as u32);
-    }
-    if s.get("fullscreen").and_then(|x| x.as_bool()) == Some(true) {
-        inst.window.fullscreen = Some(true);
-    }
+    let (prepared, java_note) = super::extsettings::prepare(&state.settings(), &f.settings, &inst.mc_version, keys.contains("java")).await;
+    super::extsettings::apply(&mut inst, &prepared, &keys);
     let inst = state.instances.insert_new(inst)?;
     task.set_instance(inst.id.clone());
 
@@ -700,7 +704,7 @@ pub async fn run_import(state: AppState, task: TaskHandle, f: Found, source_path
         super::external::write_mark(&state, &inst.id, super::LauncherKind::Norisk, &source_path)?;
         let dst = state.paths.game_dir(&inst.id);
         // 1. Spieldaten (Whitelist) + lose JARs kopieren
-        task.stage("Kopiere Spieldaten â€¦", Some(0.0));
+        task.stage("Kopiere Spieldaten …", Some(0.0));
         let src = f.game_dir.clone();
         let jars = plan.jars.clone();
         let t2 = task.clone();
@@ -737,12 +741,12 @@ pub async fn run_import(state: AppState, task: TaskHandle, f: Found, source_path
             Ok(files.len() as u64)
         })
         .await??;
-        task.message(format!("{copied} Dateien Ã¼bernommen"));
+        task.message(format!("{copied} Dateien übernommen"));
 
         // 2. Mods per Modrinth installieren
         let mut warnings = Vec::new();
         if !plan.modrinth.is_empty() && inst.loader.kind != LoaderKind::Vanilla {
-            task.stage(format!("Installiere {} Mods von Modrinth â€¦", plan.modrinth.len()), Some(0.5));
+            task.stage(format!("Installiere {} Mods von Modrinth …", plan.modrinth.len()), Some(0.5));
             let idx = ContentIndex::load(&state.paths, &inst.id);
             let mut all: Vec<install::Planned> = Vec::new();
             let mut seen: HashSet<String> = HashSet::new();
@@ -781,7 +785,7 @@ pub async fn run_import(state: AppState, task: TaskHandle, f: Found, source_path
             match state.net.get_bytes(url).await {
                 Ok(b) if b.len() < 4 * 1024 * 1024 => {
                     if let Err(e) = super::import::set_icon_bytes(&state, &inst.id, &b).await {
-                        tracing::warn!("NoRisk-Icon nicht Ã¼bernommen: {e}");
+                        tracing::warn!("NoRisk-Icon nicht übernommen: {e}");
                     }
                 }
                 Ok(_) => {}
@@ -793,12 +797,15 @@ pub async fn run_import(state: AppState, task: TaskHandle, f: Found, source_path
     .await;
     match res {
         Ok(warnings) => {
-            let mut msg = format!("{} Mods von Modrinth, {} lokale JARs Ã¼bernommen", plan.modrinth.len(), plan.jars.len());
+            let mut msg = format!("{} Mods von Modrinth, {} lokale JARs übernommen", plan.modrinth.len(), plan.jars.len());
             if !plan.skipped.is_empty() {
                 msg.push_str(&format!(", {} NoRisk-Mods ausgelassen", plan.skipped.len()));
             }
+            if let Some(n) = &java_note {
+                msg.push_str(&format!(" · {n}"));
+            }
             if let Some(w) = warnings.first() {
-                msg.push_str(&format!(" â€“ Hinweis: {w}"));
+                msg.push_str(&format!(" – Hinweis: {w}"));
             }
             task.message(msg);
             state.content.emit_changed(&inst.id);
@@ -901,7 +908,7 @@ mod tests {
                 PackMod::Skipped { id, .. } => format!("{id}!"),
             })
             .collect();
-        // nrc-client (maven) + optifine (url) Ã¼bersprungen, sodium aus dem Eltern-Pack Ã¼berschrieben,
+        // nrc-client (maven) + optifine (url) übersprungen, sodium aus dem Eltern-Pack überschrieben,
         // lithium per excludeMods entfernt, appleskin vom Profil deaktiviert, iris ohne 26.3-Eintrag
         assert!(ids.contains(&"nrc-client!".to_string()), "{ids:?}");
         assert!(ids.contains(&"optifine!".to_string()));
@@ -934,7 +941,7 @@ mod tests {
         assert_eq!(found.len(), 3);
         let main = found.iter().find(|f| f.info.name == "NRC 26.3").unwrap();
         assert_eq!(main.info.mc_version, "26.3");
-        // Pack-Policy (geerbt vom Eltern-Pack) schlÃ¤gt die Profilangabe 0.19.5
+        // Pack-Policy (geerbt vom Eltern-Pack) schlägt die Profilangabe 0.19.5
         assert_eq!(main.info.loader, Loader { kind: LoaderKind::Fabric, version: Some("0.20.1".into()) });
         assert_eq!(main.info.last_played, Some(1_793_476_074_136));
         assert_eq!(main.info.play_time_secs, Some(291_260));
@@ -945,18 +952,22 @@ mod tests {
         // Profil-Mod (deaktiviert) + Pack-Mods
         assert!(plan.modrinth.contains(&("MODMENU".into(), "MMV".into(), false)));
         assert!(plan.modrinth.iter().any(|(p, v, _)| p == "AANobbMI" && v == "CHILDVER"));
-        // nur der passende lose Mod, NRC-JAR Ã¼bersprungen
+        // nur der passende lose Mod, NRC-JAR übersprungen
         assert_eq!(plan.jars.iter().map(|(_, n)| n.as_str()).collect::<Vec<_>>(), vec!["ok-mod.jar"]);
         assert!(plan.skipped.iter().any(|s| s == "NRC Thing"));
         assert_eq!(plan.settings["memory"]["max"], 3584);
+        // Einstellungen für den Import-Dialog / das nachträgliche Übernehmen
+        assert_eq!(main.settings.max_memory_mb, Some(3584));
+        assert_eq!(main.settings.min_memory_mb, Some(1024));
+        assert!(main.settings.java_path.is_none(), "use_custom_java_path = false");
         assert_eq!(plan.banner_url.as_deref(), Some("https://cdn.example.invalid/icon.png"));
         assert_eq!(main.info.mod_count as usize, plan.modrinth.len() + 1);
-        // Loader-Version Ã¼berschrieben
+        // Loader-Version überschrieben
         let ov = found.iter().find(|f| f.info.name == "Eigene Gruppe").unwrap();
         assert_eq!(ov.info.loader.version.as_deref(), Some("0.20.1"));
         assert_eq!(ov.game_dir, root.join("data/profiles/groups/meine gruppe"));
         assert!(ov.info.warning.is_none());
-        // Beschreiben Ã¼ber die Kennung
+        // Beschreiben über die Kennung
         let again = describe(&main.info.source_path, &root.join("tmp"), &icons);
         assert_eq!(again.unwrap().info.name, "NRC 26.3");
         std::fs::remove_dir_all(&root).ok();
