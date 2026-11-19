@@ -29,6 +29,7 @@ export default {
     "ipage.meta.modpack": "Modpack {version}",
     "ipage.meta.modpack_named": "Modpack: {name} {version}",
     "ipage.meta.last_now": "gerade eben gespielt",
+    "inst.group.existing": "Vorhanden:",
 
     "ipage.notices": "Hinweise",
     "ipage.notice.modpack": "Modpack-Update {version}",
@@ -88,6 +89,7 @@ export default {
     "ipage.meta.modpack": "Modpack {version}",
     "ipage.meta.modpack_named": "Modpack: {name} {version}",
     "ipage.meta.last_now": "just played",
+    "inst.group.existing": "Existing:",
 
     "ipage.notices": "Notices",
     "ipage.notice.modpack": "Modpack update {version}",

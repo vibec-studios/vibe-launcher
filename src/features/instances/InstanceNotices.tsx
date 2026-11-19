@@ -186,6 +186,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
       )}
       {missing.length > 0 && (
         <PopoverChip
+          width={500}
           chip={
             <Chip tone="warn" icon={<Download size={15} />}>
               {missing.length === 1 ? t("ipage.notice.missing_1") : t("ipage.notice.missing", { n: missing.length })}

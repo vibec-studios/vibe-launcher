@@ -516,16 +516,25 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
 
       {/* 2. Sortierung, Filter-Chips, Aktionen */}
       {!empty && (
-        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-2">
           {!simple && (
             <>
           <DropdownMenu
             align="start"
             trigger={
-              <button className="flex h-8 items-center gap-1.5 rounded-ctl px-2 text-[13px] font-semibold text-muted transition-colors hover:bg-white/[.06] hover:text-text data-[state=open]:bg-white/[.06]">
+              // Name/Version zeigt schon der Spaltenkopf (mit Pfeil) – dann reicht hier das Symbol
+              <button
+                title={`${t("ipage.sort")}: ${t(`ipage.sort.${sort}`)}`}
+                aria-label={`${t("ipage.sort")}: ${t(`ipage.sort.${sort}`)}`}
+                className="flex h-8 items-center gap-1.5 rounded-ctl px-2 text-[13px] font-semibold text-muted transition-colors hover:bg-white/[.06] hover:text-text data-[state=open]:bg-white/[.06]"
+              >
                 <ArrowDownUp size={14} />
-                {t(`ipage.sort.${sort}`)}
-                {desc && <ChevronDown size={13} />}
+                {sort !== "name" && sort !== "version" && (
+                  <>
+                    {t(`ipage.sort.${sort}`)}
+                    {desc && <ChevronDown size={13} />}
+                  </>
+                )}
               </button>
             }
           >
@@ -547,7 +556,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
               {t("ipage.ct.desc")}
             </DropdownCheckItem>
           </DropdownMenu>
-          <span className="h-5 w-px bg-line2" />
             </>
           )}
           <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label={t("ipage.ct.type")}>
@@ -617,24 +625,24 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             </>
           )}
           {/* Rechte Gruppe bleibt zusammen und rechtsbündig, auch wenn die Zeile umbricht */}
-          <div className="ml-auto flex shrink-0 items-center gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-0.5">
           {counts.updatesAll > 0 && (
             <Button
               size="sm"
               variant="subtle"
-              className="text-accent hover:bg-accent hover:text-[var(--on-accent)]"
+              className="px-2.5 text-accent hover:bg-accent hover:text-[var(--on-accent)]"
               icon={updatesRunning ? <Spinner size={12} /> : <RefreshCw size={14} />}
               disabled={updatesRunning}
               onClick={() => update(all.filter((c) => updates.has(keyOf(c))))}
             >
-              {updatesRunning && updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : t("ipage.update_n", { n: counts.updatesAll })}
+              {updatesRunning && updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : t(simple ? "ipage.ct.update_all" : "ipage.update_n", { n: counts.updatesAll })}
             </Button>
           )}
           {!vanilla && !simple && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1100px]:inline" />}
           {!simple && (
           <DropdownMenu
             trigger={
-              <Button size="sm" variant="subtle" icon={<SlidersHorizontal size={14} />} title={t("ipage.tools")} className="data-[state=open]:bg-white/[.07] data-[state=open]:text-text">
+              <Button size="sm" variant="subtle" icon={<SlidersHorizontal size={14} />} title={t("ipage.tools")} className="px-2.5 data-[state=open]:bg-white/[.07] data-[state=open]:text-text">
                 <span className="hidden @min-[1100px]:inline">{t("ipage.tools")}</span>
               </Button>
             }
@@ -837,7 +845,7 @@ function FilterChip({ active, onClick, count, tone, children }: { active: boolea
       aria-checked={active}
       onClick={onClick}
       className={cn(
-        "flex h-8 items-center gap-1.5 rounded-pill px-2.5 text-[13px] font-semibold transition-colors duration-100 @min-[1000px]:px-3",
+        "flex h-8 items-center gap-1.5 rounded-pill px-2.5 text-[13px] font-semibold transition-colors duration-100",
         active ? (tone === "accent" ? "bg-accent text-[var(--on-accent)]" : "bg-surface3 text-text") : "bg-surface text-muted hover:bg-surface2 hover:text-text",
       )}
     >

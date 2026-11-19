@@ -12,6 +12,7 @@ import { loaderNames } from "@/lib/format";
 import type { ClientPackOffer, ClientPacksOverview, Instance, LoaderKind } from "@/lib/types";
 import { Button, Select, Skeleton, Tag, Tooltip, cn, confirm, toast } from "@/components/ui";
 import { useT } from "@/i18n";
+import { useSimple } from "@/lib/mode";
 
 export const cpk = {
   instance: (id: string) => ["client-packs", "instance", id] as const,
@@ -183,6 +184,7 @@ function PackCard({
   onRemove: () => void;
 }) {
   const t = useT();
+  const simple = useSimple();
   const inst = o.installed;
   const official = o.category === "official";
   const range = versionRange(o.mc_versions);
@@ -245,7 +247,7 @@ function PackCard({
       </div>
 
       {/* Herkunft (Anbieter, Website, woher die Datei kommt) gesammelt über den Aktionen – die Knöpfe stehen unten */}
-      <div className="flex flex-col gap-0.5 pl-[52px] text-[12px] leading-snug text-dim">
+      <div className="flex flex-col gap-0.5 pl-[52px] text-[12px] leading-snug text-dim empty:hidden">
         {!official && o.vendor && (
           <div className="flex flex-wrap items-center gap-x-2">
             <span>{t("cp.attribution", { vendor: o.vendor })}</span>
@@ -257,7 +259,8 @@ function PackCard({
             )}
           </div>
         )}
-        <p>{t(`cp.source.${o.source}`)}</p>
+        {/* Woher die Datei kommt: Detail für Experten */}
+        {!simple && <p>{t(`cp.source.${o.source}`)}</p>}
       </div>
 
       <div className="mt-auto flex min-h-8 items-center gap-2">

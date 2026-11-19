@@ -2,7 +2,7 @@
 // Klick öffnet, Rechtsklick = Aktionsmenü, Spielen-Knopf erscheint beim Hover über dem Bild.
 import { memo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpCircle } from "lucide-react";
+import { ArrowUpCircle, Download } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Instance } from "@/lib/types";
 import { AnimatedNumber, ContextMenu, Progress, cn } from "@/components/ui";
@@ -73,6 +73,19 @@ function RunningBadge({ id }: { id: string }) {
   );
 }
 
+/** „Nicht installiert“ als ruhiges Abzeichen auf der Kachel (wird beim ersten Spielen nachgeholt). */
+function NotInstalledBadge({ instance: i }: { instance: Instance }) {
+  const t = useT();
+  const { phase } = useRunPhase(i.id);
+  if (phase !== "idle" || i.install_state !== "not_installed") return null;
+  return (
+    <span className="absolute left-2 top-2 inline-flex h-6 items-center gap-1 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-muted">
+      <Download size={12} />
+      {t("inst.status.not_installed")}
+    </span>
+  );
+}
+
 /** „N Updates“ (Hintergrundprüfung im Backend, höchstens alle 30 min). OWNER Badge: Content-Agent. */
 function UpdatesBadge({ id }: { id: string }) {
   const t = useT();
@@ -132,6 +145,7 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
         <div className="vl-zoom relative aspect-[4/3] overflow-hidden rounded-card bg-surface2">
           <IconArea instance={i} accent={accent} />
           <RunningBadge id={i.id} />
+          <NotInstalledBadge instance={i} />
           <UpdatesBadge id={i.id} />
           <div className="absolute bottom-2 right-2 translate-y-1 opacity-0 transition-[opacity,transform] duration-150 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100">
             <PlayButton instance={i} size="icon" />
@@ -154,11 +168,13 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
 });
 
 /** Kleiner Hinweis hinter der Versionszeile (nur wenn nicht „installiert & bereit“). */
-function StatusDot({ instance: i }: { instance: Instance }) {
+function StatusDot({ instance: i, notInstalled }: { instance: Instance; notInstalled?: boolean }) {
   const { phase } = useRunPhase(i.id);
   const t = useT();
   if (phase === "running" || (phase === "idle" && i.install_state === "installed")) return null;
-  // „Nicht installiert“ ist kein Fehler (wird beim ersten Spielen nachgeholt) – ruhig statt orange
+  // „Nicht installiert“ ist kein Fehler (wird beim ersten Spielen nachgeholt) – ruhig statt orange.
+  // Kachel: als Abzeichen auf dem Bild (hier kein Platz), Liste: als Text hinter dem Namen.
+  if (phase === "idle" && i.install_state === "not_installed" && !notInstalled) return null;
   if (phase === "idle" && i.install_state === "not_installed")
     return (
       <>
@@ -230,7 +246,7 @@ export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOp
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-[13.5px] font-semibold text-text">{i.name}</span>
             <span className="flex min-w-0 items-center gap-1.5 truncate text-[12px] font-normal empty:hidden">
-              <StatusDot instance={i} />
+              <StatusDot instance={i} notInstalled />
             </span>
           </div>
           {/* Zweite Zeile nur, wenn sie etwas sagt: Modpack-Name (wenn anders als der Instanzname) bzw. „Modpack“ */}
