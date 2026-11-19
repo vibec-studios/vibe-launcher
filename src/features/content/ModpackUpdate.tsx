@@ -146,7 +146,7 @@ export function ModpackUpdateDialog({ instance, versionId, onClose }: { instance
               </div>
             </div>
           )}
-          {p.missing.length > 0 && <div className="text-meta text-warn">{t("modpack.missing", { n: p.missing.length })}</div>}
+          {p.missing.length > 0 && <div className="text-meta text-warn">{t(p.missing.length === 1 ? "modpack.missing_1" : "modpack.missing", { n: p.missing.length })}</div>}
         </div>
       ) : null}
     </Dialog>

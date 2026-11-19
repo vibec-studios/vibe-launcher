@@ -1,13 +1,13 @@
 // OWNER: Frontend-Agent A. Bibliothek: eine Werkzeugleiste (Filter, Suche, Sortierung, Gruppierung, Import, Neu)
 // über einem Raster rahmenloser Instanz-Kacheln. Der Seitentitel steht in der Titelleiste.
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
-import { ChevronDown, LayoutGrid, List, PackageOpen, Plus } from "lucide-react";
+import { ChevronDown, LayoutGrid, List, PackageOpen, Plus, SearchX } from "lucide-react";
 import { useInstances } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { loaderNames } from "@/lib/format";
 import { useSimple } from "@/lib/mode";
 import { Button, EmptyState, ErrorState, IconButton, SearchInput, Select, cn } from "@/components/ui";
-import { InstanceCard, InstanceCardSkeleton, InstanceListRow } from "@/components/instance/InstanceCard";
+import { InstanceCard, InstanceCardSkeleton, InstanceListHeader, InstanceListRow } from "@/components/instance/InstanceCard";
 import { openNewInstance, useInstanceActions } from "@/components/instance/actions";
 import { Logo3D } from "@/components/Logo3D";
 import { openImport } from "@/features/import/ImportDialog";
@@ -120,66 +120,80 @@ export function InstancesPage() {
   return (
     <div className="scroll h-full">
       <div className="flex flex-col gap-4 px-6 pb-10 pt-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {total > 0 && (
-            <>
-              <div className="flex gap-0.5 rounded-ctl bg-field p-0.5" role="tablist">
-                {FILTERS.map((f) => (
-                  <button
-                    key={f}
-                    role="tab"
-                    aria-selected={filter === f}
-                    onClick={() => setFilter(f)}
-                    className={cn(
-                      "flex h-8 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-3 text-[13px] font-semibold transition-colors duration-100",
-                      filter === f ? "bg-surface3 text-text" : "text-muted hover:text-text",
-                    )}
-                  >
-                    {t(`instances.filter.${f}`)}
-                    <span className="text-[12px] font-medium text-dim">{counts[f]}</span>
-                  </button>
-                ))}
-              </div>
-              <SearchInput value={query} onChange={setQuery} placeholder={t("instances.search")} className="w-[220px] min-w-[150px]" />
-              <div className="w-[150px] max-[1100px]:w-[132px]">
-                <Select<SortKey>
-                  size="sm"
-                  variant="ghost"
-                  value={sort}
-                  onChange={setSort}
-                  options={SORTS.map((s) => ({ value: s, label: t(`instances.sort.${s}`) }))}
-                />
-              </div>
-              {!simple && (
-              <div className="w-[150px] max-[1100px]:w-[132px]">
-                <Select<GroupKey>
-                  size="sm"
-                  variant="ghost"
-                  value={groupBy}
-                  onChange={setGroupBy}
-                  options={GROUPS.map((g) => ({ value: g, label: t(`instances.groupby.${g}`) }))}
-                />
-              </div>
-              )}
-            </>
-          )}
-          <div className="flex-1" />
-          {total > 0 && (
-            <div className="flex items-center gap-0.5 rounded-ctl bg-field p-0.5" role="radiogroup" aria-label={t("instances.view")}>
-              <IconButton label={t("instances.view.grid")} tip size="sm" variant="ghost" active={view === "grid"} className="h-7 w-7" role="radio" aria-checked={view === "grid"} onClick={() => setView("grid")}>
-                <LayoutGrid size={14} />
-              </IconButton>
-              <IconButton label={t("instances.view.list")} tip size="sm" variant="ghost" active={view === "list"} className="h-7 w-7" role="radio" aria-checked={view === "list"} onClick={() => setView("list")}>
-                <List size={15} />
-              </IconButton>
-            </div>
-          )}
-          <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={() => openImport()}>
-            {t("home.action.import")}
-          </Button>
-          <Button size="sm" variant="primary" icon={<Plus size={15} />} onClick={openNewInstance}>
-            {t("inst.new")}
-          </Button>
+        {/* Werkzeugleiste: Filter links, Aktionen rechts. Auf schmalen Fenstern rutschen Suche/Sortierung in eine
+            eigene zweite Zeile (statt dass „Importieren“/„Neue Instanz“ irgendwo umbrechen). */}
+        <div className="@container">
+          <div className="flex flex-wrap items-center gap-2">
+            {total > 0 && (
+              <>
+                <div className="flex shrink-0 gap-0.5 rounded-ctl bg-field p-0.5" role="tablist">
+                  {FILTERS.map((f) => (
+                    <button
+                      key={f}
+                      role="tab"
+                      aria-selected={filter === f}
+                      onClick={() => setFilter(f)}
+                      className={cn(
+                        "flex h-8 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-3 text-[13px] font-semibold transition-colors duration-100",
+                        filter === f ? "bg-surface3 text-text" : "text-muted hover:text-text",
+                      )}
+                    >
+                      {t(`instances.filter.${f}`)}
+                      <span className="text-[12px] font-medium tabular-nums text-dim">{counts[f]}</span>
+                    </button>
+                  ))}
+                </div>
+                <div
+                  className={cn(
+                    "flex min-w-0 items-center gap-2",
+                    simple ? "@max-[960px]:order-last @max-[960px]:w-full" : "@max-[1130px]:order-last @max-[1130px]:w-full",
+                  )}
+                >
+                  <SearchInput value={query} onChange={setQuery} placeholder={t("instances.search")} className="w-[220px] min-w-[150px] @max-[1130px]:flex-1" />
+                  <div className="w-[150px] shrink-0">
+                    <Select<SortKey>
+                      size="sm"
+                      variant="ghost"
+                      value={sort}
+                      onChange={setSort}
+                      options={SORTS.map((s) => ({ value: s, label: t(`instances.sort.${s}`) }))}
+                    />
+                  </div>
+                  {!simple && (
+                    <div className="w-[150px] shrink-0">
+                      <Select<GroupKey>
+                        size="sm"
+                        variant="ghost"
+                        value={groupBy}
+                        onChange={setGroupBy}
+                        options={GROUPS.map((g) => ({ value: g, label: t(`instances.groupby.${g}`) }))}
+                      />
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+            <div className="flex-1" />
+            {total > 0 && (
+              <>
+                <div className="flex items-center gap-0.5 rounded-ctl bg-field p-0.5" role="radiogroup" aria-label={t("instances.view")}>
+                  <IconButton label={t("instances.view.grid")} tip size="sm" variant="ghost" active={view === "grid"} className="h-7 w-7" role="radio" aria-checked={view === "grid"} onClick={() => setView("grid")}>
+                    <LayoutGrid size={14} />
+                  </IconButton>
+                  <IconButton label={t("instances.view.list")} tip size="sm" variant="ghost" active={view === "list"} className="h-7 w-7" role="radio" aria-checked={view === "list"} onClick={() => setView("list")}>
+                    <List size={15} />
+                  </IconButton>
+                </div>
+                {/* Leere Bibliothek: Importieren/Neu stehen groß im Leerzustand, nicht doppelt hier oben */}
+                <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={() => openImport()}>
+                  {t("home.action.import")}
+                </Button>
+                <Button size="sm" variant="primary" icon={<Plus size={15} />} onClick={openNewInstance}>
+                  {t("inst.new")}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         {isError && !data ? (
@@ -208,9 +222,29 @@ export function InstancesPage() {
             }
           />
         ) : shown === 0 ? (
-          <EmptyState title={t("instances.no_match")} text={q ? t("instances.no_match.text", { q: query }) : undefined} />
+          <EmptyState
+            icon={<SearchX size={30} strokeWidth={1.6} />}
+            title={t("instances.no_match")}
+            text={q ? t("instances.no_match.text", { q: query }) : t(`instances.no_match.filter.${filter}`)}
+            action={
+              <Button
+                size="sm"
+                onClick={() => {
+                  setQuery("");
+                  setFilter("all");
+                }}
+              >
+                {q ? t("instances.no_match.reset") : t("instances.no_match.show_all")}
+              </Button>
+            }
+          />
         ) : (
           <div className="flex flex-col gap-4">
+            {view === "list" && (
+              <div className="@container -mx-2 -mb-3 border-b border-line">
+                <InstanceListHeader />
+              </div>
+            )}
             {groups.map(([g, list]) => {
               const key = `${groupBy}:${g}`;
               const isCollapsed = showHeaders && !q && collapsed.includes(key);

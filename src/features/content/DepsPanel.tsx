@@ -49,7 +49,7 @@ export function DepsPanel({ instanceId }: { instanceId: string }) {
       <div className="flex items-start gap-3 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1">
           <div className="text-[13.5px] font-semibold text-text">
-            {issues.length === 0 ? t("deps.fixed") : errors ? t("deps.title", { n: issues.length }) : t("deps.title_warn", { n: issues.length })}
+            {issues.length === 0 ? t("deps.fixed") : errors ? t(issues.length === 1 ? "deps.title_1" : "deps.title", { n: issues.length }) : t(issues.length === 1 ? "deps.title_warn_1" : "deps.title_warn", { n: issues.length })}
           </div>
           {errors > 0 && <div className="mt-0.5 text-meta text-muted">{t("deps.text")}</div>}
         </div>

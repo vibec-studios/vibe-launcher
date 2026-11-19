@@ -20,12 +20,13 @@ import {
   TextSelect,
   UploadCloud,
   WrapText,
+  SquareTerminal,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useGameState, useGameStore } from "@/lib/queries";
 import type { Instance, LogFile, LogLine } from "@/lib/types";
 import { formatBytes, formatRelative } from "@/lib/format";
-import { ContextItem, ContextMenu, ContextSeparator, DropdownCheckItem, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, ErrorState, IconButton, SearchInput, Select, Skeleton, Spinner, cn, toast } from "@/components/ui";
+import { ContextItem, ContextMenu, ContextSeparator, DropdownCheckItem, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, EmptyState, ErrorState, IconButton, SearchInput, Select, Skeleton, Spinner, cn, toast } from "@/components/ui";
 import { PageTools } from "@/features/instances/toolbar";
 import { useT } from "@/i18n";
 import { DiagnosisDialog } from "./Diagnosis";
@@ -156,7 +157,8 @@ export function LogViewer({
   resetKey: string;
   jumpTo: { row: number } | null;
   onUpload: () => void;
-  emptyText: string;
+  /** Text (wie bisher) oder ein eigener Leerzustand */
+  emptyText: ReactNode;
 }) {
   const t = useT();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -310,7 +312,11 @@ export function LogViewer({
           className={cn("scroll h-full bg-bg py-2 outline-none", "focus-visible:shadow-[inset_0_0_0_1px_var(--accent)]")}
         >
           {lines.length === 0 ? (
-            <div className="grid h-full place-items-center px-6 text-center text-[13px] text-dim">{emptyText}</div>
+            typeof emptyText === "string" ? (
+              <div className="grid h-full place-items-center px-6 text-center text-[13px] text-dim">{emptyText}</div>
+            ) : (
+              <div className="grid h-full place-items-center px-6">{emptyText}</div>
+            )
           ) : (
             <div ref={innerRef} className="selectable relative w-full" style={{ height: total }}>
               {v.getVirtualItems().map((row) => (
@@ -481,7 +487,19 @@ export function LogsTab({ instance }: { instance: Instance }) {
   if (isFile && !fileInfo) sourceOptions.push({ value: source, label: source.split(/[\\/]/).pop() ?? source, hint: "" });
 
   const crash = fileInfo?.kind === "crash";
-  const emptyText = isFile ? t("logs.file_empty") : running ? t("logs.waiting") : t("logs.empty_live");
+  // Live-Konsole ohne laufendes Spiel: richtiger Leerzustand mit Hinweis auf ältere Logs statt nur einer Textzeile
+  const emptyText: ReactNode = isFile ? (
+    t("logs.file_empty")
+  ) : running ? (
+    t("logs.waiting")
+  ) : (
+    <EmptyState
+      className="py-10"
+      icon={<SquareTerminal size={30} strokeWidth={1.6} />}
+      title={t("logs.empty_live.title")}
+      text={files.data?.length ? t("logs.empty_live.text_files") : t("logs.empty_live.text")}
+    />
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -535,7 +553,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
               </span>
             )}
             {isFile && fileInfo && <span className="truncate">{formatRelative(fileInfo.modified)}</span>}
-            <span className="truncate">{t("logs.lines", { n: lines.length.toLocaleString() })}</span>
+            {lines.length > 0 && <span className="truncate">{t("logs.lines", { n: lines.length.toLocaleString() })}</span>}
           </span>
         </div>
         <DropdownMenu

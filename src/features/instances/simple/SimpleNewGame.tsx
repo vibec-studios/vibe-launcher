@@ -20,7 +20,7 @@ import { usePopularModpacks } from "@/features/home/data";
 import { installPackAfterCreate } from "@/features/instances/settings/ClientPacks";
 import { queryClient, waitForTask } from "@/lib/queries";
 import { useT, t as tt } from "@/i18n";
-import { GOAL_ICONS, GoalTiles, usePlan, type GamePlan, type NewGameGoal } from "./goals";
+import { GoalTiles, usePlan, type GamePlan, type NewGameGoal } from "./goals";
 
 type Step = "goal" | "packs" | "details";
 
@@ -84,7 +84,7 @@ export function SimpleNewGameDialog({ open, goal: initialGoal, onOpenChange }: {
             {step === "goal" ? (
               <>
                 <div className="scroll min-h-0 flex-1 px-6 pb-4 pt-1">
-                  <GoalTiles onPick={pick} cols={3} />
+                  <GoalTiles onPick={pick} variant="list" />
                 </div>
                 <Footer>
                   <AdvancedLink />
@@ -299,9 +299,13 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
         }}
       >
         <div className="flex w-[300px] shrink-0 flex-col gap-5">
-          <div className="flex items-center gap-4">
-            <InstanceIcon icon={null} accent={accent} size={72} />
-            <span className="grid h-11 w-11 place-items-center rounded-card bg-surface text-muted">{GOAL_ICONS[goal]}</span>
+          {/* Vorschau, wie das Spiel in der Liste aussieht (statt eines losen Ziel-Symbols ohne Bedeutung) */}
+          <div className="flex items-center gap-4 rounded-card bg-surface p-3">
+            <InstanceIcon icon={null} accent={accent} size={56} />
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-semibold text-text">{name.trim() || t("wiz.name")}</div>
+              <div className="mt-0.5 truncate text-[12.5px] text-muted">{plan.mc ? `Minecraft ${plan.mc}` : t("wiz.sum.version_auto")}</div>
+            </div>
           </div>
           <label className="flex flex-col gap-1.5">
             <span className="label">{t("wiz.name")}</span>

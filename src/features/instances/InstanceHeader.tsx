@@ -45,7 +45,13 @@ function MetaLine({ instance: i }: { instance: Instance }) {
       {/* Simple: nur die Minecraft-Version, kein Mod-Unterbau/keine Loader-Version */}
       <Meta icon={<Box size={15} />}>{simple ? `Minecraft ${i.mc_version}` : `${loader} · Minecraft ${i.mc_version}`}</Meta>
       {i.play_time_secs >= 60 && <Meta icon={<Timer size={15} />}>{t("inst.meta.played", { time: formatDuration(i.play_time_secs) })}</Meta>}
-      <Meta icon={<Clock size={15} />}>{i.last_played ? t("inst.meta.last", { when: formatRelative(i.last_played) }) : t("inst.never_played")}</Meta>
+      <Meta icon={<Clock size={15} />}>
+        {!i.last_played
+          ? t("inst.never_played")
+          : Date.now() - i.last_played < 60_000
+            ? t("ipage.meta.last_now")
+            : t("inst.meta.last", { when: formatRelative(i.last_played) })}
+      </Meta>
       {pack && !simple && (
         <Meta icon={<Package size={15} />} title={src?.name ?? undefined}>
           {pack}

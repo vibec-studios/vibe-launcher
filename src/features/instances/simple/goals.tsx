@@ -1,7 +1,7 @@
 // Ziele des geführten „Neues Spiel“-Assistenten (Simple-Modus): Der Nutzer wählt, was er vorhat – der Launcher
 // wählt Version, Mod-Unterbau und Zusätze selbst. `usePlan` rechnet ein Ziel in eine konkrete Einrichtung um.
 import { useQuery } from "@tanstack/react-query";
-import { Gauge, Puzzle, Sparkles, Sprout, Users } from "lucide-react";
+import { ChevronRight, Gauge, Puzzle, Sparkles, Sprout, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { api } from "@/lib/api";
 import { useGameVersions } from "@/lib/queries";
@@ -33,9 +33,52 @@ export function useGoals(): NewGameGoal[] {
 }
 
 /** Große Kacheln „Neues Spiel“ (Startseite, Assistent, Onboarding). */
-export function GoalTiles({ onPick, compact, cols, className }: { onPick: (g: NewGameGoal) => void; compact?: boolean; cols?: number; className?: string }) {
+export function GoalTiles({
+  onPick,
+  compact,
+  cols,
+  className,
+  variant = "tiles",
+}: {
+  onPick: (g: NewGameGoal) => void;
+  compact?: boolean;
+  cols?: number;
+  className?: string;
+  /** list = eine Zeile je Ziel (Assistent: klare Einzelauswahl ohne halbleere Kachelreihe) */
+  variant?: "tiles" | "list";
+}) {
   const t = useT();
   const goals = useGoals();
+  if (variant === "list")
+    return (
+      <div className={cn("flex flex-col gap-2", className)}>
+        {goals.map((g) => (
+          <button
+            key={g}
+            data-tour={g === "vanilla" ? "new-game" : undefined}
+            onClick={() => onPick(g)}
+            className={cn(
+              "group flex min-w-0 items-center gap-4 rounded-card bg-surface px-4 py-3.5 text-left transition-colors duration-100 hover:bg-surface2",
+              g === "vibey" && "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--ui-accent)_45%,transparent)]",
+            )}
+          >
+            <span
+              className={cn(
+                "grid h-11 w-11 shrink-0 place-items-center rounded-card bg-black/40 transition-colors duration-100",
+                g === "vibey" ? "text-brand" : "text-muted group-hover:text-text",
+              )}
+            >
+              {GOAL_ICONS[g]}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold text-text">{t(`goal.${g}`)}</span>
+              <span className="mt-0.5 block text-[12.5px] leading-snug text-muted">{t(`goal.${g}.desc`)}</span>
+            </span>
+            <ChevronRight size={18} className="shrink-0 text-dim transition-transform duration-100 group-hover:translate-x-0.5 group-hover:text-text" />
+          </button>
+        ))}
+      </div>
+    );
   return (
     <div
       className={cn("grid gap-3", !cols && (compact ? "grid-cols-[repeat(auto-fit,minmax(140px,1fr))]" : "grid-cols-[repeat(auto-fill,minmax(176px,1fr))]"), className)}

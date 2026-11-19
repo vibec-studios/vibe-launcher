@@ -68,7 +68,7 @@ function StatusBar({ file, errors, checking, onJump }: { file: FileContent; erro
           </span>
         ) : errors.length ? (
           <span className="flex items-center gap-1.5 font-semibold text-danger">
-            <AlertTriangle size={13} /> {t("files.errors", { n: errors.length })}
+            <AlertTriangle size={13} /> {t(errors.length === 1 ? "files.errors_1" : "files.errors", { n: errors.length })}
           </span>
         ) : (
           <span className="flex items-center gap-1.5 text-ok">

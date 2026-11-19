@@ -487,7 +487,8 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
 
   return (
     <div className="@container flex h-full min-h-0 flex-col gap-3 px-6 pb-4 pt-4 outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
-      {/* 1. Suche + Hinzufügen */}
+      {/* 1. Suche + Hinzufügen (leer: alles steht im Leerzustand, keine „0 Inhalte durchsuchen“-Suche) */}
+      {!empty && (
       <div className="flex shrink-0 items-center gap-2">
         <SearchInput
           value={text}
@@ -511,19 +512,29 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
           {t("content.add")}
         </Button>
       </div>
+      )}
 
       {/* 2. Sortierung, Filter-Chips, Aktionen */}
       {!empty && (
-        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-2">
           {!simple && (
             <>
           <DropdownMenu
             align="start"
             trigger={
-              <button className="flex h-8 items-center gap-1.5 rounded-ctl px-2 text-[13px] font-semibold text-muted transition-colors hover:bg-white/[.06] hover:text-text data-[state=open]:bg-white/[.06]">
+              // Name/Version zeigt schon der Spaltenkopf (mit Pfeil) – dann reicht hier das Symbol
+              <button
+                title={`${t("ipage.sort")}: ${t(`ipage.sort.${sort}`)}`}
+                aria-label={`${t("ipage.sort")}: ${t(`ipage.sort.${sort}`)}`}
+                className="flex h-8 items-center gap-1.5 rounded-ctl px-2 text-[13px] font-semibold text-muted transition-colors hover:bg-white/[.06] hover:text-text data-[state=open]:bg-white/[.06]"
+              >
                 <ArrowDownUp size={14} />
-                {t(`ipage.sort.${sort}`)}
-                {desc && <ChevronDown size={13} />}
+                {sort !== "name" && sort !== "version" && (
+                  <>
+                    {t(`ipage.sort.${sort}`)}
+                    {desc && <ChevronDown size={13} />}
+                  </>
+                )}
               </button>
             }
           >
@@ -545,7 +556,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
               {t("ipage.ct.desc")}
             </DropdownCheckItem>
           </DropdownMenu>
-          <span className="h-5 w-px bg-line2" />
             </>
           )}
           <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label={t("ipage.ct.type")}>
@@ -598,38 +608,42 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             </DropdownMenu>
           )}
           {activeFilters > 0 && (
-            <button
+            // Nur ein „×“ (mit Tooltip): sonst bricht die Zeile genau dann um, wenn ein Filter aktiv ist
+            <IconButton
+              label={t("ipage.filter.reset")}
+              tip
+              size="sm"
+              variant="ghost"
               onClick={() => {
                 setStatus("all");
                 setSideFilter("all");
               }}
-              className="flex h-8 items-center gap-1 rounded-ctl px-2 text-[12.5px] font-medium text-dim hover:bg-white/[.06] hover:text-text"
             >
-              <X size={13} />
-              {t("ipage.filter.reset")}
-            </button>
+              <X size={14} />
+            </IconButton>
           )}
             </>
           )}
-          <div className="flex-1" />
+          {/* Rechte Gruppe bleibt zusammen und rechtsbündig, auch wenn die Zeile umbricht */}
+          <div className="ml-auto flex shrink-0 items-center gap-0.5">
           {counts.updatesAll > 0 && (
             <Button
               size="sm"
               variant="subtle"
-              className="text-accent hover:bg-accent hover:text-[var(--on-accent)]"
+              className="px-2.5 text-accent hover:bg-accent hover:text-[var(--on-accent)]"
               icon={updatesRunning ? <Spinner size={12} /> : <RefreshCw size={14} />}
               disabled={updatesRunning}
               onClick={() => update(all.filter((c) => updates.has(keyOf(c))))}
             >
-              {updatesRunning && updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : t("ipage.ct.update_all", { n: counts.updatesAll })}
+              {updatesRunning && updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : t(simple ? "ipage.ct.update_all" : "ipage.update_n", { n: counts.updatesAll })}
             </Button>
           )}
-          {!vanilla && !simple && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1000px]:inline" />}
+          {!vanilla && !simple && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1100px]:inline" />}
           {!simple && (
           <DropdownMenu
             trigger={
-              <Button size="sm" variant="subtle" icon={<SlidersHorizontal size={14} />} title={t("ipage.tools")} className="data-[state=open]:bg-white/[.07] data-[state=open]:text-text">
-                <span className="hidden @min-[1000px]:inline">{t("ipage.tools")}</span>
+              <Button size="sm" variant="subtle" icon={<SlidersHorizontal size={14} />} title={t("ipage.tools")} className="px-2.5 data-[state=open]:bg-white/[.07] data-[state=open]:text-text">
+                <span className="hidden @min-[1100px]:inline">{t("ipage.tools")}</span>
               </Button>
             }
           >
@@ -651,19 +665,28 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             ))}
           </DropdownMenu>
           )}
+          </div>
         </div>
       )}
       {perfOpen && <PerfDialog instance={instance} onClose={() => setPerfOpen(false)} />}
 
       {/* 3. Tabelle */}
-      <div ref={dropRef} className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-panel">
+      {/* Außen: Ablagefläche über die ganze Höhe; innen: Tabelle nur so hoch wie ihre Zeilen (keine leere Riesenbox
+          unter drei Shadern). Leer: gestrichelter Rahmen = „hier ablegen“. */}
+      <div ref={dropRef} className="relative flex min-h-0 flex-1 flex-col">
+      <div
+        className={cn(
+          "flex min-h-0 flex-col overflow-hidden rounded-card border bg-panel",
+          empty ? "flex-1 border-dashed border-line2" : failed || pending || visible.length === 0 ? "flex-1 border-line" : "flex-initial border-line",
+        )}
+      >
         {failed ? (
           <ErrorState error={failed.error} onRetry={() => lists.forEach((l) => l.refetch())} />
         ) : empty ? (
           <EmptyState
             icon={<PackagePlus size={30} />}
             title={t("ipage.ct.empty")}
-            text={t(vanilla ? "content.empty_text.resourcepack" : "content.empty_text.mod")}
+            text={t(vanilla ? "ipage.ct.empty.resourcepack" : "ipage.ct.empty.mod")}
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button variant="accent" icon={<Plus size={15} />} onClick={toDiscover}>
@@ -768,6 +791,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             )}
           </>
         )}
+      </div>
 
         {/* Sammelaktionen: schwebende Leiste bei Auswahl */}
         {selection.size > 0 && (
@@ -821,7 +845,7 @@ function FilterChip({ active, onClick, count, tone, children }: { active: boolea
       aria-checked={active}
       onClick={onClick}
       className={cn(
-        "flex h-8 items-center gap-1.5 rounded-pill px-2.5 text-[13px] font-semibold transition-colors duration-100 @min-[1000px]:px-3",
+        "flex h-8 items-center gap-1.5 rounded-pill px-2.5 text-[13px] font-semibold transition-colors duration-100",
         active ? (tone === "accent" ? "bg-accent text-[var(--on-accent)]" : "bg-surface3 text-text") : "bg-surface text-muted hover:bg-surface2 hover:text-text",
       )}
     >

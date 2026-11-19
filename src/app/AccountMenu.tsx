@@ -42,7 +42,9 @@ async function signOut(a: Account, t: ReturnType<typeof useT>) {
 export function AccountMenu() {
   const t = useT();
   const nav = useNavigate();
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [], isPending } = useAccounts();
+  // Solange die Konten laden: neutraler Platzhalter statt kurz „Mit Microsoft anmelden“
+  const loading = isPending && !accounts.length;
   const active = accounts.find((a) => a.active) ?? accounts[0];
   const others = accounts.filter((a) => a.id !== active?.id);
   const [msa, setMsa] = useState(false);
@@ -65,6 +67,8 @@ export function AccountMenu() {
               <span className="relative shrink-0">
                 {active ? (
                   <PlayerHead uuid={active.uuid} name={active.username} size={24} />
+                ) : loading ? (
+                  <span className="skeleton block h-6 w-6" />
                 ) : (
                   <span className="grid h-6 w-6 place-items-center bg-white/[.06]">
                     <UserRound size={15} />
@@ -73,7 +77,11 @@ export function AccountMenu() {
                 {active?.needs_relogin && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-dot border-2 border-[var(--tone-frame)] bg-warn" />}
                 {vibe.dot && <span className={cn("absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-dot border-2 border-[var(--tone-frame)]", vibe.dot)} aria-hidden />}
               </span>
-              <span className="min-w-0 truncate text-[13px] font-semibold text-text max-[860px]:hidden">{active ? active.username : t("acct.sign_in")}</span>
+              {loading ? (
+                <span className="skeleton block h-3 w-16 max-[860px]:hidden" />
+              ) : (
+                <span className="min-w-0 truncate text-[13px] font-semibold text-text max-[860px]:hidden">{active ? active.username : t("acct.sign_in_short")}</span>
+              )}
               <ChevronDown size={14} className="shrink-0 text-dim transition-transform duration-150 group-data-[state=open]:rotate-180" />
             </button>
           </DM.Trigger>
@@ -147,7 +155,7 @@ export function AccountMenu() {
                   </DropdownItem>
                 ) : (
                   <DropdownItem icon={<Link2Off size={14} />} onSelect={() => unlink()}>
-                    {t("vibe.account.unlink")}
+                    {t("acct.vibe_unlink")}
                   </DropdownItem>
                 )}
                 <DropdownItem icon={<Cloud size={14} />} onSelect={() => openSettings("vibe")}>

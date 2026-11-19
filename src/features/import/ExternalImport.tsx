@@ -12,6 +12,7 @@ import { t, useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatLoader, formatRelative, loaderNames } from "@/lib/format";
 import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
+import { useSimple } from "@/lib/mode";
 import type { ExternalInstance, ExternalLauncher, LauncherKind } from "@/lib/types";
 
 // ------------------------------------------------------------------ Laufende Importe (überleben Schließen des Dialogs)
@@ -70,7 +71,7 @@ async function runImports(picks: Pick[]) {
   queryClient.invalidateQueries({ queryKey: qk.instances });
   queryClient.invalidateQueries({ queryKey: ["launchers"] });
   const open = () => navigateTo({ to: "/instances" });
-  if (failed === 0) toast.success(t("ext.done_title", { n: ok }), t("ext.done_text"), { label: t("ext.open"), onClick: open });
+  if (failed === 0) toast.success(t(ok === 1 ? "ext.done_title_1" : "ext.done_title", { n: ok }), t("ext.done_text"), { label: t("ext.open"), onClick: open });
   else toast.error(t("ext.partial", { ok, failed }), undefined);
 }
 
@@ -86,6 +87,7 @@ const norm = (p: string) => p.replace(/\//g, "\\").replace(/\\+$/, "").toLowerCa
 
 /** Inhalt + Fußzeile des Launcher-Imports. */
 export function useExternalImport(active: boolean, onClose: () => void): { body: ReactNode; footer: ReactNode; busy: boolean; progressView: boolean } {
+  const simple = useSimple();
   const tr = useT();
   const detect = useQuery({ queryKey: ["launchers"], queryFn: api.launchersDetect, enabled: active, staleTime: 0, retry: 0 });
   const [extra, setExtra] = useState<ExternalLauncher[]>([]);
@@ -210,8 +212,9 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
                   <SelectBox state={groupOn ? "on" : groupSome ? "mixed" : "off"} onClick={() => toggleMany(list, !groupOn)} label={l.name} />
                   <span className="text-section text-text">{l.name}</span>
                   <span className="text-meta tabular-nums text-dim">{l.instances.length}</span>
+                  {/* Ordnerpfad nur im Experten-Modus (Simple: Tooltip reicht) */}
                   <span className="selectable min-w-0 flex-1 truncate text-right text-caption text-dim" title={l.path}>
-                    {l.path}
+                    {simple ? "" : l.path}
                   </span>
                   {extra.some((x) => x.path === l.path) && (
                     <IconButton

@@ -61,7 +61,9 @@ export function GroupInput({ value, onChange, groups, autoFocus }: { value: stri
     <div className="flex flex-col gap-2">
       <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={t("inst.group.placeholder")} maxLength={48} autoFocus={autoFocus} />
       {groups.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        // Mit Beschriftung, sonst wirken die Chips wie zufällige Schlagwörter
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-0.5 text-[12px] text-dim">{t("inst.group.existing")}</span>
           {groups.map((g) => (
             <button
               key={g}
