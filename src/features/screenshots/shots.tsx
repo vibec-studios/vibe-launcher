@@ -60,3 +60,18 @@ export const ShotThumb = memo(function ShotThumb({ path, className }: { path: st
     </div>
   );
 });
+
+/** Datumsgruppe (Heute, Gestern, Diese Woche, dann Monat) – für Screenshots und Clips. */
+export function bucket(ts: number, now: Date): { key: string; label: (t: (k: string) => string, lang: string) => string } {
+  const d = new Date(ts);
+  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(now) - day(d)) / 86400000);
+  if (diff <= 0) return { key: "today", label: (t) => t("shots.today") };
+  if (diff === 1) return { key: "yesterday", label: (t) => t("shots.yesterday") };
+  if (diff < 7) return { key: "week", label: (t) => t("shots.week") };
+  const key = `${d.getFullYear()}-${d.getMonth()}`;
+  return {
+    key,
+    label: (_t, lang) => d.toLocaleDateString(lang === "en" ? "en-US" : "de-DE", { month: "long", year: "numeric" }),
+  };
+}

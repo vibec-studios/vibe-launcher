@@ -221,6 +221,12 @@ pub fn run() {
             commands::screenshots::screenshot_delete,
             commands::screenshots::screenshot_copy,
             commands::screenshots::screenshot_open_folder,
+            // clips (Vibey Client, docs/CLIPS.md §10)
+            commands::clips::clips_list,
+            commands::clips::clip_update,
+            commands::clips::clip_delete,
+            commands::clips::clip_open_folder,
+            commands::clips::clips_watch,
             commands::game::java_list,
             // Bedrock
             commands::bedrock::bedrock_status,

@@ -127,7 +127,10 @@ const screenshotsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/screenshots",
   component: ScreenshotsPage,
-  validateSearch: (s: Record<string, unknown>): { instance?: string } => ({ instance: typeof s.instance === "string" ? s.instance : undefined }),
+  validateSearch: (s: Record<string, unknown>): { instance?: string; tab?: "clips" } => ({
+    instance: typeof s.instance === "string" ? s.instance : undefined,
+    tab: s.tab === "clips" ? "clips" : undefined,
+  }),
 });
 
 const serversRoute = createRoute({ getParentRoute: () => rootRoute, path: "/servers", component: ServersPage });
