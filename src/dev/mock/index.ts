@@ -12,6 +12,7 @@ import clientpacks from "./clientpacks";
 import play from "./play";
 import announcements from "./announcements";
 import cosmetics from "./cosmetics";
+import modsets from "./modsets";
 import { withLiveModrinth } from "./modrinth-live";
 import type { Handlers } from "./util";
 
@@ -24,7 +25,7 @@ const mockFlag = (k: string) => {
     return null;
   }
 };
-const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks, ...play, ...announcements, ...cosmetics };
+const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks, ...play, ...announcements, ...cosmetics, ...modsets };
 // „Neu prüfen“: Updates, Probleme und Modpack-Prüfung der übrigen Mocks bündeln (etwas länger, damit der
 // Spinner am Knopf sichtbar ist; Screenshots: localStorage vl.mock.refresh = Millisekunden)
 base.instance_refresh = async (args) => {

@@ -3,7 +3,7 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
-import { AlertTriangle, ArrowUpCircle, ArrowUpRight, Download, ExternalLink, RefreshCw, Wrench } from "lucide-react";
+import { AlertTriangle, ArrowUpCircle, ArrowUpRight, Download, ExternalLink, RefreshCw, Sparkles, Wrench } from "lucide-react";
 import { forwardRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Tooltip, cn } from "@/components/ui";
 import { DepsPanel, useDepIssues } from "@/features/content/DepsPanel";
@@ -17,6 +17,8 @@ import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
 import type { ContentUpdate, Instance } from "@/lib/types";
 import { startManualDownload } from "@/components/content/install";
+import { useSetNews } from "@/features/modsets/api";
+import { openApplySets } from "@/features/modsets/shared";
 
 const route = getRouteApi("/instances/$id");
 
@@ -126,6 +128,8 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
   const pack = useModpackUpdate(instance).data;
   const deps = useDepIssues(id, !vanilla).data ?? [];
   const missing = useMissingDownloads(id).data ?? [];
+  // Neue Projekte in Mod-Sets, die auf diese Instanz angewendet wurden
+  const setNews = useSetNews(id, !simple).data ?? [];
 
   // Mod-Updates: nach einer Prüfung die genaue Liste, sonst die Hintergrundzählung des Backends
   const checked = useContentView((s) => !!s.checked[id]);
@@ -155,7 +159,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
     nav({ search: { tab: "content" }, replace: true });
   };
 
-  if (!pack && !updates && !deps.length && !missing.length && !manualUpdates.length) return null;
+  if (!pack && !updates && !deps.length && !missing.length && !manualUpdates.length && !setNews.length) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-2 px-6 pt-4" role="group" aria-label={t("ipage.notices")}>
@@ -214,6 +218,17 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
           {updates === 1 ? t("ipage.notice.updates_1") : t("ipage.notice.updates", { n: updates })}
         </Chip>
       )}
+      {setNews.map((n) => (
+        <Chip
+          key={n.set_id}
+          tone="accent"
+          icon={<Sparkles size={14} />}
+          tip={t("news.hint")}
+          onClick={() => openApplySets(id, [n.set_id], n.new_entries.map((e) => `${e.source}:${e.project_id}`))}
+        >
+          {n.new_entries.length === 1 ? t("news.chip_1", { name: n.name }) : t("news.chip", { n: n.new_entries.length, name: n.name })}
+        </Chip>
+      ))}
       {manualUpdates.length > 0 && (
         <PopoverChip
           width={420}

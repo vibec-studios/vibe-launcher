@@ -65,7 +65,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
 | Skins | skins_profile, skin_upload_file, skin_apply_library, skin_set_variant, skin_reset, cape_set, skin_library_list, skin_library_add_file, skin_library_add_current, skin_library_import_player, skin_library_rename, skin_library_set_variant, skin_library_remove, skin_library_export, skin_library_reveal |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
-| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, perf_preview, perf_install, files_list, files_stat, files_find, files_search, files_read, files_write, files_restore, files_validate, files_image, files_create, files_rename, files_duplicate, files_delete, files_import, files_abs_path, files_reveal |
+| Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, sets_list, sets_create, sets_update, sets_delete, sets_duplicate, sets_add_entries, sets_remove_entries, sets_parse_list, sets_import_text, sets_import_file, sets_export_file, sets_export_code, sets_export_links, sets_instance_candidates, sets_from_profile, sets_preview, sets_apply, sets_install_new, sets_check, sets_compat, sets_news, sets_dismiss_news, perf_preview, perf_install, files_list, files_stat, files_find, files_search, files_read, files_write, files_restore, files_validate, files_image, files_create, files_rename, files_duplicate, files_delete, files_import, files_abs_path, files_reveal |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
 | Plattform | crash_analyze, instance_servers_list, instance_servers_save, server_ping, servers_recent, playtime_sessions, optsync_get, optsync_set_instance, optsync_capture, optsync_apply_all, shortcut_create, app_actions_take, discord_available (`commands/platform.rs`, Logik in `platform/`, OWNER Frontend-Agent A) |
 | Backups | snapshots_list, snapshot_create, snapshot_restore, snapshot_delete, world_backups_list, world_backup_create, world_backup_restore, world_backup_delete, world_copy, world_import_zip, backups_open_folder (`commands/backups.rs`) |
@@ -202,9 +202,21 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   **Rust-API für andere Module:** `content::sides::classify(&AppState, instance_id) -> AppResult<Vec<SideInfo>>`
   mit `SideInfo { file_name, kind, side, enabled, rel_path }` (ordnet unbekannte Dateien vorher per Hash zu und lädt
   fehlende Modrinth-Angaben nach) – z. B. für „Server aus Profil erstellen“: `side == Client` weglassen.
-- Mod-Sets (`instances/<id>/modsets.json`): `modsets_list`, `modset_create(name)` (aus aktuellem Zustand, wird aktiv),
-  `modset_apply(setId)` (aktiviert/deaktiviert per `.disabled`; unbekannte neue Dateien bleiben), `modset_save`,
-  `modset_rename`, `modset_delete`. `ModSets.active_modified` = aktuelle Auswahl weicht vom aktiven Set ab.
+- Profile einer Instanz (UI: „Profile“, früher „Mod-Sets“; Datei bleibt `instances/<id>/modsets.json`): `modsets_list`,
+  `modset_create(name)` (aus aktuellem Zustand, wird aktiv), `modset_apply(setId)` (aktiviert/deaktiviert per
+  `.disabled`; unbekannte neue Dateien bleiben), `modset_save`, `modset_rename`, `modset_delete`.
+  `ModSets.active_modified` = aktuelle Auswahl weicht vom aktiven Profil ab.
+- Mod-Sets = instanzübergreifende Wunschlisten von Projekten (`<data>/mod_sets.json`, `content/sets.rs`,
+  `content/sets_apply.rs`, Commands in `commands/sets.rs`, Frontend `src/features/modsets/api.ts`):
+  `sets_list/create/update/delete/duplicate/add_entries/remove_entries`, `sets_parse_list(text)` (Links/Slugs/Namen),
+  `sets_import_text|file`, `sets_export_file|code|links` (Code `VIBESET1.` + base64url(deflate(JSON)), Datei
+  `{ "vibe_mod_set": 1, name, entries: [{ source, id, slug, title, type, icon }] }`), `sets_instance_candidates`,
+  `sets_from_profile(instanceId, profileId)`, `sets_preview(instanceId, setIds, only?)` (je Projekt: install /
+  installed / unavailable mit Grund + Alternativen / conflict; inkl. Pflicht-Abhängigkeiten),
+  `sets_apply(instanceId, setIds, picks) -> taskId` (vorher Snapshot, entfernt nie etwas),
+  `sets_install_new(instanceId, setIds) -> taskId` (neue Instanz), `sets_check(setIds, mc, loader)`,
+  `sets_compat(id)`, `sets_news(instanceId)` / `sets_dismiss_news` (angewendete Sets je Instanz in
+  `instances/<id>/mod_sets_applied.json`).
 - `perf_preview(instanceId) -> PerfCandidate[]` (Modrinth-Optimierungsmods je Loader, nur kompatible Versionen,
   ein Renderer-Ersatz) und `perf_install(instanceId, projectIds) -> taskId` (vorher Snapshot).
 - **Start** (`instance_launch`): installiert bei Bedarf, holt Zugangsdaten über `state.auth.launch_account(...)`,

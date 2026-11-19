@@ -35,6 +35,8 @@ pub mod loaderfix;
 pub mod refresh;
 pub mod sides;
 pub mod modsets;
+pub mod sets;
+pub mod sets_apply;
 pub mod perf;
 pub mod modpack;
 pub mod autoupdate;

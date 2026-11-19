@@ -511,6 +511,16 @@ pub async fn raw_mod(state: &AppState, id: &str) -> AppResult<CfMod> {
     Ok(r.data)
 }
 
+/// Projekt per Slug aus einem curseforge.com-Link (`hint`: Projektart aus dem Link, sonst alle Arten).
+pub async fn mod_by_slug(state: &AppState, slug: &str, hint: Option<ProjectType>) -> AppResult<Option<CfMod>> {
+    let mut q = format!("/mods/search?gameId={GAME_ID}&slug={}", urlencoding::encode(slug));
+    if let Some(t) = hint {
+        q.push_str(&format!("&classId={}", class_id(t)));
+    }
+    let r: CfPage<CfMod> = get(state, &q).await?;
+    Ok(r.data.into_iter().find(|m| m.slug.eq_ignore_ascii_case(slug)))
+}
+
 pub async fn raw_mods(state: &AppState, ids: &[u64]) -> AppResult<Vec<CfMod>> {
     let mut out = Vec::new();
     for chunk in ids.chunks(500) {

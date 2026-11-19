@@ -1,7 +1,8 @@
 // OWNER: Frontend-Agent A. Bibliothek: eine Werkzeugleiste (Filter, Suche, Sortierung, Gruppierung, Import, Neu)
 // über einem Raster rahmenloser Instanz-Kacheln. Der Seitentitel steht in der Titelleiste.
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
-import { ChevronDown, LayoutGrid, List, PackageOpen, Plus, SearchX } from "lucide-react";
+import { ChevronDown, Layers, LayoutGrid, List, PackageOpen, Plus, SearchX } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { useInstances } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { loaderNames } from "@/lib/format";
@@ -60,6 +61,7 @@ export function InstancesPage() {
   const t = useT();
   const { data, isLoading, isError, error, refetch } = useInstances();
   const { open } = useInstanceActions();
+  const nav = useNavigate();
   const [query, setQuery] = useState("");
   const [filter, setFilterState] = useState<FilterKey>(() => load("vl.inst.filter", "all"));
   const [sort, setSortState] = useState<SortKey>(() => load("vl.inst.sort", "recent"));
@@ -184,6 +186,10 @@ export function InstancesPage() {
                     <List size={15} />
                   </IconButton>
                 </div>
+                {/* Mod-Sets: instanzübergreifende Wunschlisten (eigene Seite unter der Bibliothek) */}
+                <Button size="sm" variant="subtle" icon={<Layers size={14} />} onClick={() => nav({ to: "/modsets", search: {} })}>
+                  {t("nav.modsets")}
+                </Button>
                 {/* Leere Bibliothek: Importieren/Neu stehen groß im Leerzustand, nicht doppelt hier oben */}
                 <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={() => openImport()}>
                   {t("home.action.import")}
