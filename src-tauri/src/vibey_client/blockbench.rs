@@ -12,10 +12,23 @@
 //! aktuell. Der Nutzer lädt die Datei einmal in Blockbench (ziehen oder „aus Datei laden“), danach bekommt er
 //! Updates automatisch beim nächsten Blockbench-Start. Ob das Plugin eingerichtet ist, liest der Launcher (nur
 //! lesend, best effort) aus Blockbenchs localStorage.
+//!
+//! **Quelle:** Das Plugin hat eigene GitHub-Releases in `vibec-studios/vibey-client` (Tag `blockbench-v<version>`,
+//! nicht „latest“), unabhängig von Launcher- und Client-Releases. Assets: `vibey.js` und `vibey-blockbench.json`
+//! (`version`, `file`, `size`, `sha256`, `min_client`, `notes`). Der Launcher nimmt das höchste solche Release und
+//! prüft SHA-256 + Größe. Nur wenn GitHub nicht erreichbar ist, nutzt er den alten `blockbench`-Eintrag des Backends.
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
 use serde::{Deserialize, Serialize};
+use parking_lot::Mutex;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
+use std::time::{Duration, Instant};
+
+const GH_REPO: &str = "vibec-studios/vibey-client";
+const TAG_PREFIX: &str = "blockbench-v";
+const MANIFEST_FILE: &str = "vibey-blockbench.json";
+const CACHE_TTL: Duration = Duration::from_secs(10 * 60);
 
 pub fn plugin_dir(state: &AppState) -> PathBuf {
     super::data_dir(state).join("blockbench")
@@ -31,6 +44,100 @@ fn plugin_meta_path(state: &AppState) -> PathBuf {
 struct PluginMeta {
     version: String,
     sha256: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct GhRelease {
+    tag_name: String,
+    #[serde(default)]
+    draft: bool,
+    #[serde(default)]
+    prerelease: bool,
+}
+
+/// `vibey-blockbench.json` eines Plugin-Releases.
+#[derive(Debug, Clone, Deserialize)]
+struct PluginManifest {
+    version: String,
+    file: String,
+    #[serde(default)]
+    size: u64,
+    sha256: String,
+    #[serde(default)]
+    min_client: Option<String>,
+    #[serde(default)]
+    notes: Option<String>,
+}
+
+/// Neueste Plugin-Version mit Download-Adresse.
+#[derive(Debug, Clone)]
+struct PluginRelease {
+    version: String,
+    size: u64,
+    sha256: String,
+    url: String,
+    min_client: Option<String>,
+    notes: Option<String>,
+}
+
+/// Höchstes veröffentlichtes Plugin-Release (`blockbench-v*`, kein Draft/Prerelease) -> Tag.
+fn pick_tag(rels: &[GhRelease]) -> Option<&str> {
+    rels.iter()
+        .filter(|r| !r.draft && !r.prerelease)
+        .filter_map(|r| r.tag_name.strip_prefix(TAG_PREFIX).filter(|v| !v.is_empty()).map(|v| (v, r.tag_name.as_str())))
+        .max_by(|a, b| super::install::cmp_versions(a.0, b.0))
+        .map(|(_, t)| t)
+}
+
+fn gh_download(tag: &str, file: &str) -> String {
+    format!("https://github.com/{GH_REPO}/releases/download/{tag}/{file}")
+}
+
+async fn from_github(state: &AppState) -> AppResult<PluginRelease> {
+    let rels: Vec<GhRelease> = state.net.get_json(&format!("https://api.github.com/repos/{GH_REPO}/releases?per_page=50")).await?;
+    let tag = pick_tag(&rels).ok_or_else(|| AppError::NotFound("Es gibt noch kein veröffentlichtes Blockbench-Plugin.".into()))?;
+    let m: PluginManifest = state.net.get_json(&gh_download(tag, MANIFEST_FILE)).await?;
+    if tag.strip_prefix(TAG_PREFIX) != Some(m.version.as_str()) {
+        return Err(AppError::Invalid(format!("Plugin-Release {tag} meldet Version {}", m.version)));
+    }
+    let file = super::safe_file_name(&m.file, ".js")?;
+    if !super::valid_sha256(&m.sha256) {
+        return Err(AppError::Invalid("Ungültige Prüfsumme im Plugin-Manifest".into()));
+    }
+    Ok(PluginRelease { url: gh_download(tag, &file), version: m.version, size: m.size, sha256: m.sha256, min_client: m.min_client, notes: m.notes })
+}
+
+/// Alter Weg (Backend-Manifest des Clients), nur als Rückfall.
+async fn from_backend(state: &AppState, force: bool) -> AppResult<PluginRelease> {
+    let base = crate::vibe::ensure(state, crate::vibe::Feature::Any)?;
+    let rel = super::latest(state, force).await?;
+    let bb = rel.blockbench.ok_or_else(|| AppError::NotFound("Es gibt noch kein veröffentlichtes Blockbench-Plugin.".into()))?;
+    super::safe_file_name(&bb.file, ".js")?;
+    Ok(PluginRelease { url: super::resolve_url(&base, &bb.url)?, version: bb.version, size: bb.size, sha256: bb.sha256, min_client: None, notes: None })
+}
+
+fn cache() -> &'static Mutex<Option<(Instant, PluginRelease)>> {
+    static C: OnceLock<Mutex<Option<(Instant, PluginRelease)>>> = OnceLock::new();
+    C.get_or_init(Default::default)
+}
+
+async fn latest_plugin(state: &AppState, force: bool) -> AppResult<PluginRelease> {
+    if !force {
+        if let Some((at, r)) = cache().lock().as_ref() {
+            if at.elapsed() < CACHE_TTL {
+                return Ok(r.clone());
+            }
+        }
+    }
+    let rel = match from_github(state).await {
+        Ok(r) => r,
+        Err(gh) => {
+            tracing::warn!("Blockbench-Plugin von GitHub nicht abrufbar: {gh}");
+            from_backend(state, force).await.map_err(|_| gh)?
+        }
+    };
+    *cache().lock() = Some((Instant::now(), rel.clone()));
+    Ok(rel)
 }
 
 /// Blockbench-Programm suchen.
@@ -136,6 +243,9 @@ pub struct BlockbenchStatus {
     /// In Blockbench eingerichtet (best effort, None = unbekannt)
     pub registered: Option<bool>,
     pub latest_version: Option<String>,
+    /// Älteste Vibey-Client-Version, mit der Live-Link/Einreichen gehen
+    pub min_client: Option<String>,
+    pub notes: Option<String>,
     pub update_available: bool,
     pub error: Option<String>,
 }
@@ -150,16 +260,18 @@ pub async fn status(state: &AppState) -> BlockbenchStatus {
         plugin_version: present.then(|| meta.as_ref().map(|m| m.version.clone())).flatten(),
         registered: tokio::task::spawn_blocking(plugin_registered).await.ok().flatten(),
         latest_version: None,
+        min_client: None,
+        notes: None,
         update_available: false,
         error: None,
     };
     if state.settings().vibe.enabled {
-        match super::latest(state, false).await {
-            Ok(rel) => {
-                if let Some(bb) = rel.blockbench {
-                    out.update_available = present && meta.as_ref().is_none_or(|m| m.sha256 != bb.sha256);
-                    out.latest_version = Some(bb.version);
-                }
+        match latest_plugin(state, false).await {
+            Ok(bb) => {
+                out.update_available = present && meta.as_ref().is_none_or(|m| m.sha256 != bb.sha256);
+                out.latest_version = Some(bb.version);
+                out.min_client = bb.min_client;
+                out.notes = bb.notes;
             }
             Err(e) => out.error = Some(e.to_string()),
         }
@@ -169,13 +281,11 @@ pub async fn status(state: &AppState) -> BlockbenchStatus {
 
 /// Neuestes Plugin laden (SHA-256 geprüft) und an den festen Ort legen.
 pub async fn install_plugin(state: &AppState) -> AppResult<BlockbenchStatus> {
-    let base = crate::vibe::ensure(state, crate::vibe::Feature::Any)?;
-    let rel = super::latest(state, true).await?;
-    let bb = rel.blockbench.ok_or_else(|| AppError::NotFound("Dieses Release enthält kein Blockbench-Plugin.".into()))?;
-    super::safe_file_name(&bb.file, ".js")?;
-    let url = super::resolve_url(&base, &bb.url)?;
+    // Creator-Tools gehören zu Vibe und folgen dem Hauptschalter, auch wenn die Datei von GitHub kommt
+    crate::vibe::ensure(state, crate::vibe::Feature::Any)?;
+    let bb = latest_plugin(state, true).await?;
     // Immer als vibey.js ablegen: Blockbench nimmt den Dateinamen als Plugin-ID
-    super::download_verified(state, &url, &plugin_path(state), &bb.sha256, Some(bb.size)).await?;
+    super::download_verified(state, &bb.url, &plugin_path(state), &bb.sha256, Some(bb.size)).await?;
     crate::util::write_json_atomic(&plugin_meta_path(state), &PluginMeta { version: bb.version, sha256: bb.sha256 })?;
     Ok(status(state).await)
 }
@@ -193,6 +303,22 @@ pub fn open() -> AppResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn picks_highest_plugin_release() {
+        let r = |t: &str, draft, prerelease| GhRelease { tag_name: t.into(), draft, prerelease };
+        let rels = vec![
+            r("v0.3.0", false, false),
+            r("blockbench-v0.2.3", false, false),
+            r("blockbench-v0.2.10", false, false),
+            r("blockbench-v0.4.0", true, false),
+            r("blockbench-v0.5.0", false, true),
+            r("blockbench-v", false, false),
+        ];
+        assert_eq!(pick_tag(&rels), Some("blockbench-v0.2.10"));
+        assert_eq!(pick_tag(&[r("v0.2.1", false, false)]), None);
+        assert_eq!(gh_download("blockbench-v0.2.3", "vibey.js"), "https://github.com/vibec-studios/vibey-client/releases/download/blockbench-v0.2.3/vibey.js");
+    }
 
     #[test]
     fn record_parsing() {

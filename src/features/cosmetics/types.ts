@@ -122,6 +122,9 @@ export interface BlockbenchStatus {
   plugin_version: string | null;
   registered: boolean | null;
   latest_version: string | null;
+  /** Älteste Vibey-Client-Version, mit der Live-Link/Einreichen gehen */
+  min_client?: string | null;
+  notes?: string | null;
   update_available: boolean;
   error: string | null;
 }

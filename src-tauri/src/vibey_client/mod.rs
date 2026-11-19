@@ -9,7 +9,8 @@
 //!   (Multipart-Upload).
 //! - **Creator-Tools** (`blockbench.rs`): Blockbench finden, Plugin laden/aktualisieren.
 //!
-//! Alles Netzwerk respektiert den Vibe-Hauptschalter (`vibe::ensure`) und geht nur an die Backend-Adresse.
+//! Alles Netzwerk respektiert den Vibe-Hauptschalter (`vibe::ensure`) und geht an die Backend-Adresse; nur das
+//! Blockbench-Plugin kommt aus eigenen GitHub-Releases (`blockbench.rs`).
 pub mod blockbench;
 pub mod commands;
 pub mod cosmetics;
