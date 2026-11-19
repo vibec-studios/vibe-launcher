@@ -11,6 +11,8 @@ Stand 19.11.2026. Gilt für Launcher, Vibey Client, Backend, Relay und Website.
 | `<name>.vibey.henny.dev` | `<name>.axolite.cc` | Minecraft-Adressen über das Relay |
 | `vibey.henny.dev` (Relay-Host) | `relay.axolite.cc` | Verbindung Host → Relay, gleicher Port |
 | `vibey-status.henny.dev` | `status.axolite.app` | Status-API |
+| `https://vibec-studios.github.io/data/store.json` | `https://vibe.axolite.app/api/v1/store.json` | Vibe Store (Standard-Store „Vibe Craft Studios“), jetzt vom Backend gebaut |
+| `https://vibec-studios.github.io/` | `https://vibe.axolite.app/` | Website (Einstellungen → Über, Discord-Knopf) |
 
 Infrastruktur (erledigt):
 
@@ -50,6 +52,15 @@ Infrastruktur (erledigt):
   dasselbe Backend (Downloads, Icons, Manifeste). Spiel-Links `https://axolite.cc/j/…`, `https://vibe.axolite.app/j/…`
   und `https://vibe.henny.dev/j/…` gelten in `session.json`, als Kommandozeilen-Argument und eingefügt in „Code oder
   Link eingeben“. Deep-Links `vibelauncher://…` sind unverändert.
+- **Vibe Store:** `domains::STORE_URL` (Frontend `STORE_URL`) ist die Adresse des Standard-Stores. Wer in
+  `settings.stores` noch genau die alte Adresse `https://vibec-studios.github.io/data/store.json` hat, wird beim Laden
+  der Einstellungen (`Settings::migrate_stores`) still umgestellt; aktiviert/deaktiviert bleibt, eigene Stores bleiben
+  unverändert. `domains::is_official_store` erkennt alte und neue Adresse als denselben Store (Speicher-/Plattencache
+  bleibt gültig, „Store hinzufügen“ mit der alten Adresse meldet „bereits eingetragen“). Store-IDs und Projekt-IDs
+  sind gleich geblieben, installierte Inhalte werden weiter erkannt. Die GitHub-Pages-Seite kann danach archiviert
+  werden; ältere Launcher lesen bis dahin weiter die alte Datei.
+- **Website:** `domains::WEBSITE` / `WEBSITE` = `https://vibe.axolite.app/` (Einstellungen → Über, Discord-Knopf
+  „Vibe Launcher“).
 - **Gespeicherte Werte:** Vibe-Tokens im Schlüsselbund, die noch für `https://vibe.henny.dev` gespeichert sind, werden
   beim ersten Lesen auf die neue Adresse umgeschrieben (kein Abmelden). Debug-Overrides (`VIBE_API_URL`, `VIBE_RELAY`),
   die genau der alten Standardadresse entsprechen, zeigen auf die neue. Eigene Adressen bleiben unverändert.

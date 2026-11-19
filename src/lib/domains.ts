@@ -3,6 +3,12 @@
 
 /** Backend-API, Konten, Website */
 export const API_URL = "https://vibe.axolite.app";
+/** Website von Vibe (Einstellungen → Über) */
+export const WEBSITE = "https://vibe.axolite.app/";
+/** Anzeigetext der Website */
+export const WEBSITE_LABEL = "vibe.axolite.app";
+/** Offizieller Vibe Store (Standard-Store „Vibe Craft Studios“); früher https://vibec-studios.github.io/data/store.json */
+export const STORE_URL = "https://vibe.axolite.app/api/v1/store.json";
 /** Einladungslinks: `https://axolite.cc/j/<code>` */
 export const INVITE_BASE = "https://axolite.cc/j/";
 /** Domain der Relay-Adressen (`<name>.axolite.cc`) */

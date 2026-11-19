@@ -474,7 +474,15 @@ impl Settings {
             s.onboarding_done = true;
         }
         s.sanitize_mode();
+        s.migrate_stores();
         s
+    }
+
+    /// Gespeicherte Adresse des offiziellen Stores (GitHub Pages) still auf die neue umstellen; eigene Stores bleiben.
+    pub fn migrate_stores(&mut self) {
+        for st in &mut self.stores {
+            st.url = crate::domains::migrate_store_url(&st.url);
+        }
     }
 
     /// Weggeklickte Hinweise: nur gültige IDs, ohne Doppelte, höchstens 200 (die neuesten).
@@ -576,6 +584,28 @@ mod tests {
         s.sanitize_notices();
         assert_eq!(s.dismissed_notices.len(), 200);
         assert_eq!(s.dismissed_notices[0], "n50");
+    }
+
+    #[test]
+    fn saved_legacy_store_url_is_migrated_on_load() {
+        let dir = std::env::temp_dir().join(format!("vl-store-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let paths = crate::paths::Paths { root: dir.clone() };
+        std::fs::write(
+            paths.settings_file(),
+            r#"{"onboarding_done":true,"stores":[
+              {"id":"vibe-craft-studios","name":"Vibe Craft Studios","url":"https://vibec-studios.github.io/data/store.json","enabled":false},
+              {"id":"mein-store","name":"Mein Store","url":"https://example.org/store.json","enabled":true}]}"#,
+        )
+        .unwrap();
+        let s = Settings::load_for(&paths);
+        assert_eq!(s.stores[0].url, crate::domains::STORE_URL);
+        assert!(!s.stores[0].enabled, "deaktiviert bleibt deaktiviert");
+        assert_eq!(s.stores[1].url, "https://example.org/store.json", "eigene Stores bleiben");
+        // neue Installation: gleich die neue Adresse
+        assert_eq!(Settings::default().stores[0].url, crate::domains::STORE_URL);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -1,5 +1,6 @@
 // Mock: Kern-Commands (Instanzen, Einstellungen, Aufgaben, System). OWNER: Integrator.
 import type { Instance, Settings } from "@/lib/types";
+import { STORE_URL } from "@/lib/domains";
 import { mockEmit, tasks, type Handlers } from "./util";
 
 const now = Date.now();
@@ -93,7 +94,7 @@ let settings: Settings = {
     // Screenshots: Variante per window.__VL_MOCK_APPEARANCE (Playwright-Init-Skript)
     ...((globalThis as { __VL_MOCK_APPEARANCE?: object }).__VL_MOCK_APPEARANCE ?? {}),
   } as Settings["appearance"],
-  stores: [{ id: "vibe-craft-studios", name: "Vibe Craft Studios", url: "https://vibec-studios.github.io/data/store.json", enabled: true, icon: null }],
+  stores: [{ id: "vibe-craft-studios", name: "Vibe Craft Studios", url: STORE_URL, enabled: true, icon: null }],
 };
 
 const handlers: Handlers = {

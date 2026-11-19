@@ -5,8 +5,10 @@ sie, cacht sie (ETag / `If-Modified-Since`, ca. 10 Minuten, zusätzlich auf der 
 bietet die Projekte in „Entdecken“ neben Modrinth und CurseForge an: Suche, Projektseite, Versionen,
 Installation inkl. Abhängigkeiten, Updates und Zuordnung bereits installierter Dateien per Hash.
 
-Standard-Store: **Vibe Craft Studios** – `https://vibec-studios.github.io/data/store.json`
-(immer in der Liste, kann deaktiviert, aber nicht entfernt werden).
+Standard-Store: **Vibe Craft Studios** – `https://vibe.axolite.app/api/v1/store.json`, gebaut vom Vibe-Backend
+aus den GitHub-Releases (immer in der Liste, kann deaktiviert, aber nicht entfernt werden). Die alte Adresse
+`https://vibec-studios.github.io/data/store.json` wird in gespeicherten Einstellungen automatisch umgestellt
+(docs/DOMAINS.md).
 
 ## Aufbau
 
@@ -17,7 +19,7 @@ Standard-Store: **Vibe Craft Studios** – `https://vibec-studios.github.io/data
   "id": "vibe-craft-studios",        // Pflicht, [a-z0-9-], eindeutig; erscheint in der Quelle als "store:<id>"
   "name": "Vibe Craft Studios",      // Pflicht, Anzeigename
   "icon": "https://…/logo.png",      // optional, absolute URL
-  "homepage": "https://vibec-studios.github.io/",
+  "homepage": "https://vibe.axolite.app/",
   "description": "Mods von Vibe Craft Studios",
   "updated": "2026-11-17T12:00:00Z", // optional, ISO-8601
   "projects": [
