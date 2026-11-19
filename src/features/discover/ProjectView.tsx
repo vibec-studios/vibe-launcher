@@ -138,7 +138,7 @@ function Header({ p, install, banner, onBanner }: { p: ViewProject; install: Rea
         <button
           onClick={onBanner}
           aria-label={t("project.tab.gallery")}
-          className="group relative block h-[180px] w-full overflow-hidden rounded-card bg-surface2 @max-[760px]:h-[140px]"
+          className="group relative block h-[clamp(112px,22vh,180px)] w-full overflow-hidden rounded-card bg-surface2 @max-[760px]:h-[clamp(100px,18vh,140px)]"
         >
           <img
             src={banner!}
