@@ -1,7 +1,8 @@
 // Mock: Werkzeuge der Instanzseite (Modpack-Update, Abhängigkeits-Check, Mod-Sets, Performance, Backups, Dateien,
 // Serverliste). Macht „survival“ zu einer realistisch gefüllten Modpack-Instanz. Nur für VITE_MOCK=1.
-import type { DepIssue, FileEntry, FixBackup, FixPlan, FixReport, Instance, ModSets, OptSyncInfo, PerfCandidate, ProjectVersion, ServerEntry, SnapshotInfo, SnapshotScope, SyncKey, WorldBackup } from "@/lib/types";
+import type { DepIssue, Diagnosis, FileEntry, FixBackup, FixPlan, FixReport, Instance, ModSets, OptSyncInfo, PerfCandidate, ProjectVersion, ServerEntry, SnapshotInfo, SnapshotScope, SyncKey, WorldBackup } from "@/lib/types";
 import { instances } from "./core";
+import { states } from "./a";
 import { fakeTask, type Handlers } from "./util";
 
 const now = Date.now();
@@ -147,6 +148,77 @@ const repairPlan: FixPlan = {
 const repairDeps: DepIssue[] = [
   { kind: "loader_files", severity: "error", file_name: "", mod_name: "Fabric", target: "fabric", message: "Fabric 0.17.2: Die Installation ist beschädigt (3 Datei(en))", fixes: [] },
 ];
+// Absturz (Screenshots: localStorage vl.mock.crash = "survival"): Vibey Client 0.3.0 + Centered Crosshair
+// (Mixin-Konflikt beim Start), dazu eine zu alte Abhängigkeit und eine kaputte Config
+const CRASH_FILE = "crash-2026-11-18_19.44.02-client.txt";
+const crashDiags: Diagnosis[] = [
+  {
+    id: "mixin_conflict",
+    confidence: 93,
+    culprit: { mod_id: "centered-crosshair", name: "Centered Crosshair", file: "centered-crosshair-1.3.1+1.21.4.jar" },
+    params: { other_id: "vibeyclient", other_name: "Vibey Client", other_file: "vibeyclient-fabric-1.21.4-0.3.0.jar" },
+    actions: [{ kind: "disable_mod", file: "centered-crosshair-1.3.1+1.21.4.jar" }, { kind: "upload" }],
+    evidence:
+      "[19:44:01] [Render thread/WARN]: @Redirect conflict. Skipping centeredcrosshair.mixins.json:InGameHudMixin from mod centered-crosshair->@Redirect::redirectCrosshair(…) with priority 1000, already redirected by vibeyclient.mixins.json:hud.InGameHudMixin from mod vibeyclient",
+    source: "logs/latest.log",
+    line: 214,
+    rule: "mixin_redirect_conflict",
+  },
+  {
+    id: "outdated_dependency",
+    confidence: 93,
+    culprit: { mod_id: "roughlyenoughitems", name: "REI", file: "rei-17.0.794.jar" },
+    params: { dependency: "cloth-config", dependency_name: "Cloth Config v15", range: "15.0.140 or later", present: "15.0.127", dependency_file: "cloth-config-15.0.127-fabric.jar" },
+    actions: [{ kind: "update_mod", file: "cloth-config-15.0.127-fabric.jar", mod_id: "cloth-config" }, { kind: "upload" }],
+    evidence: "- Mod 'REI' (roughlyenoughitems) 17.0.794 requires version 15.0.140 or later of mod 'Cloth Config v15' (cloth-config), but only the wrong version is present: 15.0.127!",
+    source: "logs/latest.log",
+    line: 188,
+    rule: "fabric_wrong_version",
+  },
+  {
+    id: "broken_config",
+    confidence: 84,
+    culprit: null,
+    params: { path: "config/sodium-options.json" },
+    actions: [{ kind: "reset_config", path: "config/sodium-options.json" }, { kind: "upload" }],
+    evidence: "com.google.gson.JsonSyntaxException: com.google.gson.stream.MalformedJsonException: Unterminated object at line 12 column 5 path $.quality",
+    source: `crash-reports/${CRASH_FILE}`,
+    line: 31,
+    rule: "config_parse",
+  },
+];
+const crashPlan: FixPlan = {
+  crash: true,
+  causes: crashDiags,
+  steps: [
+    { id: "c1", reason: "mixin_conflict", name: "Centered Crosshair", required_by: [], action: { kind: "disable", file_name: "centered-crosshair-1.3.1+1.21.4.jar" }, alt: { kind: "disable", file_name: "vibeyclient-fabric-1.21.4-0.3.0.jar" }, alt_name: "Vibey Client", confirm: true, selected: false, from_crash: true, cause: 0, detail: null },
+    { id: "c2", reason: "version_mismatch", name: "Cloth Config v15", required_by: ["REI"], action: { kind: "replace", file_name: "cloth-config-15.0.127-fabric.jar", source: "modrinth", project_id: "9s6osm5g", version_id: "cc140", title: "Cloth Config API", from_version: "15.0.127", to_version: "15.0.140", manual: false }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: true, cause: 1, detail: null },
+    { id: "c3", reason: "broken_config", name: "", required_by: [], action: { kind: "reset_config", path: "config/sodium-options.json" }, alt: null, alt_name: null, confirm: true, selected: false, from_crash: true, cause: 2, detail: null },
+    { id: "c4", reason: "missing_dependency", name: "Porting Lib", required_by: ["Create", "Create Deco"], action: { kind: "install", source: "modrinth", project_id: "porting-lib", title: "Porting Lib" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false, cause: null, detail: null },
+  ],
+  unfixable: [],
+};
+const crashFlag = (() => {
+  try {
+    return localStorage.getItem("vl.mock.crash");
+  } catch {
+    return null;
+  }
+})();
+if (crashFlag && instances.has(crashFlag)) {
+  const t = Date.now() - 4 * 60_000;
+  states.set(crashFlag, {
+    instance_id: crashFlag,
+    state: "stopped",
+    pid: null,
+    started_at: t,
+    exit_code: -1,
+    crashed: true,
+    crash_report: `C:\\Users\\steve\\AppData\\Roaming\\VibeLauncher\\instances\\${crashFlag}\\minecraft\\crash-reports\\${CRASH_FILE}`,
+  });
+}
+const crashedNow = (id: unknown) => id === "survival" && !!states.get("survival")?.crashed && (!fixReport || fixReport.undone);
+
 let fixReport: FixReport | null = null;
 let repaired = false;
 
@@ -238,8 +310,10 @@ const handlers: Handlers = {
   }),
   modpack_update: ({ instanceId }) => fakeTask("modpack_update", "Modpack aktualisieren", instanceId as string, 2500),
   autofix_quick: ({ instanceId }) => ({ errors: instanceId === "survival" && (!fixReport || fixReport.undone) ? 3 : instanceId === "hh-armors" && !repaired ? 1 : 0, warnings: 0, crashed: false }),
-  autofix_plan: ({ instanceId }) =>
-    instanceId === "survival" && (!fixReport || fixReport.undone)
+  autofix_plan: ({ instanceId, ignoreCrash }) =>
+    !ignoreCrash && crashedNow(instanceId)
+      ? crashPlan
+      : instanceId === "survival" && (!fixReport || fixReport.undone)
       ? fixPlan
       : instanceId === "hh-armors" && !repaired
         ? repairPlan
@@ -347,7 +421,8 @@ const handlers: Handlers = {
     return sync;
   },
   screenshots_list: () => [],
-  crash_analyze: () => [],
+  // Die Analyse liest weiter dasselbe Log – auch nach dem Beheben (erst der nächste Start ändert es)
+  crash_analyze: ({ instanceId }) => (instanceId === "survival" && states.get("survival")?.crashed ? crashDiags : []),
 };
 
 export default handlers;

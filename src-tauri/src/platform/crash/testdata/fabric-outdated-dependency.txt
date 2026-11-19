@@ -1,0 +1,12 @@
+[09:11:40] [main/INFO]: Loading Minecraft 1.21.1 with Fabric Loader 0.16.9
+[09:11:41] [main/ERROR]: Incompatible mods found!
+net.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!
+A potential solution has been determined, this may resolve your problem:
+	 - Replace mod 'Cloth Config v15' (cloth-config) 15.0.127 with version 15.0.140 or later.
+	 - Replace mod 'Xaero's Minimap' (xaerominimap) 24.0.2 with any version that is compatible with:
+		 - minecraft 1.21.1
+More details:
+	 - Mod 'REI' (roughlyenoughitems) 16.0.783 requires version 15.0.140 or later of mod 'Cloth Config v15' (cloth-config), but only the wrong version is present: 15.0.127!
+	 - Mod 'Xaero's Minimap' (xaerominimap) 24.0.2 requires version 1.20.1 of minecraft, but only the wrong version is present: 1.21.1!
+	 - Mod 'Sodium' (sodium) 0.6.0+mc1.21.1 requires version 0.16.10 or later of fabricloader, but only the wrong version is present: 0.16.9!
+	at net.fabricmc.loader.impl.FormattedException.ofLocalized(FormattedException.java:51) ~[fabric-loader-0.16.9.jar:?]

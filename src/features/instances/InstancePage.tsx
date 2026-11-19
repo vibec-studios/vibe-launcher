@@ -16,7 +16,7 @@ import { LogsTab, showLogFile, uploadCrash } from "@/features/logs/LogsTab";
 import { useT } from "@/i18n";
 import { WorldsTab } from "./WorldsTab";
 import { ServersTab } from "./ServersTab";
-import { DiagnosisCard, DiagnosisDialog, useDiagnosis } from "@/features/logs/Diagnosis";
+import { DiagnosisCard, DiagnosisDialog, diagText, useDiagnosis } from "@/features/logs/Diagnosis";
 import { AutofixButton } from "@/features/content/AutoFix";
 import { ReportProblemButton } from "@/features/feedback/FeedbackDialog";
 import { InstanceSettingsDialog } from "./settings/InstanceSettingsDialog";
@@ -59,7 +59,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
             <div className="text-[13.5px] font-semibold text-text">{t("simple.crash.title")}</div>
             <div className="text-[12.5px] text-muted">{t("simple.crash.text")}</div>
           </div>
-          <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null, launchAfter: true }} size="md" />
+          <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null, launchAfter: true }} size="md" label={t("crash.offer.fix")} />
           <ReportProblemButton instanceId={instance.id} size="md" />
           <IconButton label={t("common.close")} size="sm" className="border-transparent" onClick={() => setDismissed(key)}>
             <X size={15} />
@@ -68,18 +68,25 @@ function CrashBanner({ instance }: { instance: Instance }) {
       </div>
     );
   }
+  // „Absturz erkannt – automatisch beheben?“: wahrscheinlichste Ursache gleich nennen
+  const found = diag.data?.filter((d) => d.id !== "exit_code") ?? [];
+  const offer = found.length
+    ? t(found.length === 1 ? "crash.offer.text_1" : "crash.offer.text", { n: found.length, title: diagText(found[0], t).title })
+    : diag.data
+      ? t("crash.offer.none")
+      : null;
   return (
     <div className="shrink-0 bg-danger/[.08] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-danger)_25%,transparent)] animate-fade-in">
       <div className={cn(wrap, "flex items-center gap-3 py-2.5")}>
         <AlertTriangle size={18} className="shrink-0 text-danger" />
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-semibold text-text">{t("inst.crash.title")}</div>
+          <div className="text-[13px] font-semibold text-text">{t("crash.offer.title")}</div>
           {/* Dateiname des Crash-Reports nur im Tooltip – er steht ohnehin unter „Logs öffnen“ */}
           <div className="truncate text-[12px] text-muted" title={game?.crash_report?.split(/[\\/]/).pop()}>
-            {game?.exit_code != null ? t("inst.crash.code", { code: game.exit_code }) : t("inst.crash.text")}
+            {offer ?? (game?.exit_code != null ? t("inst.crash.code", { code: game.exit_code }) : t("inst.crash.text"))}
           </div>
         </div>
-        <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null }} />
+        <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null }} label={t("crash.offer.fix")} />
         <Button size="sm" icon={<Stethoscope size={13} />} onClick={() => setDetails(true)}>
           {t("diag.open")}
           {diag.data && diag.data.length > 0 && <span className="text-[12px] text-muted">{diag.data.length}</span>}

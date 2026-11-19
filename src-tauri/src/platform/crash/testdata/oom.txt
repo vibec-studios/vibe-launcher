@@ -1,0 +1,13 @@
+---- Minecraft Crash Report ----
+// I let you down. Sorry :(
+
+Time: 2026-11-18 18:01:44
+Description: Unexpected error
+
+java.lang.OutOfMemoryError: Java heap space
+	at java.base/java.util.Arrays.copyOf(Arrays.java:3537)
+	at net.minecraft.class_2841.method_12334(class_2841.java:120)
+
+-- System Details --
+	Memory: 12582912 bytes (12 MiB) / 4294967296 bytes (4096 MiB) up to 4294967296 bytes (4096 MiB)
+	JVM Flags: 2 total; -Xms512M -Xmx4096M

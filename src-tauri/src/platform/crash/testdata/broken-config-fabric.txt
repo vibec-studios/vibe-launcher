@@ -1,0 +1,6 @@
+[11:22:00] [main/INFO]: Loading Minecraft 1.21.1 with Fabric Loader 0.16.9
+[11:22:05] [Render thread/ERROR]: Could not load config file C:\Users\<user>\AppData\Roaming\VibeLauncher\instances\<instance>\minecraft\config\sodium-options.json
+com.google.gson.JsonSyntaxException: com.google.gson.stream.MalformedJsonException: Unterminated object at line 12 column 5 path $.quality
+	at com.google.gson.Gson.fromJson(Gson.java:1360)
+	at net.caffeinemc.mods.sodium.client.gui.SodiumGameOptions.loadFromFile(SodiumGameOptions.java:180) [from mod sodium]
+[11:22:05] [Render thread/INFO]: Crash report saved to C:\Users\<user>\AppData\Roaming\VibeLauncher\instances\<instance>\minecraft\crash-reports\crash-2026-11-18_11.22.05-client.txt

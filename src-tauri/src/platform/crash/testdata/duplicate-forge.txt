@@ -1,0 +1,5 @@
+[18Nov2026 20:20:01.001] [main/INFO] [net.minecraftforge.fml.loading.FMLLoader/CORE]: Detected Minecraft 1.20.1, Forge 47.3.0
+[18Nov2026 20:20:04.551] [main/ERROR] [net.minecraftforge.fml.loading.UniqueModListBuilder/LOADING]: Found duplicate mods:
+	Mod ID: 'jei' from mod files: jei-1.20.1-forge-15.2.0.27.jar, jei-1.20.1-forge-15.3.0.4.jar
+[18Nov2026 20:20:04.560] [main/ERROR] [net.minecraftforge.fml.loading.FMLLoader/LOADING]: Found duplicate mods: jei
+net.minecraftforge.fml.loading.EarlyLoadingException: Duplicate mods found

@@ -1,0 +1,24 @@
+[19:00:00] [main/INFO]: Loading Minecraft 1.21.1 with Fabric Loader 0.16.9
+[19:00:00] [main/INFO]: Loading 84 mods:
+	- fabric-api 0.110.0+1.21.1
+	- sodium 0.6.0+mc1.21.1
+	- iris 1.8.1+mc1.21.1
+[19:00:01] [main/WARN]: Mod 'Sodium' (sodium) 0.6.0+mc1.21.1 recommends any version of mod 'Reese's Sodium Options' (reeses-sodium-options), which is missing!
+[19:00:01] [main/WARN]: Reference map 'betterclouds-refmap.json' for betterclouds.mixins.json could not be read. If this is a development environment you can ignore this message
+[19:00:02] [main/WARN]: Error loading class: dev/emi/emi/api/EmiPlugin (java.lang.ClassNotFoundException: dev/emi/emi/api/EmiPlugin)
+[19:00:02] [main/WARN]: @Mixin target dev.emi.emi.api.EmiPlugin was not found jei-compat.mixins.json:EmiPluginMixin from mod jei-compat
+[19:00:02] [main/WARN]: @Redirect conflict. Skipping lithium.mixins.json:world.chunk_access.WorldMixin from mod lithium->@Redirect::getChunk(Lnet/minecraft/class_1937;)V with priority 1000, already redirected by c2me.mixins.json:WorldMixin from mod c2me->@Redirect::getChunkFast(Lnet/minecraft/class_1937;)V with priority 1100
+[19:00:03] [main/INFO]: Mixin config sodium.mixins.json does not specify "minVersion" property
+[19:00:04] [Render thread/INFO]: Setting user: Player
+[19:00:04] [Render thread/INFO]: Backend library: LWJGL version 3.3.3-snapshot
+[19:00:05] [Render thread/WARN]: GLFW error 65539: Invalid key -1
+[19:00:06] [Render thread/WARN]: Failed to load config for modid xaerominimap, using defaults
+[19:00:07] [Render thread/WARN]: Missing sound for event: minecraft:item.goat_horn.play
+[19:00:07] [Render thread/WARN]: Unable to resolve texture due to missing resource: minecraft:textures/item/foo.png
+[19:00:08] [Render thread/ERROR]: Failed to verify authentication
+com.mojang.authlib.exceptions.InvalidCredentialsException: Status: 401
+[19:00:09] [Render thread/ERROR]: Couldn't parse data file 'friends' from minecraft:recipes/friends.json
+com.google.gson.JsonSyntaxException: Expected BEGIN_OBJECT but was STRING at line 1 column 1 path $
+[19:00:10] [Server thread/INFO]: Preparing spawn area: 84%
+[19:00:12] [Render thread/INFO]: Connecting to localhost, 25565
+[19:05:30] [Render thread/INFO]: Stopping!

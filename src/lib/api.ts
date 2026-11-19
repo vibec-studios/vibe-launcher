@@ -153,8 +153,9 @@ export const api = {
   /** Gibt Task-ID zurück (vorher automatischer Snapshot). */
   modpackUpdate: (instanceId: string, versionId?: string | null) => call<string>("modpack_update", { instanceId, versionId: versionId ?? null }),
   contentCheckDeps: (instanceId: string) => call<T.DepIssue[]>("content_check_deps", { instanceId }),
-  autofixPlan: (instanceId: string, crashReport?: string | null, exitCode?: number | null) =>
-    call<T.FixPlan>("autofix_plan", { instanceId, crashReport: crashReport ?? null, exitCode: exitCode ?? null }),
+  /** ignoreCrash: nur statisch prüfen (Nachprüfung nach dem Beheben) */
+  autofixPlan: (instanceId: string, crashReport?: string | null, exitCode?: number | null, ignoreCrash?: boolean) =>
+    call<T.FixPlan>("autofix_plan", { instanceId, crashReport: crashReport ?? null, exitCode: exitCode ?? null, ignoreCrash: ignoreCrash ?? false }),
   /** Task-ID; Ergebnis danach über autofixLast */
   autofixApply: (instanceId: string, actions: T.FixAction[], backup?: T.FixBackup | null) => call<string>("autofix_apply", { instanceId, actions, backup: backup ?? null }),
   autofixLast: (instanceId: string) => call<T.FixReport | null>("autofix_last", { instanceId }),

@@ -1,5 +1,7 @@
 // „Probleme beheben“ in einem Klick: Plan laden (Abhängigkeiten, Konflikte, letzte Crash-Analyse), Vorschau
 // („Das wird gemacht“) mit abwählbaren Schritten, ausführen (vorher Snapshot) und Zusammenfassung mit „Rückgängig“.
+// Nach einem Absturz stehen die erkannten Ursachen oben (Erklärung, Fundstelle, zugehörige Schritte); der Bericht
+// zeigt je Ursache „behoben“ / „nicht automatisch lösbar“ und bietet „Testen“ (erneute Prüfung ohne den alten Absturz).
 // Außerdem die Rückfrage vor dem Start („Trotzdem starten“ / „Beheben und starten“). Global eingebunden (InstanceDialogs).
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -9,6 +11,7 @@ import {
   Cpu,
   Download,
   ExternalLink,
+  FileWarning,
   Info,
   MemoryStick,
   PackageCheck,
@@ -16,8 +19,10 @@ import {
   Power,
   PowerOff,
   RefreshCw,
+  RotateCcw,
   ShieldCheck,
   Undo2,
+  UploadCloud,
   Wrench,
   X,
 } from "lucide-react";
@@ -32,7 +37,9 @@ import { qk, queryClient, useInstances, useSettings, useTaskStore, waitForTask }
 import { patchSettings } from "@/lib/mode";
 import { DEFAULT_FIX_BACKUP, FixBackupPicker, useScopeList } from "@/features/backups/FixBackupPicker";
 import { loaderNames } from "@/lib/format";
-import type { FixAction, FixBackup, FixPlan, FixReport, FixStep, Instance, LoaderKind, QuickCheck } from "@/lib/types";
+import type { Diagnosis, FixAction, FixBackup, FixPlan, FixReport, FixStep, Instance, LoaderKind, QuickCheck, Unfixable } from "@/lib/types";
+import { Evidence, diagText } from "@/features/logs/Diagnosis";
+import { uploadCrash } from "@/features/logs/LogsTab";
 
 // ------------------------------------------------------------------ Store
 
@@ -91,6 +98,8 @@ function actionText(a: FixAction, t: ReturnType<typeof useT>, step?: FixStep): s
       return t(step?.reason === "loader_too_old" ? "fix.do.loader_up" : "fix.do.loader_set", { loader: loaderNames[a.loader], to: a.to });
     case "repair_loader":
       return a.version ? t("fix.do.loader_repair", { loader: loaderNames[a.loader], version: a.version }) : t("fix.do.loader_repair_any", { loader: loaderNames[a.loader] });
+    case "reset_config":
+      return t("fix.do.reset_config", { path: a.path });
   }
 }
 
@@ -121,10 +130,12 @@ function actionIcon(a: FixAction, size = 15): ReactNode {
       return <ArrowUpCircle size={size} />;
     case "repair_loader":
       return <PackageCheck size={size} />;
+    case "reset_config":
+      return <RotateCcw size={size} />;
   }
 }
 
-function stepSub(s: FixStep, t: ReturnType<typeof useT>, instLoader?: LoaderKind): string {
+function stepSub(s: FixStep, t: ReturnType<typeof useT>, instLoader?: LoaderKind, inCause = false): string {
   const inst = instLoader ? loaderNames[instLoader] : "";
   const a = s.action;
   let parts: string[];
@@ -142,7 +153,9 @@ function stepSub(s: FixStep, t: ReturnType<typeof useT>, instLoader?: LoaderKind
   if ((s.reason === "loader_files_missing" || s.reason === "loader_files_broken") && s.detail)
     parts.push(t(s.detail === "1" ? "fix.loader.files_1" : "fix.loader.files", { n: s.detail }));
   if (a.kind === "repair_loader") parts.push(t("fix.loader.repair_hint"));
-  if (s.from_crash) parts.push(t("fix.from_crash"));
+  if (a.kind === "reset_config") parts.push(t("fix.config.hint"));
+  if (s.reason === "known_pair" && s.detail) parts.push(t("fix.pair.source", { source: s.detail }));
+  if (s.from_crash && !inCause) parts.push(t("fix.from_crash"));
   return parts.join(" · ");
 }
 
@@ -157,6 +170,7 @@ function StepRow({
   onToggle,
   onAlt,
   instLoader,
+  inCause,
 }: {
   s: FixStep;
   on: boolean;
@@ -164,6 +178,7 @@ function StepRow({
   onToggle: (v: boolean) => void;
   onAlt: (v: boolean) => void;
   instLoader?: LoaderKind;
+  inCause?: boolean;
 }) {
   const t = useT();
   const a = alt && s.alt ? s.alt : s.action;
@@ -176,7 +191,7 @@ function StepRow({
           <span className={cn("truncate text-[13.5px] font-semibold", on ? "text-text" : "text-muted")}>{actionText(a, t, s)}</span>
           {s.confirm && <span className="shrink-0 rounded-xs bg-warn/15 px-1.5 py-px text-[11px] font-semibold text-warn">{t("fix.confirm_tag")}</span>}
         </div>
-        <div className="mt-0.5 text-[12px] leading-snug text-dim">{stepSub(s, t, instLoader)}</div>
+        <div className="mt-0.5 text-[12px] leading-snug text-dim">{stepSub(s, t, instLoader, inCause)}</div>
         {s.alt && (
           <div className="mt-2 flex flex-wrap gap-1" role="radiogroup" aria-label={t("fix.alt_label")}>
             {[false, true].map((v) => (
@@ -203,6 +218,80 @@ function StepRow({
   );
 }
 
+/** Nächster Schritt, wenn eine Ursache nicht automatisch lösbar ist. */
+function NextStep({ d, instanceId, crashReport }: { d: Diagnosis; instanceId: string; crashReport?: string | null }) {
+  const t = useT();
+  const [busy, setBusy] = useState(false);
+  const key = d.id === "graphics" || d.id === "heap_reserve" ? `fix.next.${d.id}` : "fix.next.default";
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-muted">
+      <span className="min-w-0 flex-1">{t(key)}</span>
+      <Button
+        size="sm"
+        variant="ghost"
+        loading={busy}
+        icon={<UploadCloud size={13} />}
+        onClick={async () => {
+          setBusy(true);
+          await uploadCrash(instanceId, crashReport ?? null);
+          setBusy(false);
+        }}
+      >
+        {t("fix.share_log")}
+      </Button>
+    </div>
+  );
+}
+
+function unfixableText(u: Unfixable, t: ReturnType<typeof useT>) {
+  return t(`fix.unfixable.${u.reason}`, { name: u.name, detail: u.detail ?? "" });
+}
+
+/** Eine Absturzursache: Erklärung, Fundstelle und die Schritte, die sie beheben. */
+function CauseCard({
+  d,
+  steps,
+  unfixable,
+  row,
+  instanceId,
+  crashReport,
+}: {
+  d: Diagnosis;
+  steps: FixStep[];
+  unfixable: Unfixable[];
+  row: (s: FixStep, inCause?: boolean) => ReactNode;
+  instanceId: string;
+  crashReport?: string | null;
+}) {
+  const t = useT();
+  const { title, text } = diagText(d, t);
+  return (
+    <div className="flex flex-col gap-2.5 rounded-card bg-surface p-3 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-danger)_22%,transparent)]">
+      <div className="flex items-start gap-2.5">
+        <FileWarning size={15} className="mt-0.5 shrink-0 text-danger" />
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-semibold text-text">{title}</div>
+          <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{text}</p>
+          <Evidence d={d} />
+        </div>
+      </div>
+      {steps.length > 0 && <div className="flex flex-col gap-1.5">{steps.map((s) => row(s, true))}</div>}
+      {unfixable.map((u, i) => (
+        <div key={i} className="flex items-start gap-2 px-1 text-[12.5px] text-muted">
+          <AlertTriangle size={13} className="mt-px shrink-0 text-warn" />
+          <span className="selectable min-w-0">{unfixableText(u, t)}</span>
+        </div>
+      ))}
+      {steps.length === 0 && (
+        <div className="flex flex-col gap-1 border-t border-line pt-2">
+          <span className="text-[12px] font-semibold text-warn">{t("fix.cause.manual")}</span>
+          <NextStep d={d} instanceId={instanceId} crashReport={crashReport} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PlanView({
   plan,
   sel,
@@ -212,8 +301,12 @@ function PlanView({
   instLoader,
   backup,
   setBackup,
+  instanceId,
+  crashReport,
 }: {
   plan: FixPlan;
+  instanceId: string;
+  crashReport?: string | null;
   instLoader?: LoaderKind;
   backup: FixBackup;
   setBackup: (b: FixBackup) => void;
@@ -223,44 +316,68 @@ function PlanView({
   setAlt: (id: string, v: boolean) => void;
 }) {
   const t = useT();
+  const causes = plan.causes ?? [];
+  // Schritte einer Absturzursache stehen in deren Karte oben
+  const inCause = (x: { cause?: number | null }) => x.cause != null && x.cause < causes.length;
+  const rest = plan.steps.filter((s) => !inCause(s));
   // Loader-Schritte als eigener Abschnitt: betreffen die ganze Instanz, nicht einzelne Mods
   const isLoader = (s: FixStep) => s.action.kind === "set_loader" || s.action.kind === "repair_loader";
-  const loader = plan.steps.filter(isLoader);
-  const normal = plan.steps.filter((s) => !s.confirm && !isLoader(s));
-  const ask = plan.steps.filter((s) => s.confirm && !isLoader(s));
+  const loader = rest.filter(isLoader);
+  const normal = rest.filter((s) => !s.confirm && !isLoader(s));
+  const ask = rest.filter((s) => s.confirm && !isLoader(s));
+  const unfixable = plan.unfixable.filter((u) => !inCause(u));
   const manual = plan.steps.some((s) => s.action.kind === "replace" && s.action.manual);
   const loaderChange = plan.steps.some((s) => s.action.kind === "set_loader");
-  const row = (s: FixStep) => (
-    <StepRow key={s.id} s={s} on={!!sel[s.id]} alt={!!alt[s.id]} onToggle={(v) => setSel(s.id, v)} onAlt={(v) => setAlt(s.id, v)} instLoader={instLoader} />
+  const row = (s: FixStep, cause = false) => (
+    <StepRow key={s.id} s={s} on={!!sel[s.id]} alt={!!alt[s.id]} onToggle={(v) => setSel(s.id, v)} onAlt={(v) => setAlt(s.id, v)} instLoader={instLoader} inCause={cause} />
   );
   return (
     <div className="flex flex-col gap-4">
+      {causes.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <div>
+            <h3 className="text-[12.5px] font-semibold text-muted">{t("fix.causes.title")}</h3>
+            <p className="text-[12px] text-dim">{t("fix.causes.text")}</p>
+          </div>
+          {causes.map((d, i) => (
+            <CauseCard
+              key={i}
+              d={d}
+              steps={plan.steps.filter((s) => s.cause === i)}
+              unfixable={plan.unfixable.filter((u) => u.cause === i)}
+              row={row}
+              instanceId={instanceId}
+              crashReport={crashReport}
+            />
+          ))}
+        </section>
+      )}
       {loader.length > 0 && (
         <section className="flex flex-col gap-1.5">
           <h3 className="text-[12.5px] font-semibold text-muted">{t("fix.loader.title")}</h3>
-          {loader.map(row)}
+          {loader.map((s) => row(s))}
         </section>
       )}
       {normal.length > 0 && (
         <section className="flex flex-col gap-1.5">
           {loader.length > 0 && <h3 className="text-[12.5px] font-semibold text-muted">{t("fix.mods.title")}</h3>}
-          {normal.map(row)}
+          {normal.map((s) => row(s))}
         </section>
       )}
       {ask.length > 0 && (
         <section className="flex flex-col gap-1.5">
           <h3 className="text-[12.5px] font-semibold text-muted">{t("fix.ask_title")}</h3>
           <p className="-mt-1 mb-0.5 text-[12px] text-dim">{t("fix.ask_text")}</p>
-          {ask.map(row)}
+          {ask.map((s) => row(s))}
         </section>
       )}
-      {plan.unfixable.length > 0 && (
+      {unfixable.length > 0 && (
         <section className="flex flex-col gap-1.5">
           <h3 className="text-[12.5px] font-semibold text-muted">{t("fix.unfixable.title")}</h3>
-          {plan.unfixable.map((u, i) => (
+          {unfixable.map((u, i) => (
             <div key={i} className="flex items-start gap-2.5 px-3 py-1.5 text-[12.5px] text-muted">
               <AlertTriangle size={14} className="mt-px shrink-0 text-warn" />
-              <span className="selectable min-w-0">{t(`fix.unfixable.${u.reason}`, { name: u.name, detail: u.detail ?? "" })}</span>
+              <span className="selectable min-w-0">{unfixableText(u, t)}</span>
             </div>
           ))}
         </section>
@@ -293,13 +410,84 @@ function PlanView({
   );
 }
 
-/** Lässt sich etwas zurückstellen? Ohne Sicherung nur Java/RAM, Loader und vorgemerkte Downloads (wie `can_undo`). */
+/** Lässt sich etwas zurückstellen? Ohne Sicherung nur Java/RAM, Loader, Configs und vorgemerkte Downloads (wie `can_undo`). */
 function canUndo(r: FixReport) {
-  return !!r.snapshot_id || !!r.prev_java || !!r.prev_loader || r.manual.length > 0;
+  return !!r.snapshot_id || !!r.prev_java || !!r.prev_loader || r.manual.length > 0 || (r.config_backups?.length ?? 0) > 0;
 }
 
-function ReportView({ report, undone, steps }: { report: FixReport; undone: boolean; steps: FixStep[] }) {
+type CauseStatus = "fixed" | "partial" | "failed" | "skipped" | "manual";
+
+/** Ergebnis je Absturzursache aus den ausgeführten Schritten. */
+export function causeStatus(i: number, plan: FixPlan, report: FixReport): CauseStatus {
+  const steps = plan.steps.filter((s) => s.cause === i);
+  if (!steps.length) return "manual";
+  const same = (a: FixAction | null, b: FixAction) => !!a && JSON.stringify(a) === JSON.stringify(b);
+  const ran = report.results.filter((r) => steps.some((s) => same(s.action, r.action) || same(s.alt, r.action)));
+  if (!ran.length) return "skipped";
+  const ok = ran.filter((r) => r.ok).length;
+  return ok === ran.length ? "fixed" : ok > 0 ? "partial" : "failed";
+}
+
+const statusStyle: Record<CauseStatus, string> = {
+  fixed: "bg-ok/15 text-ok",
+  partial: "bg-warn/15 text-warn",
+  failed: "bg-danger/15 text-danger",
+  skipped: "bg-white/[.06] text-muted",
+  manual: "bg-warn/15 text-warn",
+};
+
+export type Verify = "running" | { open: number };
+
+function VerifyView({ v, onAgain }: { v: Verify; onAgain: () => void }) {
   const t = useT();
+  return (
+    <div className="flex flex-col gap-1.5 rounded-ctl bg-surface px-3.5 py-3">
+      {v === "running" ? (
+        <span className="flex items-center gap-2 text-[13px] text-muted">
+          <RefreshCw size={13} className="animate-spin" />
+          {t("fix.verify.running")}
+        </span>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={cn("flex min-w-0 flex-1 items-center gap-2 text-[13px] font-semibold", v.open ? "text-warn" : "text-ok")}>
+            {v.open ? <AlertTriangle size={14} className="shrink-0" /> : <Check size={14} strokeWidth={2.5} className="shrink-0" />}
+            {v.open ? t(v.open === 1 ? "fix.verify.open_1" : "fix.verify.open", { n: v.open }) : t("fix.verify.ok")}
+          </span>
+          {v.open > 0 && (
+            <Button size="sm" icon={<Wrench size={13} />} onClick={onAgain}>
+              {t("fix.verify.again")}
+            </Button>
+          )}
+        </div>
+      )}
+      <span className="flex items-center gap-2 text-[12px] text-dim">
+        <Play size={12} className="shrink-0" />
+        {t("fix.verify.hint")}
+      </span>
+    </div>
+  );
+}
+
+function ReportView({
+  report,
+  undone,
+  plan,
+  instanceId,
+  crashReport,
+  verify,
+  onAgain,
+}: {
+  report: FixReport;
+  undone: boolean;
+  plan: FixPlan | undefined;
+  instanceId: string;
+  crashReport?: string | null;
+  verify: Verify | null;
+  onAgain: () => void;
+}) {
+  const t = useT();
+  const steps = plan?.steps ?? [];
+  const causes = plan?.causes ?? [];
   const scopeList = useScopeList();
   const scoped = !!report.snapshot_id && !!report.snapshot_scopes;
   const doneText = report.snapshot_id
@@ -325,6 +513,23 @@ function ReportView({ report, undone, steps }: { report: FixReport; undone: bool
           <div className="text-[12.5px] text-muted">{undone ? undoneText : doneText}</div>
         </div>
       </div>
+      {!undone && causes.length > 0 && plan && (
+        <section className="flex flex-col gap-1.5">
+          <h3 className="text-[12.5px] font-semibold text-muted">{t("fix.done.causes")}</h3>
+          {causes.map((d, i) => {
+            const st = causeStatus(i, plan, report);
+            return (
+              <div key={i} className="flex flex-col gap-1.5 rounded-ctl bg-surface px-3 py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text">{diagText(d, t).title}</span>
+                  <span className={cn("shrink-0 rounded-xs px-1.5 py-px text-[11px] font-semibold", statusStyle[st])}>{t(`fix.status.${st}`)}</span>
+                </div>
+                {(st === "manual" || st === "failed") && <NextStep d={d} instanceId={instanceId} crashReport={crashReport} />}
+              </div>
+            );
+          })}
+        </section>
+      )}
       <div className="flex flex-col">
         {report.results.map((r, i) => (
           <div key={i} className="flex items-start gap-2.5 px-1 py-1.5 text-[13px]">
@@ -358,6 +563,7 @@ function ReportView({ report, undone, steps }: { report: FixReport; undone: bool
           ))}
         </section>
       )}
+      {!undone && verify && <VerifyView v={verify} onAgain={onAgain} />}
     </div>
   );
 }
@@ -367,9 +573,12 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
   const { launch } = useInstanceActions();
   const { data: instances } = useInstances();
   const inst = instances?.find((i) => i.id === req.instanceId) ?? null;
+  // Nach „Erneut beheben“ zählt der alte Absturz nicht mehr – nur noch statisch prüfen
+  const [ignoreCrash, setIgnoreCrash] = useState(false);
+  const [verify, setVerify] = useState<Verify | null>(null);
   const plan = useQuery({
-    queryKey: ["autofix-plan", req.instanceId, req.crashReport ?? null, req.exitCode ?? null],
-    queryFn: () => api.autofixPlan(req.instanceId, req.crashReport, req.exitCode),
+    queryKey: ["autofix-plan", req.instanceId, req.crashReport ?? null, req.exitCode ?? null, ignoreCrash],
+    queryFn: () => api.autofixPlan(req.instanceId, ignoreCrash ? null : req.crashReport, ignoreCrash ? null : req.exitCode, ignoreCrash),
     staleTime: 0,
     gcTime: 0,
     retry: 0,
@@ -450,6 +659,26 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
     }
   };
 
+  /** „Testen“: erneute statische Prüfung (ohne den alten Absturz). */
+  const runVerify = async () => {
+    setVerify("running");
+    try {
+      const p = await api.autofixPlan(req.instanceId, null, null, true);
+      setVerify({ open: p.steps.length + p.unfixable.length });
+    } catch (e) {
+      toast.error(e, t("fix.failed"));
+      setVerify(null);
+    }
+  };
+  const fixAgain = () => {
+    setVerify(null);
+    setReport(null);
+    setTaskId(null);
+    setIgnoreCrash(true);
+    setPhase("preview");
+    void plan.refetch();
+  };
+
   const startNow = () => {
     onClose();
     if (inst) void launch(inst, null, null, { skipCheck: true });
@@ -458,10 +687,11 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
   const busy = phase === "running" || phase === "undoing";
   const steps = plan.data?.steps ?? [];
   const title = phase === "done" ? t("fix.done.title") : phase === "undone" ? t("fix.undone.title") : t("fix.title");
+  const causes = plan.data?.causes ?? [];
   const description =
     phase === "preview"
-      ? plan.data && (steps.length || plan.data.unfixable.length)
-        ? t(plan.data.crash ? "fix.desc_crash" : "fix.desc", { name: inst?.name ?? "" })
+      ? plan.data && (steps.length || plan.data.unfixable.length || causes.length)
+        ? t(plan.data.crash && causes.length ? "fix.desc_crash" : "fix.desc", { name: inst?.name ?? "" })
         : undefined
       : undefined;
 
@@ -493,7 +723,12 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
           </Button>
         )}
         <div className="flex-1" />
-        {req.launchAfter && phase === "done" ? (
+        {phase === "done" && (
+          <Button variant="ghost" icon={<ShieldCheck size={14} />} loading={verify === "running"} onClick={() => void runVerify()}>
+            {t("fix.verify.button")}
+          </Button>
+        )}
+        {(req.launchAfter || (verify && verify !== "running")) && phase === "done" ? (
           <>
             <Button variant="ghost" onClick={onClose}>
               {t("common.close")}
@@ -526,7 +761,7 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
           </div>
         ) : plan.isError ? (
           <p className="selectable text-[13px] text-danger">{errorMessage(plan.error)}</p>
-        ) : !steps.length && !plan.data.unfixable.length ? (
+        ) : !steps.length && !plan.data.unfixable.length && !causes.length ? (
           <div className="flex flex-col items-center gap-2 py-6 text-center">
             <span className="grid h-11 w-11 place-items-center rounded-card bg-ok/15 text-ok">
               <Check size={22} strokeWidth={2.5} />
@@ -544,6 +779,8 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
             setAlt={(id, v) => setAlt((s) => ({ ...s, [id]: v }))}
             backup={backup}
             setBackup={changeBackup}
+            instanceId={req.instanceId}
+            crashReport={ignoreCrash ? null : req.crashReport}
           />
         )
       ) : busy ? (
@@ -556,7 +793,15 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
           <div className="min-h-[18px] truncate text-[12.5px] text-muted">{task?.message ?? ""}</div>
         </div>
       ) : report ? (
-        <ReportView report={report} undone={phase === "undone"} steps={plan.data?.steps ?? []} />
+        <ReportView
+          report={report}
+          undone={phase === "undone"}
+          plan={plan.data}
+          instanceId={req.instanceId}
+          crashReport={req.crashReport}
+          verify={verify}
+          onAgain={fixAgain}
+        />
       ) : null}
     </Dialog>
   );
@@ -607,11 +852,23 @@ export function AutofixHost() {
 }
 
 /** Knopf „Probleme beheben“ (Hinweiszeile, Crash-Banner, Crash-Dialog). */
-export function AutofixButton({ req, size = "sm", variant = "accent", className }: { req: FixRequest; size?: "sm" | "md"; variant?: "accent" | "ghost"; className?: string }) {
+export function AutofixButton({
+  req,
+  size = "sm",
+  variant = "accent",
+  className,
+  label,
+}: {
+  req: FixRequest;
+  size?: "sm" | "md";
+  variant?: "accent" | "ghost";
+  className?: string;
+  label?: string;
+}) {
   const t = useT();
   return (
     <Button size={size} variant={variant} icon={<Wrench size={13} />} className={className} onClick={() => openAutofix(req)}>
-      {t("fix.button")}
+      {label ?? t("fix.button")}
     </Button>
   );
 }
