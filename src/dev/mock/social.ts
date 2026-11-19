@@ -1,6 +1,7 @@
 // Mock: simuliertes Vibe-Backend (REST `vibe_http` + Gateway `vibe_ws_*`) mit realistischem Datensatz für die
 // Freunde-Seite – Freunde online/offline/hostend, Chats mit Einladungs- und Modpack-Karten, Anfragen, Tippen.
 // Nur für VITE_MOCK=1 (Browser), nie im Produktions-Build. Skins: echte Texturen über mc-heads.net.
+import * as cosmeticsMock from "./cosmetics";
 import type { VibeHttpRequest, VibeHttpResponse, VibeStatus, VibeTokens } from "@/lib/types";
 import type {
   Chat,
@@ -274,7 +275,7 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
     "friends/requests/:id", "friends/:id", "blocks", "blocks/:id", "users/search", "chats", "chats/dm", "chats/:id", "chats/:id/messages",
     "chats/:id/messages/:id", "chats/:id/members", "chats/:id/members/:id", "chats/:id/read", "chats/:id/typing", "invites", "invites/:id/accept",
     "invites/:id/decline", "invites/:id", "hosting/friends", "hosting/limits", "hosting/sessions", "packs/mine", "packs/:id", "packs/:id/versions",
-    "notifications",
+    "notifications", "cosmetics/me", "cosmetics/loadout", "cosmetics/submissions",
   ];
   let b = "";
   let d = "";
@@ -443,6 +444,13 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
       return b === "KAICREATE" ? ok(pack) : notFound;
     case "GET packs/:id/versions":
       return ok(pack.latestVersion ? [pack.latestVersion] : []);
+    case "GET cosmetics/me":
+      return ok(cosmeticsMock.me);
+    case "PUT cosmetics/loadout":
+      Object.assign(cosmeticsMock.me.loadout, body);
+      return ok(cosmeticsMock.me.loadout);
+    case "GET cosmetics/submissions":
+      return ok(cosmeticsMock.submissions);
     case "GET notifications":
       return ok({ notifications: [], unreadCount: 0 });
     case "GET presence/friends":

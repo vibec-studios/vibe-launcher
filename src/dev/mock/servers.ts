@@ -340,6 +340,32 @@ function candidates(instanceId: string): ServerModCandidate[] {
 // Beim Laden: Survival läuft schon mit zwei Spielern und playit-Claim
 setTimeout(() => boot("survival-smp", ["Steve", "Alex"]), 50);
 
+type MockAddon = {
+  file_name: string; enabled: boolean; size: number; modified: number; sha1: string | null; name: string | null; version: string | null;
+  authors: string[]; description: string | null; icon: string | null; source: "modrinth" | null; project_id: string | null; slug: string | null;
+  version_id: string | null; title: string | null; page_url: string | null;
+};
+const addonItems = new Map<string, MockAddon[]>();
+function addonDefaults(plugins: boolean): MockAddon[] {
+  const mk = (slug: string, title: string, version: string, author: string, description: string, icon: string | null, extra: Partial<MockAddon> = {}): MockAddon => ({
+    file_name: `${slug}-${version}.jar`, enabled: true, size: 400_000 + slug.length * 91_000, modified: Date.now() - 86400_000 * (slug.length % 9),
+    sha1: null, name: title, version, authors: [author], description, icon, source: "modrinth", project_id: slug.toUpperCase().slice(0, 8), slug,
+    version_id: null, title, page_url: `https://modrinth.com/mod/${slug}`, ...extra,
+  });
+  if (plugins)
+    return [
+      mk("luckperms", "LuckPerms", "5.4.141", "Luck", "A permissions plugin for Minecraft servers.", null),
+      mk("essentialsx", "EssentialsX", "2.20.1", "EssentialsX Team", "The essential plugin suite for Minecraft servers.", null),
+    ];
+  return [
+    mk("fabric-api", "Fabric API", "0.110.5", "modmuss50", "Lightweight and modular API providing common hooks.", "https://cdn.modrinth.com/data/P7dR8mSH/icon.png"),
+    mk("lithium", "Lithium", "0.14.3", "jellysquid3", "No-compromises game logic optimization mod.", "https://cdn.modrinth.com/data/gvQqBUqZ/icon.png"),
+    mk("ferritecore", "FerriteCore", "7.1.1", "malte0811", "Memory usage optimizations.", "https://cdn.modrinth.com/data/uXXizFIs/icon.png"),
+    mk("chunky", "Chunky", "1.4.27", "pop4959", "Pre-generates chunks, quickly and efficiently.", null),
+    { ...mk("spark", "spark", "1.10.119", "lucko", "A performance profiler for Minecraft clients, servers and proxies.", null), enabled: false, file_name: "spark-1.10.119.jar.disabled" },
+  ];
+}
+
 const handlers: Handlers = {
   servers_list: () => [...servers.values()],
   server_get: ({ id }) => get(id),
@@ -506,6 +532,45 @@ const handlers: Handlers = {
     if (s.connection === "relay") relayAddr.delete(s.id);
     else claimed.delete(s.id);
     if (status(s.id).state === "running") startTunnel(s.id);
+  },
+  // Erweiterungen (Mods-/Plugins-Tab): ein paar typische Mods mit Update und einem deaktivierten Eintrag
+  server_addons: ({ id }) => {
+    const s = get(id);
+    const plugins = !!s.platform;
+    const items = (addonItems.get(s.id) ?? addonDefaults(plugins)).map((x) => ({ ...x }));
+    addonItems.set(s.id, items);
+    return { target: { folder: plugins ? "plugins" : "mods", plugins, loaders: plugins ? ["paper"] : [s.loader.kind], mc: s.mc_version, hangar: null }, items };
+  },
+  server_addon_search: ({ query }) => {
+    const all = [
+      { source: "modrinth", id: "P7dR8mSH", slug: "fabric-api", title: "Fabric API", description: "Lightweight and modular API providing common hooks.", author: "modmuss50", icon_url: "https://cdn.modrinth.com/data/P7dR8mSH/icon.png", downloads: 288_600_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/fabric-api" },
+      { source: "modrinth", id: "gvQqBUqZ", slug: "lithium", title: "Lithium", description: "No-compromises game logic optimization mod.", author: "jellysquid3", icon_url: "https://cdn.modrinth.com/data/gvQqBUqZ/icon.png", downloads: 144_200_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/lithium" },
+      { source: "modrinth", id: "uXXizFIs", slug: "ferritecore", title: "FerriteCore", description: "Memory usage optimizations.", author: "malte0811", icon_url: "https://cdn.modrinth.com/data/uXXizFIs/icon.png", downloads: 168_200_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/ferritecore" },
+      { source: "modrinth", id: "fALzjamp", slug: "chunky", title: "Chunky", description: "Pre-generates chunks, quickly and efficiently.", author: "pop4959", icon_url: null, downloads: 12_400_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/chunky" },
+      { source: "modrinth", id: "l6YH9Als", slug: "spark", title: "spark", description: "A performance profiler for Minecraft clients, servers and proxies.", author: "lucko", icon_url: null, downloads: 30_100_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/spark" },
+    ];
+    const q = String(query ?? "").toLowerCase();
+    const hits = all.filter((h) => !q || h.title.toLowerCase().includes(q));
+    return { hits, total: hits.length, offset: 0 };
+  },
+  server_addon_updates: ({ id }) => {
+    const s = get(id);
+    const lith = (addonItems.get(s.id) ?? []).find((x) => x.slug === "lithium");
+    return lith ? [{ file_name: lith.file_name, source: "modrinth", project_id: lith.project_id, current: lith.version, latest: "0.15.0" }] : [];
+  },
+  server_addon_set_enabled: ({ id, file, enabled }) => {
+    const list = addonItems.get(get(id).id) ?? [];
+    const it = list.find((x) => x.file_name === file);
+    if (it) {
+      it.enabled = !!enabled;
+      it.file_name = enabled ? it.file_name.replace(/\.disabled$/, "") : it.file_name + ".disabled";
+    }
+    return it?.file_name ?? file;
+  },
+  server_addon_remove: ({ id, file }) => {
+    const s = get(id);
+    addonItems.set(s.id, (addonItems.get(s.id) ?? []).filter((x) => x.file_name !== file));
+    return null;
   },
   servers_quit: ({ stop: doStop }) => {
     console.info("[mock] servers_quit", doStop);
