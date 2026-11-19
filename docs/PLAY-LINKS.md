@@ -31,6 +31,13 @@ Stand 2026-11-18. Gilt für Vibe-Backend, Vibe Launcher und Vibey Client. Änder
 - Regel: `pack` ist `null` bei Instanzen ohne Modpack. Dann listet `mods` alle Inhalte mit bekannter Quelle (Mods, Resourcepacks, Shader) und dem Feld `"kind"`.
 - Inhalte ohne Quelle, also manuelle Dateien, stehen nicht drin. Der Client zählt sie und zeigt sie als Hinweis an.
 - Ohne die Datei, etwa bei einem anderen Launcher, bekommt der Link nur MC-Version und Loader.
+- **Dateinamen (ergänzt von vibey-client, optional):** Damit der Client manuelle Mods zählen kann, darf jeder
+  `mods`-Eintrag `"file": "sodium-fabric-0.6.jar"` tragen (Dateiname in seinem Ordner), und `"known_files":
+  ["mods/a.jar", …]` (Pfade relativ zur Instanz) listet zusätzlich Dateien mit bekannter Quelle, die nicht in `mods`
+  stehen – vor allem die Dateien des Modpacks. Manuell = `.jar` in `mods/`, die in keinem der beiden vorkommt (Vergleich
+  ohne Groß-/Kleinschreibung; `vibeyclient*.jar` zählt nie). Fehlen beide Felder, vergleicht der Client nur die Anzahl
+  (`.jar` in `mods/` minus `mods`-Einträge mit `kind` `mod` oder ohne `kind`) und zeigt bei Modpacks keinen Hinweis.
+  `file` und `known_files` gehen nicht an das Backend.
 
 **`<instanz>/.vibe/session.json`** schreibt der Client, solange das Spiel läuft. Der Launcher liest sie für den Discord-Status:
 
@@ -42,6 +49,12 @@ Stand 2026-11-18. Gilt für Vibe-Backend, Vibe Launcher und Vibey Client. Änder
 - `server` nur bei `multiplayer`. Ein Server darf das über die Server-Regeln (§5) verbergen.
 - `world` nur bei `singleplayer` bzw. `hosting`.
 - Der Client löscht die Datei beim Beenden. Ist `updated_at` älter als 60 s, gilt sie als veraltet.
+- **Ergänzt von vibey-client:** Der Client schreibt nur, wenn `<instanz>/.vibe/` existiert (der Launcher legt den Ordner
+  mit `instance.json` an). Er schreibt bei jeder Änderung und sonst alle 15 s (Temp-Datei + Move). `play_link` gibt es
+  nur bei `hosting`; `players` bei `hosting` (inkl. Host) und `multiplayer` (Tab-Liste), `max_players` nur bei
+  `hosting`. Fehlende Felder sind weggelassen, nicht `null`. `server` fehlt auch, wenn der Spieler in Vibey
+  „Serveradresse verbergen“ an hat. Mit der Client-Einstellung „Dem Launcher zeigen, was ich spiele“ aus gibt es
+  keine Datei.
 
 ## 3. Backend
 
@@ -58,6 +71,11 @@ Auth: die Vibe-Session (wie in VIBE-API-2.md), für Client und Launcher.
 - Rate-Limit: 10 neue Links pro Stunde und Nutzer. Ablauf nach höchstens 12 h.
 - Die Mod-Liste wird beim Anlegen geprüft: Es sind nur `modrinth` und `curseforge` mit IDs erlaubt, höchstens 500 Einträge.
 - Ob der Link noch aktiv ist, prüft das Backend beim Relay (vorhandene Admin-/Status-Schnittstelle), sonst über das Ablaufdatum.
+- **Ergänzt von vibey-client:** `relay_host` ist die volle Relay-Adresse, mit `:port`, wenn das Relay nicht auf 25565
+  läuft (so wie sie `--quickPlayMultiplayer` braucht). `expires_at` ist ISO-8601 (der Client nimmt auch Unix-Sekunden).
+  Antwort auf `POST` mit `201`. Der Client legt den Link neu an, wenn sich die Relay-Adresse ändert und 2 min vor
+  Ablauf; er löscht ihn beim Ende des Hostens und beim Beenden (max. 2 s Wartezeit). Ohne die Route (`404`) oder bei
+  `feature_disabled` blendet er den Knopf aus.
 
 ## 4. Discord-Status (Launcher)
 
@@ -85,6 +103,19 @@ Auth: die Vibe-Session (wie in VIBE-API-2.md), für Client und Launcher.
 - `discord.server` versteckt den Servernamen in `session.json`.
 - Wildcards gibt es nur am Ende (`hud.*`). Unbekannte Schlüssel werden ignoriert.
 - Der Client meldet sich mit `vibey:hello` (Version und unterstützte Schlüssel), damit Server-Plugins wissen, was geht.
+- **Wire-Format (ergänzt von vibey-client, Details in `vibey-client/docs/SERVER-RULES.md`):** Der Body jeder Plugin-Message
+  ist genau ein UTF-8-JSON-Objekt, ohne Längenpräfix (`player.sendPluginMessage(plugin, "vibey:rules", json)` reicht).
+  `vibey:rules` max. 16 KiB, max. 256 Schlüssel à 64 Zeichen (`[a-z0-9_-]`-Segmente mit Punkt, optional `.*` am Ende,
+  oder `*`), `message` reiner Text, max. 256 Zeichen; `schema` ≠ 1 wird ignoriert. Jedes Paket **ersetzt** die
+  vorherigen Regeln, `{"schema":1,"disable":[]}` hebt sie auf. Hello:
+  `{"schema":1,"client":"vibey-client","version":"…","supports":[…],"minecraft":"1.21.11","loader":"fabric"}` –
+  zusätzliche Felder sind erlaubt, Empfänger ignorieren Unbekanntes.
+- **Timing:** Der Client registriert `vibey:rules` direkt nach dem Join (`minecraft:register`); Server senden die Regeln,
+  sobald sie diese Registrierung sehen (Bukkit: `PlayerRegisterChannelEvent`) und erneut nach dem Hello. Der Client
+  schickt sein Hello, sobald der Server `vibey:hello` registriert hat (er prüft 30 s lang nach dem Join).
+- **Kosmetik-Schlüssel:** `cosmetics.capes`, `cosmetics.wings`, `cosmetics.auras`, `cosmetics.pets`,
+  `cosmetics.shields`, `cosmetics.hats`, `cosmetics.backs` (`cosmetics.*` = alle); `emotes` blockiert eigene Emotes
+  und blendet die anderer Spieler aus.
 - **Für Server:**
   - ein kleines Paper/Spigot-Plugin `VibeyRules` mit `config.yml`, im Repo vibey-client unter `server-plugins/`,
   - auf Fabric/NeoForge-Servern dieselbe Konfiguration im Server-Teil des Vibey-Jars,
