@@ -43,6 +43,9 @@ pub struct LinkMod {
     pub version_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    /// Nur lokal in `instance.json` (nicht ans Backend): Dateiname im Ordner, damit der Client manuelle Mods erkennt
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
 }
 
 /// `<spielordner>/.vibe/instance.json` (schema 1).
@@ -55,6 +58,10 @@ pub struct InstanceFile {
     pub pack: Option<LinkPack>,
     pub mods: Vec<LinkMod>,
     pub client_pack: Option<String>,
+    /// Nur lokal: weitere Dateien mit bekannter Quelle (Pfade relativ zum Spielordner). Bei Modpacks leer, weil
+    /// Override-Dateien nicht im Index stehen – der Client zeigt dann keinen Hinweis auf manuelle Mods.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub known_files: Vec<String>,
 }
 
 /// `<spielordner>/.vibe/session.json` (schema 1), geschrieben vom Vibey Client.
@@ -150,13 +157,20 @@ pub fn build_instance_file(inst: &Instance, idx: &ContentIndex, client_pack: Opt
         .iter()
         .filter(|(_, e)| matches!(e.source, Source::Modrinth | Source::Curseforge))
         .filter_map(|(k, e)| {
-            Some(LinkMod { source: e.source.as_string(), project_id: e.project_id.clone(), version_id: Some(e.version_id.clone()).filter(|v| !v.is_empty()), kind: Some(kind_of_key(k)?.to_string()) })
+            Some(LinkMod {
+                source: e.source.as_string(),
+                project_id: e.project_id.clone(),
+                version_id: Some(e.version_id.clone()).filter(|v| !v.is_empty()),
+                kind: Some(kind_of_key(k)?.to_string()),
+                file: if pack.is_none() { k.split_once('/').map(|(_, f)| f.to_string()) } else { None },
+            })
         })
         .collect();
     // gleiche Projekte (z. B. ein Mod in zwei Dateien) nur einmal
     mods.sort_by(|a, b| (&a.source, &a.project_id).cmp(&(&b.source, &b.project_id)));
     mods.dedup_by(|a, b| a.source == b.source && a.project_id == b.project_id);
     mods.truncate(500);
+    let known_files = if pack.is_none() { idx.files.keys().take(2000).cloned().collect() } else { Vec::new() };
     InstanceFile {
         schema: 1,
         name: inst.name.clone(),
@@ -165,6 +179,7 @@ pub fn build_instance_file(inst: &Instance, idx: &ContentIndex, client_pack: Opt
         pack,
         mods,
         client_pack,
+        known_files,
     }
 }
 

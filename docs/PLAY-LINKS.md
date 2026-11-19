@@ -38,6 +38,8 @@ Stand 2026-11-18. Gilt für Vibe-Backend, Vibe Launcher und Vibey Client. Änder
   ohne Groß-/Kleinschreibung; `vibeyclient*.jar` zählt nie). Fehlen beide Felder, vergleicht der Client nur die Anzahl
   (`.jar` in `mods/` minus `mods`-Einträge mit `kind` `mod` oder ohne `kind`) und zeigt bei Modpacks keinen Hinweis.
   `file` und `known_files` gehen nicht an das Backend.
+  *(Launcher, umgesetzt:)* `file` und `known_files` (alle Dateien im Content-Index) schreibt er nur bei Instanzen
+  **ohne** Modpack. Bei Modpacks fehlen beide, weil Override-Jars nicht im Index stehen; der Client zeigt dann keinen Hinweis.
 
 **`<instanz>/.vibe/session.json`** schreibt der Client, solange das Spiel läuft. Der Launcher liest sie für den Discord-Status:
 
