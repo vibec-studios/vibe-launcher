@@ -1,6 +1,6 @@
 [package]
 name = "vibe-launcher"
-version = "1.0.0-beta.3"
+version = "1.0.0-beta.4"
 license = "Apache-2.0"
 description = "Vibe Launcher - Minecraft launcher by Vibe Craft Studios"
 authors = ["Vibe Craft Studios"]
