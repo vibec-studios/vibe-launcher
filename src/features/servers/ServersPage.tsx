@@ -2,7 +2,7 @@
 // alles Weitere im ⋯-Menü bzw. per Rechtsklick. Der Seitentitel steht in der Titelleiste.
 import { memo, useDeferredValue, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { MoreHorizontal, Plus, Server as ServerIconLucide } from "lucide-react";
+import { MoreHorizontal, Plus, Server as ServerIconLucide, Users } from "lucide-react";
 import { useServerStatus, useServers } from "@/lib/queries";
 import type { Server } from "@/lib/types";
 import { formatLoader } from "@/lib/format";
@@ -131,11 +131,20 @@ export function ServersPage() {
         ) : sorted.length === 0 ? (
           <EmptyState title={t("srv.no_match", { q: query })} />
         ) : (
-          <div className="-mx-3 flex flex-col">
-            {sorted.map((s) => (
-              <ServerRow key={s.id} server={s} />
-            ))}
-          </div>
+          <>
+            <div className="-mx-3 flex flex-col">
+              {sorted.map((s) => (
+                <ServerRow key={s.id} server={s} />
+              ))}
+            </div>
+            {/* Wenige Server: kurzer Hinweis, wie Freunde mitspielen – statt einer großen leeren Fläche */}
+            {list.length <= 3 && !q && (
+              <p className="mt-3 flex items-start gap-2.5 rounded-card bg-surface px-4 py-3 text-[12.5px] leading-relaxed text-muted">
+                <Users size={15} className="mt-px shrink-0 text-dim" />
+                {t("srv.list.hint")}
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>
