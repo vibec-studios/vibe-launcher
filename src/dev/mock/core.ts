@@ -74,6 +74,7 @@ let settings: Settings = {
   reduce_motion: false,
   auto_update_content: false,
   snapshot_keep: 10,
+  fix_backup: { mode: "recommended", areas: ["mods", "configs", "options"] },
   world_backup_on_launch: false,
   world_backups_keep: 5,
   minecraftcapes: true,

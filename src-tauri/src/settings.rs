@@ -66,6 +66,8 @@ pub struct Settings {
     pub world_backup_on_launch: bool,
     /// Aufbewahrte automatische Backups je Welt
     pub world_backups_keep: u32,
+    /// Sicherung vor „Probleme beheben“ und Performance-Mods (welche Bereiche)
+    pub fix_backup: FixBackup,
     /// MinecraftCapes-Cape/Ohren des eigenen Accounts anzeigen (aus = keine Anfragen an api.minecraftcapes.net)
     pub minecraftcapes: bool,
     /// Darstellung: Akzentfarbe, Ton, Ecken, Dichte, Skalierung, Hintergrund
@@ -84,6 +86,27 @@ pub struct Settings {
     pub simple_tour_done: bool,
     /// Weggeklickte Hinweise/Ankündigungen (je `id`, z. B. "domain-move-2026-11"; docs/DOMAINS.md)
     pub dismissed_notices: Vec<String>,
+}
+
+/// Sicherung vor automatischen Mod-Änderungen. `mode`: "recommended" (Mods, Configs, Optionen) | "mods" | "all" |
+/// "custom" (Bereiche aus `areas`, siehe `snapshots::SCOPES`) | "none" (keine Sicherung, „Rückgängig“ eingeschränkt).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct FixBackup {
+    pub mode: String,
+    pub areas: Vec<String>,
+}
+
+impl FixBackup {
+    /// Was „Probleme beheben“ verändern kann (Mods, beim nächsten Start auch deren Configs und Tastenbelegungen) –
+    /// ohne Resourcepacks/Shader, die ein späteres „Rückgängig“ sonst mit zurückdrehen würde.
+    pub const RECOMMENDED: [&'static str; 3] = ["mods", "configs", "options"];
+}
+
+impl Default for FixBackup {
+    fn default() -> Self {
+        FixBackup { mode: "recommended".into(), areas: Self::RECOMMENDED.iter().map(|s| s.to_string()).collect() }
+    }
 }
 
 fn legacy_ui_mode() -> String {
@@ -402,6 +425,7 @@ impl Default for Settings {
             snapshot_keep: 10,
             world_backup_on_launch: false,
             world_backups_keep: 5,
+            fix_backup: FixBackup::default(),
             minecraftcapes: true,
             appearance: Appearance::default(),
             // Neue Nutzer wählen den Modus im Onboarding

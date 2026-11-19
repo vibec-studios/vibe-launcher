@@ -28,9 +28,11 @@ import { useInstanceActions } from "@/components/instance/actions";
 import { openExternal } from "@/components/content/util";
 import { useT } from "@/i18n";
 import { api, errorMessage, isCancelled } from "@/lib/api";
-import { qk, queryClient, useInstances, useTaskStore, waitForTask } from "@/lib/queries";
+import { qk, queryClient, useInstances, useSettings, useTaskStore, waitForTask } from "@/lib/queries";
+import { patchSettings } from "@/lib/mode";
+import { DEFAULT_FIX_BACKUP, FixBackupPicker, useScopeList } from "@/features/backups/FixBackupPicker";
 import { loaderNames } from "@/lib/format";
-import type { FixAction, FixPlan, FixReport, FixStep, Instance, LoaderKind, QuickCheck } from "@/lib/types";
+import type { FixAction, FixBackup, FixPlan, FixReport, FixStep, Instance, LoaderKind, QuickCheck } from "@/lib/types";
 
 // ------------------------------------------------------------------ Store
 
@@ -208,9 +210,13 @@ function PlanView({
   setSel,
   setAlt,
   instLoader,
+  backup,
+  setBackup,
 }: {
   plan: FixPlan;
   instLoader?: LoaderKind;
+  backup: FixBackup;
+  setBackup: (b: FixBackup) => void;
   sel: Record<string, boolean>;
   alt: Record<string, boolean>;
   setSel: (id: string, v: boolean) => void;
@@ -259,11 +265,17 @@ function PlanView({
           ))}
         </section>
       )}
-      <div className="flex flex-col gap-1 border-t border-line pt-3 text-[12px] text-dim">
-        <span className="flex items-center gap-2">
-          <ShieldCheck size={13} className="shrink-0 text-ok" />
-          {t("fix.safe_note")}
-        </span>
+      {plan.steps.length > 0 && (
+        <section className="flex flex-col gap-1.5 border-t border-line pt-3">
+          <h3 className="flex items-center gap-2 text-[12.5px] font-semibold text-muted">
+            <ShieldCheck size={13} className={backup.mode === "none" ? "text-dim" : "text-ok"} />
+            {t("fix.backup.title")}
+          </h3>
+          <FixBackupPicker value={backup} onChange={setBackup} />
+          <p className="text-[11.5px] text-dim">{t("fix.backup.remembered")}</p>
+        </section>
+      )}
+      <div className="flex flex-col gap-1 text-[12px] text-dim empty:hidden">
         {manual && (
           <span className="flex items-center gap-2">
             <ExternalLink size={13} className="shrink-0" />
@@ -281,8 +293,23 @@ function PlanView({
   );
 }
 
+/** Lässt sich etwas zurückstellen? Ohne Sicherung nur Java/RAM, Loader und vorgemerkte Downloads (wie `can_undo`). */
+function canUndo(r: FixReport) {
+  return !!r.snapshot_id || !!r.prev_java || !!r.prev_loader || r.manual.length > 0;
+}
+
 function ReportView({ report, undone, steps }: { report: FixReport; undone: boolean; steps: FixStep[] }) {
   const t = useT();
+  const scopeList = useScopeList();
+  const scoped = !!report.snapshot_id && !!report.snapshot_scopes;
+  const doneText = report.snapshot_id
+    ? scoped
+      ? t("fix.done.text_scoped", { areas: scopeList(report.snapshot_scopes) })
+      : t("fix.done.text")
+    : canUndo(report)
+      ? t("fix.done.no_backup")
+      : t("fix.done.no_undo");
+  const undoneText = report.snapshot_id ? (scoped ? t("fix.undone.text_scoped", { areas: scopeList(report.snapshot_scopes) }) : t("fix.undone.text")) : t("fix.undone.text_settings");
   // Namen aus dem Plan (Dateinamen sind im Ergebnis nicht schön)
   const same = (a: FixAction | null, b: FixAction) => !!a && JSON.stringify(a) === JSON.stringify(b);
   const stepOf = (a: FixAction) => steps.find((s) => same(s.action, a) || same(s.alt, a));
@@ -295,7 +322,7 @@ function ReportView({ report, undone, steps }: { report: FixReport; undone: bool
         </span>
         <div className="min-w-0">
           <div className="text-[14px] font-semibold text-text">{undone ? t("fix.undone.title") : t("fix.done.count", { ok, n: report.results.length })}</div>
-          <div className="text-[12.5px] text-muted">{undone ? t("fix.undone.text") : t("fix.done.text")}</div>
+          <div className="text-[12.5px] text-muted">{undone ? undoneText : doneText}</div>
         </div>
       </div>
       <div className="flex flex-col">
@@ -353,6 +380,14 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
   const [taskId, setTaskId] = useState<string | null>(null);
   const [report, setReport] = useState<FixReport | null>(null);
   const task = useTaskStore((s) => (taskId ? s.tasks[taskId] : undefined));
+  // Sicherung vorher: aus den Einstellungen, Änderungen werden dort gemerkt
+  const settings = useSettings();
+  const [backupChoice, setBackupChoice] = useState<FixBackup | null>(null);
+  const backup = backupChoice ?? settings.data?.fix_backup ?? DEFAULT_FIX_BACKUP;
+  const changeBackup = (b: FixBackup) => {
+    setBackupChoice(b);
+    void patchSettings({ fix_backup: b }).catch((e) => toast.error(e));
+  };
 
   useEffect(() => {
     if (plan.data) setSel(Object.fromEntries(plan.data.steps.map((s) => [s.id, s.selected])));
@@ -379,7 +414,7 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
     const actions = chosen.map((s) => (alt[s.id] && s.alt ? s.alt : s.action));
     setPhase("running");
     try {
-      const id = await api.autofixApply(req.instanceId, actions);
+      const id = await api.autofixApply(req.instanceId, actions, backup);
       setTaskId(id);
       await waitForTask(id).catch((e) => {
         if (!isCancelled(e)) toast.error(e, t("fix.failed"));
@@ -452,9 +487,9 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
   } else if (phase === "done" || phase === "undone") {
     footer = (
       <>
-        {phase === "done" && report?.snapshot_id && (
+        {phase === "done" && report && canUndo(report) && (
           <Button variant="ghost" icon={<Undo2 size={14} />} onClick={() => void undo()}>
-            {t("fix.undo")}
+            {report.snapshot_id ? t("fix.undo") : t("fix.undo_settings")}
           </Button>
         )}
         <div className="flex-1" />
@@ -507,6 +542,8 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
             alt={alt}
             setSel={(id, v) => setSel((s) => ({ ...s, [id]: v }))}
             setAlt={(id, v) => setAlt((s) => ({ ...s, [id]: v }))}
+            backup={backup}
+            setBackup={changeBackup}
           />
         )
       ) : busy ? (

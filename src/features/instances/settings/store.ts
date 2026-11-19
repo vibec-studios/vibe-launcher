@@ -2,7 +2,7 @@
 // `?tab=settings`, Vibey-Symbol im Kopf …).
 import { create } from "zustand";
 
-export const INSTANCE_SETTINGS_TABS = ["general", "version", "client", "java", "launch", "vibe", "advanced"] as const;
+export const INSTANCE_SETTINGS_TABS = ["general", "version", "client", "java", "launch", "sync", "vibe", "advanced"] as const;
 export type InstanceSettingsTab = (typeof INSTANCE_SETTINGS_TABS)[number];
 
 interface State {

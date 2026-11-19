@@ -47,7 +47,8 @@ import {
 import { JavaPathField, MemoryField, SaveIndicator, useAutoSave, useJavaList } from "@/components/instance/forms";
 import { Logo3D } from "@/components/Logo3D";
 import { checkForUpdate } from "@/app/UpdateNotice";
-import { MasterOptSync } from "@/components/instance/OptSync";
+import { MasterOptSync, SyncOverview } from "@/components/instance/OptSync";
+import { FixBackupPicker } from "@/features/backups/FixBackupPicker";
 import { useLang, useT } from "@/i18n";
 import { StoresCard } from "./StoresCard";
 import { SkinImportSettings } from "@/features/skins/SkinImport";
@@ -531,6 +532,10 @@ function GameTab({ s, update }: TabProps) {
       </SettingsCard>
 
       <SettingsCard title={t("settings.section.sync")}>
+        <SyncOverview />
+      </SettingsCard>
+
+      <SettingsCard title={t("sync.overview.master")}>
         <MasterOptSync />
       </SettingsCard>
 
@@ -544,6 +549,9 @@ function GameTab({ s, update }: TabProps) {
             onChange={(v) => v !== null && update({ snapshot_keep: v })}
             aria-label={t("settings.backups.snapshot_keep")}
           />
+        </SettingRow>
+        <SettingRow title={t("settings.backups.fix")} description={t("settings.backups.fix.desc")} stacked>
+          <FixBackupPicker value={s.fix_backup} onChange={(fix_backup) => update({ fix_backup })} />
         </SettingRow>
         <SettingRow title={t("settings.backups.world_on_launch")} description={t("settings.backups.world_on_launch.desc")}>
           <Switch

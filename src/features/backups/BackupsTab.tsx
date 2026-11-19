@@ -25,6 +25,7 @@ import {
   toast,
 } from "@/components/ui";
 import { runBackupTask } from "./worldActions";
+import { useScopeList } from "./FixBackupPicker";
 
 export const backupKeys = {
   snapshots: (id: string) => ["content", id, "snapshots"] as const,
@@ -42,6 +43,19 @@ function AutoTag() {
     <Tooltip content={t("backups.auto_hint")}>
       <span>
         <Tag color="#5aa9ff">{t("backups.auto")}</Tag>
+      </span>
+    </Tooltip>
+  );
+}
+
+/** Teil-Snapshot: nur einige Bereiche gesichert (Wiederherstellen lässt den Rest in Ruhe). */
+function PartialTag({ scopes }: { scopes: NonNullable<SnapshotInfo["scopes"]> }) {
+  const t = useT();
+  const list = useScopeList();
+  return (
+    <Tooltip content={t("backups.partial_hint", { areas: list(scopes) })}>
+      <span>
+        <Tag color="#e0a33f">{t("backups.partial")}</Tag>
       </span>
     </Tooltip>
   );
@@ -87,10 +101,11 @@ function RowSkeleton() {
 
 const SnapshotRow = memo(function SnapshotRow({ instance, snap, busy }: { instance: Instance; snap: SnapshotInfo; busy: boolean }) {
   const t = useT();
+  const scopeList = useScopeList();
   const restore = async () => {
     const ok = await confirm({
       title: t("backups.snapshot.restore_title", { name: snap.name }),
-      text: t("backups.snapshot.restore_text"),
+      text: snap.scopes ? `${t("backups.snapshot.restore_text")} ${t("backups.partial_hint", { areas: scopeList(snap.scopes) })}` : t("backups.snapshot.restore_text"),
       confirmLabel: t("backups.snapshot.restore"),
     });
     if (!ok) return;
@@ -120,9 +135,11 @@ const SnapshotRow = memo(function SnapshotRow({ instance, snap, busy }: { instan
             {snap.name}
           </span>
           {snap.auto && <AutoTag />}
+          {snap.scopes && <PartialTag scopes={snap.scopes} />}
         </div>
         <div className="truncate text-[12px] leading-tight text-dim">
           {dateTime(snap.created)} · {formatRelative(snap.created)} · {t("backups.snapshot.files", { n: snap.file_count })} · {formatBytes(snap.size)}
+          {snap.scopes && <> · {scopeList(snap.scopes)}</>}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">

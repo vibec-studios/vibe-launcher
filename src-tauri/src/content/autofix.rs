@@ -128,6 +128,9 @@ pub struct StepResult {
 pub struct FixReport {
     pub created: i64,
     pub snapshot_id: Option<String>,
+    /// Bereiche der Sicherung (`None` = vollständig bzw. keine Sicherung, siehe `snapshot_id`)
+    #[serde(default)]
+    pub snapshot_scopes: Option<Vec<String>>,
     pub results: Vec<StepResult>,
     /// Gesperrte Downloads, die manuell geladen werden müssen
     pub manual: Vec<MissingDownload>,
@@ -804,7 +807,8 @@ pub fn order(actions: &mut [FixAction]) {
     actions.sort_by_key(rank);
 }
 
-pub async fn run_apply(state: AppState, task: TaskHandle, instance_id: String, mut actions: Vec<FixAction>) -> AppResult<()> {
+/// `backup`: gewünschte Sicherung (sonst `Settings.fix_backup`).
+pub async fn run_apply(state: AppState, task: TaskHandle, instance_id: String, mut actions: Vec<FixAction>, backup: Option<crate::settings::FixBackup>) -> AppResult<()> {
     let inst = state.instances.get(&instance_id)?;
     if state.game.is_running(&instance_id) {
         return Err(AppError::Invalid("Die Instanz läuft gerade – bitte zuerst das Spiel beenden.".into()));
@@ -813,13 +817,22 @@ pub async fn run_apply(state: AppState, task: TaskHandle, instance_id: String, m
         return Ok(());
     }
     order(&mut actions);
-    // Sicherung zuerst: ohne Snapshot wird nichts verändert, was sich nicht zurückholen ließe
-    task.stage("Sicherung wird erstellt …", Some(0.0));
-    let snap = snapshots::create(&state, &instance_id, SNAPSHOT_NAME, true, Some(&task.sub(0.0, 0.25))).await?;
+    // Sicherung zuerst (Bereiche laut Einstellung). Schlägt sie fehl, wird nichts verändert. Bei „Gar keine“
+    // lässt sich hinterher nur Java/RAM/Loader zurückstellen.
+    let backup = backup.unwrap_or_else(|| state.settings().fix_backup);
+    let scopes = snapshots::fix_backup_scopes(&backup);
+    let snap = match &scopes {
+        Some(sc) => {
+            task.stage("Sicherung wird erstellt …", Some(0.0));
+            Some(snapshots::create_scoped(&state, &instance_id, SNAPSHOT_NAME, true, sc, Some(&task.sub(0.0, 0.25))).await?)
+        }
+        None => None,
+    };
     task.check()?;
     let mut report = FixReport {
         created: crate::util::now_ms(),
-        snapshot_id: Some(snap.id),
+        snapshot_scopes: snap.as_ref().and_then(|s| s.scopes.clone()),
+        snapshot_id: snap.map(|s| s.id),
         results: vec![],
         manual: vec![],
         prev_java: None,
@@ -959,10 +972,18 @@ async fn install_one(
 
 // ------------------------------------------------------------------ 4. Rückgängig
 
+/// Lässt sich etwas zurückstellen? Ohne Sicherung nur Java/RAM, Loader und vorgemerkte Downloads.
+pub fn can_undo(r: &FixReport) -> bool {
+    r.snapshot_id.is_some() || r.prev_java.is_some() || r.prev_loader.is_some() || !r.manual.is_empty()
+}
+
 pub async fn run_undo(state: AppState, task: TaskHandle, instance_id: String) -> AppResult<()> {
     let mut r = last_report(&state, &instance_id).ok_or_else(|| AppError::NotFound("Kein Durchlauf von „Probleme beheben“".into()))?;
     if r.undone {
         return Err(AppError::Invalid("Wurde bereits rückgängig gemacht".into()));
+    }
+    if !can_undo(&r) {
+        return Err(AppError::Invalid("Ohne Sicherung lässt sich dieser Durchlauf nicht rückgängig machen".into()));
     }
     if let Some(s) = &r.snapshot_id {
         task.stage("Stand vor dem Beheben wird wiederhergestellt …", Some(0.0));
@@ -1151,6 +1172,8 @@ mod tests {
         assert_eq!(l, FixAction::RepairLoader { loader: LoaderKind::Neoforge, version: None });
         // Alte Berichte ohne prev_loader bleiben lesbar
         let rep: FixReport = serde_json::from_str(r#"{"created":1,"snapshot_id":null,"results":[],"manual":[],"prev_java":null}"#).unwrap();
+        assert!(rep.snapshot_scopes.is_none());
+        assert!(!can_undo(&rep));
         assert!(rep.prev_loader.is_none());
     }
 
