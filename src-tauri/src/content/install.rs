@@ -263,7 +263,7 @@ fn manual_page(p: &Planned) -> String {
     }
 }
 
-async fn refresh_all(state: &AppState, inst_id: &str) -> AppResult<(Vec<(ContentKind, local::Scanned)>, ContentIndex)> {
+pub(super) async fn refresh_all(state: &AppState, inst_id: &str) -> AppResult<(Vec<(ContentKind, local::Scanned)>, ContentIndex)> {
     let mut all = Vec::new();
     for k in ContentKind::ALL {
         let (s, _) = local::refresh(state, inst_id, k).await?;

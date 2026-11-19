@@ -17,12 +17,6 @@ import type { Handlers } from "./util";
 
 mockWindows("main");
 
-const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks, ...play, ...announcements, ...cosmetics };
-// VITE_MOCK_MODRINTH=live: Entdecken/Projektseite gegen die echte Modrinth-API
-const handlers: Handlers = import.meta.env.VITE_MOCK_MODRINTH === "live" ? withLiveModrinth(base) : base;
-
-// Screenshots (Lade-/Fehlerzustände): localStorage vl.mock.latency = Millisekunden je Command (Standard 120),
-// vl.mock.fail = "cmd1,cmd2" -> diese Commands schlagen mit einer Netzwerk-Fehlermeldung fehl.
 const mockFlag = (k: string) => {
   try {
     return localStorage.getItem(k);
@@ -30,6 +24,27 @@ const mockFlag = (k: string) => {
     return null;
   }
 };
+const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks, ...play, ...announcements, ...cosmetics };
+// „Neu prüfen“: Updates, Probleme und Modpack-Prüfung der übrigen Mocks bündeln (etwas länger, damit der
+// Spinner am Knopf sichtbar ist; Screenshots: localStorage vl.mock.refresh = Millisekunden)
+base.instance_refresh = async (args) => {
+  await new Promise((r) => setTimeout(r, Number(mockFlag("vl.mock.refresh")) || 1800));
+  const updates = (await base.content_check_updates(args)) as unknown[];
+  return {
+    items: 120,
+    updates,
+    update_error: null,
+    modpack: await base.modpack_check(args),
+    issues: await base.content_check_deps(args),
+    checked_at: Date.now(),
+  };
+};
+
+// VITE_MOCK_MODRINTH=live: Entdecken/Projektseite gegen die echte Modrinth-API
+const handlers: Handlers = import.meta.env.VITE_MOCK_MODRINTH === "live" ? withLiveModrinth(base) : base;
+
+// Screenshots (Lade-/Fehlerzustände): localStorage vl.mock.latency = Millisekunden je Command (Standard 120),
+// vl.mock.fail = "cmd1,cmd2" -> diese Commands schlagen mit einer Netzwerk-Fehlermeldung fehl.
 const latency = Number(mockFlag("vl.mock.latency")) || 120;
 const failing = new Set((mockFlag("vl.mock.fail") ?? "").split(",").filter(Boolean));
 

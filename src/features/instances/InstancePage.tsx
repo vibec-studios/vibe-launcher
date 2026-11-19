@@ -25,6 +25,7 @@ import { InstanceFilesTab } from "@/features/files";
 import { accentVars } from "@/components/instance/accent";
 import { HeaderSkeleton, InstanceHeader } from "./InstanceHeader";
 import { InstanceNotices } from "./InstanceNotices";
+import { useRefreshShortcut } from "./RefreshButton";
 import { PlayLinkBar } from "@/features/play/SharePlayLink";
 import { VibeyClientBadge } from "@/features/cosmetics/VibeyClientSlot";
 import { ToolbarSlot } from "./toolbar";
@@ -212,6 +213,8 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
   const active: InstanceTab = simple && !SIMPLE_AREAS.includes(areaOf[tab]) ? "content" : tab;
   const area = areaOf[active];
   const worldItems = useWorldItems(inst.id, area === "worlds");
+  // F5 / Strg+R: Mods, Updates und Probleme neu prüfen (wie der Knopf im Kopf)
+  useRefreshShortcut(inst.id);
   // Aktuelle Unterseite merken (auch wenn sie per Link geöffnet wurde)
   useEffect(() => {
     if (active !== "settings") useLastSub.setState({ [area]: active });

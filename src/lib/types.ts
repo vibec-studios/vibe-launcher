@@ -1043,7 +1043,16 @@ export interface SideInfo {
   rel_path: string;
 }
 
-export type DepIssueKind = "missing_dependency" | "disabled_dependency" | "version_mismatch" | "incompatible" | "duplicate" | "wrong_loader" | "wrong_minecraft";
+export type DepIssueKind =
+  | "missing_dependency"
+  | "disabled_dependency"
+  | "version_mismatch"
+  | "incompatible"
+  | "duplicate"
+  | "wrong_loader"
+  | "wrong_minecraft"
+  /** Loader-Installation unvollständig/beschädigt/fehlgeschlagen (mod_name = Loader, file_name leer) */
+  | "loader_files";
 
 export type DepFix =
   | { action: "install"; source: Source; project_id: string; title: string }
@@ -1317,7 +1326,11 @@ export type FixAction =
   | { kind: "disable"; file_name: string }
   /** path null: Java wird heruntergeladen */
   | { kind: "set_java"; major: number; path: string | null }
-  | { kind: "set_ram"; mb: number };
+  | { kind: "set_ram"; mb: number }
+  /** Loader-Version umstellen und installieren */
+  | { kind: "set_loader"; loader: LoaderKind; from: string | null; to: string }
+  /** Loader in der eingestellten Version neu installieren */
+  | { kind: "repair_loader"; loader: LoaderKind; version: string | null };
 
 export type FixReason =
   | "missing_dependency"
@@ -1331,7 +1344,13 @@ export type FixReason =
   | "crash_suspect"
   | "dep_not_found"
   | "java_version"
-  | "out_of_memory";
+  | "out_of_memory"
+  | "loader_too_old"
+  | "loader_too_new"
+  | "loader_unknown"
+  | "loader_files_missing"
+  | "loader_files_broken"
+  | "loader_install_failed";
 
 export interface FixStep {
   id: string;
@@ -1346,10 +1365,12 @@ export interface FixStep {
   confirm: boolean;
   selected: boolean;
   from_crash: boolean;
+  /** Zusatzangabe je Grund: wrong_loader -> Loader der Mod ("forge"), loader_too_* -> Anforderungen, loader_files_* -> Anzahl */
+  detail: string | null;
 }
 
 export interface Unfixable {
-  reason: "loader_version" | "version_mismatch" | "no_version" | "dep_not_found" | "graphics" | "heap_reserve";
+  reason: "loader_version" | "loader_offline" | "version_mismatch" | "no_version" | "dep_not_found" | "graphics" | "heap_reserve";
   name: string;
   detail: string | null;
 }
@@ -1366,7 +1387,20 @@ export interface FixReport {
   results: { action: FixAction; ok: boolean; error: string | null }[];
   manual: MissingDownload[];
   prev_java: JavaOptions | null;
+  /** Loader vor dem Durchlauf (nur wenn umgestellt) */
+  prev_loader?: Loader | null;
   undone: boolean;
+}
+
+/** Ergebnis von „Neu prüfen“ (instance_refresh) */
+export interface RefreshReport {
+  items: number;
+  /** null: Update-Prüfung fehlgeschlagen (update_error) */
+  updates: ContentUpdate[] | null;
+  update_error: string | null;
+  modpack: ModpackUpdate | null;
+  issues: DepIssue[];
+  checked_at: number;
 }
 
 export interface QuickCheck {

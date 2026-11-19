@@ -4,16 +4,20 @@
 //! Ablauf:
 //! 1. [`needs`] (rein, getestet): Probleme -> Bedarf (installieren, aktivieren, deaktivieren, Version tauschen …),
 //!    dedupliziert und ohne Widersprüche (eine Mod, die deaktiviert/ersetzt wird, braucht keine Abhängigkeiten mehr).
-//! 2. [`plan`]: Bedarf über Modrinth/CurseForge auflösen (passende Version, Projekt zur Mod-ID, Java).
-//! 3. [`run_apply`]: Snapshot anlegen (Rückgängig), dann deaktivieren/aktivieren, tauschen/installieren, Java/RAM.
+//!    Der Loader (Version passt nicht zu den Mods, Installation unvollständig/beschädigt/fehlgeschlagen) kommt aus
+//!    [`loaderfix::loader_needs`] dazu.
+//! 2. [`plan`]: Bedarf über Modrinth/CurseForge auflösen (passende Version, Projekt zur Mod-ID, Java, Loader-Version).
+//! 3. [`run_apply`]: Snapshot anlegen (Rückgängig), dann deaktivieren/aktivieren, tauschen/installieren, Java/RAM,
+//!    zuletzt Loader umstellen bzw. neu installieren (schlägt das fehl, bleibt die alte Loader-Version eingestellt).
 //!    Nichts wird ohne Sicherung gelöscht: doppelte und unpassende Mods werden nur deaktiviert (`.disabled`),
 //!    ersetzte Dateien liegen im Snapshot. Gesperrte CurseForge-Dateien werden nur verlinkt (manueller Download).
 //! 4. [`run_undo`]: Snapshot wiederherstellen, Java/RAM zurücksetzen, vorgemerkte manuelle Downloads austragen.
 use super::deps::{self, DepIssue, Fix, IssueKind};
 use super::index::{self, ContentIndex};
+use super::loaderfix::{self, LoaderNeed};
 use super::{install, local, missing, modrinth as mr, snapshots, ContentKind, MissingDownload, ProjectVersion, Source};
 use crate::error::{AppError, AppResult};
-use crate::instance::{Instance, InstancePatch, JavaOptions, LoaderKind};
+use crate::instance::{Instance, InstancePatch, JavaOptions, Loader, LoaderKind};
 use crate::platform::crash::{self, Action as CrashAction, Diagnosis};
 use crate::state::AppState;
 use crate::tasks::TaskHandle;
@@ -54,13 +58,27 @@ pub enum FixAction {
     },
     /// Maximalen Arbeitsspeicher setzen (MB)
     SetRam { mb: u32 },
+    /// Loader-Version der Instanz umstellen und installieren (`from` nur zur Anzeige)
+    SetLoader {
+        loader: LoaderKind,
+        #[serde(default)]
+        from: Option<String>,
+        to: String,
+    },
+    /// Loader in der eingestellten Version neu installieren (alle Dateien prüfen und neu laden)
+    RepairLoader {
+        loader: LoaderKind,
+        #[serde(default)]
+        version: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FixStep {
     pub id: String,
     /// Grund: missing_dependency | disabled_dependency | version_mismatch | incompatible | known_conflict | duplicate |
-    /// wrong_loader | wrong_minecraft | crash_suspect | dep_not_found | java_version | out_of_memory
+    /// wrong_loader | wrong_minecraft | crash_suspect | dep_not_found | java_version | out_of_memory |
+    /// loader_too_old | loader_too_new | loader_unknown | loader_files_missing | loader_files_broken | loader_install_failed
     pub reason: String,
     /// Betroffene Mod (Anzeigename)
     pub name: String,
@@ -76,12 +94,15 @@ pub struct FixStep {
     pub selected: bool,
     /// Aus der Crash-Analyse
     pub from_crash: bool,
+    /// Zusatzangabe je Grund (sprachneutral): wrong_loader -> Loader der Mod ("forge"), loader_too_* -> Anforderungen
+    /// („Create >=0.16.10“), loader_files_* -> Anzahl Dateien
+    pub detail: Option<String>,
 }
 
 /// Erkannt, aber nicht automatisch behebbar.
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Unfixable {
-    /// loader_version | no_version | dep_not_found | graphics | heap_reserve
+    /// loader_version | loader_offline | no_version | dep_not_found | graphics | heap_reserve
     pub reason: String,
     pub name: String,
     pub detail: Option<String>,
@@ -112,6 +133,9 @@ pub struct FixReport {
     pub manual: Vec<MissingDownload>,
     /// Java-Einstellungen vor dem Durchlauf (nur wenn Java/RAM geändert wurde)
     pub prev_java: Option<JavaOptions>,
+    /// Loader vor dem Durchlauf (nur wenn die Loader-Version umgestellt wurde)
+    #[serde(default)]
+    pub prev_loader: Option<Loader>,
     #[serde(default)]
     pub undone: bool,
 }
@@ -153,6 +177,7 @@ fn kind_str(k: IssueKind) -> &'static str {
         IssueKind::Duplicate => "duplicate",
         IssueKind::WrongLoader => "wrong_loader",
         IssueKind::WrongMinecraft => "wrong_minecraft",
+        IssueKind::LoaderFiles => "loader_files",
     }
 }
 
@@ -272,13 +297,13 @@ pub fn needs(issues: &[DepIssue], diags: &[Diagnosis], names: &HashMap<String, S
             a.install(t, Some((&i.mod_name, &i.file_name)), false);
         }
     }
-    // Unpassende Version einer Abhängigkeit: Abhängigkeit tauschen (Loader-Version: nur Hinweis)
+    // Unpassende Version einer Abhängigkeit: Abhängigkeit tauschen (Loader-Version: siehe loaderfix)
     for i in of(IssueKind::VersionMismatch) {
         if a.gone(&i.file_name) {
             continue;
         }
         match (&i.target, &i.other_file) {
-            (Some(t), _) if LOADER_IDS.contains(&t.as_str()) => a.unfixable("loader_version", &i.mod_name, Some(i.message.clone())),
+            (Some(t), _) if LOADER_IDS.contains(&t.as_str()) => {}
             (_, Some(o)) => {
                 if a.gone(o) || a.out.iter().any(|n| matches!(n, Need::Update { file, .. } if file == o)) {
                     continue;
@@ -418,9 +443,18 @@ struct Builder {
 
 impl Builder {
     #[allow(clippy::too_many_arguments)]
-    fn step(&mut self, reason: &str, name: &str, required_by: Vec<String>, action: FixAction, alt: Option<(FixAction, String)>, confirm: bool, from_crash: bool) {
+    fn step(
+        &mut self,
+        reason: &str,
+        name: &str,
+        required_by: Vec<String>,
+        action: FixAction,
+        alt: Option<(FixAction, String)>,
+        confirm: bool,
+        from_crash: bool,
+    ) -> Option<&mut FixStep> {
         if self.steps.iter().any(|s| s.action == action) {
-            return;
+            return None;
         }
         let (alt, alt_name) = match alt {
             Some((a, n)) => (Some(a), Some(n)),
@@ -437,7 +471,9 @@ impl Builder {
             confirm,
             selected: !confirm,
             from_crash,
+            detail: None,
         });
+        self.steps.last_mut()
     }
 }
 
@@ -455,6 +491,7 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
     };
     let (scanned, idx): (Vec<local::Scanned>, ContentIndex) = if modded { local::scan(state, instance_id, ContentKind::Mod).await? } else { (vec![], ContentIndex::default()) };
     let names: HashMap<String, String> = scanned.iter().map(|s| (s.file_name.clone(), s.meta.name.clone().unwrap_or_else(|| display_name(&s.file_name)))).collect();
+    let by_file: HashMap<&str, &local::Scanned> = scanned.iter().map(|s| (s.file_name.as_str(), s)).collect();
     let need = needs(&issues, &diags, &names);
     let origin = |file: &str| idx.files.get(&index::key("mods", index::strip_disabled(file))).cloned();
 
@@ -479,6 +516,8 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
                 b.step("disabled_dependency", &name, required_by, FixAction::Enable { file_name: file }, None, false, from_crash);
             }
             Need::Swap { file, name, reason, from_crash } => {
+                // Bei falschem Loader: für welchen Loader die Mod gebaut ist (Anzeige)
+                let mod_loader = by_file.get(file.as_str()).and_then(|s| s.meta.loader.clone()).filter(|_| reason == "wrong_loader");
                 let o = origin(&file);
                 let v = match &o {
                     Some(o) => best(state, &inst, o.source, &o.project_id).await.filter(|v| v.id != o.version_id),
@@ -488,7 +527,7 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
                     (Some(o), Some(v)) => {
                         let manual = locked(state, &v).await;
                         let title = o.title.clone().unwrap_or_else(|| name.clone());
-                        b.step(
+                        if let Some(s) = b.step(
                             &reason,
                             &name,
                             vec![],
@@ -505,13 +544,40 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
                             None,
                             false,
                             from_crash,
-                        );
+                        ) {
+                            s.detail = mod_loader.clone();
+                        }
                         if manual {
                             // Bis die Datei von Hand geladen ist: alte (unpassende) Datei deaktivieren
-                            b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, from_crash);
+                            if let Some(s) = b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, from_crash) {
+                                s.detail = mod_loader;
+                            }
                         }
                     }
-                    _ => b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, from_crash),
+                    (None, _) if reason == "wrong_loader" => {
+                        // Von Hand hinzugefügte Datei: passende Variante über die Mod-ID auf Modrinth suchen
+                        let mod_id = by_file.get(file.as_str()).and_then(|s| s.meta.mod_id.clone());
+                        let variant = match &mod_id {
+                            Some(id) => match deps::resolve_modrinth(state, id, &inst).await {
+                                Some((pid, title)) if !idx.has_project(Source::Modrinth, &pid) && best(state, &inst, Source::Modrinth, &pid).await.is_some() => Some((pid, title)),
+                                _ => None,
+                            },
+                            None => None,
+                        };
+                        if let Some(s) = b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, from_crash) {
+                            s.detail = mod_loader.clone();
+                        }
+                        if let Some((pid, title)) = variant {
+                            if let Some(s) = b.step(&reason, &title, vec![], FixAction::Install { source: Source::Modrinth, project_id: pid, title: title.clone() }, None, false, from_crash) {
+                                s.detail = mod_loader;
+                            }
+                        }
+                    }
+                    _ => {
+                        if let Some(s) = b.step(&reason, &name, vec![], FixAction::Disable { file_name: file }, None, false, from_crash) {
+                            s.detail = mod_loader;
+                        }
+                    }
                 }
             }
             Need::Update { file, name, required_by } => {
@@ -591,6 +657,24 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
         }
     }
 
+    // Loader: Version passt nicht zu den Mods (die aktiv bleiben) / Installation unvollständig
+    if modded {
+        let files = loaderfix::inspect(&state.paths, &inst);
+        let reqs: Vec<deps::LoaderReq> = deps::loader_requirements(&inst, &scanned).into_iter().filter(|r| !gone.contains(&r.file)).collect();
+        let available = if loaderfix::needs_versions(&inst, &files, &reqs) {
+            match crate::minecraft::loaders::loader_versions(state, inst.loader.kind, &inst.mc_version).await {
+                Ok(l) => Some(l),
+                Err(e) => {
+                    tracing::warn!("Autofix {instance_id}: Loader-Versionen nicht geladen: {e}");
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        loader_steps(&inst, loaderfix::loader_needs(&inst, &files, &reqs, available.as_deref()), &mut b);
+    }
+
     // Bekannte Konflikte laut Modrinth (Abhängigkeitstyp „incompatible“ der installierten Version)
     if modded {
         if let Err(e) = known_conflicts(state, &scanned, &idx, &names, &gone, &mut b).await {
@@ -599,6 +683,27 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
     }
 
     Ok(FixPlan { steps: b.steps, unfixable: b.unfixable, crash })
+}
+
+/// Loader-Bedarf als Schritte bzw. Hinweise.
+fn loader_steps(inst: &Instance, need: Vec<LoaderNeed>, b: &mut Builder) {
+    let kind = inst.loader.kind;
+    let label = crate::minecraft::loaders::loader_name(kind);
+    for n in need {
+        match n {
+            LoaderNeed::Set { from, to, reason, required_by, detail } => {
+                if let Some(s) = b.step(reason, label, required_by, FixAction::SetLoader { loader: kind, from, to }, None, false, false) {
+                    s.detail = detail;
+                }
+            }
+            LoaderNeed::Repair { version, reason, detail } => {
+                if let Some(s) = b.step(reason, label, vec![], FixAction::RepairLoader { loader: kind, version }, None, false, false) {
+                    s.detail = detail;
+                }
+            }
+            LoaderNeed::Unfixable { reason, detail } => b.unfixable.push(Unfixable { reason: reason.into(), name: label.into(), detail }),
+        }
+    }
 }
 
 /// Installierte Modrinth-Mods, deren Version eine andere installierte Mod als inkompatibel markiert.
@@ -683,7 +788,7 @@ fn summary(r: &FixReport) -> String {
     s
 }
 
-/// Reihenfolge: deaktivieren/aktivieren, dann tauschen/installieren, zuletzt Java/RAM.
+/// Reihenfolge: deaktivieren/aktivieren, dann tauschen/installieren, Java/RAM, zuletzt der Loader.
 pub fn order(actions: &mut [FixAction]) {
     let rank = |a: &FixAction| match a {
         FixAction::Disable { .. } => 0,
@@ -692,6 +797,9 @@ pub fn order(actions: &mut [FixAction]) {
         FixAction::Install { .. } => 3,
         FixAction::SetJava { .. } => 4,
         FixAction::SetRam { .. } => 5,
+        // Zuletzt: Installation braucht die gewählte Java-Version (Forge-Installer)
+        FixAction::SetLoader { .. } => 6,
+        FixAction::RepairLoader { .. } => 7,
     };
     actions.sort_by_key(rank);
 }
@@ -709,7 +817,15 @@ pub async fn run_apply(state: AppState, task: TaskHandle, instance_id: String, m
     task.stage("Sicherung wird erstellt …", Some(0.0));
     let snap = snapshots::create(&state, &instance_id, SNAPSHOT_NAME, true, Some(&task.sub(0.0, 0.25))).await?;
     task.check()?;
-    let mut report = FixReport { created: crate::util::now_ms(), snapshot_id: Some(snap.id), results: vec![], manual: vec![], prev_java: None, undone: false };
+    let mut report = FixReport {
+        created: crate::util::now_ms(),
+        snapshot_id: Some(snap.id),
+        results: vec![],
+        manual: vec![],
+        prev_java: None,
+        prev_loader: None,
+        undone: false,
+    };
     let n = actions.len().max(1) as f64;
     let mut java = inst.java.clone();
     let mut java_changed = false;
@@ -760,6 +876,36 @@ pub async fn run_apply(state: AppState, task: TaskHandle, instance_id: String, m
                     java_changed = true;
                     state.instances.patch(&instance_id, InstancePatch { java: Some(java.clone()), ..Default::default() })?;
                     Ok(())
+                }
+                FixAction::SetLoader { loader, to: target, .. } => {
+                    let cur = state.instances.get(&instance_id)?;
+                    if cur.loader.kind != *loader {
+                        return Err(AppError::Invalid("Der Loader der Instanz wurde inzwischen geändert".into()));
+                    }
+                    let name = crate::minecraft::loaders::loader_name(*loader);
+                    task.stage(format!("{name} {target} wird installiert …"), Some(from));
+                    let prev = cur.loader.clone();
+                    state.instances.modify(&instance_id, |i| i.loader.version = Some(target.clone()))?;
+                    match crate::minecraft::install_instance_opts(&state, &instance_id, &task.sub(from, to), false).await {
+                        Ok(_) => {
+                            report.prev_loader.get_or_insert(prev);
+                            Ok(())
+                        }
+                        Err(e) => {
+                            // Nicht halb umgestellt zurücklassen: alte Version bleibt eingestellt
+                            let _ = state.instances.modify(&instance_id, |i| i.loader = prev);
+                            Err(e)
+                        }
+                    }
+                }
+                FixAction::RepairLoader { loader, .. } => {
+                    let cur = state.instances.get(&instance_id)?;
+                    if cur.loader.kind != *loader {
+                        return Err(AppError::Invalid("Der Loader der Instanz wurde inzwischen geändert".into()));
+                    }
+                    let name = crate::minecraft::loaders::loader_name(*loader);
+                    task.stage(format!("{name} wird neu installiert …"), Some(from));
+                    crate::minecraft::install_instance_opts(&state, &instance_id, &task.sub(from, to), true).await.map(|_| ())
                 }
             }
         }
@@ -824,6 +970,14 @@ pub async fn run_undo(state: AppState, task: TaskHandle, instance_id: String) ->
     }
     if let Some(j) = r.prev_java.clone() {
         state.instances.patch(&instance_id, InstancePatch { java: Some(j), ..Default::default() })?;
+    }
+    if let Some(l) = r.prev_loader.clone() {
+        // Alte Loader-Version wieder einstellen; deren Dateien sind noch da, der nächste Start prüft sie
+        state.instances.modify(&instance_id, |i| {
+            if i.loader.kind == l.kind {
+                i.loader = l;
+            }
+        })?;
     }
     if !r.manual.is_empty() {
         let files: Vec<String> = r.manual.iter().map(|m| m.file_name.clone()).collect();
@@ -920,7 +1074,8 @@ mod tests {
         ];
         let n = needs(&issues, &[], &HashMap::new());
         assert!(n.iter().any(|x| matches!(x, Need::Update { file, required_by, .. } if file == "cloth-1.jar" && required_by == "A")));
-        assert!(n.iter().any(|x| matches!(x, Need::Unfixable(u) if u.reason == "loader_version")));
+        // Loader-Version übernimmt loaderfix (Version anheben) -> hier weder Bedarf noch Hinweis
+        assert!(!n.iter().any(|x| matches!(x, Need::Unfixable(_))), "{n:#?}");
         assert!(n.iter().any(|x| matches!(x, Need::Enable { file, name, .. } if file == "lib.jar.disabled" && name == "Lib")));
     }
 
@@ -974,17 +1129,68 @@ mod tests {
             FixAction::Disable { file_name: "x.jar".into() },
             FixAction::SetJava { major: 21, path: None },
             FixAction::Enable { file_name: "y.jar.disabled".into() },
+            FixAction::RepairLoader { loader: LoaderKind::Fabric, version: Some("0.16.9".into()) },
+            FixAction::SetLoader { loader: LoaderKind::Fabric, from: Some("0.16.9".into()), to: "0.16.14".into() },
         ];
         order(&mut a);
         assert!(matches!(a[0], FixAction::Disable { .. }));
         assert!(matches!(a[1], FixAction::Enable { .. }));
+        assert!(matches!(a[3], FixAction::SetJava { .. }), "Java vor dem Loader (Forge-Installer braucht es)");
         assert!(matches!(a[4], FixAction::SetRam { .. }));
+        assert!(matches!(a[5], FixAction::SetLoader { .. }));
+        assert!(matches!(a[6], FixAction::RepairLoader { .. }));
         let json = serde_json::to_string(&a).unwrap();
         assert!(json.contains(r#""kind":"set_java""#), "{json}");
+        assert!(json.contains(r#""kind":"set_loader","loader":"fabric","from":"0.16.9","to":"0.16.14""#), "{json}");
         let back: Vec<FixAction> = serde_json::from_str(&json).unwrap();
         assert_eq!(back, a);
         // Frontend schickt `manual`/`path` evtl. nicht mit
         let r: FixAction = serde_json::from_str(r#"{"kind":"replace","file_name":"a.jar","source":"modrinth","project_id":"p","version_id":"v","title":"A","from_version":null,"to_version":"2"}"#).unwrap();
         assert!(matches!(r, FixAction::Replace { manual: false, .. }));
+        let l: FixAction = serde_json::from_str(r#"{"kind":"repair_loader","loader":"neoforge"}"#).unwrap();
+        assert_eq!(l, FixAction::RepairLoader { loader: LoaderKind::Neoforge, version: None });
+        // Alte Berichte ohne prev_loader bleiben lesbar
+        let rep: FixReport = serde_json::from_str(r#"{"created":1,"snapshot_id":null,"results":[],"manual":[],"prev_java":null}"#).unwrap();
+        assert!(rep.prev_loader.is_none());
+    }
+
+    #[test]
+    fn wrong_loader_mods_are_swapped_not_deleted() {
+        // Forge-Mod in Fabric-Instanz: Tauschen (sonst deaktivieren), ihre Abhängigkeiten zählen nicht mehr
+        let issues = vec![
+            issue(IssueKind::WrongLoader, "create-forge.jar", "Create", None, None, vec![Fix::Disable { file_name: "create-forge.jar".into() }]),
+            issue(IssueKind::MissingDependency, "create-forge.jar", "Create", Some("flywheel"), None, vec![]),
+            issue(IssueKind::VersionMismatch, "create-forge.jar", "Create", Some("forge"), None, vec![]),
+        ];
+        let n = needs(&issues, &[], &HashMap::new());
+        assert_eq!(n.len(), 1, "{n:#?}");
+        assert!(matches!(&n[0], Need::Swap { file, reason, .. } if file == "create-forge.jar" && reason == "wrong_loader"));
+    }
+
+    #[test]
+    fn loader_needs_become_steps_and_hints() {
+        let inst: Instance = serde_json::from_value(serde_json::json!({
+            "id": "x", "name": "x", "icon": null, "accent": null, "group": null, "mc_version": "1.21.1",
+            "loader": Loader { kind: LoaderKind::Fabric, version: Some("0.16.9".into()) }, "created_at": 0
+        }))
+        .unwrap();
+        let mut b = Builder { steps: vec![], unfixable: vec![] };
+        loader_steps(
+            &inst,
+            vec![
+                LoaderNeed::Set { from: Some("0.16.9".into()), to: "0.16.14".into(), reason: "loader_too_old", required_by: vec!["Create".into()], detail: Some("Create >=0.16.10".into()) },
+                LoaderNeed::Repair { version: Some("0.16.9".into()), reason: "loader_files_broken", detail: Some("2".into()) },
+                LoaderNeed::Unfixable { reason: "loader_offline", detail: None },
+            ],
+            &mut b,
+        );
+        assert_eq!(b.steps.len(), 2);
+        let s = &b.steps[0];
+        assert_eq!((s.reason.as_str(), s.name.as_str(), s.selected, s.confirm), ("loader_too_old", "Fabric", true, false));
+        assert_eq!(s.required_by, vec!["Create".to_string()]);
+        assert_eq!(s.detail.as_deref(), Some("Create >=0.16.10"));
+        assert!(matches!(&s.action, FixAction::SetLoader { loader: LoaderKind::Fabric, to, .. } if to == "0.16.14"));
+        assert!(matches!(&b.steps[1].action, FixAction::RepairLoader { .. }));
+        assert_eq!(b.unfixable, vec![Unfixable { reason: "loader_offline".into(), name: "Fabric".into(), detail: None }]);
     }
 }

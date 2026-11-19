@@ -202,6 +202,9 @@ pub enum IssueKind {
     Duplicate,
     WrongLoader,
     WrongMinecraft,
+    /// Loader-Installation fehlt teilweise, ist beschädigt oder zuletzt fehlgeschlagen (kein Mod-Problem;
+    /// `mod_name` = Loader-Name, `file_name` leer). Behebt „Probleme beheben“ (Loader neu installieren).
+    LoaderFiles,
 }
 
 /// Ein-Klick-Lösung.
@@ -252,10 +255,17 @@ fn builtin_ids(inst: &Instance) -> Vec<&'static str> {
     v
 }
 
-fn loader_ok(inst: &Instance, meta: &LocalMeta) -> bool {
+/// Sinytra Connector lädt Fabric-Mods unter NeoForge (und Forge 1.20.1).
+fn connector_hosts(inst: &Instance) -> bool {
+    inst.loader.kind == LoaderKind::Neoforge || (inst.loader.kind == LoaderKind::Forge && inst.mc_version == "1.20.1")
+}
+
+/// `connector`: Sinytra Connector ist aktiv installiert -> Fabric-Mods gelten als passend.
+fn loader_ok(inst: &Instance, meta: &LocalMeta, connector: bool) -> bool {
     let Some(l) = meta.loader.as_deref() else { return true };
     match (inst.loader.kind, l) {
         (_, "multi") => true,
+        (_, "fabric") if connector && connector_hosts(inst) => true,
         (LoaderKind::Fabric, "fabric") => true,
         (LoaderKind::Quilt, "fabric" | "quilt") => true,
         (LoaderKind::Forge, "forge") => true,
@@ -264,6 +274,40 @@ fn loader_ok(inst: &Instance, meta: &LocalMeta) -> bool {
         (LoaderKind::Vanilla, _) => false,
         _ => false,
     }
+}
+
+/// Abhängigkeits-ID eines Loaders, die für diese Instanz geprüft wird (`fabricloader` nur bei Fabric –
+/// Quilt-Versionen sind nicht mit Fabric-Loader-Versionen vergleichbar).
+fn loader_dep_applies(inst: &Instance, id: &str) -> bool {
+    match id {
+        "fabricloader" | "fabric-loader" => inst.loader.kind == LoaderKind::Fabric,
+        "quilt_loader" => inst.loader.kind == LoaderKind::Quilt,
+        "neoforge" => inst.loader.kind == LoaderKind::Neoforge,
+        "forge" => inst.loader.kind == LoaderKind::Forge,
+        _ => false,
+    }
+}
+
+const LOADER_DEP_IDS: &[&str] = &["fabricloader", "fabric-loader", "quilt_loader", "neoforge", "forge"];
+
+/// Versionsanforderung einer aktiven Mod an den Loader der Instanz.
+#[derive(Debug, Clone, PartialEq)]
+pub struct LoaderReq {
+    pub file: String,
+    pub mod_name: String,
+    pub range: String,
+}
+
+/// Alle Loader-Versionsanforderungen der aktiven Mods (auch erfüllte – für die Wahl einer neuen Version).
+pub fn loader_requirements(inst: &Instance, scanned: &[Scanned]) -> Vec<LoaderReq> {
+    let mut out = vec![];
+    for s in scanned.iter().filter(|s| s.enabled) {
+        for d in s.meta.deps.iter().filter(|d| d.kind == "required" && loader_dep_applies(inst, &d.id)) {
+            let Some(r) = d.range.as_deref().map(str::trim).filter(|r| !r.is_empty() && *r != "*") else { continue };
+            out.push(LoaderReq { file: s.file_name.clone(), mod_name: name_of(s), range: r.to_string() });
+        }
+    }
+    out
 }
 
 fn loader_label(l: &str) -> &str {
@@ -297,7 +341,13 @@ fn known_project(id: &str) -> Option<&'static str> {
 
 /// Modrinth-Projekt zu einer Mod-ID suchen (bekannte Zuordnung, Slug, Suche).
 pub(super) async fn resolve_modrinth(state: &AppState, id: &str, inst: &Instance) -> Option<(String, String)> {
-    let candidate = known_project(id).map(str::to_string).unwrap_or_else(|| id.replace('_', "-"));
+    // Fabric-Mods über Connector: statt Fabric API die NeoForge-Portierung (Forgified Fabric API)
+    let forgified = connector_hosts(inst) && matches!(id, "fabric" | "fabric-api" | "fabric_api");
+    let candidate = if forgified {
+        "forgified-fabric-api".to_string()
+    } else {
+        known_project(id).map(str::to_string).unwrap_or_else(|| id.replace('_', "-"))
+    };
     if let Ok(p) = mr::raw_project(state, &candidate).await {
         if p.project_type == "mod" {
             return Some((p.id, p.title));
@@ -335,6 +385,9 @@ pub async fn check(state: &AppState, instance_id: &str, resolve: bool) -> AppRes
     let mods: Vec<ModInfo> = scanned.iter().filter(|s| s.enabled).filter_map(info).collect();
     let disabled: Vec<ModInfo> = scanned.iter().filter(|s| !s.enabled).filter_map(info).collect();
     let mut issues = analyze(&inst, &mods, &disabled);
+    if let Some(i) = loader_files_issue(&inst, &super::loaderfix::inspect(&state.paths, &inst)) {
+        issues.push(i);
+    }
     if resolve {
         // Fehlende Abhängigkeiten: Modrinth-Projekt suchen (gleiche ID nur einmal)
         let mut cache: HashMap<String, Option<(String, String)>> = HashMap::new();
@@ -350,6 +403,32 @@ pub async fn check(state: &AppState, instance_id: &str, resolve: bool) -> AppRes
         }
     }
     Ok(issues)
+}
+
+/// Hinweis zur Loader-Installation (fehlende Dateien lädt der nächste Start nach -> nur Warnung).
+pub(super) fn loader_files_issue(inst: &Instance, files: &super::loaderfix::LoaderFiles) -> Option<DepIssue> {
+    use super::loaderfix::LoaderFiles as F;
+    let name = loader_label(inst.loader.kind.as_str()).to_string();
+    let full = match inst.loader.version.as_deref().filter(|v| !v.is_empty()) {
+        Some(v) => format!("{name} {v}"),
+        None => name.clone(),
+    };
+    let (severity, message) = match files {
+        F::Ok | F::NotInstalled => return None,
+        F::Failed => ("error", format!("{full}: Die letzte Installation ist fehlgeschlagen")),
+        F::Missing { files } => ("warning", format!("{full}: {files} Datei(en) der Installation fehlen")),
+        F::Broken { files } => ("error", format!("{full}: Die Installation ist beschädigt ({files} Datei(en))")),
+    };
+    Some(DepIssue {
+        kind: IssueKind::LoaderFiles,
+        severity: severity.into(),
+        file_name: String::new(),
+        mod_name: name,
+        target: Some(inst.loader.kind.as_str().into()),
+        other_file: None,
+        message,
+        fixes: vec![],
+    })
 }
 
 /// `disabled`: deaktivierte Mods (`.disabled`) – nur, um bei fehlenden Abhängigkeiten „aktivieren“ anzubieten.
@@ -368,6 +447,7 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
     }
     // ID -> (Version, Datei) aller aktiven Mods inkl. bereitgestellter IDs
     let mut present: HashMap<&str, (Option<&str>, &Scanned)> = HashMap::new();
+    let connector = mods.iter().any(|m| m.id == "connector");
     for m in mods {
         present.insert(m.id, (m.s.meta.version.as_deref(), m.s));
         // Eingebettete/bereitgestellte IDs: Version unbekannt (nicht die der Haupt-Mod)
@@ -378,7 +458,7 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
     for m in mods {
         let s = m.s;
         let name = name_of(s);
-        if !loader_ok(inst, &s.meta) {
+        if !loader_ok(inst, &s.meta, connector) {
             let l = s.meta.loader.as_deref().unwrap_or("?");
             issues.push(DepIssue {
                 kind: IssueKind::WrongLoader,
@@ -413,14 +493,9 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
                         }
                         continue;
                     }
-                    if ["fabricloader", "fabric-loader", "neoforge", "forge"].contains(&id) {
+                    if LOADER_DEP_IDS.contains(&id) {
                         if let (Some(r), Some(lv)) = (&d.range, inst.loader.version.as_deref()) {
-                            let applies = match id {
-                                "fabricloader" | "fabric-loader" => matches!(inst.loader.kind, LoaderKind::Fabric | LoaderKind::Quilt),
-                                "neoforge" => inst.loader.kind == LoaderKind::Neoforge,
-                                _ => inst.loader.kind == LoaderKind::Forge,
-                            };
-                            if applies && satisfies(r, lv) == Some(false) {
+                            if loader_dep_applies(inst, id) && satisfies(r, lv) == Some(false) {
                                 issues.push(DepIssue {
                                     kind: IssueKind::VersionMismatch,
                                     severity: "error".into(),
@@ -438,7 +513,10 @@ fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -> Vec<DepIs
                     if builtins.contains(&id) {
                         continue;
                     }
-                    match present.get(id) {
+                    // Mod-IDs mit „-“ und „_“ werden uneinheitlich angegeben (fabric-api / fabric_api)
+                    let alias = if id.contains('-') { id.replace('-', "_") } else { id.replace('_', "-") };
+                    let found = present.get(id).or_else(|| present.get(alias.as_str()));
+                    match found {
                         None if off.contains_key(id) => {
                             let other = off[id];
                             issues.push(DepIssue {

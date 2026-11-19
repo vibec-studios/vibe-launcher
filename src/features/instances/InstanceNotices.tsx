@@ -138,6 +138,17 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
   // Gesperrte CurseForge-Downloads: eigener Hinweis mit Version und Link zur Dateiseite
   const manualUpdates = (updatesQ.data ?? []).filter((u) => u.manual);
   const depErrors = deps.filter((d) => d.severity === "error").length;
+  // Nur die Loader-Installation betroffen -> nicht „Mod-Problem“ nennen
+  const depsLabel =
+    deps.length === 1 && deps[0].kind === "loader_files"
+      ? t(depErrors ? "ipage.notice.loader" : "ipage.notice.loader_warn")
+      : depErrors
+        ? deps.length === 1
+          ? t("ipage.notice.deps_1")
+          : t("ipage.notice.deps", { n: deps.length })
+        : deps.length === 1
+          ? t("ipage.notice.deps_warn_1")
+          : t("ipage.notice.deps_warn", { n: deps.length });
   const showUpdates = () => {
     markUpdatesChecked(id);
     setContentFilter(id, "updates");
@@ -151,7 +162,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
       {/* Simple: kein technisches Abhängigkeits-Panel; der Hinweis öffnet direkt „Probleme beheben“ (der Knopf im Kopf bleibt) */}
       {deps.length > 0 && simple && (
         <Chip tone={depErrors ? "danger" : "warn"} icon={<AlertTriangle size={15} />} tip={t("fix.button_hint")} onClick={() => openAutofix({ instanceId: id })}>
-          {depErrors ? (deps.length === 1 ? t("ipage.notice.deps_1") : t("ipage.notice.deps", { n: deps.length })) : deps.length === 1 ? t("ipage.notice.deps_warn_1") : t("ipage.notice.deps_warn", { n: deps.length })}
+          {depsLabel}
         </Chip>
       )}
       {deps.length > 0 && !simple && (
@@ -161,13 +172,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
             width={500}
             chip={
               <Chip tone={depErrors ? "danger" : "warn"} icon={<AlertTriangle size={15} />} className="rounded-r-none">
-                {depErrors
-                  ? deps.length === 1
-                    ? t("ipage.notice.deps_1")
-                    : t("ipage.notice.deps", { n: deps.length })
-                  : deps.length === 1
-                    ? t("ipage.notice.deps_warn_1")
-                    : t("ipage.notice.deps_warn", { n: deps.length })}
+                {depsLabel}
               </Chip>
             }
           >

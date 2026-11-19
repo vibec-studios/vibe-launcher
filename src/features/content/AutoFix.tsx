@@ -4,12 +4,14 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  ArrowUpCircle,
   Check,
   Cpu,
   Download,
   ExternalLink,
   Info,
   MemoryStick,
+  PackageCheck,
   Play,
   Power,
   PowerOff,
@@ -26,8 +28,9 @@ import { useInstanceActions } from "@/components/instance/actions";
 import { openExternal } from "@/components/content/util";
 import { useT } from "@/i18n";
 import { api, errorMessage, isCancelled } from "@/lib/api";
-import { queryClient, useInstances, useTaskStore, waitForTask } from "@/lib/queries";
-import type { FixAction, FixPlan, FixReport, FixStep, Instance, QuickCheck } from "@/lib/types";
+import { qk, queryClient, useInstances, useTaskStore, waitForTask } from "@/lib/queries";
+import { loaderNames } from "@/lib/format";
+import type { FixAction, FixPlan, FixReport, FixStep, Instance, LoaderKind, QuickCheck } from "@/lib/types";
 
 // ------------------------------------------------------------------ Store
 
@@ -81,7 +84,17 @@ function actionText(a: FixAction, t: ReturnType<typeof useT>, step?: FixStep): s
       return t("fix.do.java", { major: a.major });
     case "set_ram":
       return t("fix.do.ram", { gb: Math.round(a.mb / 1024) });
+    case "set_loader":
+      // Nach oben = „aktualisieren“; nach unten bzw. unbekannte Version = neutral „umstellen“
+      return t(step?.reason === "loader_too_old" ? "fix.do.loader_up" : "fix.do.loader_set", { loader: loaderNames[a.loader], to: a.to });
+    case "repair_loader":
+      return a.version ? t("fix.do.loader_repair", { loader: loaderNames[a.loader], version: a.version }) : t("fix.do.loader_repair_any", { loader: loaderNames[a.loader] });
   }
+}
+
+/** Anzeigename eines Loaders aus der Mod-Metadaten-Kennung („forge“, „fabric“ …). */
+function loaderLabel(l: string | null): string {
+  return (l && loaderNames[l as LoaderKind]) || l || "?";
 }
 
 function fileLabel(f: string) {
@@ -102,14 +115,31 @@ function actionIcon(a: FixAction, size = 15): ReactNode {
       return <Cpu size={size} />;
     case "set_ram":
       return <MemoryStick size={size} />;
+    case "set_loader":
+      return <ArrowUpCircle size={size} />;
+    case "repair_loader":
+      return <PackageCheck size={size} />;
   }
 }
 
-function stepSub(s: FixStep, t: ReturnType<typeof useT>): string {
-  const parts = [t(`fix.reason.${s.reason}`)];
-  if (s.action.kind === "replace" && s.action.from_version && !s.action.manual) parts.push(`${s.action.from_version} → ${s.action.to_version}`);
-  if (s.action.kind === "set_java") parts.push(s.action.path ? t("fix.java.found") : t("fix.java.download"));
-  if (s.required_by.length) parts.push(t("fix.needed_by", { names: s.required_by.slice(0, 3).join(", ") + (s.required_by.length > 3 ? " …" : "") }));
+function stepSub(s: FixStep, t: ReturnType<typeof useT>, instLoader?: LoaderKind): string {
+  const inst = instLoader ? loaderNames[instLoader] : "";
+  const a = s.action;
+  let parts: string[];
+  if (s.reason === "wrong_loader" && s.detail) {
+    // „Für Forge gebaut – die Instanz nutzt Fabric“ bzw. beim Ersatz „Passende Version für Fabric“
+    parts = [a.kind === "install" ? t("fix.reason.wrong_loader_variant", { loader: inst }) : t("fix.reason.wrong_loader_of", { mod: loaderLabel(s.detail), loader: inst })];
+  } else {
+    parts = [t(`fix.reason.${s.reason}`)];
+  }
+  if (a.kind === "replace" && a.from_version && !a.manual) parts.push(`${a.from_version} → ${a.to_version}`);
+  if (a.kind === "set_java") parts.push(a.path ? t("fix.java.found") : t("fix.java.download"));
+  if (a.kind === "set_loader" && a.from) parts.push(`${a.from} → ${a.to}`);
+  if (a.kind === "set_loader" && s.detail) parts.push(t("fix.loader.requires", { detail: s.detail }));
+  else if (s.required_by.length) parts.push(t("fix.needed_by", { names: s.required_by.slice(0, 3).join(", ") + (s.required_by.length > 3 ? " …" : "") }));
+  if ((s.reason === "loader_files_missing" || s.reason === "loader_files_broken") && s.detail)
+    parts.push(t(s.detail === "1" ? "fix.loader.files_1" : "fix.loader.files", { n: s.detail }));
+  if (a.kind === "repair_loader") parts.push(t("fix.loader.repair_hint"));
   if (s.from_crash) parts.push(t("fix.from_crash"));
   return parts.join(" · ");
 }
@@ -118,7 +148,21 @@ function stepSub(s: FixStep, t: ReturnType<typeof useT>): string {
 
 type Phase = "preview" | "running" | "done" | "undoing" | "undone";
 
-function StepRow({ s, on, alt, onToggle, onAlt }: { s: FixStep; on: boolean; alt: boolean; onToggle: (v: boolean) => void; onAlt: (v: boolean) => void }) {
+function StepRow({
+  s,
+  on,
+  alt,
+  onToggle,
+  onAlt,
+  instLoader,
+}: {
+  s: FixStep;
+  on: boolean;
+  alt: boolean;
+  onToggle: (v: boolean) => void;
+  onAlt: (v: boolean) => void;
+  instLoader?: LoaderKind;
+}) {
   const t = useT();
   const a = alt && s.alt ? s.alt : s.action;
   return (
@@ -130,7 +174,7 @@ function StepRow({ s, on, alt, onToggle, onAlt }: { s: FixStep; on: boolean; alt
           <span className={cn("truncate text-[13.5px] font-semibold", on ? "text-text" : "text-muted")}>{actionText(a, t, s)}</span>
           {s.confirm && <span className="shrink-0 rounded-xs bg-warn/15 px-1.5 py-px text-[11px] font-semibold text-warn">{t("fix.confirm_tag")}</span>}
         </div>
-        <div className="mt-0.5 text-[12px] leading-snug text-dim">{stepSub(s, t)}</div>
+        <div className="mt-0.5 text-[12px] leading-snug text-dim">{stepSub(s, t, instLoader)}</div>
         {s.alt && (
           <div className="mt-2 flex flex-wrap gap-1" role="radiogroup" aria-label={t("fix.alt_label")}>
             {[false, true].map((v) => (
@@ -163,23 +207,40 @@ function PlanView({
   alt,
   setSel,
   setAlt,
+  instLoader,
 }: {
   plan: FixPlan;
+  instLoader?: LoaderKind;
   sel: Record<string, boolean>;
   alt: Record<string, boolean>;
   setSel: (id: string, v: boolean) => void;
   setAlt: (id: string, v: boolean) => void;
 }) {
   const t = useT();
-  const normal = plan.steps.filter((s) => !s.confirm);
-  const ask = plan.steps.filter((s) => s.confirm);
+  // Loader-Schritte als eigener Abschnitt: betreffen die ganze Instanz, nicht einzelne Mods
+  const isLoader = (s: FixStep) => s.action.kind === "set_loader" || s.action.kind === "repair_loader";
+  const loader = plan.steps.filter(isLoader);
+  const normal = plan.steps.filter((s) => !s.confirm && !isLoader(s));
+  const ask = plan.steps.filter((s) => s.confirm && !isLoader(s));
   const manual = plan.steps.some((s) => s.action.kind === "replace" && s.action.manual);
+  const loaderChange = plan.steps.some((s) => s.action.kind === "set_loader");
   const row = (s: FixStep) => (
-    <StepRow key={s.id} s={s} on={!!sel[s.id]} alt={!!alt[s.id]} onToggle={(v) => setSel(s.id, v)} onAlt={(v) => setAlt(s.id, v)} />
+    <StepRow key={s.id} s={s} on={!!sel[s.id]} alt={!!alt[s.id]} onToggle={(v) => setSel(s.id, v)} onAlt={(v) => setAlt(s.id, v)} instLoader={instLoader} />
   );
   return (
     <div className="flex flex-col gap-4">
-      {normal.length > 0 && <div className="flex flex-col gap-1.5">{normal.map(row)}</div>}
+      {loader.length > 0 && (
+        <section className="flex flex-col gap-1.5">
+          <h3 className="text-[12.5px] font-semibold text-muted">{t("fix.loader.title")}</h3>
+          {loader.map(row)}
+        </section>
+      )}
+      {normal.length > 0 && (
+        <section className="flex flex-col gap-1.5">
+          {loader.length > 0 && <h3 className="text-[12.5px] font-semibold text-muted">{t("fix.mods.title")}</h3>}
+          {normal.map(row)}
+        </section>
+      )}
       {ask.length > 0 && (
         <section className="flex flex-col gap-1.5">
           <h3 className="text-[12.5px] font-semibold text-muted">{t("fix.ask_title")}</h3>
@@ -207,6 +268,12 @@ function PlanView({
           <span className="flex items-center gap-2">
             <ExternalLink size={13} className="shrink-0" />
             {t("fix.manual_note")}
+          </span>
+        )}
+        {loaderChange && (
+          <span className="flex items-center gap-2">
+            <Undo2 size={13} className="shrink-0" />
+            {t("fix.loader_note")}
           </span>
         )}
       </div>
@@ -294,6 +361,7 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
   const chosen = useMemo(() => (plan.data?.steps ?? []).filter((s) => sel[s.id]), [plan.data, sel]);
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["content", req.instanceId] });
+    void queryClient.invalidateQueries({ queryKey: qk.instances });
     void queryClient.invalidateQueries({ queryKey: ["diagnose", req.instanceId] });
     void queryClient.invalidateQueries({ queryKey: ["missing", req.instanceId] });
   };
@@ -434,6 +502,7 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
         ) : (
           <PlanView
             plan={plan.data}
+            instLoader={inst?.loader.kind}
             sel={sel}
             alt={alt}
             setSel={(id, v) => setSel((s) => ({ ...s, [id]: v }))}

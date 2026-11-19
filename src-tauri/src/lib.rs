@@ -327,6 +327,7 @@ pub fn run() {
             commands::content::autofix_last,
             commands::content::autofix_undo,
             commands::content::autofix_quick,
+            commands::content::instance_refresh,
             commands::content::content_sides,
             commands::content::modsets_list,
             commands::content::modset_create,

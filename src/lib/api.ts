@@ -160,6 +160,8 @@ export const api = {
   autofixLast: (instanceId: string) => call<T.FixReport | null>("autofix_last", { instanceId }),
   autofixUndo: (instanceId: string) => call<string>("autofix_undo", { instanceId }),
   autofixQuick: (instanceId: string) => call<T.QuickCheck>("autofix_quick", { instanceId }),
+  /** „Neu prüfen“: Ordner neu einlesen, Updates ohne Cache, Probleme (inkl. Loader) neu berechnen */
+  instanceRefresh: (instanceId: string) => call<T.RefreshReport>("instance_refresh", { instanceId }),
   contentSides: (instanceId: string) => call<T.SideInfo[]>("content_sides", { instanceId }),
   modsetsList: (instanceId: string) => call<T.ModSets>("modsets_list", { instanceId }),
   modsetCreate: (instanceId: string, name: string) => call<T.ModSets>("modset_create", { instanceId, name }),

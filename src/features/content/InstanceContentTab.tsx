@@ -1,7 +1,7 @@
 // OWNER: Frontend-Agent B. Inhalte einer Instanz – aufgebaut wie die Modrinth App:
 //   1. Suche über alles + „Dateien hinzufügen“ + Hauptknopf „Inhalte hinzufügen“
 //   2. Sortierung, Filter-Chips (Alle / Mods / Resourcepacks / Shader · Updates / Aktiv / Deaktiviert), Seite (Mods),
-//      rechts „Alle aktualisieren“, Mod-Sets und das Werkzeuge-Menü (Updates prüfen, Performance-Mods, Ordner)
+//      rechts „Alle aktualisieren“, „Neu prüfen“ (F5), Mod-Sets und das Werkzeuge-Menü (Performance-Mods, Ordner)
 //   3. Tabelle mit Spaltenköpfen (Auswahl, Name, Version, Aktionen) – Klick auf Name/Version sortiert –, virtualisiert
 //      für 300+ Einträge. Mehrfachauswahl mit schwebender Sammelaktionsleiste, Kontextmenü, optimistisches Aktivieren,
 //      Drag & Drop (.jar -> Mods, .zip -> Resourcepacks bzw. Shader im Shader-Filter).
@@ -48,7 +48,7 @@ import {
 import { SIDE_FILTERS, sideMatches, type SideFilter } from "@/components/content/sides";
 import { ModSetsMenu } from "./ModSetsMenu";
 import { PerfDialog } from "./PerfDialog";
-import { markUpdatesChecked, setContentFilter, setContentSort, setUpdateTask, useContentView, type ContentFilter, type ContentSort } from "./contentView";
+import { setContentFilter, setContentSort, setUpdateTask, useContentView, type ContentFilter, type ContentSort } from "./contentView";
 import { useT, t as tt } from "@/i18n";
 import { api, errorMessage, isCancelled } from "@/lib/api";
 import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
@@ -58,6 +58,7 @@ import { contentKey, fileExt, kindExtensions, kindFolder } from "@/components/co
 import { ContentRow, GRID, ROW_H, RowSkeleton, SelectBox, SimpleContentRow, type RowActions } from "./ContentRow";
 import { useSimple } from "@/lib/mode";
 import { startManualDownload } from "@/components/content/install";
+import { RefreshButton } from "@/features/instances/RefreshButton";
 
 export type TypeFilter = "all" | ContentKind;
 const STATUS: ContentFilter[] = ["updates", "enabled", "disabled"];
@@ -116,16 +117,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
   // CurseForge-Projekte ohne Freigabe für andere Launcher (Markierung in der Tabelle)
   const manualQ = useQuery({ queryKey: ["content", id, "manual-projects"], queryFn: () => api.contentManualProjects(id), staleTime: 30 * 60_000, retry: 0 });
   const manualProjects = useMemo(() => new Set(manualQ.data ?? []), [manualQ.data]);
-  const checkUpdates = async () => {
-    markUpdatesChecked(id);
-    try {
-      const res = await queryClient.fetchQuery({ queryKey: qk.contentUpdates(id), queryFn: () => api.contentCheckUpdates(id), staleTime: 0 });
-      if (!res.length) toast.success(tt("content.no_updates"));
-      else setContentFilter(id, "updates");
-    } catch (e) {
-      toast.error(e);
-    }
-  };
+  // Updates prüfen: „Neu prüfen“ in der Werkzeugleiste (RefreshButton) – prüft zugleich Ordner und Probleme
 
   // ---------------------------------------------------------------- Suche / Filter / Sortierung
   const [text, setText] = useState("");
@@ -638,24 +630,26 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
               {updatesRunning && updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : t(simple ? "ipage.ct.update_all" : "ipage.update_n", { n: counts.updatesAll })}
             </Button>
           )}
-          {!vanilla && !simple && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1100px]:inline" />}
+          {/* Neu prüfen: Ordner neu einlesen, Updates ohne Cache, Probleme (auch Loader) – auch per F5. Behält seinen Text;
+              Mod-Sets/Werkzeuge zeigen ihren erst ab 1240px, damit die Leiste bei 1280er-Fenstern einzeilig bleibt */}
+          <RefreshButton instanceId={id} />
+          {!vanilla && !simple && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1240px]:inline" />}
           {!simple && (
           <DropdownMenu
             trigger={
               <Button size="sm" variant="subtle" icon={<SlidersHorizontal size={14} />} title={t("ipage.tools")} className="px-2.5 data-[state=open]:bg-white/[.07] data-[state=open]:text-text">
-                <span className="hidden @min-[1100px]:inline">{t("ipage.tools")}</span>
+                <span className="hidden @min-[1240px]:inline">{t("ipage.tools")}</span>
               </Button>
             }
           >
-            <DropdownItem icon={<RefreshCw size={14} />} disabled={updatesQ.isFetching} onSelect={() => void checkUpdates()}>
-              {t("content.check_updates")}
-            </DropdownItem>
             {!vanilla && (
-              <DropdownItem icon={<Gauge size={14} />} onSelect={() => setPerfOpen(true)}>
-                {t("perf.title")} …
-              </DropdownItem>
+              <>
+                <DropdownItem icon={<Gauge size={14} />} onSelect={() => setPerfOpen(true)}>
+                  {t("perf.title")} …
+                </DropdownItem>
+                <DropdownSeparator />
+              </>
             )}
-            <DropdownSeparator />
             {addFilesMenu}
             <DropdownSeparator />
             {kinds.map((k) => (
@@ -713,6 +707,8 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                 </Button>
                 </>
                 )}
+                {/* Dateien von Hand in den Ordner gelegt? -> neu einlesen */}
+                <RefreshButton instanceId={id} variant="empty" />
               </div>
             }
           />
