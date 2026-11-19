@@ -250,10 +250,16 @@ pub async fn import_settings_offer(state: State<'_, AppState>, instance_id: Stri
     extsettings::offer(&state, &instance_id).await
 }
 
-/// Gewählte Einstellungen (`keys`) übernehmen; `files` ("options", "config") kopiert Dateien erneut (vorher Snapshot).
+/// Gewählte Einstellungen (`keys`) übernehmen; `data` kopiert gewählte Ordner/Dateien im Hintergrund (nur Fehlendes,
+/// Überschreiben nur mit `overwrite`; vorher Snapshot bzw. Welt-Backup).
 #[tauri::command]
-pub async fn import_settings_apply(state: State<'_, AppState>, instance_id: String, keys: Vec<String>, files: Vec<String>) -> AppResult<crate::instance::Instance> {
-    extsettings::apply_offer(&state, &instance_id, keys, files).await
+pub async fn import_settings_apply(
+    state: State<'_, AppState>,
+    instance_id: String,
+    keys: Vec<String>,
+    data: Option<Vec<crate::content::gamedata::DataPick>>,
+) -> AppResult<crate::instance::Instance> {
+    extsettings::apply_offer(&state, &instance_id, keys, data.unwrap_or_default()).await
 }
 
 /// Version eines Inhalts fixieren (kein Auto-Update, nicht bei „Alle aktualisieren“) oder lösen.

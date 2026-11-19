@@ -4,10 +4,12 @@
 //!
 //! - Beim Import übernimmt `external::run_import` die gewählten Bereiche (`KEYS`, Standard: alle außer
 //!   Start-Befehlen – die laufen auf dem Rechner und werden nur nach ausdrücklicher Wahl übernommen).
-//! - Nachträglich: [`pending`] (alle importierten Instanzen mit Unterschieden), [`offer`] (eine Instanz, auch
-//!   Dateien wie `options.txt`), [`apply_offer`] (gewählte Werte setzen; Dateien nur auf Wunsch, vorher Snapshot).
+//! - Nachträglich: [`pending`] (alle importierten Instanzen mit Unterschieden in Einstellungen oder Daten),
+//!   [`offer`] (eine Instanz), [`apply_offer`] (gewählte Werte setzen; Daten nach [`super::gamedata`]: fehlende
+//!   nur hinzufügen, Überschreiben nur pro Eintrag ausdrücklich, vorher Snapshot bzw. Welt-Backup).
 //! - Fremde Ordner werden nur gelesen. Accounts/Tokens werden nie angefasst.
 use super::external::{self, Found};
+use super::gamedata::{self, DataEntry, DataPick};
 use super::LauncherKind;
 use crate::error::{AppError, AppResult};
 use crate::instance::{Instance, PackSource};
@@ -16,15 +18,12 @@ use crate::state::AppState;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Bereiche, die beim Import (und nachträglich) gewählt werden können.
 pub const KEYS: [&str; 8] = ["memory", "java", "jvm_args", "env", "window", "hooks", "notes", "group"];
 /// Nur nachträglich (beim Import immer übernommen): Spielzeit, Icon, Modpack-Herkunft.
 pub const EXTRA_KEYS: [&str; 3] = ["playtime", "icon", "pack"];
-/// Dateien, die nachträglich auf ausdrücklichen Wunsch erneut kopiert werden können.
-pub const OPTION_FILES: [&str; 3] = ["options.txt", "optionsof.txt", "optionsshaders.txt"];
-pub const CONFIG_DIRS: [&str; 2] = ["config", "defaultconfigs"];
 
 /// Start-Befehle laufen auf dem Rechner: nie automatisch übernehmen.
 pub fn default_on(key: &str) -> bool {
@@ -747,20 +746,10 @@ pub struct SettingsOffer {
     pub launcher_name: String,
     pub source_path: String,
     pub changes: Vec<Change>,
-    /// Dateien, die erneut kopiert werden könnten (nur auf ausdrücklichen Wunsch, vorher Snapshot)
-    pub files: Vec<FileOffer>,
+    /// Ordner/Dateien der Quelle, die in Vibe fehlen oder in der Quelle neuer sind ([`super::gamedata::scan`])
+    pub data: Vec<DataEntry>,
     /// z. B. „Java 8 passt nicht zu Minecraft 1.21 – automatische Wahl“
     pub notes: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct FileOffer {
-    /// "options" | "config"
-    pub key: String,
-    /// Dateien bzw. Ordner in der Quelle
-    pub items: Vec<String>,
-    /// Anzahl Dateien, die sich von der Vibe-Instanz unterscheiden
-    pub changed: u32,
 }
 
 /// Unterschiede der Extras (Spielzeit, Icon, Herkunft) – nur, wenn in Vibe noch nichts gesetzt ist.
@@ -780,109 +769,40 @@ fn extra_changes(inst: &Instance, f: &Found) -> Vec<Change> {
     out
 }
 
-fn file_hash(p: &Path) -> Option<(u64, [u8; 20])> {
-    use sha1::Digest;
-    let m = std::fs::metadata(p).ok()?;
-    if m.len() > 8 * 1024 * 1024 {
-        return Some((m.len(), [0; 20]));
-    }
-    Some((m.len(), sha1::Sha1::digest(std::fs::read(p).ok()?).into()))
-}
-
-fn differs(a: &Path, b: &Path) -> bool {
-    match (file_hash(a), file_hash(b)) {
-        (Some(x), Some(y)) => x != y,
-        (Some(_), None) => true,
-        _ => false,
-    }
-}
-
-/// Dateien im Ordner (rekursiv, ohne Symlinks zu verfolgen; höchstens 20 000).
-fn files_in(dir: &Path) -> Vec<PathBuf> {
-    walkdir::WalkDir::new(dir).follow_links(false).into_iter().flatten().filter(|e| e.file_type().is_file()).take(20_000).map(|e| e.into_path()).collect()
-}
-
-/// Was sich an Dateien erneut übernehmen ließe (Quelle -> Ziel, nur unterschiedliche).
-fn file_plan(src_game: &Path, dst_game: &Path, key: &str) -> Vec<(PathBuf, PathBuf)> {
-    let mut out = Vec::new();
-    match key {
-        "options" => {
-            for n in OPTION_FILES {
-                let (a, b) = (src_game.join(n), dst_game.join(n));
-                if a.is_file() && differs(&a, &b) {
-                    out.push((a, b));
-                }
-            }
-        }
-        "config" => {
-            for d in CONFIG_DIRS {
-                for f in files_in(&src_game.join(d)) {
-                    let Ok(rel) = f.strip_prefix(src_game) else { continue };
-                    let b = dst_game.join(rel);
-                    if differs(&f, &b) {
-                        out.push((f.clone(), b));
-                    }
-                }
-            }
-        }
-        _ => {}
-    }
-    out
-}
-
-fn file_offers(src_game: &Path, dst_game: &Path) -> Vec<FileOffer> {
-    let mut out = Vec::new();
-    for (key, names) in [("options", OPTION_FILES.as_slice()), ("config", CONFIG_DIRS.as_slice())] {
-        let items: Vec<String> = names.iter().filter(|n| src_game.join(n).exists()).map(|n| n.to_string()).collect();
-        if items.is_empty() {
-            continue;
-        }
-        let changed = file_plan(src_game, dst_game, key).len() as u32;
-        if changed > 0 {
-            out.push(FileOffer { key: key.into(), items, changed });
-        }
-    }
-    out
-}
-
-async fn build_offer(state: &AppState, inst: &Instance, kind: LauncherKind, source_path: &str, f: &Found, with_files: bool) -> SettingsOffer {
+async fn build_offer(state: &AppState, inst: &Instance, mark: &external::ExternalMark, f: &Found) -> SettingsOffer {
     let vibe = state.settings();
+    let kind = mark.launcher;
     let (s, note) = prepare(&vibe, &f.settings, &inst.mc_version, true).await;
     let mut changes = diff(inst, &s);
     changes.extend(extra_changes(inst, f));
-    let files = if with_files {
-        let (src, dst) = (f.game_dir.clone(), state.paths.game_dir(&inst.id));
-        tokio::task::spawn_blocking(move || file_offers(&src, &dst)).await.unwrap_or_default()
-    } else {
-        vec![]
-    };
+    let (src, dst, prior) = (f.game_dir.clone(), state.paths.game_dir(&inst.id), mark.prior());
+    let data = tokio::task::spawn_blocking(move || gamedata::scan(&src, &dst, kind, &prior)).await.unwrap_or_default();
     SettingsOffer {
         instance_id: inst.id.clone(),
         instance_name: inst.name.clone(),
         launcher: kind,
         launcher_name: external::launcher_name(kind).to_string(),
-        source_path: source_path.to_string(),
+        source_path: mark.source_path.clone(),
         changes,
-        files,
+        data,
         notes: note.into_iter().collect(),
     }
 }
 
-/// Alle importierten Instanzen, deren Quelle noch da ist und deren Einstellungen abweichen.
+/// Alle importierten Instanzen, deren Quelle noch da ist und deren Einstellungen oder Daten abweichen.
 pub async fn pending(state: &AppState) -> AppResult<Vec<SettingsOffer>> {
-    let marks: Vec<(Instance, LauncherKind, String)> =
-        state.instances.list().into_iter().filter_map(|i| external::read_mark(state, &i.id).map(|m| (i, m.launcher, m.source_path))).collect();
+    let marks: Vec<(Instance, external::ExternalMark)> = state.instances.list().into_iter().filter_map(|i| external::read_mark(state, &i.id).map(|m| (i, m))).collect();
     if marks.is_empty() {
         return Ok(vec![]);
     }
     let tmp = state.paths.tmp();
-    let reqs: Vec<(LauncherKind, String)> = marks.iter().map(|(_, k, p)| (*k, p.clone())).collect();
+    let reqs: Vec<(LauncherKind, String)> = marks.iter().map(|(_, m)| (m.launcher, m.source_path.clone())).collect();
     let found = tokio::task::spawn_blocking(move || external::describe_many(&reqs, &tmp)).await?;
     let mut out = Vec::new();
-    for ((inst, kind, path), f) in marks.iter().zip(found) {
+    for ((inst, mark), f) in marks.iter().zip(found) {
         let Some(f) = f else { continue };
-        let o = build_offer(state, inst, *kind, path, &f, false).await;
-        if !o.changes.is_empty() {
+        let o = build_offer(state, inst, mark, &f).await;
+        if !o.changes.is_empty() || !o.data.is_empty() {
             out.push(o);
         }
     }
@@ -896,7 +816,7 @@ pub async fn offer(state: &AppState, instance_id: &str) -> AppResult<Option<Sett
     let tmp = state.paths.tmp();
     let req = vec![(mark.launcher, mark.source_path.clone())];
     let Some(f) = tokio::task::spawn_blocking(move || external::describe_many(&req, &tmp)).await?.pop().flatten() else { return Ok(None) };
-    Ok(Some(build_offer(state, &inst, mark.launcher, &mark.source_path, &f, true).await))
+    Ok(Some(build_offer(state, &inst, &mark, &f).await))
 }
 
 /// Nachträglich übernehmen (nur die Instanz-Daten, keine Dateien): Einstellungen + Extras (Spielzeit, Herkunft),
@@ -918,8 +838,11 @@ pub fn apply_found(i: &mut Instance, s: &ExtSettings, f: &Found, keys: &HashSet<
     }
 }
 
-/// Gewählte Werte übernehmen. `files` ("options", "config") kopiert Dateien erneut – vorher Snapshot.
-pub async fn apply_offer(state: &AppState, instance_id: &str, keys: Vec<String>, files: Vec<String>) -> AppResult<Instance> {
+/// Gewählte Werte übernehmen. `data`: Ordner/Dateien aus [`offer`] – ohne `overwrite` werden nur fehlende Dateien
+/// hinzugefügt, mit `overwrite` auch neuere ersetzt (Welten komplett). Das Kopieren läuft als Aufgabe im
+/// Hintergrund; vorher Snapshot (Configs/Packs/Optionen) bzw. Welt-Backup, andere ersetzte Dateien werden nach
+/// `backups/reimport/<instanz>/<zeit>/` gesichert.
+pub async fn apply_offer(state: &AppState, instance_id: &str, keys: Vec<String>, data: Vec<DataPick>) -> AppResult<Instance> {
     let inst = state.instances.get(instance_id)?;
     let mark = external::read_mark(state, instance_id).ok_or_else(|| AppError::Invalid("Diese Instanz wurde nicht aus einem anderen Launcher importiert".into()))?;
     let tmp = state.paths.tmp();
@@ -930,8 +853,7 @@ pub async fn apply_offer(state: &AppState, instance_id: &str, keys: Vec<String>,
         .flatten()
         .ok_or_else(|| AppError::NotFound(format!("Die Instanz im {} ({})", external::launcher_name(mark.launcher), mark.source_path)))?;
     let keys: HashSet<String> = keys.into_iter().filter(|k| KEYS.contains(&k.as_str()) || EXTRA_KEYS.contains(&k.as_str())).collect();
-    let files: Vec<String> = files.into_iter().filter(|k| k == "options" || k == "config").collect();
-    if !files.is_empty() && state.game.is_running(instance_id) {
+    if !data.is_empty() && state.game.is_running(instance_id) {
         return Err(AppError::Invalid("Bitte beende zuerst das Spiel – Dateien werden nur bei geschlossenem Spiel übernommen.".into()));
     }
     let vibe = state.settings();
@@ -944,28 +866,47 @@ pub async fn apply_offer(state: &AppState, instance_id: &str, keys: Vec<String>,
             updated = state.instances.get(instance_id)?;
         }
     }
-    if !files.is_empty() {
-        let (src, dst) = (f.game_dir.clone(), state.paths.game_dir(instance_id));
-        let plan: Vec<(PathBuf, PathBuf)> = {
-            let (src, dst, files) = (src.clone(), dst.clone(), files.clone());
-            tokio::task::spawn_blocking(move || files.iter().flat_map(|k| file_plan(&src, &dst, k)).collect()).await?
-        };
+    if !data.is_empty() {
+        let (src, dst, kind, prior) = (f.game_dir.clone(), state.paths.game_dir(instance_id), mark.launcher, mark.prior());
+        let plan = tokio::task::spawn_blocking(move || gamedata::plan(&src, &dst, kind, &prior, &data)).await?;
         if !plan.is_empty() {
-            super::snapshots::create(state, instance_id, &format!("Vor Übernahme aus {}", external::launcher_name(mark.launcher)), false, None).await?;
-            tokio::task::spawn_blocking(move || -> AppResult<()> {
-                for (a, b) in plan {
-                    if let Some(p) = b.parent() {
-                        std::fs::create_dir_all(p)?;
-                    }
-                    std::fs::copy(&a, &b).map_err(|e| AppError::msg(format!("{} konnte nicht kopiert werden: {e}", a.display())))?;
-                }
-                Ok(())
-            })
-            .await??;
-            state.content.emit_changed(instance_id);
+            let launcher = external::launcher_name(kind);
+            let (st, id) = (state.clone(), instance_id.to_string());
+            state.tasks.spawn("import", format!("Daten aus {launcher} übernehmen"), Some(id.clone()), move |task| copy_data(st, task, id, plan, launcher));
         }
     }
     Ok(updated)
+}
+
+/// Aufgabe: gewählte Daten kopieren (vorher Snapshot bzw. Welt-Backup).
+async fn copy_data(state: AppState, task: crate::tasks::TaskHandle, id: String, plan: gamedata::CopyPlan, launcher: &'static str) -> AppResult<()> {
+    if state.game.is_running(&id) {
+        return Err(AppError::Invalid("Bitte beende zuerst das Spiel – Dateien werden nur bei geschlossenem Spiel übernommen.".into()));
+    }
+    if plan.touches_snapshot() || plan.ops.iter().any(|o| o.replace) {
+        task.stage("Lege Snapshot an …", Some(0.0));
+        super::snapshots::create(&state, &id, &format!("Vor Übernahme aus {launcher}"), false, None).await?;
+    }
+    for w in &plan.replace_worlds {
+        task.stage(format!("Sichere Welt „{w}“ …"), Some(0.0));
+        super::worldbackup::create(&state, &id, w, None).await?;
+    }
+    let n_files = plan.ops.len();
+    task.stage(if n_files == 1 { "Kopiere 1 Datei …".to_string() } else { format!("Kopiere {n_files} Dateien …") }, Some(0.0));
+    let dst = state.paths.game_dir(&id);
+    let keep = super::snapshots::backups_root(&state.paths).join("reimport").join(&id).join(chrono::Local::now().format("%Y-%m-%d_%H-%M-%S").to_string());
+    let total = plan.total().max(1);
+    let content_lock = state.content.lock(&id);
+    let _c = content_lock.lock().await;
+    let (t2, k2) = (task.clone(), keep.clone());
+    let n = tokio::task::spawn_blocking(move || gamedata::execute(&plan, &dst, &k2, |done| t2.progress(done as f64 / total as f64), || t2.check())).await??;
+    let mut msg = if n == 1 { format!("1 Datei aus {launcher} übernommen") } else { format!("{n} Dateien aus {launcher} übernommen") };
+    if keep.is_dir() {
+        msg.push_str(&format!(" · ersetzte Dateien gesichert in {}", keep.display()));
+    }
+    task.message(msg);
+    state.content.emit_changed(&id);
+    Ok(())
 }
 
 #[cfg(test)]
@@ -1178,25 +1119,5 @@ mod tests {
         assert!(s.is_empty());
         let s = ExtSettings { max_memory_mb: Some(4096), min_memory_mb: Some(8000), ..Default::default() }.sanitize();
         assert_eq!((s.min_memory_mb, s.max_memory_mb), (None, Some(4096)));
-    }
-
-    #[test]
-    fn file_plan_only_changed() {
-        let root = std::env::temp_dir().join(format!("vl-es-{}", uuid::Uuid::new_v4()));
-        let (src, dst) = (root.join("src"), root.join("dst"));
-        std::fs::create_dir_all(src.join("config/sub")).unwrap();
-        std::fs::create_dir_all(dst.join("config")).unwrap();
-        std::fs::write(src.join("options.txt"), "fov:90").unwrap();
-        std::fs::write(dst.join("options.txt"), "fov:70").unwrap();
-        std::fs::write(src.join("optionsof.txt"), "same").unwrap();
-        std::fs::write(dst.join("optionsof.txt"), "same").unwrap();
-        std::fs::write(src.join("config/a.toml"), "a=1").unwrap();
-        std::fs::write(dst.join("config/a.toml"), "a=1").unwrap();
-        std::fs::write(src.join("config/sub/b.json"), "{}").unwrap();
-        let o = file_offers(&src, &dst);
-        assert_eq!(o.iter().find(|f| f.key == "options").unwrap().changed, 1);
-        assert_eq!(o.iter().find(|f| f.key == "config").unwrap().changed, 1);
-        assert_eq!(file_plan(&src, &dst, "config")[0].1, dst.join("config").join("sub").join("b.json"));
-        std::fs::remove_dir_all(&root).ok();
     }
 }

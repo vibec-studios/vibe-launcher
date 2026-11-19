@@ -25,31 +25,12 @@ use std::path::{Path, PathBuf};
 
 pub const WARN_NRC: &str = "NoRisk-Client-Mods werden nicht übernommen – sie laufen nur im NoRisk-Launcher.";
 
-/// Einträge auf oberster Ebene des Spielordners, die NICHT übernommen werden: NoRisk-eigene Daten (laufen nur im
-/// NoRisk-Launcher), Mods (kommen über Modrinth bzw. als passende lose JARs) und Laufzeit-Reste.
-/// Alles andere (Configs, Welten, Packs, Optionen, Daten anderer Mods wie `xaero/`, `journeymap/` …) kommt mit.
-const SKIP: &[&str] = &[
-    "mods",
-    "custom_mods",
-    "NoRiskClient",
-    "optionsNRC.json",
-    "logs",
-    "crash-reports",
-    "debug",
-    "cache",
-    "downloads",
-    "backups",
-    "usercache.json",
-    "realms_persistence.json",
-    "command_history.txt",
-    ".fabric",
-    ".mixin.out",
-];
-
-/// Wird dieser Eintrag (oberste Ebene) beim Import übersprungen?
+/// Wird dieser Eintrag (oberste Ebene) beim Import übersprungen? Gemeinsame Regeln ([`super::gamedata`]) plus
+/// NoRisk-eigene Daten (`NoRiskClient/`, `optionsNRC.json` – laufen nur im NoRisk-Launcher) und Mods (kommen über
+/// Modrinth bzw. als passende lose JARs). Alles andere (Configs, Welten, Packs, Optionen, Daten anderer Mods wie
+/// `xaero/`, `journeymap/` …) kommt mit.
 fn skip_top(name: &str) -> bool {
-    let l = name.to_ascii_lowercase();
-    SKIP.iter().any(|s| s.eq_ignore_ascii_case(name)) || (l.starts_with("hs_err_pid") && l.ends_with(".log")) || l.ends_with(".dat_old")
+    super::gamedata::skip_top(super::LauncherKind::Norisk, super::gamedata::Purpose::Import, name)
 }
 
 /// Wurzelordner des NoRisk-Launchers (je OS).
@@ -713,7 +694,6 @@ pub async fn run_import(
     task.set_instance(inst.id.clone());
 
     let res: AppResult<Vec<String>> = async {
-        super::external::write_mark(&state, &inst.id, super::LauncherKind::Norisk, &source_path)?;
         let dst = state.paths.game_dir(&inst.id);
         // 1. Spieldaten (alles außer SKIP) + lose JARs kopieren
         task.stage("Kopiere Spieldaten …", Some(0.0));
@@ -721,7 +701,7 @@ pub async fn run_import(
         let jars = plan.jars.clone();
         let t2 = task.clone();
         let d2 = dst.clone();
-        let copied = tokio::task::spawn_blocking(move || -> AppResult<u64> {
+        let (copied, tops) = tokio::task::spawn_blocking(move || -> AppResult<(u64, Vec<String>)> {
             let mut files: Vec<(PathBuf, PathBuf)> = Vec::new();
             let mut top: Vec<std::fs::DirEntry> = std::fs::read_dir(&src)?.flatten().collect();
             top.sort_by_key(|e| e.file_name());
@@ -734,13 +714,15 @@ pub async fn run_import(
                 if p.is_file() {
                     files.push((p, PathBuf::from(&name)));
                 } else if p.is_dir() {
-                    for w in walkdir::WalkDir::new(&p).follow_links(false).into_iter().flatten().filter(|w| w.file_type().is_file()) {
+                    let it = walkdir::WalkDir::new(&p).follow_links(false).into_iter().filter_entry(|w| !super::gamedata::skip_inner(&w.file_name().to_string_lossy()));
+                    for w in it.flatten().filter(|w| w.file_type().is_file()) {
                         if let Ok(rel) = w.path().strip_prefix(&src) {
                             files.push((w.path().to_path_buf(), rel.to_path_buf()));
                         }
                     }
                 }
             }
+            let tops = super::gamedata::top_names(files.iter().map(|f| f.1.as_path()));
             for (j, n) in &jars {
                 files.push((j.clone(), Path::new("mods").join(n)));
             }
@@ -756,9 +738,10 @@ pub async fn run_import(
                 }
                 std::fs::copy(from, &to).map_err(|e| AppError::msg(format!("{} konnte nicht kopiert werden: {e}", rel.display())))?;
             }
-            Ok(files.len() as u64)
+            Ok((files.len() as u64, tops))
         })
         .await??;
+        super::external::write_mark(&state, &inst.id, super::LauncherKind::Norisk, &source_path, tops)?;
         task.message(format!("{copied} Dateien übernommen"));
 
         // 2. Mods per Modrinth installieren

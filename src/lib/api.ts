@@ -188,7 +188,7 @@ export const api = {
   importSettingsPending: () => call<T.SettingsOffer[]>("import_settings_pending"),
   importSettingsOffer: (instanceId: string) => call<T.SettingsOffer | null>("import_settings_offer", { instanceId }),
   /** `files`: "options" | "config" erneut kopieren (vorher Snapshot). */
-  importSettingsApply: (instanceId: string, keys: string[], files: string[]) => call<T.Instance>("import_settings_apply", { instanceId, keys, files }),
+  importSettingsApply: (instanceId: string, keys: string[], data: T.DataPick[]) => call<T.Instance>("import_settings_apply", { instanceId, keys, data }),
 
   // ---------------------------------------------------------------- Lokale Server (OWNER Game-Agent)
   serversList: () => call<T.Server[]>("servers_list"),
