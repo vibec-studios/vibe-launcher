@@ -3,6 +3,7 @@
 //   vl.mock.empty = "1"   -> keine Instanzen (Erststart)
 //   vl.mock.vibe  = "0"   -> Vibe-Hauptschalter aus
 //   vl.mock.panel = "1"   -> Freunde-Panel offen
+//   vl.mock.shots = "empty" -> keine Screenshots, vl.mock.stats = "empty" -> keine Spielzeit
 // Nur für VITE_MOCK=1.
 import type { RecentServer, Settings, World } from "@/lib/types";
 import type { Friend, HostSession } from "@/lib/vibe-sdk";
@@ -83,11 +84,48 @@ const shots = [
     height: 1080,
     taken_at: now - 3 * D,
   },
+  // weitere Aufnahmen über die letzten Wochen, damit die Galerie realistisch gefüllt ist
+  ...Array.from({ length: 16 }, (_, n) => {
+    const t = now - (n < 3 ? 26 * H + n * H : n < 8 ? (2 + n) * D : (20 + n * 4) * D);
+    const d = new Date(t);
+    const p2 = (x: number) => String(x).padStart(2, "0");
+    return {
+      instance_id: ["survival", "vanilla", "hh-armors", "old-forge"][n % 4],
+      file_name: `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}_${p2(d.getHours())}.${p2(d.getMinutes())}.0${n % 10}.png`,
+      path: `C:/mock/shots/s${n + 3}.png`,
+      size: 1_800_000 + n * 40_000,
+      width: 1920,
+      height: 1080,
+      taken_at: t,
+    };
+  }),
 ];
 
+// Spielzeit-Sitzungen der letzten Monate (deterministisch, damit Screenshots stabil bleiben)
+const sessions = (() => {
+  const out: { instance_id: string; start: number; end: number }[] = [];
+  const ids = ["survival", "survival", "hh-armors", "vanilla", "survival", "old-forge"];
+  const day0 = new Date(new Date(now).getFullYear(), new Date(now).getMonth(), new Date(now).getDate()).getTime();
+  for (let d = 0; d < 330; d++) {
+    const r = (Math.sin(d * 12.9898) * 43758.5453) % 1;
+    const v = Math.abs(r);
+    if (d > 2 && v < 0.45) continue;
+    const id = ids[Math.floor(v * 97) % ids.length];
+    const start = day0 - d * D + (17 + Math.floor(v * 4)) * H;
+    const len = (0.4 + v * 2.6) * H;
+    out.push({ instance_id: id, start, end: Math.min(start + len, now - 5 * 60_000) });
+  }
+  return out.filter((s) => s.end > s.start);
+})();
+
 const handlers: Handlers = {
-  screenshots_list: ({ instanceId }) => shots.filter((x) => !instanceId || x.instance_id === instanceId),
-  screenshot_thumb: ({ path }) => landscape(String(path).includes("a.png") ? 1 : 2),
+  playtime_sessions: ({ since }) => (flag("vl.mock.stats") === "empty" ? [] : sessions.filter((s) => s.end > ((since as number | null) ?? 0))),
+  screenshots_list: ({ instanceId }) =>
+    flag("vl.mock.shots") === "empty" ? [] : shots.filter((x) => !instanceId || x.instance_id === instanceId),
+  screenshot_thumb: ({ path }) => {
+    const m = /s(\d+)\.png$/.exec(String(path));
+    return landscape(m ? Number(m[1]) : String(path).includes("a.png") ? 1 : 2);
+  },
   worlds_list: (args) => [...((a.worlds_list(args) as World[]) ?? []), ...(extraWorlds[args.instanceId as string] ?? [])],
   servers_recent: () => servers.filter((s) => instances.has(s.instance_id)),
   server_ping: ({ address }) => ({

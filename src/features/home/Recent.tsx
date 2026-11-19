@@ -150,7 +150,7 @@ function SpotRow({ spot }: { spot: Spot }) {
       >
         <SpotThumb spot={spot} size={36} />
         <div className="min-w-0 flex-1">
-          <div className={spot.kind === "server" ? "truncate font-mono text-[13px] font-semibold text-text" : "truncate text-[13.5px] font-semibold text-text"}>
+          <div className="truncate text-[13.5px] font-semibold text-text" title={name}>
             {name}
           </div>
           <div className="truncate text-[12px] text-muted">{detail}</div>

@@ -73,6 +73,30 @@ export function UpdateChecker() {
   return null;
 }
 
+/** Versionshinweise lesbar statt als Markdown-Quelltext: Aufzählungen als Liste, Überschriften fett, ohne `**`/`#`. */
+function ReleaseNotes({ text }: { text: string }) {
+  const clean = (s: string) => s.replace(/\*\*(.+?)\*\*/g, "$1").replace(/`([^`]+)`/g, "$1").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+  const lines = text.split(/\r?\n/).map((l) => l.trimEnd());
+  return (
+    <div className="selectable scroll flex max-h-[240px] flex-col gap-1 px-4 py-3 text-[13px] leading-snug text-muted">
+      {lines.map((l, n) => {
+        if (!l.trim()) return <div key={n} className="h-1" />;
+        const head = /^#{1,6}\s+(.*)$/.exec(l);
+        if (head) return <div key={n} className="pt-1 font-semibold text-text">{clean(head[1])}</div>;
+        const item = /^\s*[-*•]\s+(.*)$/.exec(l);
+        if (item)
+          return (
+            <div key={n} className="flex gap-2 pl-0.5">
+              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-dot bg-dim" aria-hidden />
+              <span className="min-w-0">{clean(item[1])}</span>
+            </div>
+          );
+        return <p key={n}>{clean(l)}</p>;
+      })}
+    </div>
+  );
+}
+
 /** Knopf in der Topbar, nur sichtbar wenn ein Update bereitliegt (oder gerade installiert wird). */
 export function UpdateButton() {
   const tt = useT();
@@ -100,10 +124,12 @@ export function UpdateButton() {
           <div className="border-b border-line px-4 py-3">
             <div className="text-section text-text">{tt("update.title", { version: info.version })}</div>
             <div className="mt-0.5 text-meta text-muted">
-              {tt("update.current", { version: info.current_version })} · {info.channel === "dev" ? tt("update.channel.dev") : tt("update.channel.release")}
+              {tt("update.current", { version: info.current_version })}
+              {/* Kanal nur erwähnen, wenn es nicht der normale ist */}
+              {info.channel === "dev" && ` · ${tt("update.channel.dev")}`}
             </div>
           </div>
-          {info.notes && <div className="selectable scroll max-h-[220px] whitespace-pre-wrap px-4 py-3 text-[13px] text-muted">{info.notes}</div>}
+          {info.notes && <ReleaseNotes text={info.notes} />}
           <div className="flex flex-col gap-2 border-t border-line px-4 py-3">
             {task && (running || failed) && (
               <>

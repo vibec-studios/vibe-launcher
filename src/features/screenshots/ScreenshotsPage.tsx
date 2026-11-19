@@ -1,5 +1,6 @@
-// OWNER: Frontend-Agent A. Screenshots aller Instanzen: Werkzeugleiste (Instanz-Filter, Ordner, Neu laden) über einem
-// virtualisierten, rahmenlosen Raster nach Datum gruppiert, Lightbox, Kontextmenü (Kopieren, im Ordner zeigen, Löschen). Lädt nur Vorschaubilder.
+// OWNER: Frontend-Agent A. Screenshots aller Instanzen: Werkzeugleiste (Instanz-Filter, Anzahl, Ordner, Neu laden) über einem
+// virtualisierten, rahmenlosen Raster nach Datum gruppiert (neueste zuerst), Lightbox, Kontextmenü (Kopieren, im Ordner
+// zeigen, Löschen). Lädt nur Vorschaubilder. Leer mit Filter: Weg zurück zu allen Instanzen bzw. in den Ordner.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getRouteApi } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,7 +10,7 @@ import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
 import type { Screenshot } from "@/lib/types";
 import { formatBytes, formatDate, imageSrc } from "@/lib/format";
-import { ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, Select, Skeleton, cn, confirm, toast } from "@/components/ui";
+import { Button, ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, Select, Skeleton, cn, confirm, toast } from "@/components/ui";
 import { t as tt, useLang, useT } from "@/i18n";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { ShotThumb, useScreenshots, useShotFocus } from "./shots";
@@ -17,7 +18,7 @@ import { ShotThumb, useScreenshots, useShotFocus } from "./shots";
 const route = getRouteApi("/screenshots");
 const GAP = 8;
 const MIN_TILE = 220;
-const HEAD_H = 44;
+const HEAD_H = 40;
 const PAD = 24;
 const ALL = "__all";
 
@@ -108,7 +109,8 @@ export function ScreenshotsPage() {
   const [lightbox, setLightbox] = useState<number | null>(null);
 
   const names = useMemo(() => new Map(instances.map((i) => [i.id, i.name])), [instances]);
-  const all = useMemo(() => q.data ?? [], [q.data]);
+  // Neueste zuerst – sonst zerfallen die Datumsgruppen (z. B. zweimal „Diese Woche“), wenn die Liste nicht sortiert ankommt
+  const all = useMemo(() => (q.data ?? []).slice().sort((a, b) => b.taken_at - a.taken_at), [q.data]);
   const shots = useMemo(() => (instance ? all.filter((s) => s.instance_id === instance) : all), [all, instance]);
   const counts = useMemo(() => {
     const m = new Map<string, number>();
@@ -211,17 +213,19 @@ export function ScreenshotsPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-12 shrink-0 items-center gap-2 px-6 pt-1">
+      {/* Werkzeugleiste wie in der Bibliothek: Filter links, Anzahl als Einordnung, Aktionen rechts */}
+      <div className="flex shrink-0 items-center gap-3 px-6 pb-1 pt-4">
         <div className="w-[240px]">
           <Select<string>
             size="sm"
-            variant="ghost"
             value={instance ?? ALL}
             onChange={(v) => nav({ search: { instance: v === ALL ? undefined : v }, replace: true })}
             options={filterOptions}
           />
         </div>
-        {q.data && <span className="text-meta tabular-nums text-dim">{shots.length.toLocaleString()}</span>}
+        {q.data && shots.length > 0 && (
+          <span className="text-meta tabular-nums text-dim">{t(shots.length === 1 ? "shots.count_one" : "shots.count", { n: shots.length.toLocaleString() })}</span>
+        )}
         <div className="flex-1" />
         {instance && (
           <IconButton
@@ -240,20 +244,53 @@ export function ScreenshotsPage() {
 
       <div ref={scrollRef} className="scroll min-h-0 flex-1 px-6 pb-8">
         {q.isError && !q.data ? (
-          <ErrorState error={q.error} onRetry={() => q.refetch()} />
+          <div className="mt-3 rounded-panel bg-surface">
+            <ErrorState error={q.error} onRetry={() => q.refetch()} />
+          </div>
         ) : !q.data ? (
-          <div className="grid gap-2 pt-10" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-            {Array.from({ length: cols * 3 }, (_, n) => (
-              <Skeleton key={n} className="aspect-video rounded-card" />
-            ))}
+          // Platzhalter wie das echte Raster: Gruppen-Überschrift + Kacheln
+          <div className="flex flex-col" aria-busy>
+            <div className="flex h-[40px] items-end pb-2.5">
+              <Skeleton className="h-3.5 w-24" />
+            </div>
+            <div className="grid" style={{ gap: GAP, gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+              {Array.from({ length: cols * 2 }, (_, n) => (
+                <Skeleton key={n} className="aspect-video rounded-card" />
+              ))}
+            </div>
           </div>
         ) : shots.length === 0 ? (
-          <EmptyState
-            className="mt-4 rounded-panel bg-surface"
-            icon={<Camera size={34} />}
-            title={t("shots.empty.title")}
-            text={t("shots.empty.text")}
-          />
+          instance && all.length > 0 ? (
+            // Gefiltert, aber diese Instanz hat (noch) keine Aufnahmen: zurück zu allen bzw. in den Ordner
+            <EmptyState
+              className="mt-3 rounded-panel bg-surface"
+              icon={<Camera size={34} />}
+              title={t("shots.empty_filtered.title", { name: names.get(instance) ?? t("shots.this_instance") })}
+              text={t("shots.empty_filtered.text")}
+              action={
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button size="sm" onClick={() => nav({ search: { instance: undefined }, replace: true })}>
+                    {t("shots.show_all")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="subtle"
+                    icon={<FolderOpen size={14} />}
+                    onClick={() => api.instanceOpenFolder(instance, "screenshots").catch((e) => toast.error(e))}
+                  >
+                    {t("common.open_folder")}
+                  </Button>
+                </div>
+              }
+            />
+          ) : (
+            <EmptyState
+              className="mt-3 rounded-panel bg-surface"
+              icon={<Camera size={34} />}
+              title={t("shots.empty.title")}
+              text={t("shots.empty.text")}
+            />
+          )
         ) : (
           <div className="relative w-full" style={{ height: v.getTotalSize() }}>
             {v.getVirtualItems().map((vr) => {
@@ -262,8 +299,8 @@ export function ScreenshotsPage() {
                 <div key={vr.key} className="absolute left-0 top-0 w-full" style={{ transform: `translateY(${vr.start}px)`, height: vr.size }}>
                   {row.kind === "head" ? (
                     <div className="flex h-full items-end gap-2 pb-2.5">
-                      <span className="text-section text-text">{row.label}</span>
-                      <span className="text-[12px] text-dim">{row.count}</span>
+                      <h2 className="text-section text-text">{row.label}</h2>
+                      <span className="text-meta tabular-nums text-dim">{row.count}</span>
                     </div>
                   ) : (
                     <div className="flex" style={{ gap: GAP }}>

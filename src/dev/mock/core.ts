@@ -48,7 +48,8 @@ export const instances = new Map<string, Instance>(
 );
 
 let settings: Settings = {
-  language: "de",
+  // Screenshots: localStorage vl.mock.lang = en
+  language: mockFlag("vl.mock.lang") === "en" ? "en" : "de",
   min_memory_mb: 512,
   max_memory_mb: 4096,
   jvm_args: "",

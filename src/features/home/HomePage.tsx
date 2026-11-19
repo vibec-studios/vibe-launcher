@@ -27,11 +27,19 @@ import { useSimple } from "@/lib/mode";
 const RECENT = 6;
 const SPOTS = 5;
 
-function Header({ count }: { count: number }) {
+function Header({ count, loading }: { count: number; loading?: boolean }) {
   const t = useT();
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [], isPending } = useAccounts();
   const active = accounts.find((a) => a.active) ?? accounts[0];
   const week = useWeekPlaytime();
+  // Beim Start nicht erst „Willkommen“ und dann „Willkommen zurück, Name“ zeigen
+  if (loading || (isPending && !accounts.length))
+    return (
+      <header className="flex min-h-[44px] flex-col justify-end gap-1.5" aria-busy>
+        <Skeleton className="h-[22px] w-72" />
+        <Skeleton className="h-3.5 w-48" />
+      </header>
+    );
   return (
     <header className="flex min-w-0 items-end gap-3">
       <div className="min-w-0 flex-1">
@@ -101,15 +109,33 @@ function ExpertHome() {
   return (
     <div className="scroll h-full">
       <div className="mx-auto flex max-w-[1240px] flex-col gap-6 px-6 pb-10 pt-6">
-        <Header count={list.length} />
+        <Header count={list.length} loading={loading} />
 
         {loading ? (
-          <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-6">
-            <div className="flex flex-col gap-6">
-              <Skeleton className="h-[178px] rounded-panel" />
-              <Skeleton className="h-[140px] rounded-panel" />
+          // Platzhalter in der Form der echten Seite (Weiterspielen, Zuletzt gespielt, Welten/Server | rechte Spalte)
+          <div className="grid grid-cols-[minmax(0,1fr)_300px] items-start gap-6 max-[980px]:grid-cols-[minmax(0,1fr)_272px]" aria-busy>
+            <div className="flex min-w-0 flex-col gap-6">
+              <Skeleton className="h-[210px] rounded-panel" />
+              <div className="flex flex-col gap-2.5">
+                <Skeleton className="h-4 w-32" />
+                <div className="grid grid-cols-3 gap-2">
+                  <Skeleton className="h-[72px] rounded-panel" />
+                  <Skeleton className="h-[72px] rounded-panel" />
+                  <Skeleton className="h-[72px] rounded-panel" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-[168px] rounded-panel" />
+              </div>
             </div>
-            <Skeleton className="h-[200px] rounded-panel" />
+            <div className="flex flex-col gap-6">
+              <Skeleton className="h-[88px] rounded-panel" />
+              <div className="flex flex-col gap-2.5">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-[220px] rounded-panel" />
+              </div>
+            </div>
           </div>
         ) : empty ? (
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-6">

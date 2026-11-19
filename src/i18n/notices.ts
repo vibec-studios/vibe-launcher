@@ -7,7 +7,7 @@ export default {
     "notice.more": "Mehr erfahren",
     "notice.move.title": "Vibe zieht um",
     "notice.move.body":
-      "Neue Adressen: vibe.axolite.app und *.axolite.cc. Alte Adressen funktionieren vorerst weiter. Gespeicherte Server-Adressen bitte auf .axolite.cc umstellen.",
+      "Vibe ist jetzt unter vibe.axolite.app erreichbar, die alten Adressen funktionieren vorerst weiter. Hast du Vibe-Server in Minecraft gespeichert, ändere deren Endung auf .axolite.cc.",
     "simple:notice.move.body":
       "Vibe hat eine neue Internet-Adresse. Alles funktioniert weiter wie bisher. Wenn du Freunde über Vibe besuchst, nutze ab jetzt Adressen mit .axolite.cc.",
 
@@ -24,7 +24,7 @@ export default {
     "notice.more": "Learn more",
     "notice.move.title": "Vibe is moving",
     "notice.move.body":
-      "New addresses: vibe.axolite.app and *.axolite.cc. Old addresses keep working for now. Please switch saved server addresses to .axolite.cc.",
+      "Vibe now lives at vibe.axolite.app, the old addresses keep working for now. If you saved Vibe servers in Minecraft, change their ending to .axolite.cc.",
     "simple:notice.move.body":
       "Vibe has a new internet address. Everything keeps working as before. When you visit friends through Vibe, use addresses ending in .axolite.cc from now on.",
 

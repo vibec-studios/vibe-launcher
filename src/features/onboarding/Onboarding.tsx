@@ -33,6 +33,8 @@ import { useLang, useT, type Lang } from "@/i18n";
 import { Button, Spinner, Tag, cn, toast } from "@/components/ui";
 import { Logo3D } from "@/components/Logo3D";
 import { PlayerHead } from "@/components/PlayerHead";
+import { InstanceIcon } from "@/components/instance/InstanceIcon";
+import { instanceAccent } from "@/lib/format";
 import { MsaDialog } from "@/features/accounts/MsaDialog";
 import { openImport } from "@/features/import/ImportDialog";
 import { SkinImportDialog, useSkinImportScan } from "@/features/skins/SkinImport";
@@ -472,10 +474,11 @@ function ImportStep({ finds }: { finds: ReturnType<typeof useImportFinds> }) {
                   <HardDriveDownload size={19} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[15px] font-semibold text-text">{t("onb.import.games", { n: total })}</div>
+                  <div className="text-[15px] font-semibold text-text">{t(total === 1 ? "onb.import.games_one" : "onb.import.games", { n: total })}</div>
                   <div className="truncate text-[12.5px] text-muted">{finds.found.map((l) => l.name).join(" · ")}</div>
                 </div>
-                <Button variant="primary" onClick={() => openImport(null, "launcher")}>
+                {/* Sekundär wie „Skins übernehmen“: Hauptweg des Schritts bleibt „Weiter“ unten rechts */}
+                <Button variant="ghost" onClick={() => openImport(null, "launcher")}>
                   {t("onb.import.games_cta")}
                 </Button>
               </div>
@@ -487,7 +490,7 @@ function ImportStep({ finds }: { finds: ReturnType<typeof useImportFinds> }) {
                 <Shirt size={19} />
               </span>
               <div className="min-w-0 flex-1">
-                <div className="text-[15px] font-semibold text-text">{t("onb.import.skins", { n: finds.newSkins })}</div>
+                <div className="text-[15px] font-semibold text-text">{t(finds.newSkins === 1 ? "onb.import.skins_one" : "onb.import.skins", { n: finds.newSkins })}</div>
                 <div className="text-[12.5px] text-muted">{t("onb.import.skins_text")}</div>
               </div>
               <Button variant="ghost" onClick={() => setSkins(true)}>
@@ -511,7 +514,21 @@ function GameStep({ mode, onFinish }: { mode: UiMode; onFinish: (after?: () => v
   if (instances.length > 0) {
     return (
       <>
-        <StepHead eyebrow={t("onb.game.eyebrow")} title={t("onb.game.ready_title")} lead={t("onb.game.ready_lead", { n: instances.length })} />
+        <StepHead
+          eyebrow={t("onb.game.ready_eyebrow")}
+          title={t("onb.game.ready_title")}
+          lead={t(instances.length === 1 ? "onb.game.ready_lead_one" : "onb.game.ready_lead", { n: instances.length })}
+        />
+        {/* Die vorhandenen Spiele zeigen, statt nur eine Zahl zu nennen */}
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          {instances.slice(0, 4).map((i) => (
+            <span key={i.id} className="flex h-11 min-w-0 max-w-[220px] items-center gap-2.5 rounded-card bg-surface pl-1.5 pr-3.5">
+              <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={32} />
+              <span className="truncate text-[13.5px] font-semibold text-text">{i.name}</span>
+            </span>
+          ))}
+          {instances.length > 4 && <span className="px-1 text-[13px] text-dim">{t("onb.game.ready_more", { n: instances.length - 4 })}</span>}
+        </div>
         <div className="flex items-center gap-3 text-[14px] text-ok">
           <CheckCircle2 size={18} />
           {t("onb.game.ready_hint")}
