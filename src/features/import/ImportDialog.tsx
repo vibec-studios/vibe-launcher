@@ -153,8 +153,9 @@ export function ImportDialog() {
     <Dialog
       open={open}
       onOpenChange={(o) => !o && close()}
-      title={t("import.title")}
-      description={t("import.description")}
+      // Gleicher Titel in beiden Modi (springt beim Umschalten nicht), Erklärung je Modus
+      title={t("import.title_any")}
+      description={t("import.description_file")}
       size="md"
       footer={
         running ? (
@@ -182,11 +183,14 @@ export function ImportDialog() {
       {!path ? (
         <button
           onClick={choose}
-          className="flex w-full flex-col items-center justify-center gap-2.5 rounded-card bg-surface px-6 py-12 text-center transition-colors duration-150 hover:bg-surface2"
+          // Sichtbare Ablagefläche (gestrichelt), damit klar ist: hier klicken oder Datei hineinziehen
+          className="group flex w-full flex-col items-center justify-center gap-2.5 rounded-card border border-dashed border-line2 bg-surface/60 px-6 py-12 text-center transition-colors duration-150 hover:border-accent/60 hover:bg-surface"
         >
-          <FileArchive size={26} className="text-dim" />
+          <span className="grid h-12 w-12 place-items-center rounded-card bg-surface2 text-muted transition-colors group-hover:text-accent">
+            <FileArchive size={22} />
+          </span>
           <span className="text-section text-text">{t("import.drop_or_choose")}</span>
-          <span className="text-meta text-muted">{t("import.formats")}</span>
+          <span className="text-meta text-muted">{t("import.formats_named")}</span>
         </button>
       ) : preview.isPending ? (
         <div className="flex flex-col gap-4">

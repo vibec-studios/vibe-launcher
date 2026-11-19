@@ -487,7 +487,8 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
 
   return (
     <div className="@container flex h-full min-h-0 flex-col gap-3 px-6 pb-4 pt-4 outline-none" tabIndex={-1} onKeyDown={onKeyDown}>
-      {/* 1. Suche + Hinzufügen */}
+      {/* 1. Suche + Hinzufügen (leer: alles steht im Leerzustand, keine „0 Inhalte durchsuchen“-Suche) */}
+      {!empty && (
       <div className="flex shrink-0 items-center gap-2">
         <SearchInput
           value={text}
@@ -511,6 +512,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
           {t("content.add")}
         </Button>
       </div>
+      )}
 
       {/* 2. Sortierung, Filter-Chips, Aktionen */}
       {!empty && (
@@ -598,20 +600,24 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             </DropdownMenu>
           )}
           {activeFilters > 0 && (
-            <button
+            // Nur ein „×“ (mit Tooltip): sonst bricht die Zeile genau dann um, wenn ein Filter aktiv ist
+            <IconButton
+              label={t("ipage.filter.reset")}
+              tip
+              size="sm"
+              variant="ghost"
               onClick={() => {
                 setStatus("all");
                 setSideFilter("all");
               }}
-              className="flex h-8 items-center gap-1 rounded-ctl px-2 text-[12.5px] font-medium text-dim hover:bg-white/[.06] hover:text-text"
             >
-              <X size={13} />
-              {t("ipage.filter.reset")}
-            </button>
+              <X size={14} />
+            </IconButton>
           )}
             </>
           )}
-          <div className="flex-1" />
+          {/* Rechte Gruppe bleibt zusammen und rechtsbündig, auch wenn die Zeile umbricht */}
+          <div className="ml-auto flex shrink-0 items-center gap-1">
           {counts.updatesAll > 0 && (
             <Button
               size="sm"
@@ -621,15 +627,15 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
               disabled={updatesRunning}
               onClick={() => update(all.filter((c) => updates.has(keyOf(c))))}
             >
-              {updatesRunning && updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : t("ipage.ct.update_all", { n: counts.updatesAll })}
+              {updatesRunning && updTask?.progress != null ? `${Math.round(updTask.progress * 100)}%` : t("ipage.update_n", { n: counts.updatesAll })}
             </Button>
           )}
-          {!vanilla && !simple && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1000px]:inline" />}
+          {!vanilla && !simple && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1100px]:inline" />}
           {!simple && (
           <DropdownMenu
             trigger={
               <Button size="sm" variant="subtle" icon={<SlidersHorizontal size={14} />} title={t("ipage.tools")} className="data-[state=open]:bg-white/[.07] data-[state=open]:text-text">
-                <span className="hidden @min-[1000px]:inline">{t("ipage.tools")}</span>
+                <span className="hidden @min-[1100px]:inline">{t("ipage.tools")}</span>
               </Button>
             }
           >
@@ -651,19 +657,28 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             ))}
           </DropdownMenu>
           )}
+          </div>
         </div>
       )}
       {perfOpen && <PerfDialog instance={instance} onClose={() => setPerfOpen(false)} />}
 
       {/* 3. Tabelle */}
-      <div ref={dropRef} className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-panel">
+      {/* Außen: Ablagefläche über die ganze Höhe; innen: Tabelle nur so hoch wie ihre Zeilen (keine leere Riesenbox
+          unter drei Shadern). Leer: gestrichelter Rahmen = „hier ablegen“. */}
+      <div ref={dropRef} className="relative flex min-h-0 flex-1 flex-col">
+      <div
+        className={cn(
+          "flex min-h-0 flex-col overflow-hidden rounded-card border bg-panel",
+          empty ? "flex-1 border-dashed border-line2" : failed || pending || visible.length === 0 ? "flex-1 border-line" : "flex-initial border-line",
+        )}
+      >
         {failed ? (
           <ErrorState error={failed.error} onRetry={() => lists.forEach((l) => l.refetch())} />
         ) : empty ? (
           <EmptyState
             icon={<PackagePlus size={30} />}
             title={t("ipage.ct.empty")}
-            text={t(vanilla ? "content.empty_text.resourcepack" : "content.empty_text.mod")}
+            text={t(vanilla ? "ipage.ct.empty.resourcepack" : "ipage.ct.empty.mod")}
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button variant="accent" icon={<Plus size={15} />} onClick={toDiscover}>
@@ -768,6 +783,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             )}
           </>
         )}
+      </div>
 
         {/* Sammelaktionen: schwebende Leiste bei Auswahl */}
         {selection.size > 0 && (

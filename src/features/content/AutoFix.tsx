@@ -376,7 +376,7 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
         )}
         {steps.length > 0 && (
           <Button variant="accent" icon={<Wrench size={14} />} disabled={!chosen.length} onClick={() => void run()}>
-            {req.launchAfter ? t("fix.run_launch", { n: chosen.length }) : t("fix.run", { n: chosen.length })}
+            {req.launchAfter ? t("fix.run_launch", { n: chosen.length }) : t(chosen.length === 1 ? "fix.run_1" : "fix.run", { n: chosen.length })}
           </Button>
         )}
       </>
@@ -468,7 +468,7 @@ function PreLaunchDialog({ inst, q, resolve }: { inst: Instance; q: QuickCheck; 
       open
       onOpenChange={(o) => !o && done("cancel")}
       title={t("fix.pre.title")}
-      description={t("fix.pre.text", { n: q.errors, name: inst.name })}
+      description={t(q.errors === 1 ? "fix.pre.text_1" : "fix.pre.text", { n: q.errors, name: inst.name })}
       size="sm"
       footer={
         <>

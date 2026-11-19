@@ -17,7 +17,8 @@ export function PerfDialog({ instance, onClose }: { instance: Instance; onClose:
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    if (q.data) setSel(new Set(q.data.filter((c) => c.recommended).map((c) => c.project_id)));
+    // Bereits installierte/nicht verfügbare nicht vorauswählen – sonst zeigt der Knopf „3 installieren“ bei nur 2 Häkchen
+    if (q.data) setSel(new Set(q.data.filter((c) => c.recommended && !c.installed && c.available).map((c) => c.project_id)));
   }, [q.data]);
 
   const install = async () => {

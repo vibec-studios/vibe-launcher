@@ -4,11 +4,13 @@ export default {
     "ipage.ct.search": "{n} Inhalte durchsuchen …",
     "ipage.ct.type": "Art",
     "ipage.ct.type.all": "Alle",
-    "ipage.ct.updates": "Updates verfügbar",
+    "ipage.ct.updates": "Updates",
     "ipage.ct.update_all": "Alle aktualisieren ({n})",
     "ipage.ct.desc": "Absteigend",
     "ipage.ct.open_folder": "Ordner „{folder}“ öffnen",
     "ipage.ct.empty": "Noch keine Inhalte",
+    "ipage.ct.empty.mod": "Finde Mods unter „Entdecken“ – oder zieh Mod-Dateien einfach hier hinein.",
+    "ipage.ct.empty.resourcepack": "Finde Resourcepacks und Shader unter „Entdecken“ – oder zieh Dateien einfach hier hinein.",
     "ipage.ct.col.actions": "Aktionen",
     "ipage.ct.drop": "Dateien hier ablegen",
     "ipage.sort.version": "Version",
@@ -26,6 +28,7 @@ export default {
 
     "ipage.meta.modpack": "Modpack {version}",
     "ipage.meta.modpack_named": "Modpack: {name} {version}",
+    "ipage.meta.last_now": "gerade eben gespielt",
 
     "ipage.notices": "Hinweise",
     "ipage.notice.modpack": "Modpack-Update {version}",
@@ -39,6 +42,7 @@ export default {
     "ipage.notice.deps_warn": "{n} Mod-Hinweise",
     "ipage.notice.missing_1": "1 manueller Download",
     "ipage.notice.missing": "{n} manuelle Downloads",
+    "ipage.notice.fix": "Automatisch beheben",
 
     "ipage.menu.edit": "Icon, Farbe & Gruppe …",
     "ipage.tools": "Werkzeuge",
@@ -64,6 +68,8 @@ export default {
     "ipage.ct.desc": "Descending",
     "ipage.ct.open_folder": "Open “{folder}” folder",
     "ipage.ct.empty": "No content yet",
+    "ipage.ct.empty.mod": "Find mods in Discover – or simply drop mod files here.",
+    "ipage.ct.empty.resourcepack": "Find resource packs and shaders in Discover – or simply drop files here.",
     "ipage.ct.col.actions": "Actions",
     "ipage.ct.drop": "Drop files here",
     "ipage.sort.version": "Version",
@@ -81,6 +87,7 @@ export default {
 
     "ipage.meta.modpack": "Modpack {version}",
     "ipage.meta.modpack_named": "Modpack: {name} {version}",
+    "ipage.meta.last_now": "just played",
 
     "ipage.notices": "Notices",
     "ipage.notice.modpack": "Modpack update {version}",
@@ -94,6 +101,7 @@ export default {
     "ipage.notice.deps_warn": "{n} mod notes",
     "ipage.notice.missing_1": "1 manual download",
     "ipage.notice.missing": "{n} manual downloads",
+    "ipage.notice.fix": "Fix automatically",
 
     "ipage.menu.edit": "Icon, colour & group …",
     "ipage.tools": "Tools",

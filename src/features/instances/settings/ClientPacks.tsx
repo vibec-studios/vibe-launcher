@@ -141,7 +141,8 @@ export function ClientPacks({ instance, only, compact }: { instance: Instance; o
       {groups.map((g) => (
         <section key={g.key} className="flex flex-col gap-2">
           {!compact && <h3 className="px-1 text-[12.5px] font-semibold text-muted">{t(`cp.group.${g.key}`)}</h3>}
-          <div className={cn("grid gap-3", compact ? "grid-cols-1" : "grid-cols-2 max-[980px]:grid-cols-1")}>
+          {/* Ein einzelnes Pack (z. B. Offiziell: nur Vibey) nimmt die ganze Breite statt einer halben Kachel */}
+          <div className={cn("grid gap-3", compact || g.items.length === 1 ? "grid-cols-1" : "grid-cols-2 max-[980px]:grid-cols-1")}>
             {g.items.map((o) => (
               <PackCard
                 key={o.id}
@@ -243,17 +244,21 @@ function PackCard({
         </div>
       </div>
 
-      {!official && o.vendor && (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-dim">
-          <span>{t("cp.attribution", { vendor: o.vendor })}</span>
-          {o.homepage && (
-            <a href={o.homepage} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-muted hover:text-text hover:underline">
-              {new URL(o.homepage).host.replace(/^www\./, "")}
-              <ExternalLink size={11} />
-            </a>
-          )}
-        </div>
-      )}
+      {/* Herkunft (Anbieter, Website, woher die Datei kommt) gesammelt über den Aktionen – die Knöpfe stehen unten */}
+      <div className="flex flex-col gap-0.5 pl-[52px] text-[12px] leading-snug text-dim">
+        {!official && o.vendor && (
+          <div className="flex flex-wrap items-center gap-x-2">
+            <span>{t("cp.attribution", { vendor: o.vendor })}</span>
+            {o.homepage && (
+              <a href={o.homepage} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-muted hover:text-text hover:underline">
+                {new URL(o.homepage).host.replace(/^www\./, "")}
+                <ExternalLink size={11} />
+              </a>
+            )}
+          </div>
+        )}
+        <p>{t(`cp.source.${o.source}`)}</p>
+      </div>
 
       <div className="mt-auto flex min-h-8 items-center gap-2">
         <div
@@ -265,7 +270,9 @@ function PackCard({
           {tone === "warn" && <AlertTriangle size={12} className="shrink-0" />}
           {tone === "ok" && <Check size={12} className="shrink-0" />}
           {tone === "brand" && <ArrowUpCircle size={12} className="shrink-0" />}
-          <span className="min-w-0">{status}</span>
+          <span className="min-w-0 truncate" title={typeof status === "string" ? status : undefined}>
+            {status}
+          </span>
           {o.available === null && o.source === "norisk" && o.homepage && (
             <a href={o.homepage} target="_blank" rel="noreferrer" className="shrink-0 font-semibold text-text hover:underline">
               {t("cp.norisk.download_site")}
@@ -298,7 +305,6 @@ function PackCard({
           </Tooltip>
         )}
       </div>
-      <p className="-mt-1 text-[11.5px] text-dim">{t(`cp.source.${o.source}`)}</p>
     </article>
   );
 }

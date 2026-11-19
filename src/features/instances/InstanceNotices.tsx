@@ -22,6 +22,12 @@ const route = getRouteApi("/instances/$id");
 
 type Tone = "accent" | "warn" | "danger";
 const toneIcon: Record<Tone, string> = { accent: "text-accent", warn: "text-warn", danger: "text-danger" };
+// Leicht getönte Fläche je Ton: Probleme fallen sofort auf, Updates bleiben ruhig – statt fünf gleich grauer Kästen
+const toneBg: Record<Tone, string> = {
+  accent: "bg-accent/[.07] hover:bg-accent/[.13] data-[state=open]:bg-accent/[.13]",
+  warn: "bg-warn/[.08] hover:bg-warn/[.14] data-[state=open]:bg-warn/[.14]",
+  danger: "bg-danger/[.09] hover:bg-danger/[.15] data-[state=open]:bg-danger/[.15]",
+};
 
 /** Gut lesbarer Hinweis: farbiges Symbol + Text auf ruhiger Fläche; Zusatzinfo im Tooltip, Details per Klick. */
 const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { icon: ReactNode; tone: Tone; tip?: ReactNode }>(function Chip(
@@ -32,8 +38,8 @@ const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElemen
     <button
       ref={ref}
       className={cn(
-        "flex h-8 shrink-0 items-center gap-2 rounded-ctl bg-surface px-3 text-[13px] font-medium text-text transition-colors duration-100",
-        "hover:bg-surface2 data-[state=open]:bg-surface2",
+        "flex h-8 shrink-0 items-center gap-2 rounded-ctl px-3 text-[13px] font-medium text-text transition-colors duration-100",
+        toneBg[tone],
         className,
       )}
       {...rest}
@@ -58,8 +64,14 @@ function PopoverChip({ chip, children, width = 460 }: { chip: ReactNode; childre
       <Popover.Trigger asChild>{chip}</Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
-          align="end"
+          align="start"
           sideOffset={8}
+          // Kein Fokus-Sprung auf den ersten Knopf (zeigte sofort Fokusrahmen + Tooltip „Erneut prüfen“)
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            (e.currentTarget as HTMLElement | null)?.focus();
+          }}
+          tabIndex={-1}
           collisionPadding={12}
           style={{ width }}
           className="z-[60] overflow-hidden rounded-card bg-overlay shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
@@ -136,14 +148,6 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
 
   return (
     <div className="flex flex-wrap items-center gap-2 px-6 pt-4" role="group" aria-label={t("ipage.notices")}>
-      {pack && (
-        <>
-          <Chip tone="accent" icon={<ArrowUpCircle size={15} />} tip={t("ipage.notice.modpack_hint")} onClick={() => setPackOpen(true)}>
-            {t("ipage.notice.modpack", { version: pack.latest.version_number })}
-          </Chip>
-          {packOpen && <ModpackUpdateDialog instance={instance} versionId={pack.latest.id} onClose={() => setPackOpen(false)} />}
-        </>
-      )}
       {/* Simple: kein technisches Abhängigkeits-Panel; der Hinweis öffnet direkt „Probleme beheben“ (der Knopf im Kopf bleibt) */}
       {deps.length > 0 && simple && (
         <Chip tone={depErrors ? "danger" : "warn"} icon={<AlertTriangle size={15} />} tip={t("fix.button_hint")} onClick={() => openAutofix({ instanceId: id })}>
@@ -151,27 +155,34 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
         </Chip>
       )}
       {deps.length > 0 && !simple && (
-        <PopoverChip
-          width={500}
-          chip={
-            <Chip tone={depErrors ? "danger" : "warn"} icon={<AlertTriangle size={15} />}>
-              {depErrors
-                ? deps.length === 1
-                  ? t("ipage.notice.deps_1")
-                  : t("ipage.notice.deps", { n: deps.length })
-                : deps.length === 1
-                  ? t("ipage.notice.deps_warn_1")
-                  : t("ipage.notice.deps_warn", { n: deps.length })}
-            </Chip>
-          }
-        >
-          {() => <DepsPanel instanceId={id} />}
-        </PopoverChip>
-      )}
-      {deps.length > 0 && !simple && (
-        <Chip tone="accent" icon={<Wrench size={14} />} tip={t("fix.button_hint")} onClick={() => openAutofix({ instanceId: id })} className="text-accent">
-          {t("fix.button")}
-        </Chip>
+        // Problem + Lösung als ein zusammenhängendes Paar: links Details, rechts „Automatisch beheben“
+        <div className="flex shrink-0 items-center gap-px">
+          <PopoverChip
+            width={500}
+            chip={
+              <Chip tone={depErrors ? "danger" : "warn"} icon={<AlertTriangle size={15} />} className="rounded-r-none">
+                {depErrors
+                  ? deps.length === 1
+                    ? t("ipage.notice.deps_1")
+                    : t("ipage.notice.deps", { n: deps.length })
+                  : deps.length === 1
+                    ? t("ipage.notice.deps_warn_1")
+                    : t("ipage.notice.deps_warn", { n: deps.length })}
+              </Chip>
+            }
+          >
+            {() => <DepsPanel instanceId={id} />}
+          </PopoverChip>
+          <Chip
+            tone={depErrors ? "danger" : "warn"}
+            icon={<Wrench size={14} />}
+            tip={t("fix.button_hint")}
+            onClick={() => openAutofix({ instanceId: id })}
+            className="rounded-l-none font-semibold"
+          >
+            {t("ipage.notice.fix")}
+          </Chip>
+        </div>
       )}
       {missing.length > 0 && (
         <PopoverChip
@@ -183,6 +194,14 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
         >
           {(close) => <MissingPanel instanceId={id} onDismissed={close} />}
         </PopoverChip>
+      )}
+      {pack && (
+        <>
+          <Chip tone="accent" icon={<ArrowUpCircle size={15} />} tip={t("ipage.notice.modpack_hint")} onClick={() => setPackOpen(true)}>
+            {t("ipage.notice.modpack", { version: pack.latest.version_number })}
+          </Chip>
+          {packOpen && <ModpackUpdateDialog instance={instance} versionId={pack.latest.id} onClose={() => setPackOpen(false)} />}
+        </>
       )}
       {updates > 0 && (
         <Chip tone="accent" icon={<RefreshCw size={14} />} tip={t("ipage.notice.updates_hint")} onClick={showUpdates}>

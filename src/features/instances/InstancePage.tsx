@@ -70,9 +70,9 @@ function CrashBanner({ instance }: { instance: Instance }) {
         <AlertTriangle size={18} className="shrink-0 text-danger" />
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-semibold text-text">{t("inst.crash.title")}</div>
-          <div className="truncate text-[12px] text-muted">
+          {/* Dateiname des Crash-Reports nur im Tooltip – er steht ohnehin unter „Logs öffnen“ */}
+          <div className="truncate text-[12px] text-muted" title={game?.crash_report?.split(/[\\/]/).pop()}>
             {game?.exit_code != null ? t("inst.crash.code", { code: game.exit_code }) : t("inst.crash.text")}
-            {game?.crash_report && <span className="font-mono text-dim"> · {game.crash_report.split(/[\\/]/).pop()}</span>}
           </div>
         </div>
         <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null }} />
@@ -90,9 +90,10 @@ function CrashBanner({ instance }: { instance: Instance }) {
         >
           {t("inst.crash.logs")}
         </Button>
+        {/* Hochladen ist nichts Gefährliches -> ruhiger Text-Knopf statt rotem Knopf */}
         <Button
           size="sm"
-          variant="danger"
+          variant="subtle"
           loading={busy}
           icon={<UploadCloud size={13} />}
           onClick={async () => {

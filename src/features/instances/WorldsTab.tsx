@@ -8,6 +8,7 @@ import { qk } from "@/lib/queries";
 import type { Instance, World } from "@/lib/types";
 import { formatBytes, formatRelative, imageSrc } from "@/lib/format";
 import {
+  Button,
   ContextItem,
   ContextLabel,
   ContextMenu,
@@ -170,12 +171,13 @@ export function WorldsTab({ instance }: { instance: Instance }) {
       <PageTools>
         <SearchInput value={query} onChange={setQuery} placeholder={t("worlds.search")} className="w-[240px] min-w-[140px] shrink [&_input]:h-8" />
         <div className="flex-1" />
-        <IconButton label={t("worlds.import")} tip variant="ghost" onClick={() => importWorldZip(instance)}>
-          <FileArchive size={16} />
-        </IconButton>
-        <IconButton label={t("worlds.open_saves")} tip variant="ghost" onClick={() => api.instanceOpenFolder(instance.id, "saves").catch((e) => toast.error(e))}>
+        {/* Beschriftete Hauptaktion statt zwei unklarer Symbole (wie „Server hinzufügen“ nebenan) */}
+        <IconButton label={t("worlds.open_saves_tip")} tip variant="ghost" onClick={() => api.instanceOpenFolder(instance.id, "saves").catch((e) => toast.error(e))}>
           <FolderOpen size={16} />
         </IconButton>
+        <Button size="sm" variant="ghost" icon={<FileArchive size={14} />} title={t("worlds.import")} onClick={() => importWorldZip(instance)}>
+          {t("worlds.import_short")}
+        </Button>
       </PageTools>
       <div className="pb-6">
         {q.isError && !q.data ? (
@@ -193,9 +195,18 @@ export function WorldsTab({ instance }: { instance: Instance }) {
             ))}
           </div>
         ) : q.data.length === 0 ? (
-          <EmptyState icon={<Globe2 size={34} />} title={t("worlds.empty.title")} text={t("worlds.empty.text")} />
+          <EmptyState
+            icon={<Globe2 size={34} />}
+            title={t("worlds.empty.title")}
+            text={t("worlds.empty.text")}
+            action={
+              <Button size="sm" variant="ghost" icon={<FileArchive size={14} />} onClick={() => importWorldZip(instance)}>
+                {t("worlds.import")}
+              </Button>
+            }
+          />
         ) : list.length === 0 ? (
-          <EmptyState title={t("instances.no_match")} />
+          <EmptyState title={t("instances.no_match")} text={t("worlds.no_match", { q: query.trim() })} />
         ) : (
           <div className="flex flex-col">
             {list.map((w) => (
