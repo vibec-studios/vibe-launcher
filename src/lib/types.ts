@@ -221,6 +221,12 @@ export interface Appearance {
   motion: AppearanceMotion;
   /** Übergang beim Seitenwechsel */
   nav_animations: boolean;
+  /** App-Icon in Taskleiste, Fenster und Verknüpfungen */
+  app_icon: "seal" | "penguin" | "custom";
+  /** Kachelfarbe des App-Icons (Hex) */
+  app_icon_color: string;
+  /** Eigenes Bild fürs App-Icon (vom Launcher kopiert) */
+  app_icon_image: string | null;
   /** Theme-Extras (wirken nur, wenn das Theme sie hat – z. B. Winter) */
   effects: {
     snow: boolean;

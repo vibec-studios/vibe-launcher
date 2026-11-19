@@ -85,7 +85,9 @@ pub fn run() {
             }
             tracing::info!("Vibe Launcher {} – Daten: {:?}", env!("CARGO_PKG_VERSION"), state.paths.root);
             let startup_state = state.clone();
+            let appearance = state.settings().appearance.clone();
             app.manage(state);
+            platform::app_icon::apply(app.handle(), &appearance);
             platform::init(app.handle());
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
@@ -156,6 +158,8 @@ pub fn run() {
             commands::core::settings_get,
             commands::core::settings_set,
             commands::core::appearance_import_background,
+            commands::core::app_icon_import,
+            commands::core::app_icon_preview,
             commands::core::tasks_list,
             commands::core::task_cancel,
             commands::core::tasks_clear,

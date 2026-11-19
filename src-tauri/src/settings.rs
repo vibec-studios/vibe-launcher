@@ -134,6 +134,12 @@ pub struct Appearance {
     /// Übergang beim Seitenwechsel
     pub nav_animations: bool,
     pub effects: Effects,
+    /// App-Icon (Taskleiste, Fenster, Verknüpfungen): "seal" | "penguin" | "custom"
+    pub app_icon: String,
+    /// Kachelfarbe des App-Icons als Hex
+    pub app_icon_color: String,
+    /// Eigenes Bild fürs App-Icon (in `<daten>/app-icon/` kopiert)
+    pub app_icon_image: Option<String>,
 }
 
 /// Seitenleiste.
@@ -240,6 +246,9 @@ impl Default for Appearance {
             motion: "normal".into(),
             nav_animations: true,
             effects: Effects::default(),
+            app_icon: "seal".into(),
+            app_icon_color: crate::platform::app_icon::DEFAULT_COLOR.into(),
+            app_icon_image: None,
         }
     }
 }
@@ -269,6 +278,8 @@ impl Appearance {
         };
         fix_hex(&mut self.accent, &d.accent);
         pick(&mut self.theme, &["standard", "winter", "graphite"], &d.theme);
+        pick(&mut self.app_icon, crate::platform::app_icon::MOTIFS, &d.app_icon);
+        fix_hex(&mut self.app_icon_color, &d.app_icon_color);
         pick(&mut self.font, &["inter", "system"], &d.font);
         pick(&mut self.headings, &["default", "pixel"], &d.headings);
         self.font_scale = self.font_scale.clamp(90, 115);
