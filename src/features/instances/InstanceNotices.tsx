@@ -3,7 +3,7 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
-import { AlertTriangle, ArrowUpCircle, ArrowUpRight, Download, Layers, ExternalLink, RefreshCw, Sparkles, Wrench } from "lucide-react";
+import { AlertTriangle, ArrowUpCircle, ArrowUpRight, Download, Layers, MemoryStick, ExternalLink, RefreshCw, Sparkles, Wrench } from "lucide-react";
 import { forwardRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Tooltip, cn } from "@/components/ui";
 import { DepsPanel, useDepIssues } from "@/features/content/DepsPanel";
@@ -18,6 +18,8 @@ import { qk } from "@/lib/queries";
 import type { ContentUpdate, Instance } from "@/lib/types";
 import { startManualDownload } from "@/components/content/install";
 import { DatapacksDialog, unusedPacks, useLoosePacks } from "@/features/content/DatapacksDialog";
+import { useRamSuggestion } from "@/features/perf/ram";
+import { RamDialog } from "@/features/perf/PerfControls";
 import { useSetNews } from "@/features/modsets/api";
 import { openApplySets } from "@/features/modsets/shared";
 
@@ -133,6 +135,8 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
   const setNews = useSetNews(id, !simple).data ?? [];
   const loosePacks = unusedPacks(useLoosePacks(id).data);
   const [dpOpen, setDpOpen] = useState(false);
+  const ram = useRamSuggestion(instance);
+  const [ramOpen, setRamOpen] = useState(false);
 
   // Mod-Updates: nach einer Prüfung die genaue Liste, sonst die Hintergrundzählung des Backends
   const checked = useContentView((s) => !!s.checked[id]);
@@ -162,7 +166,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
     nav({ search: { tab: "content" }, replace: true });
   };
 
-  if (!pack && !updates && !deps.length && !missing.length && !manualUpdates.length && !setNews.length && !loosePacks.length) return null;
+  if (!pack && !updates && !deps.length && !missing.length && !manualUpdates.length && !setNews.length && !loosePacks.length && !ram.suggestion) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-2 px-6 pt-4" role="group" aria-label={t("ipage.notices")}>
@@ -232,6 +236,14 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
           {n.new_entries.length === 1 ? t("news.chip_1", { name: n.name }) : t("news.chip", { n: n.new_entries.length, name: n.name })}
         </Chip>
       ))}
+      {ram.suggestion && (
+        <>
+          <Chip tone="accent" icon={<MemoryStick size={15} />} tip={t("perf.ram.chip_hint")} onClick={() => setRamOpen(true)}>
+            {t("perf.ram.chip")}
+          </Chip>
+          <RamDialog open={ramOpen} onClose={() => setRamOpen(false)} instance={instance} suggestion={ram.suggestion} onApply={ram.apply} onDismiss={ram.dismiss} />
+        </>
+      )}
       {loosePacks.length > 0 && (
         <>
           <Chip tone="warn" icon={<Layers size={15} />} tip={t("dp.notice_hint")} onClick={() => setDpOpen(true)}>

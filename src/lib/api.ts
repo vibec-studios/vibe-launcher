@@ -56,6 +56,10 @@ export const api = {
   updateCheck: () => call<T.UpdateInfo | null>("update_check"),
   updateInstall: (force = false) => call<string>("update_install", { force }),
   updateBlockers: () => call<T.UpdateBlockers>("update_blockers"),
+  gpuSettingsOpen: () => call<void>("gpu_settings_open"),
+  launchSkipStep: (taskId: string) => call<void>("launch_skip_step", { taskId }),
+  datadirPreview: (target: string | null) => call<T.DataDirPreview>("datadir_preview", { target }),
+  datadirMove: (target: string) => call<string>("datadir_move", { target }),
 
   // ---------------------------------------------------------------- Accounts
   accountsList: () => call<T.Account[]>("accounts_list"),

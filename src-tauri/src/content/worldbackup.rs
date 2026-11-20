@@ -567,10 +567,15 @@ pub async fn before_launch(state: &AppState, instance_id: &str, task: &crate::ta
         return;
     }
     task.stage("Welten werden gesichert …", Some(0.0));
+    task.set_step(Some(crate::minecraft::prelaunch::STEP_WORLD_BACKUP));
     let n = todo.len();
     let mut any = false;
     for (i, folder) in todo.into_iter().enumerate() {
         let prog = Progress(Some(task.sub(i as f64 / n as f64, (i + 1) as f64 / n as f64)));
+        if let Err(e) = crate::util::spacecheck::for_world_backup(&state.paths, saves(&state.paths, instance_id).join(&folder)).await {
+            log(format!("Welt-Backup übersprungen: {e}"));
+            break;
+        }
         let (paths, iid, f, keep) = (state.paths.clone(), instance_id.to_string(), folder.clone(), settings.world_backups_keep);
         let res = tokio::task::spawn_blocking(move || {
             let b = backup_sync(&paths, &iid, &f, true, &prog)?;
@@ -591,6 +596,7 @@ pub async fn before_launch(state: &AppState, instance_id: &str, task: &crate::ta
             Err(e) => log(format!("Welt-Backup von {folder} fehlgeschlagen: {e}")),
         }
     }
+    task.set_step(None);
     if any {
         state.content.emit_changed(instance_id);
     }

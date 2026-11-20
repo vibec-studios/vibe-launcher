@@ -100,6 +100,11 @@ pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> App
     s.save(&state.paths.settings_file())?;
     let icon_key = |a: &crate::settings::Appearance| (a.app_icon.clone(), a.app_icon_color.clone(), a.app_icon_image.clone());
     let icon_changed = icon_key(&state.settings().appearance) != icon_key(&s.appearance);
+    if state.settings().prefer_dgpu && !s.prefer_dgpu {
+        if let Err(e) = crate::platform::gpupref::revert(&state.paths) {
+            tracing::warn!("GPU-Vorgaben nicht zurücksetzbar: {e}");
+        }
+    }
     state.net.set_concurrency(s.concurrent_downloads as usize);
     *state.settings.write() = s.clone();
     crate::vibe::on_settings_changed(&state);

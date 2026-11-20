@@ -155,6 +155,7 @@ pub async fn modpack_install(state: State<'_, AppState>, source: Source, project
     if source == Source::Curseforge {
         curseforge::key(&state)?;
     }
+    crate::util::spacecheck::for_modpack(&state.paths).await?;
     let st = state.inner().clone();
     Ok(state.tasks.spawn("import", "Modpack installieren", None, move |task| import::run_modpack_install(st, task, source, project_id, version_id)))
 }
@@ -171,6 +172,7 @@ pub async fn import_pack(state: State<'_, AppState>, path: String, name: Option<
     if !std::path::Path::new(&path).is_file() {
         return Err(AppError::NotFound(path));
     }
+    crate::util::spacecheck::for_pack_file(&state.paths, std::path::Path::new(&path)).await?;
     let st = state.inner().clone();
     let title = std::path::Path::new(&path).file_name().map(|n| format!("{} importieren", n.to_string_lossy())).unwrap_or_else(|| "Importieren".into());
     Ok(state.tasks.spawn("import", title, None, move |task| import::run_import_task(st, task, path, name)))
@@ -233,6 +235,7 @@ pub async fn import_external(
     if source != LauncherKind::Norisk && !std::path::Path::new(&source_path).is_dir() {
         return Err(AppError::NotFound(source_path));
     }
+    crate::util::spacecheck::for_launcher_import(&state.paths, &source_path).await?;
     let st = state.inner().clone();
     let title = std::path::Path::new(&source_path).file_name().map(|n| format!("{} übernehmen", n.to_string_lossy())).unwrap_or_else(|| "Instanz übernehmen".into());
     Ok(state.tasks.spawn("import", title, None, move |task| external::run_import(st, task, source, source_path, name, mc_version, loader, settings)))

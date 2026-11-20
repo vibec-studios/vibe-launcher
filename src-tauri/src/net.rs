@@ -11,6 +11,8 @@ use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Semaphore;
 
+pub mod throttle;
+
 pub const USER_AGENT: &str = concat!("VibeLauncher/", env!("CARGO_PKG_VERSION"), " (+https://github.com/vibec-studios)");
 
 #[derive(Debug, Clone)]
@@ -38,6 +40,18 @@ impl DownloadItem {
 pub struct Net {
     pub client: reqwest::Client,
     concurrency: AtomicUsize,
+    throttle: throttle::Throttle,
+}
+
+fn retry_after(r: &reqwest::Response) -> Option<Duration> {
+    let v = r.headers().get(reqwest::header::RETRY_AFTER)?.to_str().ok()?;
+    throttle::parse_retry_after(v, chrono::Utc::now())
+}
+
+fn note_error(permit: &throttle::Permit, e: &reqwest::Error) {
+    if e.is_timeout() || e.is_connect() {
+        permit.timeout();
+    }
 }
 
 impl Net {
@@ -49,7 +63,7 @@ impl Net {
             .pool_max_idle_per_host(16)
             .build()
             .expect("HTTP-Client");
-        Net { client, concurrency: AtomicUsize::new(concurrency.clamp(1, 64)) }
+        Net { client, concurrency: AtomicUsize::new(concurrency.clamp(1, 64)), throttle: Default::default() }
     }
 
     pub fn set_concurrency(&self, n: usize) {
@@ -65,17 +79,28 @@ impl Net {
     /// GET mit Retries, liefert den Body. Fehlerstatus wird zu einem Fehler.
     pub async fn get_bytes(&self, url: &str) -> AppResult<bytes::Bytes> {
         let mut last_err = None;
-        for attempt in 0..3 {
+        for attempt in 0..4 {
             if attempt > 0 {
                 tokio::time::sleep(Duration::from_millis(400 * attempt as u64)).await;
             }
+            let permit = self.throttle.acquire(url, self.concurrency.load(Ordering::Relaxed)).await;
             match self.client.get(url).send().await {
-                Ok(r) if r.status().is_success() => return Ok(r.bytes().await?),
-                Ok(r) if r.status().is_client_error() && r.status().as_u16() != 429 => {
+                Ok(r) if r.status().is_success() => {
+                    permit.ok();
+                    return Ok(r.bytes().await?);
+                }
+                Ok(r) if r.status().as_u16() == 429 => {
+                    permit.too_many(retry_after(&r));
+                    last_err = Some(AppError::msg(format!("Der Server ist gerade überlastet (HTTP 429) – bitte gleich noch einmal versuchen ({url})")));
+                }
+                Ok(r) if r.status().is_client_error() => {
                     return Err(AppError::msg(format!("HTTP {} für {url}", r.status())));
                 }
                 Ok(r) => last_err = Some(AppError::msg(format!("HTTP {} für {url}", r.status()))),
-                Err(e) => last_err = Some(e.into()),
+                Err(e) => {
+                    note_error(&permit, &e);
+                    last_err = Some(e.into());
+                }
             }
         }
         Err(last_err.unwrap_or_else(|| AppError::msg("Download fehlgeschlagen")))
@@ -114,7 +139,7 @@ impl Net {
             item.path.extension().and_then(|e| e.to_str()).unwrap_or("dl")
         ));
         let mut last_err: Option<AppError> = None;
-        for attempt in 0..4u64 {
+        for attempt in 0..5u64 {
             if attempt > 0 {
                 tokio::time::sleep(Duration::from_millis(500 * attempt)).await;
             }
@@ -122,8 +147,19 @@ impl Net {
                 return Err(AppError::Cancelled);
             }
             let mut written = 0u64;
+            let permit = self.throttle.acquire(&item.url, self.concurrency.load(Ordering::Relaxed)).await;
             let res: AppResult<()> = async {
-                let resp = self.client.get(&item.url).send().await?;
+                let resp = match self.client.get(&item.url).send().await {
+                    Ok(r) => r,
+                    Err(e) => {
+                        note_error(&permit, &e);
+                        return Err(e.into());
+                    }
+                };
+                if resp.status().as_u16() == 429 {
+                    permit.too_many(retry_after(&resp));
+                    return Err(AppError::msg(format!("Der Server ist gerade überlastet (HTTP 429) für {}", item.url)));
+                }
                 if !resp.status().is_success() {
                     return Err(AppError::msg(format!("HTTP {} für {}", resp.status(), item.url)));
                 }
@@ -134,7 +170,7 @@ impl Net {
                     if cancel.is_some_and(|c| c.is_cancelled()) {
                         return Err(AppError::Cancelled);
                     }
-                    let chunk = chunk?;
+                    let chunk = chunk.inspect_err(|e| note_error(&permit, e))?;
                     hasher.update(&chunk);
                     file.write_all(&chunk).await?;
                     written += chunk.len() as u64;
@@ -151,9 +187,11 @@ impl Net {
                     }
                 }
                 tokio::fs::rename(&tmp, &item.path).await?;
+                permit.ok();
                 Ok(())
             }
             .await;
+            drop(permit);
             match res {
                 Ok(()) => return Ok(()),
                 Err(AppError::Cancelled) => {

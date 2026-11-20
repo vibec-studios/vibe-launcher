@@ -1,6 +1,7 @@
 // Launcher-Einstellungen als großes Popup: Tabs links, Inhalt rechts (auf schmalen Fenstern nur Icons).
 // Öffnen überall per `openSettings(tab)` (store.ts); die alte Route `/settings?tab=…` leitet hierher um.
 // Alles speichert automatisch; `settings://changed` hält den Cache aktuell.
+import { DataDirRow } from "./DataDirMove";
 import * as D from "@radix-ui/react-dialog";
 import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,7 +13,6 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
-  FolderOpen,
   Gamepad2,
   GitBranch,
   Globe,
@@ -615,11 +615,7 @@ function DownloadsTab({ s, update }: TabProps) {
       <StoresCard id="set-stores" />
 
       <SettingsCard title={t("settings.section.storage")}>
-        <SettingRow title={t("settings.data_dir")} description={<span className="selectable break-all font-mono text-[11px]">{sys.data?.data_dir ?? "…"}</span>}>
-          <Button size="sm" icon={<FolderOpen size={13} />} onClick={() => api.openDataDir().catch((e) => toast.error(e))}>
-            {t("common.open_folder")}
-          </Button>
-        </SettingRow>
+        <DataDirRow dataDir={sys.data?.data_dir} />
       </SettingsCard>
     </>
   );

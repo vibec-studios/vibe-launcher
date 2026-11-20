@@ -25,6 +25,7 @@ import { AccentPicker, GroupInput } from "../NewInstanceDialog";
 import { ClientPacks, useClientPacks } from "./ClientPacks";
 import { closeInstanceSettings } from "./store";
 import { ImportSettingsRow } from "@/features/import/SettingsOffer";
+import { GpuRow, SimplePerfCard } from "@/features/perf/PerfControls";
 
 export interface TabProps {
   instance: Instance;
@@ -90,6 +91,7 @@ function SimpleGeneralTab({ instance, d, update, local, reset }: TabProps) {
           <AccentPicker value={accent} onChange={(c) => update({ accent: c })} />
         </SettingRow>
       </SettingsCard>
+      <SimplePerfCard d={d} update={update} />
       <p className="px-1 text-[12.5px] text-dim">{t("simple.isd.auto")}</p>
       <ImportSettingsRow instance={instance} />
       <SettingsCard title={t("isettings.danger")} danger>
@@ -355,6 +357,7 @@ export function JavaTab({ instance, d, update }: TabProps) {
             />
           </div>
         )}
+        <GpuRow />
         <SettingRow title={t("isettings.jvm")} description={t("isettings.jvm.desc")} stacked>
           <div className="mb-2 w-[260px]">
             <Select<"none" | "g1" | "zgc" | "low">

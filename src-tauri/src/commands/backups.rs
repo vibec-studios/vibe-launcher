@@ -55,6 +55,9 @@ pub async fn world_backups_list(state: State<'_, AppState>, instance_id: String)
 #[tauri::command]
 pub async fn world_backup_create(state: State<'_, AppState>, instance_id: String, folder: String) -> AppResult<String> {
     state.instances.get(&instance_id)?;
+    if let Some(dir) = crate::util::safe_join(&state.paths.game_dir(&instance_id).join("saves"), &folder) {
+        crate::util::spacecheck::for_world_backup(&state.paths, dir).await?;
+    }
     let st = state.inner().clone();
     let iid = instance_id.clone();
     Ok(state.tasks.spawn("backup", format!("Welt sichern: {folder}"), Some(instance_id), move |task| async move {

@@ -68,6 +68,7 @@ mod tests {
             status,
             error: None,
             started_at: 0,
+            step: None,
         }
     }
 

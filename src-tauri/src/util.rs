@@ -1,4 +1,6 @@
 //! Kleine Helfer.
+pub mod diskspace;
+pub mod spacecheck;
 #[cfg(test)]
 pub mod testdir;
 use crate::error::AppResult;

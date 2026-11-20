@@ -6,6 +6,7 @@ pub mod commands;
 #[cfg(debug_assertions)]
 mod devlive;
 pub mod content;
+pub mod datadir;
 pub mod domains;
 pub mod error;
 pub mod events;
@@ -86,6 +87,7 @@ pub fn run() {
                 tracing::warn!("Asset-Scope für {:?} nicht setzbar: {e}", state.paths.root);
             }
             tracing::info!("Vibe Launcher {} – Daten: {:?}", env!("CARGO_PKG_VERSION"), state.paths.root);
+            datadir::on_startup(&state.paths);
             let startup_state = state.clone();
             let appearance = state.settings().appearance.clone();
             app.manage(state);
@@ -174,6 +176,10 @@ pub fn run() {
             commands::core::update_check,
             commands::core::update_install,
             commands::core::update_blockers,
+            commands::perf::gpu_settings_open,
+            commands::perf::launch_skip_step,
+            commands::datadir::datadir_preview,
+            commands::datadir::datadir_move,
             // auth
             commands::auth::accounts_list,
             commands::auth::account_remove,

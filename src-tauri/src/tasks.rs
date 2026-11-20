@@ -35,6 +35,8 @@ pub struct TaskInfo {
     pub status: TaskStatus,
     pub error: Option<String>,
     pub started_at: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub step: Option<String>,
 }
 
 struct Entry {
@@ -66,6 +68,7 @@ impl Tasks {
             status: TaskStatus::Running,
             error: None,
             started_at: chrono::Utc::now().timestamp_millis(),
+            step: None,
         };
         let cancel = CancellationToken::new();
         self.map.lock().insert(id.clone(), Entry { info: info.clone(), cancel: cancel.clone() });
@@ -202,6 +205,12 @@ impl TaskHandle {
     pub fn set_instance(&self, instance_id: impl Into<String>) {
         let id = instance_id.into();
         let info = self.inner.tasks.update(&self.inner.id, |i| i.instance_id = Some(id));
+        self.throttled_emit(info, true);
+    }
+
+    pub fn set_step(&self, step: Option<&str>) {
+        let step = step.map(str::to_string);
+        let info = self.inner.tasks.update(&self.inner.id, |i| i.step = step);
         self.throttled_emit(info, true);
     }
 

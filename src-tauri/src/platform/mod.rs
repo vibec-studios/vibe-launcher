@@ -6,6 +6,7 @@
 pub mod app_icon;
 pub mod crash;
 pub mod discord;
+pub mod gpupref;
 pub mod links;
 pub mod optsync;
 pub mod presence;

@@ -87,6 +87,7 @@ pub struct Settings {
     pub simple_tour_done: bool,
     /// Weggeklickte Hinweise/Ankündigungen (je `id`, z. B. "domain-move-2026-11"; docs/DOMAINS.md)
     pub dismissed_notices: Vec<String>,
+    pub prefer_dgpu: bool,
 }
 
 /// Sicherung vor automatischen Mod-Änderungen. `mode`: "recommended" (Mods, Configs, Optionen) | "mods" | "all" |
@@ -435,6 +436,7 @@ impl Default for Settings {
             simple_hint_seen: false,
             simple_tour_done: false,
             dismissed_notices: Vec::new(),
+            prefer_dgpu: false,
         }
     }
 }
