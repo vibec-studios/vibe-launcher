@@ -62,7 +62,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Bereich | Commands |
 |---|---|
 | Kern | instances_list, instance_get, instance_create, instance_update, instance_delete, instance_duplicate, instance_set_icon, instance_open_folder, settings_get, settings_set, tasks_list, task_cancel, tasks_clear, system_info, open_path, open_data_dir |
-| Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel |
+| Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel, auth_msa_window_login |
 | Skins | skins_profile, skin_upload_file, skin_apply_library, skin_set_variant, skin_reset, cape_set, skin_library_list, skin_library_add_file, skin_library_add_current, skin_library_import_player, skin_library_rename, skin_library_set_variant, skin_library_remove, skin_library_export, skin_library_reveal |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
 | Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, sets_list, sets_create, sets_update, sets_delete, sets_duplicate, sets_add_entries, sets_remove_entries, sets_parse_list, sets_import_text, sets_import_file, sets_export_file, sets_export_code, sets_export_links, sets_instance_candidates, sets_from_profile, sets_preview, sets_apply, sets_install_new, sets_check, sets_compat, sets_news, sets_dismiss_news, perf_preview, perf_install, files_list, files_stat, files_find, files_search, files_read, files_write, files_restore, files_validate, files_image, files_create, files_rename, files_duplicate, files_delete, files_import, files_abs_path, files_reveal |
@@ -247,10 +247,15 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   - Datenschutz (§10.4): nichts hochladen, fehlendes `server` nie aus `session.json` ergänzen.
   - Abspielen im WebView über das Asset-Protokoll (`convertFileSrc`; der Datenordner wird beim Start per
     `asset_protocol_scope().allow_directory` freigegeben, CSP `media-src` erlaubt `asset:`/`http://asset.localhost`).
-- **Accounts**: nur Microsoft (`AccountKind = "microsoft"`, keine Offline-Accounts). Login: `auth_msa_begin` -> Code
-  anzeigen -> `auth_msa_wait` (liefert den Account) bzw. `auth_msa_cancel`. Tokens liegen im Windows-Schlüsselbund,
+- **Accounts**: nur Microsoft (`AccountKind = "microsoft"`, keine Offline-Accounts). Login standardmäßig über ein
+  eigenes Fenster: `auth_msa_window_login(title)` (Authorization Code + PKCE, InPrivate-WebView, siehe docs/AUTH.md;
+  Fenster schließen = `cancelled`). Fallback: `auth_msa_begin` -> Code anzeigen -> `auth_msa_wait` (liefert den Account).
+  `auth_msa_cancel` bricht beide ab. Tokens liegen im Windows-Schlüsselbund,
   `accounts.json` enthält keine Geheimnisse. `launch_account` erneuert den Minecraft-Token automatisch (< 5 min Rest);
-  schlägt das wegen der Anmeldung fehl, wird `needs_relogin = true` gesetzt.
+  schlägt das wegen der Anmeldung fehl, wird `needs_relogin = true` gesetzt. Scheitert es nur an der Verbindung
+  (`network`) und ist der Account verifiziert (`needs_relogin == false`), endet der Start mit `offline_available`
+  plus Event `auth://offline-available`; `instance_launch(..., offline: true)` startet dann einmalig offline
+  (Einzelspieler, echter Name + UUID). Tresor-Schreibfehler -> Event `auth://vault-warning`.
   Nur Debug-Builds (automatisierte Tests): `VIBE_DEV_OFFLINE_ACCOUNT=<Name>` -> ohne aktiven Account startet das Spiel
   mit einem Offline-Profil (nicht in UI/accounts.json, im Release wegkompiliert).
 - **Skins & Capes** (`auth/skins.rs`, `commands/skins.rs`): Profil über `api.minecraftservices.com/minecraft/profile`
@@ -304,6 +309,8 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | `game://log` | {instance_id, lines: LogLine[]} | gebündelt ≤10/s |
 | `content://changed` | {instance_id} | Mods/Packs/Shader/Welten geändert |
 | `accounts://changed` | Account[] | Accounts geändert |
+| `auth://vault-warning` | `{ account_id, username, message }` | Zugangsdaten nicht im Windows-Tresor gespeichert (einmal je Account und Sitzung) |
+| `auth://offline-available` | `{ instance_id, account_id, message }` | Start scheiterte nur an der Verbindung, Offline-Start möglich |
 | `settings://changed` | Settings | Einstellungen gespeichert |
 | `clips://changed` | {instance_ids: string[]} | Clips dazugekommen/geändert/gelöscht (nur während `clips_watch`) |
 | `skins://changed` | {scope: "library"} \| {scope: "profile", account_id} | Skin-Bibliothek bzw. Skin/Cape eines Accounts geändert |

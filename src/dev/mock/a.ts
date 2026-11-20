@@ -358,7 +358,17 @@ const handlers: Handlers = {
       mockEmit("instance://changed", done);
     });
   },
-  instance_launch: ({ id }) => launch(id as string),
+  instance_launch: ({ id, accountId, offline }) => {
+    let off = false;
+    try {
+      off = localStorage.getItem("mock.offline") === "1";
+    } catch {}
+    if (off && !offline) {
+      setTimeout(() => mockEmit("auth://offline-available", { instance_id: id as string, account_id: (accountId as string | null) ?? null, message: "Microsoft nicht erreichbar" }), 400);
+      return "mock-offline";
+    }
+    return launch(id as string);
+  },
   instance_kill: ({ id }) => {
     const s = states.get(id as string);
     if (s?.state === "preparing") {

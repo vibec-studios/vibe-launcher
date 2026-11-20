@@ -683,6 +683,27 @@ const handlers: Handlers = {
   auth_msa_cancel: () => {
     if (msa) msa.cancelled = true;
   },
+  auth_msa_window_login: async () => {
+    msa = { cancelled: false };
+    const me = msa;
+    const wait = flag("mock.msa") === "window-wait" ? 600 : 25;
+    for (let i = 0; i < wait; i++) {
+      await delay(100);
+      if (me.cancelled) throw { kind: "cancelled", message: "Abgebrochen" };
+    }
+    if (flag("mock.msa") === "closed") throw { kind: "cancelled", message: "Abgebrochen" };
+    if (flag("mock.msa") === "redirect")
+      throw {
+        kind: "not_configured",
+        message:
+          "Nicht konfiguriert: Das Anmeldefenster ist in der Azure-App noch nicht freigeschaltet: Unter „Authentication → Mobile and desktop applications“ muss die Redirect URI https://login.microsoftonline.com/common/oauth2/nativeclient aktiviert sein. Bis dahin klappt die Anmeldung über „Im Browser anmelden (Code)“.",
+      };
+    const acc: Account = { id: "a" + Date.now(), kind: "microsoft", username: "Alex_" + Math.floor(Math.random() * 90 + 10), uuid: uuid(), skin_url: null, active: true, expires_at: Date.now() + 24 * 3600_000, needs_relogin: false };
+    accounts = [...accounts.map((a) => ({ ...a, active: false })), acc];
+    emitAccounts();
+    if (flag("mock.vault") === "fail") mockEmit("auth://vault-warning", { account_id: acc.id, username: acc.username, message: "Schlüsselbund: Zugriff verweigert" });
+    return acc;
+  },
 
   // Datei-Dialoge (Plugin) – liefern plausible Pfade
   "plugin:dialog|open": ({ options }) => {

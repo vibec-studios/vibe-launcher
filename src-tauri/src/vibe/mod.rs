@@ -250,7 +250,7 @@ pub async fn mojang_join(state: &AppState, server_id: &str) -> AppResult<JoinRes
     if server_id.is_empty() || server_id.len() > 64 || !server_id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-') {
         return Err(AppError::Invalid("Ungültige Anmeldeanfrage".into()));
     }
-    let la = state.auth.launch_account(state, None).await?;
+    let la = state.auth.online_account(state, None).await?;
     let name = la.username.clone();
     let uuid = dashed(&la.uuid);
     // Debug-Offline-Profil: kein echter Token, das lokale Test-Backend (AUTH_DEV_BYPASS) prüft nicht
@@ -276,7 +276,7 @@ pub async fn mojang_join(state: &AppState, server_id: &str) -> AppResult<JoinRes
         let id = state.auth.list().into_iter().find(|a| a.active).map(|a| a.id);
         if let Some(id) = id {
             state.auth.refresh(state, &id, true).await?;
-            let la2 = state.auth.launch_account(state, Some(&id)).await?;
+            let la2 = state.auth.online_account(state, Some(&id)).await?;
             let r2 = send(la2.access_token).await?;
             if r2.status().is_success() {
                 return Ok(JoinResult { name, uuid });

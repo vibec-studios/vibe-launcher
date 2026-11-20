@@ -319,6 +319,18 @@ export interface Account {
   needs_relogin: boolean;
 }
 
+export interface VaultWarning {
+  account_id: string;
+  username: string;
+  message: string;
+}
+
+export interface OfflineOffer {
+  instance_id: string;
+  account_id: string | null;
+  message: string;
+}
+
 export interface DeviceCode {
   user_code: string;
   verification_uri: string;

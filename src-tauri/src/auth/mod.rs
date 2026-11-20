@@ -4,10 +4,15 @@
 //!
 //! Speicherung: `accounts.json` enthält nur Metadaten (keine Tokens). MSA-Refresh-Token und
 //! Minecraft-Access-Token liegen als JSON im OS-Schlüsselbund (siehe [`secrets`]).
+#[cfg(test)]
+mod fake_server;
 pub mod msa;
+pub mod offline;
+pub mod pkce;
 pub mod secrets;
 pub mod skin_import;
 pub mod skins;
+pub mod webview;
 
 use crate::error::{AppError, AppResult};
 use crate::events;
@@ -15,7 +20,7 @@ use crate::paths::Paths;
 use crate::util::now_ms;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tauri::AppHandle;
@@ -53,6 +58,13 @@ pub struct DeviceCode {
     pub verification_uri: String,
     pub expires_in: u64,
     pub interval: u64,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct VaultWarning {
+    pub account_id: String,
+    pub username: String,
     pub message: String,
 }
 
@@ -142,6 +154,9 @@ pub struct AuthState {
     /// falls er nicht beschreibbar ist).
     secret_cache: Mutex<HashMap<String, Secrets>>,
     pending: Mutex<Option<PendingLogin>>,
+    window_login: Mutex<Option<(u64, CancellationToken)>>,
+    offline: offline::Grants,
+    vault_warned: Mutex<HashSet<String>>,
     generation: std::sync::atomic::AtomicU64,
     /// Refreshs nacheinander (Refresh-Tokens rotieren)
     refresh_lock: tokio::sync::Mutex<()>,
@@ -172,6 +187,9 @@ impl AuthState {
             secrets,
             secret_cache: Mutex::new(HashMap::new()),
             pending: Mutex::new(None),
+            window_login: Mutex::new(None),
+            offline: Default::default(),
+            vault_warned: Mutex::new(HashSet::new()),
             generation: Default::default(),
             refresh_lock: tokio::sync::Mutex::new(()),
             skins,
@@ -233,7 +251,7 @@ impl AuthState {
         s
     }
 
-    fn store_secrets(&self, id: &str, s: &Secrets) {
+    fn store_secrets(&self, id: &str, name: &str, s: &Secrets) {
         self.secret_cache.lock().insert(id.to_string(), s.clone());
         let json = match serde_json::to_string(s) {
             Ok(j) => j,
@@ -242,6 +260,9 @@ impl AuthState {
         if let Err(e) = self.secrets.save(id, &json) {
             // Sitzung funktioniert weiter (Cache); nach Neustart ist eine neue Anmeldung nötig.
             tracing::error!("Zugangsdaten für Account {id} nicht gespeichert: {e}");
+            if self.vault_warned.lock().insert(id.to_string()) {
+                events::emit(&self.app, events::AUTH_VAULT_WARNING, &VaultWarning { account_id: id.to_string(), username: name.to_string(), message: e.to_string() });
+            }
         }
     }
 
@@ -285,9 +306,7 @@ impl AuthState {
     /// Device-Code anfordern (bricht einen laufenden Login ab).
     pub async fn msa_begin(&self, state: &crate::state::AppState) -> AppResult<DeviceCode> {
         let client_id = msa_client_id(state)?;
-        if let Some(old) = self.pending.lock().take() {
-            old.cancel.cancel();
-        }
+        self.msa_cancel();
         let dc = msa::request_device_code(&state.net.client, &client_id).await?;
         let generation = self.generation.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
         *self.pending.lock() = Some(PendingLogin {
@@ -366,6 +385,50 @@ impl AuthState {
         if let Some(p) = self.pending.lock().take() {
             p.cancel.cancel();
         }
+        if let Some((_, c)) = self.window_login.lock().take() {
+            c.cancel();
+        }
+    }
+
+    pub async fn msa_window_login(&self, state: &crate::state::AppState, title: &str) -> AppResult<Account> {
+        let client_id = msa_client_id(state)?;
+        self.msa_cancel();
+        let generation = self.generation.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+        let cancel = CancellationToken::new();
+        *self.window_login.lock() = Some((generation, cancel.clone()));
+        let label = format!("{}{generation}", webview::LABEL_PREFIX);
+        let client = state.net.client.clone();
+        let flow = async {
+            let (code, pkce) = webview::authorize(&self.app, &label, title, &client_id, cancel.clone()).await?;
+            let tokens = msa::exchange_code(&client, &client_id, &code, &pkce.verifier).await?;
+            let mc = tokio::select! {
+                _ = cancel.cancelled() => return Err(AppError::Cancelled),
+                r = msa::minecraft_login(&client, &tokens.access_token) => r?,
+            };
+            Ok::<_, AppError>((tokens, mc))
+        };
+        let result = flow.await;
+        {
+            let mut w = self.window_login.lock();
+            if w.as_ref().is_some_and(|(g, _)| *g == generation) {
+                *w = None;
+            }
+        }
+        let (tokens, mc) = result.inspect_err(|e| {
+            if !matches!(e, AppError::Cancelled) {
+                tracing::warn!("Microsoft-Login (Fenster) fehlgeschlagen: {e}");
+            }
+        })?;
+        let id = self.apply_login(&mc, tokens.refresh_token)?;
+        tracing::info!("Microsoft-Account {} angemeldet (Fenster)", mc.profile.name);
+        self.get(&id)
+    }
+
+    pub fn grant_offline(&self, account_id: Option<&str>) {
+        let id = account_id.filter(|s| !s.is_empty()).map(str::to_string).or_else(|| self.store.lock().active.clone());
+        if let Some(id) = id {
+            self.offline.grant(&id);
+        }
     }
 
     /// Ergebnis eines Logins/Refreshs übernehmen. Gibt die Account-ID zurück.
@@ -375,6 +438,7 @@ impl AuthState {
         let old = self.load_secrets(&id);
         self.store_secrets(
             &id,
+            &mc.profile.name,
             &Secrets {
                 msa_refresh_token: refresh_token.or(old.msa_refresh_token),
                 mc_access_token: Some(mc.access_token.clone()),
@@ -425,7 +489,7 @@ impl AuthState {
             if let Some(rt) = &tokens.refresh_token {
                 let mut s = self.load_secrets(id);
                 s.msa_refresh_token = Some(rt.clone());
-                self.store_secrets(id, &s);
+                self.store_secrets(id, &acc.username, &s);
             }
             let mc = msa::minecraft_login(&client, &tokens.access_token).await?;
             Ok::<_, AppError>((tokens, mc))
@@ -466,7 +530,7 @@ impl AuthState {
         let id = explicit
             .or(active)
             .ok_or_else(|| AppError::NotConfigured("Kein Account – bitte unter Accounts mit Microsoft anmelden".into()))?;
-        let la = self.launch_account(state, Some(&id)).await?;
+        let la = self.online_account(state, Some(&id)).await?;
         Ok((id, la.access_token))
     }
 
@@ -490,6 +554,14 @@ impl AuthState {
     /// Gültige Zugangsdaten für den Start (frischt Microsoft-Tokens bei Bedarf auf).
     /// `account_id = None` -> aktiver Account. Kein Account -> Fehler `NotConfigured`.
     pub async fn launch_account(&self, state: &crate::state::AppState, account_id: Option<&str>) -> AppResult<LaunchAccount> {
+        self.account_for(state, account_id, true).await
+    }
+
+    pub async fn online_account(&self, state: &crate::state::AppState, account_id: Option<&str>) -> AppResult<LaunchAccount> {
+        self.account_for(state, account_id, false).await
+    }
+
+    async fn account_for(&self, state: &crate::state::AppState, account_id: Option<&str>, game: bool) -> AppResult<LaunchAccount> {
         let explicit = account_id.filter(|s| !s.is_empty()).map(str::to_string);
         let active = self.store.lock().active.clone();
         let Some(id) = explicit.or(active) else {
@@ -516,6 +588,14 @@ impl AuthState {
                 Err(e) if !matches!(e, AppError::Auth(_)) && expires - now_ms() > 30_000 && secrets.mc_access_token.is_some() => {
                     tracing::warn!("Token-Erneuerung fehlgeschlagen, nutze vorhandenen Token: {e}");
                     (acc, secrets.mc_access_token.unwrap_or_default())
+                }
+                Err(e) if game && offline::eligible(&acc, &e) => {
+                    if self.offline.take(&id) {
+                        tracing::warn!("Offline-Start (Einzelspieler) für {} – Microsoft nicht erreichbar: {e}", acc.username);
+                        return Ok(offline::launch_account(&acc));
+                    }
+                    tracing::warn!("Token-Erneuerung ohne Verbindung fehlgeschlagen, Offline-Start möglich: {e}");
+                    return Err(AppError::OfflineAvailable(offline::offer_message(&acc.username)));
                 }
                 Err(e) => return Err(e),
             }

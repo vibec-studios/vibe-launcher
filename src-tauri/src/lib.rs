@@ -182,6 +182,7 @@ pub fn run() {
             commands::auth::auth_msa_begin,
             commands::auth::auth_msa_wait,
             commands::auth::auth_msa_cancel,
+            commands::auth::auth_msa_window_login,
             // skins
             commands::skins::skins_profile,
             commands::skins::skin_upload_file,

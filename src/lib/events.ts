@@ -1,7 +1,7 @@
 // Backend-Events (siehe src-tauri/src/events.rs).
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useRef } from "react";
-import type { Account, GameState, Instance, LogLine, ManualArrived, Server, ServerStatus, Settings, TaskInfo, VibeWsEvent } from "./types";
+import type { Account, GameState, Instance, LogLine, ManualArrived, OfflineOffer, Server, ServerStatus, Settings, TaskInfo, VaultWarning, VibeWsEvent } from "./types";
 
 export interface EventMap {
   "task://update": TaskInfo;
@@ -13,6 +13,8 @@ export interface EventMap {
   /** Manuell geladene Datei aus dem Download-Ordner übernommen */
   "content://manual-arrived": ManualArrived;
   "accounts://changed": Account[];
+  "auth://vault-warning": VaultWarning;
+  "auth://offline-available": OfflineOffer;
   "settings://changed": Settings;
   /** Clips (Vibey Client) geändert – nur solange `clipsWatch(true)` läuft */
   "clips://changed": { instance_ids: string[] };
