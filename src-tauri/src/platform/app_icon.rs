@@ -44,7 +44,11 @@ impl IconSpec {
     }
 
     fn is_default(&self) -> bool {
-        self.motif == "seal" && Some(self.color) == parse_hex(DEFAULT_COLOR)
+        self.motif == "seal" && self.has_default_color()
+    }
+
+    pub fn has_default_color(&self) -> bool {
+        Some(self.color) == parse_hex(DEFAULT_COLOR)
     }
 
     /// Schlüssel für „hat sich geändert?“ (inkl. Änderungszeit des eigenen Bildes).
@@ -198,7 +202,8 @@ pub fn ico_bytes(spec: &IconSpec) -> AppResult<Vec<u8>> {
 }
 
 /// Eigenes Bild nach `<daten>/app-icon/` kopieren (PNG/JPG, max. 10 MB). Gibt den neuen Pfad zurück.
-pub fn import_image(root: &Path, src: &Path) -> AppResult<PathBuf> {
+/// `prefix` trennt die Bilder: "custom" (App-Icon) bzw. "discord" (Discord-Status).
+pub fn import_image(root: &Path, src: &Path, prefix: &str) -> AppResult<PathBuf> {
     let ext = src.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).unwrap_or_default();
     if !["png", "jpg", "jpeg"].contains(&ext.as_str()) {
         return Err(AppError::Invalid("Bitte ein PNG- oder JPG-Bild wählen".into()));
@@ -212,12 +217,12 @@ pub fn import_image(root: &Path, src: &Path) -> AppResult<PathBuf> {
     std::fs::create_dir_all(&dir)?;
     if let Ok(rd) = std::fs::read_dir(&dir) {
         for e in rd.flatten() {
-            if e.file_name().to_string_lossy().starts_with("custom-") {
+            if e.file_name().to_string_lossy().starts_with(&format!("{prefix}-")) {
                 let _ = std::fs::remove_file(e.path());
             }
         }
     }
-    let target = dir.join(format!("custom-{}.{ext}", crate::util::now_ms()));
+    let target = dir.join(format!("{prefix}-{}.{ext}", crate::util::now_ms()));
     std::fs::copy(src, &target)?;
     Ok(target)
 }
@@ -372,16 +377,27 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
+    fn export_discord_assets() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../docs/discord-assets");
+        for m in ["seal", "penguin"] {
+            render(&IconSpec::new(m, DEFAULT_COLOR, None), 1024).save(dir.join(format!("{m}.png"))).unwrap();
+        }
+    }
+
+    #[test]
     fn custom_image() {
         let dir = std::env::temp_dir().join(format!("vl-appicon-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let src = dir.join("me.png");
         RgbaImage::from_pixel(8, 8, Rgba([200, 10, 10, 255])).save(&src).unwrap();
-        let stored = import_image(&dir, &src).unwrap();
+        let stored = import_image(&dir, &src, "custom").unwrap();
+        let other = import_image(&dir, &src, "discord").unwrap();
+        assert!(stored.exists() && other.exists());
         let spec = IconSpec::new("custom", DEFAULT_COLOR, stored.to_str());
         let p = *render(&spec, 64).get_pixel(32, 32);
         assert_eq!((p[0], p[1], p[2]), (200, 10, 10));
-        assert!(import_image(&dir, &dir.join("nope.txt")).is_err());
+        assert!(import_image(&dir, &dir.join("nope.txt"), "custom").is_err());
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

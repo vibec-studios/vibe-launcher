@@ -1,4 +1,5 @@
 //! Globale Launcher-Einstellungen (`settings.json`).
+mod discord;
 mod syslang;
 use crate::error::AppResult;
 use serde::{Deserialize, Serialize};
@@ -49,6 +50,14 @@ pub struct Settings {
     pub discord_rpc: bool,
     /// Discord: Servernamen und Welt anzeigen (sonst nur „Im Mehrspieler“ usw.)
     pub discord_details: bool,
+    /// Discord: großes Bild "logo" | "app_icon" | "head" | "custom" (docs/DISCORD.md)
+    pub discord_large: String,
+    /// Discord: Modpack-Icon statt des großen Bilds, wenn es eins gibt
+    pub discord_pack_icon: bool,
+    /// Discord: kleines Bild "head" | "loader" | "none"
+    pub discord_small: String,
+    /// Discord: eigenes Bild (nach `<daten>/app-icon/` kopiert)
+    pub discord_image: Option<String>,
     /// Update-Kanal: "release" (nur GitHub-Releases) oder "dev" (jeder Commit)
     pub update_channel: String,
     /// Wrapper-Befehl vor java (z. B. "prime-run"), optional
@@ -419,6 +428,10 @@ impl Default for Settings {
             vibe: VibeServices::default(),
             discord_rpc: true,
             discord_details: true,
+            discord_large: "logo".into(),
+            discord_pack_icon: true,
+            discord_small: "head".into(),
+            discord_image: None,
             wrapper_command: None,
             open_log_on_launch: false,
             reduce_motion: false,

@@ -10,6 +10,7 @@ pub mod gpupref;
 pub mod links;
 pub mod optsync;
 pub mod presence;
+pub mod presence_art;
 pub mod servers;
 pub mod shortcuts;
 pub mod stats;
@@ -124,6 +125,8 @@ pub fn init(app: &AppHandle) {
     });
     let h = app.clone();
     app.listen(crate::events::SETTINGS_CHANGED, move |_| update_presence(&h));
+    let h = app.clone();
+    app.listen(crate::events::ACCOUNTS_CHANGED, move |_| update_presence(&h));
     update_presence(app);
 }
 
@@ -168,6 +171,8 @@ pub fn update_presence(app: &AppHandle) {
         return;
     }
     let english = settings.language.starts_with("en");
+    let art = presence_art::Art::from_settings(&settings);
+    let head = active_head(&state);
     let active = p.active.lock().iter().max_by_key(|(_, a)| a.start).map(|(id, a)| (id.clone(), a.clone()));
     let input = match active {
         Some((id, a)) => {
@@ -192,11 +197,18 @@ pub fn update_presence(app: &AppHandle) {
                 start: a.start,
                 icon_url: inst.as_ref().and_then(|i| icon_url(app, &p, i)),
                 play_link,
+                art,
+                head,
             }
         }
-        None => presence::PresenceInput { english, start: p.opened_at, details: settings.discord_details, ..Default::default() },
+        None => presence::PresenceInput { english, start: p.opened_at, details: settings.discord_details, art, head, ..Default::default() },
     };
     p.discord.set(Some(presence::build_activity(&input)));
+}
+
+fn active_head(state: &AppState) -> Option<presence_art::Head> {
+    let acc = state.auth.list().into_iter().find(|a| a.active && a.kind == crate::auth::AccountKind::Microsoft)?;
+    presence_art::Head::new(&acc.uuid, &acc.username)
 }
 
 /// Öffentliche Icon-URL eines Modrinth-Modpacks (einmal im Hintergrund laden, dann aus dem Speicher).

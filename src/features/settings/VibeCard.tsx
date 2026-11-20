@@ -8,6 +8,7 @@ import { SettingRow, SettingsCard, Switch } from "@/components/ui";
 import { useT } from "@/i18n";
 import { VibeAccountCard, VibeDangerCard, VibePrivacyCard } from "@/features/social/VibeAccountSettings";
 import { useSimple } from "@/lib/mode";
+import { DiscordArtRows } from "./discord/DiscordArtRows";
 
 const SUBS: (keyof Pick<VibeServices, "social" | "presence" | "hosting" | "sharing">)[] = ["social", "presence", "hosting", "sharing"];
 
@@ -67,6 +68,7 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
             />
           </SettingRow>
         )}
+        {s.discord_rpc && <DiscordArtRows settings={s} update={update} />}
       </SettingsCard>
 
       {!simple && v.enabled && <VibeDangerCard />}

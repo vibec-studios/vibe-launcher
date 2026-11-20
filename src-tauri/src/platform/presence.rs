@@ -1,5 +1,6 @@
 //! Discord-Status aus Launcher-Zustand und `session.json` zusammenbauen (docs/PLAY-LINKS.md §4). Rein und testbar.
 use super::discord::{Activity, WEBSITE};
+use super::presence_art::{Art, Head};
 use crate::play::Session;
 
 /// Eingaben für den Discord-Status.
@@ -22,6 +23,10 @@ pub struct PresenceInput {
     pub icon_url: Option<String>,
     /// Geprüfter Spiel-Link (wird nur beim Hosten gezeigt)
     pub play_link: Option<String>,
+    /// Bildauswahl aus den Einstellungen
+    pub art: Art,
+    /// Aktives Microsoft-Konto (None = keins angemeldet)
+    pub head: Option<Head>,
 }
 
 fn count(s: &Session) -> String {
@@ -37,7 +42,16 @@ pub fn build_activity(i: &PresenceInput) -> Activity {
     let tr = |de: &str, english: &str| if en { english.to_string() } else { de.to_string() };
     let website = ("Vibe Launcher".to_string(), WEBSITE.to_string());
     let Some(name) = &i.instance_name else {
-        return Activity { details: tr("Im Launcher", "In the launcher"), start: Some(i.start), buttons: vec![website], ..Default::default() };
+        let art = i.art.pick(None, None, i.head.as_ref());
+        return Activity {
+            details: tr("Im Launcher", "In the launcher"),
+            start: Some(i.start),
+            buttons: vec![website],
+            large_image: art.large,
+            small_image: art.small.as_ref().map(|s| s.0.clone()),
+            small_text: art.small.map(|s| s.1),
+            ..Default::default()
+        };
     };
     let mut buttons = vec![];
     let line = match &i.session {
@@ -66,20 +80,23 @@ pub fn build_activity(i: &PresenceInput) -> Activity {
         },
     };
     buttons.push(website);
+    let art = i.art.pick(i.icon_url.as_deref(), i.loader.as_ref(), i.head.as_ref());
     Activity {
         details: format!("{} {name}", tr("Spielt", "Playing")),
         state: line,
         start: Some(i.start),
-        large_image: i.icon_url.clone(),
+        large_image: art.large,
         large_text: Some(name.clone()),
-        small_image: i.loader.as_ref().map(|l| l.0.clone()),
-        small_text: i.loader.as_ref().map(|l| l.1.clone()),
+        small_image: art.small.as_ref().map(|s| s.0.clone()),
+        small_text: art.small.map(|s| s.1),
         buttons,
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::super::discord::ASSET_LOGO;
+    use super::super::presence_art::Large;
     use super::*;
 
     fn base() -> PresenceInput {
@@ -102,6 +119,30 @@ mod tests {
         assert_eq!(a.start, Some(5));
         assert_eq!(a.buttons, vec![("Vibe Launcher".to_string(), WEBSITE.to_string())]);
         assert_eq!(build_activity(&PresenceInput { english: true, ..Default::default() }).details, "In the launcher");
+        assert_eq!(a.large_image.as_deref(), Some(ASSET_LOGO));
+        assert!(a.small_image.is_none());
+    }
+
+    #[test]
+    fn player_head() {
+        let head = Head::new("069a79f4-44e9-4726-a5be-fca90e38aaf5", "Notch");
+        let url = "https://mc-heads.net/avatar/069a79f444e94726a5befca90e38aaf5/128";
+        let launcher = build_activity(&PresenceInput { head: head.clone(), ..Default::default() });
+        assert_eq!(launcher.small_image.as_deref(), Some(url));
+        assert_eq!(launcher.small_text.as_deref(), Some("Notch"));
+        let mut i = base();
+        i.head = head;
+        i.icon_url = Some("https://cdn.modrinth.com/x.png".into());
+        let a = build_activity(&i);
+        assert_eq!(a.small_image.as_deref(), Some(url));
+        assert_eq!(a.small_text.as_deref(), Some("Notch"));
+        assert_eq!(a.large_image.as_deref(), Some("https://cdn.modrinth.com/x.png"));
+        let v = super::super::discord::activity_json(&a);
+        assert_eq!(v["assets"]["small_image"], url);
+        i.art = Art { large: Large::AppIcon, pack_icon: false, ..Art::default() };
+        assert_eq!(build_activity(&i).large_image.as_deref(), Some("seal"));
+        i.head = None;
+        assert_eq!(build_activity(&i).small_image.as_deref(), Some("fabric"));
     }
 
     #[test]
@@ -118,6 +159,7 @@ mod tests {
         assert_eq!(a.buttons[1].0, "Vibe Launcher");
         assert_eq!(a.large_image.as_deref(), Some("https://cdn.modrinth.com/x.png"));
         assert_eq!(a.small_image.as_deref(), Some("fabric"));
+        assert_eq!(a.small_text.as_deref(), Some("Fabric · Minecraft 1.21.1"));
         // „Server und Welt anzeigen“ aus: Weltname versteckt
         i.details = false;
         assert_eq!(build_activity(&i).state.as_deref(), Some("Hostet eine Welt (3/8)"));
