@@ -742,7 +742,7 @@ export interface ExternalInstance {
 /** Bereiche, die aus einem anderen Launcher übernommen werden können (Import und nachträglich). */
 export type ExtSettingKey = "memory" | "java" | "jvm_args" | "env" | "window" | "hooks" | "notes" | "group";
 /** Nur nachträglich: Spielzeit, Icon, Modpack-Herkunft */
-export type ExtExtraKey = "playtime" | "icon" | "pack";
+export type ExtExtraKey = "playtime" | "icon" | "pack" | "mods";
 
 export interface ExtSettings {
   min_memory_mb: number | null;

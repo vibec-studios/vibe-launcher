@@ -2,38 +2,47 @@
 //!
 //! - Wurzel: Windows `%APPDATA%\norisk\NoRiskClientV3`, macOS `~/Library/Application Support/gg.norisk.NoRiskClientV3`,
 //!   Linux `~/.local/share/noriskclientv3` (`directories::ProjectDirs("gg","norisk","NoRiskClientV3")`).
-//! - Profile: SQLite `meta/app.db` (Tabellen `profiles`, `profile_mods`, `profile_disabled_norisk_mods`),
-//!   ältere Versionen `profiles.json` (JSON-Liste). Die DB wird vor dem Lesen samt WAL kopiert.
+//! - Profile: SQLite `meta/app.db` (Tabellen `profiles`, `profile_mods`, `profile_disabled_norisk_mods`, Sync Packs),
+//!   ältere Versionen `profiles.json` (JSON-Liste). Die DB wird vor dem Lesen samt WAL kopiert, Spalten werden
+//!   per `PRAGMA table_info` abgefragt (ältere Schemata).
 //! - Spielordner: `<profiles>/<profile.path>`; mit `use_shared_minecraft_folder` (nicht in den Gruppen
 //!   SERVER/MODPACKS) der Gruppenordner `noriskclient/new|legacy` bzw. `groups/<gruppe>`.
 //!   `<profiles>` = `data/profiles` (Windows) bzw. `profiles`, oder `<custom_game_directory>/profiles`.
-//! - Inhalte: Mods der Profil-Mod-Liste (Modrinth-Quelle) und des gewählten NoRisk-Packs
+//! - Inhalte: Mods der Profil-Mod-Liste (Modrinth- und CurseForge-Quelle), des gewählten NoRisk-Packs
 //!   (`norisk_modpacks.json`, `compatibility[mc][loader].identifier` = Modrinth-Versions-ID, mit
-//!   `inheritsFrom`/`excludeMods`) werden per Modrinth installiert. Pack-Mods aus dem NoRisk-Maven bzw.
-//!   per URL (NoRisk-Client-Mods, OptiFine) laufen nur im NoRisk-Launcher und werden nicht übernommen.
-//!   Lose JARs aus `mods/` und `custom_mods/` werden kopiert, wenn sie zu Version/Loader passen.
+//!   `inheritsFrom`/`excludeMods`) und der abonnierten Sync Packs werden per Modrinth/CurseForge installiert.
+//!   Pack-Mods aus dem NoRisk-Maven bzw. per URL (NoRisk-Client-Mods, OptiFine) laufen nur im NoRisk-Launcher.
+//!   Lose JARs aus `mods/`, `custom_mods/`, `mods/nrc-<mc>-<loader>[-<xxxx>]` und `sync_packs/<id>/mods/` werden
+//!   kopiert, wenn sie zu Version/Loader passen und keine NoRisk-Mods sind.
+//! - Globale Einstellungen: [`global`] (nur benannte Felder aus `launcher_config.json`), Sync Packs: [`sync`],
+//!   [`syncplan`]; Details in docs/IMPORT-SETTINGS.md.
 //! - `accounts.json` (Tokens) wird nie gelesen.
+pub mod banner;
+pub mod global;
+pub mod mods;
+pub mod options;
+mod run;
+pub mod sync;
+pub mod syncplan;
+
+pub use run::run_import;
+
 use super::external::{norm, Found};
-use super::{deps, index::ContentIndex, install, ContentKind, Source};
+use super::extsettings::{select_rows, Row};
+use super::{deps, ContentKind, Source};
 use crate::error::{AppError, AppResult};
-use crate::instance::{InstallState, Instance, Loader, LoaderKind, PackSource, PackSourceKind};
-use crate::state::AppState;
-use crate::tasks::TaskHandle;
+use crate::instance::{Loader, LoaderKind, PackSource};
+use banner::Banner;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 pub const WARN_NRC: &str = "NoRisk-Client-Mods werden nicht übernommen – sie laufen nur im NoRisk-Launcher.";
 
-/// Wird dieser Eintrag (oberste Ebene) beim Import übersprungen? Gemeinsame Regeln ([`super::gamedata`]) plus
-/// NoRisk-eigene Daten (`NoRiskClient/`, `optionsNRC.json` – laufen nur im NoRisk-Launcher) und Mods (kommen über
-/// Modrinth bzw. als passende lose JARs). Alles andere (Configs, Welten, Packs, Optionen, Daten anderer Mods wie
-/// `xaero/`, `journeymap/` …) kommt mit.
 fn skip_top(name: &str) -> bool {
     super::gamedata::skip_top(super::LauncherKind::Norisk, super::gamedata::Purpose::Import, name)
 }
 
-/// Wurzelordner des NoRisk-Launchers (je OS).
 pub fn default_root() -> Option<PathBuf> {
     let d = dirs::data_dir()?;
     Some(if cfg!(windows) {
@@ -53,14 +62,12 @@ pub fn is_root(r: &Path) -> bool {
     r.join("meta").join("app.db").is_file() || r.join("profiles.json").is_file() || r.join("norisk_modpacks.json").is_file()
 }
 
-/// `custom_game_directory` aus `launcher_config.json` (nur dieses Feld).
-fn custom_dir(root: &Path) -> Option<PathBuf> {
-    let v: Value = serde_json::from_slice(&std::fs::read(root.join("launcher_config.json")).ok()?).ok()?;
-    v.get("custom_game_directory")?.as_str().filter(|s| !s.trim().is_empty()).map(PathBuf::from)
+pub fn profiles_dir(root: &Path) -> PathBuf {
+    profiles_dir_with(root, global::read(root).custom_dir.as_deref())
 }
 
-pub fn profiles_dir(root: &Path) -> PathBuf {
-    if let Some(c) = custom_dir(root).filter(|c| c.join("profiles").is_dir()) {
+fn profiles_dir_with(root: &Path, custom: Option<&Path>) -> PathBuf {
+    if let Some(c) = custom.filter(|c| c.join("profiles").is_dir()) {
         return c.join("profiles");
     }
     if root.join("data").join("profiles").is_dir() || cfg!(windows) {
@@ -80,6 +87,7 @@ pub struct NrMod {
     pub file_name: Option<String>,
     pub name: Option<String>,
     pub enabled: bool,
+    pub file_override: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -96,15 +104,14 @@ pub struct NrProfile {
     pub is_standard: bool,
     pub playtime_secs: u64,
     pub settings: Value,
-    pub banner_url: Option<String>,
+    pub banner: Value,
+    pub modpack_info: Value,
     pub pack_id: Option<String>,
     pub description: Option<String>,
     pub mods: Vec<NrMod>,
-    /// (pack_id, mod_id, game_version, loader)
     pub disabled_pack_mods: Vec<(String, String, String, String)>,
 }
 
-/// Zeitstempel unbekannter Einheit (s/ms/Âµs/ns) nach ms.
 pub fn to_ms(v: i64) -> Option<i64> {
     if v <= 0 {
         return None;
@@ -120,74 +127,93 @@ pub fn to_ms(v: i64) -> Option<i64> {
     })
 }
 
-fn banner_url(v: &Value) -> Option<String> {
-    let src = v.get("source")?;
-    (src.get("type")?.as_str()? == "url").then(|| src.get("url").and_then(|u| u.as_str()).map(str::to_string)).flatten().filter(|u| u.starts_with("https://"))
+fn str_of(v: Option<&Value>) -> Option<String> {
+    v.and_then(|x| x.as_str()).map(str::to_string).filter(|s| !s.is_empty())
 }
 
-fn parse_json<T: serde::de::DeserializeOwned>(s: Option<String>) -> Option<T> {
-    s.and_then(|s| serde_json::from_str(&s).ok())
+fn parse_json(v: Option<&Value>) -> Value {
+    match v {
+        Some(Value::String(t)) => serde_json::from_str(t).unwrap_or(Value::Null),
+        Some(v) => v.clone(),
+        None => Value::Null,
+    }
 }
 
-/// Profile aus der (kopierten) Datenbank.
+fn int(r: &Row, k: &str) -> i64 {
+    r.get(k).and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse().ok()))).unwrap_or(0)
+}
+
+fn col(r: &Row, k: &str) -> Option<String> {
+    str_of(r.get(k))
+}
+
+pub const PROFILE_COLS: &[&str] = &[
+    "id",
+    "name",
+    "path",
+    "game_version",
+    "loader",
+    "loader_version",
+    "last_played",
+    "selected_norisk_pack_id",
+    "group_name",
+    "use_shared_minecraft_folder",
+    "is_standard_version",
+    "playtime_seconds",
+    "settings",
+    "banner",
+    "description",
+    "modpack_info",
+];
+pub const MOD_COLS: &[&str] = &["profile_id", "ordinal", "source_type", "project_id", "version_id", "file_name", "enabled", "display_name", "file_name_override"];
+
+fn profile_of(r: &Row) -> Option<NrProfile> {
+    Some(NrProfile {
+        id: col(r, "id")?,
+        name: col(r, "name").unwrap_or_default(),
+        path: col(r, "path").unwrap_or_default(),
+        game_version: col(r, "game_version").unwrap_or_default(),
+        loader: col(r, "loader").unwrap_or_else(|| "vanilla".into()),
+        loader_version: col(r, "loader_version"),
+        last_played_ms: to_ms(int(r, "last_played")),
+        pack_id: col(r, "selected_norisk_pack_id"),
+        group: col(r, "group_name"),
+        use_shared: int(r, "use_shared_minecraft_folder") != 0,
+        is_standard: int(r, "is_standard_version") != 0,
+        playtime_secs: int(r, "playtime_seconds").max(0) as u64,
+        settings: parse_json(r.get("settings")),
+        banner: parse_json(r.get("banner")),
+        modpack_info: parse_json(r.get("modpack_info")),
+        description: col(r, "description"),
+        ..Default::default()
+    })
+}
+
 pub fn read_db(c: &rusqlite::Connection) -> AppResult<Vec<NrProfile>> {
-    let mut st = c
-        .prepare(
-            "SELECT id, name, path, game_version, loader, loader_version, last_played, selected_norisk_pack_id, group_name,
-                    use_shared_minecraft_folder, is_standard_version, playtime_seconds, settings, banner, description
-             FROM profiles",
-        )
-        .map_err(|e| AppError::msg(format!("NoRisk-Datenbank: {e}")))?;
-    let mut list: Vec<NrProfile> = st
-        .query_map([], |r| {
-            Ok(NrProfile {
-                id: r.get(0)?,
-                name: r.get(1)?,
-                path: r.get(2)?,
-                game_version: r.get(3)?,
-                loader: r.get(4)?,
-                loader_version: r.get(5)?,
-                last_played_ms: r.get::<_, Option<i64>>(6)?.and_then(to_ms),
-                pack_id: r.get(7)?,
-                group: r.get(8)?,
-                use_shared: r.get::<_, i64>(9)? != 0,
-                is_standard: r.get::<_, i64>(10)? != 0,
-                playtime_secs: r.get::<_, i64>(11)?.max(0) as u64,
-                settings: parse_json(r.get(12)?).unwrap_or(Value::Null),
-                banner_url: parse_json::<Value>(r.get(13)?).as_ref().and_then(banner_url),
-                description: r.get(14)?,
-                ..Default::default()
-            })
-        })
-        .map_err(|e| AppError::msg(e.to_string()))?
-        .flatten()
-        .collect();
+    let rows = select_rows(c, "profiles", PROFILE_COLS);
+    if rows.is_empty() && c.prepare("SELECT 1 FROM profiles LIMIT 1").is_err() {
+        return Err(AppError::msg("NoRisk-Datenbank: Tabelle profiles fehlt"));
+    }
+    let mut list: Vec<NrProfile> = rows.iter().filter_map(profile_of).collect();
+    let mut mod_rows = select_rows(c, "profile_mods", MOD_COLS);
+    mod_rows.sort_by_key(|r| int(r, "ordinal"));
     let mut mods: HashMap<String, Vec<NrMod>> = HashMap::new();
-    if let Ok(mut st) = c.prepare("SELECT profile_id, source_type, project_id, version_id, file_name, enabled, display_name FROM profile_mods ORDER BY profile_id, ordinal") {
-        if let Ok(rows) = st.query_map([], |r| {
-            Ok((
-                r.get::<_, String>(0)?,
-                NrMod {
-                    source_type: r.get(1)?,
-                    project_id: r.get(2)?,
-                    version_id: r.get(3)?,
-                    file_name: r.get(4)?,
-                    enabled: r.get::<_, i64>(5)? != 0,
-                    name: r.get(6)?,
-                },
-            ))
-        }) {
-            for (pid, m) in rows.flatten() {
-                mods.entry(pid).or_default().push(m);
-            }
-        }
+    for r in mod_rows {
+        let Some(pid) = col(&r, "profile_id") else { continue };
+        mods.entry(pid).or_default().push(NrMod {
+            source_type: col(&r, "source_type").unwrap_or_default(),
+            project_id: col(&r, "project_id"),
+            version_id: col(&r, "version_id"),
+            file_name: col(&r, "file_name"),
+            enabled: r.get("enabled").map_or(true, |v| v.as_i64() != Some(0)),
+            name: col(&r, "display_name"),
+            file_override: col(&r, "file_name_override"),
+        });
     }
     let mut disabled: HashMap<String, Vec<(String, String, String, String)>> = HashMap::new();
-    if let Ok(mut st) = c.prepare("SELECT profile_id, pack_id, mod_id, game_version, loader FROM profile_disabled_norisk_mods") {
-        if let Ok(rows) = st.query_map([], |r| Ok((r.get::<_, String>(0)?, (r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)))) {
-            for (pid, d) in rows.flatten() {
-                disabled.entry(pid).or_default().push(d);
-            }
+    for r in select_rows(c, "profile_disabled_norisk_mods", &["profile_id", "pack_id", "mod_id", "game_version", "loader"]) {
+        if let (Some(p), Some(a), Some(b), Some(g), Some(l)) = (col(&r, "profile_id"), col(&r, "pack_id"), col(&r, "mod_id"), col(&r, "game_version"), col(&r, "loader")) {
+            disabled.entry(p).or_default().push((a, b, g, l));
         }
     }
     for p in list.iter_mut() {
@@ -197,11 +223,20 @@ pub fn read_db(c: &rusqlite::Connection) -> AppResult<Vec<NrProfile>> {
     Ok(list)
 }
 
-fn str_of(v: Option<&Value>) -> Option<String> {
-    v.and_then(|x| x.as_str()).map(str::to_string).filter(|s| !s.is_empty())
+fn json_mod(m: &Value) -> NrMod {
+    let src = m.get("source").cloned().unwrap_or(Value::Null);
+    let id = |k: &str| src.get(k).and_then(|x| x.as_str().map(str::to_string).or_else(|| x.as_u64().map(|n| n.to_string()))).filter(|s| !s.is_empty());
+    NrMod {
+        source_type: str_of(src.get("type")).unwrap_or_default(),
+        project_id: id("project_id"),
+        version_id: id("version_id").or_else(|| id("file_id")),
+        file_name: str_of(src.get("file_name")),
+        name: str_of(m.get("display_name")),
+        enabled: m.get("enabled").and_then(|e| e.as_bool()).unwrap_or(true),
+        file_override: str_of(m.get("file_name_override")),
+    }
 }
 
-/// Ältere Launcher-Versionen: `profiles.json` (Liste oder `{ profiles: {...} }`).
 pub fn read_json(b: &[u8]) -> AppResult<Vec<NrProfile>> {
     let v: Value = serde_json::from_slice(b).map_err(|e| AppError::msg(format!("NoRisk-Profile unlesbar: {e}")))?;
     let items: Vec<Value> = match &v {
@@ -221,33 +256,11 @@ pub fn read_json(b: &[u8]) -> AppResult<Vec<NrProfile>> {
                 Some(Value::String(s)) => chrono::DateTime::parse_from_rfc3339(s).ok().map(|d| d.timestamp_millis()),
                 _ => None,
             };
-            let mods = p
-                .get("mods")
-                .and_then(|m| m.as_array())
-                .map(|a| {
-                    a.iter()
-                        .map(|m| {
-                            let src = m.get("source").cloned().unwrap_or(Value::Null);
-                            NrMod {
-                                source_type: str_of(src.get("type")).unwrap_or_default(),
-                                project_id: str_of(src.get("project_id")),
-                                version_id: str_of(src.get("version_id")),
-                                file_name: str_of(src.get("file_name")),
-                                name: str_of(m.get("display_name")),
-                                enabled: m.get("enabled").and_then(|e| e.as_bool()).unwrap_or(true),
-                            }
-                        })
-                        .collect()
-                })
-                .unwrap_or_default();
+            let mods = p.get("mods").and_then(|m| m.as_array()).map(|a| a.iter().map(json_mod).collect()).unwrap_or_default();
             let disabled = p
                 .get("disabled_norisk_mods_detailed")
                 .and_then(|d| d.as_array())
-                .map(|a| {
-                    a.iter()
-                        .filter_map(|d| Some((str_of(d.get("pack_id"))?, str_of(d.get("mod_id"))?, str_of(d.get("game_version"))?, str_of(d.get("loader"))?)))
-                        .collect()
-                })
+                .map(|a| a.iter().filter_map(|d| Some((str_of(d.get("pack_id"))?, str_of(d.get("mod_id"))?, str_of(d.get("game_version"))?, str_of(d.get("loader"))?))).collect())
                 .unwrap_or_default();
             Some(NrProfile {
                 id: str_of(p.get("id"))?,
@@ -262,7 +275,8 @@ pub fn read_json(b: &[u8]) -> AppResult<Vec<NrProfile>> {
                 is_standard: p.get("is_standard_version").and_then(|x| x.as_bool()).unwrap_or(false),
                 playtime_secs: p.get("playtime_seconds").and_then(|x| x.as_u64()).unwrap_or(0),
                 settings: p.get("settings").cloned().unwrap_or(Value::Null),
-                banner_url: p.get("banner").and_then(banner_url),
+                banner: p.get("banner").cloned().unwrap_or(Value::Null),
+                modpack_info: p.get("modpack_info").cloned().unwrap_or(Value::Null),
                 pack_id: str_of(p.get("selected_norisk_pack_id")),
                 description: str_of(p.get("description")),
                 mods,
@@ -272,30 +286,40 @@ pub fn read_json(b: &[u8]) -> AppResult<Vec<NrProfile>> {
         .collect())
 }
 
-/// Alle Profile der Wurzel (DB bevorzugt, sonst profiles.json).
-pub fn read_profiles(root: &Path, tmp: &Path) -> AppResult<Vec<NrProfile>> {
+#[derive(Debug, Clone, Default)]
+pub struct NrRoot {
+    pub profiles: Vec<NrProfile>,
+    pub meta: PathBuf,
+    pub sync: sync::SyncDb,
+}
+
+pub fn read_root(root: &Path, custom: Option<&Path>, tmp: &Path) -> AppResult<NrRoot> {
     let mut dbs = vec![root.join("meta")];
-    if let Some(c) = custom_dir(root) {
+    if let Some(c) = custom {
         dbs.push(c.join("meta"));
-        dbs.push(c.clone());
+        dbs.push(c.to_path_buf());
     }
     for d in dbs {
         if d.join("app.db").is_file() {
             if let Some(c) = super::external::open_db_copy_named(&d, tmp, "norisk-db") {
-                return read_db(&c);
+                return Ok(NrRoot { profiles: read_db(&c)?, sync: sync::read(&c), meta: d });
             }
         }
     }
-    match std::fs::read(root.join("profiles.json")) {
-        Ok(b) => read_json(&b),
-        Err(_) => Ok(vec![]),
-    }
+    let profiles = match std::fs::read(root.join("profiles.json")) {
+        Ok(b) => read_json(&b)?,
+        Err(_) => vec![],
+    };
+    Ok(NrRoot { profiles, meta: root.join("meta"), sync: Default::default() })
+}
+
+pub fn read_profiles(root: &Path, tmp: &Path) -> AppResult<Vec<NrProfile>> {
+    Ok(read_root(root, global::read(root).custom_dir.as_deref(), tmp)?.profiles)
 }
 
 // ------------------------------------------------------------------ Spielordner
 
 fn is_legacy(mc: &str) -> bool {
-    // < 1.13
     let mut it = mc.split('.').map(|x| x.parse::<u32>().unwrap_or(0));
     matches!((it.next(), it.next()), (Some(1), Some(minor)) if minor < 13)
 }
@@ -304,7 +328,6 @@ fn sanitize(s: &str) -> String {
     s.to_lowercase().chars().map(|c| if c.is_control() || "<>:\"/\\|?*".contains(c) { '_' } else { c }).collect::<String>().trim().trim_end_matches('.').to_string()
 }
 
-/// Spielordner wie im NoRisk-Launcher (`calculate_instance_path_for_profile`).
 pub fn game_dir(profiles: &Path, p: &NrProfile) -> PathBuf {
     let isolated_group = p.group.as_deref().is_some_and(|g| matches!(g.to_lowercase().as_str(), "server" | "modpacks"));
     if p.use_shared && !isolated_group {
@@ -325,7 +348,6 @@ pub fn game_dir(profiles: &Path, p: &NrProfile) -> PathBuf {
 
 // ------------------------------------------------------------------ Packs
 
-/// Pack-Mod: installierbar (Modrinth-Version) oder nicht (NoRisk-Maven, URL …).
 #[derive(Debug, Clone, PartialEq)]
 pub enum PackMod {
     Modrinth { id: String, name: String, project_id: String, version_id: String },
@@ -361,7 +383,6 @@ fn resolve_pack(packs: &serde_json::Map<String, Value>, id: &str, visited: &mut 
     map.into_iter().map(|(_, m)| m).collect()
 }
 
-/// Mods eines NoRisk-Packs für Version + Loader (ohne vom Profil deaktivierte).
 pub fn pack_mods(packs_json: &Value, p: &NrProfile) -> Vec<PackMod> {
     let Some(pack_id) = &p.pack_id else { return vec![] };
     let Some(packs) = packs_json.get("packs").and_then(|x| x.as_object()) else { return vec![] };
@@ -379,7 +400,6 @@ pub fn pack_mods(packs_json: &Value, p: &NrProfile) -> Vec<PackMod> {
             continue;
         }
         let name = m.get("displayName").and_then(|x| x.as_str()).unwrap_or(&id).to_string();
-        // Gibt es diesen Mod für Version + Loader?
         let Some(compat) = m.get("compatibility").and_then(|c| c.get(&p.game_version)).and_then(|c| c.get(&loader)) else { continue };
         let src = m.get("source").cloned().unwrap_or(Value::Null);
         let ident = compat.get("identifier").and_then(|x| x.as_str()).map(str::to_string);
@@ -393,20 +413,51 @@ pub fn pack_mods(packs_json: &Value, p: &NrProfile) -> Vec<PackMod> {
 
 // ------------------------------------------------------------------ Plan + Scan
 
-/// Was beim Import passiert (wird beim Scan berechnet, beim Import erneut gelesen).
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlanMod {
+    pub source: Source,
+    pub project_id: String,
+    pub version_id: Option<String>,
+    pub enabled: bool,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlanJar {
+    pub path: PathBuf,
+    pub name: String,
+    pub mod_id: Option<String>,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Plan {
     pub profile_id: String,
-    /// (project_id, version_id, enabled)
-    pub modrinth: Vec<(String, String, bool)>,
-    /// Nicht übernommene NoRisk-eigene Mods (Namen)
+    pub mods: Vec<PlanMod>,
     pub skipped: Vec<String>,
-    /// Lose JARs (Quelle, Zielname)
-    pub jars: Vec<(PathBuf, String)>,
+    pub jars: Vec<PlanJar>,
     pub group: Option<String>,
-    pub banner_url: Option<String>,
-    pub settings: Value,
+    pub banner: Option<Banner>,
     pub description: Option<String>,
+    pub sync_packs: Vec<String>,
+}
+
+impl Plan {
+    fn add_mod(&mut self, m: PlanMod) {
+        if !self.mods.iter().any(|x| x.source == m.source && x.project_id == m.project_id) {
+            self.mods.push(m);
+        }
+    }
+
+    fn add_jar(&mut self, j: PlanJar) {
+        let dup = self.jars.iter().any(|x| x.name.eq_ignore_ascii_case(&j.name) || (x.mod_id.is_some() && x.mod_id == j.mod_id));
+        if !dup {
+            self.jars.push(j);
+        }
+    }
+
+    pub fn count(&self, s: Source) -> usize {
+        self.mods.iter().filter(|m| m.source == s).count()
+    }
 }
 
 fn is_nrc_id(id: &str) -> bool {
@@ -414,84 +465,135 @@ fn is_nrc_id(id: &str) -> bool {
     l.starts_with("nrc") || l.starts_with("norisk")
 }
 
-/// Lose JARs aus `mods/` und `custom_mods/`, die zu Version + Loader passen und keine NoRisk-Mods sind.
-pub fn loose_jars(game: &Path, mc: &str, loader: LoaderKind, icons: &Path) -> (Vec<(PathBuf, String)>, Vec<String>) {
-    let mut ok = Vec::new();
+pub enum JarClass {
+    Fits(Option<String>),
+    Norisk(String),
+    Unfit,
+}
+
+pub fn jar_class(f: &Path, name: &str, mc: &str, loader: LoaderKind, icons: &Path) -> JarClass {
+    let lower = name.to_ascii_lowercase();
+    let meta = super::meta::read_entry(f, ContentKind::Mod, icons);
+    let id = meta.mod_id.clone().unwrap_or_default();
+    if is_nrc_id(&id) || lower.starts_with("nrc-") || lower.starts_with("norisk") {
+        return JarClass::Norisk(meta.name.clone().unwrap_or_else(|| name.to_string()));
+    }
+    let loader_ok = match meta.loader.as_deref().and_then(LoaderKind::parse) {
+        Some(l) => l == loader || (loader == LoaderKind::Quilt && l == LoaderKind::Fabric),
+        None => true,
+    };
+    let mc_ok = meta.deps.iter().find(|d| d.id == "minecraft").and_then(|d| d.range.as_deref()).and_then(|r| deps::satisfies(r, mc)).unwrap_or(true);
+    if loader_ok && mc_ok {
+        JarClass::Fits(meta.mod_id.filter(|m| !m.is_empty()))
+    } else {
+        JarClass::Unfit
+    }
+}
+
+fn nrc_dir(name: &str, mc: &str, loader: LoaderKind) -> bool {
+    let base = format!("nrc-{}-{}", mc, loader.as_str()).to_ascii_lowercase();
+    let l = name.to_ascii_lowercase();
+    l == base || l.strip_prefix(&format!("{base}-")).is_some_and(|r| r.len() == 4 && r.chars().all(|c| c.is_ascii_hexdigit()))
+}
+
+fn mod_dirs(game: &Path, mc: &str, loader: LoaderKind) -> Vec<PathBuf> {
+    let mut v = vec![game.join("mods"), game.join("custom_mods")];
+    let mut nrc: Vec<PathBuf> = std::fs::read_dir(game.join("mods"))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter(|e| e.path().is_dir() && nrc_dir(&e.file_name().to_string_lossy(), mc, loader))
+        .map(|e| e.path())
+        .collect();
+    nrc.sort();
+    v.extend(nrc);
+    v
+}
+
+pub fn loose_jars(game: &Path, mc: &str, loader: LoaderKind, icons: &Path, known: &HashSet<String>) -> (Vec<PlanJar>, Vec<String>) {
+    let mut ok: Vec<PlanJar> = Vec::new();
     let mut skipped = Vec::new();
     let mut seen = HashSet::new();
-    for sub in ["mods", "custom_mods"] {
-        let Ok(rd) = std::fs::read_dir(game.join(sub)) else { continue };
+    for dir in mod_dirs(game, mc, loader) {
+        let Ok(rd) = std::fs::read_dir(dir) else { continue };
         let mut files: Vec<PathBuf> = rd.flatten().map(|e| e.path()).filter(|p| p.is_file()).collect();
         files.sort();
         for f in files {
             let name = f.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
             let lower = name.to_ascii_lowercase();
-            if !(lower.ends_with(".jar") || lower.ends_with(".jar.disabled")) || !seen.insert(lower.trim_end_matches(".disabled").to_string()) {
+            let base = lower.trim_end_matches(".disabled").to_string();
+            if !(lower.ends_with(".jar") || lower.ends_with(".jar.disabled")) || known.contains(&base) || !seen.insert(base) {
                 continue;
             }
-            let meta = super::meta::read_entry(&f, ContentKind::Mod, icons);
-            let id = meta.mod_id.clone().unwrap_or_default();
-            if is_nrc_id(&id) || lower.starts_with("nrc-") || lower.starts_with("norisk") {
-                skipped.push(meta.name.clone().unwrap_or(name));
-                continue;
-            }
-            let loader_ok = match meta.loader.as_deref().and_then(LoaderKind::parse) {
-                Some(l) => l == loader || (loader == LoaderKind::Quilt && l == LoaderKind::Fabric),
-                None => true,
-            };
-            let mc_ok = meta.deps.iter().find(|d| d.id == "minecraft").and_then(|d| d.range.as_deref()).and_then(|r| deps::satisfies(r, mc)).unwrap_or(true);
-            if loader_ok && mc_ok {
-                ok.push((f, name));
+            match jar_class(&f, &name, mc, loader, icons) {
+                JarClass::Fits(mod_id) => {
+                    if mod_id.is_none() || !ok.iter().any(|j| j.mod_id == mod_id) {
+                        ok.push(PlanJar { path: f, name, mod_id });
+                    }
+                }
+                JarClass::Norisk(n) => skipped.push(n),
+                JarClass::Unfit => {}
             }
         }
     }
     (ok, skipped)
 }
 
-fn modrinth_version_name(m: &NrMod) -> String {
+fn mod_name(m: &NrMod) -> String {
     m.name.clone().or_else(|| m.file_name.clone()).or_else(|| m.project_id.clone()).unwrap_or_default()
 }
 
-pub fn plan_for(p: &NrProfile, packs: &Value, game: &Path, icons: &Path) -> Plan {
-    let mut plan = Plan {
-        profile_id: p.id.clone(),
-        group: p.group.clone(),
-        banner_url: p.banner_url.clone(),
-        settings: p.settings.clone(),
-        description: p.description.clone(),
-        ..Default::default()
+fn profile_mod(m: &NrMod) -> Option<PlanMod> {
+    let source = match m.source_type.as_str() {
+        "modrinth" => Source::Modrinth,
+        "curse_forge" | "curseforge" => Source::Curseforge,
+        _ => return None,
     };
-    let mut have: HashSet<String> = HashSet::new();
+    Some(PlanMod { source, project_id: m.project_id.clone()?, version_id: m.version_id.clone(), enabled: m.enabled, name: mod_name(m) })
+}
+
+pub fn plan_for(p: &NrProfile, packs: &Value, game: &Path, icons: &Path) -> Plan {
+    let mut plan = Plan { profile_id: p.id.clone(), group: p.group.clone(), description: p.description.clone(), ..Default::default() };
+    let mut known: HashSet<String> = HashSet::new();
     for m in &p.mods {
-        match (m.source_type.as_str(), &m.project_id, &m.version_id) {
-            ("modrinth", Some(pid), Some(vid)) => {
-                if have.insert(pid.clone()) {
-                    plan.modrinth.push((pid.clone(), vid.clone(), m.enabled));
-                }
+        match profile_mod(m) {
+            Some(pm) => {
+                known.extend([&m.file_name, &m.file_override].into_iter().flatten().map(|f| f.to_ascii_lowercase()));
+                plan.add_mod(pm);
             }
-            _ => plan.skipped.push(modrinth_version_name(m)),
+            None if matches!(m.source_type.as_str(), "maven" | "embedded") => plan.skipped.push(mod_name(m)),
+            None => {}
         }
     }
     for pm in pack_mods(packs, p) {
         match pm {
-            PackMod::Modrinth { project_id, version_id, .. } => {
-                if have.insert(project_id.clone()) {
-                    plan.modrinth.push((project_id, version_id, true));
-                }
-            }
+            PackMod::Modrinth { project_id, version_id, name, .. } => plan.add_mod(PlanMod { source: Source::Modrinth, project_id, version_id: Some(version_id), enabled: true, name }),
             PackMod::Skipped { name, .. } => plan.skipped.push(name),
         }
     }
     let loader = LoaderKind::parse(&p.loader).unwrap_or(LoaderKind::Vanilla);
     if loader != LoaderKind::Vanilla {
-        let (jars, skipped) = loose_jars(game, &p.game_version, loader, icons);
+        let (jars, skipped) = loose_jars(game, &p.game_version, loader, icons, &known);
         plan.jars = jars;
         plan.skipped.extend(skipped);
     }
     plan
 }
 
-/// Kennung je Profil: `<spielordner>#<profil-id>` (mehrere Profile teilen sich einen Ordner).
+pub fn add_sync(plan: &mut Plan, s: syncplan::SyncPlan, loader: LoaderKind) {
+    plan.sync_packs = s.packs;
+    if loader == LoaderKind::Vanilla {
+        return;
+    }
+    for m in s.mods {
+        plan.add_mod(m);
+    }
+    for j in s.jars {
+        plan.add_jar(j);
+    }
+    plan.skipped.extend(s.skipped);
+}
+
 pub fn source_path(game: &Path, id: &str) -> String {
     format!("{}#{id}", game.to_string_lossy())
 }
@@ -507,8 +609,9 @@ fn read_packs(root: &Path) -> Value {
     std::fs::read(root.join("norisk_modpacks.json")).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or(Value::Null)
 }
 
-/// `loaderPolicy` eines Packs samt Eltern (Kind überschreibt Eltern), wie `resolve_loader_policy_for_pack`.
-fn merged_policy(packs: &serde_json::Map<String, Value>, id: &str, visited: &mut HashSet<String>) -> (HashMap<String, Value>, HashMap<String, HashMap<String, Value>>) {
+type Policy = (HashMap<String, Value>, HashMap<String, HashMap<String, Value>>);
+
+fn merged_policy(packs: &serde_json::Map<String, Value>, id: &str, visited: &mut HashSet<String>) -> Policy {
     let mut default: HashMap<String, Value> = HashMap::new();
     let mut by_mc: HashMap<String, HashMap<String, Value>> = HashMap::new();
     if !visited.insert(id.to_string()) {
@@ -538,7 +641,6 @@ fn merged_policy(packs: &serde_json::Map<String, Value>, id: &str, visited: &mut
     (default, by_mc)
 }
 
-/// Loader-Version laut Pack-Policy: exakte MC-Version, dann `x.y.*`, dann Präfix, dann `default`.
 pub fn pack_loader_version(packs_json: &Value, pack_id: &str, mc: &str, loader: &str) -> Option<String> {
     let packs = packs_json.get("packs")?.as_object()?;
     let (default, by_mc) = merged_policy(packs, pack_id, &mut HashSet::new());
@@ -567,7 +669,6 @@ pub fn pack_loader_version(packs_json: &Value, pack_id: &str, mc: &str, loader: 
     ver(&default)
 }
 
-/// Loader + Version wie im NoRisk-Launcher: Nutzer-Override > Pack-Policy > Profilangabe.
 pub fn loader_of(p: &NrProfile, packs: &Value) -> Loader {
     let kind = LoaderKind::parse(&p.loader).unwrap_or(LoaderKind::Vanilla);
     if kind == LoaderKind::Vanilla {
@@ -587,8 +688,15 @@ pub fn loader_of(p: &NrProfile, packs: &Value) -> Loader {
     Loader { kind, version: over.or(policy).or_else(|| p.loader_version.clone()).filter(|v| !v.is_empty()) }
 }
 
+fn pack_of(p: &NrProfile) -> Option<PackSource> {
+    let mut s = banner::pack_source(&p.modpack_info)?;
+    s.name = Some(if p.name.trim().is_empty() { "NoRisk Client".into() } else { p.name.clone() });
+    Some(s)
+}
+
 pub fn scan(root: &Path, tmp: &Path, icons: &Path) -> Vec<Found> {
-    let profiles = match read_profiles(root, tmp) {
+    let g = global::read(root);
+    let nr = match read_root(root, g.custom_dir.as_deref(), tmp) {
         Ok(p) => p,
         Err(e) => {
             tracing::warn!("NoRisk-Profile nicht lesbar: {e}");
@@ -596,44 +704,57 @@ pub fn scan(root: &Path, tmp: &Path, icons: &Path) -> Vec<Found> {
         }
     };
     let packs = read_packs(root);
-    let pdir = profiles_dir(root);
-    profiles
+    let pdir = profiles_dir_with(root, g.custom_dir.as_deref());
+    let dirs: HashMap<String, PathBuf> = nr.profiles.iter().map(|p| (p.id.clone(), game_dir(&pdir, p))).collect();
+    let roots: Vec<PathBuf> = [Some(root.to_path_buf()), g.custom_dir.clone(), Some(pdir.clone())].into_iter().flatten().collect();
+    let ctx = syncplan::Ctx { db: &nr.sync, meta: &nr.meta, tmp, icons, dirs: &dirs };
+    nr.profiles
         .iter()
         .map(|p| {
-            let game = game_dir(&pdir, p);
-            let plan = plan_for(p, &packs, &game, icons);
+            let game = dirs[&p.id].clone();
+            let loader = loader_of(p, &packs);
+            let mut plan = plan_for(p, &packs, &game, icons);
+            let sync = syncplan::plan(&ctx, &p.id, &p.game_version, loader.kind, &game);
+            let overlays = sync.overlays.clone();
+            add_sync(&mut plan, sync, loader.kind);
+            plan.banner = banner::parse(&p.banner, root, &game, &roots, icons);
+            let icon_path = match &plan.banner {
+                Some(Banner::File(f)) => Some(f.clone()),
+                _ => None,
+            };
             let mut f = super::external::found(
                 if p.name.trim().is_empty() { p.id.clone() } else { p.name.clone() },
                 game.clone(),
                 Path::new(&source_path(&game, &p.id)),
                 p.game_version.clone(),
-                loader_of(p, &packs),
-                None,
+                loader,
+                icon_path,
             );
-            f.info.icon = p.banner_url.clone();
-            f.info.mod_count = (plan.modrinth.len() + plan.jars.len()) as u32;
+            if let Some(Banner::Url(u)) = &plan.banner {
+                f.info.icon = Some(u.clone());
+            }
+            f.info.mod_count = (plan.mods.len() + plan.jars.len()) as u32;
             f.info.last_played = p.last_played_ms;
             f.info.play_time_secs = Some(p.playtime_secs).filter(|v| *v > 0);
             if !plan.skipped.is_empty() {
                 f.info.warning = Some(format!("{WARN_NRC} ({})", plan.skipped.len()));
             }
-            f.settings = super::extsettings::norisk(&plan.settings, plan.group.clone(), plan.description.clone());
+            f.settings = super::extsettings::norisk(&p.settings, plan.group.clone(), plan.description.clone(), p.is_standard, &g);
+            f.pack = pack_of(p);
+            f.overlays = overlays;
             f.norisk = Some(plan);
             f
         })
         .collect()
 }
 
-/// Ein Profil anhand seiner Kennung erneut lesen.
 pub fn describe(source: &str, tmp: &Path, icons: &Path) -> Option<Found> {
     let me = norm(source);
     roots_for(source).iter().find_map(|r| scan(r, tmp, icons).into_iter().find(|f| norm(&f.info.source_path) == me))
 }
 
-/// Mögliche Wurzeln zu einer Profil-Kennung (aus dem Pfad abgeleitet, dann der Standardort).
 pub fn roots_for(source: &str) -> Vec<PathBuf> {
     let mut roots = roots();
-    // Wurzel aus dem Pfad ableiten (…\data\profiles\… bzw. …\profiles\…)
     let (dir, _) = split_source(source);
     let mut cur = Path::new(dir).parent();
     while let Some(c) = cur {
@@ -645,363 +766,5 @@ pub fn roots_for(source: &str) -> Vec<PathBuf> {
     roots
 }
 
-// ------------------------------------------------------------------ Import
-
-#[allow(clippy::too_many_arguments)]
-pub async fn run_import(
-    state: AppState,
-    task: TaskHandle,
-    f: Found,
-    source_path: String,
-    name: Option<String>,
-    mc_version: Option<String>,
-    loader: Option<Loader>,
-    keys: HashSet<String>,
-) -> AppResult<()> {
-    let plan = f.norisk.clone().unwrap_or_default();
-    let mc = mc_version.filter(|v| !v.trim().is_empty()).unwrap_or_else(|| f.info.mc_version.clone());
-    if mc.trim().is_empty() {
-        return Err(AppError::Invalid(format!("{}: Minecraft-Version unbekannt – bitte angeben", f.info.name)));
-    }
-    let loader = loader.unwrap_or_else(|| f.info.loader.clone());
-    let name = name.filter(|n| !n.trim().is_empty()).unwrap_or_else(|| f.info.name.clone());
-    task.set_title(format!("{name} übernehmen"));
-
-    let mut inst = Instance {
-        id: String::new(),
-        name: name.clone(),
-        icon: None,
-        accent: None,
-        group: None,
-        mc_version: mc,
-        loader,
-        java: Default::default(),
-        window: Default::default(),
-        hooks: Default::default(),
-        source: Some(PackSource { kind: PackSourceKind::Local, project_id: None, version_id: None, name: Some("NoRisk Client".into()), version_name: None }),
-        install_state: InstallState::NotInstalled,
-        version_id: None,
-        created_at: crate::util::now_ms(),
-        last_played: f.info.last_played,
-        play_time_secs: f.info.play_time_secs.unwrap_or(0),
-        notes: None,
-        auto_update_content: None,
-        bedrock: None,
-    };
-    let (prepared, java_note) = super::extsettings::prepare(&state.settings(), &f.settings, &inst.mc_version, keys.contains("java")).await;
-    super::extsettings::apply(&mut inst, &prepared, &keys);
-    let inst = state.instances.insert_new(inst)?;
-    task.set_instance(inst.id.clone());
-
-    let res: AppResult<Vec<String>> = async {
-        let dst = state.paths.game_dir(&inst.id);
-        // 1. Spieldaten (alles außer SKIP) + lose JARs kopieren
-        task.stage("Kopiere Spieldaten …", Some(0.0));
-        let src = f.game_dir.clone();
-        let jars = plan.jars.clone();
-        let t2 = task.clone();
-        let d2 = dst.clone();
-        let (copied, tops) = tokio::task::spawn_blocking(move || -> AppResult<(u64, Vec<String>)> {
-            let mut files: Vec<(PathBuf, PathBuf)> = Vec::new();
-            let mut top: Vec<std::fs::DirEntry> = std::fs::read_dir(&src)?.flatten().collect();
-            top.sort_by_key(|e| e.file_name());
-            for e in top {
-                let name = e.file_name().to_string_lossy().to_string();
-                if skip_top(&name) {
-                    continue;
-                }
-                let p = e.path();
-                if p.is_file() {
-                    files.push((p, PathBuf::from(&name)));
-                } else if p.is_dir() {
-                    let it = walkdir::WalkDir::new(&p).follow_links(false).into_iter().filter_entry(|w| !super::gamedata::skip_inner(&w.file_name().to_string_lossy()));
-                    for w in it.flatten().filter(|w| w.file_type().is_file()) {
-                        if let Ok(rel) = w.path().strip_prefix(&src) {
-                            files.push((w.path().to_path_buf(), rel.to_path_buf()));
-                        }
-                    }
-                }
-            }
-            let tops = super::gamedata::top_names(files.iter().map(|f| f.1.as_path()));
-            for (j, n) in &jars {
-                files.push((j.clone(), Path::new("mods").join(n)));
-            }
-            let total = files.len().max(1);
-            for (i, (from, rel)) in files.iter().enumerate() {
-                if i % 32 == 0 {
-                    t2.check()?;
-                    t2.progress(i as f64 / total as f64 * 0.5);
-                }
-                let to = d2.join(rel);
-                if let Some(p) = to.parent() {
-                    std::fs::create_dir_all(p)?;
-                }
-                std::fs::copy(from, &to).map_err(|e| AppError::msg(format!("{} konnte nicht kopiert werden: {e}", rel.display())))?;
-            }
-            Ok((files.len() as u64, tops))
-        })
-        .await??;
-        super::external::write_mark(&state, &inst.id, super::LauncherKind::Norisk, &source_path, tops)?;
-        task.message(format!("{copied} Dateien übernommen"));
-
-        // 2. Mods per Modrinth installieren
-        let mut warnings = Vec::new();
-        if !plan.modrinth.is_empty() && inst.loader.kind != LoaderKind::Vanilla {
-            task.stage(format!("Installiere {} Mods von Modrinth …", plan.modrinth.len()), Some(0.5));
-            let idx = ContentIndex::load(&state.paths, &inst.id);
-            let mut all: Vec<install::Planned> = Vec::new();
-            let mut seen: HashSet<String> = HashSet::new();
-            for (pid, vid, _) in &plan.modrinth {
-                task.check()?;
-                match install::plan(&state, &inst, &idx, vec![(Source::Modrinth, pid.clone(), Some(vid.clone()))], &mut warnings).await {
-                    Ok(list) => {
-                        for p in list {
-                            if seen.insert(p.brief.id.clone()) {
-                                all.push(p);
-                            }
-                        }
-                    }
-                    Err(e) => warnings.push(format!("{pid}: {e}")),
-                }
-            }
-            install::apply(&state, &inst, all, &task.sub(0.5, 0.95)).await?;
-            // Im NoRisk-Launcher deaktivierte Mods auch hier deaktivieren
-            let idx = ContentIndex::load(&state.paths, &inst.id);
-            for (pid, _, enabled) in &plan.modrinth {
-                if *enabled {
-                    continue;
-                }
-                for k in idx.keys_of_project(Source::Modrinth, pid) {
-                    let p = dst.join(&k);
-                    if p.is_file() {
-                        let mut d = p.clone().into_os_string();
-                        d.push(".disabled");
-                        let _ = std::fs::rename(&p, PathBuf::from(d));
-                    }
-                }
-            }
-        }
-        // 3. Icon (Banner-URL)
-        if let Some(url) = &plan.banner_url {
-            match state.net.get_bytes(url).await {
-                Ok(b) if b.len() < 4 * 1024 * 1024 => {
-                    if let Err(e) = super::import::set_icon_bytes(&state, &inst.id, &b).await {
-                        tracing::warn!("NoRisk-Icon nicht übernommen: {e}");
-                    }
-                }
-                Ok(_) => {}
-                Err(e) => tracing::warn!("NoRisk-Icon nicht ladbar: {e}"),
-            }
-        }
-        Ok(warnings)
-    }
-    .await;
-    match res {
-        Ok(warnings) => {
-            let mut msg = format!("{} Mods von Modrinth, {} lokale JARs übernommen", plan.modrinth.len(), plan.jars.len());
-            if !plan.skipped.is_empty() {
-                msg.push_str(&format!(", {} NoRisk-Mods ausgelassen", plan.skipped.len()));
-            }
-            if let Some(n) = &java_note {
-                msg.push_str(&format!(" · {n}"));
-            }
-            if let Some(w) = warnings.first() {
-                msg.push_str(&format!(" – Hinweis: {w}"));
-            }
-            task.message(msg);
-            state.content.emit_changed(&inst.id);
-            Ok(())
-        }
-        Err(e) => {
-            if let Err(de) = state.instances.delete(&inst.id) {
-                tracing::warn!("Halb importierte Instanz {} nicht entfernt: {de}", inst.id);
-            }
-            Err(e)
-        }
-    }
-}
-
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn fixtures() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src").join("content").join("testdata").join("norisk")
-    }
-
-    fn tmp() -> PathBuf {
-        let d = std::env::temp_dir().join(format!("vl-nr-{}", uuid::Uuid::new_v4()));
-        std::fs::create_dir_all(&d).unwrap();
-        d
-    }
-
-    /// Wurzel wie im NoRisk-Launcher: meta/app.db (Schema aus migrations/0002_profiles.sql), Packs, Spielordner.
-    fn make_root() -> PathBuf {
-        let root = tmp();
-        std::fs::create_dir_all(root.join("meta")).unwrap();
-        std::fs::copy(fixtures().join("norisk_modpacks.json"), root.join("norisk_modpacks.json")).unwrap();
-        let c = rusqlite::Connection::open(root.join("meta/app.db")).unwrap();
-        c.execute_batch(&std::fs::read_to_string(fixtures().join("app.sql")).unwrap()).unwrap();
-        drop(c);
-        let g = root.join("data/profiles/noriskclient/new");
-        std::fs::create_dir_all(g.join("mods/nrc-26.3-fabric")).unwrap();
-        std::fs::create_dir_all(g.join("saves/Welt/region")).unwrap();
-        std::fs::create_dir_all(g.join("NoRiskClient")).unwrap();
-        std::fs::write(g.join("options.txt"), "fov:0.5\n").unwrap();
-        std::fs::write(g.join("saves/Welt/level.dat"), "x").unwrap();
-        // lose JARs: passend, falsche MC-Version, NoRisk-Mod
-        let jar = |p: &Path, json: &str| {
-            let f = std::fs::File::create(p).unwrap();
-            let mut w = zip::ZipWriter::new(f);
-            w.start_file("fabric.mod.json", zip::write::SimpleFileOptions::default()).unwrap();
-            use std::io::Write;
-            w.write_all(json.as_bytes()).unwrap();
-            w.finish().unwrap();
-        };
-        jar(&g.join("mods/ok-mod.jar"), r#"{"id":"okmod","name":"OK Mod","version":"1","depends":{"minecraft":">=26.3"}}"#);
-        jar(&g.join("mods/old-mod.jar"), r#"{"id":"oldmod","name":"Old","version":"1","depends":{"minecraft":"~1.21.5"}}"#);
-        jar(&g.join("mods/nrc-thing.jar"), r#"{"id":"nrc-thing","name":"NRC Thing","version":"1"}"#);
-        std::fs::create_dir_all(root.join("data/profiles/groups/meine gruppe")).unwrap();
-        root
-    }
-
-    #[test]
-    fn times() {
-        assert_eq!(to_ms(1_794_687_657_678_095_000), Some(1_794_687_657_678));
-        assert_eq!(to_ms(1_794_687_657_678), Some(1_794_687_657_678));
-        assert_eq!(to_ms(1_794_687_657), Some(1_794_687_657_000));
-        assert_eq!(to_ms(0), None);
-    }
-
-    #[test]
-    fn game_dirs() {
-        let pd = Path::new("P");
-        let mut p = NrProfile { path: "noriskclient/hypixel".into(), game_version: "1.21.5".into(), group: Some("SERVER".into()), use_shared: true, ..Default::default() };
-        // SERVER ist isoliert -> eigener Pfad trotz shared
-        assert_eq!(game_dir(pd, &p), pd.join("noriskclient").join("hypixel"));
-        p.group = Some("NORISK CLIENT".into());
-        assert_eq!(game_dir(pd, &p), pd.join("noriskclient").join("new"));
-        p.game_version = "1.8.9".into();
-        assert_eq!(game_dir(pd, &p), pd.join("noriskclient").join("legacy"));
-        p.group = Some("Meine Gruppe".into());
-        assert_eq!(game_dir(pd, &p), pd.join("groups").join("meine gruppe"));
-        p.use_shared = false;
-        assert_eq!(game_dir(pd, &p), pd.join("noriskclient").join("hypixel"));
-        p.path = "../../evil".into();
-        assert_eq!(game_dir(pd, &p), pd.join("evil"));
-    }
-
-    #[test]
-    fn copies_mod_data_but_not_norisk_internals() {
-        for keep in ["config", "saves", "xaero", "journeymap", "options.txt", "servers.dat", "data", "schematics"] {
-            assert!(!skip_top(keep), "{keep} muss mitkommen");
-        }
-        for skip in ["mods", "custom_mods", "NoRiskClient", "noriskclient", "optionsNRC.json", "logs", "crash-reports", "hs_err_pid31768.log", "servers.dat_old", "usercache.json"] {
-            assert!(skip_top(skip), "{skip} darf nicht mitkommen");
-        }
-    }
-
-    #[test]
-    fn packs_inherit_exclude_disable() {
-        let packs: Value = serde_json::from_slice(&std::fs::read(fixtures().join("norisk_modpacks.json")).unwrap()).unwrap();
-        let p = NrProfile {
-            game_version: "26.3".into(),
-            loader: "fabric".into(),
-            pack_id: Some("child".into()),
-            disabled_pack_mods: vec![("child".into(), "appleskin".into(), "26.3".into(), "fabric".into())],
-            ..Default::default()
-        };
-        let mods = pack_mods(&packs, &p);
-        let ids: Vec<String> = mods
-            .iter()
-            .map(|m| match m {
-                PackMod::Modrinth { id, version_id, .. } => format!("{id}={version_id}"),
-                PackMod::Skipped { id, .. } => format!("{id}!"),
-            })
-            .collect();
-        // nrc-client (maven) + optifine (url) übersprungen, sodium aus dem Eltern-Pack überschrieben,
-        // lithium per excludeMods entfernt, appleskin vom Profil deaktiviert, iris ohne 26.3-Eintrag
-        assert!(ids.contains(&"nrc-client!".to_string()), "{ids:?}");
-        assert!(ids.contains(&"optifine!".to_string()));
-        assert!(ids.contains(&"sodium=CHILDVER".to_string()));
-        assert!(ids.contains(&"fabric-api=FAPI263".to_string()));
-        assert!(!ids.iter().any(|i| i.starts_with("lithium") || i.starts_with("appleskin") || i.starts_with("iris")));
-    }
-
-    #[test]
-    fn loader_policy() {
-        let packs: Value = serde_json::from_slice(&std::fs::read(fixtures().join("norisk_modpacks.json")).unwrap()).unwrap();
-        assert_eq!(pack_loader_version(&packs, "child", "26.3", "fabric").as_deref(), Some("0.20.1"));
-        assert_eq!(pack_loader_version(&packs, "child", "1.21.5", "fabric").as_deref(), Some("0.18.0"));
-        assert_eq!(pack_loader_version(&packs, "child", "1.21", "fabric").as_deref(), Some("0.17.0"));
-        assert_eq!(pack_loader_version(&packs, "child", "26.3", "forge"), None);
-        let mut p = NrProfile { loader: "fabric".into(), loader_version: Some("0.19.5".into()), game_version: "26.3".into(), pack_id: Some("child".into()), ..Default::default() };
-        assert_eq!(loader_of(&p, &packs).version.as_deref(), Some("0.20.1"));
-        p.settings = serde_json::json!({"use_overwrite_loader_version": true, "overwrite_loader_versions": {"fabric": "0.21.0"}, "overwrite_loader_version": "0.1"});
-        assert_eq!(loader_of(&p, &packs).version.as_deref(), Some("0.21.0"));
-        p.pack_id = None;
-        p.settings = Value::Null;
-        assert_eq!(loader_of(&p, &packs).version.as_deref(), Some("0.19.5"));
-    }
-
-    #[test]
-    fn scan_fixture_root() {
-        let root = make_root();
-        let icons = root.join("icons");
-        let found = scan(&root, &root.join("tmp"), &icons);
-        assert_eq!(found.len(), 3);
-        let main = found.iter().find(|f| f.info.name == "NRC 26.3").unwrap();
-        assert_eq!(main.info.mc_version, "26.3");
-        // Pack-Policy (geerbt vom Eltern-Pack) schlägt die Profilangabe 0.19.5
-        assert_eq!(main.info.loader, Loader { kind: LoaderKind::Fabric, version: Some("0.20.1".into()) });
-        assert_eq!(main.info.last_played, Some(1_793_476_074_136));
-        assert_eq!(main.info.play_time_secs, Some(291_260));
-        assert!(main.info.warning.as_deref().unwrap().contains("NoRisk"));
-        assert!(main.info.source_path.ends_with("#p-main"));
-        assert_eq!(main.game_dir, root.join("data/profiles/noriskclient/new"));
-        let plan = main.norisk.as_ref().unwrap();
-        // Profil-Mod (deaktiviert) + Pack-Mods
-        assert!(plan.modrinth.contains(&("MODMENU".into(), "MMV".into(), false)));
-        assert!(plan.modrinth.iter().any(|(p, v, _)| p == "AANobbMI" && v == "CHILDVER"));
-        // nur der passende lose Mod, NRC-JAR übersprungen
-        assert_eq!(plan.jars.iter().map(|(_, n)| n.as_str()).collect::<Vec<_>>(), vec!["ok-mod.jar"]);
-        assert!(plan.skipped.iter().any(|s| s == "NRC Thing"));
-        assert_eq!(plan.settings["memory"]["max"], 3584);
-        // Einstellungen für den Import-Dialog / das nachträgliche Übernehmen
-        assert_eq!(main.settings.max_memory_mb, Some(3584));
-        assert_eq!(main.settings.min_memory_mb, Some(1024));
-        assert!(main.settings.java_path.is_none(), "use_custom_java_path = false");
-        assert_eq!(plan.banner_url.as_deref(), Some("https://cdn.example.invalid/icon.png"));
-        assert_eq!(main.info.mod_count as usize, plan.modrinth.len() + 1);
-        // Loader-Version überschrieben
-        let ov = found.iter().find(|f| f.info.name == "Eigene Gruppe").unwrap();
-        assert_eq!(ov.info.loader.version.as_deref(), Some("0.20.1"));
-        assert_eq!(ov.game_dir, root.join("data/profiles/groups/meine gruppe"));
-        assert!(ov.info.warning.is_none());
-        // Beschreiben über die Kennung
-        let again = describe(&main.info.source_path, &root.join("tmp"), &icons);
-        assert_eq!(again.unwrap().info.name, "NRC 26.3");
-        std::fs::remove_dir_all(&root).ok();
-    }
-
-    #[test]
-    fn legacy_json() {
-        let b = std::fs::read(fixtures().join("profiles.json")).unwrap();
-        let v = read_json(&b).unwrap();
-        assert_eq!(v.len(), 1);
-        let p = &v[0];
-        assert_eq!(p.name, "Hypixel Skyblock");
-        assert_eq!(p.group.as_deref(), Some("SERVER"));
-        assert_eq!(p.pack_id.as_deref(), Some("hypixel-skyblock"));
-        assert_eq!(p.last_played_ms, Some(1_790_000_000_000));
-        assert_eq!(p.mods[0], NrMod { source_type: "modrinth".into(), project_id: Some("P7dR8mSH".into()), version_id: Some("V1".into()), file_name: Some("fabric-api.jar".into()), name: Some("Fabric API".into()), enabled: true });
-        assert_eq!(p.disabled_pack_mods, vec![("hypixel-skyblock".into(), "sodium".into(), "1.21.5".into(), "fabric".into())]);
-        assert_eq!(p.banner_url.as_deref(), Some("https://cdn.norisk.gg/misc/hypixel-skyblock-icon.png"));
-    }
-
-    #[test]
-    fn source_ids() {
-        assert_eq!(split_source(r"C:\x\noriskclient\new#abc-123"), (r"C:\x\noriskclient\new", Some("abc-123")));
-        assert_eq!(split_source(r"C:\x\new"), (r"C:\x\new", None));
-    }
-}
+mod tests;

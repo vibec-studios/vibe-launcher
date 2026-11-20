@@ -32,6 +32,7 @@ pub mod nbt;
 pub mod provider;
 pub mod store;
 pub mod snapshots;
+pub mod srctree;
 pub mod deps;
 pub mod autofix;
 pub mod loaderfix;

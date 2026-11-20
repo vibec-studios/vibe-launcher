@@ -29,6 +29,8 @@ pub struct Found {
     pub settings: ExtSettings,
     /// NoRisk: was übernommen/installiert wird
     pub norisk: Option<super::norisk::Plan>,
+    /// Zusätzliche Quellen im Spielordner (NoRisk Sync Packs), siehe [`super::srctree`]
+    pub overlays: Vec<super::srctree::Overlay>,
 }
 
 pub(crate) fn launcher_name(k: LauncherKind) -> &'static str {
@@ -107,6 +109,7 @@ pub(crate) fn found(name: String, game_dir: PathBuf, source_path: &Path, mc: Str
         pack: None,
         settings: ExtSettings::default(),
         norisk: None,
+        overlays: Vec::new(),
     }
 }
 
