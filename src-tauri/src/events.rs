@@ -18,6 +18,8 @@ pub const CONTENT_CHANGED: &str = "content://changed";
 pub const CONTENT_MANUAL_ARRIVED: &str = "content://manual-arrived";
 /// Payload: `Account[]`
 pub const ACCOUNTS_CHANGED: &str = "accounts://changed";
+pub const AUTH_VAULT_WARNING: &str = "auth://vault-warning";
+pub const AUTH_OFFLINE_AVAILABLE: &str = "auth://offline-available";
 /// Payload: `Settings`
 pub const SETTINGS_CHANGED: &str = "settings://changed";
 /// Payload: `{ instance_ids: string[] }` – Clips (Vibey Client) dazugekommen/geändert/gelöscht; nur solange

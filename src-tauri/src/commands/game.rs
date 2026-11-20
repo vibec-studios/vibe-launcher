@@ -51,6 +51,7 @@ pub async fn instance_launch(
     account_id: Option<String>,
     world: Option<String>,
     server: Option<String>,
+    offline: Option<bool>,
 ) -> AppResult<String> {
     let inst = state.instances.get(&id)?;
     // Bedrock: eigener Ablauf (kein Java, kein Account – das Spiel meldet sich selbst bei Xbox an)
@@ -75,13 +76,21 @@ pub async fn instance_launch(
         return Err(AppError::NotConfigured("Kein Account – bitte unter Accounts mit Microsoft anmelden".into()));
     }
     state.game.begin(&id)?;
+    if offline == Some(true) {
+        state.auth.grant_offline(account_id.as_deref());
+    }
     crate::platform::on_launch(&state, &id, world.clone(), server.clone());
     let st = state.inner().clone();
     let iid = id.clone();
+    let offer_account = account_id.clone();
     let task_id = state.tasks.spawn("launch", format!("{} wird gestartet", inst.name), Some(id.clone()), move |task| async move {
         let r = minecraft::launch::launch(&st, &iid, account_id, world, server, &task).await;
         if let Err(e) = &r {
             st.game.fail(&iid, e);
+            if let AppError::OfflineAvailable(message) = e {
+                let payload = serde_json::json!({ "instance_id": iid, "account_id": offer_account, "message": message });
+                crate::events::emit(&st.app, crate::events::AUTH_OFFLINE_AVAILABLE, &payload);
+            }
         }
         r
     });

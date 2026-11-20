@@ -29,6 +29,7 @@ import { SimpleTour } from "@/features/onboarding/SimpleTour";
 import { SimpleModeHint } from "@/features/onboarding/SimpleModeHint";
 import { ImportSettingsHint, SettingsReviewDialog } from "@/features/import/SettingsOffer";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { AuthBridge } from "@/features/accounts/AuthBridge";
 import { useVibe } from "@/lib/vibe";
 import { VibeBridge } from "@/features/social/VibeBridge";
 import { CosmeticsBridge } from "@/features/cosmetics/CosmeticsBridge";
@@ -402,6 +403,7 @@ export function Shell() {
       <VibeBridge />
       <CosmeticsBridge />
       <SocialDialogs />
+      <AuthBridge />
       <SettingsDialog />
       <ErrorBoundary>
         <FeedbackDialog />

@@ -70,6 +70,7 @@ export const api = {
   authMsaBegin: () => call<T.DeviceCode>("auth_msa_begin"),
   authMsaWait: () => call<T.Account>("auth_msa_wait"),
   authMsaCancel: () => call<void>("auth_msa_cancel"),
+  authMsaWindowLogin: (title: string) => call<T.Account>("auth_msa_window_login", { title }),
 
   // ---------------------------------------------------------------- Skins & Capes (accountId null = aktiver Account)
   skinsProfile: (accountId?: string | null) => call<T.SkinProfile>("skins_profile", { accountId: accountId ?? null }),
@@ -99,8 +100,8 @@ export const api = {
   instanceInstall: (id: string, force = false) => call<string>("instance_install", { id, force }),
   /** `world`: Ordnername unter saves/ – startet per Quick Play direkt in diese Welt (ab Minecraft 1.20). */
   /** `server`: Adresse (host[:port]) – direkt auf diesen Server (Quick Play ab 1.20, sonst --server/--port). */
-  instanceLaunch: (id: string, accountId?: string | null, world?: string | null, server?: string | null) =>
-    call<string>("instance_launch", { id, accountId: accountId ?? null, world: world ?? null, server: server ?? null }),
+  instanceLaunch: (id: string, accountId?: string | null, world?: string | null, server?: string | null, offline?: boolean) =>
+    call<string>("instance_launch", { id, accountId: accountId ?? null, world: world ?? null, server: server ?? null, offline: offline ?? null }),
   instanceKill: (id: string) => call<void>("instance_kill", { id }),
   gameStates: () => call<T.GameState[]>("game_states"),
   instanceLogSession: (id: string) => call<T.LogLine[]>("instance_log_session", { id }),

@@ -115,23 +115,47 @@ pub async fn poll_device_code(client: &reqwest::Client, client_id: &str, device_
 }
 
 pub async fn refresh_msa(client: &reqwest::Client, client_id: &str, refresh_token: &str) -> AppResult<MsaTokens> {
-    let resp = client
-        .post(format!("{MSA_BASE}/token"))
-        .form(&[
-            ("grant_type", "refresh_token"),
+    refresh_msa_at(client, &format!("{MSA_BASE}/token"), client_id, refresh_token).await
+}
+
+pub async fn refresh_msa_at(client: &reqwest::Client, token_url: &str, client_id: &str, refresh_token: &str) -> AppResult<MsaTokens> {
+    token_post(
+        client,
+        token_url,
+        &[("grant_type", "refresh_token"), ("client_id", client_id), ("refresh_token", refresh_token), ("scope", MSA_SCOPE)],
+    )
+    .await
+}
+
+pub async fn exchange_code(client: &reqwest::Client, client_id: &str, code: &str, verifier: &str) -> AppResult<MsaTokens> {
+    exchange_code_at(client, &format!("{MSA_BASE}/token"), client_id, code, verifier).await
+}
+
+pub async fn exchange_code_at(client: &reqwest::Client, token_url: &str, client_id: &str, code: &str, verifier: &str) -> AppResult<MsaTokens> {
+    token_post(
+        client,
+        token_url,
+        &[
+            ("grant_type", "authorization_code"),
             ("client_id", client_id),
-            ("refresh_token", refresh_token),
+            ("code", code),
+            ("redirect_uri", super::pkce::REDIRECT_URI),
+            ("code_verifier", verifier),
             ("scope", MSA_SCOPE),
-        ])
-        .send()
-        .await?;
+        ],
+    )
+    .await
+}
+
+async fn token_post(client: &reqwest::Client, token_url: &str, form: &[(&str, &str)]) -> AppResult<MsaTokens> {
+    let resp = client.post(token_url).form(form).send().await?;
     let status = resp.status();
     let body = resp.bytes().await?;
     if status.is_success() {
         return parse_tokens(&body);
     }
     if status.is_server_error() {
-        return Err(AppError::msg(format!("Microsoft-Anmeldedienst nicht erreichbar (HTTP {status}) – bitte später erneut versuchen")));
+        return Err(AppError::Unreachable(format!("Microsoft-Anmeldedienst nicht erreichbar (HTTP {status}) – bitte später erneut versuchen")));
     }
     Err(oauth_error(status.as_u16(), &body))
 }
@@ -147,6 +171,13 @@ fn first_line(s: &str) -> &str {
     s.trim()
 }
 
+pub const REDIRECT_HINT: &str = "Das Anmeldefenster ist in der Azure-App noch nicht freigeschaltet: Unter „Authentication → Mobile and desktop applications“ muss die Redirect URI https://login.microsoftonline.com/common/oauth2/nativeclient aktiviert sein. Bis dahin klappt die Anmeldung über „Im Browser anmelden (Code)“.";
+
+pub fn redirect_uri_problem(error: &str, desc: &str) -> bool {
+    let d = desc.to_ascii_lowercase();
+    (error == "invalid_request" || error.is_empty()) && (d.contains("redirect_uri") || d.contains("redirect uri") || d.contains("reply address"))
+}
+
 /// OAuth-Fehler von login.microsoftonline.com in verständliche Meldungen übersetzen.
 pub fn oauth_error(status: u16, body: &[u8]) -> AppError {
     let Ok(e) = serde_json::from_slice::<OAuthError>(body) else {
@@ -154,6 +185,9 @@ pub fn oauth_error(status: u16, body: &[u8]) -> AppError {
     };
     let desc = first_line(&e.error_description);
     let has = |code: u64| e.error_codes.contains(&code) || desc.contains(&format!("AADSTS{code}:"));
+    if redirect_uri_problem(&e.error, desc) || has(50011) || has(500113) {
+        return AppError::NotConfigured(REDIRECT_HINT.into());
+    }
     match e.error.as_str() {
         "expired_token" => return AppError::Auth("Der Anmeldecode ist abgelaufen – bitte den Login erneut starten.".into()),
         "authorization_declined" | "access_denied" => return AppError::Auth("Die Anmeldung wurde im Browser abgelehnt.".into()),
@@ -235,7 +269,7 @@ pub async fn xbox_live(client: &reqwest::Client, msa_access_token: &str) -> AppR
     let (status, bytes) = post_json(client, XBL_AUTH, &body, None).await?;
     if !(200..300).contains(&status) {
         if status >= 500 {
-            return Err(AppError::msg(format!("Xbox Live nicht erreichbar (HTTP {status}) – bitte später erneut versuchen")));
+            return Err(AppError::Unreachable(format!("Xbox Live nicht erreichbar (HTTP {status}) – bitte später erneut versuchen")));
         }
         return Err(AppError::Auth(format!("Xbox-Live-Anmeldung fehlgeschlagen (HTTP {status})")));
     }
@@ -257,7 +291,7 @@ pub async fn xsts(client: &reqwest::Client, xbl_token: &str) -> AppResult<(Strin
     }
     if !(200..300).contains(&status) {
         if status >= 500 {
-            return Err(AppError::msg(format!("Xbox-Dienst nicht erreichbar (HTTP {status}) – bitte später erneut versuchen")));
+            return Err(AppError::Unreachable(format!("Xbox-Dienst nicht erreichbar (HTTP {status}) – bitte später erneut versuchen")));
         }
         return Err(AppError::Auth(format!("Xbox-Autorisierung fehlgeschlagen (HTTP {status})")));
     }
@@ -347,7 +381,7 @@ pub async fn minecraft_login(client: &reqwest::Client, msa_access_token: &str) -
             ))
         }
         429 => return Err(AppError::msg("Zu viele Anmeldeversuche bei Minecraft – bitte ein paar Minuten warten.")),
-        s if s >= 500 => return Err(AppError::msg(format!("Minecraft-Dienste nicht erreichbar (HTTP {s}) – bitte später erneut versuchen"))),
+        s if s >= 500 => return Err(AppError::Unreachable(format!("Minecraft-Dienste nicht erreichbar (HTTP {s}) – bitte später erneut versuchen"))),
         s => return Err(AppError::Auth(format!("Minecraft-Anmeldung fehlgeschlagen (HTTP {s})"))),
     }
     let login: McLoginResponse =
@@ -379,6 +413,7 @@ pub async fn fetch_profile(client: &reqwest::Client, mc_token: &str, owns_game: 
             }))
         }
         401 => return Err(AppError::Auth("Minecraft-Token ungültig".into())),
+        s if s >= 500 => return Err(AppError::Unreachable(format!("Minecraft-Profil konnte nicht geladen werden (HTTP {s})"))),
         s => return Err(AppError::msg(format!("Minecraft-Profil konnte nicht geladen werden (HTTP {s})"))),
     }
     let p: ProfileResponse = resp.json().await.map_err(|e| AppError::msg(format!("Ungültiges Minecraft-Profil: {e}")))?;
@@ -440,6 +475,39 @@ mod tests {
             e => panic!("{e:?}"),
         }
         assert!(matches!(oauth_error(502, b"<html>"), AppError::Msg(_)));
+    }
+
+    #[tokio::test]
+    async fn code_exchange_sends_verifier() {
+        let srv = super::super::fake_server::serve(200, r#"{"access_token":"at","refresh_token":"rt"}"#).await;
+        let t = exchange_code_at(&reqwest::Client::new(), &srv.url, "cid", "the-code", "the-verifier").await.unwrap();
+        assert_eq!((t.access_token.as_str(), t.refresh_token.as_deref()), ("at", Some("rt")));
+        let req = srv.requests.lock().concat();
+        let raw_body = req.split("\r\n\r\n").nth(1).unwrap_or_default();
+        let body: std::collections::HashMap<String, String> = url::form_urlencoded::parse(raw_body.as_bytes()).into_owned().collect();
+        assert_eq!(body["grant_type"], "authorization_code");
+        assert_eq!(body["code"], "the-code");
+        assert_eq!(body["code_verifier"], "the-verifier");
+        assert_eq!(body["redirect_uri"], crate::auth::pkce::REDIRECT_URI);
+        assert_eq!(body["client_id"], "cid");
+    }
+
+    #[tokio::test]
+    async fn code_exchange_redirect_not_enabled() {
+        let srv = super::super::fake_server::serve(
+            400,
+            r#"{"error":"invalid_request","error_description":"AADSTS50011: The redirect URI 'https://login.microsoftonline.com/common/oauth2/nativeclient' specified in the request does not match the redirect URIs configured for the application.","error_codes":[50011]}"#,
+        )
+        .await;
+        let e = exchange_code_at(&reqwest::Client::new(), &srv.url, "cid", "c", "v").await.unwrap_err();
+        assert!(matches!(e, AppError::NotConfigured(m) if m.contains("Mobile and desktop applications") && m.contains("(Code)")));
+    }
+
+    #[test]
+    fn redirect_uri_errors_point_to_fallback() {
+        let live = br#"{"error":"invalid_request","error_description":"The provided value for the input parameter 'redirect_uri' is not valid. The expected value is a URI which matches a redirect URI registered for this client application."}"#;
+        assert!(matches!(oauth_error(400, live), AppError::NotConfigured(m) if m == REDIRECT_HINT));
+        assert!(!redirect_uri_problem("invalid_grant", "redirect_uri"));
     }
 
     #[test]

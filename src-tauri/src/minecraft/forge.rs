@@ -90,9 +90,17 @@ async fn full_version(state: &AppState, spec: &ForgeSpec<'_>) -> String {
 }
 
 /// Erwartete Versions-ID (ohne Installer zu öffnen) – für den schnellen Pfad.
-fn marker_path(state: &AppState, spec: &ForgeSpec<'_>) -> PathBuf {
+fn marker_path(paths: &crate::paths::Paths, spec: &ForgeSpec<'_>) -> PathBuf {
     let name = if spec.neoforge { "neoforge" } else { "forge" };
-    state.paths.meta().join("loader-installs").join(format!("{name}-{}-{}.json", spec.mc, spec.version))
+    paths.meta().join("loader-installs").join(format!("{name}-{}-{}.json", spec.mc, spec.version))
+}
+
+pub fn installed_locally(paths: &crate::paths::Paths, spec: &ForgeSpec<'_>) -> Option<String> {
+    let b = std::fs::read(marker_path(paths, spec)).ok()?;
+    let m = serde_json::from_slice::<serde_json::Value>(&b).ok()?;
+    let id = m["id"].as_str()?.to_string();
+    let outputs_ok = m["files"].as_array().map(|a| a.iter().filter_map(|v| v.as_str()).all(|p| Path::new(p).is_file())).unwrap_or(true);
+    (paths.version_json(&id).is_file() && outputs_ok).then_some(id)
 }
 
 fn read_zip_entry(z: &mut zip::ZipArchive<std::fs::File>, name: &str) -> AppResult<Vec<u8>> {
@@ -165,21 +173,10 @@ pub async fn download_installer(state: &AppState, spec: &ForgeSpec<'_>, force: b
 /// Forge/NeoForge installieren. Gibt die Versions-ID des Profils zurück.
 /// Voraussetzung: Vanilla-JSON + Client-JAR sind vorhanden, `java` ist eine passende Java-Installation.
 pub async fn install(state: &AppState, spec: ForgeSpec<'_>, java: &Path, force: bool, sp: &SubProgress) -> AppResult<String> {
-    let marker = marker_path(state, &spec);
+    let marker = marker_path(&state.paths, &spec);
     if !force {
-        if let Ok(b) = std::fs::read(&marker) {
-            if let Ok(m) = serde_json::from_slice::<serde_json::Value>(&b) {
-                if let Some(id) = m["id"].as_str() {
-                    let id = id.to_string();
-                    let outputs_ok = m["files"]
-                        .as_array()
-                        .map(|a| a.iter().filter_map(|v| v.as_str()).all(|p| Path::new(p).is_file()))
-                        .unwrap_or(true);
-                    if state.paths.version_json(&id).is_file() && outputs_ok {
-                        return Ok(id);
-                    }
-                }
-            }
+        if let Some(id) = installed_locally(&state.paths, &spec) {
+            return Ok(id);
         }
     }
     let (installer, full) = download_installer(state, &spec, force, sp).await?;

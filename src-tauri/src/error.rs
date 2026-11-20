@@ -15,6 +15,10 @@ pub enum AppError {
     NotConfigured(String),
     #[error("Authentifizierung fehlgeschlagen: {0}")]
     Auth(String),
+    #[error("{0}")]
+    Unreachable(String),
+    #[error("{0}")]
+    OfflineAvailable(String),
     #[error("Netzwerkfehler: {0}")]
     Http(#[from] reqwest::Error),
     #[error("Dateifehler: {0}")]
@@ -37,6 +41,8 @@ impl AppError {
             AppError::Cancelled => "cancelled",
             AppError::NotConfigured(_) => "not_configured",
             AppError::Auth(_) => "auth",
+            AppError::Unreachable(_) => "network",
+            AppError::OfflineAvailable(_) => "offline_available",
             AppError::Http(_) => "network",
             AppError::Io(_) => "io",
             AppError::Json(_) => "json",

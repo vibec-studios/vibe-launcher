@@ -133,7 +133,7 @@ async fn mojang_join(state: &AppState, token: &str, uuid: &str, server_id: &str)
 /// Eine Control-Sitzung. `Ok(Some(text))` = endgültiger Fehler (kein neuer Versuch).
 async fn session(state: &AppState, id: &str, cancel: &CancellationToken) -> AppResult<Option<String>> {
     let server = state.servers.get(id)?;
-    let acc = match state.auth.launch_account(state, None).await {
+    let acc = match state.auth.online_account(state, None).await {
         Ok(a) => a,
         Err(e) => return Ok(Some(format!("Für den Vibe-Relay wird ein Minecraft-Account benötigt: {e}"))),
     };

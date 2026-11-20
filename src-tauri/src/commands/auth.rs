@@ -48,6 +48,13 @@ pub async fn auth_msa_wait(state: State<'_, AppState>) -> AppResult<Account> {
 }
 
 #[tauri::command]
+pub async fn auth_msa_window_login(state: State<'_, AppState>, title: Option<String>) -> AppResult<Account> {
+    let st = state.inner().clone();
+    let title = title.filter(|t| !t.trim().is_empty()).unwrap_or_else(|| "Microsoft".into());
+    st.auth.msa_window_login(&st, &title).await
+}
+
+#[tauri::command]
 pub async fn auth_msa_cancel(state: State<'_, AppState>) -> AppResult<()> {
     state.auth.msa_cancel();
     Ok(())

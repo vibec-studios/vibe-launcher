@@ -12,6 +12,8 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+mod local;
+
 /// Ergebnis der Installation – alles, was der Start braucht.
 #[derive(Debug, Clone)]
 pub struct Prepared {
@@ -84,11 +86,14 @@ fn library_items(r: &Resolved, libs_dir: &Path, env: &Env) -> Vec<DownloadItem> 
     items
 }
 
-/// Vanilla-Dateien: Client-JAR, Libraries, Logging-Config, Asset-Index + Objekte.
-async fn install_vanilla_files(state: &AppState, r: &Resolved, game_dir: &Path, force: bool, sp: &SubProgress) -> AppResult<(PathBuf, Option<PathBuf>)> {
-    let env = Env::current();
-    let paths = &state.paths;
-    let mut items = library_items(r, &paths.libraries(), &env);
+struct VanillaItems {
+    items: Vec<DownloadItem>,
+    log_config: Option<PathBuf>,
+    index_path: Option<PathBuf>,
+}
+
+fn vanilla_items(paths: &crate::paths::Paths, r: &Resolved, env: &Env) -> VanillaItems {
+    let mut items = library_items(r, &paths.libraries(), env);
     if let Some(c) = &r.client {
         items.push(DownloadItem::new(&c.url, paths.version_jar(&r.base_id)).sha1(c.sha1.clone()).size(c.size));
     }
@@ -102,54 +107,74 @@ async fn install_vanilla_files(state: &AppState, r: &Resolved, game_dir: &Path, 
     if let (Some(a), Some(p)) = (&r.asset_index, &index_path) {
         items.push(DownloadItem::new(&a.url, p).sha1(a.sha1.clone()).size(a.size));
     }
+    VanillaItems { items, log_config, index_path }
+}
+
+async fn read_asset_index(p: &Path) -> AppResult<AssetIndex> {
+    let bytes = tokio::fs::read(p).await?;
+    serde_json::from_slice(&bytes).ctx("Asset-Index ungültig")
+}
+
+fn asset_items(paths: &crate::paths::Paths, idx: &AssetIndex) -> Vec<DownloadItem> {
+    let objects = paths.assets().join("objects");
+    let mut items = Vec::with_capacity(idx.objects.len());
+    for o in idx.objects.values() {
+        if o.hash.len() < 2 {
+            continue;
+        }
+        let pre = &o.hash[..2];
+        items.push(
+            DownloadItem::new(format!("{}{pre}/{}", meta::RESOURCES_URL, o.hash), objects.join(pre).join(&o.hash))
+                .sha1(Some(o.hash.clone()))
+                .size(Some(o.size)),
+        );
+    }
+    items
+}
+
+async fn materialize_assets(paths: &crate::paths::Paths, index_id: &str, idx: &AssetIndex, game_dir: &Path) -> AppResult<PathBuf> {
+    if !(idx.is_virtual || idx.map_to_resources) {
+        return Ok(paths.assets());
+    }
+    let target = if idx.map_to_resources { game_dir.join("resources") } else { paths.assets().join("virtual").join(index_id) };
+    let objs = paths.assets().join("objects");
+    let t2 = target.clone();
+    let entries: Vec<(String, String, u64)> = idx.objects.iter().map(|(k, v)| (k.clone(), v.hash.clone(), v.size)).collect();
+    tokio::task::spawn_blocking(move || -> AppResult<()> {
+        for (name, hash, size) in entries {
+            let Some(out) = crate::util::safe_join(&t2, &name) else { continue };
+            if out.metadata().map(|m| m.len() == size).unwrap_or(false) {
+                continue;
+            }
+            if let Some(p) = out.parent() {
+                std::fs::create_dir_all(p)?;
+            }
+            if hash.len() >= 2 {
+                std::fs::copy(objs.join(&hash[..2]).join(&hash), &out)?;
+            }
+        }
+        Ok(())
+    })
+    .await??;
+    Ok(target)
+}
+
+/// Vanilla-Dateien: Client-JAR, Libraries, Logging-Config, Asset-Index + Objekte.
+async fn install_vanilla_files(state: &AppState, r: &Resolved, game_dir: &Path, force: bool, sp: &SubProgress) -> AppResult<(PathBuf, Option<PathBuf>)> {
+    let env = Env::current();
+    let paths = &state.paths;
+    let VanillaItems { items, log_config, index_path } = vanilla_items(paths, r, &env);
     sp.message("Spieldateien werden geladen …");
     download(state, items, force, &sp.sub(0.0, 0.35)).await?;
     sp.check()?;
 
-    // Assets
     let mut game_assets = paths.assets();
     if let (Some(a), Some(p)) = (&r.asset_index, &index_path) {
-        let bytes = tokio::fs::read(p).await?;
-        let idx: AssetIndex = serde_json::from_slice(&bytes).ctx("Asset-Index ungültig")?;
-        let objects = paths.assets().join("objects");
-        let mut items = Vec::with_capacity(idx.objects.len());
-        for o in idx.objects.values() {
-            if o.hash.len() < 2 {
-                continue;
-            }
-            let pre = &o.hash[..2];
-            items.push(
-                DownloadItem::new(format!("{}{pre}/{}", meta::RESOURCES_URL, o.hash), objects.join(pre).join(&o.hash))
-                    .sha1(Some(o.hash.clone()))
-                    .size(Some(o.size)),
-            );
-        }
+        let idx = read_asset_index(p).await?;
         sp.message("Assets werden geladen …");
-        download(state, items, force, &sp.sub(0.35, 0.95)).await?;
+        download(state, asset_items(paths, &idx), force, &sp.sub(0.35, 0.95)).await?;
         sp.check()?;
-        if idx.is_virtual || idx.map_to_resources {
-            let target = if idx.map_to_resources { game_dir.join("resources") } else { paths.assets().join("virtual").join(&a.id) };
-            let objs = objects.clone();
-            let t2 = target.clone();
-            let entries: Vec<(String, String, u64)> = idx.objects.iter().map(|(k, v)| (k.clone(), v.hash.clone(), v.size)).collect();
-            tokio::task::spawn_blocking(move || -> AppResult<()> {
-                for (name, hash, size) in entries {
-                    let Some(out) = crate::util::safe_join(&t2, &name) else { continue };
-                    if out.metadata().map(|m| m.len() == size).unwrap_or(false) {
-                        continue;
-                    }
-                    if let Some(p) = out.parent() {
-                        std::fs::create_dir_all(p)?;
-                    }
-                    if hash.len() >= 2 {
-                        std::fs::copy(objs.join(&hash[..2]).join(&hash), &out)?;
-                    }
-                }
-                Ok(())
-            })
-            .await??;
-            game_assets = target;
-        }
+        game_assets = materialize_assets(paths, &a.id, &idx, game_dir).await?;
     }
     sp.progress(1.0);
     Ok((game_assets, log_config))
@@ -232,8 +257,15 @@ fn link_client_jar(paths: &crate::paths::Paths, r: &Resolved) -> AppResult<PathB
     Ok(target)
 }
 
-async fn do_install(state: &AppState, id: &str, sp: &SubProgress, force: bool) -> AppResult<Prepared> {
+async fn do_install(state: &AppState, id: &str, sp: &SubProgress, force: bool, installed: bool) -> AppResult<Prepared> {
     let inst = state.instances.get(id)?;
+    if installed && !force {
+        match local::prepare(state, &inst, sp).await {
+            Ok(Some(p)) => return Ok(p),
+            Ok(None) => tracing::info!("Instanz {id}: lokale Dateien unvollständig, vollständige Prüfung"),
+            Err(e) => tracing::info!("Instanz {id}: Schnellstart nicht möglich ({e}), vollständige Prüfung"),
+        }
+    }
     let mc = inst.mc_version.trim().to_string();
     let game_dir = state.paths.game_dir(id);
     tokio::fs::create_dir_all(&game_dir).await?;
@@ -326,7 +358,7 @@ pub async fn install_instance_opts(state: &AppState, id: &str, sp: &SubProgress,
     };
     let before = state.instances.get(id)?.install_state;
     state.instances.modify(id, |i| i.install_state = InstallState::Installing)?;
-    let res = do_install(state, id, sp, force).await;
+    let res = do_install(state, id, sp, force, before == InstallState::Installed).await;
     drop(lock);
     match &res {
         Ok(p) => {
