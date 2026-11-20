@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Download, RotateCcw } from "lucide-react";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Button, Skeleton, cn } from "@/components/ui";
+import { Button, Skeleton, cn, pageWrap } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { formatCount } from "@/lib/format";
@@ -204,7 +204,7 @@ export function Browse({
 
   return (
     <div className="scroll min-h-0 flex-1">
-      <div ref={ref} className="@container mx-auto flex w-full max-w-[1320px] flex-col gap-9 px-6 pb-12 pt-2">
+      <div ref={ref} className={cn("@container flex flex-col gap-9 pb-12 pt-2", pageWrap)}>
         <section>
           <SectionHead
             title={t("discover.browse.trending")}

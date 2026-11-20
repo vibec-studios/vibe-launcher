@@ -1,5 +1,5 @@
 // Daten der Startseite: zuletzt gespielte Welten/Server über mehrere Instanzen, Update-Zähler, beliebte Modpacks.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
@@ -71,14 +71,13 @@ export function usePopularModpacks(limit = 8, source: "modrinth" | "curseforge" 
 
 /** Wie viele Spalten (mind. `min` px breit, `gap` Abstand) passen in den Container? Für Reihen ohne halbe Zeilen. */
 export function useFitColumns<T extends HTMLElement>(min: number, gap = 8) {
-  const ref = useRef<T>(null);
+  const [el, ref] = useState<T | null>(null);
   const [cols, setCols] = useState(4);
   useEffect(() => {
-    const el = ref.current;
     if (!el) return;
     const ro = new ResizeObserver(([e]) => setCols(Math.max(1, Math.floor((e.contentRect.width + gap) / (min + gap)))));
     ro.observe(el);
     return () => ro.disconnect();
-  }, [min, gap]);
+  }, [el, min, gap]);
   return [ref, cols] as const;
 }

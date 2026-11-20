@@ -157,7 +157,7 @@ function LastShot({ instance: i }: { instance: Instance }) {
         nav({ to: "/screenshots", search: { instance: i.id } });
       }}
       title={`${t("nav.screenshots")} · ${formatRelative(shot.taken_at)}`}
-      className="relative hidden aspect-video w-[300px] shrink-0 self-center overflow-hidden rounded-card transition-opacity duration-100 hover:opacity-85 @min-[760px]:block"
+      className="relative hidden aspect-video w-[300px] shrink-0 self-center overflow-hidden rounded-card transition-opacity duration-100 hover:opacity-85 @min-[760px]:block @min-[1100px]:w-[400px]"
     >
       <ShotThumb path={shot.path} className="absolute inset-0" />
     </button>

@@ -45,6 +45,8 @@ export default {
     "home.new.mods_1": "1 Inhalts-Update",
     "home.new.mods_n": "{n} Inhalts-Updates",
     "home.new.pack": "Modpack {v}",
+    "home.new.all": "Alle {n} anzeigen",
+    "home.new.less": "Weniger anzeigen",
 
     "home.discover": "Beliebte Modpacks",
     "home.discover.more": "Mehr entdecken",
@@ -141,6 +143,8 @@ export default {
     "home.new.mods_1": "1 content update",
     "home.new.mods_n": "{n} content updates",
     "home.new.pack": "Modpack {v}",
+    "home.new.all": "Show all {n}",
+    "home.new.less": "Show less",
 
     "home.discover": "Popular modpacks",
     "home.discover.more": "Discover more",

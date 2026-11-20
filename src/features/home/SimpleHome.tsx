@@ -15,9 +15,9 @@ import { openNewGame } from "@/components/instance/actions";
 import { MsaDialog } from "@/features/accounts/MsaDialog";
 import { GoalTiles } from "@/features/instances/simple/goals";
 import { useT } from "@/i18n";
-import { byRecent } from "./data";
+import { byRecent, useFitColumns } from "./data";
 
-const MORE = 6;
+const ROWS = 2;
 
 function Hero({ instance: i }: { instance: Instance }) {
   const t = useT();
@@ -96,12 +96,13 @@ export function SimpleHome() {
   const active = accounts?.find((a) => a.active) ?? accounts?.[0];
   const list = useMemo(() => byRecent(data ?? []), [data]);
   const hero = list[0];
-  const more = list.slice(1, 1 + MORE);
+  const [gridRef, cols] = useFitColumns<HTMLDivElement>(300);
+  const more = list.slice(1, 1 + cols * ROWS);
   const loading = isLoading && !data;
 
   return (
     <div className="scroll h-full">
-      <div className="mx-auto flex max-w-[1080px] flex-col gap-8 px-8 pb-12 pt-8">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-8 px-8 pb-12 pt-8">
         <header>
           <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">{active ? t("shome.hello_name", { name: active.username }) : t("shome.hello")}</h1>
           <p className="mt-1 text-[14.5px] text-muted">{hero ? t("shome.lead") : t("shome.lead_empty")}</p>
@@ -128,7 +129,7 @@ export function SimpleHome() {
                 <ChevronRight size={14} />
               </button>
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-2">
+            <div ref={gridRef} className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
               {more.map((i) => (
                 <GameRow key={i.id} instance={i} />
               ))}

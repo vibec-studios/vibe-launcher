@@ -4,7 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Play } from "lucide-react";
 import type { Instance } from "@/lib/types";
 import { formatRelative, instanceAccent } from "@/lib/format";
-import { ContextMenu, IconButton, Skeleton, Tooltip } from "@/components/ui";
+import { ContextMenu, IconButton, Skeleton, Tooltip, cn } from "@/components/ui";
 import { InstanceStatus, loaderLine } from "@/components/instance/InstanceCard";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { InstanceContextMenuContent } from "@/components/instance/InstanceMenu";
@@ -95,8 +95,9 @@ function RecentTile({ instance: i }: { instance: Instance }) {
 /** Eine Zeile Kacheln – so viele, wie hineinpassen (kein halbes Raster, keine verwaiste Kachel). */
 export function RecentInstances({ list, total }: { list: Instance[]; total: number }) {
   const t = useT();
-  const [ref, cols] = useFitColumns<HTMLDivElement>(190);
+  const [ref, fit] = useFitColumns<HTMLDivElement>(200);
   if (!list.length) return null;
+  const cols = Math.min(fit, list.length);
   return (
     <section>
       <SectionHead
@@ -179,21 +180,27 @@ function SpotRow({ spot }: { spot: Spot }) {
   );
 }
 
+const spotGrid1 = "grid-cols-1 [&>:nth-child(n+2)]:border-t";
+const spotGrid2 = "grid-cols-2 [&>:nth-child(n+3)]:border-t [&>:nth-child(odd)]:border-r [&>:last-child:nth-child(odd)]:col-span-2 [&>:last-child:nth-child(odd)]:border-r-0";
+
 export function JumpBackIn({ spots, loading }: { spots: Spot[]; loading: boolean }) {
   const t = useT();
+  const [ref, fit] = useFitColumns<HTMLDivElement>(560, 0);
+  const cols = Math.min(fit, 2, Math.max(spots.length, 1));
+  const shown = spots.slice(0, cols === 2 ? 8 : 5);
   if (!loading && !spots.length) return null;
   return (
     <section>
       <SectionHead title={t("home.jump")} />
-      <div className="@container overflow-hidden rounded-panel bg-surface">
+      <div ref={ref} className="@container overflow-hidden rounded-panel bg-surface">
         {loading && !spots.length ? (
           <div className="flex flex-col gap-px p-2">
             <Skeleton className="h-12" />
             <Skeleton className="h-12" />
           </div>
         ) : (
-          <div className="divide-y divide-line">
-            {spots.map((s) => (
+          <div className={cn("grid [&>*]:border-line", cols === 2 ? spotGrid2 : spotGrid1)}>
+            {shown.map((s) => (
               <SpotRow key={s.key} spot={s} />
             ))}
           </div>

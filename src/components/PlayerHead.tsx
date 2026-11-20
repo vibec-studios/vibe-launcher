@@ -30,7 +30,7 @@ export function PlayerHead({ uuid, name, size = 24 }: { uuid: string; name: stri
       backgroundPosition: `${-x * f}px ${-8 * f}px`,
     });
     return (
-      <span className="relative shrink-0 overflow-hidden [image-rendering:pixelated]" style={{ width: size, height: size }} aria-hidden>
+      <span className="relative block shrink-0 overflow-hidden [image-rendering:pixelated]" style={{ width: size, height: size }} aria-hidden>
         <span className="absolute inset-0 bg-no-repeat" style={layer(8)} />
         <span className="absolute inset-0 bg-no-repeat" style={layer(40)} />
         {/* unsichtbares Bild nur zur Fehlererkennung */}

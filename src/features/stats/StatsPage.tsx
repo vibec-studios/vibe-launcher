@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
 import type { PlaySession } from "@/lib/types";
 import { formatDuration, instanceAccent } from "@/lib/format";
-import { Button, EmptyState, ErrorState, Segmented, Skeleton, Tooltip, cn } from "@/components/ui";
+import { Button, EmptyState, ErrorState, Segmented, Skeleton, Tooltip, cn, pageWrap } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { useLang, useT } from "@/i18n";
 
@@ -138,7 +138,7 @@ export function StatsPage() {
 
   return (
     <div className="scroll h-full">
-      <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-6 pb-10 pt-4">
+      <div className={cn(pageWrap, "flex flex-col gap-4 pb-10 pt-4")}>
         {/* Werkzeugleiste: Zeitraum links, der genaue Zeitraum als Einordnung rechts */}
         <div className="flex h-8 items-center gap-3">
           <Segmented<Range>

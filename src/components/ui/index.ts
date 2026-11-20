@@ -12,3 +12,4 @@ export * from "./Spinner";
 export * from "./Settings";
 export * from "./Motion";
 export { cn } from "./cn";
+export { pageWrap } from "./page";

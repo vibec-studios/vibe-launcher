@@ -1,7 +1,7 @@
 // Rechte Spalte der Startseite: Vibe-Nachricht, Freunde (online/hostend) und „Neu für deine Instanzen“.
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowUpCircle, CheckCircle2, ChevronRight, Megaphone, Play } from "lucide-react";
+import { ArrowUpCircle, CheckCircle2, ChevronDown, ChevronRight, Megaphone, Play } from "lucide-react";
 import type { Instance } from "@/lib/types";
 import type { Friend, HostSession } from "@/lib/vibe-sdk";
 import { instanceAccent } from "@/lib/format";
@@ -15,7 +15,7 @@ import { Avatar, startDm } from "@/features/social/FriendsList";
 import { usePresenceText } from "@/features/social/presence";
 import { openInviteAccept } from "@/features/social/dialogs";
 import { useT } from "@/i18n";
-import { useUpdateCounts } from "./data";
+import { useUpdateEntries } from "./updates";
 import { MoreLink, SectionHead } from "./Recent";
 
 // ------------------------------------------------------------------ Vibe-Nachricht
@@ -131,21 +131,19 @@ function UpdateLine({ instance: i, mods }: { instance: Instance; mods: number })
 }
 
 /** Modpack-Instanzen werden einzeln geprüft (gecacht), Inhalts-Updates kommen gesammelt aus dem Backend. */
-export function UpdatesBlock({ instances }: { instances: Instance[] }) {
+export function UpdatesBlock({ instances, limit = 5 }: { instances: Instance[]; limit?: number }) {
   const t = useT();
-  const counts = useUpdateCounts();
-  const candidates = useMemo(
-    () => instances.filter((i) => i.install_state === "installed" && ((counts.data?.[i.id] ?? 0) > 0 || !!i.source?.project_id)),
-    [instances, counts.data],
-  );
+  const entries = useUpdateEntries(instances);
+  const [all, setAll] = useState(false);
   if (!instances.length) return null;
+  const shown = all ? entries : entries.slice(0, limit);
   return (
     <section>
       <SectionHead title={t("home.new")} />
       <div className="overflow-hidden rounded-panel bg-surface">
         <div className="py-1 empty:hidden [&:not(:empty)+*]:hidden">
-          {candidates.map((i) => (
-            <UpdateLine key={i.id} instance={i} mods={counts.data?.[i.id] ?? 0} />
+          {shown.map((e) => (
+            <UpdateLine key={e.instance.id} instance={e.instance} mods={e.mods} />
           ))}
         </div>
         {/* „Alles aktuell“ nur, wenn keine Zeile darüber etwas zeigt (Modpack-Prüfung läuft je Zeile) */}
@@ -156,6 +154,15 @@ export function UpdatesBlock({ instances }: { instances: Instance[] }) {
             <div className="text-[12px] text-muted">{t("home.new.none_text")}</div>
           </div>
         </div>
+        {entries.length > limit && (
+          <button
+            onClick={() => setAll(!all)}
+            className="group flex h-10 w-full items-center justify-center gap-1 border-t border-line text-meta font-medium text-muted transition-colors duration-100 hover:bg-white/[.03] hover:text-text"
+          >
+            {all ? t("home.new.less") : t("home.new.all", { n: entries.length })}
+            <ChevronDown size={14} className={cn("transition-transform duration-150", all && "rotate-180")} />
+          </button>
+        )}
       </div>
     </section>
   );
