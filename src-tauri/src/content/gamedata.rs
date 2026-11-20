@@ -12,6 +12,7 @@
 //!   gleicher Größe). Standard ist „nur Fehlendes hinzufügen“; überschrieben wird nur pro Eintrag ausdrücklich.
 //!   Welten werden einzeln angeboten und nie dateiweise gemischt (ganz hinzufügen oder ganz ersetzen).
 //! - Fremde Ordner werden nur gelesen.
+use super::srctree::{self, Overlay};
 use super::LauncherKind;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -258,22 +259,9 @@ fn file_state(src: &Path, sm: &std::fs::Metadata, dst: &Path, top: &str, prior: 
     }
 }
 
-/// Dateien unterhalb eines Ordners (ohne Symlink-Verfolgung, ohne Konten/Tokens).
+/// Dateien unterhalb eines Ordners (Junctions/Symlinks werden mit Zyklusschutz verfolgt, ohne Konten/Tokens).
 fn walk_files(dir: &Path, budget: &mut usize) -> Vec<(PathBuf, std::fs::Metadata)> {
-    let mut out = Vec::new();
-    let it = walkdir::WalkDir::new(dir).follow_links(false).min_depth(1).into_iter().filter_entry(|e| !skip_inner(&e.file_name().to_string_lossy()));
-    for e in it.flatten() {
-        if *budget == 0 {
-            break;
-        }
-        if e.file_type().is_file() {
-            if let Ok(m) = e.metadata() {
-                *budget -= 1;
-                out.push((e.into_path(), m));
-            }
-        }
-    }
-    out
+    srctree::walk(dir, budget).into_iter().map(|(abs, _, m)| (abs, m)).collect()
 }
 
 fn rel_str(p: &Path) -> String {
@@ -292,12 +280,9 @@ fn world_name(dir: &Path) -> Option<String> {
     data.get("LevelName").and_then(|v| v.as_str()).map(str::to_string).filter(|s| !s.trim().is_empty())
 }
 
-/// Top-Level-Einträge der Quelle, die nachimportiert werden können (sortiert).
-fn top_entries(src: &Path, kind: LauncherKind) -> Vec<(String, PathBuf)> {
-    let Ok(rd) = std::fs::read_dir(src) else { return vec![] };
-    let mut v: Vec<(String, PathBuf)> = rd.flatten().map(|e| (e.file_name().to_string_lossy().to_string(), e.path())).filter(|(n, _)| !skip_top(kind, Purpose::Reimport, n)).collect();
-    v.sort_by_key(|(n, _)| n.to_lowercase());
-    v
+/// Top-Level-Einträge der Quelle (samt Overlays), die nachimportiert werden können (sortiert).
+fn top_entries(src: &Path, ov: &[Overlay], kind: LauncherKind) -> Vec<(String, PathBuf)> {
+    srctree::tops(src, ov).into_iter().filter(|n| !skip_top(kind, Purpose::Reimport, n)).filter_map(|n| Some((n.clone(), srctree::locate(src, Path::new(&n), ov)?))).collect()
 }
 
 fn world_entry(src_world: &Path, dst_world: &Path, rel: String, prior: &Prior, budget: &mut usize) -> Option<DataEntry> {
@@ -338,20 +323,21 @@ fn world_entry(src_world: &Path, dst_world: &Path, rel: String, prior: &Prior, b
 }
 
 /// Vergleicht den Spielordner der Quelle mit dem der Vibe-Instanz. Gleiche Einträge fehlen in der Liste.
-pub fn scan(src: &Path, dst: &Path, kind: LauncherKind, prior: &Prior) -> Vec<DataEntry> {
+pub fn scan(src: &Path, ov: &[Overlay], dst: &Path, kind: LauncherKind, prior: &Prior) -> Vec<DataEntry> {
     let mut out = Vec::new();
     let mut worlds = Vec::new();
     let mut budget = MAX_FILES;
-    for (name, path) in top_entries(src, kind) {
+    for (name, path) in top_entries(src, ov, kind) {
         let Ok(meta) = std::fs::metadata(&path) else { continue };
         let always = ALWAYS_COMPARE.iter().any(|a| a.eq_ignore_ascii_case(&name));
         if meta.is_dir() && name.eq_ignore_ascii_case("saves") {
             // Welten einzeln (Ordner ohne level.dat werden ignoriert)
-            let Ok(rd) = std::fs::read_dir(&path) else { continue };
-            let mut dirs: Vec<PathBuf> = rd.flatten().map(|e| e.path()).filter(|p| p.is_dir() && is_world(p)).collect();
-            dirs.sort();
-            for w in dirs {
-                let folder = w.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+            let dirs: Vec<(String, PathBuf)> = srctree::children(src, Path::new(&name), ov)
+                .into_iter()
+                .filter_map(|f| Some((f.clone(), srctree::locate(src, &Path::new(&name).join(&f), ov)?)))
+                .filter(|(_, p)| p.is_dir() && is_world(p))
+                .collect();
+            for (folder, w) in dirs {
                 if let Some(e) = world_entry(&w, &dst.join(&name).join(&folder), format!("{name}/{folder}"), prior, &mut budget) {
                     worlds.push(e);
                 }
@@ -389,7 +375,7 @@ pub fn scan(src: &Path, dst: &Path, kind: LauncherKind, prior: &Prior) -> Vec<Da
         if !meta.is_dir() {
             continue;
         }
-        let files = walk_files(&path, &mut budget);
+        let files: Vec<srctree::Entry> = srctree::files(src, Path::new(&name), ov, &mut budget);
         if files.is_empty() {
             continue;
         }
@@ -407,9 +393,9 @@ pub fn scan(src: &Path, dst: &Path, kind: LauncherKind, prior: &Prior) -> Vec<Da
             default_on: false,
         };
         let mut deleted = (0u32, 0u64);
-        for (f, m) in &files {
+        for fe in &files {
+            let (f, m, rel) = (&fe.abs, &fe.meta, &fe.rel);
             e.size += m.len();
-            let Ok(rel) = f.strip_prefix(src) else { continue };
             match file_state(f, m, &dst.join(rel), &name, prior) {
                 FileState::Missing => {
                     e.missing_files += 1;
@@ -439,7 +425,7 @@ pub fn scan(src: &Path, dst: &Path, kind: LauncherKind, prior: &Prior) -> Vec<Da
             e.status = if dst_exists { DataStatus::Partial } else { DataStatus::Missing };
             e.default_on = true;
         } else if e.overwrite_files > 0 {
-            e.status = if always && !has_newer(&files, src, dst, &name, prior) { DataStatus::Changed } else { DataStatus::Newer };
+            e.status = if always && !has_newer(&files, dst, &name, prior) { DataStatus::Changed } else { DataStatus::Newer };
         } else {
             continue;
         }
@@ -449,8 +435,8 @@ pub fn scan(src: &Path, dst: &Path, kind: LauncherKind, prior: &Prior) -> Vec<Da
     out
 }
 
-fn has_newer(files: &[(PathBuf, std::fs::Metadata)], src: &Path, dst: &Path, top: &str, prior: &Prior) -> bool {
-    files.iter().any(|(f, m)| f.strip_prefix(src).is_ok_and(|rel| file_state(f, m, &dst.join(rel), top, prior) == FileState::Newer))
+fn has_newer(files: &[srctree::Entry], dst: &Path, top: &str, prior: &Prior) -> bool {
+    files.iter().any(|e| file_state(&e.abs, &e.meta, &dst.join(&e.rel), top, prior) == FileState::Newer)
 }
 
 // ------------------------------------------------------------------ Nachkopieren
@@ -491,8 +477,8 @@ impl CopyPlan {
 
 /// Gewählte Einträge in Kopieraktionen übersetzen (frisch gegen den aktuellen Stand geprüft).
 /// Nur Einträge, die [`scan`] anbietet; Pfade außerhalb des Spielordners werden verworfen.
-pub fn plan(src: &Path, dst: &Path, kind: LauncherKind, prior: &Prior, picks: &[DataPick]) -> CopyPlan {
-    let offered: Vec<DataEntry> = scan(src, dst, kind, prior);
+pub fn plan(src: &Path, ov: &[Overlay], dst: &Path, kind: LauncherKind, prior: &Prior, picks: &[DataPick]) -> CopyPlan {
+    let offered: Vec<DataEntry> = scan(src, ov, dst, kind, prior);
     let mut plan = CopyPlan::default();
     let mut seen = HashSet::new();
     let mut budget = MAX_FILES;
@@ -502,7 +488,6 @@ pub fn plan(src: &Path, dst: &Path, kind: LauncherKind, prior: &Prior, picks: &[
             continue;
         }
         let rel = PathBuf::from(&e.path);
-        let from = src.join(&rel);
         let top = rel.components().next().map(|c| c.as_os_str().to_string_lossy().to_string()).unwrap_or_default();
         let always = ALWAYS_COMPARE.iter().any(|a| a.eq_ignore_ascii_case(&top));
         match e.kind {
@@ -514,22 +499,15 @@ pub fn plan(src: &Path, dst: &Path, kind: LauncherKind, prior: &Prior, picks: &[
                 if exists {
                     plan.replace_worlds.push(rel.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default());
                 }
-                for (f, m) in walk_files(&from, &mut budget) {
-                    if let Ok(r) = f.strip_prefix(src) {
-                        plan.ops.push(CopyOp { from: f.clone(), rel: r.to_path_buf(), size: m.len(), replace: false });
-                    }
+                for f in srctree::files(src, &rel, ov, &mut budget) {
+                    plan.ops.push(CopyOp { size: f.meta.len(), from: f.abs, rel: f.rel, replace: false });
                 }
             }
             DataKind::File | DataKind::Dir => {
-                let files: Vec<(PathBuf, std::fs::Metadata)> = if e.kind == DataKind::File {
-                    std::fs::metadata(&from).map(|m| vec![(from.clone(), m)]).unwrap_or_default()
-                } else {
-                    walk_files(&from, &mut budget)
-                };
                 let restore = e.status == DataStatus::Removed;
-                for (f, m) in files {
-                    let Ok(r) = f.strip_prefix(src) else { continue };
-                    let st = file_state(&f, &m, &dst.join(r), &top, prior);
+                for fe in srctree::files(src, &rel, ov, &mut budget) {
+                    let (f, m, r) = (fe.abs, fe.meta, fe.rel);
+                    let st = file_state(&f, &m, &dst.join(&r), &top, prior);
                     let (take, replace) = match st {
                         FileState::Missing => (true, false),
                         FileState::Deleted => (restore, false),
@@ -538,7 +516,7 @@ pub fn plan(src: &Path, dst: &Path, kind: LauncherKind, prior: &Prior, picks: &[
                         FileState::Same => (false, false),
                     };
                     if take {
-                        plan.ops.push(CopyOp { from: f.clone(), rel: r.to_path_buf(), size: m.len(), replace });
+                        plan.ops.push(CopyOp { from: f, rel: r, size: m.len(), replace });
                     }
                 }
             }
@@ -679,7 +657,7 @@ mod tests {
         set_mtime(&src.join("saves/Alt/level.dat"), t0 + 3_600_000);
         // Import lange vor dem Anlegen der Fixtures -> alles in der Quelle ist „neu seit dem Import“
         let prior = Prior { launcher: Some(LauncherKind::Norisk), imported_at: 1_000, copied: None };
-        let v = scan(&src, &dst, LauncherKind::Norisk, &prior);
+        let v = scan(&src, &[], &dst, LauncherKind::Norisk, &prior);
         let x = by(&v, "xaero").unwrap();
         assert_eq!((x.status, x.kind, x.missing_files, x.default_on), (DataStatus::Missing, DataKind::Dir, 1, true));
         assert_eq!(by(&v, "journeymap").unwrap().status, DataStatus::Missing);
@@ -698,7 +676,7 @@ mod tests {
 
         // Standard übernehmen: nur Fehlendes, keine Welt ersetzt, keine Tokens
         let picks: Vec<DataPick> = v.iter().filter(|e| e.default_on).map(|e| DataPick { path: e.path.clone(), overwrite: false }).collect();
-        let p = plan(&src, &dst, LauncherKind::Norisk, &prior, &picks);
+        let p = plan(&src, &[], &dst, LauncherKind::Norisk, &prior, &picks);
         assert!(p.replace_worlds.is_empty() && p.ops.iter().all(|o| !o.replace));
         let keep = root.join("keep");
         execute(&p, &dst, &keep, |_| {}, || Ok(())).unwrap();
@@ -708,10 +686,10 @@ mod tests {
         assert!(!dst.join("essential/microsoft_accounts.json").exists());
         assert!(!dst.join("mods").exists() && !dst.join("logs").exists());
         // Danach: nur noch die neuere Welt
-        let v2 = scan(&src, &dst, LauncherKind::Norisk, &prior);
+        let v2 = scan(&src, &[], &dst, LauncherKind::Norisk, &prior);
         assert_eq!(v2.iter().map(|e| e.path.as_str()).collect::<Vec<_>>(), vec!["saves/Alt"]);
         // Ausdrücklich ersetzen
-        let p = plan(&src, &dst, LauncherKind::Norisk, &prior, &[DataPick { path: "saves/Alt".into(), overwrite: true }]);
+        let p = plan(&src, &[], &dst, LauncherKind::Norisk, &prior, &[DataPick { path: "saves/Alt".into(), overwrite: true }]);
         assert_eq!(p.replace_worlds, vec!["Alt".to_string()]);
         execute(&p, &dst, &keep, |_| {}, || Ok(())).unwrap();
         assert_eq!(std::fs::read_to_string(dst.join("saves/Alt/level.dat")).unwrap(), "lvl2");
@@ -740,7 +718,7 @@ mod tests {
         set_mtime(&dst.join("config/jei.toml"), old + 100_000);
         // Alles existierte schon beim Import (Erstellzeit < imported_at), screenshots wurde übernommen
         let prior = Prior { launcher: Some(LauncherKind::Prism), imported_at: i64::MAX / 2, copied: Some(vec!["screenshots".into(), "schematics".into(), "config".into(), "servers.dat".into()]) };
-        let v = scan(&src, &dst, LauncherKind::Prism, &prior);
+        let v = scan(&src, &[], &dst, LauncherKind::Prism, &prior);
         let s = by(&v, "screenshots").unwrap();
         assert_eq!((s.status, s.default_on), (DataStatus::Removed, false), "in Vibe gelöscht");
         let sc = by(&v, "schematics").unwrap();
@@ -752,8 +730,8 @@ mod tests {
         assert!(by(&v, "servers.dat").is_none());
 
         // Ohne overwrite passiert bei „neuer“ nichts
-        assert!(plan(&src, &dst, LauncherKind::Prism, &prior, &[DataPick { path: "schematics".into(), overwrite: false }]).is_empty());
-        let p = plan(&src, &dst, LauncherKind::Prism, &prior, &[DataPick { path: "schematics".into(), overwrite: true }, DataPick { path: "screenshots".into(), overwrite: false }]);
+        assert!(plan(&src, &[], &dst, LauncherKind::Prism, &prior, &[DataPick { path: "schematics".into(), overwrite: false }]).is_empty());
+        let p = plan(&src, &[], &dst, LauncherKind::Prism, &prior, &[DataPick { path: "schematics".into(), overwrite: true }, DataPick { path: "screenshots".into(), overwrite: false }]);
         assert_eq!(p.ops.len(), 2);
         assert!(!p.touches_snapshot());
         let keep = root.join("keep");
@@ -762,11 +740,11 @@ mod tests {
         assert_eq!(std::fs::read_to_string(keep.join("schematics/haus.litematic")).unwrap(), "alt", "alte Fassung gesichert");
         assert!(dst.join("screenshots/a.png").is_file(), "ausdrücklich wiederhergestellt");
         // config überschreiben -> Snapshot-Bereich (keine Extra-Sicherung)
-        let p = plan(&src, &dst, LauncherKind::Prism, &prior, &[DataPick { path: "config".into(), overwrite: true }]);
+        let p = plan(&src, &[], &dst, LauncherKind::Prism, &prior, &[DataPick { path: "config".into(), overwrite: true }]);
         assert!(p.touches_snapshot());
         assert_eq!(p.ops.len(), 1);
         // Unbekannte/manipulierte Pfade werden ignoriert
-        assert!(plan(&src, &dst, LauncherKind::Prism, &prior, &[DataPick { path: "../x".into(), overwrite: true }]).is_empty());
+        assert!(plan(&src, &[], &dst, LauncherKind::Prism, &prior, &[DataPick { path: "../x".into(), overwrite: true }]).is_empty());
         std::fs::remove_dir_all(&root).ok();
     }
 
@@ -778,7 +756,7 @@ mod tests {
         std::fs::create_dir_all(dst.join("screenshots")).unwrap();
         // Import vor langer Zeit -> Datei ist neu
         let prior = Prior { launcher: Some(LauncherKind::Modrinth), imported_at: 1_000, copied: Some(vec!["screenshots".into()]) };
-        let v = scan(&src, &dst, LauncherKind::Modrinth, &prior);
+        let v = scan(&src, &[], &dst, LauncherKind::Modrinth, &prior);
         let s = by(&v, "screenshots").unwrap();
         assert_eq!((s.status, s.missing_files, s.default_on), (DataStatus::Partial, 1, true));
         std::fs::remove_dir_all(&root).ok();

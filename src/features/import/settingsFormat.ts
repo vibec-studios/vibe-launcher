@@ -135,6 +135,10 @@ export function formatValue(key: ExtSettingKey | ExtExtraKey, v: unknown): strin
       return formatDuration(Number(o.secs ?? 0));
     case "icon":
       return v ? t("ext.set.key.icon") : t("ext.set.default");
+    case "mods": {
+      const list = Array.isArray(v) ? (v as string[]) : [];
+      return list.length ? short(t("ext.set.mods_n", { n: list.length, list: list.join(", ") }), 80) : t("ext.set.missing");
+    }
     case "pack": {
       const p = v as PackSource | null;
       if (!p) return t("ext.set.none");

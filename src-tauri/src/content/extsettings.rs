@@ -22,8 +22,8 @@ use std::path::Path;
 
 /// Bereiche, die beim Import (und nachträglich) gewählt werden können.
 pub const KEYS: [&str; 8] = ["memory", "java", "jvm_args", "env", "window", "hooks", "notes", "group"];
-/// Nur nachträglich (beim Import immer übernommen): Spielzeit, Icon, Modpack-Herkunft.
-pub const EXTRA_KEYS: [&str; 3] = ["playtime", "icon", "pack"];
+/// Nur nachträglich (beim Import immer übernommen): Spielzeit, Icon, Modpack-Herkunft, fehlende Mods (NoRisk).
+pub const EXTRA_KEYS: [&str; 4] = ["playtime", "icon", "pack", "mods"];
 
 /// Start-Befehle laufen auf dem Rechner: nie automatisch übernehmen.
 pub fn default_on(key: &str) -> bool {
@@ -714,22 +714,40 @@ pub fn atlauncher_pack(l: &Value) -> Option<PackSource> {
 
 // ------------------------------------------------------------------ NoRisk Client
 
-/// Profil-`settings` (JSON) des NoRisk-Launchers.
-pub fn norisk(settings: &Value, group: Option<String>, description: Option<String>) -> ExtSettings {
+/// Profil-`settings` (JSON) des NoRisk-Launchers. Standard-Profile (`is_standard_version`) nutzen RAM und
+/// JVM-Argumente aus `launcher_config.json` (wie der NoRisk-Launcher beim Start), alle Profile die globalen Hooks.
+pub fn norisk(settings: &Value, group: Option<String>, description: Option<String>, is_standard: bool, global: &super::norisk::global::NrGlobal) -> ExtSettings {
     let mut s = ExtSettings::default();
-    let mem = settings.get("memory");
-    s.min_memory_mb = num(mem.and_then(|m| m.get("min")));
-    s.max_memory_mb = num(mem.and_then(|m| m.get("max")));
+    let mem = settings.get("memory").filter(|m| m.is_object());
+    let gmem = Some(&global.memory).filter(|m| m.is_object());
+    match (is_standard, mem, gmem) {
+        (true, _, Some(g)) | (false, None, Some(g)) => {
+            s.min_memory_mb = num(g.get("min"));
+            s.max_memory_mb = num(g.get("max"));
+            s.inherit("memory");
+        }
+        (_, m, _) => {
+            s.min_memory_mb = num(m.and_then(|m| m.get("min")));
+            s.max_memory_mb = num(m.and_then(|m| m.get("max")));
+        }
+    }
     if boolean(settings.get("use_custom_java_path")) == Some(true) {
         s.java_path = text(settings.get("java_path"));
     }
-    s.jvm_args = text(settings.get("custom_jvm_args"));
+    if is_standard {
+        s.jvm_args = global.jvm_args.clone();
+        s.inherit("jvm_args");
+    } else {
+        s.jvm_args = text(settings.get("custom_jvm_args"));
+    }
     if let Some(r) = settings.get("resolution").filter(|r| r.is_object()) {
         (s.width, s.height) = (num(r.get("width")), num(r.get("height")));
     }
     if boolean(settings.get("fullscreen")) == Some(true) {
         s.fullscreen = Some(true);
     }
+    (s.pre_launch, s.wrapper, s.post_exit) = (global.pre_launch.clone(), global.wrapper.clone(), global.post_exit.clone());
+    s.inherit("hooks");
     s.notes = description;
     s.group = group;
     s.sanitize()
@@ -775,8 +793,14 @@ async fn build_offer(state: &AppState, inst: &Instance, mark: &external::Externa
     let (s, note) = prepare(&vibe, &f.settings, &inst.mc_version, true).await;
     let mut changes = diff(inst, &s);
     changes.extend(extra_changes(inst, f));
-    let (src, dst, prior) = (f.game_dir.clone(), state.paths.game_dir(&inst.id), mark.prior());
-    let data = tokio::task::spawn_blocking(move || gamedata::scan(&src, &dst, kind, &prior)).await.unwrap_or_default();
+    if let Some(plan) = f.norisk.as_ref() {
+        let m = super::norisk::mods::missing(state, inst, plan).await;
+        if !m.is_empty() {
+            changes.push(Change { key: "mods".into(), old: json!([]), new: json!(m.names()), default_on: true, inherited: false });
+        }
+    }
+    let (src, ov, dst, prior) = (f.game_dir.clone(), f.overlays.clone(), state.paths.game_dir(&inst.id), mark.prior());
+    let data = tokio::task::spawn_blocking(move || gamedata::scan(&src, &ov, &dst, kind, &prior)).await.unwrap_or_default();
     SettingsOffer {
         instance_id: inst.id.clone(),
         instance_name: inst.name.clone(),
@@ -866,9 +890,15 @@ pub async fn apply_offer(state: &AppState, instance_id: &str, keys: Vec<String>,
             updated = state.instances.get(instance_id)?;
         }
     }
+    if keys.contains("mods") {
+        if let Some(plan) = f.norisk.clone() {
+            let (st, id) = (state.clone(), instance_id.to_string());
+            state.tasks.spawn("import", "Mods aus NoRisk Client übernehmen".to_string(), Some(id.clone()), move |task| super::norisk::mods::run_missing(st, task, id, plan));
+        }
+    }
     if !data.is_empty() {
-        let (src, dst, kind, prior) = (f.game_dir.clone(), state.paths.game_dir(instance_id), mark.launcher, mark.prior());
-        let plan = tokio::task::spawn_blocking(move || gamedata::plan(&src, &dst, kind, &prior, &data)).await?;
+        let (src, ov, dst, kind, prior) = (f.game_dir.clone(), f.overlays.clone(), state.paths.game_dir(instance_id), mark.launcher, mark.prior());
+        let plan = tokio::task::spawn_blocking(move || gamedata::plan(&src, &ov, &dst, kind, &prior, &data)).await?;
         if !plan.is_empty() {
             let launcher = external::launcher_name(kind);
             let (st, id) = (state.clone(), instance_id.to_string());
@@ -1058,13 +1088,32 @@ mod tests {
 
     #[test]
     fn norisk_settings() {
+        use super::super::norisk::global::NrGlobal;
+        let none = NrGlobal::default();
         let s = norisk(&json!({"memory": {"min": 1024, "max": 3584}, "use_custom_java_path": false, "java_path": "x", "custom_jvm_args": "-Dfoo",
-            "resolution": {"width": 1280, "height": 720}, "fullscreen": false}), Some("NRC".into()), Some("Beschreibung".into()));
+            "resolution": {"width": 1280, "height": 720}, "fullscreen": false}), Some("NRC".into()), Some("Beschreibung".into()), false, &none);
         assert_eq!((s.min_memory_mb, s.max_memory_mb), (Some(1024), Some(3584)));
         assert!(s.java_path.is_none());
         assert_eq!(s.jvm_args.as_deref(), Some("-Dfoo"));
         assert_eq!((s.width, s.height, s.fullscreen), (Some(1280), Some(720), None));
         assert_eq!(s.notes.as_deref(), Some("Beschreibung"));
+        assert!(s.inherited.is_empty());
+        let g = NrGlobal { memory: json!({"min": 2048, "max": 8192}), jvm_args: Some("-XX:+UseZGC".into()), wrapper: Some("prime-run".into()), ..Default::default() };
+        let std = norisk(&json!({"memory": {"min": 1024, "max": 3584}, "custom_jvm_args": "-Dfoo"}), None, None, true, &g);
+        assert_eq!((std.min_memory_mb, std.max_memory_mb), (Some(2048), Some(8192)));
+        assert_eq!(std.jvm_args.as_deref(), Some("-XX:+UseZGC"));
+        assert_eq!(std.wrapper.as_deref(), Some("prime-run"));
+        for k in ["memory", "jvm_args", "hooks"] {
+            assert!(std.inherited.contains(&k.to_string()), "{k}");
+        }
+        let own = norisk(&json!({"memory": {"min": 1024, "max": 3584}}), None, None, false, &g);
+        assert_eq!(own.max_memory_mb, Some(3584));
+        assert!(own.jvm_args.is_none(), "eigene Profile nutzen keine globalen JVM-Argumente");
+        assert_eq!(own.inherited, vec!["hooks".to_string()]);
+        assert!(!diff(&inst(), &own).iter().find(|c| c.key == "hooks").unwrap().default_on);
+        let missing = norisk(&json!({}), None, None, false, &g);
+        assert_eq!(missing.max_memory_mb, Some(8192));
+        assert!(missing.inherited.contains(&"memory".to_string()));
     }
 
     #[test]

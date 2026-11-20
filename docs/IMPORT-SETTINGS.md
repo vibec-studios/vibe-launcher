@@ -49,12 +49,16 @@ Je Launcher (`gamedata::launcher_skip`):
 | Modrinth App | `<profiles>/<profil>` (bzw. `custom_dir`) | ganzer Spielordner inkl. `mods/` | `profile.json` (sehr alte App) |
 | CurseForge | `Instances/<instanz>` | ganzer Instanzordner inkl. `mods/` und aller Zusatzordner | `minecraftinstance.json`, `.curseclient` |
 | ATLauncher | `instances/<instanz>` | ganzer Instanzordner inkl. `mods/`; `disabledmods/*.jar` → `mods/<name>.disabled` | `instance.json`, `instance.png`, `disabledmods/` (als Ordner), `jarmods/` |
-| NoRisk Client | Profilordner bzw. geteilter Gruppenordner | ganzer Spielordner; Mods über Modrinth + passende lose JARs | `NoRiskClient/`, `optionsNRC.json`, `mods/`, `custom_mods/`, `backups/` |
+| NoRisk Client | Profilordner bzw. geteilter Gruppenordner, dazu Sync-Pack-Ordner | ganzer Spielordner samt verlinkter Sync-Pack-Ordner; Mods über Modrinth/CurseForge + passende lose JARs | `NoRiskClient/`, `optionsNRC.json`, `mods/`, `custom_mods/`, `backups/` |
 | Ordner | `<ordner>/.minecraft`, sonst der Ordner | ganzer Spielordner inkl. `mods/` | – |
 
 Spieldaten außerhalb des Spielordners legen diese Launcher nicht ab (Prism-Icons sowie Modrinth-/NoRisk-Datenbanken
-sind Metadaten und werden nur gelesen). Welche Einträge der obersten Ebene ein Import übernommen hat, steht seitdem
-in `external.json` (`copied`).
+sind Metadaten und werden nur gelesen). Ausnahme NoRisk: Ordner und Dateien aus Sync Packs (siehe unten) werden wie
+Teile des Spielordners behandelt (`content::srctree`, „Overlays“). Welche Einträge der obersten Ebene ein Import
+übernommen hat, steht seitdem in `external.json` (`copied`).
+
+Junctions und Symlinks im Spielordner werden auf jeder Ebene verfolgt (früher nur auf der obersten); Zyklen (ein Link
+auf einen übergeordneten Ordner) werden erkannt und übersprungen.
 
 ## Quellen je Launcher
 
@@ -124,19 +128,43 @@ Instanz: `<wurzel>/instances/<instanz>/instance.json` (`launcher.*`), Standards:
 
 ### NoRisk Client
 
-Datenbank `meta/app.db` (Kopie), Tabelle `profiles`, Spalte `settings` (JSON); ältere Versionen `profiles.json`.
+Datenbank `meta/app.db` (Kopie; Spalten per `PRAGMA table_info`, ältere Schemata gehen), Tabelle `profiles`,
+Spalte `settings` (JSON); ältere Versionen `profiles.json`. Aus `launcher_config.json` werden nur
+`custom_game_directory`, `global_memory_settings`, `global_custom_jvm_args` und `hooks` gelesen.
 `accounts.json` wird nie geöffnet.
 
 | Bereich | Quelle |
 |---|---|
-| RAM | `settings.memory.min`, `settings.memory.max` |
+| RAM | Standard-Profile (`is_standard_version`): `global_memory_settings` (geerbt); sonst `settings.memory` (fehlt sie: global, geerbt) |
 | Java | `settings.java_path`, nur wenn `settings.use_custom_java_path` |
-| JVM-Argumente | `settings.custom_jvm_args` |
+| JVM-Argumente | Standard-Profile: `global_custom_jvm_args` (geerbt); sonst `settings.custom_jvm_args` (wie der NoRisk-Launcher: kein Rückfall auf die globalen) |
+| Start-Befehle | `hooks.pre_launch`, `hooks.wrapper`, `hooks.post_exit` (global, gelten für alle Profile; nie vorausgewählt) |
 | Fenster | `settings.resolution.width/height`, `settings.fullscreen` |
 | Notizen | `description` |
 | Gruppe | `group_name` |
 | Spielzeit / zuletzt | `playtime_seconds`, `last_played` |
-| Icon | `banner` (nur `https://`-URL) |
+| Icon | `banner.source`: `url` (nur `https://`), `relativePath` (zur NoRisk-Wurzel), `relativeProfile` (zum Spielordner), `absolutePath`, `base64`; Dateien nur innerhalb der NoRisk-Ordner (Wurzel, `custom_game_directory`, Profilordner), höchstens 4 MB |
+| Modpack-Herkunft | `modpack_info.source` (`modrinth`: `project_id`/`version_id`, `curse_forge`: `project_id`/`file_id`); sonst „NoRisk Client“ (lokal) |
+
+Mods: `profile_mods` mit `source_type` `modrinth` bzw. `curse_forge` (über Modrinth bzw. CurseForge; gesperrte
+CurseForge-Dateien landen in `missing.json` und werden im Download-Ordner erwartet), Mods des gewählten NoRisk-Packs
+(Modrinth), Maven-/eingebettete Mods werden ausgelassen. Lose JARs aus `mods/`, `custom_mods/`,
+`mods/nrc-<mc>-<loader>` und `mods/nrc-<mc>-<loader>-<xxxx>` (Mod-Ordner geteilter Profile) kommen mit, wenn sie zu
+Version/Loader passen und keine NoRisk-Mods sind; Dateien, die schon als Modrinth-/CurseForge-Mod der Profilliste
+bekannt sind, und JARs mit einer bereits installierten Mod-ID werden übersprungen.
+
+Sync Packs (Tabellen `sync_packs`, `sync_pack_targets`, `sync_pack_mods`, `sync_pack_mod_resolutions`,
+`profile_sync_packs`, `profile_sync_mod_exclusions`; Daten unter `meta/sync_packs/<pack>/master|mods` bzw.
+`external_path`). Berücksichtigt werden die abonnierten, aktiven Packs mit aktiven Zielen in Abo-Reihenfolge (späteres
+Pack gewinnt bei gleichem Pfad, Ziele unterhalb eines verlinkten Ordners entfallen wie im NoRisk-Launcher). Ziele in
+`mods`, `versions`, `libraries`, `assets` und in NoRisk-Interna (`NoRiskClient/`, `logs/` …) werden ignoriert.
+
+| Art | Übernahme |
+|---|---|
+| `dir_link` (z. B. `resourcepacks`, `shaderpacks`, `config`, `xaero`) | Master-Ordner wird mitkopiert, auch ohne Junction im Profil; bei Kollisionen mit einem echten Profilordner gewinnt je nach `adopt`: Master (`backup_local`, `prefer_master`), Profil (`prefer_instance`) oder die neuere Datei (`prefer_newer`) |
+| `file_merge` (z. B. `options.txt`) | neuere Fassungen (Master, andere Abonnenten) werden schlüsselweise in die Profildatei gemischt, `local_keys` (Standard `resourcePacks`, `incompatibleResourcePacks`) bleiben lokal – außer `resourcepacks` ist verlinkt |
+| `file_copy` (z. B. `servers.dat`) | die neueste Fassung (Master, andere Abonnenten, Profil) |
+| Mods | `sync_pack_mods` (nur aktive, ohne `version_overrides` = `disabled` und ohne Ausschlüsse des Profils); Version: `pin` aus `version_overrides`, sonst `sync_pack_mod_resolutions` für MC-Version + Loader, sonst die eigene Version, wenn sie zur MC-Version passt, sonst die neueste passende; Mods der Profilliste haben Vorrang. Dazu lose JARs aus `sync_packs/<pack>/mods/` (ohne `jar:<datei>`-Ausschlüsse) |
 
 Spieldaten: ganzer Spielordner nach der gemeinsamen Regel (siehe „Ordner und Dateien“); bis v1.0.0-beta.4 nur eine
 feste Liste (`gamedata::LEGACY_NORISK_COPY`) – deshalb bietet der Nachimport z. B. `xaero/` und `journeymap/` an.
@@ -148,6 +176,11 @@ Importierte Instanzen tragen `instances/<id>/external.json` (Launcher, Quellpfad
 Original noch existiert und deren Einstellungen abweichen **oder** in denen Daten fehlen. Vorausgewählt ist ein
 Bereich nur, wenn in Vibe noch kein eigener Wert steht (und nie Start-Befehle). Spielzeit, Icon und Modpack-Herkunft
 werden nur angeboten, wenn sie in Vibe noch fehlen.
+
+NoRisk zusätzlich: globale Einstellungen (siehe oben), Daten aus Sync Packs (Abschnitt „Dateien“, gleiche Regeln) und
+**fehlende Mods** (Bereich `mods`): Modrinth-/CurseForge-Mods aus Profilliste, NoRisk-Pack und Sync Packs, deren Projekt
+in Vibe nicht installiert ist, sowie lose JARs, deren Datei bzw. Mod-ID in Vibe fehlt. Vorausgewählt, nur hinzufügen;
+vorher Snapshot („Vor Übernahme aus NoRisk Client“), Installation als Aufgabe im Hintergrund bei geschlossenem Spiel.
 
 ### Dateien
 
@@ -166,7 +199,7 @@ Ebene, **Welten einzeln** (`saves/<welt>`, nur Ordner mit `level.dat`):
 Welten werden nie dateiweise gemischt. Kopiert wird als Aufgabe im Hintergrund, nur bei geschlossenem Spiel. Vorher:
 Snapshot („Vor Übernahme aus …“), sobald etwas überschrieben wird oder Snapshot-Bereiche (Configs, Packs, Optionen)
 betroffen sind; Welt-Backup vor dem Ersetzen einer Welt; andere ersetzte Dateien (z. B. in `xaero/`) werden nach
-`backups/reimport/<instanz>/<zeit>/` gesichert. Mods werden nicht nachimportiert.
+`backups/reimport/<instanz>/<zeit>/` gesichert. Mods werden als Dateien nicht nachimportiert (NoRisk: siehe oben).
 
 ### Hinweis
 
@@ -187,6 +220,8 @@ Ablehnung galt also nur den Einstellungen. Dauerhaft: Instanz-Einstellungen → 
   Modpack-Update dem Kanal der installierten Version).
 - Konten, Tokens, Skins, Launcher-weite Einstellungen ohne Instanzbezug.
 - Logs, Absturzberichte, Caches (siehe „Ordner und Dateien“); ATLauncher-`jarmods/` (keine Entsprechung in Vibe).
-- Mods beim Nachimport (fehlende Mods erkennt die Content-Logik).
+- Mods beim Nachimport als Dateien (fehlende Mods erkennt die Content-Logik; NoRisk: Bereich „Fehlende Mods“).
+- NoRisk: globale JVM-Argumente für eigene (nicht Standard-)Profile – der NoRisk-Launcher nutzt sie dort auch nicht.
+- NoRisk: Sync-Pack-Abos selbst (Vibe kopiert den aktuellen Stand; spätere Änderungen im Pack synchronisiert Vibe nicht).
 - Datei-Import (`.mrpack`, CurseForge-ZIP, Prism-Export): unverändert RAM/JVM-Argumente/Notizen aus Prism-Exporten;
   Java-Pfade und Start-Befehle aus heruntergeladenen Dateien werden bewusst nie übernommen.
