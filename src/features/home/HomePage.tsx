@@ -10,7 +10,7 @@ import { PackageOpen, Plus } from "lucide-react";
 import { useEvent } from "@/lib/events";
 import { useAccounts, useInstances } from "@/lib/queries";
 import { formatDuration } from "@/lib/format";
-import { Button, Skeleton } from "@/components/ui";
+import { Button, Skeleton, cn, pageWrap } from "@/components/ui";
 import { openNewInstance } from "@/components/instance/actions";
 import { openImport } from "@/features/import/ImportDialog";
 import { useWeekPlaytime } from "@/features/stats/StatsPage";
@@ -19,13 +19,15 @@ import { useT } from "@/i18n";
 import { byRecent, useSpots } from "./data";
 import { ContinueCard } from "./Continue";
 import { JumpBackIn, RecentInstances } from "./Recent";
-import { FriendsBlock, UpdatesBlock, VibeNews } from "./Side";
+import { FriendsBlock, VibeNews } from "./Side";
+import { HomeAside } from "./Aside";
+import { sideWidth, useHeight, useTier } from "./layout";
 import { PopularPacks, StartHere } from "./Discover";
 import { SimpleHome } from "./SimpleHome";
 import { useSimple } from "@/lib/mode";
 
-const RECENT = 6;
-const SPOTS = 5;
+const RECENT = 8;
+const SPOTS = 8;
 
 function Header({ count, loading }: { count: number; loading?: boolean }) {
   const t = useT();
@@ -84,6 +86,8 @@ export function HomePage() {
 function ExpertHome() {
   const { data, isLoading } = useInstances();
   const vibe = useVibe();
+  const [ref, tier] = useTier<HTMLDivElement>();
+  const [leftRef, leftHeight] = useHeight<HTMLDivElement>();
   const list = useMemo(() => byRecent(data ?? []), [data]);
   const hero = list[0];
   const { spots, loading: spotsLoading } = useSpots(list);
@@ -108,12 +112,12 @@ function ExpertHome() {
 
   return (
     <div className="scroll h-full">
-      <div className="mx-auto flex max-w-[1240px] flex-col gap-6 px-6 pb-10 pt-6">
+      <div ref={ref} className={cn(pageWrap, "flex flex-col gap-6 pb-10 pt-6")}>
         <Header count={list.length} loading={loading} />
 
         {loading ? (
           // Platzhalter in der Form der echten Seite (Weiterspielen, Zuletzt gespielt, Welten/Server | rechte Spalte)
-          <div className="grid grid-cols-[minmax(0,1fr)_300px] items-start gap-6 max-[980px]:grid-cols-[minmax(0,1fr)_272px]" aria-busy>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-6" aria-busy>
             <div className="flex min-w-0 flex-col gap-6">
               <Skeleton className="h-[210px] rounded-panel" />
               <div className="flex flex-col gap-2.5">
@@ -129,7 +133,7 @@ function ExpertHome() {
                 <Skeleton className="h-[168px] rounded-panel" />
               </div>
             </div>
-            <div className="flex flex-col gap-6">
+            <div className={cn("flex flex-col gap-6", sideWidth[tier])}>
               <Skeleton className="h-[88px] rounded-panel" />
               <div className="flex flex-col gap-2.5">
                 <Skeleton className="h-4 w-24" />
@@ -144,7 +148,7 @@ function ExpertHome() {
               <PopularPacks rows={2} />
             </div>
             {vibe.enabled && (
-              <aside className="flex w-[300px] flex-col gap-6 empty:hidden">
+              <aside className={cn("flex flex-col gap-6 empty:hidden", sideWidth[tier])}>
                 <VibeNews />
                 <FriendsBlock />
               </aside>
@@ -152,17 +156,13 @@ function ExpertHome() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-[minmax(0,1fr)_300px] items-start gap-6 max-[980px]:grid-cols-[minmax(0,1fr)_272px]">
-              <div className="flex min-w-0 flex-col gap-6">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-6">
+              <div ref={leftRef} className="flex min-w-0 flex-col gap-6">
                 <ContinueCard key={hero.id} instance={hero} spot={heroSpot} />
                 <RecentInstances list={others} total={list.length} />
                 <JumpBackIn spots={restSpots} loading={spotsLoading} />
               </div>
-              <aside className="flex min-w-0 flex-col gap-6">
-                <VibeNews />
-                <FriendsBlock />
-                <UpdatesBlock instances={list} />
-              </aside>
+              <HomeAside tier={tier} instances={list} left={leftHeight} />
             </div>
             <PopularPacks />
           </>

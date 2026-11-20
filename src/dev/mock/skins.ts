@@ -3,7 +3,7 @@ import type { Cape, LibrarySkin, SkinProfile, SkinVariant } from "@/lib/types";
 import { mockEmit, type Handlers } from "./util";
 
 /** Einfache 64×64-Skin-Textur in Wunschfarben. */
-function makeSkin(shirt: string, pants: string, hair: string, skinTone = "#c58c64"): string {
+export function makeSkin(shirt: string, pants: string, hair: string, skinTone = "#c58c64"): string {
   const c = document.createElement("canvas");
   c.width = 64;
   c.height = 64;

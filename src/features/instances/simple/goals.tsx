@@ -81,7 +81,7 @@ export function GoalTiles({
     );
   return (
     <div
-      className={cn("grid gap-3", !cols && (compact ? "grid-cols-[repeat(auto-fit,minmax(140px,1fr))]" : "grid-cols-[repeat(auto-fill,minmax(176px,1fr))]"), className)}
+      className={cn("grid gap-3", !cols && (compact ? "grid-cols-[repeat(auto-fit,minmax(140px,1fr))]" : "grid-cols-[repeat(auto-fit,minmax(176px,1fr))]"), className)}
       style={cols ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } : undefined}
     >
       {goals.map((g) => (
