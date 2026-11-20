@@ -1,4 +1,6 @@
 //! Kleine Helfer.
+#[cfg(test)]
+pub mod testdir;
 use crate::error::AppResult;
 use serde::Serialize;
 use std::path::Path;

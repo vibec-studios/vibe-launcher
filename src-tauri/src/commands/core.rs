@@ -253,12 +253,18 @@ pub async fn update_check(state: State<'_, AppState>) -> AppResult<Option<crate:
     crate::updater::check(&state).await
 }
 
+#[tauri::command]
+pub async fn update_blockers(state: State<'_, AppState>) -> AppResult<crate::updater::guard::UpdateBlockers> {
+    Ok(crate::updater::guard::collect(&state))
+}
+
 /// Gefundenes Update herunterladen und installieren (Task). Der Launcher startet danach neu.
 #[tauri::command]
-pub async fn update_install(state: State<'_, AppState>) -> AppResult<String> {
+pub async fn update_install(state: State<'_, AppState>, force: Option<bool>) -> AppResult<String> {
     if state.pending_update.0.lock().is_none() {
         return Err(AppError::Invalid("Kein Update gefunden – bitte erneut suchen".into()));
     }
+    crate::updater::guard::ensure_allowed(&crate::updater::guard::collect(&state), force.unwrap_or(false))?;
     let st = state.inner().clone();
     Ok(state.tasks.spawn("update", "Launcher-Update", None, move |task| async move { crate::updater::install(&st, &task).await }))
 }

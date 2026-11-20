@@ -173,6 +173,7 @@ pub fn run() {
             commands::core::open_data_dir,
             commands::core::update_check,
             commands::core::update_install,
+            commands::core::update_blockers,
             // auth
             commands::auth::accounts_list,
             commands::auth::account_remove,
@@ -319,6 +320,8 @@ pub fn run() {
             commands::content::content_check_updates,
             commands::content::content_update,
             commands::content::worlds_list,
+            commands::datapacks::datapacks_overview,
+            commands::datapacks::datapacks_copy_to_worlds,
             commands::content::world_delete,
             commands::content::modpack_install,
             commands::content::import_preview,

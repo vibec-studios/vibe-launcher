@@ -13,6 +13,7 @@ use std::time::{Duration, Instant};
 use tauri::AppHandle;
 
 pub mod curseforge;
+pub mod datapacks;
 pub mod export;
 pub mod external;
 pub mod gamedata;

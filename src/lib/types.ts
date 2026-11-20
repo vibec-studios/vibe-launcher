@@ -675,6 +675,18 @@ export interface UpdateInfo {
   date: string | null;
 }
 
+export interface DatapackOverview {
+  packs: { file_name: string; in_worlds: string[] }[];
+  worlds: { folder: string; name: string }[];
+}
+
+export interface UpdateBlockers {
+  servers: number;
+  games: number;
+  tasks: string[];
+  bedrock_swap: boolean;
+}
+
 // ------------------------------------------------------------------ Import aus anderen Launchern
 
 /** folder = beliebiger Spielordner (nur über launcherScanDir) */

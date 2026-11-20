@@ -1,4 +1,5 @@
 //! Globale Launcher-Einstellungen (`settings.json`).
+mod syslang;
 use crate::error::AppResult;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -439,16 +440,7 @@ impl Default for Settings {
 }
 
 fn default_language() -> String {
-    let lang = std::env::var("LANG").unwrap_or_default().to_lowercase();
-    if lang.starts_with("en") {
-        return "en".into();
-    }
-    #[cfg(windows)]
-    {
-        // Windows: Benutzersprache über die Umgebung ist unzuverlässig – Deutsch als Standard,
-        // umschaltbar in den Einstellungen.
-    }
-    "de".into()
+    syslang::system().into()
 }
 
 fn default_max_memory() -> u32 {

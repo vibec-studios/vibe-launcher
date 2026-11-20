@@ -12,6 +12,7 @@ import { SaveIndicator, useAutoSave } from "@/components/instance/forms";
 import { useT } from "@/i18n";
 import { HostingInvite } from "@/features/social/HostingInvite";
 import { AddressChip } from "./parts";
+import { ConnBadge, LanHint } from "./LanHint";
 
 const applyServer = (base: Server, p: ServerPatch): Server => ({ ...base, ...p }) as Server;
 
@@ -23,6 +24,7 @@ function Option({
   text,
   disabled,
   extra,
+  badge,
   onSelect,
 }: {
   value: ServerConnection;
@@ -32,6 +34,7 @@ function Option({
   text: string;
   disabled?: boolean;
   extra?: ReactNode;
+  badge?: ReactNode;
   onSelect: (v: ServerConnection) => void;
 }) {
   const active = value === current;
@@ -62,6 +65,7 @@ function Option({
         <div className={cn("flex items-center gap-2 text-[13.5px] font-semibold", active ? "text-text" : "text-text/90")}>
           <span className="text-muted">{icon}</span>
           {title}
+          {badge}
         </div>
         <div className="mt-1 text-[12.5px] leading-relaxed text-muted">{text}</div>
       </div>
@@ -147,6 +151,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                   icon={<Home size={15} />}
                   title={t("srv.conn.local")}
                   text={t("srv.conn.local.text")}
+                  badge={<ConnBadge tone="muted">{t("srvh.badge.lan")}</ConnBadge>}
                   onSelect={(v) => update({ connection: v })}
                 />
                 <Option
@@ -156,6 +161,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                   title={t("srv.conn.relay")}
                   text={relayOk ? t("srv.conn.relay.text") : t("srv.conn.relay.disabled")}
                   disabled={!relayOk && d.connection !== "relay"}
+                  badge={relayOk ? <ConnBadge tone="accent">{t("srvh.badge.internet")}</ConnBadge> : undefined}
                   extra={
                     !relayOk && (
                       <Button size="sm" variant="subtle" icon={<SettingsIcon size={13} />} onClick={() => nav({ to: "/settings", search: { tab: "vibe" } })}>
@@ -171,6 +177,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                   icon={<Globe size={15} />}
                   title={t("srv.conn.playit")}
                   text={t("srv.conn.playit.text")}
+                  badge={!relayOk ? <ConnBadge tone="accent">{t("srvh.badge.internet")}</ConnBadge> : undefined}
                   onSelect={(v) => update({ connection: v })}
                 />
               </div>
@@ -199,6 +206,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                   <>
                     <AddressChip address={addrs.data?.lan[0] ?? localAddr} large />
                     <p className="text-[12.5px] leading-relaxed text-muted">{t("srv.conn.local.friends")}</p>
+                    <LanHint relayOk={relayOk} onSwitch={(v) => update({ connection: v })} />
                     {st?.state === "running" && <HostingInvite serverId={server.id} relay={false} />}
                   </>
                 )}

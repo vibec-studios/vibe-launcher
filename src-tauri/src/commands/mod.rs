@@ -15,3 +15,4 @@ pub mod files;
 pub mod vibe;
 pub mod play;
 pub mod feedback;
+pub mod datapacks;
