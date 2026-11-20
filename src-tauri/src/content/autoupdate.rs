@@ -27,22 +27,26 @@ pub fn enabled_for(settings: &Settings, inst: &Instance) -> bool {
 }
 
 /// Updates (ohne fixierte Inhalte) einspielen. Gibt die aktualisierten Dateien zurück.
-async fn apply_all(state: &AppState, inst: &Instance, task: &TaskHandle) -> AppResult<Vec<ContentUpdate>> {
-    // Gesperrte CurseForge-Downloads nie automatisch (Nutzer lädt sie selbst)
-    let updates: Vec<ContentUpdate> = install::check_updates(state, &inst.id).await?.into_iter().filter(|u| !u.manual).collect();
-    if updates.is_empty() {
-        return Ok(vec![]);
-    }
-    task.check()?;
-    let idx = ContentIndex::load(&state.paths, &inst.id);
-    let roots = updates.iter().map(|u| (u.source, u.project_id.clone(), Some(u.new_version.id.clone()))).collect();
-    let mut warnings = Vec::new();
-    let planned = install::plan(state, inst, &idx, roots, &mut warnings).await?;
+async fn apply_all(state: &AppState, inst: &Instance, task: &TaskHandle) -> AppResult<Option<Vec<ContentUpdate>>> {
+    let prepare = async {
+        let updates: Vec<ContentUpdate> = install::check_updates(state, &inst.id).await?.into_iter().filter(|u| !u.manual).collect();
+        if updates.is_empty() {
+            return Ok(None);
+        }
+        task.check()?;
+        let idx = ContentIndex::load(&state.paths, &inst.id);
+        let roots = updates.iter().map(|u| (u.source, u.project_id.clone(), Some(u.new_version.id.clone()))).collect();
+        let mut warnings = Vec::new();
+        let planned = install::plan(state, inst, &idx, roots, &mut warnings).await?;
+        Ok::<_, crate::error::AppError>(Some((updates, planned, warnings)))
+    };
+    let Some(prepared) = crate::minecraft::prelaunch::skippable(task, crate::minecraft::prelaunch::STEP_AUTO_UPDATE, prepare).await else { return Ok(None) };
+    let Some((updates, planned, warnings)) = prepared? else { return Ok(Some(vec![])) };
     install::apply(state, inst, planned, &task.sub(0.0, 0.05)).await?;
     for w in warnings {
         tracing::warn!("Auto-Update {}: {w}", inst.id);
     }
-    Ok(updates)
+    Ok(Some(updates))
 }
 
 /// Hook vor dem Spielstart (aus `minecraft::launch`). Schlägt nie fehl – Probleme landen im Log.
@@ -57,8 +61,9 @@ pub async fn before_launch(state: &AppState, id: &str, task: &TaskHandle) {
     task.stage("Mods werden aktualisiert …", None);
     log("Auto-Update: suche nach Updates für Mods, Resourcepacks und Shader …".into());
     match tokio::time::timeout(LIMIT, apply_all(state, &inst, task)).await {
-        Ok(Ok(list)) if list.is_empty() => log("Auto-Update: alles aktuell".into()),
-        Ok(Ok(list)) => {
+        Ok(Ok(None)) => log("Auto-Update übersprungen".into()),
+        Ok(Ok(Some(list))) if list.is_empty() => log("Auto-Update: alles aktuell".into()),
+        Ok(Ok(Some(list))) => {
             let names: Vec<String> =
                 list.iter().map(|u| format!("{} ({} → {})", u.file_name, u.current_version.clone().unwrap_or_else(|| "?".into()), u.new_version.version_number)).collect();
             log(format!("Auto-Update: {} aktualisiert: {}", list.len(), names.join(", ")));

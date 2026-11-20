@@ -18,6 +18,8 @@ export interface BedrockChannelStatus {
   active_instance: string | null;
   running: boolean;
   store_url: string;
+  swap_locked?: boolean;
+  same_volume?: boolean;
 }
 
 export interface BedrockStatus {

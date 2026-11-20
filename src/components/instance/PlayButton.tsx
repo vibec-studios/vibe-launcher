@@ -8,6 +8,7 @@ import { Button, Spinner, Tooltip, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { killInstance, useInstanceActions } from "./actions";
 import { useRunPhase } from "./status";
+import { PrelaunchSkip, prelaunchLabel } from "./PrelaunchStep";
 
 export const PlayButton = memo(function PlayButton({
   instance,
@@ -61,7 +62,7 @@ export const PlayButton = memo(function PlayButton({
     const p = task?.progress ?? null;
     return (
       <div
-        className={cn("relative flex items-stretch overflow-hidden rounded-ctl bg-surface2", h, size === "lg" ? "w-[240px]" : "w-[220px]", className)}
+        className={cn("relative flex items-stretch overflow-hidden rounded-ctl bg-surface2", h, task?.step === "auto_update" ? "w-[350px]" : size === "lg" ? "w-[240px]" : "w-[220px]", className)}
       >
         <div
           className="absolute inset-y-0 left-0 bg-accent/20 transition-[width] duration-150 ease-linear"
@@ -71,12 +72,13 @@ export const PlayButton = memo(function PlayButton({
           <Spinner size={13} className="shrink-0 text-accent" />
           <div className="min-w-0 flex-1 leading-tight">
             <div className="flex items-center gap-1.5 text-[13px] font-semibold text-white">
-              <span className="truncate">{phase === "preparing" && !task ? t("inst.starting") : t("inst.preparing")}</span>
+              <span className="truncate">{prelaunchLabel(task, t) ?? (phase === "preparing" && !task ? t("inst.starting") : t("inst.preparing"))}</span>
               {p !== null && <span className="tabular-nums text-accent">{Math.round(p * 100)}%</span>}
             </div>
             {task?.message && <div className="truncate text-[11px] text-muted">{task.message}</div>}
           </div>
         </div>
+        <PrelaunchSkip task={task} />
         {task && (
           <Tooltip content={t("common.cancel")}>
             <button

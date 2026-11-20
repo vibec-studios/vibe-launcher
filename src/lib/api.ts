@@ -54,7 +54,12 @@ export const api = {
   openPath: (path: string) => call<void>("open_path", { path }),
   openDataDir: () => call<void>("open_data_dir"),
   updateCheck: () => call<T.UpdateInfo | null>("update_check"),
-  updateInstall: () => call<string>("update_install"),
+  updateInstall: (force = false) => call<string>("update_install", { force }),
+  updateBlockers: () => call<T.UpdateBlockers>("update_blockers"),
+  gpuSettingsOpen: () => call<void>("gpu_settings_open"),
+  launchSkipStep: (taskId: string) => call<void>("launch_skip_step", { taskId }),
+  datadirPreview: (target: string | null) => call<T.DataDirPreview>("datadir_preview", { target }),
+  datadirMove: (target: string) => call<string>("datadir_move", { target }),
 
   // ---------------------------------------------------------------- Accounts
   accountsList: () => call<T.Account[]>("accounts_list"),
@@ -130,6 +135,8 @@ export const api = {
   contentCheckUpdates: (instanceId: string) => call<T.ContentUpdate[]>("content_check_updates", { instanceId }),
   contentUpdate: (instanceId: string, fileNames: string[]) => call<string>("content_update", { instanceId, fileNames }),
   worldsList: (instanceId: string) => call<T.World[]>("worlds_list", { instanceId }),
+  datapacksOverview: (instanceId: string) => call<T.DatapackOverview>("datapacks_overview", { instanceId }),
+  datapacksCopyToWorlds: (instanceId: string, files: string[], worlds: string[]) => call<number>("datapacks_copy_to_worlds", { instanceId, files, worlds }),
   worldDelete: (instanceId: string, folder: string) => call<void>("world_delete", { instanceId, folder }),
   modpackInstall: (source: T.Source, projectId: string, versionId?: string | null) =>
     call<string>("modpack_install", { source, projectId, versionId: versionId ?? null }),

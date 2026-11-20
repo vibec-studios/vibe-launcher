@@ -62,6 +62,10 @@ impl GameManager {
         self.sessions.lock().get(instance_id).is_some_and(|s| s.state.state == RunState::Running)
     }
 
+    pub fn running_count(&self) -> usize {
+        self.sessions.lock().values().filter(|s| s.state.state != RunState::Stopped).count()
+    }
+
     pub(crate) fn any_running(&self) -> bool {
         self.sessions.lock().values().any(|s| s.state.state == RunState::Running)
     }

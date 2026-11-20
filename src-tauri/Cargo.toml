@@ -47,7 +47,7 @@ url = "2"
 walkdir = "2"
 toml = "0.8"
 base64 = "0.22"
-sysinfo = { version = "0.33", default-features = false, features = ["system"] }
+sysinfo = { version = "0.33", default-features = false, features = ["system", "disk"] }
 keyring = { version = "3", features = ["windows-native", "apple-native", "linux-native"] }
 md-5 = "0.10"
 urlencoding = "2"
@@ -69,4 +69,4 @@ strip = true
 
 [target.'cfg(windows)'.dependencies]
 # Großes Fenster-Icon (Taskleiste) setzen – Tauri setzt nur das kleine
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_UI_HiDpi", "Win32_System_Registry", "Win32_Storage_FileSystem", "Win32_Graphics_Gdi", "Win32_Storage_Xps"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_UI_HiDpi", "Win32_System_Registry", "Win32_Storage_FileSystem", "Win32_Graphics_Gdi", "Win32_Storage_Xps", "Win32_Globalization"] }

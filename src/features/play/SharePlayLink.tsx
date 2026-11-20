@@ -13,6 +13,7 @@ import { useT, t as tt } from "@/i18n";
 import { useFriends } from "@/features/social/hooks";
 import { Avatar } from "@/features/social/FriendsList";
 import { errText, openDm, sendMessage, useSocial } from "@/features/social/service";
+import { ManualModsWarning, needsManualWarning, useManualMods } from "./ManualModsWarning";
 
 /** `session.json` der laufenden Instanzen (alle 5 s, solange etwas läuft). */
 export function usePlaySessions(): RunningSession[] {
@@ -37,9 +38,12 @@ export function PlayLinkBar({ instanceId, compact, className }: { instanceId?: s
   const hosting = useHostingLink(instanceId);
   const [copied, setCopied] = useState(false);
   const [send, setSend] = useState(false);
+  const [warn, setWarn] = useState<null | (() => void)>(null);
+  const manual = useManualMods(hosting?.instance_id);
   if (!hosting || !vibe.enabled) return null;
   const url = hosting.session.play_link!;
   const s = hosting.session;
+  const guarded = (fn: () => void) => () => (needsManualWarning(hosting.instance_id, manual) ? setWarn(() => fn) : fn());
   const copy = async () => {
     await copyText(url);
     setCopied(true);
@@ -62,17 +66,18 @@ export function PlayLinkBar({ instanceId, compact, className }: { instanceId?: s
           </div>
         </div>
         <div className={cn("flex shrink-0 items-center gap-1.5", compact && "[&>*]:flex-1")}>
-          <Button size="sm" variant={compact ? "subtle" : "primary"} icon={copied ? <Check size={13} /> : <Copy size={13} />} onClick={() => void copy()}>
+          <Button size="sm" variant={compact ? "subtle" : "primary"} icon={copied ? <Check size={13} /> : <Copy size={13} />} onClick={guarded(() => void copy())}>
             {copied ? t("common.copied") : compact ? t("play.share.copy_short") : t("play.share.copy")}
           </Button>
           {canSend && (
-            <Button size="sm" variant="subtle" icon={<Send size={13} />} onClick={() => setSend(true)}>
+            <Button size="sm" variant="subtle" icon={<Send size={13} />} onClick={guarded(() => setSend(true))}>
               {compact ? t("play.share.send_short") : t("play.share.send")}
             </Button>
           )}
         </div>
       </div>
       {send && <SendLinkDialog url={url} world={s.world} onClose={() => setSend(false)} />}
+      {warn && <ManualModsWarning instanceId={hosting.instance_id} mods={manual} onProceed={warn} onClose={() => setWarn(null)} />}
     </>
   );
 }

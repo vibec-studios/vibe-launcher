@@ -13,6 +13,7 @@ pub mod launch;
 pub mod loaders;
 pub mod logs;
 pub mod meta;
+pub mod prelaunch;
 pub mod process;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

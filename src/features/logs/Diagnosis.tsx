@@ -9,6 +9,7 @@ import { Button, Dialog, Skeleton, cn, toast } from "@/components/ui";
 import { useT, t as tt } from "@/i18n";
 import { uploadCrash } from "./LogsTab";
 import { openAutofix } from "@/features/content/AutoFix";
+import { DriverHelp } from "@/features/perf/DriverHelp";
 
 export function useDiagnosis(instanceId: string, crashReport: string | null, exitCode: number | null, enabled = true) {
   return useQuery({
@@ -165,7 +166,7 @@ async function runAction(a: DiagnosisAction, inst: Instance, crashReport: string
 function ActionButton({ a, inst, crashReport, onDone }: { a: DiagnosisAction; inst: Instance; crashReport: string | null; onDone: () => void }) {
   const t = useT();
   const [busy, setBusy] = useState(false);
-  if (a.kind === "update_drivers") return null;
+  if (a.kind === "update_drivers") return <DriverHelp />;
   const label =
     a.kind === "disable_mod"
       ? t("diag.act.disable")

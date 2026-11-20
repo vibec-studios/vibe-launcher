@@ -1,4 +1,5 @@
 //! Globale Launcher-Einstellungen (`settings.json`).
+mod syslang;
 use crate::error::AppResult;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -86,6 +87,7 @@ pub struct Settings {
     pub simple_tour_done: bool,
     /// Weggeklickte Hinweise/Ankündigungen (je `id`, z. B. "domain-move-2026-11"; docs/DOMAINS.md)
     pub dismissed_notices: Vec<String>,
+    pub prefer_dgpu: bool,
 }
 
 /// Sicherung vor automatischen Mod-Änderungen. `mode`: "recommended" (Mods, Configs, Optionen) | "mods" | "all" |
@@ -434,21 +436,13 @@ impl Default for Settings {
             simple_hint_seen: false,
             simple_tour_done: false,
             dismissed_notices: Vec::new(),
+            prefer_dgpu: false,
         }
     }
 }
 
 fn default_language() -> String {
-    let lang = std::env::var("LANG").unwrap_or_default().to_lowercase();
-    if lang.starts_with("en") {
-        return "en".into();
-    }
-    #[cfg(windows)]
-    {
-        // Windows: Benutzersprache über die Umgebung ist unzuverlässig – Deutsch als Standard,
-        // umschaltbar in den Einstellungen.
-    }
-    "de".into()
+    syslang::system().into()
 }
 
 fn default_max_memory() -> u32 {

@@ -1,0 +1,28 @@
+export default {
+  de: {
+    "update.guard.title": "Trotzdem jetzt aktualisieren?",
+    "update.guard.text": "Beim Update schließt sich der Launcher kurz und startet neu.",
+    "update.guard.servers_one": "Ein lokaler Server läuft – er läuft weiter, aber ohne Live-Konsole, bis du ihn neu startest.",
+    "update.guard.servers": "{n} lokale Server laufen – sie laufen weiter, aber ohne Live-Konsole, bis du sie neu startest.",
+    "update.guard.games_one": "Minecraft läuft – das Spiel bleibt offen, aber das Live-Protokoll fehlt danach.",
+    "update.guard.games": "{n} Minecraft-Instanzen laufen – sie bleiben offen, aber das Live-Protokoll fehlt danach.",
+    "update.guard.tasks": "Diese Aufgaben werden abgebrochen:",
+    "update.guard.confirm": "Trotzdem aktualisieren",
+    "update.guard.later": "Später",
+    "update.guard.bedrock_title": "Update gerade nicht möglich",
+    "update.guard.bedrock": "Minecraft Bedrock nutzt gerade ein getauschtes Profil. Schließe Bedrock und warte, bis deine Welten zurückgetauscht sind – dann kannst du aktualisieren.",
+  },
+  en: {
+    "update.guard.title": "Update now anyway?",
+    "update.guard.text": "The launcher closes briefly during the update and restarts.",
+    "update.guard.servers_one": "A local server is running – it keeps running, but without the live console until you restart it.",
+    "update.guard.servers": "{n} local servers are running – they keep running, but without the live console until you restart them.",
+    "update.guard.games_one": "Minecraft is running – the game stays open, but the live log will be missing afterwards.",
+    "update.guard.games": "{n} Minecraft instances are running – they stay open, but the live log will be missing afterwards.",
+    "update.guard.tasks": "These tasks will be cancelled:",
+    "update.guard.confirm": "Update anyway",
+    "update.guard.later": "Later",
+    "update.guard.bedrock_title": "Update not possible right now",
+    "update.guard.bedrock": "Minecraft Bedrock is using a swapped profile right now. Close Bedrock and wait until your worlds have been swapped back – then you can update.",
+  },
+};

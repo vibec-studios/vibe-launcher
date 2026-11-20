@@ -10,6 +10,7 @@ import { qk, queryClient, useTask } from "@/lib/queries";
 import type { Settings, UpdateInfo } from "@/lib/types";
 import { Button, Progress, toast } from "@/components/ui";
 import { t, useT } from "@/i18n";
+import { askUpdateGuard } from "./updateGuard";
 
 interface UpdateState {
   info: UpdateInfo | null;
@@ -39,7 +40,9 @@ export async function checkForUpdate(manual = false): Promise<UpdateInfo | null>
 
 export async function installUpdate() {
   try {
-    const id = await api.updateInstall();
+    const force = await askUpdateGuard();
+    if (force === null) return;
+    const id = await api.updateInstall(force);
     useUpdate.setState({ taskId: id });
   } catch (e) {
     toast.error(e, t("update.install_failed"));

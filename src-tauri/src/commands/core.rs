@@ -100,6 +100,11 @@ pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> App
     s.save(&state.paths.settings_file())?;
     let icon_key = |a: &crate::settings::Appearance| (a.app_icon.clone(), a.app_icon_color.clone(), a.app_icon_image.clone());
     let icon_changed = icon_key(&state.settings().appearance) != icon_key(&s.appearance);
+    if state.settings().prefer_dgpu && !s.prefer_dgpu {
+        if let Err(e) = crate::platform::gpupref::revert(&state.paths) {
+            tracing::warn!("GPU-Vorgaben nicht zurücksetzbar: {e}");
+        }
+    }
     state.net.set_concurrency(s.concurrent_downloads as usize);
     *state.settings.write() = s.clone();
     crate::vibe::on_settings_changed(&state);
@@ -253,12 +258,18 @@ pub async fn update_check(state: State<'_, AppState>) -> AppResult<Option<crate:
     crate::updater::check(&state).await
 }
 
+#[tauri::command]
+pub async fn update_blockers(state: State<'_, AppState>) -> AppResult<crate::updater::guard::UpdateBlockers> {
+    Ok(crate::updater::guard::collect(&state))
+}
+
 /// Gefundenes Update herunterladen und installieren (Task). Der Launcher startet danach neu.
 #[tauri::command]
-pub async fn update_install(state: State<'_, AppState>) -> AppResult<String> {
+pub async fn update_install(state: State<'_, AppState>, force: Option<bool>) -> AppResult<String> {
     if state.pending_update.0.lock().is_none() {
         return Err(AppError::Invalid("Kein Update gefunden – bitte erneut suchen".into()));
     }
+    crate::updater::guard::ensure_allowed(&crate::updater::guard::collect(&state), force.unwrap_or(false))?;
     let st = state.inner().clone();
     Ok(state.tasks.spawn("update", "Launcher-Update", None, move |task| async move { crate::updater::install(&st, &task).await }))
 }

@@ -10,6 +10,8 @@ use serde::Serialize;
 use std::sync::Arc;
 use tauri_plugin_updater::{Update, UpdaterExt};
 
+pub mod guard;
+
 pub const REPO: &str = "vibec-studios/vibe-launcher";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -120,6 +122,7 @@ pub async fn install(state: &AppState, task: &crate::tasks::TaskHandle) -> AppRe
         .await
         .map_err(|e| AppError::msg(format!("Download des Updates fehlgeschlagen: {e}")))?;
     task.check()?;
+    guard::ensure_allowed(&guard::collect(state), true)?;
     task.stage("Update wird installiert – der Launcher startet neu …", None);
     // Kurz warten, damit das Frontend den Status noch anzeigen kann
     tokio::time::sleep(std::time::Duration::from_millis(400)).await;

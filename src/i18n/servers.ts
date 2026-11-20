@@ -219,7 +219,7 @@ export default {
 
     "srv.quit.title": "{n} Server laufen noch",
     "srv.quit.title_one": "Ein Server läuft noch",
-    "srv.quit.text": "Sollen die Server beim Schließen beendet werden? Weiterlaufende Server bleiben für Freunde erreichbar, haben aber keine Konsole mehr, bis du den Launcher wieder öffnest.",
+    "srv.quit.text": "Sollen die Server beim Schließen beendet werden? Weiterlaufende Server bleiben für Freunde erreichbar. Auch nach dem nächsten Öffnen des Launchers fehlt dann aber die Live-Konsole (keine Befehle, kein Protokoll) – bis du den Server einmal neu startest.",
     "srv.quit.stop": "Server beenden und schließen",
     "srv.quit.keep": "Weiterlaufen lassen und schließen",
 
@@ -542,7 +542,7 @@ export default {
 
     "srv.quit.title": "{n} servers are still running",
     "srv.quit.title_one": "A server is still running",
-    "srv.quit.text": "Stop the servers when closing? Servers that keep running stay reachable for friends but have no console until you open the launcher again.",
+    "srv.quit.text": "Stop the servers when closing? Servers that keep running stay reachable for friends. Even after you open the launcher again, the live console (commands, log) stays missing until you restart the server once.",
     "srv.quit.stop": "Stop servers and close",
     "srv.quit.keep": "Keep running and close",
 

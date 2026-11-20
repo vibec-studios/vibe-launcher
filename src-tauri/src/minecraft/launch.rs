@@ -325,6 +325,7 @@ pub async fn launch(
     // java.exe statt javaw.exe (CREATE_NO_WINDOW verhindert das Konsolenfenster): Startfehler der
     // JVM landen so im Log statt in einem blockierenden Windows-Dialog.
     let program = super::java::console_java(&plan.program);
+    crate::platform::gpupref::apply_for_launch(&state.paths, settings.prefer_dgpu, &program);
     let mut cmd = tokio::process::Command::new(&program);
     cmd.args(&plan.args)
         .current_dir(&plan.cwd)

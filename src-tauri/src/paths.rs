@@ -12,6 +12,8 @@
 //!   java/<component>/                   heruntergeladene Java-Runtimes
 //!   cache/                              Icons, API-Antworten, temporäre Downloads
 //! ```
+pub mod location;
+
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
@@ -27,14 +29,7 @@ impl Default for Paths {
 
 impl Paths {
     pub fn new() -> Self {
-        let root = std::env::var_os("VIBE_LAUNCHER_HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                dirs::data_dir()
-                    .unwrap_or_else(|| PathBuf::from("."))
-                    .join("VibeLauncher")
-            });
-        Paths { root }
+        Paths { root: location::resolve(location::env_override(), &location::default_root()) }
     }
 
     pub fn ensure(&self) -> std::io::Result<()> {

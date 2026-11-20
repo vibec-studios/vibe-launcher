@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import { queryClient } from "@/lib/queries";
 import { kindFolder, openExternal } from "@/components/content/util";
 import { setWatching, useWatching } from "@/components/content/install";
+import { useKeepWatching } from "./useKeepWatching";
 
 export function useMissingDownloads(instanceId: string) {
   // Schlüssel unter ["content", id] -> EventBridge invalidiert bei content://changed
@@ -37,6 +38,7 @@ export function MissingPanel({ instanceId, onDismissed }: { instanceId: string; 
   const now = useNow(!!until);
   const watching = !!until && until > now && items.length > 0;
   const [scanning, setScanning] = useState(false);
+  useKeepWatching(instanceId, items.length > 0);
 
   const recheck = () => queryClient.invalidateQueries({ queryKey: ["content", instanceId] });
   const dismiss = () =>

@@ -162,6 +162,7 @@ export interface Settings {
   simple_tour_done: boolean;
   /** Weggeklickte Hinweise/Ankündigungen (je `id`, z. B. "domain-move-2026-11"; docs/DOMAINS.md) */
   dismissed_notices: string[];
+  prefer_dgpu?: boolean;
 }
 
 export type UiMode = "simple" | "expert";
@@ -302,6 +303,7 @@ export interface TaskInfo {
   status: TaskStatus;
   error: string | null;
   started_at: number;
+  step?: string | null;
 }
 
 // ------------------------------------------------------------------ Accounts
@@ -673,6 +675,31 @@ export interface UpdateInfo {
   channel: "release" | "dev";
   notes: string | null;
   date: string | null;
+}
+
+export interface DatapackOverview {
+  packs: { file_name: string; in_worlds: string[] }[];
+  worlds: { folder: string; name: string }[];
+}
+
+export interface DataDirPreview {
+  current: string;
+  default: string;
+  locked: boolean;
+  target: string | null;
+  size: number;
+  free: number | null;
+  enough: boolean;
+  problem: string | null;
+  busy: string[];
+  bedrock_warning: boolean;
+}
+
+export interface UpdateBlockers {
+  servers: number;
+  games: number;
+  tasks: string[];
+  bedrock_swap: boolean;
 }
 
 // ------------------------------------------------------------------ Import aus anderen Launchern

@@ -220,6 +220,8 @@ fn mv(from: &Path, to: &Path) -> AppResult<()> {
         // 17 = ERROR_NOT_SAME_DEVICE (Windows), 18 = EXDEV (Unix)
         if matches!(e.raw_os_error(), Some(17) | Some(18)) {
             AppError::msg("Der Launcher-Datenordner liegt auf einem anderen Laufwerk als Minecraft Bedrock. Für eigene Profile müssen beide auf demselben Laufwerk liegen – oder nutze „Gemeinsames Profil“.")
+        } else if super::issues::is_lock_error(&e) {
+            super::issues::locked_error(from)
         } else {
             AppError::msg(format!("{from:?} -> {to:?} verschieben: {e}"))
         }
