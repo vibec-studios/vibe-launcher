@@ -95,6 +95,7 @@ pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> App
     if s.appearance.app_icon_image.as_deref().is_some_and(|p| !std::path::Path::new(p).starts_with(&icon_dir)) {
         s.appearance.app_icon_image = None;
     }
+    s.sanitize_discord(&icon_dir);
     s.sanitize_mode();
     s.sanitize_notices();
     s.save(&state.paths.settings_file())?;
@@ -115,11 +116,12 @@ pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> App
     Ok(s)
 }
 
-/// Eigenes Bild fürs App-Icon übernehmen; gibt den gespeicherten Pfad zurück.
+/// Eigenes Bild fürs App-Icon (bzw. mit `slot` = "discord" für den Discord-Status) übernehmen; gibt den gespeicherten Pfad zurück.
 #[tauri::command]
-pub async fn app_icon_import(state: State<'_, AppState>, path: String) -> AppResult<String> {
+pub async fn app_icon_import(state: State<'_, AppState>, path: String, slot: Option<String>) -> AppResult<String> {
     let root = state.paths.root.clone();
-    let p = tokio::task::spawn_blocking(move || crate::platform::app_icon::import_image(&root, std::path::Path::new(&path)))
+    let prefix = if slot.as_deref() == Some("discord") { "discord" } else { "custom" };
+    let p = tokio::task::spawn_blocking(move || crate::platform::app_icon::import_image(&root, std::path::Path::new(&path), prefix))
         .await
         .map_err(|e| AppError::msg(e.to_string()))??;
     Ok(p.to_string_lossy().to_string())

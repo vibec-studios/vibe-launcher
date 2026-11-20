@@ -134,6 +134,14 @@ export interface Settings {
   discord_rpc: boolean;
   /** Discord: Server und Welt anzeigen */
   discord_details: boolean;
+  /** Discord: großes Bild */
+  discord_large: DiscordLarge;
+  /** Discord: Modpack-Icon statt des großen Bilds, wenn es eins gibt */
+  discord_pack_icon: boolean;
+  /** Discord: kleines Bild (rund, unten rechts) */
+  discord_small: DiscordSmall;
+  /** Discord: eigenes Bild (Pfad im Datenordner) */
+  discord_image: string | null;
   wrapper_command: string | null;
   open_log_on_launch: boolean;
   reduce_motion: boolean;
@@ -309,6 +317,9 @@ export interface TaskInfo {
 // ------------------------------------------------------------------ Accounts
 
 export type AccountKind = "microsoft";
+
+export type DiscordLarge = "logo" | "app_icon" | "head" | "custom";
+export type DiscordSmall = "head" | "loader" | "none";
 
 export interface Account {
   id: string;
