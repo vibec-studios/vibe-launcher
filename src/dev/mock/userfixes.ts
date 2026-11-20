@@ -1,4 +1,5 @@
 import mockA from "./a";
+import mockBedrock from "./bedrock";
 import mockB from "./b";
 import { fakeTask, mockEmit, tasks, type Handlers } from "./util";
 
@@ -40,6 +41,11 @@ export default {
       ? { packs: [{ file_name: "terralith-2.5.zip", in_worlds: [] }, { file_name: "dungeons-and-taverns.zip", in_worlds: [] }], worlds: [{ folder: "Neue Welt", name: "Neue Welt" }, { folder: "Creative", name: "Creative" }] }
       : { packs: [], worlds: [] },
   datapacks_copy_to_worlds: ({ files, worlds }) => (files as string[]).length * (worlds as string[]).length,
+  bedrock_status: (args) => {
+    const s = mockBedrock.bedrock_status(args) as { channels: Record<string, unknown>[] };
+    if (!flag("vl.mock.bedrock_locked")) return s;
+    return { ...s, channels: s.channels.map((c) => (c.channel === "release" ? { ...c, active_instance: "bedrock-welten", swap_locked: true } : c)) };
+  },
   instance_launch: async (args) => {
     const id = (await mockA.instance_launch(args)) as string;
     if (flag("vl.mock.prelaunch")) {

@@ -60,6 +60,10 @@ export function NewBedrockTab({ onDone, onBusy }: { onDone: () => void; onBusy: 
   const [busy, setBusy] = useState(false);
 
   const cs = channelStatus(status.data, channel);
+  const otherDrive = cs?.same_volume === false;
+  useEffect(() => {
+    if (otherDrive) setProfile("shared");
+  }, [otherDrive]);
   const supported = status.data?.supported ?? true;
   const blocked = status.data?.blocked ?? null;
   const canAdopt = profile === "isolated" && !!cs?.has_data;
@@ -202,8 +206,8 @@ export function NewBedrockTab({ onDone, onBusy }: { onDone: () => void; onBusy: 
                 onClick={() => setProfile("isolated")}
                 icon={<FolderSync size={16} />}
                 title={t("bedrock.profile.isolated")}
-                text={t("bedrock.profile.isolated_text")}
-                disabled={disabled}
+                text={otherDrive ? t("bedrock.profile.isolated_other_drive") : t("bedrock.profile.isolated_text")}
+                disabled={disabled || otherDrive}
               />
             </div>
           </div>

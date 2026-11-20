@@ -1,7 +1,7 @@
 // Kleine gemeinsame Bausteine der Bedrock-Oberfläche.
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ExternalLink, Info, RotateCcw } from "lucide-react";
+import { AlertTriangle, ExternalLink, Info, RotateCcw, ShieldCheck } from "lucide-react";
 import type { BedrockChannel, Instance } from "@/lib/types";
 import { Button, Tag, cn, toast } from "@/components/ui";
 import { PixelBlock } from "@/components/instance/InstanceIcon";
@@ -78,16 +78,17 @@ export function PendingSwapNotice({ status, channel, running }: { status: Bedroc
   // Die eingetauschte Instanz startet gerade oder läuft -> kein offener Tausch
   const other = useRunPhase(cs?.active_instance ?? "");
   if (!cs?.active_instance || cs.running || running || other.phase !== "idle") return null;
+  const locked = !!cs.swap_locked;
   return (
-    <div className="flex items-center gap-3 rounded-card bg-surface2 px-4 py-3">
-      <Info size={17} className="shrink-0 text-accent" />
+    <div className={locked ? "flex items-center gap-3 rounded-card bg-ok/[.07] px-4 py-3" : "flex items-center gap-3 rounded-card bg-surface2 px-4 py-3"}>
+      {locked ? <ShieldCheck size={17} className="shrink-0 text-ok" /> : <Info size={17} className="shrink-0 text-accent" />}
       <div className="min-w-0 flex-1">
-        <div className="text-[13.5px] font-semibold text-text">{t("bedrock.pending.title")}</div>
-        <div className="text-[12.5px] text-muted">{t("bedrock.pending.text")}</div>
+        <div className="text-[13.5px] font-semibold text-text">{t(locked ? "bedrock.locked.title" : "bedrock.pending.title")}</div>
+        <div className="text-[12.5px] text-muted">{t(locked ? "bedrock.locked.text" : "bedrock.pending.text")}</div>
       </div>
       <Button
         size="sm"
-        variant="ghost"
+        variant={locked ? "accent" : "ghost"}
         loading={busy}
         icon={<RotateCcw size={13} />}
         onClick={async () => {
@@ -104,7 +105,7 @@ export function PendingSwapNotice({ status, channel, running }: { status: Bedroc
           }
         }}
       >
-        {t("bedrock.pending.action")}
+        {t(locked ? "bedrock.locked.action" : "bedrock.pending.action")}
       </Button>
     </div>
   );

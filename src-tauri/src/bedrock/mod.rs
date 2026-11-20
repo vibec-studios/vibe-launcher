@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 pub mod cf;
 pub mod detect;
 pub mod game;
+pub mod issues;
 pub mod manifest;
 pub mod packs;
 pub mod swap;

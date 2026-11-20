@@ -10,6 +10,7 @@ import { DepsPanel, useDepIssues } from "@/features/content/DepsPanel";
 import { openAutofix } from "@/features/content/AutoFix";
 import { useSimple } from "@/lib/mode";
 import { MissingPanel, useMissingDownloads } from "@/features/content/MissingPanel";
+import { useKeepWatching } from "@/features/content/useKeepWatching";
 import { ModpackUpdateDialog, useModpackUpdate } from "@/features/content/ModpackUpdate";
 import { markUpdatesChecked, setContentFilter, useContentView } from "@/features/content/contentView";
 import { useT } from "@/i18n";
@@ -131,6 +132,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
   const pack = useModpackUpdate(instance).data;
   const deps = useDepIssues(id, !vanilla).data ?? [];
   const missing = useMissingDownloads(id).data ?? [];
+  useKeepWatching(id, missing.length > 0);
   // Neue Projekte in Mod-Sets, die auf diese Instanz angewendet wurden
   const setNews = useSetNews(id, !simple).data ?? [];
   const loosePacks = unusedPacks(useLoosePacks(id).data);

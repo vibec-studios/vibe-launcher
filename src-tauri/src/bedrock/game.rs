@@ -72,6 +72,8 @@ pub struct ChannelStatus {
     pub active_instance: Option<String>,
     pub running: bool,
     pub store_url: String,
+    pub swap_locked: bool,
+    pub same_volume: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -108,13 +110,15 @@ pub fn status(state: &AppState) -> Status {
                     active_instance: sw.active_instance(),
                     running: game_running(ch),
                     store_url,
+                    swap_locked: super::issues::is_locked(ch),
+                    same_volume: swap::check_same_volume(&state.paths.root, &t.base).is_ok(),
                 });
             }
             Err(e) => {
                 if supported {
                     blocked = Some(e.to_string());
                 }
-                channels.push(ChannelStatus { channel: ch, installed: false, version: None, layout: None, data_dir: None, has_data: false, active_instance: None, running: false, store_url });
+                channels.push(ChannelStatus { channel: ch, installed: false, version: None, layout: None, data_dir: None, has_data: false, active_instance: None, running: false, store_url, swap_locked: false, same_volume: true });
             }
         }
     }
@@ -290,6 +294,7 @@ async fn swap_back(state: &AppState, ch: BedrockChannel) -> bool {
             swapper(&st.paths, &t).swap_out(&|| game_running(ch))
         })
         .await;
+        super::issues::record(ch, &r);
         match r {
             Ok(rep) => {
                 if let Some(rep) = rep.filter(|r| !r.rescued.is_empty()) {
@@ -376,7 +381,9 @@ pub fn on_startup(state: &AppState) {
             continue;
         }
         let _g = DATA_LOCK.lock();
-        match sw.swap_out(&|| game_running(ch)) {
+        let r = sw.swap_out(&|| game_running(ch));
+        super::issues::record(ch, &r);
+        match r {
             Ok(Some(r)) => tracing::info!("Bedrock: offenen Tausch von {} nach Neustart abgeschlossen (gerettet: {:?})", r.instance_id, r.rescued),
             Ok(None) => {}
             Err(e) => tracing::error!("Bedrock: Wiederaufnahme des Tauschs fehlgeschlagen: {e}"),
@@ -397,7 +404,9 @@ pub fn recover(state: &AppState, ch: BedrockChannel) -> AppResult<bool> {
         }
     }
     let _g = DATA_LOCK.lock();
-    Ok(sw.swap_out(&|| game_running(ch))?.is_some())
+    let r = sw.swap_out(&|| game_running(ch));
+    super::issues::record(ch, &r);
+    Ok(r?.is_some())
 }
 
 // ------------------------------------------------------------------ Screenshots
