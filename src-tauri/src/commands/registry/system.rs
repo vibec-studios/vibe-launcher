@@ -32,6 +32,9 @@ macro_rules! system_commands {
             crate::commands::perf::game_resources,
             crate::commands::datadir::datadir_preview,
             crate::commands::datadir::datadir_move,
+            crate::storage::commands::storage_usage,
+            crate::storage::commands::storage_clean,
+            crate::storage::commands::storage_dedup,
         ] $($rest)*)
     };
 }

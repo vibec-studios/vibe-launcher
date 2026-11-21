@@ -73,7 +73,7 @@ pub async fn run_import(state: &AppState, task: &TaskHandle, path: &Path, opts: 
             items.push(DownloadItem::new(f.url.clone(), target).sha1(f.sha1.clone()).size(f.size));
         }
         sub.message(format!("Lade {} Datei(en) …", items.len()));
-        state.net.download_all(items, Some(&sub.sub(0.2, 0.95))).await?;
+        crate::storage::store::download_all(state, items, Some(&sub.sub(0.2, 0.95))).await?;
         task.check()?;
 
         // Index (Herkunft bekannter Dateien) + fehlende Downloads

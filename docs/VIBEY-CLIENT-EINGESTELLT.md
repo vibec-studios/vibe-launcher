@@ -46,6 +46,7 @@ die Domain-Migration `*.vibey.henny.dev` und `client_pack_install`/`client_pack_
 ### Alte Daten
 
 - `instances/<id>/vibey-client.json` und Vibey-Client-Jars bleiben unberührt; nichts wird automatisch gelöscht.
+- Einstellungen → Speicher bietet `<daten>/vibey/` und alle `instances/<id>/vibey-client.json` als „Vibey-Client-Reste (eingestellt)“ zum Entfernen an (Kategorie `vibey`, `storage_clean`). Jars in `mods/` fasst das nicht an.
 - **Play-Links mit `client_pack: "vibey"`:** Die Vorschau zeigt kein Client-Pack an, die Einrichtung installiert
   nichts und schreibt ins Instanz-Log „Der Einladende nutzt den Vibey Client. Den gibt es nicht mehr – du trittst
   ohne ihn bei.“ Neue Links und `instance.json` nennen kein `"vibey"` mehr.

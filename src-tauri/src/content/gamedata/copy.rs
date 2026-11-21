@@ -131,6 +131,7 @@ pub fn execute(
         if let Some(p) = to.parent() {
             std::fs::create_dir_all(p)?;
         }
+        crate::storage::links::detach(&to);
         std::fs::copy(&op.from, &to).map_err(|e| AppError::msg(format!("{} konnte nicht kopiert werden: {e}", rel_str(&op.rel))))?;
         done += op.size;
         n += 1;

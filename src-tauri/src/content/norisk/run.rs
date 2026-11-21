@@ -84,6 +84,7 @@ fn copy_all(src: PathBuf, ov: Vec<Overlay>, dst: PathBuf, task: TaskHandle) -> A
         if let Some(p) = to.parent() {
             std::fs::create_dir_all(p)?;
         }
+        crate::storage::links::detach(&to);
         std::fs::copy(from, &to).map_err(|e| AppError::msg(format!("{} konnte nicht kopiert werden: {e}", rel.display())))?;
     }
     Ok((files.len() as u64, tops))

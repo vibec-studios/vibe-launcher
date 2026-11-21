@@ -99,3 +99,24 @@ pub(super) fn merge_index(current: Option<&[u8]>, snap: Option<&[u8]>, prefixes:
     }
     serde_json::to_vec_pretty(&Value::Object(cur)).unwrap_or_default()
 }
+
+pub(crate) fn referenced(root: &Path, instance_id: &str) -> Vec<(String, u64)> {
+    manifests(root, instance_id).into_iter().flat_map(|m| m.files.into_iter().chain(m.meta)).map(|f| (f.sha1, f.size)).collect()
+}
+
+pub(crate) async fn drop_instance(paths: &Paths, instance_id: &str) -> AppResult<()> {
+    if !valid_name(instance_id) {
+        return Err(AppError::Invalid("Instanz-ID".into()));
+    }
+    let _g = LOCK.lock().await;
+    let root = backups_root(paths);
+    let dir = snapshot_dir(&root, instance_id);
+    tokio::task::spawn_blocking(move || -> AppResult<()> {
+        if dir.is_dir() {
+            std::fs::remove_dir_all(&dir)?;
+        }
+        gc(&root)?;
+        Ok(())
+    })
+    .await?
+}

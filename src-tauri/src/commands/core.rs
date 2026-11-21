@@ -46,14 +46,19 @@ pub async fn instance_delete(state: State<'_, AppState>, id: String) -> AppResul
         crate::bedrock::guard_idle(&state.paths, &inst)?;
     }
     let store = state.instances.clone();
-    tokio::task::spawn_blocking(move || store.delete(&id)).await?
+    let gone = id.clone();
+    tokio::task::spawn_blocking(move || store.delete(&id)).await??;
+    crate::storage::after_instance_delete(&state, &gone);
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn instance_duplicate(state: State<'_, AppState>, id: String, name: Option<String>) -> AppResult<Instance> {
     crate::bedrock::guard_idle(&state.paths, &state.instances.get(&id)?)?;
     let store = state.instances.clone();
-    tokio::task::spawn_blocking(move || store.duplicate(&id, name)).await?
+    let inst = tokio::task::spawn_blocking(move || store.duplicate(&id, name)).await??;
+    crate::storage::adopt_instance(&state, &inst.id);
+    Ok(inst)
 }
 
 #[tauri::command]

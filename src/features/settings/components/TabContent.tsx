@@ -9,6 +9,7 @@ import { DownloadsTab } from "../tabs/DownloadsTab";
 import { GameTab } from "../tabs/GameTab";
 import { GeneralTab } from "../tabs/GeneralTab";
 import { JavaTab } from "../tabs/JavaTab";
+import { StorageTabHost } from "../tabs/StorageTabHost";
 import { UpdatesTab } from "../tabs/UpdatesTab";
 
 export function TabContent({ tab, s, update }: TabProps & { tab: SettingsTab }) {
@@ -23,6 +24,8 @@ export function TabContent({ tab, s, update }: TabProps & { tab: SettingsTab }) 
       return <GameTab s={s} update={update} />;
     case "downloads":
       return <DownloadsTab s={s} update={update} />;
+    case "storage":
+      return <StorageTabHost />;
     case "vibe":
       return <VibeTab settings={s} update={update} />;
     case "privacy":

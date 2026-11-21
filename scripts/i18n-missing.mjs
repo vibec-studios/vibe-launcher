@@ -93,7 +93,10 @@ for (const lang of only ? [only] : langs) {
 
 const helpDir = join(root, "src", "features", "help");
 const glossaryEn = (await import(pathToFileURL(join(helpDir, "glossary", "en.ts")).href)).default;
-const contentEn = (await import(pathToFileURL(join(helpDir, "content", "en.ts")).href)).default;
+const loadTs = async (...parts) => import(pathToFileURL(join(helpDir, ...parts)).href);
+const contentEn = existsSync(join(helpDir, "content", "en.ts"))
+  ? (await loadTs("content", "en.ts")).default
+  : { guides: (await loadTs("content", "en", "guides.ts")).guides, tours: (await loadTs("content", "en", "tours.ts")).tours };
 const readJson = (file) => {
   if (!existsSync(file)) return null;
   try {
