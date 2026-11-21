@@ -158,7 +158,7 @@ example = "java.lang.ClassCastException: class jdk.internal.loader.ClassLoaders$
 id = "out_of_memory"
 kind = "out_of_memory"
 confidence = 90
-unless = "unable to create native thread"
+unless = "unable to create (?:new )?native thread|Direct buffer memory|direct buffer memory|Metaspace|Compressed class space"
 regex = '''java\.lang\.OutOfMemoryError(?:: (?P<detail>[^\n]+))?'''
 example = "java.lang.OutOfMemoryError: GC overhead limit exceeded"
 
@@ -168,6 +168,46 @@ kind = "heap_reserve"
 confidence = 90
 regex = '''Could not reserve enough space for (?:\d+KB )?object heap|Invalid maximum heap size|There is insufficient memory for the Java Runtime Environment to continue'''
 example = "Could not reserve enough space for 8388608KB object heap"
+
+[[pattern]]
+id = "native_memory"
+kind = "manual"
+confidence = 94
+fatal = true
+regex = '''java\.lang\.OutOfMemoryError: (?:unable to create (?:new )?native thread|(?:Direct buffer memory|Cannot reserve \d+ bytes of direct buffer memory)|Metaspace|Compressed class space)'''
+example = "java.lang.OutOfMemoryError: unable to create native thread: possibly out of memory or process/resource limits reached"
+
+[[pattern]]
+id = "disk_full"
+kind = "manual"
+confidence = 96
+fatal = true
+regex = '''(?i)(?:IOException|FileSystemException): [^\n]*(?:no space left on device|there is not enough space on the disk|disk quota exceeded|nicht genügend Speicherplatz auf dem Datenträger)'''
+example = "Caused by: java.io.IOException: No space left on device"
+
+[[pattern]]
+id = "invalid_jvm_flag"
+kind = "manual"
+confidence = 96
+fatal = true
+regex = '''(?m)^(?:Unrecognized (?:VM option|option):? |Improperly specified VM option )[^\n]+'''
+example = "Unrecognized VM option 'UseConcMarkSweepGC'"
+
+[[pattern]]
+id = "corrupt_archive"
+kind = "manual"
+confidence = 89
+fatal = true
+regex = '''java\.util\.zip\.ZipException: (?:zip END header not found|invalid (?:CEN|LOC) header|error in opening zip file)'''
+example = "Caused by: java.util.zip.ZipException: zip END header not found"
+
+[[pattern]]
+id = "locked_world"
+kind = "manual"
+confidence = 96
+fatal = true
+regex = '''(?i)(?:LockException: [^\n]*session\.lock: already locked|the save is being accessed from another location)'''
+example = "net.minecraft.util.DirectoryLock$LockException: saves/My world/session.lock: already locked (possibly by other Minecraft instance?)"
 
 # --------------------------------------------------------------------- Mixin
 

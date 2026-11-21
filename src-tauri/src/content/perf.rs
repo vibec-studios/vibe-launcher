@@ -124,19 +124,22 @@ async fn candidate(state: &AppState, inst: &Instance, slug: &str) -> Option<Perf
     })
 }
 
+pub(crate) async fn backup(state: &AppState, task: &TaskHandle, instance_id: &str, label: &str) {
+    if let Some(scopes) = super::snapshots::fix_backup_scopes(&state.settings().fix_backup) {
+        task.stage("Sicherung wird erstellt …", None);
+        if let Err(error) = super::snapshots::create_scoped(state, instance_id, label, true, &scopes, None).await {
+            tracing::warn!("Snapshot vor Mod-Installation fehlgeschlagen: {error}");
+        }
+    }
+}
+
 /// Task-Körper: Snapshot, dann ausgewählte Projekte inkl. Abhängigkeiten installieren.
 pub async fn run_install(state: AppState, task: TaskHandle, instance_id: String, project_ids: Vec<String>) -> AppResult<()> {
     let inst = state.instances.get(&instance_id)?;
     if project_ids.is_empty() {
         return Ok(());
     }
-    // Gleiche Sicherungs-Einstellung wie „Probleme beheben“ (installiert ebenfalls nur Mods)
-    if let Some(scopes) = super::snapshots::fix_backup_scopes(&state.settings().fix_backup) {
-        task.stage("Sicherung wird erstellt …", None);
-        if let Err(e) = super::snapshots::create_scoped(&state, &instance_id, "Vor Performance-Mods", true, &scopes, None).await {
-            tracing::warn!("Snapshot vor Performance-Mods fehlgeschlagen: {e}");
-        }
-    }
+    backup(&state, &task, &instance_id, "Vor Performance-Mods").await;
     task.check()?;
     task.stage("Löse Abhängigkeiten auf …", None);
     let (_, idx) = local::refresh(&state, &instance_id, ContentKind::Mod).await?;

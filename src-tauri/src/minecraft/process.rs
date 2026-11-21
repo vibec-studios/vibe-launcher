@@ -44,6 +44,10 @@ impl GameManager {
         self.reg.lock().get(key).map(|s| s.state.clone())
     }
 
+    pub fn spark_report(&self, run_id: &str) -> Option<String> {
+        self.reg.lock().get(run_id)?.spark_report.clone()
+    }
+
     pub fn latest_crash(&self, instance_id: &str) -> Option<GameState> {
         self.reg.lock().latest_crash(instance_id)
     }

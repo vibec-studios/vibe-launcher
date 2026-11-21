@@ -157,10 +157,14 @@ fn on_game_state(app: &AppHandle, v: &serde_json::Value) {
                     tracing::warn!("Spielzeit konnte nicht gespeichert werden: {e}");
                 }
             }
-            if let Ok(inst) = state.instances.get(id) {
-                let s = optsync::after_exit(&state.paths.root, &state.paths.game_dir(id), id, &inst.name, &inst.mc_version, since);
-                if !s.conflicts.is_empty() || s.changes > 0 {
-                    let _ = app.emit(SYNC_EVENT, id);
+            if let Ok(_guard) = state.content.launch_gate(id).try_lock_owned() {
+                if !state.game.is_running(id) {
+                    if let Ok(inst) = state.instances.get(id) {
+                        let s = optsync::after_exit(&state.paths.root, &state.paths.game_dir(id), id, &inst.name, &inst.mc_version, since);
+                        if !s.conflicts.is_empty() || !s.errors.is_empty() || s.changes > 0 || s.options > 0 {
+                            let _ = app.emit(SYNC_EVENT, id);
+                        }
+                    }
                 }
             }
         }

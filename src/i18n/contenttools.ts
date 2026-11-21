@@ -1,6 +1,11 @@
 // OWNER: Content-Agent. Seiten-Filter, Abhängigkeits-Check, Mod-Sets, Performance-Presets, Modpack-Updates.
 export default {
   de: {
+    "fix.unfixable.native_memory": "Wenn das erneut passiert, setze eigene Java-Speicheroptionen auf die Standardwerte zurück.",
+    "fix.unfixable.disk_full": "Prüfe den freien Speicher auch auf dem Systemlaufwerk, auf dem Java temporäre Dateien ablegt.",
+    "fix.unfixable.invalid_jvm_flag": "Wenn du die abgelehnte Option im Log findest, entferne genau diese aus den eigenen Java-Argumenten.",
+    "fix.unfixable.corrupt_archive": "Bei Minecraft-Dateien hilft oft eine erneute Installation der betroffenen Spielversion.",
+    "fix.unfixable.locked_world": "Beende gegebenenfalls die andere Sitzung. Die Sperrdatei schützt deinen Spielstand.",
     "side.short.client": "Client",
     "side.short.both": "Client & Server",
     "side.short.server": "Server",
@@ -241,6 +246,11 @@ export default {
     "fix.pre.fix": "Beheben und starten",
   },
   en: {
+    "fix.unfixable.native_memory": "If it happens again, reset any custom Java memory options to their defaults.",
+    "fix.unfixable.disk_full": "Check the system drive too, as Java uses it for temporary files.",
+    "fix.unfixable.invalid_jvm_flag": "If you find the rejected option in the log, remove that option from your custom Java arguments.",
+    "fix.unfixable.corrupt_archive": "For Minecraft's own files, reinstalling the affected game version often helps.",
+    "fix.unfixable.locked_world": "Close the other game session if necessary. The lock file protects your save.",
     "side.short.client": "Client",
     "side.short.both": "Client & server",
     "side.short.server": "Server",

@@ -75,6 +75,27 @@ fn normal_logs_have_no_findings() {
 }
 
 #[test]
+fn manual_causes_offer_guidance_only_after_a_crash() {
+    let examples = [
+        ("native_memory", "java.lang.OutOfMemoryError: unable to create new native thread"),
+        ("disk_full", "Caused by: java.nio.file.FileSystemException: saves/world/level.dat: No space left on device"),
+        ("invalid_jvm_flag", "Unrecognized VM option 'UseConcMarkSweepGC'"),
+        ("corrupt_archive", "Caused by: java.util.zip.ZipException: zip END header not found"),
+        ("locked_world", "net.minecraft.util.DirectoryLock$LockException: saves/world/session.lock: already locked"),
+    ];
+    for (id, example) in examples {
+        let sources = [LogText::new("console", example)];
+        let mods = ModIndex::default();
+        let crashed = ctx("fabric", "1.21.4");
+        let found = analyze(&sources, &crashed, &mods);
+        assert_eq!(ids(&found), vec![id], "{example}");
+        assert!(found[0].actions.iter().all(|a| matches!(a, Action::Upload)), "{example}");
+        assert_eq!(found[0].line, Some(1));
+        assert!(analyze(&sources, &Ctx { exit_code: None, ..crashed }, &mods).is_empty());
+    }
+}
+
+#[test]
 fn normal_warnings_do_not_add_findings_to_a_real_crash() {
     // OOM-Absturz + Log mit üblichen Warnungen: nur die echte Ursache
     let d = run(&["oom.txt", "normal-fabric.txt"], &Ctx { crash_report: true, ..ctx("fabric", "1.21.1") }, &ModIndex::default());

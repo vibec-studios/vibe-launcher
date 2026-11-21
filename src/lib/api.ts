@@ -107,6 +107,7 @@ export const api = {
   instanceKill: (id: string, runId?: string | null) => call<void>("instance_kill", { id, runId: runId ?? null }),
   consoleOpen: (runId?: string | null) => call<void>("console_open", { runId: runId ?? null }),
   gameStates: () => call<T.GameState[]>("game_states"),
+  gameResources: () => call<T.RunResources[]>("game_resources"),
   instanceLogSession: (id: string, runId?: string | null) => call<T.LogLine[]>("instance_log_session", { id, runId: runId ?? null }),
   instanceLogFiles: (id: string) => call<T.LogFile[]>("instance_log_files", { id }),
   instanceLogRead: (id: string, name: string) => call<string>("instance_log_read", { id, name }),
@@ -182,6 +183,8 @@ export const api = {
   modsetRename: (instanceId: string, setId: string, name: string) => call<T.ModSets>("modset_rename", { instanceId, setId, name }),
   modsetDelete: (instanceId: string, setId: string) => call<T.ModSets>("modset_delete", { instanceId, setId }),
   perfPreview: (instanceId: string) => call<T.PerfCandidate[]>("perf_preview", { instanceId }),
+  quickModStatus: (instanceId: string, tool: T.QuickMod) => call<T.QuickModStatus>("quick_mod_status", { instanceId, tool }),
+  quickModInstall: (instanceId: string, tool: T.QuickMod) => call<string>("quick_mod_install", { instanceId, tool }),
   /** Gibt Task-ID zurück (vorher Snapshot). */
   perfInstall: (instanceId: string, projectIds: string[]) => call<string>("perf_install", { instanceId, projectIds }),
   launchersDetect: () => call<T.ExternalLauncher[]>("launchers_detect"),

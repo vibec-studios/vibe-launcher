@@ -1,11 +1,20 @@
 // Mock: Werkzeuge der Instanzseite (Modpack-Update, Abhängigkeits-Check, Mod-Sets, Performance, Backups, Dateien,
 // Serverliste). Macht „survival“ zu einer realistisch gefüllten Modpack-Instanz. Nur für VITE_MOCK=1.
-import type { DepIssue, Diagnosis, FileEntry, FixBackup, FixPlan, FixReport, Instance, ModSets, OptSyncInfo, PerfCandidate, ProjectVersion, ServerEntry, SnapshotInfo, SnapshotScope, SyncKey, WorldBackup } from "@/lib/types";
+import type { DepIssue, Diagnosis, FileEntry, FixBackup, FixPlan, FixReport, Instance, ModSets, OptSyncInfo, PerfCandidate, ProjectVersion, QuickModStatus, ServerEntry, SnapshotInfo, SnapshotScope, SyncKey, WorldBackup } from "@/lib/types";
 import { instances } from "./core";
 import { emptyState, latestState, states } from "./sessions";
 import { fakeTask, type Handlers } from "./util";
 
 const now = Date.now();
+const quickMods = new Set<string>();
+function quickModStatus(instanceId: unknown, tool: unknown): QuickModStatus {
+  const inst = instances.get(String(instanceId));
+  if (!inst || inst.loader.kind === "vanilla" || (tool === "replaymod" && inst.loader.kind === "neoforge")) {
+    return { status: "unavailable" };
+  }
+  if (quickMods.has(`${instanceId}:${tool}`)) return { status: "installed" };
+  return { status: "available", version_id: `mock-${tool}`, version: tool === "spark" ? "1.10.170" : "2.6.27" };
+}
 const survival = instances.get("survival");
 if (survival) {
   const next: Instance = {
@@ -198,6 +207,24 @@ const crashPlan: FixPlan = {
   ],
   unfixable: [],
 };
+const diskDiagnosis: Diagnosis = {
+  id: "disk_full",
+  confidence: 96,
+  culprit: null,
+  params: {},
+  actions: [],
+  evidence: "java.io.IOException: No space left on device",
+  source: "logs/latest.log",
+  line: 84,
+  rule: "disk_full",
+};
+const diskPlan: FixPlan = {
+  crash: true,
+  causes: [diskDiagnosis],
+  steps: [],
+  unfixable: [{ reason: "disk_full", name: "", detail: null, cause: 0 }],
+};
+const activeCrashPlan = () => localStorage.getItem("vl.mock.crash.rule") === "disk_full" ? diskPlan : crashPlan;
 const crashFlag = (() => {
   try {
     return localStorage.getItem("vl.mock.crash");
@@ -262,8 +289,8 @@ let sync: OptSyncInfo = {
     shader: syncEmpty ? null : { pack: "ComplementaryReimagined_r5.4.zip", enabled: true },
     optifine: {},
   },
-  categories: ["controls", "sound", "video", "language", "accessibility"],
-  areas: ["resourcepacks", "shaderpacks", "servers", "screenshots"],
+  categories: ["controls", "keybinds", "sound", "video", "language", "accessibility"],
+  areas: ["resourcepacks", "shaderpacks", "servers", "screenshots", "hotbars", "command_history"],
   counts: syncEmpty ? {} : { controls: 48, sound: 1, language: 2, resourcepacks: 2 },
   shared: syncEmpty
     ? [
@@ -312,7 +339,7 @@ const handlers: Handlers = {
   autofix_quick: ({ instanceId }) => ({ errors: instanceId === "survival" && (!fixReport || fixReport.undone) ? 3 : instanceId === "hh-armors" && !repaired ? 1 : 0, warnings: 0, crashed: false }),
   autofix_plan: ({ instanceId, ignoreCrash }) =>
     !ignoreCrash && crashedNow(instanceId)
-      ? crashPlan
+      ? activeCrashPlan()
       : instanceId === "survival" && (!fixReport || fixReport.undone)
       ? fixPlan
       : instanceId === "hh-armors" && !repaired
@@ -354,6 +381,25 @@ const handlers: Handlers = {
   modset_rename: ({ setId, name }) => (modsets = { ...modsets, sets: modsets.sets.map((s) => (s.id === setId ? { ...s, name: String(name) } : s)) }),
   modset_delete: ({ setId }) => (modsets = { ...modsets, active: null, sets: modsets.sets.filter((s) => s.id !== setId) }),
   perf_preview: () => perf,
+  quick_mod_status: ({ instanceId, tool }) => quickModStatus(instanceId, tool),
+  quick_mod_install: ({ instanceId, tool }) => {
+    const status = quickModStatus(instanceId, tool);
+    if (status.status === "unavailable") throw new Error("Für diese Instanz ist keine passende Version verfügbar.");
+    if ([...states.values()].some((run) => run.instance_id === instanceId && run.state !== "stopped")) {
+      throw new Error("Beende zuerst alle Spielsitzungen dieser Instanz.");
+    }
+    return fakeTask("content", tool === "spark" ? "spark einrichten" : "ReplayMod einrichten", String(instanceId), 1000,
+      () => quickMods.add(`${instanceId}:${tool}`));
+  },
+  game_resources: () => {
+    const report = localStorage.getItem("vl.mock.spark.report");
+    return [...states.values()].filter((run) => run.state !== "stopped").map((run) => ({
+      run_id: run.run_id,
+      cpu_percent: run.state === "running" ? 11 * run.slot + Math.round(Date.now() / 3000) % 17 : null,
+      memory_bytes: run.state === "running" ? (850 + 410 * run.slot) * MB : null,
+      spark_report: report && /^https:\/\/spark\.lucko\.me\/[A-Za-z0-9]{6,32}$/.test(report) ? report : null,
+    }));
+  },
   perf_install: ({ instanceId }) => fakeTask("perf_install", "Performance-Mods installieren", instanceId as string, 2000),
   snapshots_list: ({ instanceId }) => (instanceId === "survival" ? snapshots : []),
   snapshot_create: () => null,
@@ -422,7 +468,7 @@ const handlers: Handlers = {
   },
   screenshots_list: () => [],
   // Die Analyse liest weiter dasselbe Log – auch nach dem Beheben (erst der nächste Start ändert es)
-  crash_analyze: ({ instanceId }) => (instanceId === "survival" && latestState("survival")?.crashed ? crashDiags : []),
+  crash_analyze: ({ instanceId }) => (instanceId === "survival" && latestState("survival")?.crashed ? activeCrashPlan().causes ?? [] : []),
 };
 
 export default handlers;

@@ -21,11 +21,12 @@ use crate::error::AppResult;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
+mod personal;
 
 /// Bereiche aus `options.txt`.
-pub const CATEGORIES: [&str; 5] = ["controls", "sound", "video", "language", "accessibility"];
+pub const CATEGORIES: [&str; 6] = ["controls", "keybinds", "sound", "video", "language", "accessibility"];
 /// Weitere Bereiche (Ordner, Server-Liste).
-pub const AREAS: [&str; 4] = ["resourcepacks", "shaderpacks", "servers", "screenshots"];
+pub const AREAS: [&str; 6] = ["resourcepacks", "shaderpacks", "servers", "screenshots", "hotbars", "command_history"];
 /// Bereiche mit gemeinsamem Ordner, der in beide Richtungen abgeglichen wird.
 const DIR_AREAS: [&str; 2] = ["resourcepacks", "shaderpacks"];
 
@@ -101,7 +102,7 @@ const OPTIFINE_SKIP: &[&str] = &["ofFullscreenMode"];
 /// Kategorie eines Schlüssels (None = wird nie synchronisiert).
 pub fn category_of(key: &str) -> Option<&'static str> {
     if key.starts_with("key_") {
-        return Some("controls");
+        return Some("keybinds");
     }
     if key.starts_with("soundCategory_") {
         return Some("sound");
@@ -161,14 +162,33 @@ pub struct SyncConfig {
     pub shader: Option<ShaderSel>,
     /// OptiFine-Einstellungen (`optionsof.txt`, gehört zu „Grafik“)
     pub optifine: BTreeMap<String, String>,
+    pub legacy_keybinds: BTreeMap<String, String>,
+    keybinds_separate: bool,
 }
 
 impl SyncConfig {
     pub fn load(path: &Path) -> SyncConfig {
-        std::fs::read(path)
+        let mut cfg: SyncConfig = std::fs::read(path)
             .ok()
             .and_then(|b| serde_json::from_slice(&b).ok())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        if !cfg.keybinds_separate {
+            for inst in cfg.instances.values_mut() {
+                if inst.categories.iter().any(|cat| cat == "controls") && !inst.categories.iter().any(|cat| cat == "keybinds") {
+                    inst.categories.push("keybinds".into());
+                }
+            }
+            cfg.master.retain(|k, v| {
+                if k.starts_with("key_") && !modern_binding(v) {
+                    cfg.legacy_keybinds.insert(k.clone(), v.clone());
+                    false
+                } else {
+                    true
+                }
+            });
+            cfg.keybinds_separate = true;
+        }
+        cfg
     }
     pub fn save(&self, path: &Path) -> AppResult<()> {
         crate::util::write_json_atomic(path, self)
@@ -225,6 +245,9 @@ pub struct InstanceState {
     pub servers: Option<syncservers::ServerBase>,
     /// Pack-Liste, die vor dem letzten Start geschrieben wurde
     pub packs_applied: Option<Vec<String>>,
+    personal: BTreeMap<String, String>,
+    command_history_base: Vec<String>,
+    options_applied: Option<BTreeMap<String, String>>,
     pub last_sync: Option<i64>,
     pub conflicts: Vec<ConflictNote>,
     /// Fehler des letzten Abgleichs (z. B. gesperrte Datei)
@@ -271,6 +294,17 @@ fn forget_areas(root: &Path, id: &str, areas: Option<&[String]>) {
     if hit("screenshots") {
         st.screenshots.clear();
     }
+    for area in personal::AREAS {
+        if hit(area) {
+            st.personal.remove(area);
+        }
+    }
+    if hit("command_history") {
+        st.command_history_base.clear();
+    }
+    if hit("keybinds") {
+        st.options_applied = None;
+    }
     if let Err(e) = st.save(root, id) {
         tracing::warn!("Sync-Stand von {id} nicht gespeichert: {e}");
     }
@@ -284,7 +318,7 @@ pub fn set_instance(root: &Path, id: &str, enabled: bool, categories: Vec<String
     let mut cfg = SyncConfig::load(&p);
     let old = cfg.for_instance(id);
     let now = InstanceSync { enabled, categories };
-    let removed: Vec<String> = AREAS.iter().filter(|a| old.has(a) && !now.has(a)).map(|s| s.to_string()).collect();
+    let removed: Vec<String> = AREAS.iter().chain(&["keybinds"]).filter(|a| old.has(a) && !now.has(a)).map(|s| s.to_string()).collect();
     let added: Vec<String> = AREAS.iter().filter(|a| !old.has(a) && now.has(a)).map(|s| s.to_string()).collect();
     cfg.instances.insert(id.to_string(), now);
     cfg.save(&p)?;
@@ -364,10 +398,14 @@ fn set_opt(opts: &mut Vec<(String, String)>, k: &str, v: String) {
 }
 
 /// Neues Format der Tastenbelegung (ab 1.13: „key.keyboard.w“) vs. alt (Zahlencodes)?
+fn modern_binding(value: &str) -> bool {
+    value.starts_with("key.") || value == "unknown"
+}
+
 fn modern_keys(opts: &[(String, String)]) -> Option<bool> {
     opts.iter()
         .find(|(k, _)| k.starts_with("key_"))
-        .map(|(_, v)| v.starts_with("key.") || v == "unknown")
+        .map(|(_, v)| modern_binding(v))
 }
 
 /// Master-Werte der gewählten Kategorien in eine options.txt einmischen.
@@ -383,7 +421,7 @@ pub fn merge_into(
         if !categories.iter().any(|c| c == cat) {
             continue;
         }
-        if k.starts_with("key_") && (v.starts_with("key.") || v == "unknown") != target_modern_keys
+        if k.starts_with("key_") && modern_binding(v) != target_modern_keys
         {
             continue;
         }
@@ -399,6 +437,46 @@ pub fn capture(text: &str, master: &mut BTreeMap<String, String>, categories: &[
         if let Some(cat) = category_of(&k) {
             if categories.iter().any(|c| c == cat) {
                 master.insert(k, v);
+                n += 1;
+            }
+        }
+    }
+    n
+}
+
+fn applied_options(opts: &[(String, String)], cats: &[String], modern: bool) -> BTreeMap<String, String> {
+    opts.iter()
+        .filter(|(k, v)| {
+            category_of(k).is_some_and(|cat| cats.iter().any(|c| c == cat) && (cat != "keybinds" || modern_binding(v) == modern))
+        })
+        .cloned()
+        .collect()
+}
+
+fn capture_options(
+    cfg: &mut SyncConfig,
+    text: &str,
+    cats: &[String],
+    mc: &str,
+    baseline: Option<&BTreeMap<String, String>>,
+    replace: bool,
+) -> usize {
+    let opts = parse_options(text);
+    let modern = modern_keys(&opts).unwrap_or_else(|| !is_pre_113(mc));
+    let mut n = 0;
+    for cat in cats {
+        let master = if cat == "keybinds" && !modern { &mut cfg.legacy_keybinds } else { &mut cfg.master };
+        if replace {
+            master.retain(|k, _| category_of(k) != Some(cat.as_str()));
+        }
+        for (k, v) in &opts {
+            if category_of(k) != Some(cat.as_str()) || (cat == "keybinds" && modern_binding(v) != modern) {
+                continue;
+            }
+            let current = master.get(k);
+            let untouched = current.is_some() && baseline.and_then(|base| base.get(k)) == Some(v);
+            if current != Some(v) && !untouched {
+                master.insert(k.clone(), v.clone());
                 n += 1;
             }
         }
@@ -574,25 +652,43 @@ pub fn apply(
     let cats = inst.option_categories();
     let packs = cfg.resource_packs.clone().filter(|_| inst.has("resourcepacks") && !is_pre_113(mc_version));
     let mut n = 0;
-    if (!cfg.master.is_empty() && !cats.is_empty()) || packs.is_some() {
+    if !cats.is_empty() || packs.is_some() {
         let path = game_dir.join("options.txt");
-        let existing = std::fs::read_to_string(&path).unwrap_or_default();
+        let existing = match std::fs::read_to_string(&path) {
+            Ok(existing) => existing,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
+            Err(error) => return Err(error.into()),
+        };
         let modern = modern_keys(&parse_options(&existing)).unwrap_or_else(|| !is_pre_113(mc_version));
-        let mut opts = parse_options(&merge_into(&existing, &cfg.master, &cats, modern));
-        n += cfg
-            .master
-            .keys()
-            .filter(|k| category_of(k).is_some_and(|c| cats.iter().any(|x| x == c)))
+        let mut master = cfg.master.clone();
+        if !modern {
+            master.extend(cfg.legacy_keybinds);
+        }
+        let mut opts = parse_options(&merge_into(&existing, &master, &cats, modern));
+        n += master.iter()
+            .filter(|(k, v)| {
+                category_of(k).is_some_and(|c| cats.iter().any(|x| x == c)
+                    && (c != "keybinds" || modern_binding(v) == modern))
+            })
             .count();
         if let Some(p) = &packs {
             write_packs(&mut opts, p);
             n += 1;
+        }
+        if n > 0 {
+            std::fs::create_dir_all(game_dir)?;
+            std::fs::write(&path, render_options(&opts))?;
+        }
+        if packs.is_some() || !cats.is_empty() {
             let mut st = InstanceState::load(root, instance_id);
-            st.packs_applied = Some(p.clone());
+            if packs.is_some() {
+                st.packs_applied = packs;
+            }
+            if !cats.is_empty() {
+                st.options_applied = Some(applied_options(&opts, &cats, modern));
+            }
             st.save(root, instance_id)?;
         }
-        std::fs::create_dir_all(game_dir)?;
-        std::fs::write(&path, render_options(&opts))?;
     }
     // OptiFine (nur wenn es in der Instanz schon eine optionsof.txt gibt)
     if inst.has("video") && !cfg.optifine.is_empty() {
@@ -627,8 +723,10 @@ pub fn pull(root: &Path, game_dir: &Path, instance_id: &str, mc_version: &str, s
     let mut changed = false;
     if let Ok(text) = std::fs::read_to_string(game_dir.join("options.txt")) {
         if !cats.is_empty() {
-            n += capture(&text, &mut cfg.master, &cats);
-            changed = true;
+            let st = InstanceState::load(root, instance_id);
+            let captured = capture_options(&mut cfg, &text, &cats, mc_version, st.options_applied.as_ref(), false);
+            n += captured;
+            changed |= captured > 0;
         }
         if inst.has("resourcepacks") && !is_pre_113(mc_version) {
             let after = parse_options(&text).into_iter().find(|(k, _)| k == "resourcePacks").and_then(|(_, v)| parse_pack_list(&v));
@@ -680,8 +778,7 @@ pub fn capture_from(root: &Path, game_dir: &Path, instance_id: &str, mc_version:
     let mut n = 0;
     if !cats.is_empty() {
         let text = text.as_deref().map_err(|_| crate::error::AppError::NotFound("Diese Instanz hat noch keine options.txt – einmal starten und Einstellungen vornehmen".into()))?;
-        cfg.master.retain(|k, _| category_of(k).map_or(true, |c| !cats.iter().any(|x| x == c)));
-        n += capture(text, &mut cfg.master, &cats);
+        n += capture_options(&mut cfg, text, &cats, mc_version, None, true);
     }
     let has = |a: &str| areas.iter().any(|x| x == a);
     if has("resourcepacks") && !is_pre_113(mc_version) {
@@ -699,6 +796,11 @@ pub fn capture_from(root: &Path, game_dir: &Path, instance_id: &str, mc_version:
         if let Some(sel) = read_shader(game_dir) {
             cfg.shader = Some(sel);
             n += 1;
+        }
+    }
+    for area in personal::AREAS {
+        if has(area) {
+            n += personal::capture(root, game_dir, area, mc_version)?;
         }
     }
     cfg.source = Some(instance_id.to_string());
@@ -723,7 +825,7 @@ pub struct SyncSummary {
 }
 
 /// Ordner + Server-Liste (+ Screenshots) einer Instanz abgleichen. Läuft unter [`LOCK`].
-fn sync_files(root: &Path, game_dir: &Path, id: &str, name: &str, collect_shots: bool) -> SyncSummary {
+fn sync_files(root: &Path, game_dir: &Path, id: &str, name: &str, mc_version: &str, collect_shots: bool) -> SyncSummary {
     let cfg = SyncConfig::load(&config_path(root));
     let inst = cfg.for_instance(id);
     let mut sum = SyncSummary::default();
@@ -750,6 +852,18 @@ fn sync_files(root: &Path, game_dir: &Path, id: &str, name: &str, collect_shots:
         match syncservers::sync(&game_dir.join("servers.dat"), &shared_servers(root), &mut st.servers) {
             Ok(r) => sum.changes += (r.to_instance + r.to_shared) as usize,
             Err(e) => sum.errors.push(format!("servers.dat: {e}")),
+        }
+    }
+    for area in personal::AREAS {
+        if !inst.has(area) {
+            continue;
+        }
+        match personal::sync(root, game_dir, area, mc_version, &mut st) {
+            Ok((changes, conflict)) => {
+                sum.changes += changes;
+                sum.conflicts.extend(conflict);
+            }
+            Err(error) => sum.errors.push(format!("{area}: {error}")),
         }
     }
     if collect_shots && inst.has("screenshots") {
@@ -783,7 +897,7 @@ fn log_summary(what: &str, id: &str, s: &SyncSummary) {
 /// Vor dem Start: gemeinsame Ordner und Server-Liste in die Instanz holen, dann Optionen/Pack-/Shader-Auswahl schreiben.
 pub fn before_launch(root: &Path, game_dir: &Path, id: &str, name: &str, mc_version: &str) -> SyncSummary {
     let _g = LOCK.lock();
-    let mut s = sync_files(root, game_dir, id, name, false);
+    let mut s = sync_files(root, game_dir, id, name, mc_version, false);
     match apply(root, game_dir, id, mc_version) {
         Ok(n) => s.options = n,
         Err(e) => s.errors.push(format!("Optionen: {e}")),
@@ -803,7 +917,7 @@ pub fn after_exit(root: &Path, game_dir: &Path, id: &str, name: &str, mc_version
             0
         }
     };
-    let mut s = sync_files(root, game_dir, id, name, true);
+    let mut s = sync_files(root, game_dir, id, name, mc_version, true);
     s.options = options;
     s.errors.extend(errors);
     log_summary("nach dem Spielen", id, &s);
@@ -812,9 +926,9 @@ pub fn after_exit(root: &Path, game_dir: &Path, id: &str, name: &str, mc_version
 
 /// „Jetzt abgleichen“ (Einstellungen, neu eingeschaltete Bereiche): nur Dateien und Server-Liste, keine Optionen.
 /// Die Instanz darf nicht laufen (prüft der Aufrufer).
-pub fn sync_now(root: &Path, game_dir: &Path, id: &str, name: &str) -> SyncSummary {
+pub fn sync_now(root: &Path, game_dir: &Path, id: &str, name: &str, mc_version: &str) -> SyncSummary {
     let _g = LOCK.lock();
-    let s = sync_files(root, game_dir, id, name, true);
+    let s = sync_files(root, game_dir, id, name, mc_version, true);
     log_summary("manuell", id, &s);
     s
 }
@@ -856,7 +970,7 @@ mod tests {
 
     #[test]
     fn categories() {
-        assert_eq!(category_of("key_key.forward"), Some("controls"));
+        assert_eq!(category_of("key_key.forward"), Some("keybinds"));
         assert_eq!(category_of("soundCategory_music"), Some("sound"));
         assert_eq!(category_of("renderDistance"), Some("video"));
         assert_eq!(category_of("lang"), Some("language"));
@@ -877,7 +991,7 @@ mod tests {
         let out = merge_into(
             existing,
             &master,
-            &["language".into(), "controls".into(), "sound".into()],
+            &["language".into(), "keybinds".into(), "sound".into()],
             true,
         );
         assert_eq!(
@@ -893,7 +1007,7 @@ mod tests {
         let out = merge_into(
             "version:1343\nkey_key.forward:17\n",
             &master,
-            &["controls".into()],
+            &["keybinds".into()],
             false,
         );
         assert_eq!(out, "version:1343\nkey_key.forward:17\n");
@@ -912,6 +1026,118 @@ mod tests {
         assert_eq!(n, 1);
         assert_eq!(m.get("fov").map(String::as_str), Some("0.5"));
         assert!(!m.contains_key("lang"));
+    }
+
+    #[test]
+    fn keybinds_migrate_and_keep_independent_formats_and_newer_values() {
+        let root = tmp_root("keybinds");
+        std::fs::write(config_path(&root), r#"{
+            "master":{"key_key.forward":"17"},
+            "instances":{"a":{"enabled":true,"categories":["controls"]}}
+        }"#).unwrap();
+        let old = root.join("old");
+        let a = root.join("a");
+        let b = root.join("b");
+        let cfg = SyncConfig::load(&config_path(&root));
+        assert!(cfg.for_instance("a").has("keybinds"));
+        assert_eq!(cfg.legacy_keybinds["key_key.forward"], "17");
+        enable(&root, "old", &["keybinds"]);
+        enable(&root, "b", &["keybinds"]);
+        apply(&root, &old, "old", "1.12.2").unwrap();
+        assert_eq!(std::fs::read_to_string(old.join("options.txt")).unwrap(), "key_key.forward:17\n");
+
+        std::fs::create_dir_all(&a).unwrap();
+        std::fs::write(a.join("options.txt"), "key_key.forward:key.keyboard.w\n").unwrap();
+        apply(&root, &a, "a", "1.21.4").unwrap();
+        pull(&root, &a, "a", "1.21.4", None).unwrap();
+        apply(&root, &a, "a", "1.21.4").unwrap();
+        apply(&root, &b, "b", "1.21.4").unwrap();
+        std::fs::write(b.join("options.txt"), "key_key.forward:key.keyboard.up\n").unwrap();
+        pull(&root, &b, "b", "1.21.4", None).unwrap();
+        pull(&root, &a, "a", "1.21.4", None).unwrap();
+
+        let cfg = SyncConfig::load(&config_path(&root));
+        assert_eq!(cfg.master["key_key.forward"], "key.keyboard.up");
+        assert_eq!(cfg.legacy_keybinds["key_key.forward"], "17");
+        enable(&root, "a", &["controls"]);
+        assert!(!SyncConfig::load(&config_path(&root)).for_instance("a").has("keybinds"));
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn hotbars_sync_by_version_and_keep_the_conflicting_copy() {
+        let root = tmp_root("hotbars");
+        let a = root.join("a");
+        let b = root.join("b");
+        std::fs::create_dir_all(&a).unwrap();
+        enable(&root, "a", &["hotbars"]);
+        enable(&root, "b", &["hotbars"]);
+        std::fs::write(a.join("hotbar.nbt"), b"first").unwrap();
+        assert_eq!(sync_now(&root, &a, "a", "A", "1.21.4").changes, 1);
+        assert_eq!(before_launch(&root, &b, "b", "B", "1.20.1").changes, 0);
+        assert!(!b.join("hotbar.nbt").exists());
+        assert_eq!(before_launch(&root, &b, "b", "B", "1.21.4").changes, 1);
+        std::fs::write(a.join("hotbar.nbt"), b"shared edit").unwrap();
+        std::fs::write(b.join("hotbar.nbt"), b"local edit").unwrap();
+        after_exit(&root, &a, "a", "A", "1.21.4", None);
+        let summary = after_exit(&root, &b, "b", "B", "1.21.4", None);
+        assert!(summary.errors.is_empty(), "{:?}", summary.errors);
+        assert_eq!(std::fs::read(b.join("hotbar.nbt")).unwrap(), b"shared edit");
+        assert_eq!(std::fs::read(b.join(&summary.conflicts[0].renamed)).unwrap(), b"local edit");
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn histories_merge_new_commands_without_reviving_old_entries() {
+        let root = tmp_root("history");
+        let a = root.join("a");
+        let b = root.join("b");
+        std::fs::create_dir_all(&a).unwrap();
+        enable(&root, "a", &["command_history"]);
+        enable(&root, "b", &["command_history"]);
+        let history = (0..50).map(|n| format!("/step{n}\n")).collect::<String>();
+        std::fs::write(a.join("command_history.txt"), &history).unwrap();
+        before_launch(&root, &a, "a", "A", "1.21.4");
+        before_launch(&root, &b, "b", "B", "1.20.2");
+        let first = history.find('\n').unwrap() + 1;
+        std::fs::write(a.join("command_history.txt"), format!("{}\n/remote\n", &history[first..])).unwrap();
+        std::fs::write(b.join("command_history.txt"), format!("{}\n/local\nchat line\n", &history[first..])).unwrap();
+        after_exit(&root, &a, "a", "A", "1.21.4", None);
+        after_exit(&root, &b, "b", "B", "1.20.2", None);
+        let result = std::fs::read_to_string(b.join("command_history.txt")).unwrap();
+        assert_eq!(result.lines().count(), 50);
+        assert!(result.starts_with("/step2\n"));
+        assert!(result.ends_with("/remote\n/local\n"));
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn parallel_sessions_do_not_write_back_stale_options() {
+        let root = tmp_root("parallel");
+        let a = root.join("a");
+        let b = root.join("b");
+        std::fs::create_dir_all(&a).unwrap();
+        std::fs::create_dir_all(&b).unwrap();
+        std::fs::write(a.join("options.txt"), "key_key.zoom:key.keyboard.c\nsoundCategory_music:1.0\n").unwrap();
+        std::fs::write(b.join("options.txt"), "key_key.zoom:key.keyboard.c\nsoundCategory_music:1.0\nkey_key.map:key.keyboard.m\n").unwrap();
+        enable(&root, "a", &["keybinds", "sound"]);
+        enable(&root, "b", &["keybinds", "sound"]);
+        before_launch(&root, &a, "a", "A", "1.21.4");
+        before_launch(&root, &b, "b", "B", "1.21.4");
+        std::fs::write(a.join("options.txt"), "key_key.zoom:key.keyboard.z\nsoundCategory_music:0.2\n").unwrap();
+        after_exit(&root, &a, "a", "A", "1.21.4", None);
+        after_exit(&root, &b, "b", "B", "1.21.4", None);
+        let cfg = SyncConfig::load(&config_path(&root));
+        assert_eq!(cfg.master["key_key.zoom"], "key.keyboard.z");
+        assert_eq!(cfg.master["soundCategory_music"], "0.2");
+        assert_eq!(cfg.master["key_key.map"], "key.keyboard.m");
+        before_launch(&root, &b, "b", "B", "1.21.4");
+        let text = std::fs::read_to_string(b.join("options.txt")).unwrap();
+        assert!(text.contains("key_key.zoom:key.keyboard.z\n") && text.contains("soundCategory_music:0.2\n"), "{text}");
+        before_launch(&root, &a, "a", "A", "1.21.4");
+        std::fs::write(a.join("options.txt"), "key_key.zoom:key.keyboard.z\nsoundCategory_music:0.2\nkey_key.map:key.keyboard.m\n").unwrap();
+        assert_eq!(pull(&root, &a, "a", "1.21.4", None).unwrap(), 0);
+        std::fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]

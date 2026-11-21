@@ -11,6 +11,7 @@ import { useInstances } from "@/lib/queries";
 import { instanceAccent } from "@/lib/format";
 import { formatUptime } from "@/lib/sessions";
 import type { GameState, Instance } from "@/lib/types";
+import { SessionResources } from "@/features/perf/SessionResources";
 
 function useNow(on: boolean) {
   const [now, setNow] = useState(() => Date.now());
@@ -98,10 +99,8 @@ export function RunningGames() {
   const now = useNow(open);
   const byId = new Map(instances.map((i) => [i.id, i]));
   const shown = runs.filter((r) => byId.has(r.instance_id));
-  if (!shown.length) return null;
   const newest = shown[shown.length - 1];
-  if (shown.length === 1) return <SingleChip run={newest} inst={byId.get(newest.instance_id)!} />;
-  return (
+  const chips = !newest ? null : shown.length === 1 ? <SingleChip run={newest} inst={byId.get(newest.instance_id)!} /> : (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button
@@ -138,5 +137,11 @@ export function RunningGames() {
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
+  );
+  return (
+    <>
+      <SessionResources runs={shown} name={(run) => label(run, byId.get(run.instance_id))} />
+      {chips}
+    </>
   );
 }
