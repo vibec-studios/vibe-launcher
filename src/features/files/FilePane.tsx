@@ -1,167 +1,20 @@
 // Rechte Seite des Datei-Bereichs: Kopfzeile mit Aktionen, Hinweise (läuft gerade, nur lesend), dann je nach
 // Datei der CodeMirror-Editor (lazy), eine Bildvorschau oder eine Info-Karte für große/binäre Dateien.
-import { Suspense, lazy, useState, type ReactNode, type Ref } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, ClipboardCopy, Copy, ExternalLink, History, Info, MoreHorizontal, Pencil, RefreshCw, Save, Trash2, Undo2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { Suspense, lazy, type ReactNode, type Ref } from "react";
+import { AlertTriangle, ClipboardCopy, Copy, ExternalLink, History, Info, MoreHorizontal, Pencil, RefreshCw, Save, Trash2, Undo2 } from "lucide-react";
 import type { FileContent, FileEntry, FileScope, FileValidationError } from "@/lib/types";
 import { formatBytes, formatRelative } from "@/lib/format";
-import { Button, DropdownItem, DropdownMenu, DropdownSeparator, EmptyState, ErrorState, IconButton, Skeleton, Spinner, Tag, Tooltip, cn } from "@/components/ui";
-import { useLang, useT } from "@/i18n";
+import { Button, DropdownItem, DropdownMenu, DropdownSeparator, ErrorState, IconButton, Skeleton, Spinner, Tag, Tooltip } from "@/components/ui";
+import { useT } from "@/i18n";
 import type { CodeEditorHandle } from "./CodeEditor";
 import type { FileActions } from "./FileTree";
-import { FileIcon, baseName, extOf, fullDate, scopeKey } from "./util";
+import { FileIcon, baseName } from "./util";
+import { Banner, EditorFallback, StatusBar } from "./pane/parts";
+import { ImagePreview, InfoCard } from "./pane/previews";
+
+export { CHECKED } from "./pane/parts";
 
 const CodeEditor = lazy(() => import("./CodeEditor"));
-
-/** Formate mit Syntaxprüfung im Backend */
-export const CHECKED = new Set(["json", "json5", "toml"]);
-
-function EditorFallback() {
-  const t = useT();
-  return (
-    <div className="flex h-full items-center justify-center gap-2 text-[13px] text-dim">
-      <Spinner size={14} /> {t("files.loading_editor")}
-    </div>
-  );
-}
-
-function Banner({ tone, icon, children, action }: { tone: "warn" | "info"; icon: ReactNode; children: ReactNode; action?: ReactNode }) {
-  return (
-    <div
-      className={cn(
-        "flex shrink-0 items-center gap-3 border-b px-4 py-2 text-[12.5px] text-text",
-        tone === "warn" ? "border-warn/25 bg-warn/[.07] [&>svg]:text-warn" : "border-line bg-surface [&>svg]:text-muted",
-      )}
-    >
-      {icon}
-      <span className="min-w-0 flex-1">{children}</span>
-      {action}
-    </div>
-  );
-}
-
-function StatusBar({ file, errors, checking, onJump }: { file: FileContent; errors: FileValidationError[]; checking: boolean; onJump: (e: FileValidationError) => void }) {
-  const t = useT();
-  const checked = CHECKED.has(file.language) && !file.readonly;
-  return (
-    <div className="shrink-0 border-t border-line bg-surface">
-      {errors.length > 0 && (
-        <div className="scroll max-h-[92px] border-b border-line py-1">
-          {errors.map((e, i) => (
-            <button key={i} onClick={() => onJump(e)} className="flex w-full items-baseline gap-3 px-4 py-0.5 text-left text-[12px] hover:bg-white/[.04]">
-              <AlertTriangle size={12} className="shrink-0 translate-y-[2px] text-danger" />
-              <span className="shrink-0 font-mono text-[11px] text-danger">{t("files.error_at", { line: e.line, col: e.column })}</span>
-              <span className="min-w-0 flex-1 truncate text-text">{e.message}</span>
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="flex h-8 items-center gap-3 px-4 text-[12px]">
-        {file.readonly ? (
-          <span className="text-dim">{t("files.readonly_short")}</span>
-        ) : !checked ? (
-          <span className="text-dim">{t("files.no_check")}</span>
-        ) : checking && !errors.length ? (
-          <span className="flex items-center gap-1.5 text-dim">
-            <Spinner size={11} /> {t("files.checking")}
-          </span>
-        ) : errors.length ? (
-          <span className="flex items-center gap-1.5 font-semibold text-danger">
-            <AlertTriangle size={13} /> {t(errors.length === 1 ? "files.errors_1" : "files.errors", { n: errors.length })}
-          </span>
-        ) : (
-          <span className="flex items-center gap-1.5 text-ok">
-            <CheckCircle2 size={13} /> {t("files.ok")}
-          </span>
-        )}
-        <div className="flex-1" />
-        <span className="text-dim">{file.readonly ? t("files.shortcuts_ro") : t("files.shortcuts")}</span>
-      </div>
-    </div>
-  );
-}
-
-function ImagePreview({ scope, file }: { scope: FileScope; file: FileContent }) {
-  const t = useT();
-  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
-  const q = useQuery({
-    queryKey: ["files", scopeKey(scope), "image", file.path, file.modified],
-    queryFn: () => api.filesImage(scope, file.path),
-    staleTime: Infinity,
-    gcTime: 30_000,
-    retry: false,
-  });
-  if (q.isError) return <EmptyState icon="error" title={t("files.image.failed")} text={String((q.error as { message?: string })?.message ?? "")} className="h-full" />;
-  if (!q.data)
-    return (
-      <div className="flex h-full items-center justify-center gap-2 text-[13px] text-dim">
-        <Spinner size={14} /> {t("files.image.loading")}
-      </div>
-    );
-  // Kleine Texturen (16×16) pixelgenau vergrößern, große einpassen
-  const small = dims && dims.w <= 128 && dims.h <= 128;
-  return (
-    <div className="flex h-full flex-col">
-      <div
-        className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-6"
-        style={{ backgroundImage: "repeating-conic-gradient(#ffffff0a 0% 25%, transparent 0% 50%)", backgroundSize: "16px 16px" }}
-      >
-        <img
-          src={q.data}
-          alt={baseName(file.path)}
-          onLoad={(e) => setDims({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
-          className={cn("max-h-full max-w-full object-contain", small && "[image-rendering:pixelated]")}
-          style={small && dims ? { width: Math.min(dims.w * 8, 512), height: "auto" } : undefined}
-        />
-      </div>
-      <div className="flex h-8 shrink-0 items-center gap-3 border-t border-line bg-surface px-4 text-[12px] text-dim">
-        {dims && (
-          <span className="tabular-nums">
-            {dims.w} × {dims.h} px
-          </span>
-        )}
-        <span>{formatBytes(file.size)}</span>
-      </div>
-    </div>
-  );
-}
-
-function InfoCard({ file, actions }: { file: FileContent; actions: FileActions }) {
-  const t = useT();
-  const lang = useLang((s) => s.lang);
-  const entry = { name: baseName(file.path), path: file.path, is_dir: false, kind: file.kind } as const;
-  const ext = extOf(file.path);
-  return (
-    <div className="flex h-full items-center justify-center p-8">
-      <div className="flex w-full max-w-[420px] flex-col items-center gap-4 border border-line bg-surface px-8 py-8 text-center">
-        <div className="grid h-14 w-14 place-items-center border border-line2 bg-surface2">
-          <FileIcon entry={entry} size={26} />
-        </div>
-        <div className="min-w-0 max-w-full">
-          <div className="truncate font-mono text-[14px] font-medium text-text" title={file.path}>
-            {baseName(file.path)}
-          </div>
-          <div className="mt-1 text-[12.5px] text-muted">{t(`files.readonly.${file.readonly_reason ?? "binary"}`)}</div>
-        </div>
-        <dl className="grid w-full grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-left text-[12.5px]">
-          <dt className="text-dim">{t("files.kind")}</dt>
-          <dd className="text-right text-text">
-            {t(`files.type.${file.kind}`)}
-            {ext && <span className="ml-1.5 font-mono text-[11.5px] text-muted">.{ext}</span>}
-          </dd>
-          <dt className="text-dim">{t("files.size")}</dt>
-          <dd className="text-right tabular-nums text-text">{formatBytes(file.size)}</dd>
-          <dt className="text-dim">{t("files.modified_full")}</dt>
-          <dd className="text-right tabular-nums text-text">{fullDate(file.modified, lang)}</dd>
-        </dl>
-        <Button size="sm" icon={<ExternalLink size={13} />} onClick={() => actions.reveal(file.path)}>
-          {t("files.act.reveal")}
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export interface FilePaneProps {
   scope: FileScope;
