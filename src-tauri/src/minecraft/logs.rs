@@ -2,6 +2,7 @@
 //! Log-Dateien der Instanz, Upload zu mclo.gs.
 use super::{LogFile, LogLevel, MclogsResult};
 use crate::error::{AppError, AppResult};
+use crate::feedback::redact;
 use crate::state::AppState;
 use regex::Regex;
 use std::path::Path;
@@ -303,11 +304,15 @@ pub fn truncate_for_mclogs(content: &str) -> String {
     text
 }
 
+pub fn prepare_for_mclogs(content: &str, known: &redact::Known) -> String {
+    truncate_for_mclogs(&redact::redact(content, known).text)
+}
+
 pub async fn mclogs_upload(state: &AppState, content: &str) -> AppResult<MclogsResult> {
     if content.trim().is_empty() {
         return Err(AppError::Invalid("Das Log ist leer".into()));
     }
-    let text = truncate_for_mclogs(content);
+    let text = prepare_for_mclogs(content, &redact::Known::from_env());
     let resp = state
         .net
         .client
@@ -394,5 +399,23 @@ mod tests {
         assert!(t.starts_with("line 0\n"));
         assert!(t.trim_end().ends_with("line 29999"));
         assert_eq!(truncate_for_mclogs("short"), "short");
+    }
+
+    #[test]
+    fn mclogs_upload_is_redacted() {
+        let known = redact::Known { users: vec!["henny".into()], hosts: vec!["DESKTOP-XYZ".into()] };
+        let raw = [
+            "Launching with --accessToken eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefghij --uuid 0123",
+            r"Loading C:\Users\henny\AppData\Roaming\x.jar on DESKTOP-XYZ",
+            "Session token:abcdefghijklmnop:0123456789abcdef0123456789abcdef",
+        ]
+        .join("\n");
+        let raw = raw.as_str();
+        let t = prepare_for_mclogs(raw, &known);
+        assert!(!t.contains("eyJhbGci"));
+        assert!(!t.contains("abcdefghijklmnop"));
+        assert!(!t.to_lowercase().contains("henny"));
+        assert!(!t.contains("DESKTOP-XYZ"));
+        assert!(t.contains("--accessToken"));
     }
 }
