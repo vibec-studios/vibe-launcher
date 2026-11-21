@@ -88,6 +88,7 @@ async fn from_cache(state: &AppState, id: &str, mods: &[PlanMod], locked: &[crat
         }
         if let Some(src) = dirs.iter().map(|d| d.join(name)).find(|p| p.is_file()) {
             let dst = game.join(l.kind.folder()).join(name);
+            crate::storage::links::detach(&dst);
             if dst.parent().map(std::fs::create_dir_all).is_some_and(|r| r.is_ok()) && std::fs::copy(&src, &dst).is_ok() {
                 copied = true;
             }
@@ -142,6 +143,7 @@ pub async fn copy_jars(state: &AppState, id: &str, jars: &[PlanJar]) -> AppResul
             if j.name.contains(['/', '\\']) || j.name.starts_with('.') || done.iter().any(|d: &String| d.eq_ignore_ascii_case(&j.name)) {
                 continue;
             }
+            crate::storage::links::detach(&dst.join(&j.name));
             std::fs::copy(&j.path, dst.join(&j.name)).map_err(|e| AppError::msg(format!("{} konnte nicht kopiert werden: {e}", j.name)))?;
             done.push(j.name.clone());
         }

@@ -42,5 +42,6 @@ pub(crate) use progress::*;
 pub(crate) use paths::*;
 use objects::*;
 use manifests::*;
+pub(crate) use manifests::{drop_instance, referenced};
 pub(crate) use sync::*;
 pub use api::*;

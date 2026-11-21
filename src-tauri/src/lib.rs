@@ -27,6 +27,7 @@ pub mod server;
 pub mod serverpack;
 pub mod settings;
 pub mod state;
+pub mod storage;
 pub mod tasks;
 pub mod updater;
 pub mod util;
@@ -38,7 +39,12 @@ use tauri::Manager;
 fn init_logging(paths: &paths::Paths) -> Option<tracing_appender::non_blocking::WorkerGuard> {
     use tracing_subscriber::{fmt, prelude::*, EnvFilter};
     let _ = std::fs::create_dir_all(paths.launcher_logs());
-    let file = tracing_appender::rolling::daily(paths.launcher_logs(), "launcher.log");
+    let file = tracing_appender::rolling::Builder::new()
+        .rotation(tracing_appender::rolling::Rotation::DAILY)
+        .filename_prefix("launcher.log")
+        .max_log_files(14)
+        .build(paths.launcher_logs())
+        .unwrap_or_else(|_| tracing_appender::rolling::daily(paths.launcher_logs(), "launcher.log"));
     let (nb, guard) = tracing_appender::non_blocking(file);
     let filter = EnvFilter::try_from_env("VIBE_LOG").unwrap_or_else(|_| EnvFilter::new("info,vibe_launcher_lib=debug,hyper=warn,reqwest=warn"));
     let registry = tracing_subscriber::registry()
@@ -94,6 +100,7 @@ pub fn run() {
             }
             tracing::info!("Vibe Launcher {} – Daten: {:?}", env!("CARGO_PKG_VERSION"), state.paths.root);
             datadir::on_startup(&state.paths);
+            storage::maintenance::on_startup(&state.paths.root);
             let startup_state = state.clone();
             let appearance = state.settings().appearance.clone();
             app.manage(state);

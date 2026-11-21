@@ -73,7 +73,7 @@ pub async fn apply(state: &AppState, inst: &Instance, planned: Vec<Planned>, sub
         entries.push((key, entry, old_keys));
     }
 
-    state.net.download_all(items, Some(sub)).await?;
+    crate::storage::store::download_all(state, items, Some(sub)).await?;
 
     // Alte Dateien entfernen, Index aktualisieren
     let lock = state.content.lock(&inst.id);

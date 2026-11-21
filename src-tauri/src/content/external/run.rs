@@ -161,6 +161,7 @@ pub async fn run_import(
                 if let Some(p) = target.parent() {
                     std::fs::create_dir_all(p)?;
                 }
+                crate::storage::links::detach(&target);
                 std::fs::copy(src, &target).map_err(|e| AppError::msg(format!("{} konnte nicht kopiert werden: {e}", rel.display())))?;
                 done += size;
                 t2.progress(if total == 0 { 1.0 } else { done as f64 / total as f64 });

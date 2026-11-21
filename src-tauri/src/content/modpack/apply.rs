@@ -49,7 +49,7 @@ pub(crate) async fn apply_target(state: AppState, task: TaskHandle, inst: Instan
         items.push(DownloadItem::new(f.url.clone(), path).sha1(f.sha1.clone()).size(f.size));
     }
     task.stage(format!("Lade {} Datei(en) …", items.len()), Some(0.1));
-    state.net.download_all(items, Some(&task.sub(0.1, 0.85))).await?;
+    crate::storage::store::download_all(&state, items, Some(&task.sub(0.1, 0.85))).await?;
     task.check()?;
 
     // Alte Dateien entfernen (ersetzt / nicht mehr im Pack)

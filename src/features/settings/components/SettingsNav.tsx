@@ -1,6 +1,6 @@
 import * as D from "@radix-ui/react-dialog";
 import type { ReactNode } from "react";
-import { Cloud, Coffee, Download, Gamepad2, Info, Palette, RefreshCw, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { Cloud, Coffee, Download, Gamepad2, HardDrive, Info, Palette, RefreshCw, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { Tooltip, cn, toast } from "@/components/ui";
 import { SaveIndicator, type SaveState } from "@/components/instance/forms";
 import { setMode, useSimple } from "@/lib/mode";
@@ -14,6 +14,7 @@ const ICONS: Record<SettingsTab, ReactNode> = {
   java: <Coffee size={16} />,
   game: <Gamepad2 size={16} />,
   downloads: <Download size={16} />,
+  storage: <HardDrive size={16} />,
   vibe: <Cloud size={16} />,
   privacy: <ShieldCheck size={16} />,
   updates: <RefreshCw size={16} />,

@@ -1,7 +1,6 @@
 import { useSystemInfo } from "@/lib/queries";
 import { NumberInput, SettingRow, SettingsCard, Slider } from "@/components/ui";
 import { useT } from "@/i18n";
-import { DataDirRow } from "../DataDirMove";
 import { StoresCard } from "../StoresCard";
 import { SecretInput } from "../components/SecretInput";
 import type { TabProps } from "../types";
@@ -42,10 +41,6 @@ export function DownloadsTab({ s, update }: TabProps) {
       </SettingsCard>
 
       <StoresCard id="set-stores" />
-
-      <SettingsCard title={t("settings.section.storage")}>
-        <DataDirRow dataDir={sys.data?.data_dir} />
-      </SettingsCard>
     </>
   );
 }
