@@ -1,0 +1,82 @@
+{
+  "instance": {
+    "title": "Instancia (juego)",
+    "text": "Una instalación de Minecraft separada con su propia versión, mods y mundos. Puedes tener todas las que quieras: no se afectan entre sí.",
+    "example": "Por ejemplo, una instancia “Vanilla 1.21” y otra “Modpack con amigos”."
+  },
+  "modpack": {
+    "title": "Modpack",
+    "text": "Un paquete listo de muchos mods que funcionan juntos. El launcher lo crea como instancia nueva y lo descarga todo automáticamente.",
+    "example": "Un buen comienzo: Fabulously Optimized (más rápido, más bonito, sin cambios en la jugabilidad)."
+  },
+  "mod": {
+    "title": "Mod",
+    "text": "Un complemento que cambia Minecraft: bloques y criaturas nuevos, mejor rendimiento o más comodidad. Los mods necesitan una instancia con mod loader."
+  },
+  "loader": {
+    "title": "Mod loader",
+    "text": "La base que carga los mods. Cada mod está hecho para un loader: los mods de Fabric no funcionan en Forge y al revés. Al instalar, el launcher solo te muestra mods compatibles.",
+    "example": "¿No lo tienes claro? Elige Fabric: tiene la mayoría de mods nuevos."
+  },
+  "vanilla": {
+    "title": "Vanilla",
+    "text": "Minecraft tal como lo publica Mojang, sin mods. Los paquetes de recursos y los shaders siguen funcionando."
+  },
+  "fabric": {
+    "title": "Fabric",
+    "text": "Un mod loader ligero y rápido. Aquí están la mayoría de mods para las versiones nuevas de Minecraft, incluidos mods de rendimiento como Sodium."
+  },
+  "quilt": {
+    "title": "Quilt",
+    "text": "Una rama de Fabric. La mayoría de mods de Fabric también funcionan aquí. Solo hace falta si un mod pide Quilt expresamente."
+  },
+  "forge": {
+    "title": "Forge",
+    "text": "El mod loader más antiguo. Muchos modpacks grandes y mods para versiones antiguas (hasta la 1.20) dependen de él."
+  },
+  "neoforge": {
+    "title": "NeoForge",
+    "text": "El sucesor de Forge desde Minecraft 1.20.2. Los modpacks grandes nuevos suelen usar NeoForge."
+  },
+  "resourcepack": {
+    "title": "Paquete de recursos",
+    "text": "Cambia el aspecto o el sonido de bloques, objetos y menús. No necesita mods y funciona en cualquier instancia."
+  },
+  "shader": {
+    "title": "Shader",
+    "text": "Lleva la luz, las sombras y el agua a otro nivel. Necesita una instancia con Iris u OptiFine y una buena tarjeta gráfica."
+  },
+  "datapack": {
+    "title": "Datapack",
+    "text": "Cambia reglas del juego, recetas o la generación del mundo sin mods. Los datapacks siempre pertenecen a un mundo concreto."
+  },
+  "ram": {
+    "title": "Memoria (RAM)",
+    "text": "Cuánta memoria puede usar Minecraft. Muy poca provoca tirones o cierres; demasiada ralentiza el resto de tu PC. El launcher elige un buen valor automáticamente.",
+    "example": "Regla general: 2–4 GB sin mods, 4–8 GB para modpacks grandes."
+  },
+  "java": {
+    "title": "Java",
+    "text": "El software sobre el que funciona Minecraft: Java Edition. El launcher descarga la versión de Java adecuada automáticamente: no tienes que instalar nada."
+  },
+  "snapshot": {
+    "title": "Snapshot",
+    "text": "Una versión de prueba de Minecraft con funciones sin terminar. Puede tener errores y dañar mundos: haz antes una copia de seguridad."
+  },
+  "server": {
+    "title": "Servidor",
+    "text": "Un ordenador que mantiene un mundo en marcha para que otros puedan unirse. Para jugar juntos, normalmente basta con “Alojar mundo”; los servidores propios están en el modo experto."
+  },
+  "backup": {
+    "title": "Copia de seguridad",
+    "text": "Una copia de tu mundo o instancia. Si algo sale mal, recupera el estado anterior."
+  },
+  "vibe": {
+    "title": "Vibe",
+    "text": "Los servicios online del launcher: amigos, chat, jugar mundos juntos y cosméticos. Son opcionales y se pueden desactivar cuando quieras."
+  },
+  "account": {
+    "title": "Cuenta de Microsoft",
+    "text": "Minecraft: Java Edition está ligado a tu cuenta de Microsoft. El inicio de sesión se hace directamente en Microsoft: el launcher nunca ve tu contraseña."
+  }
+}

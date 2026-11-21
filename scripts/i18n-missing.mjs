@@ -91,6 +91,36 @@ for (const lang of only ? [only] : langs) {
   }
 }
 
+const helpDir = join(root, "src", "features", "help");
+const glossaryEn = (await import(pathToFileURL(join(helpDir, "glossary", "en.ts")).href)).default;
+const contentEn = (await import(pathToFileURL(join(helpDir, "content", "en.ts")).href)).default;
+const readJson = (file) => {
+  if (!existsSync(file)) return null;
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch (e) {
+    broken++;
+    console.error(`✗ ${file}: ungültiges JSON – ${e.message}`);
+    return null;
+  }
+};
+for (const row of rows) {
+  const g = readJson(join(localesDir, row.lang, "help", "glossary.json")) ?? {};
+  const c = readJson(join(localesDir, row.lang, "help", "content.json")) ?? {};
+  const terms = Object.keys(glossaryEn);
+  const guides = Object.keys(contentEn.guides);
+  const tours = Object.keys(contentEn.tours);
+  const tourOk = (id) => c.tours?.[id]?.steps?.length === contentEn.tours[id].steps.length;
+  row.glossary = `${terms.filter((k) => g[k]).length}/${terms.length}`;
+  row.help = `${guides.filter((k) => c.guides?.[k]).length + tours.filter(tourOk).length}/${guides.length + tours.length}`;
+  if (only) {
+    const mg = terms.filter((k) => !g[k]);
+    const mc = [...guides.filter((k) => !c.guides?.[k]).map((k) => `guides.${k}`), ...tours.filter((k) => !tourOk(k)).map((k) => `tours.${k}`)];
+    if (mg.length) console.log(`\nGlossar fehlt (help/glossary.json): ${mg.join(", ")}`);
+    if (mc.length) console.log(`Hilfe-Center fehlt (help/content.json, Vorlage: src/features/help/content/en.ts): ${mc.join(", ")}`);
+  }
+}
+
 console.log("");
-console.table(rows.map((r) => ({ Sprache: r.lang, Übersetzt: `${r.done}/${total}`, "%": Math.floor((r.done / total) * 100), Fehlend: r.missing, Veraltet: r.obsolete })));
+console.table(rows.map((r) => ({ Sprache: r.lang, Übersetzt: `${r.done}/${total}`, "%": Math.floor((r.done / total) * 100), Fehlend: r.missing, Veraltet: r.obsolete, Glossar: r.glossary, Hilfe: r.help })));
 if (flag("--check") && broken) process.exit(1);

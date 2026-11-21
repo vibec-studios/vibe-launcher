@@ -1,0 +1,82 @@
+{
+  "instance": {
+    "title": "Kurulum (oyun)",
+    "text": "Kendi sürümü, modları ve dünyaları olan ayrı bir Minecraft kurulumu. İstediğin kadar olabilir – birbirlerini etkilemezler.",
+    "example": "Örneğin bir “Vanilla 1.21” kurulumu ve bir “Arkadaşlarla mod paketi”."
+  },
+  "modpack": {
+    "title": "Mod paketi",
+    "text": "Birlikte çalışan birçok moddan oluşan hazır bir paket. Launcher onu yeni bir kurulum olarak oluşturur ve her şeyi otomatik indirir.",
+    "example": "İyi bir başlangıç: Fabulously Optimized (daha hızlı, daha güzel, oynanış değişmeden)."
+  },
+  "mod": {
+    "title": "Mod",
+    "text": "Minecraft'ı değiştiren bir eklenti: yeni bloklar, yaratıklar, daha iyi performans veya konfor. Modlar mod loader'lı bir kurulum gerektirir."
+  },
+  "loader": {
+    "title": "Mod loader",
+    "text": "Modları yükleyen temel. Her mod bir loader için yapılır – Fabric modları Forge'da çalışmaz, tersi de geçerli. Yüklerken launcher sana yalnızca uygun modları gösterir.",
+    "example": "Emin değil misin? Fabric'i seç – en çok yeni mod onda."
+  },
+  "vanilla": {
+    "title": "Vanilla",
+    "text": "Minecraft'ın Mojang'ın yayımladığı hali – modsuz. Kaynak paketleri ve shader'lar yine de çalışır."
+  },
+  "fabric": {
+    "title": "Fabric",
+    "text": "Hafif ve hızlı bir mod loader. Yeni Minecraft sürümleri için modların çoğu burada, Sodium gibi performans modları dahil."
+  },
+  "quilt": {
+    "title": "Quilt",
+    "text": "Fabric'ten türemiş bir loader. Fabric modlarının çoğu burada da çalışır. Yalnızca bir mod açıkça Quilt isterse gerekir."
+  },
+  "forge": {
+    "title": "Forge",
+    "text": "En eski mod loader. Birçok büyük mod paketi ve eski sürümler (1.20'ye kadar) için modlar ona dayanır."
+  },
+  "neoforge": {
+    "title": "NeoForge",
+    "text": "Minecraft 1.20.2'den itibaren Forge'un halefi. Büyük yeni mod paketleri genelde NeoForge kullanır."
+  },
+  "resourcepack": {
+    "title": "Kaynak paketi",
+    "text": "Blokların, eşyaların ve menülerin görünüşünü veya sesini değiştirir. Mod gerektirmez ve her kurulumda çalışır."
+  },
+  "shader": {
+    "title": "Shader",
+    "text": "Işığı, gölgeleri ve suyu bambaşka bir seviyeye taşır. Iris veya OptiFine'lı bir kurulum ve iyi bir ekran kartı gerektirir."
+  },
+  "datapack": {
+    "title": "Veri paketi",
+    "text": "Oyun kurallarını, tarifleri veya dünya oluşumunu modsuz değiştirir. Veri paketleri her zaman belirli bir dünyaya aittir."
+  },
+  "ram": {
+    "title": "Bellek (RAM)",
+    "text": "Minecraft'ın ne kadar bellek kullanabileceği. Azı takılmalara veya çökmelere, fazlası bilgisayarın geri kalanının yavaşlamasına yol açar. Launcher otomatik olarak iyi bir değer seçer.",
+    "example": "Kabaca: modsuz 2–4 GB, büyük mod paketleri için 4–8 GB."
+  },
+  "java": {
+    "title": "Java",
+    "text": "Minecraft: Java Edition'ın üzerinde çalıştığı yazılım. Launcher doğru Java sürümünü otomatik indirir – hiçbir şey yüklemen gerekmez."
+  },
+  "snapshot": {
+    "title": "Snapshot",
+    "text": "Henüz bitmemiş özellikler içeren bir Minecraft test sürümü. Hatalar içerebilir ve dünyalara zarar verebilir – önce yedek al."
+  },
+  "server": {
+    "title": "Sunucu",
+    "text": "Başkalarının katılabilmesi için bir dünyayı açık tutan bilgisayar. Birlikte oynamak için genelde “Dünyayı barındır” yeterlidir – kendi sunucuların uzman modunda."
+  },
+  "backup": {
+    "title": "Yedek",
+    "text": "Dünyanın veya kurulumunun bir kopyası. Bir şey ters giderse eski durumu geri getirir."
+  },
+  "vibe": {
+    "title": "Vibe",
+    "text": "Launcher'ın çevrimiçi hizmetleri: arkadaşlar, sohbet, dünyalarda birlikte oynama ve kozmetikler. İsteğe bağlıdır ve istediğin zaman kapatılabilir."
+  },
+  "account": {
+    "title": "Microsoft hesabı",
+    "text": "Minecraft: Java Edition, Microsoft hesabına bağlıdır. Giriş doğrudan Microsoft'ta yapılır – launcher şifreni asla görmez."
+  }
+}

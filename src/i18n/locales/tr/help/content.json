@@ -1,0 +1,372 @@
+{
+  "guides": {
+    "first-instance": {
+      "title": "İlk kurulumunu oluştur",
+      "summary": "Kurulum; kendi sürümü, modları ve dünyaları olan ayrı bir Minecraft'tır. İstediğin kadar kurulumun olabilir.",
+      "steps": [
+        "Kenar çubuğunda “+ Yeni kurulum”a ya da ana sayfada “Yeni kurulum”a tıkla.",
+        "Ne yapmak istediğini seç: vanilla, modlu, mod paketi veya içe aktarma. Basit modda bir hedefe tek tık yeterli.",
+        "Kuruluma bir ad ver ve Minecraft sürümünü seç. Modlar için ayrıca bir loader seç (Fabric, NeoForge, Forge veya Quilt).",
+        "“Oluştur”a tıkla. Launcher Minecraft'ı, Java'yı ve loader'ı kendisi indirir. İlerleme sağ üstteki görevlerde görünür.",
+        "Kurulum hazır olunca “Oyna” ile başlat."
+      ],
+      "tips": [
+        "Önce Microsoft hesabınla giriş yap (sağ üstteki hesap düğmesi), yoksa çevrimiçi oynayamazsın.",
+        "Hangi loader'a ihtiyacın olduğundan emin değil misin? Fabric'i seç. Güncel modların çoğu onu destekler."
+      ],
+      "keywords": "yeni oluştur sürüm loader fabric forge vanilla oyun kurulum"
+    },
+    "modpack": {
+      "title": "Mod paketi yükle",
+      "summary": "Mod paketi, hazır bir mod koleksiyonudur. Launcher onun için yeni bir kurulum oluşturur ve her şeyi otomatik yükler.",
+      "steps": [
+        "Kenar çubuğunda “Keşfet”i aç.",
+        "Üstten “Mod paketleri” türünü seç.",
+        "Mod paketinin adını ara veya soldaki filtrelerle göz at.",
+        "Mod paketini aç ve “Yükle”ye tıkla. Mod paketinin adıyla yeni bir kurulum oluşturulur.",
+        "Kurulum bitene kadar bekle (sağ üstteki görevler), sonra “Oyna”ya tıkla."
+      ],
+      "tips": [
+        "Mod paketi dosyalarını (.mrpack, CurseForge .zip) doğrudan launcher penceresine de sürükleyebilirsin.",
+        "Güncelleme varsa kurulum bir bildirim gösterir. Güncellerken dünyaların korunur."
+      ],
+      "keywords": "modrinth curseforge mrpack paket koleksiyon mod paketi"
+    },
+    "mods": {
+      "title": "Mod ekle ve güncelle",
+      "summary": "Modları, kaynak paketlerini ve shader'ları doğrudan bir kurulumda ekle. Launcher güncellemeleri senin için denetler.",
+      "steps": [
+        "Kütüphanende kurulumu aç ve “İçerik” alanında kal.",
+        "“İçerik ekle”ye tıkla. “Keşfet”, uygun sürüm ve loader'a göre filtrelenmiş olarak açılır.",
+        "Bir modda “Yükle”ye tıkla. Gerekli bağımlılıklar da indirilir.",
+        "Kendi .jar dosyalarını “Dosya ekle” ile ekle ya da pencereye sürükle.",
+        "“Tekrar denetle” (veya F5) güncellemeleri arar. Varsa “Tümünü güncelle” ile güncelle."
+      ],
+      "tips": [
+        "Listedeki anahtarla tek tek modları silmeden kapatabilirsin.",
+        "Büyük güncellemelerden önce kurulumu yedeklemeye değer."
+      ],
+      "keywords": "mod jar güncelle shader kaynak paketi doku ekle"
+    },
+    "import": {
+      "title": "Başka bir launcher'dan içe aktar",
+      "summary": "Diğer launcher'lardan kurulumları taşı, ör. Modrinth App, CurseForge, Prism, MultiMC, ATLauncher, GDLauncher veya resmî launcher.",
+      "steps": [
+        "Kütüphanede veya ana sayfada “İçe aktar”a tıkla.",
+        "Üstten “Başka bir launcher'dan”ı seç. Launcher yüklü launcher'ları kendisi arar.",
+        "Launcher'ın bulunamazsa “Klasör seç …”e tıkla ve onun klasörünü veya tek bir kurulumun klasörünü seç.",
+        "Taşımak istediğin kurulumları işaretle ve “İçe aktar”a tıkla. Dünyalar, ayar dosyaları ve ayarlar birlikte gelir.",
+        "Sonra daha fazla içe aktarmak için: içe aktarmayı tekrar aç. Zaten taşınan kurulumlar “Zaten içe aktarıldı” olarak işaretlidir, yeniler eklenebilir."
+      ],
+      "tips": [
+        "Eski launcher'ına dokunulmaz, her şey kopyalanır.",
+        "Tek mod paketi dosyalarını “Dosya” modunda içe aktar.",
+        "İçe aktarmadan sonra launcher RAM veya Java gibi ayarları taşımayı önerir."
+      ],
+      "keywords": "içe aktar taşı prism multimc curseforge modrinth atlauncher gdlauncher tekrar daha fazla"
+    },
+    "autofix": {
+      "title": "Çökmeden sonra otomatik düzeltme",
+      "summary": "Minecraft çökerse launcher sebebini arar ve bir çözüm önerir, ör. eksik bağımlılıklar, yanlış Java veya az RAM.",
+      "steps": [
+        "Bir çökmeden sonra kurulumun üstünde kırmızı bir “Çökme algılandı” bildirimi görünür.",
+        "“Düzelt” veya “Sorunları düzelt”e tıkla. Launcher ne bulduğunu ve neyi değiştireceğini gösterir.",
+        "Önerileri onayla. Launcher önce otomatik olarak bir yedek alır.",
+        "Oyunu tekrar başlat. İşe yaramazsa ayrıntılar için uzman modunda “Loglar” altındaki “Tanı”yı aç.",
+        "Hâlâ takıldın mı? “Sorunu bildir” ile loglarla birlikte bir hata bildirimi gönder."
+      ],
+      "tips": [
+        "En sık sebep: bir mod Minecraft sürümüne uymuyor veya bir bağımlılık eksik.",
+        "Otomatik düzeltmeyi her zaman geri alabilirsin: yedek “Yedekler” altında."
+      ],
+      "keywords": "çökme hata onar düzelt tanı log açılmıyor"
+    },
+    "backups": {
+      "title": "Yedekler",
+      "summary": "Yedekler dünyaları veya bir kurulumun yapısını kaydeder; böylece bozuk bir güncellemeden ya da bir hatadan sonra geri dönebilirsin.",
+      "steps": [
+        "Kurulumu aç ve “Yedekler” alanına geç.",
+        "“Anlık görüntü oluştur” modları, ayar dosyalarını, paketleri ve seçenekleri kaydeder ama dünyaları değil. Güncellemeden önce ideal.",
+        "Dünyaları “Dünyalar” alanında yedekle: dünyaya sağ tıkla → “Yedek oluştur”. “Dünya yedekleri” altında görünürler.",
+        "Geri dönmek için anlık görüntüde veya yedekte “Geri yükle”ye tıkla.",
+        "Otomatik yedekleri Ayarlar → Oyun → Yedekler altından ayarla, ör. her başlatmadan önce."
+      ],
+      "tips": [
+        "Otomatik yedekler saklama sınırına sayılır, eskiler silinir.",
+        "Otomatik düzeltme her değişiklikten önce kendisi bir anlık görüntü alır."
+      ],
+      "keywords": "yedek geri yükle dünya anlık görüntü geri al"
+    },
+    "hosting": {
+      "title": "Arkadaşlarla dünya barındır",
+      "summary": "Vibe Relay ile arkadaşların port yönlendirme olmadan dünyana katılabilir. Bir oyun bağlantısı onları doğru mod paketiyle hemen davet eder.",
+      "steps": [
+        "Kurulumunu Vibey Client ile başlat (kurulum ayarları → İstemci).",
+        "Dünyanı oyunda aç ve “Arkadaşlara aç”ı seç. İstemci Vibe Relay'e bağlanır.",
+        "Launcher oyun bağlantısıyla bir “Barındırıyorsun …” çubuğu gösterir. Kopyala ya da doğrudan arkadaşlarına gönder.",
+        "Arkadaşların bağlantıyı açar. Launcher'ları uygun mod paketini kurar ve onları doğrudan dünyana bağlar.",
+        "Sen olmadan da çalışan bir sunucu için “Sunucular” altında bir tane oluştur ve bağlantı olarak “Vibe Relay”i seç."
+      ],
+      "tips": [
+        "Barındırma için Vibe gerekir (Ayarlar → Vibe ve hesap). Vibe şu an beta aşamasında, “Vibe beta bekleme listesi”ne bak.",
+        "Oyun bağlantıları barındırmayı bıraktığında, en geç 12 saat sonra geçersiz olur."
+      ],
+      "keywords": "arkadaşlar çok oyunculu relay davet bağlantı paylaş lan barındır"
+    },
+    "servers": {
+      "title": "Sunucuları yönet",
+      "summary": "Kendi Minecraft sunucularını bilgisayarında oluştur, başlat ve yönet – konsol, oyuncular, dünyalar ve eklentilerle.",
+      "steps": [
+        "Kenar çubuğunda “Sunucular”ı aç (uzman modu).",
+        "“Yeni sunucu”ya tıkla ve bir platform (ör. Paper, Fabric, NeoForge) ile sürüm seç.",
+        "Sunucuyu başlat. Konsol neler olduğunu gösterir ve komut girmeni sağlar.",
+        "“Bağlantı” altında arkadaşlarının nasıl katılacağını seçersin: yerel/LAN, Vibe Relay veya playit.gg.",
+        "Beyaz listeyi, operatörleri ve yasakları “Oyuncular” altında, eklentileri ve modları “Eklentiler” altında yönet."
+      ],
+      "tips": ["Sunucu senin bilgisayarında çalışır. Yalnızca bilgisayarın açıkken erişilebilir."],
+      "keywords": "sunucu paper spigot konsol beyaz liste eklenti bağlantı"
+    },
+    "skins": {
+      "title": "Skinler ve kozmetikler",
+      "summary": "Skin'ini doğrudan launcher'da değiştir. Pelerin, şapka ve emote gibi kozmetikleri Vibey Client'lı diğer oyuncular görür.",
+      "steps": [
+        "Kenar çubuğunda veya sağ üstteki hesap düğmesinden “Skinler”i aç.",
+        "Bir skin yükle veya kütüphanenden birini seç. 3D önizleme nasıl göründüğünü gösterir.",
+        "Klasik ve ince model arasında seçim yap ve “Uygula”ya tıkla.",
+        "Kozmetikler için kenar çubuğunda “Kozmetikler”i aç, öğeleri seç ve kıyafetini kaydet."
+      ],
+      "tips": [
+        "Skin'ini değiştirmek için Microsoft hesabınla giriş yapmış olman gerekir.",
+        "Kozmetikler için Vibe ve kurulumda Vibey Client gerekir."
+      ],
+      "keywords": "skin pelerin kozmetik emote görünüm"
+    },
+    "modsets": {
+      "title": "Mod setleri",
+      "summary": "Mod seti, favori modlarının listesidir. Herhangi bir kuruluma uygula, başka sürümlerde bile.",
+      "steps": [
+        "“Kütüphane”yi, sonra üstten “Mod setleri”ni aç.",
+        "“Yeni set”e tıkla veya mevcut bir kurulumun modlarını al.",
+        "Modları arama ile veya bir liste yapıştırarak ekle.",
+        "Seti “Uygula” ile bir kuruluma uygula. Launcher o Minecraft sürümü için uygun sürümleri bulur."
+      ],
+      "tips": ["Setler dışa ve içe aktarılabilir – arkadaşlarla paylaşmak için harika."],
+      "keywords": "set liste koleksiyon favori modlar uygula"
+    },
+    "gallery": {
+      "title": "Galeri ve klipler",
+      "summary": "Galeri, kurulumlarındaki tüm ekran görüntülerini ve klipleri tek bir yerde toplar.",
+      "steps": [
+        "Kenar çubuğunda “Galeri”yi aç.",
+        "Üstten “Ekran görüntüleri” ile “Klipler” arasında geçiş yap. Klipleri oyunda Vibey Client kaydeder.",
+        "Yalnızca bir oyunun görsellerini görmek için kuruluma göre filtrele.",
+        "Büyük görmek, kopyalamak veya klasörünü açmak için bir görsele ya da klibe tıkla."
+      ],
+      "tips": ["Oyunda F2 ile ekran görüntüsü al."],
+      "keywords": "ekran görüntüsü görsel video klip galeri kayıt"
+    },
+    "waitlist": {
+      "title": "Vibe beta bekleme listesi",
+      "summary": "Vibe (arkadaşlar, sohbet, barındırma, kozmetikler, Vibey Client) beta aşamasında. Katılmak için bekleme listesine girersin ve ekip seni içeri alır.",
+      "steps": [
+        "Ayarlar → Vibe ve hesap'ı aç.",
+        "Minecraft hesabınla Vibe'a giriş yap.",
+        "Bekleme listesine katıl. Durumun sonra bu bölümde görünür.",
+        "Ekip seni onaylar onaylamaz arkadaşlar, barındırma, kozmetikler ve Vibey Client çalışır."
+      ],
+      "tips": [
+        "Launcher'ın kendisi Vibe olmadan da tamamen çalışır: kurulumlar, modlar, mod paketleri ve sunucular.",
+        "Betadan önce buradaysan otomatik olarak onaylanırsın."
+      ],
+      "keywords": "beta bekleme listesi onay erişim vibe hesap giriş"
+    },
+    "bedrock": {
+      "title": "Bedrock (deneysel)",
+      "summary": "Launcher Java'nın yanında Minecraft Bedrock'u da başlatabilir ve eklentileri, dünyaları ve yedekleri yönetebilir. Bu özellik hâlâ deneysel.",
+      "steps": [
+        "Önce Minecraft Bedrock'u Microsoft Store'dan veya Xbox uygulamasından yükle.",
+        "“Yeni kurulum”a tıkla ve “Bedrock” sekmesini seç.",
+        "Release veya Preview'i ve kurulumun kendi oyun verilerinin olup olmayacağını seç.",
+        "Bedrock kurulumunda eklentileri, dünyaları ve yedekleri yönetirsin. “Oyna” yüklü oyunu başlatır."
+      ],
+      "tips": [
+        "Bedrock kurulumları “BE” ile işaretlidir.",
+        "Sürüm seçimi, Java modları ve oyun bağlantıları Bedrock için mevcut değil."
+      ],
+      "keywords": "bedrock windows edition xbox eklenti addon store deneysel"
+    },
+    "feedback": {
+      "title": "Geri bildirim gönder",
+      "summary": "Bir şey çalışmıyor mu ya da bir fikrin mi var? Doğrudan launcher'dan ekibe gönder.",
+      "steps": [
+        "Sağ üstteki geri bildirim simgesine tıkla (ünlemli konuşma balonu).",
+        "Bunun bir hata, fikir veya başka bir şey olduğunu seç ve kısaca anlat.",
+        "Hatalar için log ve ekran görüntüsü ekleyebilirsin. Bu, sebebi bulmaya yardımcı olur.",
+        "“Gönder”e tıkla. Bir bilet numarası alırsın. Bununla ilgili Discord'da yazarsan numarayı belirt."
+      ],
+      "tips": ["Bir çökmeden sonra, doğru logları zaten içeren bir “Sorunu bildir” düğmesi vardır."],
+      "keywords": "geri bildirim hata bildirim fikir öneri destek bilet"
+    },
+    "performance": {
+      "title": "Performans ve RAM",
+      "summary": "Minecraft'ın ne kadar bellek (RAM) alacağını tüm kurulumlar veya tek bir kurulum için ayarla.",
+      "steps": [
+        "Tüm kurulumlar için: Ayarlar → Java ve bellek (basit modda: Bellek).",
+        "Tek kurulum için: kurulumu aç → dişli (kurulum ayarları) → Java → “Özel değerler”.",
+        "Kabaca: vanilla 2–4 GB, modlu 4–6 GB, büyük mod paketleri 6–8 GB.",
+        "RAM'inin yaklaşık dörtte üçünden fazlasını asla verme. Windows ve diğer programların da belleğe ihtiyacı var.",
+        "Hâlâ takılıyor mu? Sodium gibi performans modları yardımcı olur. Launcher onları “İçerik” alanında önerir."
+      ],
+      "tips": [
+        "Basit modda tam sayılar yerine kurulum ayarlarında bir performans seviyesi seçersin.",
+        "Fazla RAM oyunu yavaşlatabilir bile."
+      ],
+      "keywords": "ram bellek performans fps lag yavaş java"
+    }
+  },
+  "tours": {
+    "intro": {
+      "title": "Hızlı tur",
+      "steps": [
+        {
+          "title": "Oyununu buradan başlat",
+          "text": "“Oyna”ya tek tık son oyununu başlatır. Launcher gereken her şeyi indirir.",
+          "variants": {
+            "new-game": { "title": "Yeni bir oyun oluştur", "text": "Ne yapmak istediğini seçmen yeterli. Sürüm ve kurulumla launcher ilgilenir." },
+            "new-instance": { "title": "Yeni bir oyun oluştur", "text": "Ne yapmak istediğini seçmen yeterli. Sürüm ve kurulumla launcher ilgilenir." }
+          }
+        },
+        { "title": "Oyunlarım", "text": "Tüm oyunların bir bakışta. Orada mod ekler, dünyalarını görür veya sorunları düzeltirsin." },
+        { "title": "Keşfet", "text": "Mod, kaynak paketi, shader ve mod paketi bul. Doğrudan seçili oyuna eklenirler." },
+        { "title": "Hesabın", "text": "Hesap ve skin'i burada değiştir, istediğin zaman uzman moduna geç." },
+        { "title": "Yardım ve rehberler", "text": "Adım adım rehberler ve diğer turlar her zaman burada." }
+      ]
+    },
+    "first-instance": {
+      "title": "İlk kurulum",
+      "steps": [
+        { "title": "Yeni kurulum", "text": "Bu artı, hangi sayfada olursan ol, istediğin zaman yeni bir kurulum oluşturur." },
+        { "title": "Ya da doğrudan kütüphanede", "text": "Bu da çalışır. Sonra sürüm ve loader seç, gerisini launcher indirir." },
+        { "title": "Zaten başka bir launcher mı kullanıyorsun?", "text": "“İçe aktar” mevcut kurulumlarını dünyaları ve ayarlarıyla taşır." },
+        { "title": "Kütüphanen", "text": "Tüm kurulumlar burada. Modlarını, dünyalarını ve ayarlarını görmek için birine tıkla." }
+      ]
+    },
+    "modpack": {
+      "title": "Mod paketi yükle",
+      "steps": [
+        { "title": "Keşfet", "text": "Modrinth ve CurseForge'daki modları ve mod paketlerini burada bul." },
+        { "title": "Bir tür seç", "text": "“Mod paketleri” zaten seçili. Modlara, shader'lara veya kaynak paketlerine buradan geç." },
+        { "title": "Ara", "text": "Mod paketinin adını yaz. Solda sürüme, loader'a ve kategoriye göre filtrele." },
+        { "title": "Yükle", "text": "Bir mod paketini aç ve “Yükle”ye tıkla. Her şeyin dahil olduğu yeni bir kurulum oluşturulur." }
+      ]
+    },
+    "mods": {
+      "title": "Modları yönet",
+      "steps": [
+        { "title": "İçerik ekle", "text": "Bu kurulumun sürümüne ve loader'ına göre filtrelenmiş “Keşfet”i açar." },
+        { "title": "Kendi dosyaların", "text": "Bir .jar dosyan mı var? Buradan ekle ya da pencereye sürükle." },
+        {
+          "title": "Güncellemeler",
+          "text": "Güncellemeler var. Tek tık tüm modları aynı anda günceller.",
+          "variants": { "content-refresh": { "title": "Güncellemeleri denetle", "text": "“Tekrar denetle” (veya F5) güncellemeleri ve sorunları arar. Varsa yanında “Tümünü güncelle” görünür." } }
+        },
+        { "title": "İçeriğin", "text": "Her satırdaki anahtar bir modu silmeden kapatır." }
+      ]
+    },
+    "import": {
+      "title": "İçe aktar",
+      "steps": [
+        { "title": "İçe aktar", "text": "Mod paketi dosyalarını veya başka launcher'lardaki kurulumların tamamını buradan taşı." },
+        { "title": "Dosya veya launcher", "text": "“Başka bir launcher'dan” Modrinth App, CurseForge, Prism, MultiMC ve diğerlerini otomatik arar." },
+        { "title": "Seç", "text": "Kurulumları işaretle ve “İçe aktar”a tıkla. Launcher'ın eksikse klasörünü kendin seç." },
+        { "title": "Sonra daha fazlasını içe aktar", "text": "Eski launcher'ında yeni kurulumlar mı var? İçe aktarmayı tekrar aç. Zaten içe aktarılanlar işaretlidir." }
+      ]
+    },
+    "autofix": {
+      "title": "Otomatik düzeltme",
+      "steps": [
+        {
+          "title": "Sorunları düzelt",
+          "text": "Tek tık ve launcher sebebi arar, önerilerini gösterir ve önce bir yedek alır.",
+          "variants": {
+            "crash-banner": { "title": "Çökme algılandı", "text": "Bir çökmeden sonra bu bildirim en olası sebeple burada görünür. “Düzelt” oyunu otomatik onarır." },
+            "logs-diagnose": { "title": "Tanı", "text": "Bir çökmeden sonra üstte “Düzelt” içeren kırmızı bir bildirim görünür. Burada, tanıda ayrıntıları görür ve “Sorunları düzelt”i de başlatabilirsin." }
+          }
+        },
+        { "title": "Tekrar başlat", "text": "Sonra tekrar “Oyna”ya tıkla. Launcher başlatmadan önce bir kez daha denetler." },
+        { "title": "Hiçbir şey işe yaramıyor mu?", "text": "O zaman geri bildirimle bize bir hata bildirimi gönder. Loglar eklenebilir." }
+      ]
+    },
+    "backups": {
+      "title": "Yedekler",
+      "steps": [
+        { "title": "Anlık görüntü oluştur", "text": "Bu kurulumun modlarını, ayar dosyalarını ve paketlerini kaydeder, ör. büyük bir güncellemeden önce. Dünyaları “Dünyalar” alanında yedekle." },
+        { "title": "Yedeklerin", "text": "Anlık görüntüler ve dünya yedekleri burada listelenir. “Geri yükle” seni geri götürür." },
+        { "title": "Otomatik yedekler", "text": "Launcher'ın ne zaman kendiliğinden yedek alacağını ve kaç yedek saklayacağını ayarlardan seç." }
+      ]
+    },
+    "hosting": {
+      "title": "Arkadaşlarla oyna",
+      "steps": [
+        { "title": "Dünyaların", "text": "Dünyayı Vibey Client ile başlat ve oyunda “Arkadaşlara aç”ı seç. Gerisini Vibe Relay halleder." },
+        { "title": "Oyun bağlantısı", "text": "Barındırırken oyun bağlantın burada görünür. Kopyala ya da doğrudan arkadaşlarına gönder." },
+        { "title": "Arkadaşlar", "text": "Kimin çevrimiçi olduğunu gör ve arkadaşlarını doğrudan dünyana davet et." },
+        { "title": "Kendi sunucun", "text": "Dünya sen olmadan da çalışsın mı? Bir sunucu oluştur ve bağlantı olarak “Vibe Relay”i seç." }
+      ]
+    },
+    "servers": {
+      "title": "Sunucular",
+      "steps": [
+        { "title": "Yeni sunucu", "text": "Bir platform ve sürüm seç. Launcher sunucuyu indirir ve kurar." },
+        { "title": "Sunucuların", "text": "Konsol, oyuncular, dünyalar, eklentiler ve arkadaşlar için bağlantı için bir sunucuyu aç." },
+        { "title": "Her zaman burada", "text": "Sunucularını istediğin zaman burada bul. Yeşil nokta birinin çalıştığını gösterir." }
+      ]
+    },
+    "skins": {
+      "title": "Skinler",
+      "steps": [
+        { "title": "Önizleme", "text": "Skin'in şu an böyle görünüyor. Döndürmek için karakteri sürükle." },
+        { "title": "Skinlerin", "text": "Yeni skinler yükle ya da kayıtlı birini seç ve uygula." },
+        { "title": "Kozmetikler", "text": "Vibey Client için pelerinler, şapkalar ve emote'lar burada." }
+      ]
+    },
+    "modsets": {
+      "title": "Mod setleri",
+      "steps": [
+        { "title": "Yeni set", "text": "Favori modlarının bir listesini oluştur. Her sürüm için çalışır." },
+        { "title": "İçe aktar", "text": "Arkadaşlarından veya bir dosyadan setleri buradan al." },
+        { "title": "Setlerin", "text": "Mod eklemek veya bir kuruluma uygulamak için bir seti aç." }
+      ]
+    },
+    "gallery": {
+      "title": "Galeri",
+      "steps": [
+        { "title": "Ekran görüntüleri ve klipler", "text": "Görseller ile Vibey Client klipleri arasında buradan geçiş yap." },
+        { "title": "Kuruluma göre filtrele", "text": "Yalnızca belirli bir kurulumun görsellerini göster." },
+        { "title": "Görüntüle", "text": "Büyük açmak, kopyalamak veya klasöründe göstermek için bir görsele tıkla." }
+      ]
+    },
+    "waitlist": {
+      "title": "Vibe beta",
+      "steps": [
+        { "title": "Vibe ve hesap", "text": "Vibe'a buradan giriş yap. Vibe beta aşamasında, önce bir bekleme listesine girersin." },
+        { "title": "Erişimin", "text": "Durumun burada gösterilir. Onaylanınca arkadaşlar, barındırma ve kozmetikler çalışır." }
+      ]
+    },
+    "feedback": {
+      "title": "Geri bildirim",
+      "steps": [
+        { "title": "Geri bildirim gönder", "text": "Hata mı fikir mi? Bize buradan yaz. Log ve ekran görüntüsü eklenebilir." },
+        { "title": "Yardım", "text": "Ve takıldığında tüm rehberleri ve turları burada bulursun." }
+      ]
+    },
+    "performance": {
+      "title": "Performans ve RAM",
+      "steps": [
+        { "title": "Kurulum ayarları", "text": "Dişli bu kurulumun ayarlarını açar." },
+        { "title": "Bu kurulumun performansı", "text": "Bu kurulumun ne kadar bellek alacağını ayarla. “Özel değerler” varsayılanları geçersiz kılar." },
+        { "title": "Herkes için bellek", "text": "Bu değerler kendi ayarı olmayan tüm kurulumlar için geçerlidir. Modlarla 4–6 GB iyi bir başlangıçtır." }
+      ]
+    }
+  }
+}
