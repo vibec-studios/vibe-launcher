@@ -9,7 +9,8 @@
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:panel": "pnpm --dir panel install --frozen-lockfile && pnpm --dir panel build"
   },
   "dependencies": {
     "@codemirror/commands": "6.11.1",

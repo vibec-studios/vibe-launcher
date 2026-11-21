@@ -61,7 +61,7 @@ pub async fn world_preview_render(
     let job = RenderJob(Uuid::new_v4());
     let token = CancellationToken::new();
     RENDERS.lock().insert(job.0, token.clone());
-    ready.send(job.0.to_string())?;
+    ready.send(job.0.to_string()).map_err(|e| AppError::msg(e.to_string()))?;
     let permit = tokio::select! {
         _ = token.cancelled() => return Err(AppError::Cancelled),
         result = RENDER_LIMIT.acquire() => result.map_err(|_| AppError::Cancelled)?,

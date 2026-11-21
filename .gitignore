@@ -17,3 +17,5 @@ src-tauri/gen/schemas
 .claude/worktrees
 
 /agent/panel-dist/
+# Vibe Panel-Build (R2), wird ins Agent-Binary eingebettet
+agent/panel-dist/

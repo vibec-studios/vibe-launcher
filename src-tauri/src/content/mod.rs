@@ -12,6 +12,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tauri::AppHandle;
 
+pub use vibe_server_core::content::{ContentKind, GalleryImage, ProjectLinks, Side, Source, StoreKey};
 pub mod curseforge;
 pub mod datapacks;
 pub mod export;
@@ -20,17 +21,17 @@ pub mod gamedata;
 pub mod gdlauncher;
 pub mod extmods;
 pub mod extsettings;
-pub mod http;
+pub use vibe_server_core::content::http;
 pub mod import;
 pub mod importreport;
-pub mod index;
+pub use vibe_server_core::content::index;
 pub mod install;
 pub mod local;
-pub mod meta;
+pub use vibe_server_core::content::meta;
 pub mod missing;
 pub mod modrinth;
 pub mod norisk;
-pub mod murmur;
+pub use vibe_server_core::content::murmur;
 pub mod nbt;
 pub mod provider;
 pub mod store;
@@ -58,70 +59,12 @@ pub mod world_preview;
 pub mod worldbackup;
 pub mod organize;
 
-/// Herkunft: Modrinth, CurseForge oder ein eigener Store (serialisiert als `"store:<id>"`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Source {
-    Modrinth,
-    Curseforge,
-    Store(StoreKey),
-}
 
-/// Internierte Store-ID (hält `Source` klein und `Copy`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct StoreKey(u32);
 
-static STORE_IDS: std::sync::OnceLock<parking_lot::RwLock<Vec<String>>> = std::sync::OnceLock::new();
 
-impl StoreKey {
-    pub fn intern(id: &str) -> StoreKey {
-        let reg = STORE_IDS.get_or_init(Default::default);
-        if let Some(i) = reg.read().iter().position(|s| s == id) {
-            return StoreKey(i as u32);
-        }
-        let mut w = reg.write();
-        if let Some(i) = w.iter().position(|s| s == id) {
-            return StoreKey(i as u32);
-        }
-        w.push(id.to_string());
-        StoreKey((w.len() - 1) as u32)
-    }
-    pub fn id(&self) -> String {
-        STORE_IDS.get_or_init(Default::default).read().get(self.0 as usize).cloned().unwrap_or_default()
-    }
-}
 
-impl Source {
-    pub fn store(id: &str) -> Source {
-        Source::Store(StoreKey::intern(id))
-    }
-    pub fn as_string(&self) -> String {
-        match self {
-            Source::Modrinth => "modrinth".into(),
-            Source::Curseforge => "curseforge".into(),
-            Source::Store(k) => format!("store:{}", k.id()),
-        }
-    }
-    pub fn parse(s: &str) -> Option<Source> {
-        match s {
-            "modrinth" => Some(Source::Modrinth),
-            "curseforge" => Some(Source::Curseforge),
-            _ => s.strip_prefix("store:").filter(|id| !id.is_empty()).map(Source::store),
-        }
-    }
-}
 
-impl Serialize for Source {
-    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        s.serialize_str(&self.as_string())
-    }
-}
 
-impl<'de> Deserialize<'de> for Source {
-    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-        let s = String::deserialize(d)?;
-        Source::parse(&s).ok_or_else(|| serde::de::Error::custom(format!("unbekannte Quelle: {s}")))
-    }
-}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]
@@ -133,19 +76,6 @@ pub enum ProjectType {
     Datapack,
 }
 
-/// Ordner-Art in der Instanz.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "snake_case")]
-pub enum ContentKind {
-    /// mods/
-    Mod,
-    /// resourcepacks/
-    Resourcepack,
-    /// shaderpacks/
-    Shader,
-    /// datapacks/ im Spielordner (siehe docs/CONTRACT.md: global, nicht je Welt)
-    Datapack,
-}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -214,22 +144,7 @@ pub struct SearchResult {
     pub limit: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GalleryImage {
-    pub url: String,
-    pub title: Option<String>,
-    pub description: Option<String>,
-    pub featured: bool,
-}
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ProjectLinks {
-    pub website: Option<String>,
-    pub source: Option<String>,
-    pub issues: Option<String>,
-    pub wiki: Option<String>,
-    pub discord: Option<String>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectDetails {
@@ -479,19 +394,6 @@ pub struct MissingScan {
     pub watching_until: Option<i64>,
 }
 
-/// Wo ein Inhalt gebraucht wird.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "snake_case")]
-pub enum Side {
-    /// nur Client (z. B. Shader, Minimap)
-    Client,
-    /// Client und Server
-    Both,
-    /// nur Server
-    Server,
-    /// unbekannt
-    Unknown,
-}
 
 /// Anderer Launcher, aus dem Instanzen übernommen werden können.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -542,26 +444,6 @@ pub struct ExternalLauncher {
     pub instances: Vec<ExternalInstance>,
 }
 
-impl ContentKind {
-    pub const ALL: [ContentKind; 4] = [ContentKind::Mod, ContentKind::Resourcepack, ContentKind::Shader, ContentKind::Datapack];
-
-    /// Ordner im Spielordner.
-    pub fn folder(&self) -> &'static str {
-        match self {
-            ContentKind::Mod => "mods",
-            ContentKind::Resourcepack => "resourcepacks",
-            ContentKind::Shader => "shaderpacks",
-            ContentKind::Datapack => "datapacks",
-        }
-    }
-
-    pub fn from_folder(folder: &str) -> Option<ContentKind> {
-        ContentKind::ALL.into_iter().find(|k| k.folder() == folder)
-    }
-}
-
-const CACHE_TTL: Duration = Duration::from_secs(10 * 60);
-const CACHE_MAX: usize = 600;
 
 /// Laufzeit-Zustand des Content-Moduls: kurzlebiger API-Cache, Sperren je Instanz für `content.json`,
 /// laufende Hash-Zuordnungen.
@@ -569,7 +451,7 @@ pub struct ContentState {
     /// Datenordner (Kopie aus `AppState`, für Hintergrundarbeit ohne AppState)
     pub paths: Paths,
     pub(crate) app: AppHandle,
-    cache: Mutex<HashMap<String, (Instant, bytes::Bytes)>>,
+    http_cache: Arc<vibe_server_core::content::HttpCache>,
     locks: Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
     launch_gates: Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
     /// Instanzen, für die gerade eine Hash-Zuordnung im Hintergrund läuft
@@ -587,11 +469,11 @@ pub struct ContentState {
 }
 
 impl ContentState {
-    pub fn new(paths: Paths, app: AppHandle) -> Arc<Self> {
+    pub fn new(paths: Paths, app: AppHandle, http_cache: Arc<vibe_server_core::content::HttpCache>) -> Arc<Self> {
         Arc::new(ContentState {
             paths,
             app,
-            cache: Mutex::new(HashMap::new()),
+            http_cache,
             locks: Mutex::new(HashMap::new()),
             launch_gates: Mutex::new(HashMap::new()),
             identifying: Mutex::new(HashSet::new()),
@@ -603,29 +485,9 @@ impl ContentState {
         })
     }
 
-    pub(crate) fn cache_get(&self, key: &str) -> Option<bytes::Bytes> {
-        let map = self.cache.lock();
-        map.get(key).filter(|(t, _)| t.elapsed() < CACHE_TTL).map(|(_, b)| b.clone())
-    }
-
-    pub(crate) fn cache_put(&self, key: String, value: bytes::Bytes) {
-        let mut map = self.cache.lock();
-        if map.len() >= CACHE_MAX {
-            map.retain(|_, (t, _)| t.elapsed() < CACHE_TTL);
-            if map.len() >= CACHE_MAX {
-                let mut v: Vec<(String, Instant)> = map.iter().map(|(k, (t, _))| (k.clone(), *t)).collect();
-                v.sort_by_key(|(_, t)| *t);
-                for (k, _) in v.into_iter().take(CACHE_MAX / 2) {
-                    map.remove(&k);
-                }
-            }
-        }
-        map.insert(key, (Instant::now(), value));
-    }
-
     /// Kurzzeit-Cache der Plattform-APIs und geladene Store-Dateien verwerfen („Neu prüfen“).
     pub(crate) fn clear_api_cache(&self) {
-        self.cache.lock().clear();
+        self.http_cache.clear();
         self.stores.lock().clear();
     }
 
