@@ -29,6 +29,7 @@ export interface GameState {
   account_uuid: string | null;
   world: string | null;
   server: string | null;
+  resumed?: "saved" | "external";
 }
 
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "stdout" | "stderr" | "launcher";

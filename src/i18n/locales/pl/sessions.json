@@ -42,5 +42,7 @@
   "console.lvl.warn": "Ostrzeżenie",
   "console.lvl.error": "Błąd",
   "console.lvl.debug": "Debug",
-  "console.lvl.launcher": "Launcher"
+  "console.lvl.launcher": "Launcher",
+  "sess.resumed": "wznowiona",
+  "sess.resumed_external": "uruchomiona zewnętrznie"
 }
