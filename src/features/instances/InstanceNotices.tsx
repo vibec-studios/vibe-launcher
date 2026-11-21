@@ -134,7 +134,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
   const missing = useMissingDownloads(id).data ?? [];
   useKeepWatching(id, missing.length > 0);
   // Neue Projekte in Mod-Sets, die auf diese Instanz angewendet wurden
-  const setNews = useSetNews(id, !simple).data ?? [];
+  const setNews = useSetNews(id, true).data ?? [];
   const loosePacks = unusedPacks(useLoosePacks(id).data);
   const [dpOpen, setDpOpen] = useState(false);
   const ram = useRamSuggestion(instance);

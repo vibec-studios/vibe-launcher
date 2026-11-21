@@ -3,7 +3,6 @@ import { Info } from "lucide-react";
 import { api } from "@/lib/api";
 import { discordArt, headAccount } from "@/lib/discordArt";
 import { useAccounts } from "@/lib/queries";
-import { useSimple } from "@/lib/mode";
 import type { DiscordLarge, DiscordSmall, Settings } from "@/lib/types";
 import { Button, Segmented, SettingRow, Switch, toast } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -14,7 +13,6 @@ const SMALL: DiscordSmall[] = ["head", "loader", "none"];
 
 export function DiscordArtRows({ settings: s, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
   const t = useT();
-  const simple = useSimple();
   const head = headAccount(useAccounts().data);
   const [busy, setBusy] = useState(false);
   const { large, small, hint } = discordArt(s, head);
@@ -58,7 +56,6 @@ export function DiscordArtRows({ settings: s, update }: { settings: Settings; up
       <SettingRow className="border-t" title={t("vibe.discord.pack")} description={t("vibe.discord.pack.desc")}>
         <Switch checked={s.discord_pack_icon} onChange={(discord_pack_icon) => update({ discord_pack_icon })} label={t("vibe.discord.pack")} />
       </SettingRow>
-      {!simple && (
         <SettingRow className="border-t" title={t("vibe.discord.small")} description={t("vibe.discord.small.desc")}>
           <Segmented
             value={s.discord_small}
@@ -66,7 +63,6 @@ export function DiscordArtRows({ settings: s, update }: { settings: Settings; up
             items={SMALL.map((v) => ({ value: v, label: t(`vibe.discord.small.${v}`) }))}
           />
         </SettingRow>
-      )}
     </>
   );
 }

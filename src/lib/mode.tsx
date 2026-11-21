@@ -1,7 +1,7 @@
-// Bedienmodus: „Simple“ (geführt, ohne Fachbegriffe) oder „Expert“ (alle Funktionen, unverändert).
-// Ein zentrales Flag für alles, was Simple ausblendet oder vereinfacht:
+// Bedienmodus: „Simple“ (voller Launcher mit einfachen Wörtern) oder „Expert“ (zusätzlich Technik/Admin).
+// Was Simple ausblendet, steht zentral in src/lib/simple-mode.ts (SIMPLE_HIDDEN, useExpert, simpleHides),
+// dokumentiert in docs/USABILITY.md. Hier nur der Modus selbst:
 //   const simple = useSimple();            // in Komponenten
-//   <ExpertOnly>…</ExpertOnly>             // Teile, die es nur im Expert-Modus gibt
 // Texte: Schlüssel mit `simple:`-Variante in src/i18n/simple.ts ersetzen Fachbegriffe automatisch (useT/t).
 // Gespeichert in den Einstellungen (`ui_mode`); der letzte Wert liegt zusätzlich im Browser-Speicher, damit beim
 // Start nichts flackert, bevor die Einstellungen geladen sind.

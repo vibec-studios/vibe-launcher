@@ -10,7 +10,7 @@ export const GUIDES: GuideDef[] = [
   { id: "autofix", icon: "wrench", tour: "autofix" },
   { id: "backups", icon: "archive", tour: "backups" },
   { id: "hosting", icon: "globe", tour: "hosting" },
-  { id: "servers", icon: "server", tour: "servers" },
+  { id: "servers", icon: "server", tour: "servers", expert: true },
   { id: "skins", icon: "shirt", tour: "skins" },
   { id: "modsets", icon: "layers", tour: "modsets" },
   { id: "gallery", icon: "images", tour: "gallery" },
@@ -96,7 +96,7 @@ export const TOURS: TourDef[] = [
       { targets: ["worlds-list"], route: `${INSTANCE}?tab=worlds` },
       { targets: ["play-link"], optional: true },
       { targets: ["social"], optional: true },
-      { targets: ["servers-new"], route: "/servers" },
+      { targets: ["servers-new"], route: "/servers", expert: true },
     ],
   },
   {

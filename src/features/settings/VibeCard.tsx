@@ -7,7 +7,6 @@ import type { Settings, VibeServices } from "@/lib/types";
 import { SettingRow, SettingsCard, Switch } from "@/components/ui";
 import { useT } from "@/i18n";
 import { VibeAccountCard, VibeDangerCard, VibePrivacyCard } from "@/features/social/VibeAccountSettings";
-import { useSimple } from "@/lib/mode";
 import { DiscordArtRows } from "./discord/DiscordArtRows";
 import { useSocial } from "@/features/social/service";
 import { AccessCard } from "@/features/access/AccessCard";
@@ -20,7 +19,6 @@ const SUBS: (keyof Pick<VibeServices, "social" | "presence" | "hosting" | "shari
 export function VibeTab({ settings: s, update }: { settings: Settings; update: (p: Partial<Settings>, delay?: number) => void }) {
   const t = useT();
   // Simple-Modus: nur Vibe an/aus und das Vibe-Konto
-  const simple = useSimple();
   const discord = useQuery({ queryKey: ["discord-available"], queryFn: api.discordAvailable, staleTime: Infinity });
   const v = s.vibe;
   const setVibe = (p: Partial<VibeServices>, delay?: number) => update({ vibe: { ...v, ...p } }, delay);
@@ -58,7 +56,7 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
             </div>
           )}
           <VibeAccountCard />
-          {!simple && !showAccess && (
+          {!showAccess && (
           <>
           <SettingsCard title={t("vibe.features")}>
             {SUBS.map((k) => (
@@ -80,7 +78,6 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
         >
           <Switch checked={s.discord_rpc} onChange={(discord_rpc) => update({ discord_rpc })} label={t("vibe.discord")} />
         </SettingRow>
-        {!simple && (
           <SettingRow title={t("vibe.discord.details")} description={t("vibe.discord.details.desc")}>
             <Switch
               checked={s.discord_details}
@@ -89,11 +86,10 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
               label={t("vibe.discord.details")}
             />
           </SettingRow>
-        )}
         {s.discord_rpc && <DiscordArtRows settings={s} update={update} />}
       </SettingsCard>
 
-      {!simple && v.enabled && <VibeDangerCard />}
+      {v.enabled && <VibeDangerCard />}
     </>
   );
 }

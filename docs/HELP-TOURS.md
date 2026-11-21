@@ -14,6 +14,7 @@ Code: `src/features/help/`
 | `tour/` | Tour-System: Speicher, Ziel-Suche, Positionierung, Overlay mit Spotlight, Bubble |
 | `HelpCenter.tsx`, `GuideView.tsx`, `ToursView.tsx` | Der Dialog „Hilfe & Anleitungen“ |
 | `HelpButton.tsx` | Fragezeichen in der Kopfzeile und `HelpLink` für kontextuelle „?“-Links |
+| `glossary/` | Glossar „Begriffe erklärt“: Begriffe (`terms.ts`), Texte (`de.ts`, `en.ts`), Popover `Term.tsx`, Seite `GlossaryView.tsx` |
 | `src/i18n/help.ts` | Texte der Oberfläche (Knöpfe, Status), nicht der Inhalte |
 
 ## Neue Anleitung hinzufügen
@@ -55,6 +56,8 @@ Code: `src/features/help/`
    - `open`: öffnet vorher einen Dialog (`settings:<tab>`, `import:launcher`, `instance-settings:perf`). Neue Aktionen
      in `types.ts` (`TourAction`) und `tour/actions.ts` (`runAction`, `closeAction`) ergänzen. Was eine Tour öffnet,
      schließt sie beim nächsten Schritt bzw. am Ende wieder.
+   - `expert: true`: Schritt zeigt eine Experten-Funktion (z. B. Server). Im Simple Mode wird er übersprungen, bevor
+     die Route geöffnet wird.
    - `optional: true`: fehlt das Ziel, wird der Schritt still übersprungen (z. B. Play-Link nur beim Hosten). Ohne
      `optional` zeigt die Tour den Text mittig mit dem Hinweis, dass das Element gerade nicht zu sehen ist.
 4. In `content/de.ts` und `content/en.ts` unter `tours` den Titel und je Schritt `title` und `text` eintragen, in
@@ -77,6 +80,24 @@ Code: `src/features/help/`
 - Während der Tour sind Klicks auf die Seite gesperrt. Die Tour zeigt nur, sie bedient nichts.
 - Für den Zugangsstatus der Vibe-Beta (Warteliste) ist das Ziel `data-tour="vibe-access"` vorgesehen. Solange es
   fehlt, zeigt die Tour „Vibe-Beta“ auf den ganzen Bereich „Vibe & Konto“.
+
+## Experten-Anleitungen
+
+`expert: true` an einer Anleitung in `GUIDES` (z. B. `servers`): Im Simple Mode zeigt die Anleitung einen Hinweis mit
+„Experten-Modus“ statt „Tour starten“, und die Tour fehlt unter „Alle Touren“. Was Simple ausblendet, steht zentral in
+`src/lib/simple-mode.ts` (siehe `docs/USABILITY.md`).
+
+## Glossar und Begriffs-Popover
+
+```tsx
+import { Term } from "@/features/help/glossary/Term";
+
+<Term id="loader">{t("newinst.loader")}</Term>
+```
+
+Unterstreicht den Text gepunktet; Klick öffnet eine kurze Erklärung mit Link zu „Begriffe erklärt“
+(`openHelp("glossary", id)`). Neuer Begriff: ID in `glossary/terms.ts`, Text in `glossary/de.ts` und `glossary/en.ts`.
+Sparsam einsetzen, vor allem dort, wo Neulinge auf Fachwörter stoßen.
 
 ## Kontextuelle „?“-Links
 

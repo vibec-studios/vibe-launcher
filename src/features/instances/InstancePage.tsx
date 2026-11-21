@@ -31,6 +31,7 @@ import { PlayLinkBar } from "@/features/play/SharePlayLink";
 import { VibeyClientBadge } from "@/features/cosmetics/VibeyClientSlot";
 import { ToolbarSlot } from "./toolbar";
 import { useSimple } from "@/lib/mode";
+import { simpleHides, type InstanceArea } from "@/lib/simple-mode";
 import { BedrockInstanceView } from "@/features/bedrock/BedrockInstanceView";
 import { HelpLink } from "@/features/help/HelpButton";
 
@@ -138,7 +139,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
 // im Kopf (alte Deep-Links `?tab=settings` öffnen das Popup).
 // Die URL behält die bisherigen Tab-Werte (Deep-Links bleiben gültig): content/resourcepacks/shaders öffnen die
 // Inhalte (mit passendem Typ-Filter), worlds/servers die Welten.
-type Area = "content" | "worlds" | "logs" | "files" | "backups";
+type Area = InstanceArea;
 const areaOf: Record<InstanceTab, Area> = {
   content: "content",
   resourcepacks: "content",
@@ -218,14 +219,11 @@ export function InstancePage() {
   return <InstanceView key={inst.id} inst={inst} tab={tab} />;
 }
 
-/** Simple-Modus: nur Inhalte und Welten (keine Logs, Dateien, Backups). */
-const SIMPLE_AREAS: Area[] = ["content", "worlds"];
-
 function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
   const t = useT();
   const navTab = route.useNavigate();
   const simple = useSimple();
-  const active: InstanceTab = simple && !SIMPLE_AREAS.includes(areaOf[tab]) ? "content" : tab;
+  const active: InstanceTab = simpleHides.instanceArea(simple, areaOf[tab]) ? "content" : tab;
   const area = areaOf[active];
   const worldItems = useWorldItems(inst.id, area === "worlds");
   // F5 / Strg+R: Mods, Updates und Probleme neu prüfen (wie der Knopf im Kopf)
@@ -275,7 +273,7 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
                 { value: "files", label: t("inst.tab.files"), icon: <FolderOpen size={15} /> },
                 { value: "backups", label: t("inst.tab.backups"), icon: <Archive size={15} /> },
               ] as { value: Area; label: string; icon: React.ReactNode }[]
-            ).filter((it) => !simple || SIMPLE_AREAS.includes(it.value))}
+            ).filter((it) => !simpleHides.instanceArea(simple, it.value))}
           />
         }
         notices={<InstanceNotices instance={inst} tab={active} />}

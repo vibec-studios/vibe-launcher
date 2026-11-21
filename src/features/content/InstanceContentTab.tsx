@@ -55,7 +55,7 @@ import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
 import type { ContentItem, ContentKind, ContentUpdate, Instance } from "@/lib/types";
 import { registerDropTarget, useDragState } from "@/components/content/dragdrop";
 import { contentKey, fileExt, kindExtensions, kindFolder } from "@/components/content/util";
-import { ContentRow, GRID, ROW_H, RowSkeleton, SelectBox, SimpleContentRow, type RowActions } from "./ContentRow";
+import { ContentRow, GRID, ROW_H, RowSkeleton, SelectBox, type RowActions } from "./ContentRow";
 import { useSimple } from "@/lib/mode";
 import { startManualDownload } from "@/components/content/install";
 import { RefreshButton } from "@/features/instances/RefreshButton";
@@ -488,7 +488,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
           placeholder={t("ipage.ct.search", { n: total })}
           className="min-w-[160px] flex-1"
         />
-        {!simple && (
           <DropdownMenu
             trigger={
               <Button variant="ghost" data-tour="content-add-files" icon={<FilePlus2 size={15} />} className="data-[state=open]:bg-surface3">
@@ -499,7 +498,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
           >
             {addFilesMenu}
           </DropdownMenu>
-        )}
         <Button variant="accent" data-tour="content-add" icon={<Plus size={16} />} onClick={toDiscover}>
           {t("content.add")}
         </Button>
@@ -509,7 +507,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
       {/* 2. Sortierung, Filter-Chips, Aktionen */}
       {!empty && (
         <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-2">
-          {!simple && (
             <>
           <DropdownMenu
             align="start"
@@ -549,7 +546,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             </DropdownCheckItem>
           </DropdownMenu>
             </>
-          )}
           <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label={t("ipage.ct.type")}>
             <FilterChip active={type === "all"} onClick={() => setType("all")} count={counts.all}>
               {t("ipage.ct.type.all")}
@@ -560,7 +556,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
               </FilterChip>
             ))}
           </div>
-          {!simple && (
             <>
           <span className="h-5 w-px bg-line2" />
           <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t("ipage.filter.status")}>
@@ -615,7 +610,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             </IconButton>
           )}
             </>
-          )}
           {/* Rechte Gruppe bleibt zusammen und rechtsbündig, auch wenn die Zeile umbricht */}
           <div className="ml-auto flex shrink-0 items-center gap-0.5">
           {counts.updatesAll > 0 && (
@@ -634,8 +628,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
           {/* Neu prüfen: Ordner neu einlesen, Updates ohne Cache, Probleme (auch Loader) – auch per F5. Behält seinen Text;
               Mod-Sets/Werkzeuge zeigen ihren erst ab 1240px, damit die Leiste bei 1280er-Fenstern einzeilig bleibt */}
           <RefreshButton instanceId={id} />
-          {!simple && <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1240px]:inline" />}
-          {!simple && (
+          <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1240px]:inline" />
           <DropdownMenu
             trigger={
               <Button size="sm" variant="subtle" icon={<SlidersHorizontal size={14} />} title={t("ipage.tools")} className="px-2.5 data-[state=open]:bg-white/[.07] data-[state=open]:text-text">
@@ -659,7 +652,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
               </DropdownItem>
             ))}
           </DropdownMenu>
-          )}
           </div>
         </div>
       )}
@@ -688,7 +680,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                 <Button variant="accent" data-tour="content-add" icon={<Plus size={15} />} onClick={toDiscover}>
                   {t("content.add")}
                 </Button>
-                {!simple && (
                 <>
                 <DropdownMenu
                   trigger={
@@ -708,7 +699,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                   {t("common.open_folder")}
                 </Button>
                 </>
-                )}
                 {/* Dateien von Hand in den Ordner gelegt? -> neu einlesen */}
                 <RefreshButton instanceId={id} variant="empty" />
               </div>
@@ -717,7 +707,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
         ) : (
           <>
             {/* Spaltenköpfe (Simple: keine) */}
-            {!simple && (
             <div role="rowgroup" className={cn(GRID, "h-11 shrink-0 overflow-y-hidden bg-surface text-[12.5px] font-semibold text-muted [scrollbar-gutter:stable]")}>
               <SelectBox
                 state={headState}
@@ -732,7 +721,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
               </ColumnHead>
               <span className="text-right">{t("ipage.ct.col.actions")}</span>
             </div>
-            )}
 
             {pending ? (
               <div className="min-h-0 flex-1 overflow-hidden">
@@ -768,9 +756,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                     const key = keyOf(item);
                     return (
                       <div key={key} className="absolute inset-x-0" style={{ top: it.start, height: ROW_H }}>
-                        {simple ? (
-                          <SimpleContentRow item={item} update={updates.get(key)} actions={actions} />
-                        ) : (
                         <ContentRow
                           item={item}
                           itemKey={key}
@@ -780,7 +765,6 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                           actions={actions}
                           showKind={type === "all"}
                         />
-                        )}
                       </div>
                     );
                   })}

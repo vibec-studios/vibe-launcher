@@ -28,7 +28,6 @@ import {
   Waves,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { useSimple } from "@/lib/mode";
 import type { Appearance, BackgroundAnimated, BackgroundGradient, BackgroundKind, NavKey, Settings, ThemeId } from "@/lib/types";
 import {
   ACCENT_PRESETS,
@@ -75,7 +74,6 @@ const NAV_ICONS: Record<NavKey, ReactNode> = {
 export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
   const t = useT();
   // Simple-Modus: nur die Basics (Theme, Akzentfarbe, Animationen)
-  const simple = useSimple();
   const a = normalizeAppearance(s.appearance);
   const b = a.background;
   const shown = effectiveAppearance(a);
@@ -206,7 +204,6 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
         <SettingRow title={t("ap.accent")} description={t("ap.accent.desc")} stacked>
           <AccentPicker value={a.accent} onChange={(accent, d) => set({ accent }, d)} />
         </SettingRow>
-        {!simple && (
           <>
         <SettingRow title={t("ap.tone")} description={t("ap.tone.desc")}>
           <Segmented
@@ -240,10 +237,8 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
           </div>
         </SettingRow>
           </>
-        )}
       </SettingsCard>
 
-      {!simple && (
         <>
       {/* ---------------------------------------------------------- Schrift */}
       <SettingsCard title={t("ap.section.font")}>
@@ -410,7 +405,6 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
       </SettingsCard>
 
         </>
-      )}
 
       {/* ---------------------------------------------------------- Bewegung */}
       <SettingsCard title={t("ap.section.motion")}>
@@ -425,14 +419,11 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
             items={(["reduced", "normal", "more"] as const).map((v) => ({ value: v, label: t(`ap.motion.${v}`) }))}
           />
         </SettingRow>
-        {!simple && (
           <SettingRow title={t("ap.nav_animations")} description={t("ap.nav_animations.desc")} className={cn(motion === "reduced" && "opacity-50")}>
             <Switch checked={a.nav_animations} disabled={motion === "reduced"} onChange={(nav_animations) => set({ nav_animations })} label={t("ap.nav_animations")} />
           </SettingRow>
-        )}
       </SettingsCard>
 
-      {!simple && (
         <>
       {/* ---------------------------------------------------------- Hintergrund */}
       <SettingsCard title={t("ap.section.background")}>
@@ -487,7 +478,6 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
         </SettingRow>
       </SettingsCard>
         </>
-      )}
     </>
   );
 }

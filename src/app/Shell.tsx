@@ -22,7 +22,7 @@ import { TaskDock } from "./TaskDock";
 import { UpdateButton } from "./UpdateNotice";
 import { NoticeBar } from "./Notices";
 import { AccountMenu } from "./AccountMenu";
-import { ModeHost, useSimple } from "@/lib/mode";
+import { ModeHost } from "@/lib/mode";
 import { Onboarding } from "@/features/onboarding/Onboarding";
 import { SimpleTour } from "@/features/onboarding/SimpleTour";
 import { SimpleModeHint } from "@/features/onboarding/SimpleModeHint";
@@ -89,9 +89,8 @@ function RailButton({
 const RailInstance = memo(function RailInstance({ instance: i, active, wide }: { instance: Instance; active: boolean; wide: boolean }) {
   const nav = useNavigate();
   const { running, busy } = useInstanceActivity(i.id);
-  const simple = useSimple();
   return (
-    <ContextMenu disabled={simple} content={<InstanceContextMenuContent instance={i} />}>
+    <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
       <div className={wide ? "w-full" : undefined}>
         <Tooltip content={wide ? null : i.bedrock ? `${i.name} · Bedrock` : i.name} side="right">
           <button

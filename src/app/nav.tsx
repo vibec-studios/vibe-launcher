@@ -8,6 +8,7 @@ import type { NavKey } from "@/lib/types";
 import { useLiveAppearance } from "@/lib/appearance";
 import { killInstance } from "@/components/instance/actions";
 import { useSimple } from "@/lib/mode";
+import { simpleHides } from "@/lib/simple-mode";
 import { useVibe } from "@/lib/vibe";
 import { useSocialBadge } from "@/features/social/hooks";
 import { useSettingsDialog } from "@/features/settings/store";
@@ -30,10 +31,6 @@ export const NAV: Record<NavKey, NavDef> = {
   screenshots: { icon: <Images size={20} />, label: "nav.screenshots", go: (nav) => nav({ to: "/screenshots" }), match: (p) => p === "/screenshots" },
 };
 
-/** Simple-Modus: feste, kurze Navigation (Skins übers Konto-Menü; Server, Screenshots und Statistiken nur im
- *  Expert-Modus – sie setzen Technik voraus oder sind für den Einstieg nicht nötig). */
-export const SIMPLE_NAV: NavKey[] = ["home", "instances", "discover", "social", "cosmetics"];
-
 /** Gemeinsamer Zustand der Seitenleiste (v1 und v2): sichtbare Einträge, Instanzen, Abzeichen. */
 export function useRailModel() {
   const nav = useNavigate();
@@ -48,8 +45,8 @@ export function useRailModel() {
   const vibe = useVibe();
   const socialBadge = useSocialBadge();
   const settingsOpen = useSettingsDialog((s) => s.open);
-  const keys = (simple ? SIMPLE_NAV : sidebar.order.filter((k) => !sidebar.hidden.includes(k))).filter(
-    (k) => (k !== "social" || vibe.social) && (k !== "cosmetics" || vibe.enabled),
+  const keys = sidebar.order.filter(
+    (k) => !sidebar.hidden.includes(k) && !simpleHides.nav(simple, k) && (k !== "social" || vibe.social) && (k !== "cosmetics" || vibe.enabled),
   );
   return { nav, path, at, wide, simple, keys, recent, serversRunning, socialBadge, settingsOpen };
 }

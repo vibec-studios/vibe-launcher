@@ -24,6 +24,7 @@ export interface TourStepDef {
   route?: string;
   open?: TourAction;
   optional?: boolean;
+  expert?: boolean;
 }
 
 export interface TourDef {
@@ -36,6 +37,7 @@ export interface GuideDef {
   id: GuideId;
   icon: string;
   tour?: TourId;
+  expert?: boolean;
 }
 
 export interface StepText {

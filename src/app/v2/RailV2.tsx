@@ -11,7 +11,6 @@ import { openNewInstance } from "@/components/instance/actions";
 import { Logo3D } from "@/components/Logo3D";
 import { BEDROCK_TEXT_COLOR } from "@/features/bedrock/parts";
 import { openSettings } from "@/features/settings/store";
-import { useSimple } from "@/lib/mode";
 import { NAV, useInstanceActivity, useRailModel } from "../nav";
 
 function Item({
@@ -58,9 +57,8 @@ function Item({
 const RailInstance = memo(function RailInstance({ instance: i, active, wide }: { instance: Instance; active: boolean; wide: boolean }) {
   const nav = useNavigate();
   const { running, busy } = useInstanceActivity(i.id);
-  const simple = useSimple();
   return (
-    <ContextMenu disabled={simple} content={<InstanceContextMenuContent instance={i} />}>
+    <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
       <div className={wide ? "w-full" : undefined}>
         <Tooltip content={wide ? null : i.bedrock ? `${i.name} · Bedrock` : i.name} side="right">
           <button

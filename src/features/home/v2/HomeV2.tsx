@@ -13,6 +13,7 @@ import { HomeAside } from "../Aside";
 import { sideWidth, useHeight, useTier } from "../layout";
 import { PopularPacks, StartHere } from "../Discover";
 import { HeroV2 } from "./HeroV2";
+import { StarterCard } from "../StarterCard";
 
 function Stat({ icon, children, to }: { icon: ReactNode; children: ReactNode; to?: "/stats" | "/instances" }) {
   const cls =
@@ -81,6 +82,7 @@ export function HomeV2() {
     <div className="scroll h-full">
       <div ref={ref} className={cn(pageWrap, "flex flex-col gap-8 pb-12 pt-7 min-[1600px]:px-9")}>
         <HeaderV2 count={list.length} loading={loading} />
+        {!loading && <StarterCard />}
         {loading ? (
           <div className="flex flex-col gap-8" aria-busy>
             <Skeleton className="h-[248px] rounded-panel" />

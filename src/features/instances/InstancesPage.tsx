@@ -6,7 +6,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useInstances } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { loaderNames } from "@/lib/format";
-import { useSimple } from "@/lib/mode";
 import { Button, EmptyState, ErrorState, IconButton, SearchInput, Select, cn } from "@/components/ui";
 import { InstanceCard, InstanceCardSkeleton, InstanceListHeader, InstanceListRow } from "@/components/instance/InstanceCard";
 import { openNewInstance, useInstanceActions } from "@/components/instance/actions";
@@ -68,8 +67,7 @@ export function InstancesPage() {
   const [sort, setSortState] = useState<SortKey>(() => load("vl.inst.sort", "recent"));
   const [storedGroupBy, setGroupByState] = useState<GroupKey>(() => load("vl.inst.groupby", "group"));
   // Simple-Modus: keine Gruppierung nach Loader/Version, Auswahl ausgeblendet
-  const simple = useSimple();
-  const groupBy: GroupKey = simple && (storedGroupBy === "loader" || storedGroupBy === "version") ? "group" : storedGroupBy;
+  const groupBy: GroupKey = storedGroupBy;
   const [collapsed, setCollapsed] = useState<string[]>(() => load("vl.inst.collapsed", []));
   // Standardansicht aus der Darstellung; eine Umschaltung hier gilt, bis die Einstellung geändert wird
   const [view, setViewState] = useState<ViewKey>(() => load("vl.inst.view", cachedAppearance().library_view));
@@ -159,7 +157,7 @@ export function InstancesPage() {
                 <div
                   className={cn(
                     "flex min-w-0 items-center gap-2 @max-[500px]:flex-wrap",
-                    simple ? "@max-[960px]:order-last @max-[960px]:w-full" : "@max-[1130px]:order-last @max-[1130px]:w-full",
+                    "@max-[1130px]:order-last @max-[1130px]:w-full",
                   )}
                 >
                   <SearchInput value={query} onChange={setQuery} placeholder={t("instances.search")} className="w-[220px] min-w-[150px] @max-[1130px]:flex-1 @max-[500px]:basis-full" />
@@ -172,7 +170,6 @@ export function InstancesPage() {
                       options={SORTS.map((s) => ({ value: s, label: t(`instances.sort.${s}`) }))}
                     />
                   </div>
-                  {!simple && (
                     <div className="w-[150px] shrink-0">
                       <Select<GroupKey>
                         size="sm"
@@ -182,7 +179,6 @@ export function InstancesPage() {
                         options={GROUPS.map((g) => ({ value: g, label: t(`instances.groupby.${g}`) }))}
                       />
                     </div>
-                  )}
                 </div>
               </>
             )}

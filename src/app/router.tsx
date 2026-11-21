@@ -122,11 +122,11 @@ const screenshotsRoute = createRoute({
   }),
 });
 
-const serversRoute = createRoute({ getParentRoute: () => rootRoute, path: "/servers", component: lazyRouteComponent(() => import("@/features/servers/ServersPage"), "ServersPage") });
+const serversRoute = createRoute({ getParentRoute: () => rootRoute, path: "/servers", component: lazyRouteComponent(() => import("@/features/simple/ServersGate"), "ServersPage") });
 const serverRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/servers/$id",
-  component: lazyRouteComponent(() => import("@/features/servers/ServerPage"), "ServerPage"),
+  component: lazyRouteComponent(() => import("@/features/simple/ServersGate"), "ServerPage"),
   validateSearch: (s: Record<string, unknown>): { tab: ServerTab } => ({
     tab: serverTabs.includes(s.tab as ServerTab) ? (s.tab as ServerTab) : "console",
   }),

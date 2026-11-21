@@ -1,5 +1,6 @@
 // Aktionsmenü einer Instanz – derselbe Inhalt als Rechtsklick-Menü (Karten) und als Dropdown („Mehr“).
 import type { ReactNode } from "react";
+import { useExpert } from "@/lib/simple-mode";
 import {
   Box,
   Check,
@@ -94,6 +95,7 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
   const vibe = useVibe();
   // Bedrock: keine Java-Ordner, kein Export als Modpack, kein Teilen/Hosting/Reparieren
   const bedrock = !!i.bedrock;
+  const servers = useExpert("servers");
 
   return (
     <>
@@ -146,7 +148,7 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
           {t("inst.shortcut.start_menu")}
         </Item>
       </Sub>
-      {!bedrock && (
+      {!bedrock && servers && (
         <Item icon={<ServerIcon size={14} />} onSelect={() => openNewServer(i.id)}>
           {t("srv.host_instance")}
         </Item>

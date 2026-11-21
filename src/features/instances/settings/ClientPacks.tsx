@@ -12,7 +12,7 @@ import { loaderNames } from "@/lib/format";
 import type { ClientPackOffer, ClientPacksOverview, Instance, LoaderKind } from "@/lib/types";
 import { Button, Select, Skeleton, Tag, Tooltip, cn, confirm, toast } from "@/components/ui";
 import { useT } from "@/i18n";
-import { useSimple } from "@/lib/mode";
+import { useExpert } from "@/lib/simple-mode";
 
 export const cpk = {
   instance: (id: string) => ["client-packs", "instance", id] as const,
@@ -184,7 +184,7 @@ function PackCard({
   onRemove: () => void;
 }) {
   const t = useT();
-  const simple = useSimple();
+  const tech = useExpert("tech-details");
   const inst = o.installed;
   const official = o.category === "official";
   const range = versionRange(o.mc_versions);
@@ -260,7 +260,7 @@ function PackCard({
           </div>
         )}
         {/* Woher die Datei kommt: Detail für Experten */}
-        {!simple && <p>{t(`cp.source.${o.source}`)}</p>}
+        {tech && <p>{t(`cp.source.${o.source}`)}</p>}
       </div>
 
       <div className="mt-auto flex min-h-8 items-center gap-2">
