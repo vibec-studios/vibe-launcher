@@ -20,8 +20,6 @@ pub struct GameManager {
     me: Weak<GameManager>,
     reg: Mutex<Registry>,
     flusher: std::sync::Once,
-    /// Installationen laufen nacheinander (gemeinsame Dateien in meta/)
-    pub(crate) install_lock: tokio::sync::Mutex<()>,
 }
 
 impl GameManager {
@@ -32,7 +30,6 @@ impl GameManager {
             me: me.clone(),
             reg: Mutex::new(Registry::default()),
             flusher: std::sync::Once::new(),
-            install_lock: tokio::sync::Mutex::new(()),
         })
     }
 
@@ -417,25 +414,8 @@ impl OlderExt for Option<&(std::time::SystemTime, String)> {
     }
 }
 
-/// Ganzen Prozessbaum beenden.
-pub fn kill_tree(pid: u32) {
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        let _ = std::process::Command::new("taskkill")
-            .args(["/F", "/T", "/PID", &pid.to_string()])
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .creation_flags(super::java::CREATE_NO_WINDOW)
-            .status();
-    }
-    #[cfg(unix)]
-    {
-        // Spiel läuft in eigener Prozessgruppe (pgid = pid)
-        let _ = std::process::Command::new("kill").args(["-KILL", &format!("-{pid}")]).status();
-        let _ = std::process::Command::new("kill").args(["-KILL", &pid.to_string()]).status();
-    }
-}
+
+pub use vibe_server_core::minecraft::process::kill_tree;
 
 /// `settings.launch_behavior`: Launcher während des Spiels minimieren/verstecken, danach zeigen.
 pub(crate) fn apply_launch_behavior(state: &AppState, started: bool) {

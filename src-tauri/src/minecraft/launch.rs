@@ -22,34 +22,8 @@ pub struct LaunchPlan {
     pub display: String,
 }
 
-/// Einfaches Shell-artiges Aufteilen (Leerzeichen, "…" und '…').
-pub fn split_args(s: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut cur = String::new();
-    let mut quote: Option<char> = None;
-    let mut has = false;
-    for c in s.chars() {
-        match quote {
-            Some(q) if c == q => quote = None,
-            Some(_) => cur.push(c),
-            None if c == '"' || c == '\'' => {
-                quote = Some(c);
-                has = true;
-            }
-            None if c.is_whitespace() => {
-                if has || !cur.is_empty() {
-                    out.push(std::mem::take(&mut cur));
-                    has = false;
-                }
-            }
-            None => cur.push(c),
-        }
-    }
-    if has || !cur.is_empty() {
-        out.push(cur);
-    }
-    out
-}
+
+pub use vibe_server_core::util::split_args;
 
 /// `${name}` ersetzen; unbekannte Platzhalter bleiben stehen.
 pub fn substitute(s: &str, vars: &HashMap<&str, String>) -> String {

@@ -345,13 +345,13 @@ pub async fn install_instance_opts(state: &AppState, id: &str, sp: &SubProgress,
         let v = super::loaders::default_loader_version(state, inst.loader.kind, &inst.mc_version).await?;
         state.instances.modify(id, |i| i.loader.version = Some(v))?;
     }
-    let lock = match state.game.install_lock.try_lock() {
+    let lock = match state.install_lock.try_lock() {
         Ok(g) => g,
         Err(_) => {
             sp.message("Warte auf eine andere Installation …");
             let cancel = sp.task.cancel_token();
             tokio::select! {
-                g = state.game.install_lock.lock() => g,
+                g = state.install_lock.lock() => g,
                 _ = cancel.cancelled() => return Err(AppError::Cancelled),
             }
         }

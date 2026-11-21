@@ -49,18 +49,8 @@ fn effective_api_url(over: Option<String>) -> String {
     over.map(|o| crate::domains::migrate_api_url(&o)).unwrap_or_else(|| DEFAULT_API_URL.to_string())
 }
 
-/// Wert einer Entwickler-Umgebungsvariable – nur in Debug-Builds, in Release immer `None`.
-pub fn debug_override(name: &str) -> Option<String> {
-    #[cfg(debug_assertions)]
-    {
-        std::env::var(name).ok().map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
-    }
-    #[cfg(not(debug_assertions))]
-    {
-        let _ = name;
-        None
-    }
-}
+
+pub use vibe_server_core::util::debug_override;
 
 pub fn normalize_base(raw: &str) -> String {
     raw.trim().trim_end_matches('/').to_string()
