@@ -61,7 +61,7 @@ export function JoinWaitlistDialog({ open, onOpenChange }: { open: boolean; onOp
       description={name ? t("access.join.lead", { name }) : t("access.join.lead_noname")}
       footer={
         <>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button variant="subtle" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>
           <Button variant="primary" icon={<ListPlus size={14} />} loading={busy} onClick={() => void submit()}>

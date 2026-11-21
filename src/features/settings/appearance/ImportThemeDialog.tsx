@@ -69,7 +69,7 @@ export function ImportThemeDialog({
           <Button variant="subtle" icon={<FileUp size={14} />} onClick={() => void fromFile()} className="mr-auto">
             {t("ct.import.file")}
           </Button>
-          <Button variant="ghost" onClick={() => close(false)}>
+          <Button variant="subtle" onClick={() => close(false)}>
             {t("common.cancel")}
           </Button>
           <Button variant="primary" disabled={!text.trim()} onClick={() => submit()}>

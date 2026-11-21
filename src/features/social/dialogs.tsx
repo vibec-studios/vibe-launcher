@@ -4,7 +4,7 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { copyText as writeText } from "@/components/content/util";
-import { Check, Copy, Link2, PackageOpen, Server as ServerIcon, Share2 } from "lucide-react";
+import { Check, Copy, Link2, PackageOpen, SearchX, Server as ServerIcon, Share2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api, errorMessage, isCancelled } from "@/lib/api";
 import { sqk, useServers, useServerStore, waitForTask, useJavaInstances } from "@/lib/queries";
@@ -12,10 +12,9 @@ import type { Instance, LoaderKind, Server } from "@/lib/types";
 import { useVibe } from "@/lib/vibe";
 import type { HostSession, Invite, Pack, PackVisibility } from "@/lib/vibe-sdk";
 import { Button, Checkbox, Dialog, Field, Input, Segmented, Select, Skeleton, Spinner, Textarea, toast } from "@/components/ui";
-import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { useInstanceActions } from "@/components/instance/actions";
 import { finishNewInstance } from "@/components/content/install";
-import { instanceAccent } from "@/lib/format";
+import { loaderNames } from "@/lib/format";
 import { t as tr, useT } from "@/i18n";
 import { Avatar } from "./FriendsList";
 import { useFriends } from "./hooks";
@@ -138,6 +137,40 @@ function InviteFriendsDialog({ init, onClose }: { init: NonNullable<DialogState[
   };
 
   const canSend = !!target && (init.chatId || picked.size > 0);
+  if (!vibe.hosting || hosted.length === 0) {
+    const toServers = () => {
+      onClose();
+      nav({ to: "/servers" });
+    };
+    return (
+      <Dialog
+        open
+        onOpenChange={(o) => !o && onClose()}
+        title={t("social.invite.title")}
+        size="sm"
+        footer={
+          <>
+            <Button variant="subtle" onClick={onClose}>
+              {t("common.close")}
+            </Button>
+            {vibe.hosting && (
+              <Button variant="primary" icon={<ServerIcon size={14} />} onClick={toServers} autoFocus>
+                {t("uic.invite.to_servers")}
+              </Button>
+            )}
+          </>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 px-2 pb-2 pt-3 text-center">
+          <span className="grid h-12 w-12 place-items-center rounded-card bg-surface2 text-muted">
+            <ServerIcon size={22} />
+          </span>
+          <div className="text-[15px] font-semibold text-text">{t("uic.invite.no_server.title")}</div>
+          <p className="text-[13px] leading-relaxed text-muted">{vibe.hosting ? t("uic.invite.no_server.text") : t("social.invite.hosting_off")}</p>
+        </div>
+      </Dialog>
+    );
+  }
   return (
     <Dialog
       open
@@ -156,33 +189,14 @@ function InviteFriendsDialog({ init, onClose }: { init: NonNullable<DialogState[
       }
     >
       <div className="flex flex-col gap-4">
-        {!vibe.hosting ? (
-          <p className="text-[13px] text-muted">{t("social.invite.hosting_off")}</p>
-        ) : hosted.length === 0 ? (
-          <div className="rounded-card bg-surface p-3 text-[13px] text-muted">
-            <p>{t("social.invite.no_server")}</p>
-            <Button
-              size="sm"
-              className="mt-3"
-              icon={<ServerIcon size={14} />}
-              onClick={() => {
-                onClose();
-                nav({ to: "/servers" });
-              }}
-            >
-              {t("nav.servers")}
-            </Button>
-          </div>
-        ) : (
-          <Field label={t("social.invite.server")}>
-            <Select
-              value={target?.server.id ?? null}
-              onChange={setServerId}
-              options={hosted.map((h) => ({ value: h.server.id, label: h.server.name, hint: h.address }))}
-            />
-            {target?.kind === "direct" && <p className="mt-1.5 text-[12px] text-warn">{t("social.invite.lan_hint")}</p>}
-          </Field>
-        )}
+        <Field label={t("social.invite.server")}>
+          <Select
+            value={target?.server.id ?? null}
+            onChange={setServerId}
+            options={hosted.map((h) => ({ value: h.server.id, label: h.server.name, hint: h.address }))}
+          />
+          {target?.kind === "direct" && <p className="mt-1.5 text-[12px] text-warn">{t("social.invite.lan_hint")}</p>}
+        </Field>
         {limits.data && (
           <p className="font-mono text-[11px] text-dim">
             {t("social.hosting.limits", { active: limits.data.active, max: limits.data.maxHosts })}
@@ -407,7 +421,7 @@ function AcceptDialog({ req, onClose }: { req: AcceptReq; onClose: () => void })
               <div className="truncate text-[12px] text-muted">
                 {t("social.accept.from", { name: tgt.from.name })}
                 {tgt.mcVersion ? ` · ${tgt.mcVersion}` : ""}
-                {tgt.loader && tgt.loader !== "vanilla" ? ` · ${tgt.loader}` : ""}
+                {tgt.loader && tgt.loader !== "vanilla" ? ` · ${loaderNames[tgt.loader as LoaderKind] ?? tgt.loader}` : ""}
               </div>
             </div>
           </div>
@@ -418,14 +432,11 @@ function AcceptDialog({ req, onClose }: { req: AcceptReq; onClose: () => void })
               onChange={setPick}
               disabled={!!step}
               options={[
-                ...candidates.map((i) => ({ value: i.id, label: i.name, hint: `${i.mc_version} · ${i.loader.kind}` })),
+                ...candidates.map((i) => ({ value: i.id, label: i.name, hint: `${i.mc_version} · ${loaderNames[i.loader.kind]}` })),
                 { value: "__new", label: newLabel },
               ]}
             />
           </Field>
-          {chosen !== "__new" && (
-            <InstancePreview i={instances.find((i) => i.id === chosen)} />
-          )}
           {step && (
             <p className="flex items-center gap-2 text-[12px] text-muted">
               <Spinner size={11} /> {step}
@@ -435,16 +446,6 @@ function AcceptDialog({ req, onClose }: { req: AcceptReq; onClose: () => void })
         </div>
       )}
     </Dialog>
-  );
-}
-
-function InstancePreview({ i }: { i: Instance | undefined }) {
-  if (!i) return null;
-  return (
-    <div className="flex items-center gap-2.5 text-[12px] text-muted">
-      <InstanceIcon icon={i.icon} seed={i.id} accent={instanceAccent(i.id, i.accent)} size={24} />
-      <span className="truncate">{i.name}</span>
-    </div>
   );
 }
 
@@ -530,7 +531,11 @@ function ShareDialog({ instanceId, onClose }: { instanceId: string; onClose: () 
                   { value: "friends", label: t("social.share.vis.friends") },
                   { value: "public", label: t("social.share.vis.public") },
                 ]}
+                className="w-full [&>button]:flex-1"
               />
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+                {t(visibility === "unlisted" ? "uic.share.visibility.link" : visibility === "friends" ? "uic.share.visibility.friends" : "uic.share.visibility.public")}
+              </p>
             </Field>
           )}
           <Field label={asVersion ? t("social.share.changelog") : t("social.share.description")}>
@@ -626,17 +631,25 @@ export function PackImportDialog({ code, onClose }: { code: string; onClose: () 
       size="sm"
       footer={
         <>
-          <Button variant="subtle" onClick={onClose}>
-            {t("common.cancel")}
+          <Button variant="subtle" onClick={onClose} autoFocus={q.isError}>
+            {q.isError ? t("common.close") : t("common.cancel")}
           </Button>
-          <Button variant="primary" icon={<PackageOpen size={14} />} onClick={install} loading={busy} disabled={!p}>
-            {t("social.pack.install")}
-          </Button>
+          {!q.isError && (
+            <Button variant="primary" icon={<PackageOpen size={14} />} onClick={install} loading={busy} disabled={!p}>
+              {t("social.pack.install")}
+            </Button>
+          )}
         </>
       }
     >
       {q.isError ? (
-        <p className="text-[13px] text-danger">{errText(q.error)}</p>
+        <div className="flex items-start gap-3 rounded-card border border-danger/30 bg-danger/[.06] px-4 py-3">
+          <SearchX size={18} className="mt-0.5 shrink-0 text-danger" />
+          <div className="min-w-0">
+            <p className="text-[13px] leading-relaxed text-text">{t("uic.pack.not_found", { code })}</p>
+            <p className="mt-1 text-[12px] text-dim">{errText(q.error)}</p>
+          </div>
+        </div>
       ) : !p ? (
         <div className="flex items-center gap-3">
           <Skeleton className="h-12 w-12" />
@@ -649,7 +662,7 @@ export function PackImportDialog({ code, onClose }: { code: string; onClose: () 
             <div className="min-w-0">
               <div className="truncate text-[15px] font-semibold text-text">{p.name}</div>
               <div className="truncate text-[12px] text-muted">
-                {t("social.pack.by", { name: p.owner.name })} · {p.mcVersion} · {p.loader}
+                {t("social.pack.by", { name: p.owner.name })} · {p.mcVersion} · {loaderNames[p.loader as LoaderKind] ?? p.loader}
               </div>
             </div>
           </div>

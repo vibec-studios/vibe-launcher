@@ -7,7 +7,7 @@ import { Link2, ShieldAlert } from "lucide-react";
 import { api } from "@/lib/api";
 import { useJavaInstances } from "@/lib/queries";
 import type { AppAction, Instance } from "@/lib/types";
-import { instanceAccent } from "@/lib/format";
+import { formatLoader, instanceAccent } from "@/lib/format";
 import { useVibe } from "@/lib/vibe";
 import { Button, Dialog, Select, Skeleton } from "@/components/ui";
 import { openInstall } from "@/components/content/installStore";
@@ -118,7 +118,7 @@ function InstanceLine({ i }: { i: Instance }) {
       <div className="min-w-0">
         <div className="truncate text-[15px] font-semibold text-text">{i.name}</div>
         <div className="truncate text-meta text-muted">
-          {i.loader.kind} · Minecraft {i.mc_version}
+          {formatLoader(i.loader)} · Minecraft {i.mc_version}
         </div>
       </div>
     </div>

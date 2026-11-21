@@ -238,52 +238,57 @@ function PrivacyRows({ me }: { me: Me }) {
   return (
     <>
       <SettingRow title={t("social.settings.status")} description={t("social.settings.status.desc")}>
-        <Select<PresenceStatusSetting>
-          size="sm"
-          className="w-[200px]"
-          value={me.presenceStatus}
-          onChange={setStatus}
-          options={(["online", "away", "busy", "invisible"] as const).map((k) => ({ value: k, label: t(`social.status.${k}`) }))}
-        />
+        <div className="w-[200px]">
+          <Select<PresenceStatusSetting>
+            size="sm"
+            value={me.presenceStatus}
+            onChange={setStatus}
+            options={(["online", "away", "busy", "invisible"] as const).map((k) => ({ value: k, label: t(`social.status.${k}`) }))}
+          />
+        </div>
       </SettingRow>
       <SettingRow title={t("social.privacy.requests")}>
-        <Select<PrivacyLevel>
-          size="sm"
-          className="w-[200px]"
-          value={me.privacy.friendRequests}
-          onChange={(v) => patch({ privacy: { friendRequests: v } })}
-          options={levels(["everyone", "friends_of_friends", "nobody"])}
-        />
+        <div className="w-[200px]">
+          <Select<PrivacyLevel>
+            size="sm"
+            value={me.privacy.friendRequests}
+            onChange={(v) => patch({ privacy: { friendRequests: v } })}
+            options={levels(["everyone", "friends_of_friends", "nobody"])}
+          />
+        </div>
       </SettingRow>
       <SettingRow title={t("social.privacy.dms")}>
-        <Select<PrivacyLevel>
-          size="sm"
-          className="w-[200px]"
-          value={me.privacy.directMessages}
-          onChange={(v) => patch({ privacy: { directMessages: v } })}
-          options={levels(["everyone", "friends_of_friends", "friends", "nobody"])}
-        />
+        <div className="w-[200px]">
+          <Select<PrivacyLevel>
+            size="sm"
+            value={me.privacy.directMessages}
+            onChange={(v) => patch({ privacy: { directMessages: v } })}
+            options={levels(["everyone", "friends_of_friends", "friends", "nobody"])}
+          />
+        </div>
       </SettingRow>
       <SettingRow title={t("social.privacy.invites")}>
-        <Select<PrivacyLevel>
-          size="sm"
-          className="w-[200px]"
-          value={me.privacy.invites}
-          onChange={(v) => patch({ privacy: { invites: v } })}
-          options={levels(["everyone", "friends_of_friends", "friends", "nobody"])}
-        />
+        <div className="w-[200px]">
+          <Select<PrivacyLevel>
+            size="sm"
+            value={me.privacy.invites}
+            onChange={(v) => patch({ privacy: { invites: v } })}
+            options={levels(["everyone", "friends_of_friends", "friends", "nobody"])}
+          />
+        </div>
       </SettingRow>
       <SettingRow title={t("social.privacy.hosting")} description={t("social.privacy.hosting.desc")}>
-        <Select<"1" | "0">
-          size="sm"
-          className="w-[200px]"
-          value={me.privacy.showHosting ? "1" : "0"}
-          onChange={(v) => patch({ privacy: { showHosting: v === "1" } })}
-          options={[
-            { value: "1", label: t("social.privacy.level.friends") },
-            { value: "0", label: t("social.privacy.level.nobody") },
-          ]}
-        />
+        <div className="w-[200px]">
+          <Select<"1" | "0">
+            size="sm"
+            value={me.privacy.showHosting ? "1" : "0"}
+            onChange={(v) => patch({ privacy: { showHosting: v === "1" } })}
+            options={[
+              { value: "1", label: t("social.privacy.level.friends") },
+              { value: "0", label: t("social.privacy.level.nobody") },
+            ]}
+          />
+        </div>
       </SettingRow>
     </>
   );

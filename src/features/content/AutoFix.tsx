@@ -666,7 +666,7 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
   if (phase === "preview") {
     footer = (
       <>
-        <Button variant="ghost" onClick={onClose}>
+        <Button variant="subtle" onClick={onClose}>
           {t("common.cancel")}
         </Button>
         {req.launchAfter && !steps.length && plan.data && (

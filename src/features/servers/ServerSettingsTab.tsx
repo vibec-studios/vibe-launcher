@@ -164,20 +164,22 @@ function PropsForm({ server, values }: { server: Server; values: Props }) {
         <Input value={d["motd"] ?? ""} maxLength={120} placeholder="A Minecraft Server" onChange={(e) => set("motd", e.target.value, 700)} />
       </SettingRow>
       <SettingRow title={t("srv.prop.gamemode")}>
-        <Select
-          className="w-[200px]"
-          value={d["gamemode"] ?? "survival"}
-          onChange={(v) => set("gamemode", v)}
-          options={["survival", "creative", "adventure", "spectator"].map((v) => ({ value: v, label: t(`srv.gamemode.${v}`) }))}
-        />
+        <div className="w-[200px]">
+          <Select
+            value={d["gamemode"] ?? "survival"}
+            onChange={(v) => set("gamemode", v)}
+            options={["survival", "creative", "adventure", "spectator"].map((v) => ({ value: v, label: t(`srv.gamemode.${v}`) }))}
+          />
+        </div>
       </SettingRow>
       <SettingRow title={t("srv.prop.difficulty")}>
-        <Select
-          className="w-[200px]"
-          value={d["difficulty"] ?? "easy"}
-          onChange={(v) => set("difficulty", v)}
-          options={["peaceful", "easy", "normal", "hard"].map((v) => ({ value: v, label: t(`srv.difficulty.${v}`) }))}
-        />
+        <div className="w-[200px]">
+          <Select
+            value={d["difficulty"] ?? "easy"}
+            onChange={(v) => set("difficulty", v)}
+            options={["peaceful", "easy", "normal", "hard"].map((v) => ({ value: v, label: t(`srv.difficulty.${v}`) }))}
+          />
+        </div>
       </SettingRow>
       <SettingRow title={t("srv.prop.max_players")}>
         <NumberInput className="w-[130px]" value={num("max-players", 20)} min={1} max={1000} onChange={(v) => v !== null && set("max-players", v)} aria-label={t("srv.prop.max_players")} />
