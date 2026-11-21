@@ -30,8 +30,6 @@ pub(super) struct AdoptiumVersion {
     pub(super) openjdk_version: Option<String>,
 }
 
-
-
 pub async fn install_adoptium(state: &Core, major: u32, sp: Option<&SubProgress>) -> AppResult<PathBuf> {
     let dir = state.paths.java_root().join(format!("adoptium-{major}"));
     if dir.join(MARKER).is_file() {
@@ -96,8 +94,6 @@ pub async fn install_adoptium(state: &Core, major: u32, sp: Option<&SubProgress>
     find_bin_in(&dir).ok_or_else(|| AppError::msg("Java wurde entpackt, aber java.exe fehlt."))
 }
 
-
-
 /// ZIP entpacken und den obersten Ordner entfernen (jdk-21.0.5+11-jre/...).
 pub(super) fn extract_zip_strip(zip_path: &Path, dest: &Path) -> AppResult<()> {
     let f = std::fs::File::open(zip_path)?;
@@ -131,8 +127,6 @@ pub(super) fn extract_zip_strip(zip_path: &Path, dest: &Path) -> AppResult<()> {
     Ok(())
 }
 
-
-
 pub(super) fn extract_targz_strip(path: &Path, dest: &Path) -> AppResult<()> {
     // tar.gz nur auf Unix (Adoptium liefert unter Windows ZIPs) – über das System-tar.
     let status = std::process::Command::new("tar")
@@ -147,8 +141,6 @@ pub(super) fn extract_targz_strip(path: &Path, dest: &Path) -> AppResult<()> {
     }
     Ok(())
 }
-
-
 
 /// Java einer Hauptversion installieren (Mojang bevorzugt, sonst Adoptium).
 pub async fn install_major(state: &Core, major: u32, sp: Option<&SubProgress>) -> AppResult<PathBuf> {

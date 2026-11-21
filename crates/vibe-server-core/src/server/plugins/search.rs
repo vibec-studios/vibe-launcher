@@ -19,8 +19,6 @@ pub struct AddonHit {
     pub compat: AddonCompat,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct AddonCompat {
     pub ok: bool,
@@ -28,15 +26,11 @@ pub struct AddonCompat {
     pub version: Option<String>,
 }
 
-
-
 impl AddonCompat {
     pub fn ok() -> Self {
         AddonCompat { ok: true, reason: None, version: None }
     }
 }
-
-
 
 /// Kompatibilität eines Modrinth-Suchtreffers mit dem Server.
 pub fn hit_compat(t: &AddonTarget, categories: &[String], versions: &[String], server_side: Option<&str>) -> AddonCompat {
@@ -53,16 +47,12 @@ pub fn hit_compat(t: &AddonTarget, categories: &[String], versions: &[String], s
     AddonCompat { ok: true, reason: None, version: (!t.mc.is_empty()).then(|| t.mc.clone()) }
 }
 
-
-
 #[derive(Debug, Clone, Serialize)]
 pub struct AddonSearch {
     pub hits: Vec<AddonHit>,
     pub total: u64,
     pub offset: u32,
 }
-
-
 
 /// Modrinth-Facets für die Suche.
 pub fn modrinth_facets(t: &AddonTarget) -> String {
@@ -77,8 +67,6 @@ pub fn modrinth_facets(t: &AddonTarget) -> String {
     serde_json::to_string(&f).unwrap_or_else(|_| "[]".into())
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct MrSearch {
     #[serde(default)]
@@ -86,8 +74,6 @@ pub(super) struct MrSearch {
     #[serde(default)]
     pub(super) total_hits: u64,
 }
-
-
 
 #[derive(Deserialize)]
 pub(super) struct MrHit {
@@ -114,23 +100,17 @@ pub(super) struct MrHit {
     pub(super) date_modified: Option<String>,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct HangarPage<T> {
     pub(super) pagination: HangarPagination,
     pub(super) result: Vec<T>,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct HangarPagination {
     #[serde(default)]
     pub(super) count: u64,
 }
-
-
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -147,23 +127,17 @@ pub(super) struct HangarProject {
     pub(super) stats: HangarStats,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct HangarNamespace {
     pub(super) owner: String,
     pub(super) slug: String,
 }
 
-
-
 #[derive(Deserialize, Default)]
 pub(super) struct HangarStats {
     #[serde(default)]
     pub(super) downloads: u64,
 }
-
-
 
 pub fn parse_hangar_search(b: &[u8], offset: u32) -> AppResult<AddonSearch> {
     let p: HangarPage<HangarProject> = http::parse(b, "Hangar")?;
@@ -189,8 +163,6 @@ pub fn parse_hangar_search(b: &[u8], offset: u32) -> AppResult<AddonSearch> {
             .collect(),
     })
 }
-
-
 
 pub async fn search(state: &Core, s: &Server, source: AddonSource, query: &str, sort: &str, offset: u32) -> AppResult<AddonSearch> {
     let t = target(s).ok_or_else(|| AppError::Invalid("Vanilla-Server haben keine Plugins oder Mods.".into()))?;

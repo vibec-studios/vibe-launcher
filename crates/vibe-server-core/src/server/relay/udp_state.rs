@@ -7,15 +7,11 @@ pub struct UdpChannel {
     pub address: String,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct UdpDenied {
     pub channel: String,
     pub code: String,
 }
-
-
 
 /// `waiting` (angefragt), `ok` (Tunnel funktioniert), `blocked` (kein udp_ok nach 5 s: Netz blockiert UDP),
 /// `unavailable` (Relay kann kein UDP oder antwortet nicht), `off` (alle Kanäle abgelehnt)
@@ -27,14 +23,10 @@ pub struct UdpStatus {
     pub denied: Vec<UdpDenied>,
 }
 
-
-
 pub(super) fn udp_states() -> &'static Mutex<HashMap<String, UdpStatus>> {
     static S: OnceLock<Mutex<HashMap<String, UdpStatus>>> = OnceLock::new();
     S.get_or_init(Default::default)
 }
-
-
 
 pub(super) fn set_udp(state: &Core, id: &str, f: impl FnOnce(&mut Option<UdpStatus>)) {
     let next = {
@@ -52,13 +44,9 @@ pub(super) fn set_udp(state: &Core, id: &str, f: impl FnOnce(&mut Option<UdpStat
     }
 }
 
-
-
 pub(super) fn udp(state: &str) -> UdpStatus {
     UdpStatus { state: state.into(), voice: None, bedrock: None, denied: Vec::new() }
 }
-
-
 
 pub(super) fn udp_timeout(state: &Core, id: &str, cancel: &CancellationToken, from: &'static str, to: &'static str) {
     let (st, id, c) = (state.clone(), id.to_string(), cancel.clone());
@@ -74,8 +62,6 @@ pub(super) fn udp_timeout(state: &Core, id: &str, cancel: &CancellationToken, fr
         });
     });
 }
-
-
 
 pub fn parse_udp_ready(msg: &Value) -> (Option<UdpChannel>, Option<UdpChannel>, Vec<UdpDenied>) {
     let ch = |name: &str| -> Option<UdpChannel> {

@@ -10,8 +10,6 @@ pub fn os_name() -> &'static str {
     }
 }
 
-
-
 pub fn arch_name() -> &'static str {
     if cfg!(target_arch = "x86_64") {
         "x86_64"
@@ -24,8 +22,6 @@ pub fn arch_name() -> &'static str {
     }
 }
 
-
-
 pub(super) fn os_version() -> String {
     if cfg!(windows) {
         // Windows 10/11 melden beide "10.0"; Build-Nummer aus dem Kernel.
@@ -36,8 +32,6 @@ pub(super) fn os_version() -> String {
         sysinfo::System::os_version().unwrap_or_default()
     }
 }
-
-
 
 pub(super) fn cmp_dotted(a: &str, b: &str) -> std::cmp::Ordering {
     let pa: Vec<u64> = a.split(['.', '_', '-']).map(|x| x.parse().unwrap_or(0)).collect();
@@ -51,8 +45,6 @@ pub(super) fn cmp_dotted(a: &str, b: &str) -> std::cmp::Ordering {
     }
     std::cmp::Ordering::Equal
 }
-
-
 
 pub(super) fn rule_matches(rule: &Rule, env: &Env) -> bool {
     if let Some(os) = &rule.os {
@@ -105,8 +97,6 @@ pub(super) fn rule_matches(rule: &Rule, env: &Env) -> bool {
     true
 }
 
-
-
 /// Mojang-Logik: ohne Regeln erlaubt; mit Regeln zählt die letzte passende.
 pub fn rules_allow(rules: Option<&[Rule]>, env: &Env) -> bool {
     let Some(rules) = rules else { return true };
@@ -121,8 +111,6 @@ pub fn rules_allow(rules: Option<&[Rule]>, env: &Env) -> bool {
     }
     allowed
 }
-
-
 
 /// Argumente einer Liste auswerten (Regeln anwenden, Werte flach machen).
 pub fn eval_args(args: &[Argument], env: &Env) -> Vec<String> {

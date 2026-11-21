@@ -7,8 +7,6 @@ pub struct ServerStore {
     pub(super) map: RwLock<HashMap<String, Server>>,
 }
 
-
-
 pub(super) fn slug(name: &str) -> String {
     let mut s = String::new();
     for c in name.to_lowercase().chars() {
@@ -28,8 +26,6 @@ pub(super) fn slug(name: &str) -> String {
     let s = s.trim_matches(['-', '.']).chars().take(40).collect::<String>();
     if s.is_empty() { "server".into() } else { s }
 }
-
-
 
 impl ServerStore {
     pub fn load(paths: Paths, events: Sink) -> Arc<Self> {

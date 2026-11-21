@@ -5,8 +5,6 @@ pub(super) trait Container {
     fn read(&mut self, name: &str) -> Option<Vec<u8>>;
 }
 
-
-
 pub(super) struct ZipC<R: std::io::Read + std::io::Seek>(pub(super) zip::ZipArchive<R>);
 
 impl<R: std::io::Read + std::io::Seek> Container for ZipC<R> {
@@ -22,8 +20,6 @@ impl<R: std::io::Read + std::io::Seek> Container for ZipC<R> {
     }
 }
 
-
-
 pub(super) struct DirC<'a>(pub(super) &'a Path);
 
 impl Container for DirC<'_> {
@@ -36,8 +32,6 @@ impl Container for DirC<'_> {
         std::fs::read(p).ok()
     }
 }
-
-
 
 pub(super) fn parse_container(c: &mut dyn Container, kind: ContentKind) -> (Parsed, Option<Vec<u8>>) {
     let mut parsed = Parsed::default();

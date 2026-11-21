@@ -30,8 +30,6 @@ pub struct AddonProject {
     pub page_url: String,
 }
 
-
-
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub(super) struct HangarFull {
@@ -48,16 +46,12 @@ pub(super) struct HangarFull {
     pub(super) supported_platforms: HashMap<String, Vec<String>>,
 }
 
-
-
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub(super) struct HangarFullStats {
     pub(super) downloads: u64,
     pub(super) stars: u64,
 }
-
-
 
 #[derive(Deserialize, Default)]
 #[serde(default)]
@@ -68,15 +62,11 @@ pub(super) struct HangarSettings {
     pub(super) keywords: Vec<String>,
 }
 
-
-
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub(super) struct HangarLinkSection {
     pub(super) links: Vec<HangarLink>,
 }
-
-
 
 #[derive(Deserialize, Default)]
 #[serde(default)]
@@ -85,8 +75,6 @@ pub(super) struct HangarLink {
     pub(super) url: String,
 }
 
-
-
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub(super) struct HangarLicense {
@@ -94,8 +82,6 @@ pub(super) struct HangarLicense {
     #[serde(rename = "type")]
     pub(super) kind: Option<String>,
 }
-
-
 
 /// Hangar-Projekt (JSON von `/projects/{slug}`) + Hauptseite (Markdown) umwandeln.
 pub fn parse_hangar_project(b: &[u8], page: Option<String>) -> AppResult<AddonProject> {
@@ -159,14 +145,10 @@ pub fn parse_hangar_project(b: &[u8], page: Option<String>) -> AppResult<AddonPr
     })
 }
 
-
-
 /// „1.21.11“ -> [1, 21, 11] zum Sortieren.
 pub(super) fn version_key(v: &str) -> Vec<u32> {
     v.split('.').map(|p| p.parse().unwrap_or(0)).collect()
 }
-
-
 
 pub async fn hangar_project(state: &Core, project: &str) -> AppResult<AddonProject> {
     let slug = project.rsplit('/').next().unwrap_or(project);

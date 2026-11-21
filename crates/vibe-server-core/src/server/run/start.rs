@@ -25,8 +25,6 @@ pub(super) async fn server_java(state: &Core, s: &Server, spec: &crate::server::
     Ok(std::path::PathBuf::from(r?.path))
 }
 
-
-
 /// Server starten (Prozess läuft im Hintergrund weiter).
 pub fn start(state: &Core, id: &str) -> AppResult<()> {
     let s = state.servers.get(id)?;
@@ -80,8 +78,6 @@ pub fn start(state: &Core, id: &str) -> AppResult<()> {
     });
     Ok(())
 }
-
-
 
 pub(super) async fn spawn_process(state: &Core, id: &str) -> AppResult<()> {
     let mgr = state.server_mgr.clone();
@@ -141,8 +137,6 @@ pub(super) async fn spawn_process(state: &Core, id: &str) -> AppResult<()> {
     mgr.attach(state.clone(), id.to_string(), child);
     Ok(())
 }
-
-
 
 /// Hinweiszeile zum Log4Shell-Schutz fürs Server-Log.
 pub(super) fn log4shell_note(mc: &str, config: bool, own_config: bool) -> String {

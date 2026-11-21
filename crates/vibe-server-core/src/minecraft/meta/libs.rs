@@ -15,8 +15,6 @@ pub fn parse_maven(coord: &str) -> Option<(String, String, String, Option<String
     Some((p[0].to_string(), p[1].to_string(), p[2].to_string(), p.get(3).map(|s| s.to_string()), ext))
 }
 
-
-
 /// Schlüssel zum Entdoppeln: group:artifact[:classifier] (ohne Version).
 pub fn library_key(name: &str) -> String {
     match parse_maven(name) {
@@ -28,14 +26,10 @@ pub fn library_key(name: &str) -> String {
     }
 }
 
-
-
 pub(super) fn join_url(base: &str, rel: &str) -> String {
     let base = base.replace("http://files.minecraftforge.net/maven", "https://maven.minecraftforge.net");
     if base.ends_with('/') { format!("{base}{rel}") } else { format!("{base}/{rel}") }
 }
-
-
 
 /// Ein aufzulösender Library-Eintrag (Datei + Herkunft).
 #[derive(Debug, Clone)]
@@ -47,8 +41,6 @@ pub struct LibFile {
     pub size: Option<u64>,
 }
 
-
-
 impl LibFile {
     pub fn download_item(&self) -> Option<DownloadItem> {
         if self.url.is_empty() {
@@ -57,8 +49,6 @@ impl LibFile {
         Some(DownloadItem::new(&self.url, &self.path).sha1(self.sha1.clone()).size(self.size))
     }
 }
-
-
 
 impl Library {
     pub fn allowed(&self, env: &Env) -> bool {
@@ -118,8 +108,6 @@ impl Library {
         Some(LibFile { path: libs_dir.join(rel), url, sha1: None, size: None })
     }
 }
-
-
 
 // ------------------------------------------------------------------ Mergen
 

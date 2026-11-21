@@ -43,8 +43,6 @@ pub(super) struct RuntimeDl {
     pub(super) url: String,
 }
 
-
-
 pub(super) fn mojang_platform() -> &'static str {
     match (crate::minecraft::meta::os_name(), crate::minecraft::meta::arch_name()) {
         ("windows", "x86") => "windows-x86",
@@ -57,11 +55,7 @@ pub(super) fn mojang_platform() -> &'static str {
     }
 }
 
-
-
 pub(super) type RuntimeIndex = HashMap<String, HashMap<String, Vec<RuntimeEntry>>>;
-
-
 
 pub(super) async fn runtime_index(state: &Core) -> AppResult<RuntimeIndex> {
     let cache = state.paths.meta().join("java-runtimes.json");
@@ -77,8 +71,6 @@ pub(super) async fn runtime_index(state: &Core) -> AppResult<RuntimeIndex> {
         }
     }
 }
-
-
 
 pub(super) fn component_for_major(idx: &RuntimeIndex, major: u32) -> Option<String> {
     let plat = idx.get(mojang_platform())?;
@@ -102,8 +94,6 @@ pub(super) fn component_for_major(idx: &RuntimeIndex, major: u32) -> Option<Stri
     names.sort();
     names.last().map(|s| s.to_string())
 }
-
-
 
 /// Mojang-Runtime-Komponente installieren. Gibt Pfad zu java(w) zurück.
 pub async fn install_mojang_component(state: &Core, component: &str, force: bool, sp: Option<&SubProgress>) -> AppResult<PathBuf> {
@@ -177,8 +167,6 @@ pub async fn install_mojang_component(state: &Core, component: &str, force: bool
     crate::util::write_json_atomic(&dir.join(MARKER), &marker)?;
     find_bin_in(&dir).ok_or_else(|| AppError::msg("Java wurde geladen, aber java.exe fehlt."))
 }
-
-
 
 pub(super) async fn verify_or_remove(path: &Path, sha1: Option<&str>) {
     let Some(expected) = sha1 else { return };

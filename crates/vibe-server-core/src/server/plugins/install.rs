@@ -28,8 +28,6 @@ pub async fn install_modrinth_version(state: &Core, s: &Server, version_id: &str
     Ok(out)
 }
 
-
-
 /// Projekt installieren (Modrinth: inkl. Pflicht-Abhängigkeiten). Gibt die neuen Dateinamen zurück.
 pub async fn install(state: &Core, s: &Server, source: AddonSource, project: &str) -> AppResult<Vec<String>> {
     let t = target(s).ok_or_else(|| AppError::Invalid("Vanilla-Server haben keine Plugins oder Mods.".into()))?;
@@ -68,8 +66,6 @@ pub async fn install(state: &Core, s: &Server, source: AddonSource, project: &st
     Ok(out)
 }
 
-
-
 #[derive(Debug, Clone, Serialize)]
 pub struct AddonUpdate {
     pub file_name: String,
@@ -78,8 +74,6 @@ pub struct AddonUpdate {
     pub current: Option<String>,
     pub latest: String,
 }
-
-
 
 /// Verfügbare Updates (nicht gecacht).
 pub async fn updates(state: &Core, s: &Server) -> AppResult<Vec<AddonUpdate>> {
@@ -124,8 +118,6 @@ pub async fn updates(state: &Core, s: &Server) -> AppResult<Vec<AddonUpdate>> {
     }
     Ok(out)
 }
-
-
 
 /// Updates einspielen (`files = None` -> alle).
 pub async fn apply_updates(state: &Core, s: &Server, files: Option<Vec<String>>) -> AppResult<usize> {

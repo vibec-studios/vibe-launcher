@@ -13,8 +13,6 @@ pub struct PluginYml {
     pub folia_supported: bool,
 }
 
-
-
 pub(super) fn yaml_scalar(v: &str) -> String {
     let v = v.trim();
     if let Some(q) = v.chars().next().filter(|c| *c == '"' || *c == '\'') {
@@ -30,8 +28,6 @@ pub(super) fn yaml_scalar(v: &str) -> String {
     }
 }
 
-
-
 pub(super) fn yaml_list(v: &str) -> Vec<String> {
     let v = v.trim();
     if let Some(inner) = v.strip_prefix('[').and_then(|x| x.strip_suffix(']')) {
@@ -42,8 +38,6 @@ pub(super) fn yaml_list(v: &str) -> Vec<String> {
         vec![yaml_scalar(v)]
     }
 }
-
-
 
 pub fn parse_plugin_yml(text: &str) -> PluginYml {
     let mut out = PluginYml::default();
@@ -86,8 +80,6 @@ pub fn parse_plugin_yml(text: &str) -> PluginYml {
     out.authors.dedup();
     out
 }
-
-
 
 /// `velocity-plugin.json` / `bungee.yml` gibt es auf Welt-Servern nicht; für Mods lesen wir die
 /// Launcher-Metadaten (`content::meta`).

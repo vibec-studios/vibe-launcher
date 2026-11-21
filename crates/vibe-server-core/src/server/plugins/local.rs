@@ -33,8 +33,6 @@ pub(super) fn mtime_ms(m: &std::fs::Metadata) -> i64 {
     m.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_millis() as i64).unwrap_or(0)
 }
 
-
-
 /// JAR-Dateien im Ordner (aktiv und `.disabled`), ohne Metadaten-Ordner der Plugins.
 pub(super) fn list_files(dir: &Path) -> Vec<(String, PathBuf, std::fs::Metadata)> {
     let Ok(rd) = std::fs::read_dir(dir) else { return vec![] };
@@ -50,8 +48,6 @@ pub(super) fn list_files(dir: &Path) -> Vec<(String, PathBuf, std::fs::Metadata)
     out
 }
 
-
-
 /// Metadaten-Cache je (Pfad, Größe, Zeit), damit die Liste nicht jedes Mal alle JARs liest.
 pub(super) type MetaKey = (PathBuf, u64, i64);
 
@@ -59,8 +55,6 @@ pub(super) fn meta_cache() -> &'static parking_lot::Mutex<HashMap<MetaKey, Addon
     static C: std::sync::OnceLock<parking_lot::Mutex<HashMap<MetaKey, Addon>>> = std::sync::OnceLock::new();
     C.get_or_init(Default::default)
 }
-
-
 
 pub(super) fn read_local(path: &Path, name: &str, m: &std::fs::Metadata, plugins: bool, icons: &Path) -> Addon {
     let key = (path.to_path_buf(), m.len(), mtime_ms(m));
@@ -100,19 +94,13 @@ pub(super) fn read_local(path: &Path, name: &str, m: &std::fs::Metadata, plugins
     a
 }
 
-
-
 pub(super) fn modrinth_page(slug: &str, plugins: bool) -> String {
     format!("https://modrinth.com/{}/{slug}", if plugins { "plugin" } else { "mod" })
 }
 
-
-
 pub(super) fn hangar_page(slug: &str) -> String {
     format!("https://hangar.papermc.io/{slug}")
 }
-
-
 
 /// Installierte Erweiterungen mit Herkunft (Index + Modrinth-Hash-Abfrage; Netzfehler werden ignoriert).
 pub async fn list(state: &Core, s: &Server) -> AppResult<AddonList> {
@@ -180,8 +168,6 @@ pub async fn list(state: &Core, s: &Server) -> AppResult<AddonList> {
     Ok(AddonList { target: t, items })
 }
 
-
-
 pub fn set_enabled(state: &Core, s: &Server, file: &str, enabled: bool) -> AppResult<String> {
     let t = target(s).ok_or_else(|| AppError::Invalid("Kein Plugin-/Mod-Ordner".into()))?;
     let dir = server_dir(&state.paths, &s.id).join(t.folder);
@@ -193,8 +179,6 @@ pub fn set_enabled(state: &Core, s: &Server, file: &str, enabled: bool) -> AppRe
     }
     Ok(to_name)
 }
-
-
 
 pub fn remove(state: &Core, s: &Server, file: &str) -> AppResult<()> {
     let t = target(s).ok_or_else(|| AppError::Invalid("Kein Plugin-/Mod-Ordner".into()))?;

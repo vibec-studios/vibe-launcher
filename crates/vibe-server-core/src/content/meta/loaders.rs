@@ -39,8 +39,6 @@ pub(super) fn parse_fabric(v: &Value) -> Parsed {
     }
 }
 
-
-
 pub(super) fn parse_quilt(v: &Value) -> Parsed {
     let ql = v.get("quilt_loader").cloned().unwrap_or(Value::Null);
     let md = ql.get("metadata").cloned().unwrap_or(Value::Null);
@@ -86,14 +84,10 @@ pub(super) fn parse_quilt(v: &Value) -> Parsed {
     }
 }
 
-
-
 pub(super) fn toml_fallback(text: &str, key: &str) -> Option<String> {
     let re = regex::Regex::new(&format!(r#"(?m)^\s*{key}\s*=\s*["']([^"'\n]*)["']"#)).ok()?;
     re.captures(text).map(|c| c[1].to_string()).filter(|s| !s.is_empty())
 }
-
-
 
 /// `[[dependencies.<modid>]]` aus mods.toml / neoforge.mods.toml.
 pub(super) fn toml_deps(t: &toml::Table, own: Option<&str>) -> Vec<MetaDep> {
@@ -124,8 +118,6 @@ pub(super) fn toml_deps(t: &toml::Table, own: Option<&str>) -> Vec<MetaDep> {
     }
     out
 }
-
-
 
 pub(super) fn parse_mods_toml(text: &str, manifest_version: Option<&str>) -> Parsed {
     let fix_version = |v: Option<String>| -> Option<String> {
@@ -173,8 +165,6 @@ pub(super) fn parse_mods_toml(text: &str, manifest_version: Option<&str>) -> Par
     }
 }
 
-
-
 pub(super) fn parse_mcmod_info(v: &Value) -> Parsed {
     let first = match v {
         Value::Array(a) => a.first().cloned(),
@@ -200,8 +190,6 @@ pub(super) fn parse_mcmod_info(v: &Value) -> Parsed {
     }
 }
 
-
-
 pub(super) fn parse_pack_mcmeta(bytes: &[u8]) -> Parsed {
     let desc = lenient_json(bytes).and_then(|v| v.get("pack").and_then(|p| p.get("description")).map(component_text));
     Parsed {
@@ -210,8 +198,6 @@ pub(super) fn parse_pack_mcmeta(bytes: &[u8]) -> Parsed {
         ..Default::default()
     }
 }
-
-
 
 pub(super) fn manifest_impl_version(text: &str) -> Option<String> {
     text.lines()

@@ -22,8 +22,6 @@ pub struct VersionJson {
     pub release_time: Option<String>,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Arguments {
@@ -32,8 +30,6 @@ pub struct Arguments {
     #[serde(rename = "default-user-jvm")]
     pub default_user_jvm: Vec<Argument>,
 }
-
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -46,16 +42,12 @@ pub enum Argument {
     },
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum StringOrVec {
     One(String),
     Many(Vec<String>),
 }
-
-
 
 impl StringOrVec {
     pub fn to_vec(&self) -> Vec<String> {
@@ -66,8 +58,6 @@ impl StringOrVec {
     }
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Artifact {
@@ -77,8 +67,6 @@ pub struct Artifact {
     pub size: Option<u64>,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct LibDownloads {
@@ -86,15 +74,11 @@ pub struct LibDownloads {
     pub classifiers: Option<HashMap<String, Artifact>>,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Extract {
     pub exclude: Vec<String>,
 }
-
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
@@ -110,8 +94,6 @@ pub struct Library {
     pub size: Option<u64>,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AssetIndexRef {
@@ -122,8 +104,6 @@ pub struct AssetIndexRef {
     pub total_size: Option<u64>,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct JavaVersionRef {
@@ -131,15 +111,11 @@ pub struct JavaVersionRef {
     pub major_version: Option<u32>,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Logging {
     pub client: Option<LoggingClient>,
 }
-
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
@@ -150,8 +126,6 @@ pub struct LoggingClient {
     pub kind: Option<String>,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct LoggingFile {
@@ -160,8 +134,6 @@ pub struct LoggingFile {
     pub size: Option<u64>,
     pub url: String,
 }
-
-
 
 // ------------------------------------------------------------------ Regeln
 
@@ -173,8 +145,6 @@ pub struct Rule {
     pub features: Option<HashMap<String, bool>>,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct OsRule {
@@ -184,16 +154,12 @@ pub struct OsRule {
     pub version_range: Option<VersionRange>,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct VersionRange {
     pub min: Option<String>,
     pub max: Option<String>,
 }
-
-
 
 /// Umgebung, gegen die Regeln ausgewertet werden.
 #[derive(Debug, Clone)]
@@ -206,8 +172,6 @@ pub struct Env {
     pub os_version: String,
     pub features: HashMap<String, bool>,
 }
-
-
 
 impl Env {
     pub fn current() -> Env {

@@ -7,14 +7,10 @@ pub(super) struct FillVersions {
     pub(super) versions: Vec<FillVersionEntry>,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct FillVersionEntry {
     pub(super) version: FillVersion,
 }
-
-
 
 #[derive(Deserialize)]
 pub(super) struct FillVersion {
@@ -25,15 +21,11 @@ pub(super) struct FillVersion {
     pub(super) java: Option<FillJava>,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct FillSupport {
     #[serde(default)]
     pub(super) status: String,
 }
-
-
 
 #[derive(Deserialize)]
 pub(super) struct FillJava {
@@ -43,23 +35,17 @@ pub(super) struct FillJava {
     pub(super) flags: Option<FillJavaFlags>,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct FillJavaVersion {
     #[serde(default)]
     pub(super) minimum: Option<u32>,
 }
 
-
-
 #[derive(Deserialize, Default)]
 pub(super) struct FillJavaFlags {
     #[serde(default)]
     pub(super) recommended: Vec<String>,
 }
-
-
 
 #[derive(Deserialize)]
 pub(super) struct FillBuild {
@@ -74,15 +60,11 @@ pub(super) struct FillBuild {
     pub(super) downloads: std::collections::HashMap<String, FillDownload>,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct FillCommit {
     #[serde(default)]
     pub(super) message: String,
 }
-
-
 
 #[derive(Deserialize)]
 pub(super) struct FillDownload {
@@ -94,29 +76,21 @@ pub(super) struct FillDownload {
     pub(super) url: String,
 }
 
-
-
 #[derive(Deserialize, Default)]
 pub(super) struct FillChecksums {
     #[serde(default)]
     pub(super) sha256: Option<String>,
 }
 
-
-
 /// Release = nur Ziffern und Punkte (26.3, 1.21.11); alles mit -pre/-rc/Buchstaben ist Vorabversion.
 pub fn is_release(id: &str) -> bool {
     !id.is_empty() && id.chars().all(|c| c.is_ascii_digit() || c == '.')
 }
 
-
-
 pub(super) fn first_line(s: &str) -> Option<String> {
     let l = s.lines().map(str::trim).find(|l| !l.is_empty())?;
     Some(l.chars().take(140).collect())
 }
-
-
 
 pub fn parse_fill_versions(b: &[u8]) -> AppResult<Vec<PlatformVersion>> {
     let v: FillVersions = serde_json::from_slice(b).map_err(|e| AppError::msg(format!("PaperMC: unerwartete Antwort ({e})")))?;
@@ -131,8 +105,6 @@ pub fn parse_fill_versions(b: &[u8]) -> AppResult<Vec<PlatformVersion>> {
         })
         .collect())
 }
-
-
 
 /// Mindest-Java + empfohlene JVM-Flags einer Version (Fill `/versions/{v}`).
 pub fn parse_fill_version_java(b: &[u8]) -> (Option<u32>, Vec<String>) {
@@ -151,8 +123,6 @@ pub fn parse_fill_version_java(b: &[u8]) -> (Option<u32>, Vec<String>) {
     }
 }
 
-
-
 pub(super) fn fill_channel(c: &str) -> BuildChannel {
     match c.to_ascii_uppercase().as_str() {
         "STABLE" | "RECOMMENDED" => BuildChannel::Stable,
@@ -160,8 +130,6 @@ pub(super) fn fill_channel(c: &str) -> BuildChannel {
         _ => BuildChannel::Alpha,
     }
 }
-
-
 
 /// Builds neueste zuerst. Builds ohne Server-Download werden ausgelassen.
 pub fn parse_fill_builds(b: &[u8]) -> AppResult<Vec<PlatformBuild>> {

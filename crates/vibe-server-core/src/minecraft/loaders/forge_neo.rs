@@ -8,8 +8,6 @@ pub struct ForgeIndex {
     pub promos: HashMap<String, String>,
 }
 
-
-
 pub async fn forge_index(state: &Core) -> AppResult<ForgeIndex> {
     let xml = fetch_cached(state, FORGE_METADATA).await.map_err(|e| AppError::msg(format!("Forge-Versionsliste nicht ladbar: {e}")))?;
     let xml = String::from_utf8_lossy(&xml);
@@ -29,8 +27,6 @@ pub async fn forge_index(state: &Core) -> AppResult<ForgeIndex> {
     Ok(ForgeIndex { versions, promos })
 }
 
-
-
 /// "1.20.1-47.3.0" -> ("1.20.1", "47.3.0"); "1.7.10-10.13.4.1614-1.7.10" -> ("1.7.10", "10.13.4.1614")
 pub fn split_forge_version(full: &str) -> Option<(String, String)> {
     let (mc, rest) = full.split_once('-')?;
@@ -42,8 +38,6 @@ pub fn split_forge_version(full: &str) -> Option<(String, String)> {
     };
     Some((mc.to_string(), rest.to_string()))
 }
-
-
 
 /// Vollständige Maven-Version für (mc, loader-version) finden.
 pub fn forge_full_version(index: Option<&ForgeIndex>, mc: &str, version: &str) -> String {
@@ -63,8 +57,6 @@ pub fn forge_full_version(index: Option<&ForgeIndex>, mc: &str, version: &str) -
     format!("{mc}-{version}")
 }
 
-
-
 // ------------------------------------------------------------------ NeoForge
 
 #[derive(Deserialize)]
@@ -72,8 +64,6 @@ pub(super) struct NeoVersions {
     #[serde(default)]
     pub(super) versions: Vec<String>,
 }
-
-
 
 /// NeoForge-Version -> Minecraft-Version.
 /// Schema bis 1.21.x: `<mc-minor>.<mc-patch>.<build>` (21.1.77 -> 1.21.1, 21.0.5 -> 1.21, 20.4.80 -> 1.20.4).
@@ -103,21 +93,15 @@ pub fn neoforge_mc(version: &str) -> Option<String> {
     Some(if nums[1] == 0 { format!("1.{}", nums[0]) } else { format!("1.{}.{}", nums[0], nums[1]) })
 }
 
-
-
 pub(super) fn is_unstable(v: &str) -> bool {
     let l = v.to_ascii_lowercase();
     l.contains("beta") || l.contains("alpha") || l.contains("-rc") || l.contains("snapshot") || l.contains("pre")
 }
 
-
-
 pub(super) async fn neo_versions(state: &Core) -> AppResult<Vec<String>> {
     let v: NeoVersions = fetch_json(state, NEO_VERSIONS).await.map_err(|e| AppError::msg(format!("NeoForge-Versionsliste nicht ladbar: {e}")))?;
     Ok(v.versions)
 }
-
-
 
 pub(super) async fn neo_forge_versions(state: &Core) -> AppResult<Vec<String>> {
     let v: NeoVersions = fetch_json(state, NEO_FORGE_VERSIONS).await?;

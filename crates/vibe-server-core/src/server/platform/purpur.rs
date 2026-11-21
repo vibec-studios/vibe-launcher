@@ -10,30 +10,22 @@ pub(super) struct PurpurProject {
     pub(super) metadata: Option<PurpurMeta>,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct PurpurMeta {
     #[serde(default)]
     pub(super) current: Option<String>,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct PurpurDetailed {
     pub(super) builds: PurpurDetailedBuilds,
 }
-
-
 
 #[derive(Deserialize)]
 pub(super) struct PurpurDetailedBuilds {
     #[serde(default)]
     pub(super) all: Vec<PurpurBuild>,
 }
-
-
 
 #[derive(Deserialize)]
 pub(super) struct PurpurBuild {
@@ -52,15 +44,11 @@ pub(super) struct PurpurBuild {
     pub(super) md5: Option<String>,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct PurpurCommit {
     #[serde(default)]
     pub(super) description: String,
 }
-
-
 
 /// Purpur listet älteste zuerst -> neueste zuerst zurückgeben.
 pub fn parse_purpur_versions(b: &[u8]) -> AppResult<Vec<PlatformVersion>> {
@@ -73,8 +61,6 @@ pub fn parse_purpur_versions(b: &[u8]) -> AppResult<Vec<PlatformVersion>> {
         .map(|id| PlatformVersion { release: is_release(&id), supported: current.as_deref() == Some(id.as_str()), java_min: None, id })
         .collect())
 }
-
-
 
 /// `?detailed=true`-Antwort. Fehlgeschlagene Builds fallen weg; „experimental“ in den Metadaten -> Beta.
 pub fn parse_purpur_builds(b: &[u8]) -> AppResult<Vec<PlatformBuild>> {

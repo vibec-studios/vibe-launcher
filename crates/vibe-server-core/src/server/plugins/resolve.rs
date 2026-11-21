@@ -21,8 +21,6 @@ pub struct Resolved {
     pub deps: Vec<String>,
 }
 
-
-
 pub(super) fn rank(version_type: &str) -> u8 {
     match version_type.to_ascii_lowercase().as_str() {
         "release" => 0,
@@ -31,8 +29,6 @@ pub(super) fn rank(version_type: &str) -> u8 {
     }
 }
 
-
-
 /// Beste Modrinth-Version: neueste Release, sonst Beta, sonst Alpha (API liefert neueste zuerst).
 pub fn pick_modrinth(versions: &[mr::MrVersion], t: &AddonTarget) -> Option<mr::MrVersion> {
     let fits = |v: &&mr::MrVersion| v.loaders.iter().any(|l| t.loaders.contains(l)) && (t.mc.is_empty() || v.game_versions.contains(&t.mc));
@@ -40,8 +36,6 @@ pub fn pick_modrinth(versions: &[mr::MrVersion], t: &AddonTarget) -> Option<mr::
     c.sort_by(|a, b| rank(&a.version_type).cmp(&rank(&b.version_type)).then(b.date_published.cmp(&a.date_published)));
     c.first().map(|v| (*v).clone())
 }
-
-
 
 pub(super) async fn resolve_modrinth(state: &Core, t: &AddonTarget, project: &str) -> AppResult<Resolved> {
     let url = format!(
@@ -59,8 +53,6 @@ pub(super) async fn resolve_modrinth(state: &Core, t: &AddonTarget, project: &st
     let p = mr::raw_project(state, &v.project_id).await.ok();
     resolved_from(&v, p.as_ref())
 }
-
-
 
 pub(super) fn resolved_from(v: &mr::MrVersion, p: Option<&mr::MrProject>) -> AppResult<Resolved> {
     let f = v.files.iter().find(|f| f.primary).or(v.files.first()).ok_or_else(|| AppError::msg("Version ohne Datei"))?;
@@ -81,8 +73,6 @@ pub(super) fn resolved_from(v: &mr::MrVersion, p: Option<&mr::MrProject>) -> App
     })
 }
 
-
-
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct HangarVersion {
@@ -94,14 +84,10 @@ pub(super) struct HangarVersion {
     pub(super) downloads: HashMap<String, HangarDownload>,
 }
 
-
-
 #[derive(Deserialize)]
 pub(super) struct HangarChannel {
     pub(super) name: String,
 }
-
-
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -114,8 +100,6 @@ pub(super) struct HangarDownload {
     pub(super) external_url: Option<String>,
 }
 
-
-
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct HangarFileInfo {
@@ -126,12 +110,8 @@ pub(super) struct HangarFileInfo {
     pub(super) sha256_hash: Option<String>,
 }
 
-
-
 /// Gewählte Hangar-Version: (Versionsname, Download-URL, Dateiname, Größe, SHA-256).
 pub type HangarPick = (String, String, String, Option<u64>, Option<String>);
-
-
 
 /// Hangar-Versionen: „Release“-Kanal bevorzugt, sonst neueste. Externe Downloads gehen nicht.
 pub fn pick_hangar(b: &[u8], platform: &str) -> AppResult<Option<HangarPick>> {
@@ -159,8 +139,6 @@ pub fn pick_hangar(b: &[u8], platform: &str) -> AppResult<Option<HangarPick>> {
         fi.and_then(|f| f.sha256_hash.clone()),
     )))
 }
-
-
 
 pub(super) async fn resolve_hangar(state: &Core, t: &AddonTarget, project: &str, fresh: bool) -> AppResult<Resolved> {
     let platform = t.hangar.ok_or_else(|| AppError::Invalid("Hangar bietet für diese Server-Software keine Plugins an.".into()))?;
@@ -200,15 +178,11 @@ pub(super) async fn resolve_hangar(state: &Core, t: &AddonTarget, project: &str,
     })
 }
 
-
-
 pub(super) fn safe_file_name(n: &str) -> String {
     let n: String = n.chars().map(|c| if c.is_control() || "\\/:*?\"<>|".contains(c) { '_' } else { c }).collect();
     let n = n.trim().trim_start_matches('.').to_string();
     if n.to_ascii_lowercase().ends_with(".jar") { n } else { format!("{n}.jar") }
 }
-
-
 
 /// Datei laden, prüfen, alte Datei desselben Projekts ersetzen, Index aktualisieren.
 pub(super) async fn place(state: &Core, s: &Server, t: &AddonTarget, r: &Resolved, replace: Option<&str>) -> AppResult<String> {

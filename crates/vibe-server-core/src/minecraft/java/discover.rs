@@ -19,8 +19,6 @@ pub(super) fn push_bin_candidates(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-
-
 /// Verwaltete Runtimes unter `java/`.
 pub fn managed_runtimes(java_root: &Path) -> Vec<(String, PathBuf)> {
     let mut v = Vec::new();
@@ -38,8 +36,6 @@ pub fn managed_runtimes(java_root: &Path) -> Vec<(String, PathBuf)> {
     v
 }
 
-
-
 pub(super) fn find_bin_in(dir: &Path) -> Option<PathBuf> {
     for bin in [dir.join("bin"), dir.join("jre.bundle/Contents/Home/bin"), dir.join("Contents/Home/bin")] {
         if let Some(x) = launcher_exe(&bin) {
@@ -48,8 +44,6 @@ pub(super) fn find_bin_in(dir: &Path) -> Option<PathBuf> {
     }
     None
 }
-
-
 
 pub(super) fn system_candidates() -> Vec<PathBuf> {
     let mut c = Vec::new();
@@ -125,13 +119,9 @@ pub(super) fn system_candidates() -> Vec<PathBuf> {
     c
 }
 
-
-
 pub(super) fn canonical(p: &Path) -> PathBuf {
     std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf())
 }
-
-
 
 /// Alle Java-Installationen (verwaltete zuerst, dann System; neueste Version zuerst).
 pub async fn list(state: &Core) -> Vec<JavaInstall> {

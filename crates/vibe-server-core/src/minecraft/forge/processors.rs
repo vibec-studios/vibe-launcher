@@ -123,8 +123,6 @@ pub(super) async fn run_install(
     Ok((id, produced))
 }
 
-
-
 pub(super) async fn outputs_valid(outputs: &[(PathBuf, String)]) -> bool {
     for (path, sha) in outputs {
         let p = path.clone();
@@ -136,8 +134,6 @@ pub(super) async fn outputs_valid(outputs: &[(PathBuf, String)]) -> bool {
     }
     true
 }
-
-
 
 /// `{KEY}` durch Daten ersetzen, `[maven]` zu Library-Pfad, `'literal'` zu literal.
 pub fn replace_tokens(s: &str, data: &HashMap<String, String>, libs: &Path) -> String {
@@ -183,8 +179,6 @@ pub fn replace_tokens(s: &str, data: &HashMap<String, String>, libs: &Path) -> S
     out
 }
 
-
-
 pub(super) fn jar_main_class(jar: &Path) -> AppResult<String> {
     let f = std::fs::File::open(jar).map_err(|_| AppError::msg(format!("Processor fehlt: {}", jar.display())))?;
     let mut z = zip::ZipArchive::new(f)?;
@@ -198,8 +192,6 @@ pub(super) fn jar_main_class(jar: &Path) -> AppResult<String> {
     }
     Err(AppError::msg(format!("Processor ohne Main-Class: {}", jar.display())))
 }
-
-
 
 pub(super) async fn run_processor(p: &Processor, data: &HashMap<String, String>, libs: &Path, java: &Path) -> AppResult<()> {
     let jar = libs.join(maven_path(&p.jar).ctx("Processor-Pfad")?);

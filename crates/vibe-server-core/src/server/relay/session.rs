@@ -10,8 +10,6 @@ pub(super) async fn mojang_join(state: &Core, token: &str, uuid: &str, server_id
     Ok(())
 }
 
-
-
 /// Eine Control-Sitzung. `Ok(Some(text))` = endgültiger Fehler (kein neuer Versuch).
 pub(super) async fn session(state: &Core, id: &str, cancel: &CancellationToken) -> AppResult<Option<String>> {
     let server = state.servers.get(id)?;
@@ -200,8 +198,6 @@ pub(super) async fn session(state: &Core, id: &str, cancel: &CancellationToken) 
         }
     }
 }
-
-
 
 /// Data-Verbindung: Relay <-> 127.0.0.1:<port>.
 pub(super) async fn data_stream(host: &str, port: u16, sid: u64, key: &str, local_port: u16, cancel: CancellationToken) -> AppResult<()> {
