@@ -64,13 +64,3 @@ pub struct LibrarySkin {
     pub data_url: String,
 }
 
-#[derive(Debug, Clone)]
-pub struct BridgeSkin {
-    pub id: String,
-    pub name: String,
-    pub variant: SkinVariant,
-    pub path: PathBuf,
-    pub sha1: String,
-    pub added_at: i64,
-    pub cape_id: Option<String>,
-}
