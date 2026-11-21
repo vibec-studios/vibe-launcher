@@ -20,7 +20,7 @@ export const cqk = {
   instances: ["vibey", "instances"] as const,
 };
 
-export type Access = "loading" | "off" | "no_account" | "logged_out" | "ready";
+export type Access = "loading" | "off" | "no_account" | "logged_out" | "no_access" | "ready";
 
 /** Darf/kann die Cosmetics-Seite mit dem Backend reden? */
 export function useAccess(): Access {
@@ -31,12 +31,13 @@ export function useAccess(): Access {
   if (!settings.data.vibe?.enabled) return "off";
   if (conn === "no_account") return "no_account";
   if (conn === "logged_out" || conn === "logging_in") return "logged_out";
+  if (conn === "no_access") return "no_access";
   if (!vibeClient()) return "loading";
   return "ready";
 }
 
 /** Ohne Vibe-Login: Garderobe nur ansehen und anprobieren (Katalog/Assets sind öffentlich). */
-export const isGuest = (a: Access) => a === "off" || a === "no_account" || a === "logged_out";
+export const isGuest = (a: Access) => a === "off" || a === "no_account" || a === "logged_out" || a === "no_access";
 
 /** Was ein Gast tragen dürfte: kostenlose Items (`availability: "default"`). */
 export const freeItems = (c: Catalog | undefined) => (c?.items ?? []).filter((i) => i.availability === "default").map((i) => i.id);

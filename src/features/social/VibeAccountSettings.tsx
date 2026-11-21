@@ -19,7 +19,7 @@ function useLinked() {
 function StatusPill({ conn, unlinked }: { conn: Conn; unlinked: boolean }) {
   const t = useT();
   const tone =
-    conn === "ready" ? "ok" : conn === "connecting" || conn === "logging_in" || conn === "reconnecting" ? "warn" : conn === "offline" ? "danger" : "dim";
+    conn === "ready" ? "ok" : conn === "no_access" ? "dim" : conn === "connecting" || conn === "logging_in" || conn === "reconnecting" ? "warn" : conn === "offline" ? "danger" : "dim";
   const label = conn === "logged_out" && unlinked ? t("vibe.account.state.unlinked") : t(`vibe.account.state.${conn}`);
   return (
     <span
@@ -64,6 +64,8 @@ export function VibeAccountCard() {
             ? t("social.conn.offline_retry")
             : conn === "off"
               ? t("social.settings.gateway_off")
+              : conn === "no_access"
+                ? t("access.account_text")
               : t("vibe.account.linked_text");
 
   const run = async (fn: () => Promise<unknown>) => {

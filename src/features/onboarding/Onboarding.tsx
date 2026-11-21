@@ -26,7 +26,7 @@ import {
   Terminal,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { useAccounts, useInstances, useSettings } from "@/lib/queries";
 import { patchSettings, setMode, useMode, type UiMode } from "@/lib/mode";
@@ -43,6 +43,9 @@ import { openNewGame, openNewInstance } from "@/components/instance/actions";
 import { GoalTiles } from "@/features/instances/simple/goals";
 import { WindowControls } from "@/app/WindowControls";
 import { useOnboarding } from "./store";
+import { joinWaitlist } from "@/features/access/actions";
+import { useKnownApproved } from "@/features/access/hooks";
+import { useVibeAccess } from "@/features/access/store";
 
 type StepId = "welcome" | "mode" | "account" | "vibe" | "import" | "game";
 
@@ -446,9 +449,23 @@ function VibeStep() {
   const s = useSettings().data;
   const on = !!s?.vibe.enabled;
   const set = (enabled: boolean) => s && patchSettings({ vibe: { ...s.vibe, enabled } }).catch((e) => toast.error(e));
+  const knownOk = useKnownApproved();
+  const join = useRef(false);
+  join.current = on && !knownOk;
+  useEffect(
+    () => () => {
+      const st = useVibeAccess.getState().status;
+      if (join.current && st !== "waitlist" && st !== "approved") joinWaitlist().catch(() => {});
+    },
+    [],
+  );
   return (
     <>
-      <StepHead eyebrow={t("onb.vibe.eyebrow")} title={t("onb.vibe.title")} lead={t("onb.vibe.lead")} />
+      <StepHead
+        eyebrow={`${t("onb.vibe.eyebrow")} · ${t("access.beta")}`}
+        title={t("onb.vibe.title")}
+        lead={knownOk ? t("onb.vibe.lead") : t("onb.vibe.beta_lead")}
+      />
       <ul className="mb-6 grid grid-cols-3 gap-3">
         {(
           [
@@ -465,7 +482,13 @@ function VibeStep() {
         ))}
       </ul>
       <div className="grid grid-cols-2 gap-4" role="radiogroup" aria-label={t("onb.vibe.title")}>
-        <Choice selected={on} onClick={() => set(true)} title={t("onb.vibe.on")} text={t("onb.vibe.on.text")} icon={<Cloud size={18} />} />
+        <Choice
+          selected={on}
+          onClick={() => set(true)}
+          title={knownOk ? t("onb.vibe.on") : t("onb.vibe.join")}
+          text={knownOk ? t("onb.vibe.on.text") : t("onb.vibe.join.text")}
+          icon={<Cloud size={18} />}
+        />
         <Choice selected={!on} onClick={() => set(false)} title={t("onb.vibe.off")} text={t("onb.vibe.off.text")} icon={<CloudOff size={18} />} />
       </div>
     </>

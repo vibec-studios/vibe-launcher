@@ -29,7 +29,7 @@ export interface GatewayOptions {
 }
 
 /** Close-Codes, nach denen nicht automatisch neu verbunden wird. */
-const FATAL = new Set([4010]);
+const FATAL = new Set([4010, 4403]);
 
 /**
  * Realtime-Client mit Heartbeat, automatischem Reconnect (exponentielles Backoff mit Jitter),

@@ -17,6 +17,8 @@ import { VibeClient, VibeError, VibeGateway } from "@/lib/vibe-sdk";
 import type { Activity, Chat, Friend, FriendRequest, HostSession, Invite, Me, Message, PresenceStatusSetting } from "@/lib/vibe-sdk";
 import { keyringTokenStore, TauriWebSocket, tauriFetch } from "@/lib/vibe-sdk/tauri";
 import { t } from "@/i18n";
+import { accessDenied, bindAccess, clearAccess, ensureAccess, forgetAccess, onAccessChange } from "@/features/access/store";
+import { isAccessCode } from "@/features/access/types";
 
 export type Conn =
   /** Hauptschalter (bzw. Freunde + Presence) aus – keine Verbindung */
@@ -30,7 +32,8 @@ export type Conn =
   | "ready"
   | "reconnecting"
   /** Backend nicht erreichbar (versucht es weiter) */
-  | "offline";
+  | "offline"
+  | "no_access";
 
 export interface MessagesPage {
   messages: Message[];
@@ -214,7 +217,7 @@ export async function configure(next: VibeConfig) {
     client = new VibeClient({
       baseUrl: status.api_url,
       tokens,
-      fetch: tauriFetch,
+      fetch: accessFetch,
       timeoutMs: 20_000,
       onAuthLost: ({ message }) => {
         stopGateway();
@@ -225,6 +228,7 @@ export async function configure(next: VibeConfig) {
     });
     autoTries = 0;
     clearRetry();
+    bindAccess(client, ident.scope);
     set({ identity: ident.name, scope: ident.scope, unlinked: unlinkedScopes().includes(ident.scope) });
   }
   // Debug-Offline-Testprofil (VIBE_DEV_OFFLINE_ACCOUNT) nur an einem lokalen Test-Backend automatisch anmelden –
@@ -243,14 +247,58 @@ export async function configure(next: VibeConfig) {
     return;
   }
   set({ linked: true });
+  if (!(await proceed(client))) return;
+  if (seq !== cfgSeq) return;
+  // Presence-Schalter geändert -> Status sofort anpassen
+  pushPresence(true);
+}
+
+async function proceed(c: VibeClient): Promise<boolean> {
+  if (gatewayWanted() && get().conn !== "ready" && get().conn !== "no_access") set({ conn: "connecting" });
+  const allowed = await ensureAccess(c);
+  if (c !== client) return false;
+  if (!allowed) {
+    blockServices();
+    return false;
+  }
   if (gatewayWanted()) startGateway();
   else {
     stopGateway();
     set({ conn: "off" });
   }
-  // Presence-Schalter geändert -> Status sofort anpassen
-  pushPresence(true);
+  return true;
 }
+
+function blockServices() {
+  stopGateway();
+  queryClient.removeQueries({ queryKey: ["vibe"] });
+  set({ conn: "no_access", error: null, ...empty });
+}
+
+const accessFetch: typeof fetch = async (input, init) => {
+  const res = await tauriFetch(input, init);
+  if (res.status === 403) {
+    const code = await res
+      .clone()
+      .json()
+      .then((j: { error?: { code?: unknown } }) => j?.error?.code)
+      .catch(() => null);
+    if (isAccessCode(code)) accessDenied(code);
+  }
+  return res;
+};
+
+onAccessChange((allowed) => {
+  if (!client || !get().linked) return;
+  if (!allowed) {
+    if (get().conn !== "no_access") blockServices();
+    return;
+  }
+  if (get().conn !== "no_access") return;
+  if (gatewayWanted()) startGateway();
+  else set({ conn: "off" });
+  pushPresence(true);
+});
 
 function teardown(conn: Conn) {
   stopGateway();
@@ -259,6 +307,7 @@ function teardown(conn: Conn) {
   clientKey = "";
   queryClient.removeQueries({ queryKey: ["vibe"] });
   const keep = conn !== "off" && conn !== "no_account";
+  bindAccess(null, keep ? get().scope : null);
   set({ conn, error: null, ...empty, autoLinked: false, linked: false, identity: keep ? get().identity : null, scope: keep ? get().scope : null, unlinked: keep && get().unlinked });
 }
 
@@ -341,6 +390,7 @@ export async function deleteAccount() {
   }
   clearRetry();
   stopGateway();
+  forgetAccess();
   await Promise.resolve(tokens.set(null)).catch(() => {});
   queryClient.removeQueries({ queryKey: ["vibe"] });
   set({ conn: "logged_out", error: null, autoLinked: false, linked: false, ...empty });
@@ -364,17 +414,17 @@ export async function login() {
       },
     });
     set({ linked: true });
-    if (gatewayWanted()) startGateway();
-    else set({ conn: "off" });
   } catch (e) {
     set({ conn: "logged_out", error: errText(e) });
     throw e;
   }
+  if (await proceed(c)) pushPresence(true);
 }
 
 export async function logout() {
   const c = client;
   stopGateway();
+  clearAccess();
   try {
     await c?.auth.logout();
   } catch {
@@ -445,8 +495,12 @@ function wireGateway(gw: VibeGateway) {
     } else if (s === "reconnecting") set({ conn: failedAttempts >= 2 ? "offline" : "reconnecting" });
     else if (s === "connecting") set({ conn: get().conn === "offline" ? "offline" : "connecting" });
   });
-  on("disconnected", ({ code, fatal }) => {
+  on("disconnected", ({ code, reason, fatal }) => {
     if (code === 1006) failedAttempts++;
+    if (code === 4403) {
+      accessDenied(reason);
+      if (get().conn !== "no_access") blockServices();
+    }
     if (fatal && code === 4010) set({ conn: "logged_out", error: t("social.err.revoked"), linked: false, ...empty });
   });
   on("ready", (d) => {
@@ -458,6 +512,9 @@ function wireGateway(gw: VibeGateway) {
     void reloadState();
   });
   on("resumed", () => pushPresence(true));
+  on("error", ({ code }) => {
+    if (isAccessCode(code)) accessDenied(code);
+  });
 
   for (const l of extraListeners) l.off = (gw as unknown as { on: (e: string, f: (d: unknown) => void) => () => void }).on(l.ev, l.fn);
 

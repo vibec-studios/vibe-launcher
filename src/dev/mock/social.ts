@@ -2,6 +2,7 @@
 // Freunde-Seite – Freunde online/offline/hostend, Chats mit Einladungs- und Modpack-Karten, Anfragen, Tippen.
 // Nur für VITE_MOCK=1 (Browser), nie im Produktions-Build. Skins: echte Texturen über mc-heads.net.
 import * as cosmeticsMock from "./cosmetics";
+import { accessCode, accessExempt, accessRoute, accessStatus } from "./access";
 import type { VibeHttpRequest, VibeHttpResponse, VibeStatus, VibeTokens } from "@/lib/types";
 import type {
   Chat,
@@ -269,6 +270,13 @@ function relationship(u: PublicUser): UserWithRelationship["relationship"] {
 
 function route(method: string, path: string, query: URLSearchParams, body: Record<string, unknown>): Res {
   const rel = path.replace(/^\/api\/v1\//, "");
+  const acc = accessRoute(method, rel);
+  if (acc) return acc;
+  if (rel === "auth/challenge" && method === "POST") return ok({ serverId: "mock-server-id", expiresAt: new Date(Date.now() + 60_000).toISOString() });
+  if (rel === "auth/verify" && method === "POST")
+    return ok({ accessToken: "mock-access", refreshToken: "mock-refresh", expiresIn: 3600, refreshExpiresAt: new Date(Date.now() + 30 * 86400_000).toISOString(), sessionId: "mock-session", user: ME, created: false });
+  if (rel === "auth/logout") return none;
+  if (accessStatus() !== "approved" && !accessExempt(method, rel)) return { status: 403, body: { error: { code: accessCode(), message: "Vibe ist in der Beta." } } };
   // Muster wie "chats/:id/messages" -> Parameter b (1.), d (2.)
   const PATTERNS = [
     "meta", "me", "presence", "presence/friends", "friends", "friends/requests", "friends/requests/:id/accept", "friends/requests/:id/decline",
@@ -514,6 +522,15 @@ const handlers: Handlers = {
     if (id !== wsId) return null;
     const m = JSON.parse(String(data)) as { op: string; d?: Record<string, unknown> };
     if (m.op === "identify") {
+      if (accessStatus() !== "approved") {
+        const sid = wsId;
+        wsSend({ op: "error", d: { code: accessCode(), message: "Vibe ist in der Beta." } });
+        setTimeout(() => {
+          void emit("vibe://ws", { type: "close", id: sid, code: 4403, reason: accessCode() });
+          if (wsId === sid) wsId = null;
+        }, 80);
+        return null;
+      }
       setTimeout(() => {
         wsSend({ op: "ready", d: { sessionId: "gw-mock", heartbeatInterval: 40_000, user: ME, friends: [...friends.values()], features: { chat: true, hosting: true, sharing: true, invites: true } } });
         startTypingLoop();

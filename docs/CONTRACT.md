@@ -423,7 +423,7 @@ im Mock-Build); Galerie unter `#/screenshots?tab=clips`, Leerzustand mit `localS
 
 Backend: `https://vibe.axolite.app` (früher `https://vibe.henny.dev`, siehe docs/DOMAINS.md; Repo `vibe-backend`, Protokoll REST `/api/v1/*` + Gateway `/ws`). Der Client ist das
 **vendored SDK** `src/lib/vibe-sdk/` (`@vibe-craft/sdk` 0.1.0, MIT: `client.ts`, `gateway.ts`, `emitter.ts` unverändert bis
-auf Importe; `types.ts` = öffentliche API-Typen aus `@vibe-craft/shared` als reine TS-Typen, ohne Admin-/Relay-Interna).
+auf Importe und den fatalen Close-Code 4403 der Beta-Sperre; `types.ts` = öffentliche API-Typen aus `@vibe-craft/shared` als reine TS-Typen, ohne Admin-/Relay-Interna).
 
 - **Transport über Rust** (`src/lib/vibe-sdk/tauri.ts`): `tauriFetch` -> `vibe_http` (nur URLs unter `<api_url>/api/`,
   Header `authorization|content-type|accept`), `TauriWebSocket` -> `vibe_ws_open/send/close` + Event `vibe://ws` (nur
@@ -450,6 +450,9 @@ auf Importe; `types.ts` = öffentliche API-Typen aus `@vibe-craft/shared` als re
   Query-Cache `["vibe","messages",chatId]` (Infinite Query, Seiten à 50, neueste zuerst; optimistische Nachrichten per
   `nonce`). Nach `ready` wird der Zustand per REST neu geladen, nach `resumed` nicht. `VibeBridge` (Shell) verbindet
   Einstellungen/Account mit dem Service, `SocialDialogs` hostet alle Dialoge.
+- **Beta-Warteliste**: Vibe ist in der Beta. Ohne freigeschalteten Zugang (`GET /api/v1/access`) startet kein Gateway,
+  `useSocial.conn` ist `"no_access"` und die Vibe-Stellen zeigen den Zugangsstatus statt Fehlern. Vertrag und Umsetzung:
+  docs/WAITLIST.md.
 - **Schalter**: `enabled` aus -> keine Verbindung, keine Social-UI (Hinweis in den Einstellungen). `social` -> Freunde/
   Chats/Einladungen-UI, Toasts. `presence` aus -> Gateway meldet `invisible` ohne Aktivität. `hosting` -> Einladen aus dem
   Server-Verbindungs-Tab, Limits. `sharing` -> „Als Link teilen“, Pack-Import.

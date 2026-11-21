@@ -19,6 +19,8 @@ pub enum AppError {
     Unreachable(String),
     #[error("{0}")]
     OfflineAvailable(String),
+    #[error("{0}")]
+    Access(String),
     #[error("Netzwerkfehler: {0}")]
     Http(#[from] reqwest::Error),
     #[error("Dateifehler: {0}")]
@@ -43,6 +45,7 @@ impl AppError {
             AppError::Auth(_) => "auth",
             AppError::Unreachable(_) => "network",
             AppError::OfflineAvailable(_) => "offline_available",
+            AppError::Access(_) => "access",
             AppError::Http(_) => "network",
             AppError::Io(_) => "io",
             AppError::Json(_) => "json",

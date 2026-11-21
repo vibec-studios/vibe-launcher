@@ -9,6 +9,11 @@ import { useT } from "@/i18n";
 import { VibeAccountCard, VibeDangerCard, VibePrivacyCard } from "@/features/social/VibeAccountSettings";
 import { useSimple } from "@/lib/mode";
 import { DiscordArtRows } from "./discord/DiscordArtRows";
+import { useSocial } from "@/features/social/service";
+import { AccessCard } from "@/features/access/AccessCard";
+import { BetaBadge } from "@/features/access/BetaNote";
+import { JoinWaitlistButton } from "@/features/access/JoinDialog";
+import { useAccessBlocked, useKnownApproved } from "@/features/access/hooks";
 
 const SUBS: (keyof Pick<VibeServices, "social" | "presence" | "hosting" | "sharing">)[] = ["social", "presence", "hosting", "sharing"];
 
@@ -19,12 +24,23 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
   const discord = useQuery({ queryKey: ["discord-available"], queryFn: api.discordAvailable, staleTime: Infinity });
   const v = s.vibe;
   const setVibe = (p: Partial<VibeServices>, delay?: number) => update({ vibe: { ...v, ...p } }, delay);
+  const blocked = useAccessBlocked();
+  const knownOk = useKnownApproved();
+  const noAccess = useSocial((s) => s.conn === "no_access");
+  const showAccess = v.enabled && (blocked || noAccess);
   return (
     <>
-      <SettingsCard title={t("settings.section.vibe")}>
-        <SettingRow title={t("vibe.enabled")} description={t("vibe.enabled.desc")}>
-          <Switch checked={v.enabled} onChange={(enabled) => setVibe({ enabled })} label={t("vibe.enabled")} />
-        </SettingRow>
+      <div data-tour={showAccess ? undefined : "vibe-access"}>
+      <SettingsCard title={t("settings.section.vibe")} right={<BetaBadge />}>
+        {v.enabled || knownOk ? (
+          <SettingRow title={t("vibe.enabled")} description={t("vibe.enabled.desc")}>
+            <Switch checked={v.enabled} onChange={(enabled) => setVibe({ enabled })} label={t("vibe.enabled")} />
+          </SettingRow>
+        ) : (
+          <SettingRow title={t("vibe.enabled")} description={t("access.join.desc")}>
+            <JoinWaitlistButton />
+          </SettingRow>
+        )}
         {!v.enabled && (
           <div className="flex items-center gap-2.5 border-t border-line px-4 py-3 text-meta text-muted">
             <CloudOff size={14} className="shrink-0 text-dim" />
@@ -32,11 +48,17 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
           </div>
         )}
       </SettingsCard>
+      </div>
 
       {v.enabled && (
         <>
+          {showAccess && (
+            <div data-tour="vibe-access">
+              <AccessCard />
+            </div>
+          )}
           <VibeAccountCard />
-          {!simple && (
+          {!simple && !showAccess && (
           <>
           <SettingsCard title={t("vibe.features")}>
             {SUBS.map((k) => (

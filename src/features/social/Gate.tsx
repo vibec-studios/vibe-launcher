@@ -6,6 +6,9 @@ import { useState } from "react";
 import { Button, Spinner, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { openSettings } from "@/features/settings/store";
+import { AccessNotice } from "@/features/access/AccessNotice";
+import { JoinWaitlistButton } from "@/features/access/JoinDialog";
+import { useKnownApproved } from "@/features/access/hooks";
 import { connect, useSocial, type Conn } from "./service";
 
 /** Zeigt `children`, sobald Daten da sind; sonst einen passenden Zustand. */
@@ -41,11 +44,13 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   const identity = useSocial((s) => s.identity);
   const unlinked = useSocial((s) => s.unlinked);
   const [busy, setBusy] = useState(false);
+  const knownOk = useKnownApproved();
   const box = cn("flex h-full flex-col items-center justify-center gap-3 px-6 text-center", compact ? "py-8" : "py-16");
   // Ruhig: Symbol ohne Kachel, kleine Überschrift, ein Satz, höchstens eine Aktion
   const icon = (n: React.ReactNode) => <div className="text-dim">{n}</div>;
   const title = "text-[15px] font-semibold text-text";
 
+  if (conn === "no_access") return <AccessNotice compact={compact} />;
   if (conn === "connecting" || conn === "logging_in" || conn === "reconnecting") {
     return (
       <div className={box}>
@@ -68,10 +73,14 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
       <div className={box}>
         {icon(<CloudOff size={22} />)}
         <h3 className={title}>{t("social.conn.off_title")}</h3>
-        <p className="max-w-sm text-[13px] text-muted">{t("social.conn.off_text")}</p>
-        <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => openSettings("vibe")}>
-          {t("action.open_settings")}
-        </Button>
+        <p className="max-w-sm text-[13px] text-muted">{knownOk ? t("social.conn.off_text") : t("access.join.desc")}</p>
+        {knownOk ? (
+          <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => openSettings("vibe")}>
+            {t("action.open_settings")}
+          </Button>
+        ) : (
+          <JoinWaitlistButton />
+        )}
       </div>
     );
   }
