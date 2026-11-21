@@ -402,6 +402,13 @@ pub fn run() {
             commands::content::modset_delete,
             commands::content::perf_preview,
             commands::content::perf_install,
+            commands::organize::content_organize,
+            commands::organize::content_group_save,
+            commands::organize::content_group_delete,
+            commands::organize::content_group_assign,
+            commands::organize::content_tags_edit,
+            commands::organize::content_deps_keep,
+            commands::organize::content_removal_extras,
             // Mod-Sets (Wunschlisten)
             commands::sets::sets_list,
             commands::sets::sets_create,
