@@ -6,6 +6,7 @@ use crate::error::AppResult;
 use serde::{Deserialize, Serialize};
 
 pub use vibe_server_core::minecraft::forge;
+pub mod cds;
 pub mod hooks;
 pub mod install;
 pub mod java;

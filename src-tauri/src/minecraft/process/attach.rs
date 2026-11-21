@@ -87,6 +87,7 @@ impl GameManager {
                     gm.launcher_line(&run_id, LogLevel::Launcher, format!("Sitzungs-Log gespeichert: {}", p.display()));
                 }
             }
+            crate::minecraft::cds::on_exit(&run_id, crashed, crate::util::now_ms() - started_ms);
             crate::afk::on_exit(&state, &run_id, &instance_id);
             gm.flush();
             let (st, secs) = {

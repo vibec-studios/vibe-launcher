@@ -1,6 +1,7 @@
 pub mod cleanup;
 pub mod commands;
 pub mod dedup;
+pub mod fastcache;
 pub mod links;
 pub mod maintenance;
 pub mod store;

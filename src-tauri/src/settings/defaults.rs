@@ -45,6 +45,7 @@ impl Default for Settings {
             simple_tour_done: false,
             dismissed_notices: Vec::new(),
             prefer_dgpu: false,
+            java_cds: true,
             afk: crate::afk::AfkSettings::default(),
         }
     }

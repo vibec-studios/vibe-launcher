@@ -124,6 +124,9 @@ pub async fn install_instance_opts(state: &AppState, id: &str, sp: &SubProgress,
         state.instances.modify(id, |i| i.loader.version = Some(v))?;
     }
     let inst = state.instances.get(id)?;
+    if force {
+        super::cds::clear_instance(&state.paths.game_dir(id));
+    }
     let quick = inst.install_state == InstallState::Installed && !force;
     let mut tried = false;
     let lock = match state.install_lock.try_lock() {

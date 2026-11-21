@@ -22,7 +22,7 @@ pub async fn launch(
         gm.launcher_line(run, LogLevel::Launcher, "Die Instanz läuft bereits – automatische Updates und Welt-Backups werden für diese weitere Sitzung übersprungen.".into());
     }
     task.check()?;
-    let prep = super::super::install::install_instance_opts(state, id, &task.sub(0.0, 0.9), false).await?;
+    let mut prep = super::super::install::install_instance_opts(state, id, &task.sub(0.0, 0.9), false).await?;
     task.check()?;
     task.stage("Account wird geprüft …", Some(0.92));
     let acc = state.auth.launch_account(state, account_id.as_deref()).await.map_err(|e| match e {
@@ -42,7 +42,13 @@ pub async fn launch(
     task.check()?;
     let inst = state.instances.get(id)?;
     let settings = state.settings();
+    let cds = super::super::cds::prepare(state, &inst, &mut prep, &settings);
     let mut plan = build(state, &inst, &prep, &acc, &settings)?;
+    let cds_line = match cds {
+        Ok(Some(p)) => p.apply(&mut plan, run, slot),
+        Ok(None) => None,
+        Err(reason) => Some(format!("Java-Schnellstart (CDS): aus – {reason}")),
+    };
     if let Some(cfg) = prep.log_config.as_deref().filter(|_| slot > 1) {
         if let Some(p) = redirect_logs(&mut plan, cfg, slot) {
             gm.launcher_line(run, LogLevel::Launcher, format!("Log-Datei dieser Sitzung: logs/vibe-session-{slot}/latest.log ({})", p.display()));
@@ -72,6 +78,9 @@ pub async fn launch(
         LogLevel::Launcher,
         format!("Java {} ({}, {}): {}", j.version, j.vendor.clone().unwrap_or_else(|| "unbekannt".into()), j.arch, j.path),
     );
+    if let Some(l) = cds_line {
+        gm.launcher_line(run, LogLevel::Launcher, l);
+    }
     gm.launcher_line(run, LogLevel::Launcher, format!("Version: {} · Spielordner: {}", prep.resolved.id, plan.cwd.display()));
     if let Some(w) = log4shell_warning(&prep.resolved.base_id, prep.resolved.logging.is_some() && prep.log_config.is_some()) {
         gm.launcher_line(run, LogLevel::Warn, w);

@@ -1,4 +1,4 @@
-use super::{cleanup, dedup, store, usage, vibey};
+use super::{cleanup, dedup, fastcache, store, usage, vibey};
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
 use std::collections::{HashMap, HashSet};
@@ -64,6 +64,7 @@ pub async fn storage_clean(state: State<'_, AppState>, category: String, instanc
             "cache" => cleanup::clear_cache(&data),
             "launcher_logs" => cleanup::clear_launcher_logs(&data),
             "vibey" => vibey::clear(&data),
+            "fast_cache" => fastcache::clear(&data, &busy),
             "instance_logs" => games.iter().map(|g| cleanup::clear_instance_logs(g)).sum(),
             "mod_caches" => games.iter().map(|g| cleanup::clear_mod_caches(g)).sum(),
             "orphan_world_backups" => usage::orphan_dirs(&data.join("backups").join("worlds"), &live).iter().map(|p| cleanup::remove(p)).sum(),
