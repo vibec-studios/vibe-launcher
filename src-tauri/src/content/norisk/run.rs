@@ -2,7 +2,8 @@ use super::banner::{Banner, MAX_BYTES};
 use super::{mods, skip_top, Plan};
 use crate::content::external::Found;
 use crate::content::srctree::{self, Overlay};
-use crate::content::{extsettings, gamedata, LauncherKind, Source};
+use crate::content::importreport::{self, ImportReport};
+use crate::content::{extsettings, gamedata, LauncherKind};
 use crate::error::{AppError, AppResult};
 use crate::instance::{InstallState, Instance, Loader, PackSource, PackSourceKind};
 use crate::state::AppState;
@@ -88,24 +89,46 @@ fn copy_all(src: PathBuf, ov: Vec<Overlay>, dst: PathBuf, task: TaskHandle) -> A
     Ok((files.len() as u64, tops))
 }
 
-fn summary(plan: &Plan, o: &mods::Outcome, jars: usize, note: &Option<String>, warnings: &[String]) -> String {
-    let mut msg = format!("{} Mods von Modrinth, {} von CurseForge, {jars} lokale JARs übernommen", plan.count(Source::Modrinth), plan.count(Source::Curseforge));
-    if !plan.sync_packs.is_empty() {
-        msg.push_str(&format!(" (inkl. Sync Packs: {})", plan.sync_packs.join(", ")));
+fn summary(r: &ImportReport, note: &Option<String>) -> String {
+    let mut msg = format!("{} Mods installiert, {} lokale JARs übernommen", r.mods.len(), r.jars.len());
+    if !r.sync_packs.is_empty() {
+        msg.push_str(&format!(" (inkl. Sync Packs: {})", r.sync_packs.join(", ")));
     }
-    if o.locked > 0 {
-        msg.push_str(&format!(", {} gesperrte CurseForge-Dateien bitte selbst herunterladen", o.locked));
+    if !r.from_cache.is_empty() {
+        msg.push_str(&format!(", {} aus dem NoRisk-Cache", r.from_cache.len()));
     }
-    if !plan.skipped.is_empty() {
-        msg.push_str(&format!(", {} NoRisk-Mods ausgelassen", plan.skipped.len()));
+    if !r.locked.is_empty() {
+        msg.push_str(&format!(", {} gesperrte CurseForge-Dateien bitte selbst herunterladen", r.locked.len()));
+    }
+    if !r.failed.is_empty() {
+        msg.push_str(&format!(", {} nicht verfügbar", r.failed.len()));
+    }
+    if !r.norisk_only.is_empty() {
+        msg.push_str(&format!(", {} NoRisk-Mods ausgelassen", r.norisk_only.len()));
     }
     if let Some(n) = note {
         msg.push_str(&format!(" · {n}"));
     }
-    if let Some(w) = warnings.first() {
-        msg.push_str(&format!(" – Hinweis: {w}"));
-    }
     msg
+}
+
+fn report(plan: &Plan, o: mods::Outcome, copied: Vec<String>, files: u64, warnings: Vec<String>) -> ImportReport {
+    let cache: Vec<String> = o.fallback.iter().map(|j| j.name.clone()).collect();
+    ImportReport {
+        launcher: "NoRisk Client".into(),
+        at: crate::util::now_ms(),
+        files,
+        bytes: 0,
+        mods: o.installed,
+        from_cache: copied.iter().filter(|c| cache.contains(c)).cloned().collect(),
+        jars: copied,
+        failed: o.failed,
+        locked: o.locked,
+        norisk_only: plan.skipped.clone(),
+        unfit: plan.unfit.clone(),
+        sync_packs: plan.sync_packs.clone(),
+        warnings,
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -133,7 +156,7 @@ pub async fn run_import(
     let inst = state.instances.insert_new(inst)?;
     task.set_instance(inst.id.clone());
 
-    let res: AppResult<(mods::Outcome, usize, Vec<String>)> = async {
+    let res: AppResult<ImportReport> = async {
         task.stage("Kopiere Spieldaten …", Some(0.0));
         let (src, ov, dst, t2) = (f.game_dir.clone(), f.overlays.clone(), state.paths.game_dir(&inst.id), task.clone());
         let (copied, tops) = tokio::task::spawn_blocking(move || copy_all(src, ov, dst, t2)).await??;
@@ -141,14 +164,20 @@ pub async fn run_import(
         task.message(format!("{copied} Dateien übernommen"));
         let mut warnings = Vec::new();
         let o = mods::install(&state, &task, &inst, &plan.mods, 0.5, 0.95, &mut warnings).await?;
-        let jars = mods::copy_jars(&state, &inst.id, &plan.jars).await?;
+        let mut jars = plan.jars.clone();
+        jars.extend(o.fallback.iter().cloned());
+        let copied_jars = mods::copy_jars(&state, &inst.id, &jars).await?;
         set_icon(&state, &inst.id, &plan.banner).await;
-        Ok((o, jars, warnings))
+        let r = report(&plan, o, copied_jars, copied, warnings);
+        if let Err(e) = importreport::save(&state, &inst.id, &r) {
+            tracing::warn!("Import-Bericht nicht gespeichert: {e}");
+        }
+        Ok(r)
     }
     .await;
     match res {
-        Ok((o, jars, warnings)) => {
-            task.message(summary(&plan, &o, jars, &java_note, &warnings));
+        Ok(r) => {
+            task.message(summary(&r, &java_note));
             state.content.emit_changed(&inst.id);
             Ok(())
         }

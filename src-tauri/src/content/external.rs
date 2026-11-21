@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 
 const WARN_GUESSED: &str = "Version und Loader wurden aus den Mods geschätzt – bitte prüfen.";
 const WARN_UNKNOWN: &str = "Minecraft-Version unbekannt – bitte vor dem Import angeben.";
+const WARN_VERSIONS: &str = "Version aus dem Ordner versions geschätzt (zuletzt gestartet) – bitte prüfen.";
 
 /// Erkannte Instanz inkl. interner Angaben für den Import.
 #[derive(Debug, Clone)]
@@ -40,6 +41,7 @@ pub(crate) fn launcher_name(k: LauncherKind) -> &'static str {
         LauncherKind::Multimc => "MultiMC",
         LauncherKind::Curseforge => "CurseForge",
         LauncherKind::Atlauncher => "ATLauncher",
+        LauncherKind::Gdlauncher => "GDLauncher",
         LauncherKind::Norisk => "NoRisk Client",
         LauncherKind::Folder => "Ordner",
     }
@@ -235,10 +237,25 @@ pub(crate) fn open_db_copy_named(root: &Path, tmp: &Path, prefix: &str) -> Optio
                 }
             }
         }
+        if let Ok(c) = rusqlite::Connection::open(dir.join("app.db")) {
+            scrub_secrets(&c);
+        }
         let _ = std::fs::write(&stamp_file, &stamp);
     }
     // Kopie gehört uns – normal öffnen (WAL wird dabei in die Kopie übernommen)
     rusqlite::Connection::open(dir.join("app.db")).map_err(|e| tracing::warn!("Modrinth-DB nicht lesbar: {e}")).ok()
+}
+
+const SECRET_TABLES: &[&str] = &["minecraft_users", "minecraft_device_tokens", "modrinth_users", "accounts", "credentials"];
+
+fn scrub_secrets(c: &rusqlite::Connection) {
+    let _ = c.execute_batch("PRAGMA secure_delete = ON;");
+    for t in SECRET_TABLES {
+        if has_table(c, t) {
+            let _ = c.execute(&format!("DELETE FROM \"{t}\""), []);
+        }
+    }
+    let _ = c.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);");
 }
 
 #[derive(Debug, Default, Clone)]
@@ -603,9 +620,21 @@ fn folder_one(dir: &Path) -> Option<Found> {
     if !looks_like_game_dir(&game) {
         return None;
     }
-    let name = dir.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "Import".into());
+    let name = dir.file_name().map(|n| n.to_string_lossy().trim_start_matches('.').to_string()).filter(|n| !n.is_empty()).unwrap_or_else(|| "Import".into());
+    let name = if name.eq_ignore_ascii_case("minecraft") { "Minecraft".to_string() } else { name };
     let icon = ["icon.png", "instance.png"].iter().map(|n| dir.join(n)).find(|p| p.is_file());
-    Some(with_guess(found(name, game, dir, String::new(), vanilla(), icon)))
+    let mut f = with_guess(found(name, game, dir, String::new(), vanilla(), icon));
+    let has_mods = f.info.mod_count > 0;
+    if let Some(g) = super::vanilla::guess(&f.game_dir, f.info.loader.kind) {
+        if f.info.mc_version.is_empty() || (!has_mods && f.info.loader.kind == LoaderKind::Vanilla) {
+            f.info.mc_version = g.mc;
+            f.info.loader = if has_mods && g.loader.kind == LoaderKind::Vanilla { f.info.loader } else { g.loader };
+            f.info.warning = Some(WARN_VERSIONS.into());
+        } else if g.mc == f.info.mc_version && g.loader.kind == f.info.loader.kind {
+            f.info.loader.version = g.loader.version;
+        }
+    }
+    Some(f)
 }
 
 // ------------------------------------------------------------------ Öffentliche Abläufe
@@ -616,7 +645,7 @@ fn sort(v: &mut [Found]) {
 
 fn launcher(id: LauncherKind, path: &Path, mut found: Vec<Found>) -> (ExternalLauncher, Vec<Found>) {
     sort(&mut found);
-    (ExternalLauncher { id, name: launcher_name(id).into(), path: s(path), instances: found.iter().map(info_of).collect() }, found)
+    (ExternalLauncher { id, name: source_name(id, path).into(), path: s(path), instances: found.iter().map(info_of).collect() }, found)
 }
 
 /// Anzeige-Daten einer Instanz inkl. gefundener Einstellungen.
@@ -643,14 +672,50 @@ pub fn detect_blocking(tmp: &Path) -> Vec<(ExternalLauncher, Vec<Found>)> {
     for r in atlauncher_roots() {
         out.push(launcher(LauncherKind::Atlauncher, &r, atlauncher_scan(&r)));
     }
+    for (carbon, r) in super::gdlauncher::roots() {
+        out.push(launcher(LauncherKind::Gdlauncher, &r, super::gdlauncher::scan(&r, carbon)));
+    }
     for r in super::norisk::roots() {
         out.push(launcher(LauncherKind::Norisk, &r, super::norisk::scan(&r, tmp, &icons_of(tmp))));
+    }
+    if let Some((r, f)) = official_root().and_then(|r| folder_one(&r).map(|f| (r, f))) {
+        out.push(launcher(LauncherKind::Folder, &r, vec![f]));
     }
     out
 }
 
+const OFFICIAL: &str = "Minecraft Launcher";
+
+fn is_official(dir: &Path) -> bool {
+    let game = if dir.join(".minecraft").is_dir() { dir.join(".minecraft") } else { dir.to_path_buf() };
+    game.join("versions").is_dir() && ["launcher_profiles.json", "launcher_settings.json", "launcher_profiles_microsoft_store.json"].iter().any(|f| game.join(f).is_file())
+}
+
+fn source_name(kind: LauncherKind, path: &Path) -> &'static str {
+    if kind == LauncherKind::Folder && is_official(path) {
+        OFFICIAL
+    } else {
+        launcher_name(kind)
+    }
+}
+
+fn official_root() -> Option<PathBuf> {
+    let d = if cfg!(windows) {
+        dirs::data_dir()?.join(".minecraft")
+    } else if cfg!(target_os = "macos") {
+        dirs::data_dir()?.join("minecraft")
+    } else {
+        dirs::home_dir()?.join(".minecraft")
+    };
+    let worth = ["mods", "saves", "resourcepacks", "shaderpacks", "options.txt"].iter().any(|n| {
+        let p = d.join(n);
+        p.is_file() || std::fs::read_dir(&p).is_ok_and(|mut rd| rd.next().is_some())
+    });
+    worth.then_some(d)
+}
+
 /// `cache/icons` neben `cache/tmp`.
-fn icons_of(tmp: &Path) -> PathBuf {
+pub(crate) fn icons_of(tmp: &Path) -> PathBuf {
     tmp.parent().map(|c| c.join("icons")).unwrap_or_else(|| tmp.join("icons"))
 }
 
@@ -700,6 +765,17 @@ pub fn scan_dir_blocking(path: &Path, tmp: &Path) -> AppResult<(ExternalLauncher
     if let Some(f) = atlauncher_one(path) {
         return Ok(launcher(LauncherKind::Atlauncher, path, vec![f]));
     }
+    if path.join("instance.json").is_file() || path.join("config.json").is_file() {
+        if let Some(f) = super::gdlauncher::one(path) {
+            return Ok(launcher(LauncherKind::Gdlauncher, path, vec![f]));
+        }
+    }
+    for (inst, carbon) in [(super::gdlauncher::carbon_instances(path), true), (super::gdlauncher::legacy_instances(path), false), (path.to_path_buf(), true), (path.to_path_buf(), false)] {
+        let list = super::gdlauncher::scan(&inst, carbon);
+        if !list.is_empty() {
+            return Ok(launcher(LauncherKind::Gdlauncher, path, list));
+        }
+    }
     // Ordner mit mehreren Instanzen
     let subdirs: Vec<PathBuf> = std::fs::read_dir(path).map(|rd| rd.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect()).unwrap_or_default();
     let has = |f: &str| subdirs.iter().any(|d| d.join(f).is_file());
@@ -744,6 +820,7 @@ fn describe_blocking(kind: LauncherKind, source: &Path, tmp: &Path) -> AppResult
         }
         LauncherKind::Curseforge => curseforge_one(source),
         LauncherKind::Atlauncher => atlauncher_one(source),
+        LauncherKind::Gdlauncher => super::gdlauncher::one(source),
         LauncherKind::Norisk => super::norisk::describe(&s(source), tmp, &icons_of(tmp)),
         LauncherKind::Folder => folder_one(source),
     };
@@ -959,11 +1036,11 @@ pub async fn run_import(
                 LauncherKind::Modrinth => PackSourceKind::Modrinth,
                 LauncherKind::Curseforge => PackSourceKind::Curseforge,
                 LauncherKind::Prism | LauncherKind::Multimc => PackSourceKind::Prism,
-                LauncherKind::Atlauncher | LauncherKind::Norisk | LauncherKind::Folder => PackSourceKind::Local,
+                LauncherKind::Atlauncher | LauncherKind::Gdlauncher | LauncherKind::Norisk | LauncherKind::Folder => PackSourceKind::Local,
             },
             project_id: None,
             version_id: None,
-            name: Some(launcher_name(kind).to_string()),
+            name: Some(source_name(kind, Path::new(&source_path)).to_string()),
             version_name: None,
         })),
         install_state: InstallState::NotInstalled,
@@ -980,6 +1057,7 @@ pub async fn run_import(
     let inst = state.instances.insert_new(inst)?;
     task.set_instance(inst.id.clone());
 
+    let n_files = files.iter().filter(|f| f.2 != u64::MAX).count();
     let res: AppResult<()> = async {
         write_mark(&state, &inst.id, kind, &source_path, copied)?;
         task.stage(format!("Kopiere {} Dateien …", files.iter().filter(|f| f.2 != u64::MAX).count()), Some(0.0));
@@ -1016,6 +1094,17 @@ pub async fn run_import(
     .await;
     match res {
         Ok(()) => {
+            let r = super::importreport::ImportReport {
+                launcher: source_name(kind, Path::new(&source_path)).into(),
+                at: crate::util::now_ms(),
+                files: n_files as u64,
+                bytes: total,
+                jars: super::importreport::mod_files(&state.paths.game_dir(&inst.id)),
+                ..Default::default()
+            };
+            if let Err(e) = super::importreport::save(&state, &inst.id, &r) {
+                tracing::warn!("Import-Bericht nicht gespeichert: {e}");
+            }
             task.message(match &java_note {
                 Some(n) => format!("{} übernommen · {n}", fmt_size(total)),
                 None => format!("{} übernommen", fmt_size(total)),
@@ -1149,6 +1238,27 @@ mod tests {
         assert_eq!(p.pack.as_ref().unwrap().project_id.as_deref(), Some("PROJ"));
         let o = f.iter().find(|f| f.info.name == "Ohne DB").unwrap();
         assert!(o.info.warning.is_some());
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn db_copy_without_tokens() {
+        let root = tmp();
+        {
+            let c = rusqlite::Connection::open(root.join("app.db")).unwrap();
+            c.execute_batch("CREATE TABLE minecraft_users (uuid TEXT, access_token TEXT); INSERT INTO minecraft_users VALUES ('u','GEHEIM'); CREATE TABLE instances (path TEXT); INSERT INTO instances VALUES ('p');").unwrap();
+        }
+        let c = open_db_copy_named(&root, &root.join("tmp"), "modrinth-db").unwrap();
+        assert_eq!(c.query_row("SELECT count(*) FROM minecraft_users", [], |r| r.get::<_, i64>(0)).unwrap(), 0);
+        assert_eq!(c.query_row("SELECT count(*) FROM instances", [], |r| r.get::<_, i64>(0)).unwrap(), 1);
+        drop(c);
+        let copy = std::fs::read_dir(root.join("tmp")).unwrap().flatten().next().unwrap().path();
+        for f in std::fs::read_dir(&copy).unwrap().flatten() {
+            let b = std::fs::read(f.path()).unwrap();
+            assert!(!b.windows(6).any(|w| w == b"GEHEIM"), "{:?}", f.path());
+        }
+        let orig = rusqlite::Connection::open(root.join("app.db")).unwrap();
+        assert_eq!(orig.query_row("SELECT count(*) FROM minecraft_users", [], |r| r.get::<_, i64>(0)).unwrap(), 1, "Original unverändert");
         std::fs::remove_dir_all(&root).ok();
     }
 

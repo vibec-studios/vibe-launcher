@@ -256,6 +256,12 @@ pub async fn import_settings_offer(state: State<'_, AppState>, instance_id: Stri
 /// Gewählte Einstellungen (`keys`) übernehmen; `data` kopiert gewählte Ordner/Dateien im Hintergrund (nur Fehlendes,
 /// Überschreiben nur mit `overwrite`; vorher Snapshot bzw. Welt-Backup).
 #[tauri::command]
+pub async fn import_report(state: State<'_, AppState>, instance_id: String) -> AppResult<Option<crate::content::importreport::ImportReport>> {
+    state.instances.get(&instance_id)?;
+    Ok(crate::content::importreport::load(&state, &instance_id))
+}
+
+#[tauri::command]
 pub async fn import_settings_apply(
     state: State<'_, AppState>,
     instance_id: String,

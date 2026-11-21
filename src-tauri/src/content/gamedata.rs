@@ -66,7 +66,16 @@ pub const VANILLA_LAUNCHER: &[&str] = &[
     "launcher_gamer_pics.json",
     "launcher_skins.json",
     "treatment_tags.json",
+    "staging",
+    "quickPlay",
 ];
+
+fn is_vanilla_launcher(name: &str) -> bool {
+    let l = name.to_ascii_lowercase();
+    VANILLA_LAUNCHER.iter().any(|s| s.eq_ignore_ascii_case(name))
+        || (l.starts_with("launcher_") && (l.ends_with(".json") || l.ends_with(".txt") || l.ends_with(".bin") || l.ends_with(".log")))
+        || (l.starts_with("clientid") && l.ends_with(".txt"))
+}
 
 /// Was eine frühere NoRisk-Version (bis v1.0.0-beta.4) übernommen hat – für Importe ohne Liste in `external.json`.
 pub const LEGACY_NORISK_COPY: &[&str] =
@@ -87,6 +96,7 @@ pub fn launcher_skip(kind: LauncherKind) -> &'static [&'static str] {
         // NoRisk-eigene Daten laufen nur im NoRisk-Launcher, Mods kommen über Modrinth bzw. als passende lose JARs
         LauncherKind::Norisk => &["NoRiskClient", "optionsNRC.json", "custom_mods", "mods", "backups"],
         // Prism/MultiMC: Instanz-Metadaten (`instance.cfg`, `mmc-pack.json`, `patches/` …) liegen neben dem Spielordner
+        LauncherKind::Gdlauncher => super::gdlauncher::LEGACY_SKIP,
         LauncherKind::Prism | LauncherKind::Multimc | LauncherKind::Folder => &[],
     }
 }
@@ -108,7 +118,7 @@ fn is_runtime(name: &str) -> bool {
 
 /// Wird dieser Eintrag (oberste Ebene des Spielordners) übersprungen?
 pub fn skip_top(kind: LauncherKind, purpose: Purpose, name: &str) -> bool {
-    if is_secret(name) || is_runtime(name) || VANILLA_LAUNCHER.iter().any(|s| s.eq_ignore_ascii_case(name)) || launcher_skip(kind).iter().any(|s| s.eq_ignore_ascii_case(name)) {
+    if is_secret(name) || is_runtime(name) || is_vanilla_launcher(name) || (kind == LauncherKind::Gdlauncher && super::gdlauncher::skip_top(name)) || launcher_skip(kind).iter().any(|s| s.eq_ignore_ascii_case(name)) {
         return true;
     }
     purpose == Purpose::Reimport && (name.eq_ignore_ascii_case("mods") || name.eq_ignore_ascii_case("custom_mods"))
@@ -632,6 +642,28 @@ mod tests {
         assert!(skip_top(Curseforge, Purpose::Import, "minecraftinstance.json"));
         assert!(skip_top(Atlauncher, Purpose::Import, "instance.json"));
         assert!(skip_inner("accounts.json") && skip_inner("microsoft_accounts.json") && !skip_inner("waypoints.txt"));
+    }
+
+    #[test]
+    fn official_launcher_internals() {
+        for skip in [
+            "launcher_entitlements_microsoft_store.json",
+            "launcher_product_state_microsoft_store.json",
+            "launcher_ui_state_microsoft_store.json",
+            "launcher_gamer_pics_microsoft_store.json",
+            "launcher_msa_credentials_microsoft_store.bin",
+            "launcher_cef_log.txt",
+            "clientId_v2.txt",
+            "clientId.txt",
+            "staging",
+            "quickPlay",
+            "webcache2",
+        ] {
+            assert!(skip_top(LauncherKind::Folder, Purpose::Import, skip), "{skip} ist Launcher-intern");
+        }
+        for keep in ["options.txt", "launcher.png", "resourcepacks", "screenshots", "pvpai-models"] {
+            assert!(!skip_top(LauncherKind::Folder, Purpose::Import, keep), "{keep} gehört zum Spiel");
+        }
     }
 
     /// Früherer NoRisk-Import (feste Liste): `xaero/` fehlt, Welt wurde übernommen, in der Quelle weitergespielt.

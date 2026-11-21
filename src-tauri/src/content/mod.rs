@@ -17,9 +17,12 @@ pub mod datapacks;
 pub mod export;
 pub mod external;
 pub mod gamedata;
+pub mod gdlauncher;
+pub mod extmods;
 pub mod extsettings;
 pub mod http;
 pub mod import;
+pub mod importreport;
 pub mod index;
 pub mod install;
 pub mod local;
@@ -33,6 +36,7 @@ pub mod provider;
 pub mod store;
 pub mod snapshots;
 pub mod srctree;
+pub mod vanilla;
 pub mod deps;
 pub mod autofix;
 pub mod loaderfix;
@@ -43,6 +47,7 @@ pub mod sets;
 pub mod sets_apply;
 pub mod perf;
 pub mod modpack;
+pub mod mroverrides;
 pub mod autoupdate;
 pub mod worlds;
 pub mod worldbackup;
@@ -491,6 +496,7 @@ pub enum LauncherKind {
     Multimc,
     Curseforge,
     Atlauncher,
+    Gdlauncher,
     /// NoRisk Client Launcher (Profile aus `meta/app.db`)
     Norisk,
     /// Beliebiger Spielordner ohne Launcher-Metadaten (nur über `launcher_scan_dir`)

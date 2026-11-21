@@ -22,6 +22,7 @@ pub struct SyncPlan {
     pub mods: Vec<PlanMod>,
     pub jars: Vec<PlanJar>,
     pub skipped: Vec<String>,
+    pub unfit: Vec<String>,
 }
 
 fn rel_key(p: &Path) -> String {
@@ -161,6 +162,7 @@ pub fn plan(ctx: &Ctx, me: &str, mc: &str, loader: LoaderKind, game: &Path) -> S
         }
     }
     let lkey = loader.as_str();
+    let cache = super::cache::ModCache::new(ctx.meta);
     let mut seen: HashSet<String> = HashSet::new();
     for pack in packs.iter().rev() {
         let excl = ctx.db.excluded.get(&(me.to_string(), pack.id.clone()));
@@ -168,7 +170,8 @@ pub fn plan(ctx: &Ctx, me: &str, mc: &str, loader: LoaderKind, game: &Path) -> S
         for m in pack.mods.iter().filter(|m| m.enabled && !ex(&m.mod_id)) {
             let Some(version) = pick_version(m, pack, mc, lkey) else { continue };
             if seen.insert(super::sync::project_key(m)) {
-                out.mods.push(PlanMod { source: m.source, project_id: m.project_id.clone(), version_id: version, enabled: true, name: m.name.clone() });
+                let file = pack.files.get(&(super::sync::project_key(m), mc.to_string(), lkey.to_string()));
+                out.mods.push(PlanMod { source: m.source, project_id: m.project_id.clone(), version_id: version, enabled: true, name: m.name.clone(), cache: cache.file(file.map(String::as_str)) });
             }
         }
         let Some(id) = safe_rel(&pack.id) else { continue };
@@ -182,7 +185,7 @@ pub fn plan(ctx: &Ctx, me: &str, mc: &str, loader: LoaderKind, game: &Path) -> S
             match jar_class(&j, &name, mc, loader, ctx.icons) {
                 JarClass::Fits(mod_id) => out.jars.push(PlanJar { path: j, name, mod_id }),
                 JarClass::Norisk(n) => out.skipped.push(n),
-                JarClass::Unfit => {}
+                JarClass::Unfit => out.unfit.push(name),
             }
         }
     }

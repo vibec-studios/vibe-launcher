@@ -728,7 +728,7 @@ export interface UpdateBlockers {
 // ------------------------------------------------------------------ Import aus anderen Launchern
 
 /** folder = beliebiger Spielordner (nur über launcherScanDir) */
-export type LauncherKind = "modrinth" | "prism" | "multimc" | "curseforge" | "atlauncher" | "norisk" | "folder";
+export type LauncherKind = "modrinth" | "prism" | "multimc" | "curseforge" | "atlauncher" | "gdlauncher" | "norisk" | "folder";
 
 export interface ExternalInstance {
   /** Instanzordner im fremden Launcher (Kennung für importExternal) */
@@ -813,6 +813,27 @@ export interface SettingsOffer {
   changes: SettingsChange[];
   data: DataEntry[];
   notes: string[];
+}
+
+export interface ImportFailed {
+  name: string;
+  reason: string;
+}
+
+export interface ImportReport {
+  launcher: string;
+  at: number;
+  files: number;
+  bytes: number;
+  mods: string[];
+  jars: string[];
+  from_cache: string[];
+  failed: ImportFailed[];
+  locked: string[];
+  norisk_only: string[];
+  unfit: string[];
+  sync_packs: string[];
+  warnings: string[];
 }
 
 export interface ExternalLauncher {

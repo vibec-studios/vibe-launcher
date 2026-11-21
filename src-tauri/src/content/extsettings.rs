@@ -565,8 +565,12 @@ pub fn select_rows(c: &rusqlite::Connection, table: &str, wanted: &[&str]) -> Ve
     if cols.is_empty() {
         return vec![];
     }
-    let sql = format!("SELECT {} FROM {table}", cols.iter().map(|c| format!("\"{c}\"")).collect::<Vec<_>>().join(", "));
-    let Ok(mut st) = c.prepare(&sql) else { return vec![] };
+    let plain = format!("SELECT {} FROM {table}", cols.iter().map(|c| format!("\"{c}\"")).collect::<Vec<_>>().join(", "));
+    let decoded = format!(
+        "SELECT {} FROM {table}",
+        cols.iter().map(|c| format!("CASE WHEN typeof(\"{c}\") = 'blob' AND json_valid(\"{c}\", 8) THEN json(\"{c}\") ELSE \"{c}\" END")).collect::<Vec<_>>().join(", ")
+    );
+    let Ok(mut st) = c.prepare(&decoded).or_else(|_| c.prepare(&plain)) else { return vec![] };
     let rows = st.query_map([], |r| {
         let mut m = Row::new();
         for (i, c) in cols.iter().enumerate() {
@@ -622,9 +626,15 @@ pub fn modrinth_all(c: &rusqlite::Connection) -> HashMap<String, ExtSettings> {
         .filter_map(|r| Some((external::norm(r.get("path")?.as_str()?), r.get("full_version")?.as_str()?.to_string())))
         .collect();
     let mut out = HashMap::new();
+    let overrides = super::mroverrides::read(c);
     for table in ["profiles", "instances"] {
-        for r in select_rows(c, table, MR_INSTANCE_COLS) {
+        for mut r in select_rows(c, table, MR_INSTANCE_COLS) {
             let Some(path) = r.get("path").and_then(|p| p.as_str()).map(|p| p.to_lowercase()) else { continue };
+            if table == "instances" {
+                if let Some(o) = overrides.get(&path) {
+                    r.extend(o.clone());
+                }
+            }
             out.insert(path, modrinth(&r, &global, &java));
         }
     }
@@ -793,7 +803,7 @@ async fn build_offer(state: &AppState, inst: &Instance, mark: &external::Externa
     let (s, note) = prepare(&vibe, &f.settings, &inst.mc_version, true).await;
     let mut changes = diff(inst, &s);
     changes.extend(extra_changes(inst, f));
-    if let Some(plan) = f.norisk.as_ref() {
+    if let Some(plan) = mods_plan(state, mark, f).as_ref() {
         let m = super::norisk::mods::missing(state, inst, plan).await;
         if !m.is_empty() {
             changes.push(Change { key: "mods".into(), old: json!([]), new: json!(m.names()), default_on: true, inherited: false });
@@ -811,6 +821,13 @@ async fn build_offer(state: &AppState, inst: &Instance, mark: &external::Externa
         data,
         notes: note.into_iter().collect(),
     }
+}
+
+fn mods_plan(state: &AppState, mark: &external::ExternalMark, f: &Found) -> Option<super::norisk::Plan> {
+    if mark.launcher == LauncherKind::Norisk {
+        return f.norisk.clone();
+    }
+    Some(super::extmods::plan(&f.game_dir, mark.imported_at, &external::icons_of(&state.paths.tmp()))).filter(|p| !p.jars.is_empty())
 }
 
 /// Alle importierten Instanzen, deren Quelle noch da ist und deren Einstellungen oder Daten abweichen.
@@ -891,9 +908,10 @@ pub async fn apply_offer(state: &AppState, instance_id: &str, keys: Vec<String>,
         }
     }
     if keys.contains("mods") {
-        if let Some(plan) = f.norisk.clone() {
+        if let Some(plan) = mods_plan(state, &mark, &f) {
             let (st, id) = (state.clone(), instance_id.to_string());
-            state.tasks.spawn("import", "Mods aus NoRisk Client übernehmen".to_string(), Some(id.clone()), move |task| super::norisk::mods::run_missing(st, task, id, plan));
+            let launcher = external::launcher_name(mark.launcher);
+            state.tasks.spawn("import", format!("Mods aus {launcher} übernehmen"), Some(id.clone()), move |task| super::norisk::mods::run_missing(st, task, id, plan, launcher));
         }
     }
     if !data.is_empty() {
