@@ -13,6 +13,8 @@ import { AccessCard } from "@/features/access/AccessCard";
 import { BetaBadge } from "@/features/access/BetaNote";
 import { JoinWaitlistButton } from "@/features/access/JoinDialog";
 import { useAccessBlocked, useKnownApproved } from "@/features/access/hooks";
+import { CloudSyncCard } from "@/features/cloudsync/CloudSyncCard";
+import { DevicesCard } from "@/features/companion/DevicesCard";
 
 const SUBS: (keyof Pick<VibeServices, "social" | "presence" | "hosting" | "sharing">)[] = ["social", "presence", "hosting", "sharing"];
 
@@ -66,6 +68,8 @@ export function VibeTab({ settings: s, update }: { settings: Settings; update: (
             ))}
           </SettingsCard>
           <VibePrivacyCard />
+          <CloudSyncCard />
+          <DevicesCard />
           </>
           )}
         </>

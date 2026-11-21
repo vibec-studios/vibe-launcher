@@ -1,7 +1,7 @@
 // Seite „Freunde“ (/social): links eine schmale Spalte (Freunde-Übersicht, Postfach, Chats), rechts die Übersicht
 // mit eigener Werkzeugleiste oder der gewählte Chat. Der Seitentitel steht in der Titelleiste.
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { MessageSquarePlus, Users } from "lucide-react";
+import { Compass, MessageSquarePlus, Users } from "lucide-react";
 import { IconButton, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { ChatsList } from "./ChatsList";
@@ -11,13 +11,15 @@ import { Overview } from "./Overview";
 import { InboxButton, PageDialogs } from "./PageActions";
 import { openNewGroup } from "./dialogStore";
 import { useSocial } from "./service";
+import { DiscoveryView } from "@/features/serverlist/DiscoveryView";
 
 const route = getRouteApi("/social");
 
 export function SocialPage() {
   const t = useT();
   const nav = useNavigate();
-  const { chat } = route.useSearch();
+  const { chat, view } = route.useSearch();
+  const servers = !chat && view === "servers";
   const me = useSocial((s) => s.me);
   const online = useSocial((s) => Object.values(s.friends).filter((f) => f.presence.status !== "offline").length);
   const chatCount = useSocial((s) => Object.keys(s.chats).length);
@@ -29,14 +31,14 @@ export function SocialPage() {
             <div className="flex h-9 shrink-0 items-center gap-1 px-2 mb-2 mt-4">
               <button
                 onClick={() => nav({ to: "/social", search: {} })}
-                aria-current={!chat ? "page" : undefined}
+                aria-current={!chat && !servers ? "page" : undefined}
                 title={me ? t("social.signed_in_as", { name: me.name }) : undefined}
                 className={cn(
                   "flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-ctl px-2.5 text-left text-[13px] font-semibold transition-colors duration-100",
-                  !chat ? "bg-white/[.07] text-text" : "text-muted hover:bg-white/[.04] hover:text-text",
+                  !chat && !servers ? "bg-white/[.07] text-text" : "text-muted hover:bg-white/[.04] hover:text-text",
                 )}
               >
-                <Users size={15} className={!chat ? "text-brand" : "text-dim"} />
+                <Users size={15} className={!chat && !servers ? "text-brand" : "text-dim"} />
                 <span className="flex-1 truncate">{t("social.tab.friends")}</span>
                 <span className="flex items-center gap-1.5 text-caption font-normal tabular-nums text-dim">
                   <span className="h-1.5 w-1.5 rounded-dot bg-ok" />
@@ -44,6 +46,19 @@ export function SocialPage() {
                 </span>
               </button>
               <InboxButton />
+            </div>
+            <div className="mb-2 px-2">
+              <button
+                onClick={() => nav({ to: "/social", search: { view: "servers" } })}
+                aria-current={servers ? "page" : undefined}
+                className={cn(
+                  "flex h-9 w-full items-center gap-2.5 rounded-ctl px-2.5 text-left text-[13px] font-semibold transition-colors duration-100",
+                  servers ? "bg-white/[.07] text-text" : "text-muted hover:bg-white/[.04] hover:text-text",
+                )}
+              >
+                <Compass size={15} className={servers ? "text-brand" : "text-dim"} />
+                <span className="flex-1 truncate">{t("discovery.nav")}</span>
+              </button>
             </div>
             <div className="flex h-8 shrink-0 items-center justify-between pl-4 pr-2">
               <span className="text-caption font-semibold text-dim">
@@ -63,7 +78,7 @@ export function SocialPage() {
               </div>
             )}
           </aside>
-          <section className="min-w-0 flex-1">{chat ? <ChatView chatId={chat} /> : <Overview />}</section>
+          <section className="min-w-0 flex-1">{chat ? <ChatView chatId={chat} /> : servers ? <DiscoveryView /> : <Overview />}</section>
         </div>
         <PageDialogs />
       </Gate>

@@ -77,7 +77,7 @@ fn scan_dir(instance_id: &str, dir: &Path, out: &mut Vec<Screenshot>) {
 }
 
 /// Pfad prüfen: muss eine Bilddatei in `instances/<id>/minecraft/screenshots/` sein.
-fn checked(state: &AppState, path: &str) -> AppResult<PathBuf> {
+pub(crate) fn checked(state: &AppState, path: &str) -> AppResult<PathBuf> {
     let p = PathBuf::from(path);
     let canon = p.canonicalize().map_err(|_| AppError::NotFound("Screenshot".into()))?;
     let root = state.paths.instances().canonicalize()?;

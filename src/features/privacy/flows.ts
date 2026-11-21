@@ -25,6 +25,10 @@ export const FLOWS: Flow[] = [
   { id: "feedback", group: "click", hosts: ["vibe.axolite.app"] },
   { id: "mclogs", group: "click", hosts: ["api.mclo.gs"] },
   { id: "share", group: "click", hosts: ["vibe.axolite.app"] },
+  { id: "shots", group: "click", hosts: ["vibe.axolite.app"] },
+  { id: "feed", group: "auto", hosts: ["vibe.axolite.app"], switchKey: "feed.switch" },
+  { id: "cloud", group: "click", hosts: ["vibe.axolite.app"] },
+  { id: "discovery", group: "auto", hosts: ["vibe.axolite.app"] },
   { id: "heads", group: "images", hosts: ["mc-heads.net"] },
   { id: "web", group: "images", hosts: ["www.youtube-nocookie.com", "…"] },
 ];

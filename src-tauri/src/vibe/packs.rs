@@ -58,13 +58,13 @@ pub fn valid_code(code: &str) -> bool {
     (4..=16).contains(&code.len()) && code.bytes().all(|b| b.is_ascii_alphanumeric())
 }
 
-fn tmp_path(state: &AppState, ext: &str) -> PathBuf {
+pub(super) fn tmp_path(state: &AppState, ext: &str) -> PathBuf {
     let dir = state.paths.tmp();
     let _ = std::fs::create_dir_all(&dir);
     dir.join(format!("vibe-{}.{ext}", uuid::Uuid::new_v4().simple()))
 }
 
-struct TmpFiles(Vec<PathBuf>);
+pub(super) struct TmpFiles(pub(super) Vec<PathBuf>);
 impl Drop for TmpFiles {
     fn drop(&mut self) {
         for p in &self.0 {
@@ -376,7 +376,7 @@ pub fn check_overrides(path: &Path) -> AppResult<()> {
 }
 
 /// `.vlpack` aus Manifest, geprüfter Overrides-ZIP und Icon zusammensetzen.
-fn build_vlpack(dest: &Path, manifest: &str, overrides: Option<&Path>, icon: Option<&[u8]>) -> AppResult<()> {
+pub(super) fn build_vlpack(dest: &Path, manifest: &str, overrides: Option<&Path>, icon: Option<&[u8]>) -> AppResult<()> {
     let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
     let mut out = zip::ZipWriter::new(std::io::BufWriter::new(std::fs::File::create(dest)?));
     out.start_file("vlpack.json", opts)?;

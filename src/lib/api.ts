@@ -320,6 +320,11 @@ export const api = {
   /** Gibt Task-ID zurück */
   vibePackInstall: (code: string, versionId?: string | null, token?: string | null) =>
     call<string>("vibe_pack_install", { code, versionId: versionId ?? null, token: token ?? null }),
+  vibeScreenshotUpload: (path: string, visibility: string, token: string) => call<unknown>("vibe_screenshot_upload", { path, visibility, token }),
+  vibeImage: (url: string, token?: string | null) => call<string>("vibe_image", { url, token: token ?? null }),
+  vibeCloudManifests: (instanceIds: string[]) => call<{ id: string; manifest: unknown }[]>("vibe_cloud_manifests", { instanceIds }),
+  /** Gibt Task-ID zurück */
+  vibeCloudRestoreInstance: (manifest: unknown) => call<string>("vibe_cloud_restore_instance", { manifest }),
   // ---------------------------------------------------------------- Backups (Snapshots + Welt-Backups)
   snapshotsList: (instanceId: string) => call<T.SnapshotInfo[]>("snapshots_list", { instanceId }),
   /** Gibt Task-ID zurück */

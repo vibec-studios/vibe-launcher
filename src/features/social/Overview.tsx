@@ -16,6 +16,7 @@ import { loaderName, since } from "./presence";
 import { SocialActions, openPageDialog } from "./PageActions";
 import { openInviteAccept } from "./dialogStore";
 import { renderBody, useRender } from "./skinRender";
+import { FeedCard } from "@/features/feed/FeedCard";
 import { errText, refreshRequests, removeInviteLocal, requireClient, useSocial, vqk } from "./service";
 
 /** Robbe als freundliche Illustration für leere Zustände. */
@@ -396,6 +397,7 @@ export function Overview() {
           <aside className="flex flex-col gap-3">
             <ProfileCard />
             {vibe.hosting && <HostingCard />}
+            <FeedCard />
           </aside>
         </div>
       </div>

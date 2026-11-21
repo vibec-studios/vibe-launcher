@@ -99,3 +99,30 @@ pub async fn vibe_pack_install(state: State<'_, AppState>, code: String, version
     let title = format!("Pack {code} importieren");
     Ok(state.tasks.spawn("import", title, None, move |task| packs::install(st, task, code, version_id, token)))
 }
+
+/// Lokalen Screenshot zu Vibe hochladen (`visibility`: private | friends | link). Liefert `Screenshot`.
+#[tauri::command]
+pub async fn vibe_screenshot_upload(state: State<'_, AppState>, path: String, visibility: String, token: String) -> AppResult<Value> {
+    vibe::media::upload_screenshot(&state, &path, &visibility, &token).await
+}
+
+/// Bild vom Vibe-Backend (z. B. Screenshot eines Freundes) als data-URL.
+#[tauri::command]
+pub async fn vibe_image(state: State<'_, AppState>, url: String, token: Option<String>) -> AppResult<String> {
+    vibe::media::image(&state, &url, token.as_deref()).await
+}
+
+/// Manifeste (nur Datei-Referenzen) der gewählten Instanzen für die Cloud-Sicherung.
+#[tauri::command]
+pub async fn vibe_cloud_manifests(state: State<'_, AppState>, instance_ids: Vec<String>) -> AppResult<Vec<vibe::media::CloudInstance>> {
+    vibe::media::manifests(&state, instance_ids).await
+}
+
+/// Instanz aus einem Cloud-Manifest anlegen. Gibt die Task-ID zurück.
+#[tauri::command]
+pub async fn vibe_cloud_restore_instance(state: State<'_, AppState>, manifest: Value) -> AppResult<String> {
+    vibe::ensure(&state, Feature::Any)?;
+    let name = manifest["name"].as_str().unwrap_or("Instanz").to_string();
+    let st = state.inner().clone();
+    Ok(state.tasks.spawn("import", format!("{name} aus der Cloud wiederherstellen"), None, move |task| vibe::media::restore(st, task, manifest)))
+}

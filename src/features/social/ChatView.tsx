@@ -5,6 +5,8 @@ import * as Popover from "@radix-ui/react-popover";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { copyText as writeText } from "@/components/content/util";
+import { ChatShot } from "@/features/shotshare/ChatShot";
+import { withoutShotLink } from "@/features/shotshare/api";
 import { CheckCheck, Clipboard, Clock, Globe2, LogOut, Mail, MoreHorizontal, Package, PackageOpen, Pencil, Play, Send, Server, Smile, Trash2, UserPlus, Users } from "lucide-react";
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Button, ContextItem, ContextMenu, ContextSeparator, DropdownItem, DropdownMenu, DropdownSeparator, ErrorState, IconButton, Skeleton, Spinner, Textarea, Tooltip, cn, toast } from "@/components/ui";
@@ -472,7 +474,7 @@ const MessageRow = memo(function MessageRow({
                   title={timeOf(m.createdAt)}
                   className={cn("selectable min-w-0 whitespace-pre-wrap break-words rounded-card px-3.5 py-2 text-[13.5px] leading-[1.45] text-text", mine ? MINE_BG : "bg-surface2", shape)}
                 >
-                  {m.content}
+                  {withoutShotLink(m.content) || m.content}
                   {m.editedAt && <span className="ml-1.5 text-[10.5px] text-dim">{t("social.msg.edited")}</span>}
                 </p>
               )}
@@ -495,6 +497,7 @@ const MessageRow = memo(function MessageRow({
               )}
             </div>
           )}
+          {!editing && !m.deleted && <ChatShot content={m.content} mine={mine} />}
           {read && (
             <div className="mt-1 flex items-center gap-1 px-0.5 text-[11px] text-dim animate-fade-in">
               {(read.dm ? read.all : read.n > 0) && <CheckCheck size={12} className="text-brand" />}

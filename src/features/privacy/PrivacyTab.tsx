@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useSystemInfo } from "@/lib/queries";
 import type { Settings } from "@/lib/types";
 import { FLOW_GROUPS, FLOWS, type Flow } from "./flows";
+import { FeedPrivacyRow } from "@/features/feed/FeedPrivacyRow";
 
 type Update = (p: Partial<Settings>, delay?: number) => void;
 
@@ -66,6 +67,7 @@ function Switches({ s, update }: { s: Settings; update: Update }) {
           <Switch checked={v.presence} onChange={(presence) => update({ vibe: { ...v, presence } })} label={t("privacy.sw.presence")} />
         </SettingRow>
       )}
+      {v.enabled && v.social && <FeedPrivacyRow />}
       <SettingRow title={t("privacy.sw.updates")} description={t("privacy.sw.updates.desc")}>
         <Switch checked={s.check_updates} onChange={(check_updates) => update({ check_updates })} label={t("privacy.sw.updates")} />
       </SettingRow>
