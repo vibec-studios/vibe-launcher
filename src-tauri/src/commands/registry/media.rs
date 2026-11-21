@@ -12,14 +12,6 @@ macro_rules! media_commands {
             crate::commands::screenshots::screenshot_delete,
             crate::commands::screenshots::screenshot_copy,
             crate::commands::screenshots::screenshot_open_folder,
-            crate::commands::clips::clips_list,
-            crate::commands::clips::clip_update,
-            crate::commands::clips::clip_delete,
-            crate::commands::clips::clip_open_folder,
-            crate::commands::clips::clips_watch,
-            crate::commands::clip_edit::clip_set_trim,
-            crate::commands::clip_edit::clip_export_available,
-            crate::commands::clip_edit::clip_export_trim,
         ] $($rest)*)
     };
 }
