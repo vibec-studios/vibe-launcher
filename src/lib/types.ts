@@ -1284,6 +1284,7 @@ export interface Server {
   voice?: boolean;
   /** Bedrock-Freunde (Geyser + Floodgate) über den Relay */
   bedrock?: boolean;
+  remote?: { agent: string; agent_name: string; via: "direct" | "vibe"; host: string | null } | null;
 }
 
 export interface ServerExtras {

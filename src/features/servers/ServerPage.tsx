@@ -20,6 +20,7 @@ import { ConnectionTab } from "./ConnectionTab";
 import { ServerFilesTab } from "@/features/files";
 import { ServerAddonsTab } from "./ServerAddonsTab";
 import { serverSoftware } from "./addonsApi";
+import { PanelButton, RemoteBadge, RemoteFilesHint } from "@/features/remote/RemoteBadge";
 
 const route = getRouteApi("/servers/$id");
 const wrap = "w-full px-6";
@@ -149,6 +150,7 @@ function MetaLine({ server: s }: { server: Server }) {
   if (!running) parts.push(s.last_started ? t("srv.meta.last", { when: formatRelative(s.last_started) }) : t("srv.meta.never"));
   return (
     <div className="flex min-w-0 items-center gap-x-2 overflow-hidden whitespace-nowrap text-meta text-muted">
+      <RemoteBadge server={s} />
       <StatusLabel server={s} status={st} />
       {parts.map((p, n) => (
         <span key={n} className="flex min-w-0 items-center gap-2 truncate">
@@ -195,6 +197,7 @@ export function ServerPage() {
             <MetaLine server={server} />
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
+            <PanelButton server={server} size="md" />
             <ServerPowerButton server={server} className="min-w-[112px]" />
             <DropdownMenu
               trigger={
@@ -239,7 +242,7 @@ export function ServerPage() {
         ) : tab === "worlds" ? (
           <ServerWorldsTab server={server} />
         ) : tab === "files" ? (
-          <ServerFilesTab server={server} />
+          server.remote ? <RemoteFilesHint server={server} /> : <ServerFilesTab server={server} />
         ) : (
           <ConnectionTab server={server} />
         )}

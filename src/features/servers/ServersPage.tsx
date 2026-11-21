@@ -2,7 +2,7 @@
 // alles Weitere im ⋯-Menü bzw. per Rechtsklick. Der Seitentitel steht in der Titelleiste.
 import { memo, useDeferredValue, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { MoreHorizontal, Plus, SearchX, Server as ServerIconLucide, Users } from "lucide-react";
+import { MonitorSmartphone, MoreHorizontal, Network, Plus, SearchX, Server as ServerIconLucide, Users } from "lucide-react";
 import { useServerStatus, useServers } from "@/lib/queries";
 import type { Server } from "@/lib/types";
 import { formatLoader } from "@/lib/format";
@@ -11,6 +11,8 @@ import { accentVars } from "@/components/instance/accent";
 import { useT } from "@/i18n";
 import { openNewServer, serverAddress, useServerTask } from "./actions";
 import { serverSoftware } from "./addonsApi";
+import { RemoteBadge } from "@/features/remote/RemoteBadge";
+import { openAddRemote, openManageRemote, useRemote } from "@/features/remote/store";
 import { AddressChip, ServerContextMenuContent, ServerDropdownContent, ServerIcon, ServerPowerButton, StatusLabel, serverAccent } from "./parts";
 
 const cols = "grid grid-cols-[minmax(0,1fr)_130px_minmax(140px,220px)_auto] items-center gap-4";
@@ -46,7 +48,10 @@ const ServerRow = memo(function ServerRow({ server: s }: { server: Server }) {
         <div className="flex min-w-0 items-center gap-3">
           <ServerIcon server={s} size={36} />
           <div className="min-w-0">
-            <div className="truncate text-[13.5px] font-semibold text-text">{s.name}</div>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="truncate text-[13.5px] font-semibold text-text">{s.name}</span>
+              <RemoteBadge server={s} />
+            </div>
             <div className="truncate text-meta text-muted">{meta.join(" · ")}</div>
           </div>
         </div>
@@ -96,6 +101,7 @@ export function ServersPage() {
   const { data, isLoading, isError, error, refetch } = useServers();
   const [query, setQuery] = useState("");
   const q = useDeferredValue(query.trim().toLowerCase());
+  const hasAgents = useRemote((st) => st.agents.length > 0);
   const list = data ?? [];
   const sorted = [...list]
     .filter((s) => !q || s.name.toLowerCase().includes(q) || s.mc_version.includes(q) || s.loader.kind.includes(q) || (s.platform?.kind.includes(q) ?? false))
@@ -106,9 +112,19 @@ export function ServersPage() {
         {list.length > 0 && (
           <PageToolbar
             actions={
-              <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
-                {t("srv.new")}
-              </Button>
+              <>
+                {hasAgents && (
+                  <IconButton label={t("rmt.manage")} tip variant="ghost" onClick={openManageRemote}>
+                    <MonitorSmartphone size={16} />
+                  </IconButton>
+                )}
+                <Button variant="ghost" icon={<Network size={15} />} title={t("rmt.add.tip")} onClick={openAddRemote}>
+                  {t("rmt.add")}
+                </Button>
+                <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
+                  {t("srv.new")}
+                </Button>
+              </>
             }
           >
             <SearchInput value={query} onChange={setQuery} placeholder={t("srv.search")} className="min-w-[160px] max-w-[320px] flex-1 basis-[240px]" />
@@ -130,9 +146,14 @@ export function ServersPage() {
             title={t("srv.empty.title")}
             text={t("srv.empty.text")}
             action={
-              <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
-                {t("srv.new")}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
+                  {t("srv.new")}
+                </Button>
+                <Button variant="ghost" icon={<Network size={15} />} title={t("rmt.add.tip")} onClick={openAddRemote}>
+                  {t("rmt.add")}
+                </Button>
+              </div>
             }
           />
         ) : sorted.length === 0 ? (

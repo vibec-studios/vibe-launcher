@@ -613,6 +613,15 @@ const handlers: Handlers = {
   },
 };
 
+export function mockAddServer(s: Server, online: string[] = []) {
+  servers.set(s.id, s);
+  props.set(s.id, defaultProps(s));
+  players.set(s.id, { online: [], whitelist_enabled: true, whitelist: online.map((n) => entry(n)), ops: online.slice(0, 1).map((n) => entry(n, { level: 4 })), banned: [], banned_ips: [] });
+  worlds.set(s.id, [{ name: "world", size: 48_000_000, active: true }]);
+  backups.set(s.id, [{ name: "world-2026-11-20_21-00.zip", world: "world", size: 31_000_000, created: Date.now() - 86400_000 } as ServerBackup]);
+  if (online.length) setTimeout(() => boot(s.id, online), 80);
+}
+
 // Hilfen für Tests im Browser: Events auslösen, playit-Claim bestätigen
 (window as unknown as { __vlMock: unknown }).__vlMock = {
   emit: mockEmit,

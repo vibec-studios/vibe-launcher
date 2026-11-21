@@ -4,8 +4,17 @@ import type { TaskInfo } from "@/lib/types";
 
 export type Handlers = Record<string, (args: Record<string, unknown>) => unknown>;
 
+type EmitRewrite = (name: string, payload: unknown) => [string, unknown] | null;
+let rewrite: EmitRewrite | null = null;
+
+export function setEmitRewrite(fn: EmitRewrite) {
+  rewrite = fn;
+}
+
 export function mockEmit<K extends EventName>(name: K, payload: EventMap[K]) {
-  void emit(name, payload);
+  const r = rewrite?.(name, payload);
+  if (r) void emit(r[0], r[1]);
+  else void emit(name, payload);
 }
 
 export const tasks = new Map<string, TaskInfo>();

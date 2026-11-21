@@ -58,6 +58,7 @@ import packupdate from "./packupdate";
 import modMap from "./mod-map";
 import socialw4 from "./socialw4";
 import vibemedia from "./vibemedia";
+import remote from "./remote";
 
 import { isLang, normalizeLang, type Lang } from "./languages";
 
@@ -71,6 +72,7 @@ bundles.push(worldMap);
 bundles.push(modMap);
 bundles.push(socialw4);
 bundles.push(vibemedia);
+bundles.push(remote);
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);
   Object.assign(dicts.en, b.en);

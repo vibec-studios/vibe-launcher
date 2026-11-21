@@ -44,6 +44,7 @@ export function useServerTask(id: string): TaskInfo | undefined {
 /** Adresse für Freunde: Tunnel-Adresse, sonst localhost:port. */
 export function serverAddress(s: Server, st: ServerStatus | undefined): string {
   if (s.connection !== "local" && st?.tunnel?.address) return st.tunnel.address;
+  if (s.remote) return s.remote.host ? `${s.remote.host}:${s.port}` : "–";
   return `localhost:${s.port}`;
 }
 
@@ -83,7 +84,13 @@ export async function joinServer(s: Server) {
       toast.error(t("srv.join.no_instance", { version: s.mc_version }), t("srv.join.failed"));
       return;
     }
-    const addr = s.port === 25565 ? "localhost" : `localhost:${s.port}`;
+    const remoteAddr = s.remote ? serverAddress(s, useServerStore.getState().statuses[s.id]) : null;
+    if (remoteAddr === "–") {
+      toast.error(t("srv.join.failed"));
+      return;
+    }
+    const host = remoteAddr?.replace(/:25565$/, "") ?? null;
+    const addr = host ?? (s.port === 25565 ? "localhost" : `localhost:${s.port}`);
     await api.instanceLaunch(inst.id, null, null, addr);
     toast.info(t("srv.join.started", { name: inst.name }), s.name);
   } catch (e) {
@@ -143,6 +150,10 @@ export async function pickPng(): Promise<string | null> {
 }
 
 export async function setServerIcon(s: Server) {
+  if (s.remote) {
+    toast.info(t("rmt.icon.remote"));
+    return;
+  }
   const path = await pickPng();
   if (!path) return;
   api

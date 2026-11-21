@@ -21,6 +21,7 @@ pub mod paths;
 pub mod platform;
 pub mod play;
 pub mod portable;
+pub mod remote;
 pub mod server;
 pub mod settings;
 pub mod state;
@@ -513,6 +514,20 @@ pub fn run() {
             commands::vibe::vibe_mojang_join,
             commands::vibe::vibe_http,
             commands::vibe::vibe_ws_open,
+            remote::commands::remote_agents,
+            remote::commands::remote_vibe_sync,
+            remote::commands::remote_probe,
+            remote::commands::remote_pair,
+            remote::commands::remote_vibe_link_code,
+            remote::commands::remote_gateway_link,
+            remote::commands::remote_agent_rename,
+            remote::commands::remote_agent_remove,
+            remote::commands::remote_agent_info,
+            remote::commands::remote_request,
+            remote::commands::remote_ws_connect,
+            remote::commands::remote_ws_disconnect,
+            remote::commands::remote_ws_subscribe,
+            remote::commands::remote_ws_send,
             commands::vibe::vibe_ws_send,
             commands::vibe::vibe_ws_close,
             commands::vibe::vibe_pack_share,

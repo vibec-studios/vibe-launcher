@@ -1,5 +1,6 @@
 // Plugin-Server-Software (Paper/Purpur/Folia) und Erweiterungen (plugins/ bzw. mods/) eines Servers.
-import { invoke } from "@tauri-apps/api/core";
+import { invoke as coreInvoke } from "@tauri-apps/api/core";
+import { routeRemote } from "@/features/remote/dispatch";
 import type { Server, ServerPlatformKind } from "@/lib/types";
 import type { ViewProject } from "@/features/discover/ProjectView";
 
@@ -86,6 +87,8 @@ export interface AddonUpdate {
   current: string | null;
   latest: string;
 }
+
+const invoke = <R>(cmd: string, args?: Record<string, unknown>): Promise<R> => routeRemote<R>(cmd, args) ?? coreInvoke<R>(cmd, args);
 
 export const platformNames: Record<ServerPlatformKind, string> = {
   paper: "Paper",
