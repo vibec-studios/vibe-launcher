@@ -27,3 +27,4 @@ pub mod datadir;
 pub mod portable;
 pub mod server_pack;
 pub mod server_target;
+pub(crate) mod registry;
