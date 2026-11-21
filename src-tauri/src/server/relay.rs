@@ -8,6 +8,7 @@ use crate::error::{AppError, AppResult};
 use crate::minecraft::LogLevel;
 use crate::state::AppState;
 use parking_lot::Mutex;
+use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -60,10 +61,89 @@ pub fn rotate(id: &str) -> bool {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Default, PartialEq)]
+pub struct UdpChannel {
+    pub host: String,
+    pub port: u16,
+    pub address: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct UdpDenied {
+    pub channel: String,
+    pub code: String,
+}
+
+/// `waiting` (angefragt), `ok` (Tunnel funktioniert), `blocked` (kein udp_ok nach 5 s: Netz blockiert UDP),
+/// `unavailable` (Relay kann kein UDP oder antwortet nicht), `off` (alle Kanäle abgelehnt)
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct UdpStatus {
+    pub state: String,
+    pub voice: Option<UdpChannel>,
+    pub bedrock: Option<UdpChannel>,
+    pub denied: Vec<UdpDenied>,
+}
+
+fn udp_states() -> &'static Mutex<HashMap<String, UdpStatus>> {
+    static S: OnceLock<Mutex<HashMap<String, UdpStatus>>> = OnceLock::new();
+    S.get_or_init(Default::default)
+}
+
+fn set_udp(state: &AppState, id: &str, f: impl FnOnce(&mut Option<UdpStatus>)) {
+    let next = {
+        let mut map = udp_states().lock();
+        let mut cur = map.get(id).cloned();
+        f(&mut cur);
+        match &cur {
+            Some(u) => map.insert(id.to_string(), u.clone()),
+            None => map.remove(id),
+        };
+        cur
+    };
+    if let Some(t) = state.server_mgr.status(id).and_then(|s| s.tunnel).filter(|t| t.kind == ServerConnection::Relay) {
+        state.server_mgr.set_tunnel(id, Some(TunnelStatus { udp: next, ..t }));
+    }
+}
+
+fn udp(state: &str) -> UdpStatus {
+    UdpStatus { state: state.into(), voice: None, bedrock: None, denied: Vec::new() }
+}
+
+fn udp_timeout(state: &AppState, id: &str, cancel: &CancellationToken, from: &'static str, to: &'static str) {
+    let (st, id, c) = (state.clone(), id.to_string(), cancel.clone());
+    tokio::spawn(async move {
+        tokio::select! {
+            _ = tokio::time::sleep(Duration::from_secs(5)) => {}
+            _ = c.cancelled() => return,
+        }
+        set_udp(&st, &id, |u| {
+            if let Some(x) = u.as_mut().filter(|x| x.state == from) {
+                x.state = to.into();
+            }
+        });
+    });
+}
+
+pub fn parse_udp_ready(msg: &Value) -> (Option<UdpChannel>, Option<UdpChannel>, Vec<UdpDenied>) {
+    let ch = |name: &str| -> Option<UdpChannel> {
+        let c = msg["channels"].get(name)?;
+        let port = c["port"].as_u64().and_then(|p| u16::try_from(p).ok())?;
+        let address = c["address"].as_str().unwrap_or_default().to_string();
+        let host = c["host"].as_str().map(str::to_string).unwrap_or_else(|| split_host_port(&address).0);
+        Some(UdpChannel { host, port, address })
+    };
+    let denied = msg["denied"]
+        .as_object()
+        .map(|o| o.iter().map(|(k, v)| UdpDenied { channel: k.clone(), code: v["code"].as_str().unwrap_or("disabled").to_string() }).collect())
+        .unwrap_or_default();
+    (ch("voice"), ch("bedrock"), denied)
+}
+
 fn status(state: &AppState, id: &str, st: TunnelState, address: Option<String>, message: Option<String>) {
+    let udp = if st == TunnelState::Online { udp_states().lock().get(id).cloned() } else { None };
     state.server_mgr.set_tunnel(
         id,
-        Some(TunnelStatus { kind: ServerConnection::Relay, state: st, address, claim_url: None, message }),
+        Some(TunnelStatus { kind: ServerConnection::Relay, state: st, address, claim_url: None, message, udp }),
     );
 }
 
@@ -92,6 +172,7 @@ pub fn spawn(state: AppState, id: String, cancel: CancellationToken) {
                 _ = cancel.cancelled() => Ok(None),
             };
             senders().lock().remove(&id);
+            udp_states().lock().remove(&id);
             if cancel.is_cancelled() {
                 break;
             }
@@ -114,6 +195,7 @@ pub fn spawn(state: AppState, id: String, cancel: CancellationToken) {
             backoff = (backoff * 2).min(30);
         }
         senders().lock().remove(&id);
+        udp_states().lock().remove(&id);
         if state.server_mgr.status(&id).and_then(|s| s.tunnel).is_some_and(|t| t.kind == ServerConnection::Relay && t.state != TunnelState::Error) {
             state.server_mgr.set_tunnel(&id, None);
         }
@@ -178,6 +260,18 @@ async fn session(state: &AppState, id: &str, cancel: &CancellationToken) -> AppR
 
     let mut lines = BufReader::new(rd).lines();
     let local_port = server.port;
+    let local_udp = super::extras::local_ports(id);
+    let mut wanted: Vec<&str> = Vec::new();
+    if server.voice && local_udp.voice.is_some() {
+        wanted.push("voice");
+    }
+    if server.bedrock && local_udp.bedrock.is_some() {
+        wanted.push("bedrock");
+    }
+    let udp_cancel = cancel.child_token();
+    let _udp_guard = udp_cancel.clone().drop_guard();
+    let mut udp_host: Option<super::udp::UdpHost> = None;
+    let mut udp_asked = false;
     loop {
         let line = tokio::time::timeout(Duration::from_secs(75), lines.next_line())
             .await
@@ -204,6 +298,59 @@ async fn session(state: &AppState, id: &str, cancel: &CancellationToken) -> AppR
                     state.server_mgr.launcher_line(id, LogLevel::Launcher, format!("Vibe-Relay: Freunde verbinden sich mit {a}"));
                 }
                 status(state, id, TunnelState::Online, addr, None);
+                if !wanted.is_empty() && !udp_asked {
+                    udp_asked = true;
+                    let has_udp = msg["features"].as_array().is_some_and(|f| f.iter().any(|x| x.as_str() == Some("udp")));
+                    if has_udp {
+                        let _ = tx.send(json!({ "t": "udp", "channels": wanted }));
+                        set_udp(state, id, |u| *u = Some(udp("waiting")));
+                        udp_timeout(state, id, &udp_cancel, "waiting", "unavailable");
+                    } else {
+                        state.server_mgr.launcher_line(id, LogLevel::Warn, "Vibe-Relay: Sprachchat/Bedrock über den Relay ist hier nicht verfügbar (Relay zu alt).".to_string());
+                        set_udp(state, id, |u| *u = Some(udp("unavailable")));
+                    }
+                }
+            }
+            "udp_ready" => {
+                let token = msg["token"].as_str().unwrap_or_default();
+                let (voice, bedrock, denied) = parse_udp_ready(&msg);
+                for d in &denied {
+                    state.server_mgr.launcher_line(id, LogLevel::Warn, format!("Vibe-Relay: Kanal {} abgelehnt ({})", d.channel, d.code));
+                }
+                let tok = super::udp::parse_token(token);
+                let tunnel_port = msg["tunnel"]["port"].as_u64().and_then(|p| u16::try_from(p).ok());
+                match (tok, tunnel_port) {
+                    (Some(tok), Some(tp)) if voice.is_some() || bedrock.is_some() => {
+                        match &udp_host {
+                            Some(h) => h.update(token.to_string(), tp),
+                            None => match super::udp::start(host.clone(), tp, tok, local_udp, &udp_cancel).await {
+                                Ok(h) => udp_host = Some(h),
+                                Err(e) => state.server_mgr.launcher_line(id, LogLevel::Warn, format!("UDP-Tunnel nicht gestartet: {e}")),
+                            },
+                        }
+                        if let Some(b) = &bedrock {
+                            state.server_mgr.launcher_line(id, LogLevel::Launcher, format!("Bedrock: Adresse {} · Port {}", b.host, b.port));
+                        }
+                        let ok_before = udp_states().lock().get(id).is_some_and(|u| u.state == "ok");
+                        let st = if ok_before { "ok" } else { "connecting" };
+                        set_udp(state, id, |u| *u = Some(UdpStatus { state: st.into(), voice, bedrock, denied }));
+                        if !ok_before {
+                            udp_timeout(state, id, &udp_cancel, "connecting", "blocked");
+                        }
+                    }
+                    _ => {
+                        udp_host = None;
+                        set_udp(state, id, |u| *u = Some(UdpStatus { denied, ..udp("off") }));
+                    }
+                }
+            }
+            "udp_ok" => {
+                state.server_mgr.launcher_line(id, LogLevel::Launcher, "Vibe-Relay: UDP-Tunnel steht (Sprachchat/Bedrock).".to_string());
+                set_udp(state, id, |u| {
+                    if let Some(x) = u.as_mut() {
+                        x.state = "ok".into();
+                    }
+                });
             }
             "open" => {
                 let sid = msg["sid"].as_u64().unwrap_or(0);
@@ -265,6 +412,25 @@ async fn data_stream(host: &str, port: u16, sid: u64, key: &str, local_port: u16
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn udp_ready_parsing() {
+        let m: serde_json::Value = serde_json::from_str(
+            r#"{"t":"udp_ready","token":"9f","tunnel":{"port":24454},
+            "channels":{"voice":{"port":24454,"address":"mossy-otter-27.axolite.cc:24454","voiceHost":"24454"},
+            "bedrock":{"port":19207,"address":"mossy-otter-27.axolite.cc:19207","host":"mossy-otter-27.axolite.cc"}},
+            "denied":{"x":{"code":"no_port","msg":"m"}}}"#,
+        )
+        .unwrap();
+        let (v, b, d) = super::parse_udp_ready(&m);
+        assert_eq!(v.unwrap().host, "mossy-otter-27.axolite.cc");
+        let b = b.unwrap();
+        assert_eq!((b.host.as_str(), b.port), ("mossy-otter-27.axolite.cc", 19207));
+        assert_eq!(d[0].code, "no_port");
+        let empty: serde_json::Value = serde_json::from_str(r#"{"t":"udp_ready","token":"","channels":{},"denied":{"bedrock":{"code":"disabled"}}}"#).unwrap();
+        let (v, b, d) = super::parse_udp_ready(&empty);
+        assert!(v.is_none() && b.is_none() && d.len() == 1);
+    }
+
     #[test]
     fn host_port() {
         assert_eq!(super::split_host_port("relay.axolite.cc:25565"), ("relay.axolite.cc".into(), 25565));

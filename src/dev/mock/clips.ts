@@ -56,12 +56,28 @@ function clip(instance_id: string, at: number, reason: string, p: Partial<Clip>)
     kept: false,
     title: null,
     tags: [],
+    keyframes_ms: [0, 2000, 4000],
+    cuts_ms: [],
+    rewind: false,
+    trim_hint: null,
+    trim: null,
+    source_id: null,
     ...p,
   };
 }
 
 // Die Länge im JSON entspricht dem Test-Video (6 s); Marken liegen deshalb innerhalb von 6 s.
 let clips: Clip[] = [
+  clip("survival", now - 8 * 60_000, "hotkey", {
+    thumbnail_path: thumb2,
+    rewind: true,
+    keyframes_ms: [0, 1000, 2000, 3000, 4000, 5000],
+    cuts_ms: [2600],
+    trim_hint: { in_ms: 3000, out_ms: 6000 },
+    events: [{ t_ms: 4400, type: "kill", victim: "Steve" }],
+    server: "play.example.net",
+    size_bytes: 13_480_000,
+  }),
   clip("survival", now - 25 * 60_000, "multikill", {
     thumbnail_path: thumb1,
     kills: 2,
@@ -107,6 +123,43 @@ const handlers: Handlers = {
     clips = clips.filter((c) => !(c.instance_id === instanceId && c.id === id));
     changed(String(instanceId));
     return null;
+  },
+  clip_set_trim: ({ instanceId, id, trim }) => {
+    const i = clips.findIndex((c) => c.instance_id === instanceId && c.id === id);
+    if (i < 0) throw { kind: "not_found", message: "Nicht gefunden: Clip" };
+    const c = { ...clips[i], trim: (trim as Clip["trim"]) ?? null };
+    clips = clips.map((x, n) => (n === i ? c : x));
+    changed(c.instance_id);
+    return c;
+  },
+  clip_export_available: () => flag("vl.mock.clips.ffmpeg") !== "none",
+  clip_export_trim: async ({ instanceId, id, inMs, outMs, deleteOriginal }) => {
+    const src = clips.find((c) => c.instance_id === instanceId && c.id === id);
+    if (!src) throw { kind: "not_found", message: "Nicht gefunden: Clip" };
+    await new Promise((r) => setTimeout(r, 900));
+    const a = Number(inMs);
+    const b = Number(outMs);
+    const start = src.keyframes_ms.filter((k) => k <= a).pop() ?? (src.keyframes_ms.length ? 0 : a);
+    const out = clip(src.instance_id, Date.now(), "edit", {
+      ...src,
+      id: idAt(Date.now(), "edit"),
+      created_at: Date.now(),
+      reason: "edit",
+      source_id: src.id,
+      duration_ms: b - start,
+      size_bytes: Math.round(((src.size_bytes ?? 0) * (b - start)) / Math.max(1, src.duration_ms ?? 1)),
+      keyframes_ms: src.keyframes_ms.filter((k) => k >= start && k < b).map((k) => k - start),
+      cuts_ms: src.cuts_ms.filter((k) => k >= start && k < b).map((k) => k - start),
+      events: src.events.filter((e) => e.t_ms >= start && e.t_ms < b).map((e) => ({ ...e, t_ms: e.t_ms - start })),
+      highlight_ms: src.highlight_ms !== null && src.highlight_ms >= start && src.highlight_ms < b ? src.highlight_ms - start : null,
+      rewind: false,
+      trim_hint: null,
+      trim: null,
+      kept: false,
+    });
+    clips = [out, ...clips.filter((c) => !(deleteOriginal && c.instance_id === src.instance_id && c.id === src.id))];
+    changed(src.instance_id);
+    return { clip: out, start_ms: start, original_deleted: !!deleteOriginal };
   },
   clip_open_folder: () => null,
   clips_watch: () => null,

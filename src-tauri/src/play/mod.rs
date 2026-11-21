@@ -5,6 +5,7 @@
 //!   Discord-Status und „Einladungslink kopieren“.
 //! - `join`: Link laden, passende Instanz finden oder anlegen, danach startet das Frontend per Quick Play.
 pub mod join;
+pub mod skin_bridge;
 
 use crate::content::index::ContentIndex;
 use crate::content::Source;

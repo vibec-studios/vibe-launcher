@@ -8,12 +8,12 @@ use std::future::Future;
 use std::path::PathBuf;
 use tauri::State;
 
-fn texture_cache(st: &AppState) -> PathBuf {
+pub(crate) fn texture_cache(st: &AppState) -> PathBuf {
     st.paths.cache().join("textures")
 }
 
 /// Profil-Aktion mit gültigem Token ausführen; bei 401 einmal neu anmelden (Refresh) und wiederholen.
-async fn with_token<F, Fut>(st: &AppState, account_id: Option<&str>, f: F) -> AppResult<(String, RawProfile)>
+pub(crate) async fn with_token<F, Fut>(st: &AppState, account_id: Option<&str>, f: F) -> AppResult<(String, RawProfile)>
 where
     F: Fn(reqwest::Client, String) -> Fut,
     Fut: Future<Output = AppResult<RawProfile>>,
@@ -79,7 +79,12 @@ pub async fn skin_upload_file(state: State<'_, AppState>, account_id: Option<Str
 /// Skin aus der Bibliothek setzen (`variant = None` -> Variante des Eintrags).
 #[tauri::command]
 pub async fn skin_apply_library(state: State<'_, AppState>, account_id: Option<String>, id: String, variant: Option<SkinVariant>) -> AppResult<SkinProfile> {
-    let st = state.inner().clone();
+    apply_library(state.inner(), account_id, id, variant).await
+}
+
+/// Wie `skin_apply_library`, auch für die Skin-Brücke des Vibey Clients (`play::skin_bridge`).
+pub(crate) async fn apply_library(state: &AppState, account_id: Option<String>, id: String, variant: Option<SkinVariant>) -> AppResult<SkinProfile> {
+    let st = state.clone();
     let (png, lib_variant) = st.auth.skins.bytes(&id)?;
     let variant = variant.unwrap_or(lib_variant);
     let (acc, mut raw) = with_token(&st, account_id.as_deref(), |c, t| {

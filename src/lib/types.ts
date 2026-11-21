@@ -967,6 +967,30 @@ export interface Clip {
   kept: boolean;
   title: string | null;
   tags: string[];
+  /** Keyframe-Startzeiten ab Clipbeginn (Schnitt ohne Neukodierung beginnt an einem davon); leer bei älteren Clips */
+  keyframes_ms: number[];
+  /** Sprungschnitte (Aufnahme pausiert) – nur Anzeige */
+  cuts_ms: number[];
+  /** Langer Rückblick (bis 10 min) */
+  rewind: boolean;
+  /** Schnittvorschlag des Spiels */
+  trim_hint: TrimRange | null;
+  /** Gespeicherter Schnitt des Nutzers (nicht-destruktiv) */
+  trim: TrimRange | null;
+  /** Bei reason "edit": Id des Originals */
+  source_id: string | null;
+}
+
+export interface TrimRange {
+  in_ms: number;
+  out_ms: number;
+}
+
+export interface ClipExport {
+  clip: Clip;
+  /** Tatsächlicher Start (letzter Keyframe vor dem Wunschstart) */
+  start_ms: number;
+  original_deleted: boolean;
 }
 
 /** Änderbare Felder (nur diese darf der Launcher schreiben). Leerer Titel / leere Tags entfernen das Feld. */
@@ -1254,6 +1278,33 @@ export interface Server {
   last_started: number | null;
   /** Instanz, aus der der Server erstellt wurde */
   source_instance: string | null;
+  /** Sprachchat (Simple Voice Chat) über den Relay */
+  voice?: boolean;
+  /** Bedrock-Freunde (Geyser + Floodgate) über den Relay */
+  bedrock?: boolean;
+}
+
+export interface ServerExtras {
+  voice: boolean;
+  bedrock: boolean;
+  voice_supported: boolean;
+  bedrock_supported: boolean;
+  voice_installed: boolean;
+  bedrock_installed: boolean;
+}
+
+export interface UdpChannel {
+  host: string;
+  port: number;
+  address: string;
+}
+
+/** Sprachchat/Bedrock über den Relay: waiting | connecting | ok | blocked | unavailable | off */
+export interface UdpStatus {
+  state: "waiting" | "connecting" | "ok" | "blocked" | "unavailable" | "off";
+  voice: UdpChannel | null;
+  bedrock: UdpChannel | null;
+  denied: { channel: string; code: "disabled" | "no_port" | "limit" | string }[];
 }
 
 export type ServerRunState = "stopped" | "starting" | "running" | "stopping" | "crashed";
@@ -1269,6 +1320,8 @@ export interface TunnelStatus {
   claim_url: string | null;
   /** Fehler-/Hinweistext (deutsch) */
   message: string | null;
+  /** Sprachchat/Bedrock über den Relay */
+  udp?: UdpStatus | null;
 }
 
 /** Payload von `server://status` */

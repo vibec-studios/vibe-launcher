@@ -101,7 +101,7 @@ async fn api(state: &AppState, path: &str, body: Value, secret: Option<&str>) ->
 fn set(state: &AppState, id: &str, st: TunnelState, address: Option<String>, claim: Option<String>, msg: Option<String>) {
     state
         .server_mgr
-        .set_tunnel(id, Some(TunnelStatus { kind: ServerConnection::Playit, state: st, address, claim_url: claim, message: msg }));
+        .set_tunnel(id, Some(TunnelStatus { kind: ServerConnection::Playit, state: st, address, claim_url: claim, message: msg, udp: None }));
 }
 
 /// Claim-Ablauf: Link anzeigen, auf Bestätigung warten, Secret speichern.

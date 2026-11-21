@@ -164,6 +164,14 @@ const rawOf = (id: string) => "#Minecraft server properties\n#" + new Date().toU
 
 // ------------------------------------------------------------------ Simulation
 
+function extrasOf(s: Server) {
+  const p = s.platform?.kind;
+  const l = s.loader.kind;
+  const voice_supported = p ? p !== "folia" : ["fabric", "quilt", "neoforge", "forge"].includes(l);
+  const bedrock_supported = p ? p !== "folia" : ["fabric", "neoforge"].includes(l);
+  return { voice: !!s.voice, bedrock: !!s.bedrock, voice_supported, bedrock_supported, voice_installed: !!s.voice, bedrock_installed: !!s.bedrock };
+}
+
 function tunnelFor(s: Server): TunnelStatus | null {
   if (s.connection === "local") return null;
   return { kind: s.connection, state: "connecting", address: null, claim_url: null, message: null };
@@ -188,8 +196,23 @@ function startTunnel(id: string) {
     } else {
       const addr = relayAddr.get(id) ?? `relay.axolite.cc:${40000 + Math.floor(Math.random() * 9999)}`;
       relayAddr.set(id, addr);
-      setStatus(id, { tunnel: { kind: "relay", state: "online", address: addr, claim_url: null, message: null } });
+      const host = addr.split(":")[0].replace(/^relay\./, "mossy-otter-27.");
+      const wantsUdp = !!(s.voice || s.bedrock);
+      const udp = wantsUdp
+        ? {
+            state: "connecting" as const,
+            voice: s.voice ? { host, port: 24454, address: `${host}:24454` } : null,
+            bedrock: s.bedrock ? { host, port: 19207, address: `${host}:19207` } : null,
+            denied: [],
+          }
+        : null;
+      setStatus(id, { tunnel: { kind: "relay", state: "online", address: addr, claim_url: null, message: null, udp } });
       log(id, `Relay verbunden: ${addr}`, "launcher");
+      if (udp)
+        setTimeout(() => {
+          const t = status(id).tunnel;
+          if (t?.udp) setStatus(id, { tunnel: { ...t, udp: { ...t.udp, state: "ok" } } });
+        }, 1500);
     }
   }, 1400);
 }
@@ -369,6 +392,17 @@ function addonDefaults(plugins: boolean): MockAddon[] {
 
 const handlers: Handlers = {
   servers_list: () => [...servers.values()],
+  server_extras_get: ({ id }) => extrasOf(servers.get(String(id))!),
+  server_extras_set: async ({ id, voice, bedrock }) => {
+    const s = servers.get(String(id));
+    if (!s) throw { kind: "not_found", message: "Server" };
+    if (status(s.id).state !== "stopped" && status(s.id).state !== "crashed") throw { kind: "invalid", message: "Bitte den Server zuerst stoppen." };
+    await new Promise((r) => setTimeout(r, 1200));
+    const next = { ...s, voice: typeof voice === "boolean" ? voice : s.voice, bedrock: typeof bedrock === "boolean" ? bedrock : s.bedrock };
+    servers.set(s.id, next);
+    mockEmit("servers://changed", next);
+    return extrasOf(next);
+  },
   server_get: ({ id }) => get(id),
   server_create: ({ req }) => {
     const r = req as ServerCreate;

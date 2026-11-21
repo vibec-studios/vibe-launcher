@@ -7,12 +7,12 @@ import { CircleHelp, Clapperboard, Eye, FolderOpen, Play, RefreshCw, Star, Trash
 import { openHelp } from "@/features/help/store";
 import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
-import type { Clip } from "@/lib/types";
+import type { Clip, ClipExport } from "@/lib/types";
 import { formatBytes } from "@/lib/format";
 import { Button, ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, PageToolbar, Segmented, Select, Skeleton, ToolbarMeta, Tooltip, cn, confirm, toast } from "@/components/ui";
 import { useLang, useT } from "@/i18n";
 import { AUTO_REASONS, ClipThumb, ReasonIcon, clipName, clipWhere, clipsKey, formatClipLength, reasonColor, reasonKey, useClips } from "./clips";
-import { ClipPlayer } from "./ClipPlayer";
+import { ClipPlayer, RewindTag } from "./ClipPlayer";
 import { bucket } from "./shots";
 
 const ALL = "__all";
@@ -72,6 +72,7 @@ const ClipTile = memo(function ClipTile({
             <ReasonIcon reason={clip.reason} size={11} />
             {t(reasonKey(clip.reason))}
           </span>
+          {clip.rewind && <RewindTag className="pointer-events-none absolute bottom-2 left-2 bg-black/70" />}
           <span className="pointer-events-none absolute bottom-2 right-2 rounded-xs bg-black/70 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-[#fff]">
             {formatClipLength(clip.duration_ms)}
           </span>
@@ -194,6 +195,19 @@ export function ClipsView({
 
   const onOpen = useCallback((c: Clip) => setOpen({ instance_id: c.instance_id, id: c.id }), []);
 
+  const onExported = useCallback(
+    (r: ClipExport) => {
+      qc.setQueryData<Clip[]>(clipsKey, (l) => {
+        const rest = (l ?? []).filter((x) => !(x.instance_id === r.clip.instance_id && (x.id === r.clip.id || (r.original_deleted && x.id === r.clip.source_id))));
+        return [r.clip, ...rest];
+      });
+      setKind("all");
+      setOpen({ instance_id: r.clip.instance_id, id: r.clip.id });
+      qc.invalidateQueries({ queryKey: ["clips"] });
+    },
+    [qc],
+  );
+
   const filterOptions = [
     { value: ALL, label: t("shots.all_instances"), hint: String(all.length) },
     ...instances.filter((i) => counts.has(i.id) || i.id === instance).map((i) => ({ value: i.id, label: i.name, hint: String(counts.get(i.id) ?? 0) })),
@@ -305,7 +319,7 @@ export function ClipsView({
         )}
       </div>
 
-      <ClipPlayer clip={current} instanceName={instanceName} onClose={() => setOpen(null)} onChanged={replace} onDelete={onDelete} />
+      <ClipPlayer clip={current} instanceName={instanceName} onClose={() => setOpen(null)} onChanged={replace} onDelete={onDelete} onExported={onExported} />
     </div>
   );
 }

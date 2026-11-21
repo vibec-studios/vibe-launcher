@@ -450,3 +450,17 @@ pub async fn server_addon_remove(state: State<'_, AppState>, id: String, file: S
     let s = state.servers.get(&id)?;
     plugins::remove(&state, &s, &file)
 }
+
+/// Sprachchat/Bedrock-Status eines Servers (Vertrag 04/28).
+#[tauri::command]
+pub async fn server_extras_get(state: State<'_, AppState>, id: String) -> AppResult<crate::server::extras::ExtrasInfo> {
+    let s = state.servers.get(&id)?;
+    Ok(crate::server::extras::info(&state, &s).await)
+}
+
+/// Sprachchat (Simple Voice Chat) bzw. Bedrock (Geyser + Floodgate) ein-/ausschalten: installiert bzw. deaktiviert die
+/// Erweiterungen über Modrinth. Nur bei gestopptem Server.
+#[tauri::command]
+pub async fn server_extras_set(state: State<'_, AppState>, id: String, voice: Option<bool>, bedrock: Option<bool>) -> AppResult<crate::server::extras::ExtrasInfo> {
+    crate::server::extras::set(&state, &id, voice, bedrock).await
+}

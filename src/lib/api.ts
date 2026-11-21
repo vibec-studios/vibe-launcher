@@ -268,10 +268,21 @@ export const api = {
   clipUpdate: (instanceId: string, id: string, patch: T.ClipPatch) =>
     call<T.Clip>("clip_update", { instanceId, id, kept: patch.kept ?? null, title: patch.title ?? null, tags: patch.tags ?? null }),
   clipDelete: (instanceId: string, id: string) => call<void>("clip_delete", { instanceId, id }),
+  /** Schnitt nicht-destruktiv speichern (`trim` im Clip-JSON); null entfernt ihn */
+  clipSetTrim: (instanceId: string, id: string, trim: T.TrimRange | null) => call<T.Clip>("clip_set_trim", { instanceId, id, trim }),
+  /** Gibt es ein FFmpeg (vom Vibey Client geladen oder im PATH) für den Export? */
+  clipExportAvailable: (instanceId: string, id: string) => call<boolean>("clip_export_available", { instanceId, id }),
+  /** Bereich ohne Neukodierung als neuen Clip speichern (reason "edit") */
+  clipExportTrim: (instanceId: string, id: string, inMs: number, outMs: number, deleteOriginal = false) =>
+    call<T.ClipExport>("clip_export_trim", { instanceId, id, inMs, outMs, deleteOriginal }),
   /** Mit id: Video im Explorer markieren, sonst den Clip-Ordner öffnen */
   clipOpenFolder: (instanceId: string, id?: string | null) => call<void>("clip_open_folder", { instanceId, id: id ?? null }),
   /** Ordner-Polling an (verlängert ~25 s) bzw. aus; sendet dann `clips://changed` */
   clipsWatch: (active: boolean) => call<void>("clips_watch", { active }),
+  serverExtrasGet: (id: string) => call<T.ServerExtras>("server_extras_get", { id }),
+  /** Sprachchat/Bedrock ein-/ausschalten (installiert bzw. deaktiviert die Erweiterungen) */
+  serverExtrasSet: (id: string, patch: { voice?: boolean; bedrock?: boolean }) =>
+    call<T.ServerExtras>("server_extras_set", { id, voice: patch.voice ?? null, bedrock: patch.bedrock ?? null }),
 
   // ---------------------------------------------------------------- Plattform (Crash-Analyse, Server, Statistik …)
   crashAnalyze: (instanceId: string, crashReport?: string | null, exitCode?: number | null) =>

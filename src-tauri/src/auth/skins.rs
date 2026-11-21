@@ -80,6 +80,17 @@ pub struct LibrarySkin {
     pub data_url: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct BridgeSkin {
+    pub id: String,
+    pub name: String,
+    pub variant: SkinVariant,
+    pub path: PathBuf,
+    pub sha1: String,
+    pub added_at: i64,
+    pub cape_id: Option<String>,
+}
+
 // ------------------------------------------------------------------ Rohformat der API
 
 #[derive(Debug, Deserialize)]
@@ -414,6 +425,20 @@ impl Library {
     /// Skin hinzufügen. Gleiche Datei (SHA-1) schon vorhanden -> vorhandenen Eintrag zurückgeben.
     pub fn add(&self, png: &[u8], name: &str, variant: SkinVariant, source: Option<String>) -> AppResult<LibrarySkin> {
         self.add_with(png, name, variant, source, None)
+    }
+
+    /// Einträge für die Skin-Brücke (`play::skin_bridge`): neueste zuerst, mit Pfad und SHA-1 der PNG.
+    pub fn bridge_entries(&self) -> Vec<BridgeSkin> {
+        let mut items = self.items.lock().clone();
+        items.sort_by_key(|s| std::cmp::Reverse(s.added_at));
+        items
+            .into_iter()
+            .filter_map(|s| {
+                let path = self.dir.join(&s.file);
+                let sha1 = if s.sha1.is_empty() { hex::encode(Sha1::digest(std::fs::read(&path).ok()?)) } else { s.sha1.clone() };
+                path.is_file().then(|| BridgeSkin { id: s.id, name: s.name, variant: s.variant, path, sha1, added_at: s.added_at, cape_id: s.cape_id })
+            })
+            .collect()
     }
 
     /// SHA-1 aller Bibliotheks-Skins (Duplikaterkennung beim Import).
