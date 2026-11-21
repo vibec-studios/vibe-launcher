@@ -1,37 +1,26 @@
 // „Neuer Server“ als Assistent: 1. Art (aus Instanz, Vanilla, Mods, Plugins) · 2. Version bzw. Instanz · 3. Name & Leistung.
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, ArrowRight, Box, Copy, Info, Plug, Puzzle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Info } from "lucide-react";
 import { api } from "@/lib/api";
 import { useServers, useSystemInfo, useJavaInstances } from "@/lib/queries";
 import type { LoaderKind, ServerCreate } from "@/lib/types";
-import { formatLoader, instanceAccent, loaderColors, loaderNames } from "@/lib/format";
+import { formatLoader, loaderNames } from "@/lib/format";
 import { Button, Dialog, Field, Input, Select, toast } from "@/components/ui";
-import { VersionPicker, type VersionValue } from "@/components/instance/VersionPicker";
-import { InstanceIcon } from "@/components/instance/InstanceIcon";
+import type { VersionValue } from "@/components/instance/VersionPicker";
 import { useT } from "@/i18n";
-import { PlatformPicker, type PlatformValue } from "./PlatformPicker";
+import type { PlatformValue } from "./PlatformPicker";
 import { platformNames } from "./addonsApi";
-import { ChoiceCard } from "./new/ChoiceCard";
 import { StepBar } from "./new/StepBar";
 import { FromInstance, NEW_WORLD } from "./new/FromInstance";
 import { AdvancedPort, RamField } from "./new/Resources";
+import { KindStep } from "./new/KindStep";
+import { PluginStep } from "./new/PluginStep";
+import { SummaryCard } from "./new/SummaryCard";
+import { VersionStep } from "./new/VersionStep";
+import { DEFAULT_PORT, DEFAULT_RAM, suggestName, suggestPluginName, type Kind } from "./new/utils";
 import { TargetField } from "@/features/remote/TargetField";
 import { remoteServerCreate } from "@/features/remote/dispatch";
-
-type Kind = "instance" | "vanilla" | "mods" | "plugins";
-const DEFAULT_PORT = 25565;
-const DEFAULT_RAM = 2048;
-const MOD_LOADERS: Exclude<LoaderKind, "vanilla">[] = ["fabric", "neoforge", "forge", "quilt"];
-
-function suggestPluginName(p: PlatformValue): string {
-  return p.mc ? `${platformNames[p.kind]}-Server ${p.mc}` : "";
-}
-
-function suggestName(v: VersionValue): string {
-  if (!v.mc) return "";
-  return v.loader === "vanilla" ? `Server ${v.mc}` : `${loaderNames[v.loader]}-Server ${v.mc}`;
-}
 
 export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: boolean; fromInstance: string | null; onOpenChange: (o: boolean) => void }) {
   const t = useT();
@@ -200,86 +189,11 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
       >
         <StepBar steps={steps} current={step} onJump={busy ? undefined : setStep} />
 
-        {step === 0 && (
-          <div className="flex flex-col gap-3">
-            <h3 className="text-[15px] font-semibold text-text">{t("uic.srv.kind.q")}</h3>
-            <div role="radiogroup" aria-label={t("uic.srv.kind.q")} className="grid grid-cols-2 gap-3 max-[700px]:grid-cols-1">
-              <ChoiceCard
-                icon={<Copy size={20} />}
-                title={t("uic.srv.kind.instance")}
-                text={instances.length ? t("uic.srv.kind.instance.text") : t("uic.srv.kind.instance.none")}
-                selected={kind === "instance"}
-                disabled={!instances.length}
-                onSelect={() => pickKind("instance")}
-              />
-              <ChoiceCard icon={<Box size={20} />} title="Vanilla" text={t("uic.srv.kind.vanilla.text")} selected={kind === "vanilla"} onSelect={() => pickKind("vanilla")} />
-              <ChoiceCard icon={<Puzzle size={20} />} title={t("uic.srv.kind.mods")} text={t("uic.srv.kind.mods.text")} selected={kind === "mods"} onSelect={() => pickKind("mods")} />
-              <ChoiceCard icon={<Plug size={20} />} title={t("uic.srv.kind.plugins")} text={t("uic.srv.kind.plugins.text")} selected={kind === "plugins"} onSelect={() => pickKind("plugins")} />
-            </div>
-          </div>
-        )}
+        {step === 0 && <KindStep kind={kind} hasInstances={instances.length > 0} pickKind={pickKind} />}
 
-        {step === 1 && kind === "plugins" && (
-          <PlatformPicker
-            value={plat}
-            onChange={setPlat}
-            listHeight={292}
-            render={({ platform, list, build, hint }) => (
-              <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-7 max-[700px]:grid-cols-1">
-                {list}
-                <div className="flex flex-col gap-5">
-                  {platform}
-                  {build}
-                  <div className="flex items-start gap-2 text-dim">
-                    <Info size={13} className="mt-0.5 shrink-0" />
-                    {hint}
-                  </div>
-                </div>
-              </div>
-            )}
-          />
-        )}
+        {step === 1 && kind === "plugins" && <PluginStep plat={plat} setPlat={setPlat} />}
 
-        {step === 1 && (kind === "vanilla" || kind === "mods") && (
-          <VersionPicker
-            value={ver}
-            onChange={setVer}
-            listHeight={292}
-            render={({ list, loaderVersion }) => (
-              <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-7 max-[700px]:grid-cols-1">
-                {list}
-                <div className="flex flex-col gap-5">
-                  {kind === "mods" ? (
-                    <>
-                      <div className="flex flex-col gap-1.5">
-                        <span className="label">{t("newinst.loader")}</span>
-                        <div role="radiogroup" aria-label={t("newinst.loader")} className="grid grid-cols-2 gap-2">
-                          {MOD_LOADERS.map((l) => (
-                            <ChoiceCard
-                              key={l}
-                              compact
-                              icon={<span className="h-2.5 w-2.5 rounded-dot" style={{ background: loaderColors[l] }} />}
-                              title={loaderNames[l]}
-                              selected={ver.loader === l}
-                              onSelect={() => pickLoader(l)}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-[12px] leading-relaxed text-dim">{t("uic.srv.loader.hint")}</p>
-                      </div>
-                      {loaderVersion}
-                    </>
-                  ) : (
-                    <div className="flex items-start gap-3 rounded-card border border-line bg-surface px-4 py-3.5">
-                      <Info size={15} className="mt-0.5 shrink-0 text-muted" />
-                      <p className="text-[12.5px] leading-relaxed text-muted">{t("uic.srv.vanilla.hint")}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          />
-        )}
+        {step === 1 && (kind === "vanilla" || kind === "mods") && <VersionStep kind={kind} ver={ver} setVer={setVer} pickLoader={pickLoader} />}
 
         {step === 1 && kind === "instance" && (
           <div className="flex flex-col gap-5">
@@ -330,19 +244,7 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
               <TargetField value={target} onChange={setTarget} localOnly={kind === "instance"} />
             </div>
             <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3.5">
-                {kind === "instance" && inst ? (
-                  <InstanceIcon icon={inst.icon} seed={inst.id} accent={instanceAccent(inst.id, inst.accent)} size={40} />
-                ) : (
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl bg-surface2 text-muted">
-                    {kind === "plugins" ? <Plug size={18} /> : kind === "mods" ? <Puzzle size={18} /> : <Box size={18} />}
-                  </span>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13.5px] font-semibold text-text">{name.trim() || t("srv.new.name_placeholder")}</div>
-                  <div className="truncate text-[12.5px] text-muted">{summary}</div>
-                </div>
-              </div>
+              <SummaryCard kind={kind} inst={inst} name={name} summary={summary} />
               <p className="flex items-start gap-2 text-[12.5px] leading-relaxed text-muted">
                 <Info size={14} className="mt-0.5 shrink-0" />
                 {t("uic.srv.after")}
