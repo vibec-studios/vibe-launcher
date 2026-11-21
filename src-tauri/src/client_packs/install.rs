@@ -14,9 +14,6 @@ pub fn precheck(state: &AppState, instance_id: &str, pack_id: &str, replace: boo
     if !d.loaders.contains(&inst.loader.kind) {
         return Err(AppError::Invalid("Dieses Pack passt nicht zum Loader der Instanz.".into()));
     }
-    if d.source == PackSource::Vibey {
-        crate::vibe::ensure(state, crate::vibe::Feature::Any)?;
-    }
     ensure_idle(state, instance_id)?;
     let others = to_replace(pack_id, &installed_ids(state, instance_id));
     if !others.is_empty() && !replace {
@@ -35,7 +32,6 @@ pub async fn install(state: AppState, task: TaskHandle, instance_id: String, pac
     task.check()?;
     let inst = state.instances.get(&instance_id)?;
     match d.source {
-        PackSource::Vibey => vibey_client::install::enable(state.clone(), task, instance_id).await,
         PackSource::Norisk(flavor) => install_norisk(&state, &task, &inst, d, flavor).await,
         PackSource::Modrinth(projects) => install_modrinth(&state, &task, &inst, d, projects).await,
     }
@@ -43,7 +39,6 @@ pub async fn install(state: AppState, task: TaskHandle, instance_id: String, pac
 
 pub fn pretty(id: &str) -> &'static str {
     match id {
-        "vibey" => "Vibey Client",
         "norisk" => "NoRisk Client",
         "norisk-mini" => "NoRisk Mini",
         "essential" => "Essential",
@@ -161,9 +156,6 @@ pub async fn remove(state: &AppState, instance_id: &str, pack_id: &str) -> AppRe
     let d = def(pack_id).ok_or_else(|| AppError::NotFound(format!("Client-Pack {pack_id}")))?;
     state.instances.get(instance_id)?;
     ensure_idle(state, instance_id)?;
-    if d.source == PackSource::Vibey {
-        return vibey_client::install::disable(state, instance_id).await;
-    }
     let mut st = load(state, instance_id);
     let Some(rec) = st.remove(pack_id) else { return Ok(()) };
     let mut names: Vec<String> = Vec::new();

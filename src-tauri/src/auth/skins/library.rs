@@ -92,20 +92,6 @@ impl Library {
         self.add_with(png, name, variant, source, None)
     }
 
-    /// Einträge für die Skin-Brücke (`play::skin_bridge`): neueste zuerst, mit Pfad und SHA-1 der PNG.
-    pub fn bridge_entries(&self) -> Vec<BridgeSkin> {
-        let mut items = self.items.lock().clone();
-        items.sort_by_key(|s| std::cmp::Reverse(s.added_at));
-        items
-            .into_iter()
-            .filter_map(|s| {
-                let path = self.dir.join(&s.file);
-                let sha1 = if s.sha1.is_empty() { hex::encode(Sha1::digest(std::fs::read(&path).ok()?)) } else { s.sha1.clone() };
-                path.is_file().then(|| BridgeSkin { id: s.id, name: s.name, variant: s.variant, path, sha1, added_at: s.added_at, cape_id: s.cape_id })
-            })
-            .collect()
-    }
-
     /// SHA-1 aller Bibliotheks-Skins (Duplikaterkennung beim Import).
     pub fn sha1s(&self) -> std::collections::HashSet<String> {
         self.items.lock().iter().map(|s| s.sha1.clone()).filter(|s| !s.is_empty()).collect()

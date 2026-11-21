@@ -82,8 +82,8 @@ pub async fn skin_apply_library(state: State<'_, AppState>, account_id: Option<S
     apply_library(state.inner(), account_id, id, variant).await
 }
 
-/// Wie `skin_apply_library`, auch für die Skin-Brücke des Vibey Clients (`play::skin_bridge`).
-pub(crate) async fn apply_library(state: &AppState, account_id: Option<String>, id: String, variant: Option<SkinVariant>) -> AppResult<SkinProfile> {
+/// Körper von `skin_apply_library`.
+async fn apply_library(state: &AppState, account_id: Option<String>, id: String, variant: Option<SkinVariant>) -> AppResult<SkinProfile> {
     let st = state.clone();
     let (png, lib_variant) = st.auth.skins.bytes(&id)?;
     let variant = variant.unwrap_or(lib_variant);

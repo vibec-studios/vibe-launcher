@@ -55,7 +55,7 @@ fn instance_file_contract() {
     idx.files.insert("mods/sodium.jar".into(), entry(Source::Modrinth, "AANobbMI", "xyz"));
     idx.files.insert("resourcepacks/fa.zip".into(), entry(Source::Curseforge, "123", "456"));
     idx.files.insert("mods/store.jar".into(), entry(Source::store("x"), "s", "v"));
-    let f = build_instance_file(&i, &idx, Some("vibey".into()));
+    let f = build_instance_file(&i, &idx, Some("essential".into()));
     let v = serde_json::to_value(&f).unwrap();
     assert_eq!(
         v,
@@ -67,7 +67,7 @@ fn instance_file_contract() {
                 { "source": "curseforge", "project_id": "123", "version_id": "456", "kind": "resourcepack" },
                 { "source": "modrinth", "project_id": "AANobbMI", "version_id": "xyz", "kind": "mod" }
             ],
-            "client_pack": "vibey"
+            "client_pack": "essential"
         })
     );
     // ohne Modpack: pack = null

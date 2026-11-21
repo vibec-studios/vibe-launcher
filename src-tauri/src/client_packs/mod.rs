@@ -3,13 +3,13 @@
 //! - **Definition** (`PACKS`): ID, Kategorie (offiziell/Community), Quelle (Vibe-Backend, NoRisk-Liste,
 //!   Modrinth-Projekte), Ausschluss-Gruppe und Kompatibilitätsregeln (Loader). Neue Packs = ein Eintrag mehr;
 //!   Modrinth-Packs brauchen nur die Projekt-IDs.
-//! - **Ausschluss**: Packs derselben Gruppe (`client`: Vibey, NoRisk, NoRisk Mini) gehen nur einzeln. Vor dem
+//! - **Ausschluss**: Packs derselben Gruppe (`client`: NoRisk, NoRisk Mini, Essential) gehen nur einzeln. Vor dem
 //!   Installieren werden die anderen nach Bestätigung (in der Oberfläche) sauber entfernt.
-//! - **Zustand**: `instances/<id>/client-packs.json` (Version, Dateien, Modrinth-Projekte je Pack). Der Vibey
-//!   Client behält seinen eigenen Zustand (`vibey-client.json`, siehe `vibey_client::install`) und wird hier
-//!   nur eingebunden.
-//! - **Updates**: Vibey über das Manifest (wie bisher, auch still vor dem Start), NoRisk über den Jar-Namen hinter
-//!   dem offiziellen Link (nur auf Klick), Modrinth-Packs über die normalen Inhalts-Updates.
+//! - **Zustand**: `instances/<id>/client-packs.json` (Version, Dateien, Modrinth-Projekte je Pack).
+//! - **Updates**: NoRisk über den Jar-Namen hinter dem offiziellen Link (nur auf Klick), Modrinth-Packs über die
+//!   normalen Inhalts-Updates.
+//! - **Vibey Client** (eingestellt, docs/VIBEY-CLIENT-EINGESTELLT.md): kein Pack mehr. Alte `vibey-client.json` und
+//!   Jars in Instanzen bleiben unberührt; Einträge `"vibey"` in Play-Links gelten als unbekanntes Pack.
 pub mod commands;
 pub mod norisk;
 
@@ -19,7 +19,6 @@ use crate::error::{AppError, AppResult};
 use crate::instance::{Instance, LoaderKind};
 use crate::state::AppState;
 use crate::tasks::TaskHandle;
-use crate::vibey_client;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 

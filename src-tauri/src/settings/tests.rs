@@ -39,9 +39,10 @@ fn existing_data_skips_onboarding() {
 fn dismissed_notices() {
     let old: Settings = serde_json::from_str(r#"{"language":"de"}"#).unwrap();
     assert!(old.dismissed_notices.is_empty(), "alte Einstellungen: nichts weggeklickt");
-    let mut s: Settings = serde_json::from_str(r#"{"dismissed_notices":["domain-move-2026-11","domain-move-2026-11"," x ","böse id",""]}"#).unwrap();
+    let mut s: Settings =
+        serde_json::from_str(r#"{"dismissed_notices":["domain-move-2026-11","domain-move-2026-11"," x ","böse id","","vibey-eol:mein-pack-2","a:b:c",":x","x:"]}"#).unwrap();
     s.sanitize_notices();
-    assert_eq!(s.dismissed_notices, vec!["domain-move-2026-11".to_string(), "x".to_string()]);
+    assert_eq!(s.dismissed_notices, vec!["domain-move-2026-11".to_string(), "x".to_string(), "vibey-eol:mein-pack-2".to_string()]);
     s.dismissed_notices = (0..250).map(|i| format!("n{i}")).collect();
     s.sanitize_notices();
     assert_eq!(s.dismissed_notices.len(), 200);
@@ -146,6 +147,16 @@ fn appearance_customize_sanitize() {
     assert_eq!(a.status.warn, "#ffb547");
     assert_eq!(a.status.danger, "#ff0000");
     assert_eq!(a.effects.snow_amount, 10);
+}
+
+#[test]
+fn old_sidebar_with_cosmetics_still_loads() {
+    let mut a: Appearance = serde_json::from_str(r#"{"sidebar":{"order":["cosmetics","skins","home"],"hidden":["cosmetics","servers"]}}"#).unwrap();
+    a.sanitize();
+    assert!(!a.sidebar.order.iter().any(|k| k == "cosmetics"));
+    assert_eq!(a.sidebar.order[0], "skins");
+    assert_eq!(a.sidebar.order.len(), NAV_KEYS.len());
+    assert_eq!(a.sidebar.hidden, vec!["servers".to_string()]);
 }
 
 #[test]

@@ -26,10 +26,31 @@ behalten oder entfernen.“ „Entfernen“ fragt nach und entfernt den Client �
 Mod-Entfernen. Das Ausblenden wird je Instanz in `settings.dismissed_notices` (`vibey-eol:<id>`) gemerkt.
 Code: `src/features/instances/vibeyEol/`.
 
-## Noch offen (Rust)
+## Was aus dem Rust-Teil entfernt ist
 
-Die Befehle, Events und Hintergrundabläufe des Clients in `src-tauri/` (u. a. `vibey_client::*`, Clips, Skin-Brücke,
-Update vor dem Spielstart) werden in einem eigenen Schritt entfernt.
+- **`vibey_client/**`** (Verteilung über `/api/v1/client/latest`, Installation je Instanz, Cosmetics-Assets,
+  Einreichungen, Blockbench) mit allen 15 `vibey_*`-Befehlen.
+- **Update vor dem Spielstart** (`vibey_client::before_launch`): Der Launcher installiert oder aktualisiert den
+  Client nicht mehr still. Ein über den Hinweis entferntes Jar kommt also nicht zurück.
+- **Client-Pack „vibey“:** nicht mehr in `client_packs_list`. NoRisk, NoRisk Mini und Essential bleiben.
+- **Clips/Clip-Editor:** `clips_list`, `clip_update`, `clip_delete`, `clip_open_folder`, `clips_watch`,
+  `clip_set_trim`, `clip_export_available`, `clip_export_trim` und das Event `clips://changed`.
+- **Skin-Brücke** (`play::skin_bridge`, `.vibe/skins*.json`, `skin-request.json`). `skin_apply_library` bleibt.
+- **Seitenleiste:** `"cosmetics"` ist kein bekannter Eintrag mehr. Alte Einstellungen mit dem Schlüssel laden
+  weiter, er wird still verworfen.
+
+Bleibt im Rust-Teil: AFK (`afk/**`, lädt den Helfer weiter aus `vibec-studios/vibey-client`, siehe `AFK-AGENT.md`),
+`play_sessions` (liest `.vibe/session.json`, liefert ohne Client nichts mehr), `.vibe/instance.json` vor jedem Start,
+die Domain-Migration `*.vibey.henny.dev` und `client_pack_install`/`client_pack_remove`.
+
+### Alte Daten
+
+- `instances/<id>/vibey-client.json` und Vibey-Client-Jars bleiben unberührt; nichts wird automatisch gelöscht.
+- **Play-Links mit `client_pack: "vibey"`:** Die Vorschau zeigt kein Client-Pack an, die Einrichtung installiert
+  nichts und schreibt ins Instanz-Log „Der Einladende nutzt den Vibey Client. Den gibt es nicht mehr – du trittst
+  ohne ihn bei.“ Neue Links und `instance.json` nennen kein `"vibey"` mehr.
+- Weggeklickte Hinweise der Form `<art>:<id>` (z. B. `vibey-eol:<instanz>`) bleiben beim Speichern der
+  Einstellungen erhalten.
 
 ## Eingestellte Dokumente
 

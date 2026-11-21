@@ -31,7 +31,6 @@ pub mod tasks;
 pub mod updater;
 pub mod util;
 pub mod vibe;
-pub mod vibey_client;
 
 use state::AppState;
 use tauri::Manager;
@@ -100,7 +99,6 @@ pub fn run() {
             app.manage(state);
             platform::app_icon::apply(app.handle(), &appearance);
             platform::init(app.handle());
-            play::skin_bridge::init(app.handle());
             afk::init(app.handle());
             {
                 use tauri_plugin_deep_link::DeepLinkExt;

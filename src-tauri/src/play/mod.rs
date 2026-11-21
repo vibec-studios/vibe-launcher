@@ -1,11 +1,10 @@
 //! „Spiel mit mir“-Links (Vertrag: docs/PLAY-LINKS.md).
 //!
-//! - `<spielordner>/.vibe/instance.json` schreibt der Launcher vor jedem Start (§2), der Vibey Client liest sie.
-//! - `<spielordner>/.vibe/session.json` schreibt der Client, solange das Spiel läuft; der Launcher liest sie für den
+//! - `<spielordner>/.vibe/instance.json` schreibt der Launcher vor jedem Start (§2); gelesen hat sie der eingestellte Vibey Client.
+//! - `<spielordner>/.vibe/session.json` schrieb der Client, solange das Spiel lief; der Launcher liest sie weiter für den
 //!   Discord-Status und „Einladungslink kopieren“.
 //! - `join`: Link laden, passende Instanz finden oder anlegen, danach startet das Frontend per Quick Play.
 pub mod join;
-pub mod skin_bridge;
 
 use crate::content::index::ContentIndex;
 use crate::content::Source;

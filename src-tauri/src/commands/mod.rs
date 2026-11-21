@@ -14,8 +14,6 @@ pub mod minecraftcapes;
 pub mod platform;
 pub mod links;
 pub mod screenshots;
-pub mod clips;
-pub mod clip_edit;
 pub mod backups;
 pub mod files;
 pub mod vibe;

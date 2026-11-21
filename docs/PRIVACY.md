@@ -42,7 +42,7 @@ SHA-1-/Murmur2-Prüfsummen aller Inhaltsdateien, MC-Version, Loader), Status-Pin
 | Dienst | Daten | Schalter | Standard |
 |---|---|---|---|
 | GitHub `latest.json` | nur IP (Endpoint ohne Platzhalter, Vergleich lokal) | `check_updates` | an |
-| Vibe | Name, UUID, Presence, Activity, Chats; Ankündigungen mit Version + Sprache; Vibey-Client-Prüfung beim Start | `vibe.enabled`, `vibe.presence` usw. | **aus** (neu) |
+| Vibe | Name, UUID, Presence, Activity, Chats; Ankündigungen mit Version + Sprache | `vibe.enabled`, `vibe.presence` usw. | **aus** (neu) |
 | Discord RPC (lokale IPC) | Instanz, MC-Version, Loader, Server/Welt, Kopf-URL mc-heads.net | `discord_rpc`, `discord_details`, `discord_small` | an |
 | MinecraftCapes | eigene UUID | `minecraftcapes` | **aus** (neu) |
 | Relay / playit.gg | Name, UUID, Server-Einstellungen, Spielverkehr | je Server `connection`/`auto_start` | nur wenn eingerichtet |

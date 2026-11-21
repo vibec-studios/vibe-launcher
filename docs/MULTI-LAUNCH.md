@@ -31,7 +31,7 @@ Eine Instanz kann mehrmals gleichzeitig laufen. Der Launcher führt dafür **Sit
 
 ### Konflikte beim Mehrfachstart derselben Instanz
 
-- **Vorbereitung:** Auto-Update der Inhalte, Vibey-Client-Update und Welt-Backups laufen nur, wenn die
+- **Vorbereitung:** Auto-Update der Inhalte und Welt-Backups laufen nur, wenn die
   Instanz noch nicht läuft (sonst würden Dateien unter einem laufenden Spiel ersetzt). Installation/Natives
   sind bereits parallel-sicher (gesperrte Dateien bleiben stehen).
 - **Welt-Lock:** Quick-Play in eine Welt, die in einer anderen Sitzung offen ist, wird abgelehnt.
