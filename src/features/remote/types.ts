@@ -15,6 +15,8 @@ export interface RemoteAgent {
   role: string | null;
   online: boolean | null;
   last_seen: number | null;
+  gateway_id?: string | null;
+  disabled?: boolean | null;
   added_at: number;
   conn: AgentConn | null;
 }

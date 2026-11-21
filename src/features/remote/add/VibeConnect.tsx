@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { KeyRound, Link2 } from "lucide-react";
-import { Button, Spinner, toast } from "@/components/ui";
+import { Check, KeyRound, Link2 } from "lucide-react";
+import { Button, Input, Spinner, toast } from "@/components/ui";
 import { useKnownApproved } from "@/features/access/hooks";
 import { useVibe } from "@/lib/vibe";
 import { useT } from "@/i18n";
@@ -37,7 +37,9 @@ export function VibeConnect({ os, onDone }: { os: InstallOs; onDone: (a: RemoteA
   const vibe = useVibe();
   const approved = useKnownApproved();
   const all = useRemote((s) => s.agents);
-  const direct = useMemo(() => all.filter((a) => a.via === "direct" && !all.some((v) => v.via === "vibe" && v.id === a.id)), [all]);
+  const direct = useMemo(() => all.filter((a) => a.via === "direct" && !a.gateway_id && !all.some((v) => v.via === "vibe" && v.id === a.id)), [all]);
+  const [claimCode, setClaimCode] = useState("");
+  const claimOk = claimCode.replace(/[^a-z0-9]/gi, "").length === 8;
   const [code, setCode] = useState<LinkCode | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +60,21 @@ export function VibeConnect({ os, onDone }: { os: InstallOs; onDone: (a: RemoteA
         toast.success(t("rmt.vibe.linked"));
       }
       setCode(c);
+    } catch (e) {
+      setError((e as { message?: string })?.message ?? String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const claim = async () => {
+    setBusy("claim");
+    setError(null);
+    try {
+      await freshVibeToken();
+      const a = await remoteApi.vibeClaim(claimCode);
+      toast.success(t("rmt.done.title", { name: a.name }));
+      onDone(a);
     } catch (e) {
       setError((e as { message?: string })?.message ?? String(e));
     } finally {
@@ -109,6 +126,24 @@ export function VibeConnect({ os, onDone }: { os: InstallOs; onDone: (a: RemoteA
               </Button>
             </div>
           ))}
+        </div>
+      )}
+      {!code && (
+        <div className="flex flex-col gap-2 rounded-card bg-surface p-3.5">
+          <span className="text-[12.5px] leading-relaxed text-muted">{t("rmt.vibe.claim.lead")}</span>
+          <div className="flex items-center gap-2">
+            <Input
+              value={claimCode}
+              onChange={(e) => setClaimCode(e.target.value.toUpperCase())}
+              placeholder="K7Q2-M9XD"
+              maxLength={12}
+              className="max-w-[180px] font-mono tracking-wider"
+              onKeyDown={(e) => e.key === "Enter" && claimOk && void claim()}
+            />
+            <Button variant="ghost" icon={<Check size={14} />} disabled={!claimOk || !!busy} loading={busy === "claim"} onClick={() => void claim()}>
+              {t("rmt.vibe.claim")}
+            </Button>
+          </div>
         </div>
       )}
       {error && <p className="rounded-card bg-danger/10 px-3.5 py-2.5 text-[13px] text-danger">{error}</p>}

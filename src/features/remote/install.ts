@@ -12,7 +12,9 @@ export const INSTALL_COMMANDS: Record<InstallOs, string[]> = {
 };
 
 export function linkCommand(os: InstallOs, code: string): string {
-  return os === "docker" ? `docker exec vibe-agent vibe-agent link ${code}` : `vibe-agent link ${code}`;
+  if (os === "docker") return `docker exec vibe-agent vibe-agent link ${code}`;
+  if (os === "windows") return `& "$env:ProgramFiles\\Vibe Agent\\vibe-agent.exe" link ${code}`;
+  return `sudo vibe-agent link ${code}`;
 }
 
 export function groupFingerprint(fp: string): string[] {

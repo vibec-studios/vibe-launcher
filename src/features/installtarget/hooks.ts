@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { isServerActive, queryClient, useServers, useServerStatus } from "@/lib/queries";
 import { aqk } from "@/features/servers/addonsApi";
+import { remoteId } from "@/features/remote/ids";
 import "./local";
 import { localTargetInfo } from "./local";
 import { parseServerTargetKey, serverTargetKey, useTargetRegistry } from "./registry";
@@ -21,28 +22,40 @@ export function refreshTarget(t: Pick<ServerTargetInfo, "origin" | "id" | "key">
   void queryClient.invalidateQueries({ queryKey: ["target-addon-check", t.key] });
 }
 
-export function useServerTargets(): { targets: ServerTargetInfo[]; pending: boolean } {
+export function useServerTargets(): { targets: ServerTargetInfo[]; pending: boolean; fetching: boolean } {
   const local = useServers();
   const providers = useTargetRegistry((s) => s.providers);
   const remote = useMemo(() => Object.values(providers).filter((p): p is ServerTargetProvider => !!p && p.origin !== "local"), [providers]);
   const rq = useQueries({ queries: remote.map((p) => ({ queryKey: tqk.remoteList(p.origin), queryFn: () => p.list(), staleTime: 15_000 })) });
-  const targets = [...(local.data ?? []).map((s) => localTargetInfo(s)), ...rq.flatMap((q) => q.data ?? [])];
-  return { targets, pending: local.isPending };
+  const targets = [...(local.data ?? []).filter((s) => !s.remote).map((s) => localTargetInfo(s)), ...rq.flatMap((q) => q.data ?? [])];
+  return { targets, pending: local.isPending || rq.some((q) => q.isPending), fetching: local.isFetching || rq.some((q) => q.isFetching) };
+}
+
+export function refreshTargetLists() {
+  void queryClient.invalidateQueries({ queryKey: ["server-targets"] });
 }
 
 export function useServerTarget(key: string | undefined | null): { target: ServerTargetInfo | null; pending: boolean; missing: boolean } {
-  const { targets, pending } = useServerTargets();
+  const { targets, pending, fetching } = useServerTargets();
   const parsed = parseServerTargetKey(key);
   const k = parsed ? serverTargetKey(parsed) : null;
   const target = k ? (targets.find((t) => t.key === k) ?? null) : null;
-  return { target, pending, missing: !!k && !pending && !target };
+  const retried = useRef<string | null>(null);
+  const absent = !!k && !pending && !target;
+  useEffect(() => {
+    if (!absent || retried.current === k) return;
+    retried.current = k;
+    refreshTargetLists();
+  }, [absent, k]);
+  return { target, pending: pending || (absent && (retried.current !== k || fetching)), missing: absent && retried.current === k && !fetching };
 }
 
 export function useTargetRunning(t: ServerTargetInfo | null): boolean {
-  const st = useServerStatus(t?.origin === "local" ? t.id : "");
+  const sid = !t ? "" : t.origin === "local" ? t.id : remoteId(t.agentId ?? "", t.id);
+  const st = useServerStatus(sid);
   if (!t) return false;
-  if (t.origin === "local") return isServerActive(st);
-  return t.running;
+  if (st) return isServerActive(st);
+  return t.origin === "remote" && t.running;
 }
 
 export function providerOf(t: Pick<ServerTargetInfo, "origin">): ServerTargetProvider {

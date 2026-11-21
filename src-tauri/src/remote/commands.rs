@@ -1,5 +1,6 @@
 use super::http::{self, Body};
 use super::pair::{self, Probe};
+use super::upload::{self, Progress};
 use super::{store, vibe, ws, RemoteAgent, Via};
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
@@ -24,6 +25,22 @@ pub fn remote_agents(state: State<'_, AppState>) -> Vec<AgentView> {
     store::list(&state.paths).into_iter().map(view).collect()
 }
 
+async fn resolve_gateway_ids(state: &AppState) {
+    let all = store::list(&state.paths);
+    let unmatched = all.iter().any(|v| v.via == Via::Vibe && !all.iter().any(|d| d.gateway_id.as_deref() == Some(v.id.as_str())));
+    if !unmatched {
+        return;
+    }
+    let pending: Vec<RemoteAgent> = all.into_iter().filter(|a| a.via == Via::Direct && a.gateway_id.is_none()).collect();
+    let found = futures::future::join_all(pending.iter().map(|a| http::direct(state, a, "GET", "/agent/gateway", Body { json: None, text: None }, 4))).await;
+    for (a, r) in pending.iter().zip(found) {
+        let Ok(v) = r else { continue };
+        if let Some(gid) = v["agent_id"].as_str().filter(|g| super::valid_id(g)).map(str::to_string) {
+            let _ = store::update(&state.paths, &a.key, |x| x.gateway_id = Some(gid));
+        }
+    }
+}
+
 #[tauri::command]
 pub async fn remote_vibe_sync(state: State<'_, AppState>) -> AppResult<Vec<AgentView>> {
     let fresh = vibe::list(&state).await?;
@@ -31,7 +48,32 @@ pub async fn remote_vibe_sync(state: State<'_, AppState>) -> AppResult<Vec<Agent
     for a in store::list(&state.paths).into_iter().filter(|a| a.via == Via::Vibe && !keep.contains(&a.key)) {
         ws::disconnect(&a.key);
     }
-    Ok(store::replace_vibe(&state.paths, fresh)?.into_iter().map(view).collect())
+    store::replace_vibe(&state.paths, fresh)?;
+    resolve_gateway_ids(&state).await;
+    Ok(store::list(&state.paths).into_iter().map(view).collect())
+}
+
+#[tauri::command]
+pub async fn remote_vibe_claim(state: State<'_, AppState>, code: String, name: Option<String>) -> AppResult<AgentView> {
+    let agent = vibe::claim(&state, &code, name.as_deref()).await?;
+    let agent = store::upsert(&state.paths, agent)?;
+    Ok(view(agent))
+}
+
+#[tauri::command]
+pub async fn remote_upload_file(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    agent: String,
+    method: String,
+    path: String,
+    file: String,
+    content_type: Option<String>,
+    progress_id: Option<String>,
+) -> AppResult<Value> {
+    let a = store::get(&state.paths, &agent)?;
+    let ct = content_type.unwrap_or_else(|| "application/octet-stream".into());
+    upload::upload(&state, &a, &method, &path, std::path::Path::new(&file), &ct, Progress::new(app, progress_id, 0)).await
 }
 
 #[tauri::command]
@@ -58,7 +100,11 @@ pub async fn remote_gateway_link(state: State<'_, AppState>, agent: String, code
     if a.via != Via::Direct {
         return Err(AppError::Invalid("Dieser Server ist schon über Vibe verbunden.".into()));
     }
-    http::request(&state, &a, "POST", "/agent/gateway/link", Body { json: Some(json!({ "code": code })), text: None }).await
+    let v = http::request(&state, &a, "POST", "/agent/gateway/link", Body { json: Some(json!({ "code": code })), text: None }).await?;
+    if let Some(gid) = v["agent_id"].as_str().filter(|g| super::valid_id(g)).map(str::to_string) {
+        let _ = store::update(&state.paths, &agent, |x| x.gateway_id = Some(gid));
+    }
+    Ok(v)
 }
 
 #[tauri::command]

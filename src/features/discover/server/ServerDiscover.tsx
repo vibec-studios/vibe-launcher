@@ -375,6 +375,11 @@ function AddonRow({
           <span>{t("srv.addons.downloads", { n: formatCount(hit.downloads) })}</span>
           {hit.updated && <span>· {formatRelative(hit.updated)}</span>}
           <span>· {hit.source === "hangar" ? "Hangar" : "Modrinth"}</span>
+          {hit.compat && !hit.compat.ok && (
+            <span className="truncate text-warn" title={hit.compat.reason ?? undefined} data-testid="server-addon-compat">
+              · {t("st.compat.no")}
+            </span>
+          )}
         </div>
       </div>
       <div className="shrink-0" onClick={(e) => e.stopPropagation()}>

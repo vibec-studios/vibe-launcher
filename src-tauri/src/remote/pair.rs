@@ -115,6 +115,8 @@ pub async fn pair(state: &AppState, address: &str, code: &str, fingerprint: &str
             role: s(&v["user"]["role"]),
             online: Some(true),
             last_seen: Some(now_ms()),
+            gateway_id: prev.as_ref().and_then(|p| p.gateway_id.clone()),
+            disabled: None,
             added_at: prev.map(|p| p.added_at).unwrap_or_else(now_ms),
         },
     )

@@ -323,7 +323,7 @@ EnvironmentFile=-$CONF_FILE
 Environment=VIBE_AGENT_DATA_DIR=$DATA_DIR
 WorkingDirectory=$DATA_DIR
 ExecStart=$BIN_PATH run
-Restart=on-failure
+Restart=always
 RestartSec=5
 KillMode=mixed
 TimeoutStopSec=90

@@ -205,6 +205,19 @@ export function withRemote(base: Handlers): Handlers {
       return { code: "VIBE-7KQ2-M9XD", expires_at: Date.now() + 600_000 };
     },
     remote_gateway_link: (args) => request({ ...args, method: "POST", path: "/agent/gateway/link" }),
+    remote_vibe_claim: async ({ code }) => {
+      await delay(500);
+      if (String(code).replace(/[^a-z0-9]/gi, "").length !== 8) throw err("invalid", "Der Code ist falsch, schon benutzt oder abgelaufen.");
+      addVibeAgent("agt_claimed", "Mietserver");
+      return view(agents.get("v-agt_claimed")!);
+    },
+    remote_upload_file: async ({ agent: key, path }) => {
+      await delay(900);
+      const q = new URLSearchParams(String(path).split("?")[1] ?? "");
+      const id = q.get("server") ?? `ra-pack-${Date.now().toString(36)}`;
+      if (!q.get("server")) own(String(key), srv(id, q.get("name") ?? "Modpack-Server", { loader: { kind: "fabric", version: "0.16.9" } }));
+      return { server: { id }, task_id: `t-${id}` };
+    },
     remote_agent_rename: ({ agent: key, name }) => {
       const a = agents.get(String(key));
       if (!a) throw err("not_found", "weg");

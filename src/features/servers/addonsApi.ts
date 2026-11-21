@@ -72,6 +72,7 @@ export interface AddonHit {
   downloads: number;
   updated: string | null;
   page_url: string;
+  compat?: { ok: boolean; reason: string | null; version: string | null } | null;
 }
 
 export interface AddonSearch {

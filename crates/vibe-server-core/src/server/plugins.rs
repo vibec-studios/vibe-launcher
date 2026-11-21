@@ -39,22 +39,22 @@ pub struct AddonTarget {
 }
 
 pub fn target(s: &Server) -> Option<AddonTarget> {
-    let folder = s.addon_dir()?;
-    let (plugins, loaders, hangar): (bool, Vec<String>, Option<&'static str>) = match &s.platform {
-        Some(p) => (
-            true,
-            p.kind.plugin_loaders().iter().map(|l| l.to_string()).collect(),
-            (p.kind != super::platform::PlatformKind::Folia).then_some("PAPER"),
-        ),
+    target_for(&s.mc_version, s.loader.kind, s.platform.as_ref().map(|p| p.kind))
+}
+
+pub fn target_for(mc: &str, loader: LoaderKind, platform: Option<super::platform::PlatformKind>) -> Option<AddonTarget> {
+    let (folder, plugins, loaders, hangar): (&'static str, bool, Vec<String>, Option<&'static str>) = match platform {
+        Some(p) => ("plugins", true, p.plugin_loaders().iter().map(|l| l.to_string()).collect(), (p != super::platform::PlatformKind::Folia).then_some("PAPER")),
         None => {
-            let l: Vec<String> = match s.loader.kind {
+            let l: Vec<String> = match loader {
+                LoaderKind::Vanilla => return None,
                 LoaderKind::Quilt => vec!["quilt".into(), "fabric".into()],
                 k => vec![k.as_str().to_string()],
             };
-            (false, l, None)
+            ("mods", false, l, None)
         }
     };
-    Some(AddonTarget { folder, plugins, loaders, mc: s.mc_version.clone(), hangar })
+    Some(AddonTarget { folder, plugins, loaders, mc: mc.to_string(), hangar })
 }
 
 // ------------------------------------------------------------------ Herkunfts-Index

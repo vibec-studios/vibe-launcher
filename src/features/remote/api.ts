@@ -7,6 +7,9 @@ export const remoteApi = {
   probe: (address: string) => invoke<AgentProbe>("remote_probe", { address }),
   pair: (address: string, code: string, fingerprint: string) => invoke<RemoteAgent>("remote_pair", { address, code, fingerprint }),
   vibeLinkCode: () => invoke<LinkCode>("remote_vibe_link_code"),
+  vibeClaim: (code: string, name?: string) => invoke<RemoteAgent>("remote_vibe_claim", { code, name: name ?? null }),
+  upload: <T>(agent: string, method: string, path: string, file: string, contentType?: string, progressId?: string) =>
+    invoke<T>("remote_upload_file", { agent, method, path, file, contentType: contentType ?? null, progressId: progressId ?? null }),
   gatewayLink: (agent: string, code: string) => invoke<unknown>("remote_gateway_link", { agent, code }),
   rename: (agent: string, name: string) => invoke<RemoteAgent>("remote_agent_rename", { agent, name }),
   remove: (agent: string) => invoke<void>("remote_agent_remove", { agent }),

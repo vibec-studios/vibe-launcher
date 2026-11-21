@@ -22,7 +22,8 @@ pub fn prepare(args: &Args) -> AppResult<Prepared> {
 
 pub fn local_urls(cfg: &AgentConfig) -> Vec<String> {
     let scheme = if cfg.tls { "https" } else { "http" };
-    let mut hosts: Vec<String> = crate::tls::local_ips().into_iter().map(|ip| if ip.is_ipv6() { format!("[{ip}]") } else { ip.to_string() }).collect();
+    let loopback = cfg.bind.parse::<std::net::IpAddr>().is_ok_and(|ip| ip.is_loopback());
+    let mut hosts: Vec<String> = if loopback { Vec::new() } else { crate::tls::local_ips().into_iter().map(|ip| if ip.is_ipv6() { format!("[{ip}]") } else { ip.to_string() }).collect() };
     hosts.push("localhost".into());
     hosts.into_iter().map(|h| format!("{scheme}://{h}:{}/", cfg.port)).collect()
 }
