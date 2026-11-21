@@ -101,3 +101,14 @@
 :root[data-tone="light"] .mc-tooltip { color: #fff; }
 :root[data-tone="light"] .text-\[\#d6d6dc\] { color: var(--text-1); }
 :root[data-tone="light"] { --tag-l: 0.5; }
+:root[data-tone="light"] {
+  --syn-prop: #2459c7;
+  --syn-str: #0a7259;
+  --syn-num: #9a5600;
+  --syn-kw: #8a3fb8;
+  --syn-comment: #6b7080;
+  --syn-type: #b8336a;
+  --syn-var: #1d2027;
+  --syn-punct: #4b5160;
+  --syn-bad: #bd2536;
+}

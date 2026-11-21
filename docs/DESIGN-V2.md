@@ -58,7 +58,34 @@ Neue Themes: Hell, Mitternacht (OLED), Ozean, Wald, Sonnenuntergang, Sakura (hel
 Hoher Kontrast. Kontraste (WCAG AA für Text auf Flächen, Statusfarben als Text) werden per Skript geprüft.
 Saisonal (Winter im Dezember/Januar statt „Standard“) bleibt unverändert.
 
+| Theme | Ton | Akzent | Besonderheit |
+| --- | --- | --- | --- |
+| Hell | hell | #6a4cf5 | echtes Light-Theme |
+| Mitternacht | OLED | #8aa0ff | reines Schwarz, Nachtblau-Tönung |
+| Ozean | schwarz | #3cc8ec | Petrol-Tönung, leicht gerundet |
+| Wald | schwarz | #7fd36f | Moos-Tönung |
+| Sonnenuntergang | schwarz | #ff7aa2 | Pflaumen-Tönung, rund |
+| Sakura | hell | #c8346f | rosa getöntes Light-Theme |
+| Nether | schwarz | #ff8a3d | Rot-Tönung, eckig |
+| End | schwarz | #c39bff | Violett-Tönung, Karten mit Kante, Endstein-Gelb als „ok“ |
+| Retro-Pixel | dunkelgrau | #ffd23f | Pixel-Überschriften, Klötzchen-Knöpfe |
+| Hoher Kontrast | OLED | #ffd60a | Kontrast hoch, kräftige Linien, gelber Fokus |
+
+Geprüft (Skript, alle Flächen canvas/s1/s2): Text 1–3, Status ok/warn/danger als Schrift, Akzent als Schrift und
+Schrift auf Akzent jeweils ≥ 4,5:1, in v1 und v2.
+
 ## Mock
 
-- `window.__VL_MOCK_APPEARANCE = { design: "v2", theme: "ocean", … }` per Init-Skript.
-- `localStorage vl.mock.design = v2` setzt v2 im Mock ohne Init-Skript.
+- `localStorage vl.mock.design = v2` – v2 im Mock
+- `localStorage vl.mock.theme = light|midnight|ocean|forest|sunset|sakura|nether|end|retro|contrast|winter|graphite`
+- `window.__VL_MOCK_APPEARANCE = { tone: "light", radius: "round", sidebar: {…}, … }` per Init-Skript
+- weitere Schalter wie bisher: `vl.mock.mode = simple`, `vl.mock.onboarding = 1`, `vl.mock.isx = 0` (ohne
+  Einstellungs-Import-Hinweis), `vl.mock.notices = 1`, `vl.mock.many`
+
+## Bekannte Lücken
+
+- MOTD-Vorschau nutzt Minecraft-Farben (für dunklen Grund gedacht).
+- Standard/Winter/Graphit behalten in v1 ihren bisherigen, schwächeren Tertiärtext (v1 bleibt unverändert);
+  v2 hebt ihn an.
+- Cosmetics: Kategorie-Leiste scrollt bei 1280 px in v2 seitlich (gewollter Scroll-Streifen, wie v1 bei
+  schmaleren Fenstern).

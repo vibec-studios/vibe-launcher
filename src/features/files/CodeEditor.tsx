@@ -92,16 +92,16 @@ function languageExt(lang: FileLanguage): Extension {
 
 // Farben passend zur App (Akzent je Instanz über var(--accent))
 const highlight = HighlightStyle.define([
-  { tag: [t.propertyName, t.definition(t.propertyName), t.attributeName], color: "#8fb4ff" },
-  { tag: [t.string, t.special(t.string)], color: "#3fe0c5" },
-  { tag: [t.number, t.bool, t.null, t.atom], color: "#ffb547" },
-  { tag: [t.keyword, t.operatorKeyword, t.modifier], color: "#c792ea" },
-  { tag: [t.comment, t.lineComment, t.blockComment], color: "#6b6b75", fontStyle: "italic" },
-  { tag: [t.heading, t.typeName, t.className, t.namespace, t.labelName], color: "#ff8fb1", fontWeight: "600" },
-  { tag: [t.variableName, t.definition(t.variableName)], color: "#e4e4e7" },
-  { tag: [t.operator, t.punctuation, t.separator, t.bracket], color: "#a1a1aa" },
-  { tag: t.meta, color: "#a1a1aa" },
-  { tag: t.invalid, color: "#ff5470" },
+  { tag: [t.propertyName, t.definition(t.propertyName), t.attributeName], color: "var(--syn-prop, #8fb4ff)" },
+  { tag: [t.string, t.special(t.string)], color: "var(--syn-str, #3fe0c5)" },
+  { tag: [t.number, t.bool, t.null, t.atom], color: "var(--syn-num, #ffb547)" },
+  { tag: [t.keyword, t.operatorKeyword, t.modifier], color: "var(--syn-kw, #c792ea)" },
+  { tag: [t.comment, t.lineComment, t.blockComment], color: "var(--syn-comment, #6b6b75)", fontStyle: "italic" },
+  { tag: [t.heading, t.typeName, t.className, t.namespace, t.labelName], color: "var(--syn-type, #ff8fb1)", fontWeight: "600" },
+  { tag: [t.variableName, t.definition(t.variableName)], color: "var(--syn-var, #e4e4e7)" },
+  { tag: [t.operator, t.punctuation, t.separator, t.bracket], color: "var(--syn-punct, #a1a1aa)" },
+  { tag: t.meta, color: "var(--syn-punct, #a1a1aa)" },
+  { tag: t.invalid, color: "var(--syn-bad, #ff5470)" },
 ]);
 
 const theme = EditorView.theme(
@@ -114,14 +114,14 @@ const theme = EditorView.theme(
     "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
       backgroundColor: "color-mix(in srgb, var(--accent) 32%, transparent) !important",
     },
-    ".cm-activeLine": { backgroundColor: "rgba(255,255,255,.035)" },
+    ".cm-activeLine": { backgroundColor: "color-mix(in srgb, var(--ink) 3.5%, transparent)" },
     ".cm-gutters": { backgroundColor: "var(--color-surface)", color: "var(--color-dim)", border: "none", borderRight: "1px solid var(--color-line)" },
-    ".cm-activeLineGutter": { backgroundColor: "rgba(255,255,255,.05)", color: "var(--color-text)" },
+    ".cm-activeLineGutter": { backgroundColor: "color-mix(in srgb, var(--ink) 5%, transparent)", color: "var(--color-text)" },
     ".cm-lineNumbers .cm-gutterElement": { padding: "0 10px 0 12px", minWidth: "40px" },
     ".cm-foldGutter .cm-gutterElement": { padding: "0 4px", color: "var(--color-dim)" },
     ".cm-foldPlaceholder": { backgroundColor: "var(--color-surface3)", border: "1px solid var(--color-line2)", color: "var(--color-muted)", borderRadius: "0" },
-    ".cm-matchingBracket, &.cm-focused .cm-matchingBracket": { backgroundColor: "rgba(255,255,255,.12)", outline: "1px solid var(--color-line2)" },
-    ".cm-selectionMatch": { backgroundColor: "rgba(255,255,255,.08)" },
+    ".cm-matchingBracket, &.cm-focused .cm-matchingBracket": { backgroundColor: "color-mix(in srgb, var(--ink) 12%, transparent)", outline: "1px solid var(--color-line2)" },
+    ".cm-selectionMatch": { backgroundColor: "color-mix(in srgb, var(--ink) 8%, transparent)" },
     ".cm-searchMatch": { backgroundColor: "rgba(255,181,71,.22)", outline: "1px solid rgba(255,181,71,.5)" },
     ".cm-searchMatch.cm-searchMatch-selected": { backgroundColor: "rgba(255,181,71,.45)" },
     ".cm-errorLine": { backgroundColor: "rgba(255,84,112,.10)", boxShadow: "inset 2px 0 0 var(--color-danger)" },
