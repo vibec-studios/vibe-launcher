@@ -77,6 +77,10 @@ const en: Glossary = {
     title: "Vibe",
     text: "The launcher's online services: friends, chat, playing worlds together and cosmetics. Optional and can be turned off any time.",
   },
+  seed: {
+    title: "Seed",
+    text: "The starting value Minecraft uses to generate a world's terrain. The same seed, game version, and settings recreate the original terrain.",
+  },
   account: {
     title: "Microsoft account",
     text: "Minecraft: Java Edition is tied to your Microsoft account. Sign-in happens directly at Microsoft – the launcher never sees your password.",

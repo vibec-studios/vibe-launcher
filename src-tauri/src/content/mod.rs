@@ -51,6 +51,7 @@ pub mod mroverrides;
 pub mod autoupdate;
 pub mod migration;
 pub mod worlds;
+pub mod world_preview;
 pub mod worldbackup;
 pub mod organize;
 

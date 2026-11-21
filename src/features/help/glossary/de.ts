@@ -77,6 +77,10 @@ const de: Glossary = {
     title: "Vibe",
     text: "Die Online-Dienste des Launchers: Freunde, Chat, gemeinsam Welten spielen und Cosmetics. Freiwillig und jederzeit abschaltbar.",
   },
+  seed: {
+    title: "Seed",
+    text: "Der Startwert, mit dem Minecraft das Gelände einer Welt erzeugt. Mit demselben Seed, derselben Spielversion und denselben Einstellungen lässt sich das ursprüngliche Gelände erneut erzeugen.",
+  },
   account: {
     title: "Microsoft-Konto",
     text: "Minecraft: Java Edition ist an dein Microsoft-Konto gebunden. Die Anmeldung läuft direkt bei Microsoft – der Launcher sieht dein Passwort nie.",

@@ -15,6 +15,9 @@ pub enum Tag {
     Compound(HashMap<String, Tag>),
     IntArray(usize),
     LongArray(usize),
+    Bytes(Vec<u8>),
+    Ints(Vec<i32>),
+    Longs(Vec<u64>),
 }
 
 impl Tag {
@@ -45,13 +48,15 @@ struct Reader<'a> {
     b: &'a [u8],
     pos: usize,
     depth: usize,
+    keep_arrays: bool,
+    tags: usize,
 }
 
 type R<T> = Result<T, String>;
 
 impl<'a> Reader<'a> {
     fn take(&mut self, n: usize) -> R<&'a [u8]> {
-        if self.pos + n > self.b.len() {
+        if n > self.b.len() - self.pos {
             return Err("NBT: unerwartetes Dateiende".into());
         }
         let s = &self.b[self.pos..self.pos + n];
@@ -82,6 +87,13 @@ impl<'a> Reader<'a> {
         Ok(String::from_utf8_lossy(self.take(n)?).to_string())
     }
     fn payload(&mut self, t: u8) -> R<Tag> {
+        let max_depth = if self.keep_arrays { 64 } else { 512 };
+        if self.keep_arrays {
+            self.tags += 1;
+            if self.tags > 200_000 {
+                return Err("NBT: zu viele Tags".into());
+            }
+        }
         Ok(match t {
             1 => Tag::Byte(self.u8()? as i8),
             2 => Tag::Short(self.i16()?),
@@ -91,15 +103,15 @@ impl<'a> Reader<'a> {
             6 => Tag::Double(f64::from_bits(self.i64()? as u64)),
             7 => {
                 let n = self.len()?;
-                self.take(n)?;
-                Tag::ByteArray(n)
+                let bytes = self.take(n)?;
+                if self.keep_arrays { Tag::Bytes(bytes.to_vec()) } else { Tag::ByteArray(n) }
             }
             8 => Tag::String(self.string()?),
             9 => {
                 let et = self.u8()?;
                 let n = self.len()?;
                 self.depth += 1;
-                if self.depth > 512 {
+                if self.depth > max_depth {
                     return Err("NBT: zu tief verschachtelt".into());
                 }
                 let mut v = Vec::with_capacity(n.min(4096));
@@ -114,7 +126,7 @@ impl<'a> Reader<'a> {
             }
             10 => {
                 self.depth += 1;
-                if self.depth > 512 {
+                if self.depth > max_depth {
                     return Err("NBT: zu tief verschachtelt".into());
                 }
                 let mut m = HashMap::new();
@@ -132,13 +144,21 @@ impl<'a> Reader<'a> {
             }
             11 => {
                 let n = self.len()?;
-                self.take(n.checked_mul(4).ok_or("NBT")?)?;
-                Tag::IntArray(n)
+                let bytes = self.take(n.checked_mul(4).ok_or("NBT")?)?;
+                if self.keep_arrays {
+                    Tag::Ints(bytes.chunks_exact(4).map(|word| i32::from_be_bytes(word.try_into().unwrap())).collect())
+                } else {
+                    Tag::IntArray(n)
+                }
             }
             12 => {
                 let n = self.len()?;
-                self.take(n.checked_mul(8).ok_or("NBT")?)?;
-                Tag::LongArray(n)
+                let bytes = self.take(n.checked_mul(8).ok_or("NBT")?)?;
+                if self.keep_arrays {
+                    Tag::Longs(bytes.chunks_exact(8).map(|word| u64::from_be_bytes(word.try_into().unwrap())).collect())
+                } else {
+                    Tag::LongArray(n)
+                }
             }
             t => return Err(format!("NBT: unbekannter Tag-Typ {t}")),
         })
@@ -147,7 +167,15 @@ impl<'a> Reader<'a> {
 
 /// Unkomprimiertes NBT lesen (Wurzel = benanntes Compound).
 pub fn parse(b: &[u8]) -> R<Tag> {
-    let mut r = Reader { b, pos: 0, depth: 0 };
+    parse_inner(b, false)
+}
+
+pub fn parse_with_arrays(b: &[u8]) -> R<Tag> {
+    parse_inner(b, true)
+}
+
+fn parse_inner(b: &[u8], keep_arrays: bool) -> R<Tag> {
+    let mut r = Reader { b, pos: 0, depth: 0, keep_arrays, tags: 0 };
     let t = r.u8()?;
     if t != 10 {
         return Err("NBT: Wurzel ist kein Compound".into());

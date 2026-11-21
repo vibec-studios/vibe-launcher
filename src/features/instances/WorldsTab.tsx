@@ -2,7 +2,7 @@
 // öffnen, Backup erstellen, in andere Instanz kopieren, Löschen. Werkzeuge in der gemeinsamen Zeile (PageTools).
 import { memo, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, Copy, FileArchive, FolderOpen, Globe2, MoreHorizontal, Package, Play, SearchX, Trash2 } from "lucide-react";
+import { Archive, Copy, FileArchive, FolderOpen, Globe2, Map, MoreHorizontal, Package, Play, SearchX, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
 import type { Instance, World } from "@/lib/types";
@@ -33,8 +33,8 @@ import { supportsQuickPlay, useInstanceActions } from "@/components/instance/act
 import { useRunPhase } from "@/components/instance/status";
 import { PageTools } from "./toolbar";
 import { WorldDatapacksDialog } from "./WorldDatapacksDialog";
+import { WorldPreviewDialog, worldModeLabel } from "./WorldPreviewDialog";
 
-const MODES = ["survival", "creative", "adventure", "spectator", "hardcore"];
 function WorldIcon({ world }: { world: World }) {
   const [failed, setFailed] = useState(false);
   const src = imageSrc(world.icon);
@@ -58,7 +58,7 @@ function WorldIcon({ world }: { world: World }) {
 }
 
 /** Aktionen einer Welt – dieselben Einträge im ⋯-Menü und im Rechtsklick-Menü. */
-function WorldMenu({ instance, world, onCopy, onPacks, Item, Sep }: { instance: Instance; world: World; onCopy: (w: World) => void; onPacks: (w: World) => void; Item: (p: MenuItemProps) => React.ReactNode; Sep: () => React.ReactNode }) {
+function WorldMenu({ instance, world, onCopy, onPacks, onPreview, Item, Sep }: { instance: Instance; world: World; onCopy: (w: World) => void; onPacks: (w: World) => void; onPreview: (w: World) => void; Item: (p: MenuItemProps) => React.ReactNode; Sep: () => React.ReactNode }) {
   const t = useT();
   const openDir = () => api.instanceOpenFolder(instance.id, `saves/${world.folder}`).catch((e) => toast.error(e));
   const del = async () => {
@@ -78,6 +78,9 @@ function WorldMenu({ instance, world, onCopy, onPacks, Item, Sep }: { instance: 
   };
   return (
     <>
+      <Item icon={<Map size={14} />} onSelect={() => onPreview(world)}>
+        {t("world_map.title")}
+      </Item>
       <Item icon={<FolderOpen size={14} />} onSelect={openDir}>
         {t("common.open_folder")}
       </Item>
@@ -98,21 +101,21 @@ function WorldMenu({ instance, world, onCopy, onPacks, Item, Sep }: { instance: 
   );
 }
 
-const WorldRow = memo(function WorldRow({ instance, world, onCopy, onPacks }: { instance: Instance; world: World; onCopy: (w: World) => void; onPacks: (w: World) => void }) {
+const WorldRow = memo(function WorldRow({ instance, world, onCopy, onPacks, onPreview }: { instance: Instance; world: World; onCopy: (w: World) => void; onPacks: (w: World) => void; onPreview: (w: World) => void }) {
   const t = useT();
   const { launch } = useInstanceActions();
   const { phase } = useRunPhase(instance.id);
   const quick = supportsQuickPlay(instance.mc_version);
   const openDir = () => api.instanceOpenFolder(instance.id, `saves/${world.folder}`).catch((e) => toast.error(e));
   const gm = world.game_mode?.toLowerCase() ?? null;
-  const mode = gm ? (MODES.includes(gm) ? t(`worlds.mode.${gm}`) : world.game_mode) : null;
+  const mode = worldModeLabel(world.game_mode, t);
   const meta = [mode, world.last_played ? formatRelative(world.last_played) : null, formatBytes(world.size)].filter(Boolean).join(" · ");
   return (
     <ContextMenu
       content={
         <>
           <ContextLabel>{world.name}</ContextLabel>
-          <WorldMenu instance={instance} world={world} onCopy={onCopy} onPacks={onPacks} Item={ContextItem} Sep={ContextSeparator} />
+          <WorldMenu instance={instance} world={world} onCopy={onCopy} onPacks={onPacks} onPreview={onPreview} Item={ContextItem} Sep={ContextSeparator} />
         </>
       }
     >
@@ -142,6 +145,16 @@ const WorldRow = memo(function WorldRow({ instance, world, onCopy, onPacks }: { 
             <Play size={14} fill="currentColor" />
           </IconButton>
         )}
+        <IconButton
+          label={t("world_map.open", { name: world.name })}
+          size="sm"
+          variant="ghost"
+          tip
+          onClick={() => onPreview(world)}
+          onDoubleClick={(event) => event.stopPropagation()}
+        >
+          <Map size={16} />
+        </IconButton>
         <DropdownMenu
           trigger={
             <IconButton label={t("common.more")} size="sm" variant="ghost" className="opacity-60 group-hover:opacity-100 data-[state=open]:opacity-100">
@@ -149,7 +162,7 @@ const WorldRow = memo(function WorldRow({ instance, world, onCopy, onPacks }: { 
             </IconButton>
           }
         >
-          <WorldMenu instance={instance} world={world} onCopy={onCopy} onPacks={onPacks} Item={DropdownItem} Sep={DropdownSeparator} />
+          <WorldMenu instance={instance} world={world} onCopy={onCopy} onPacks={onPacks} onPreview={onPreview} Item={DropdownItem} Sep={DropdownSeparator} />
         </DropdownMenu>
       </div>
     </ContextMenu>
@@ -162,6 +175,7 @@ export function WorldsTab({ instance }: { instance: Instance }) {
   const [query, setQuery] = useState("");
   const [copying, setCopying] = useState<World | null>(null);
   const [packsWorld, setPacksWorld] = useState<World | null>(null);
+  const [previewing, setPreviewing] = useState<World | null>(null);
   const dq = useDeferredValue(query.trim().toLowerCase());
   const list = useMemo(
     () =>
@@ -224,13 +238,14 @@ export function WorldsTab({ instance }: { instance: Instance }) {
         ) : (
           <div className="flex flex-col">
             {list.map((w) => (
-              <WorldRow key={w.folder} instance={instance} world={w} onCopy={setCopying} onPacks={setPacksWorld} />
+              <WorldRow key={w.folder} instance={instance} world={w} onCopy={setCopying} onPacks={setPacksWorld} onPreview={setPreviewing} />
             ))}
           </div>
         )}
       </div>
       <CopyWorldDialog instance={instance} world={copying} onClose={() => setCopying(null)} />
       {packsWorld && <WorldDatapacksDialog instanceId={instance.id} world={packsWorld} onClose={() => setPacksWorld(null)} />}
+      {previewing && <WorldPreviewDialog key={`${instance.id}:${previewing.folder}`} instanceId={instance.id} world={previewing} onClose={() => setPreviewing(null)} />}
     </div>
   );
 }
