@@ -110,6 +110,8 @@ Code: `src/features/access/` (Store, Polling, UI), angebunden in `src/features/s
   Vibe ein bzw. meldet an und schickt die Anfrage direkt nach dem Login. Das Onboarding nutzt denselben Weg.
 - **Willkommen**: Wer einmal nicht freigeschaltet war (`localStorage["vibe.access.seen"]`), bekommt beim Wechsel auf
   `approved` einmal den Toast „Willkommen bei Vibe!“. Bestandsnutzer sehen ihn nie.
+- **Hinweis nach dem automatischen Verbinden** („Mit Vibe verbunden“): nur bei `approved`. Ohne Freischaltung entfällt
+  er ganz, der Willkommen-Toast ersetzt ihn später.
 - **UI**: Einstellungen „Vibe & Konto“ (Karte „Beta-Zugang“, dezentes „Beta“ am Abschnitt), Freunde-Seite und -Panel
   (`Gate`), Cosmetics (Seite und Gast-Banner), Server-Verbindung (Relay), Einladen beim Hosten, Vibey Client,
   Konto-Menü und Onboarding.
