@@ -90,7 +90,10 @@ export class AgentApi {
     this.r<T.ServerCreated>("POST", "/servers/import", { query: { format, name: opts.name, server: opts.server }, raw: file, onProgress });
 
   mcVersions = () => this.r<T.McVersion[]>("GET", "/catalog/minecraft");
-  loaderVersions = (kind: T.LoaderKind, mc: string) => this.r<string[]>("GET", `/catalog/loaders/${kind}`, { query: { mc } });
+  loaderVersions = async (kind: T.LoaderKind, mc: string) => {
+    const list = await this.r<(string | { version: string; stable?: boolean })[]>("GET", `/catalog/loaders/${kind}`, { query: { mc } });
+    return list.map((v) => (typeof v === "string" ? v : v.version));
+  };
   platformVersions = (kind: T.PlatformKind) => this.r<T.PlatformVersion[]>("GET", `/catalog/platforms/${kind}`);
 
   tunnel = (id: string) => this.r<T.TunnelStatus | null>("GET", `/servers/${enc(id)}/tunnel`);
