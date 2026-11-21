@@ -13,6 +13,7 @@ export interface JavaOptions {
   max_memory_mb: number | null;
   jvm_args: string | null;
   env: Record<string, string>;
+  cds?: boolean | null;
 }
 
 export interface WindowOptions {

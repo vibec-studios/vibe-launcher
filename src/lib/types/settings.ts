@@ -71,6 +71,7 @@ export interface Settings {
   /** AFK-Modus (Experimentell, docs/AFK.md) */
   afk?: import("@/features/afk/types").AfkSettings;
   prefer_dgpu?: boolean;
+  java_cds?: boolean;
 }
 
 export interface StoreConfig {

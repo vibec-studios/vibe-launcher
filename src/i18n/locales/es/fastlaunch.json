@@ -1,0 +1,13 @@
+{
+  "settings.java_cds": "Inicio rápido (archivo de clases Java)",
+  "settings.java_cds.desc": "Recuerda las clases Java cargadas la primera vez que juegas y después inicia Vanilla, Forge y NeoForge bastante más rápido (Fabric/Quilt no se benefician). El primer inicio y el primer cierre tardan un poco más una sola vez; necesita unos 50–150 MB por instancia.",
+  "isettings.java_cds": "Inicio rápido (archivo de clases Java)",
+  "isettings.java_cds.desc": "Actívalo o desactívalo para esta instancia, independientemente del ajuste global.",
+  "isettings.java_cds.global": "Como el global ({state})",
+  "isettings.java_cds.on": "Activado",
+  "isettings.java_cds.off": "Desactivado",
+  "disk.cat.fast_cache": "Caché de inicio rápido",
+  "disk.cat.fast_cache.desc": "Archivos de clases Java de tus instancias y copias sin firma de los JAR de Minecraft. Se vuelven a crear automáticamente en el siguiente inicio.",
+  "disk.confirm.fast_cache": "¿Vaciar la caché de inicio rápido?",
+  "disk.confirm.fast_cache.text": "Se liberarán unos {size}. Los próximos inicios serán más lentos una vez hasta que se vuelvan a crear los archivos."
+}

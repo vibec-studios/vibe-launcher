@@ -17,6 +17,7 @@ export type CategoryId =
   | "launcher_logs"
   | "other"
   | "vibey"
+  | "fast_cache"
   | "webview";
 
 export interface StorageFolder {
@@ -49,7 +50,7 @@ export interface StorageUsage {
   instances: InstanceUsage[];
 }
 
-export type CleanTarget = "cache" | "launcher_logs" | "instance_logs" | "mod_caches" | "orphan_world_backups" | "snapshots" | "vibey";
+export type CleanTarget = "cache" | "launcher_logs" | "instance_logs" | "mod_caches" | "orphan_world_backups" | "snapshots" | "vibey" | "fast_cache";
 
 export const CLEARABLE_KINDS: FolderKind[] = ["cache", "binaries", "rebuild"];
 

@@ -40,6 +40,20 @@ export function JavaTab({ instance, d, update }: TabProps) {
         <SettingRow title={t("isettings.java.path")} description={t("isettings.java.path.desc")} stacked>
           <JavaPathField value={d.java.path} onChange={(path, delay) => java({ path }, delay)} />
         </SettingRow>
+        <SettingRow title={t("isettings.java_cds")} description={t("isettings.java_cds.desc")}>
+          <div className="w-[200px]">
+            <Select<"global" | "on" | "off">
+              size="sm"
+              value={d.java.cds == null ? "global" : d.java.cds ? "on" : "off"}
+              onChange={(v) => java({ cds: v === "global" ? null : v === "on" })}
+              options={[
+                { value: "global", label: t("isettings.java_cds.global", { state: t(settings?.java_cds === false ? "isettings.java_cds.off" : "isettings.java_cds.on") }) },
+                { value: "on", label: t("isettings.java_cds.on") },
+                { value: "off", label: t("isettings.java_cds.off") },
+              ]}
+            />
+          </div>
+        </SettingRow>
       </SettingsCard>
 
       <div data-tour="instance-perf">
