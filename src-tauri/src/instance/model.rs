@@ -11,6 +11,7 @@ pub struct JavaOptions {
     pub jvm_args: Option<String>,
     /// Umgebungsvariablen für den Spielprozess
     pub env: HashMap<String, String>,
+    pub cds: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]

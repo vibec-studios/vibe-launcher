@@ -17,9 +17,10 @@ const ACTIONS: Partial<Record<CategoryId, { target: CleanTarget; danger?: boolea
   snapshots: { target: "snapshots" },
   orphan_world_backups: { target: "orphan_world_backups", danger: true },
   vibey: { target: "vibey" },
+  fast_cache: { target: "fast_cache" },
 };
 
-const HIDDEN_WHEN_EMPTY: CategoryId[] = ["orphan_world_backups", "store", "webview", "servers", "vibey"];
+const HIDDEN_WHEN_EMPTY: CategoryId[] = ["orphan_world_backups", "store", "webview", "servers", "vibey", "fast_cache"];
 
 function Bar({ value, max }: { value: number; max: number }) {
   const pct = max > 0 && value > 0 ? Math.max(1, Math.round((value / max) * 100)) : 0;

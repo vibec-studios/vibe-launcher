@@ -71,6 +71,7 @@ let settings: Settings = {
   fullscreen: false,
   java_overrides: {},
   auto_java: true,
+  java_cds: true,
   launch_behavior: "keep",
   show_snapshots: false,
   concurrent_downloads: 16,

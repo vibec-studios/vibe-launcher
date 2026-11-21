@@ -1,0 +1,13 @@
+{
+  "settings.java_cds": "Hızlı başlatma (Java sınıf arşivi)",
+  "settings.java_cds.desc": "İlk oynayışta yüklenen Java sınıflarını hatırlar, sonra Vanilla, Forge ve NeoForge’u belirgin şekilde daha hızlı başlatır (Fabric/Quilt bundan yararlanmaz). İlk başlatma ve ilk kapanış bir kereliğine biraz daha uzun sürer; örnek başına yaklaşık 50–150 MB gerekir.",
+  "isettings.java_cds": "Hızlı başlatma (Java sınıf arşivi)",
+  "isettings.java_cds.desc": "Bu örnek için genel ayardan bağımsız olarak aç veya kapat.",
+  "isettings.java_cds.global": "Genel ayar gibi ({state})",
+  "isettings.java_cds.on": "Açık",
+  "isettings.java_cds.off": "Kapalı",
+  "disk.cat.fast_cache": "Hızlı başlatma önbelleği",
+  "disk.cat.fast_cache.desc": "Örneklerinin Java sınıf arşivleri ve Minecraft JAR’larının imzasız kopyaları. Bir sonraki başlatmada otomatik olarak yeniden oluşturulur.",
+  "disk.confirm.fast_cache": "Hızlı başlatma önbelleği temizlensin mi?",
+  "disk.confirm.fast_cache.text": "Yaklaşık {size} boşalacak. Arşivler yeniden oluşturulana kadar sonraki başlatmalar bir kez daha yavaş olur."
+}

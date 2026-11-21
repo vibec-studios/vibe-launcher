@@ -1,0 +1,926 @@
+{
+  "phase": "idle",
+  "params": {
+    "runs": 5,
+    "longRuns": 2,
+    "shortMs": 30000,
+    "longMs": 300000
+  },
+  "launchers": {
+    "vibe": {
+      "name": "Vibe Launcher",
+      "version": "1.0.0-beta.7",
+      "runs": [
+        {
+          "run": 1,
+          "firstStart": true,
+          "background": {
+            "at": "2026-11-21T20:02:21.053Z",
+            "cpuPct": 39.5,
+            "freeGb": 16.7,
+            "top": [
+              {
+                "name": "find",
+                "corePct": 101.6
+              },
+              {
+                "name": "Discord",
+                "corePct": 86.7
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 65.6
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 7.8
+              },
+              {
+                "name": "explorer",
+                "corePct": 4.7
+              },
+              {
+                "name": "audiodg",
+                "corePct": 3.9
+              },
+              {
+                "name": "ctfmon",
+                "corePct": 2.3
+              },
+              {
+                "name": "brave",
+                "corePct": 1.6
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 39 % CPU (gesamt) – Ergebnisse können verfälscht sein"
+            ]
+          },
+          "firstWindowMs": 1587.8088000000007,
+          "windowMs": 1587.9241999999995,
+          "readyMs": 3260.4741000000013,
+          "domMs": null,
+          "domError": null,
+          "title": "Vibe Launcher",
+          "interventions": [],
+          "mem30": {
+            "workingSetMiB": 442.6,
+            "privateMiB": 221.6,
+            "processes": 7,
+            "names": {
+              "msedgewebview2": 6,
+              "vibe-launcher": 1
+            }
+          },
+          "cpu10to30": 0.08
+        },
+        {
+          "run": 2,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T20:08:38.516Z",
+            "cpuPct": 12.2,
+            "freeGb": 17.2,
+            "top": [
+              {
+                "name": "find",
+                "corePct": 99.2
+              },
+              {
+                "name": "Discord",
+                "corePct": 71.9
+              },
+              {
+                "name": "Spotify",
+                "corePct": 0.8
+              },
+              {
+                "name": "grep",
+                "corePct": 0.8
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 0.8
+              },
+              {
+                "name": "asus_framework",
+                "corePct": 0.8
+              },
+              {
+                "name": "explorer",
+                "corePct": 0.8
+              },
+              {
+                "name": "Wispr Flow Helper",
+                "corePct": 0.8
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 12 % CPU (gesamt) – Ergebnisse können verfälscht sein"
+            ]
+          },
+          "firstWindowMs": 535.4541000000318,
+          "windowMs": 535.4593000000459,
+          "readyMs": 920.8280000000377,
+          "domMs": null,
+          "domError": null,
+          "title": "Vibe Launcher",
+          "interventions": [],
+          "mem30": {
+            "workingSetMiB": 420,
+            "privateMiB": 223.4,
+            "processes": 7,
+            "names": {
+              "msedgewebview2": 6,
+              "vibe-launcher": 1
+            }
+          },
+          "cpu10to30": 0.08,
+          "memLong": {
+            "workingSetMiB": 419.5,
+            "privateMiB": 204,
+            "processes": 7
+          },
+          "cpuLong": 0.34
+        },
+        {
+          "run": 3,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T20:13:44.379Z",
+            "cpuPct": 5.9,
+            "freeGb": 17.9,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 67.2
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 2.3
+              },
+              {
+                "name": "audiodg",
+                "corePct": 2.3
+              },
+              {
+                "name": "Spotify",
+                "corePct": 1.6
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 1.6
+              },
+              {
+                "name": "Wispr Flow Helper",
+                "corePct": 1.6
+              },
+              {
+                "name": "explorer",
+                "corePct": 0.8
+              },
+              {
+                "name": "codex",
+                "corePct": 0.8
+              }
+            ],
+            "warnings": []
+          },
+          "firstWindowMs": 552.5500000000466,
+          "windowMs": 552.561699999962,
+          "readyMs": 941.7160999999614,
+          "domMs": null,
+          "domError": null,
+          "title": "Vibe Launcher",
+          "interventions": [],
+          "mem30": {
+            "workingSetMiB": 428.2,
+            "privateMiB": 225,
+            "processes": 7,
+            "names": {
+              "msedgewebview2": 6,
+              "vibe-launcher": 1
+            }
+          },
+          "cpu10to30": 0.39,
+          "memLong": {
+            "workingSetMiB": 424.4,
+            "privateMiB": 211.7,
+            "processes": 7
+          },
+          "cpuLong": 0.27
+        },
+        {
+          "run": 4,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T20:24:31.722Z",
+            "cpuPct": 2.3,
+            "freeGb": 18,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 19.5
+              },
+              {
+                "name": "typeperf",
+                "corePct": 0.8
+              },
+              {
+                "name": "powershell",
+                "corePct": 0.8
+              },
+              {
+                "name": "audiodg",
+                "corePct": 0.8
+              },
+              {
+                "name": "tail",
+                "corePct": 0
+              },
+              {
+                "name": "brave",
+                "corePct": 0
+              },
+              {
+                "name": "Spotify",
+                "corePct": 0
+              },
+              {
+                "name": "bash",
+                "corePct": 0
+              }
+            ],
+            "warnings": []
+          },
+          "firstWindowMs": 477.9885999998078,
+          "windowMs": 477.99019999988377,
+          "readyMs": 853.2751999998,
+          "domMs": null,
+          "domError": null,
+          "title": "Vibe Launcher",
+          "interventions": [],
+          "mem30": {
+            "workingSetMiB": 439.2,
+            "privateMiB": 234.7,
+            "processes": 7,
+            "names": {
+              "msedgewebview2": 6,
+              "vibe-launcher": 1
+            }
+          },
+          "cpu10to30": 1.95
+        },
+        {
+          "run": 5,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T20:25:07.511Z",
+            "cpuPct": 4.1,
+            "freeGb": 17.6,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 18
+              },
+              {
+                "name": "audiodg",
+                "corePct": 3.1
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 0.8
+              },
+              {
+                "name": "claude",
+                "corePct": 0.8
+              },
+              {
+                "name": "tail",
+                "corePct": 0
+              },
+              {
+                "name": "brave",
+                "corePct": 0
+              },
+              {
+                "name": "Spotify",
+                "corePct": 0
+              },
+              {
+                "name": "bash",
+                "corePct": 0
+              }
+            ],
+            "warnings": []
+          },
+          "firstWindowMs": 460.25929999980144,
+          "windowMs": 460.2618999998085,
+          "readyMs": 853.5606999997981,
+          "domMs": null,
+          "domError": null,
+          "title": "Vibe Launcher",
+          "interventions": [],
+          "mem30": {
+            "workingSetMiB": 432.9,
+            "privateMiB": 224.8,
+            "processes": 7,
+            "names": {
+              "msedgewebview2": 6,
+              "vibe-launcher": 1
+            }
+          },
+          "cpu10to30": 0.16
+        }
+      ],
+      "summary": {
+        "firstStartWindowMs": 1587.9241999999995,
+        "firstStartReadyMs": 3260.4741000000013,
+        "windowMs": {
+          "n": 4,
+          "median": 506.72474999996484,
+          "p25": 473.55812499986496,
+          "p75": 539.7349000000249,
+          "min": 460.2618999998085,
+          "max": 552.561699999962,
+          "mean": 506.56827499992505,
+          "sd": 44.388711797599456,
+          "cv": 0.08762631611228718
+        },
+        "readyMs": {
+          "n": 4,
+          "median": 887.1943499999179,
+          "p25": 853.4893249997986,
+          "p75": 926.0500250000186,
+          "min": 853.2751999998,
+          "max": 941.7160999999614,
+          "mean": 892.3449999998993,
+          "sd": 45.75098542752799,
+          "cv": 0.05127051244477546
+        },
+        "ram30MiB": {
+          "n": 4,
+          "median": 430.54999999999995,
+          "p25": 426.15,
+          "p75": 434.47499999999997,
+          "min": 420,
+          "max": 439.2,
+          "mean": 430.075,
+          "sd": 8.088417645003249,
+          "cv": 0.01880699330350113
+        },
+        "private30MiB": {
+          "n": 4,
+          "median": 224.9,
+          "p25": 224.45000000000002,
+          "p75": 227.425,
+          "min": 223.4,
+          "max": 234.7,
+          "mean": 226.97500000000002,
+          "sd": 5.198958228978819,
+          "cv": 0.022905422310733864
+        },
+        "ramLongMiB": {
+          "n": 2,
+          "median": 421.95,
+          "p25": 420.725,
+          "p75": 423.17499999999995,
+          "min": 419.5,
+          "max": 424.4,
+          "mean": 421.95,
+          "sd": 3.4648232278140667,
+          "cv": 0.008211454503647509
+        },
+        "privateLongMiB": {
+          "n": 2,
+          "median": 207.85,
+          "p25": 205.925,
+          "p75": 209.77499999999998,
+          "min": 204,
+          "max": 211.7,
+          "mean": 207.85,
+          "sd": 5.444722215136408,
+          "cv": 0.02619544005357906
+        },
+        "cpu10to30Pct": {
+          "n": 4,
+          "median": 0.275,
+          "p25": 0.14,
+          "p75": 0.78,
+          "min": 0.08,
+          "max": 1.95,
+          "mean": 0.645,
+          "sd": 0.8798674142543674,
+          "cv": 1.3641355259757635
+        },
+        "cpuLongPct": {
+          "n": 2,
+          "median": 0.30500000000000005,
+          "p25": 0.28750000000000003,
+          "p75": 0.3225,
+          "min": 0.27,
+          "max": 0.34,
+          "mean": 0.30500000000000005,
+          "sd": 0.04949747468305833,
+          "cv": 0.16228680223953548
+        }
+      }
+    },
+    "prism": {
+      "name": "Prism Launcher",
+      "version": "11.1.1",
+      "runs": [
+        {
+          "run": 1,
+          "firstStart": true,
+          "background": {
+            "at": "2026-11-21T20:02:56.900Z",
+            "cpuPct": 17.4,
+            "freeGb": 17,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 109.4
+              },
+              {
+                "name": "find",
+                "corePct": 97.7
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 5.5
+              },
+              {
+                "name": "tail",
+                "corePct": 3.9
+              },
+              {
+                "name": "audiodg",
+                "corePct": 3.9
+              },
+              {
+                "name": "grep",
+                "corePct": 3.1
+              },
+              {
+                "name": "Spotify",
+                "corePct": 2.3
+              },
+              {
+                "name": "powershell",
+                "corePct": 1.6
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 17 % CPU (gesamt) – Ergebnisse können verfälscht sein"
+            ]
+          },
+          "firstWindowMs": 876.283199999998,
+          "windowMs": 1365.0694999999978,
+          "readyMs": 3825.6296,
+          "domMs": null,
+          "domError": null,
+          "title": "Prism Launcher 11.1.1",
+          "interventions": [
+            {
+              "atMs": 1110.8676999999952,
+              "action": "Finish per UI-Automation",
+              "ok": true,
+              "ms": 234.39410000000498
+            }
+          ],
+          "mem30": {
+            "workingSetMiB": 106.7,
+            "privateMiB": 42.6,
+            "processes": 1,
+            "names": {
+              "prismlauncher": 1
+            }
+          },
+          "cpu10to30": 0.08
+        },
+        {
+          "run": 2,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T20:03:32.676Z",
+            "cpuPct": 16.6,
+            "freeGb": 17.2,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 121.9
+              },
+              {
+                "name": "find",
+                "corePct": 100
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 2.3
+              },
+              {
+                "name": "explorer",
+                "corePct": 2.3
+              },
+              {
+                "name": "Wispr Flow Helper",
+                "corePct": 2.3
+              },
+              {
+                "name": "audiodg",
+                "corePct": 2.3
+              },
+              {
+                "name": "brave",
+                "corePct": 1.6
+              },
+              {
+                "name": "cloudflared",
+                "corePct": 0.8
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 17 % CPU (gesamt) – Ergebnisse können verfälscht sein"
+            ]
+          },
+          "firstWindowMs": 144.47849999999744,
+          "windowMs": 367.71149999999034,
+          "readyMs": 686.9783999999927,
+          "domMs": null,
+          "domError": null,
+          "title": "Prism Launcher 11.1.1",
+          "interventions": [
+            {
+              "atMs": 174.71949999999197,
+              "action": "Finish per UI-Automation",
+              "ok": true,
+              "ms": 30.20799999999872
+            }
+          ],
+          "mem30": {
+            "workingSetMiB": 109.1,
+            "privateMiB": 44.3,
+            "processes": 1,
+            "names": {
+              "prismlauncher": 1
+            }
+          },
+          "cpu10to30": 0,
+          "memLong": {
+            "workingSetMiB": 108.9,
+            "privateMiB": 42.3,
+            "processes": 1
+          },
+          "cpuLong": 0.02
+        },
+        {
+          "run": 3,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T20:18:50.205Z",
+            "cpuPct": 6.8,
+            "freeGb": 17.9,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 84.4
+              },
+              {
+                "name": "explorer",
+                "corePct": 3.9
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 3.1
+              },
+              {
+                "name": "Spotify",
+                "corePct": 2.3
+              },
+              {
+                "name": "audiodg",
+                "corePct": 2.3
+              },
+              {
+                "name": "powershell",
+                "corePct": 0.8
+              },
+              {
+                "name": "tail",
+                "corePct": 0
+              },
+              {
+                "name": "brave",
+                "corePct": 0
+              }
+            ],
+            "warnings": []
+          },
+          "firstWindowMs": 145.53489999996964,
+          "windowMs": 380.4723000000231,
+          "readyMs": 678.5639000000665,
+          "domMs": null,
+          "domError": null,
+          "title": "Prism Launcher 11.1.1",
+          "interventions": [
+            {
+              "atMs": 187.75439999997616,
+              "action": "Finish per UI-Automation",
+              "ok": true,
+              "ms": 42.1925999999512
+            }
+          ],
+          "mem30": {
+            "workingSetMiB": 107.1,
+            "privateMiB": 42.1,
+            "processes": 1,
+            "names": {
+              "prismlauncher": 1
+            }
+          },
+          "cpu10to30": 0.16,
+          "memLong": {
+            "workingSetMiB": 104.4,
+            "privateMiB": 41.5,
+            "processes": 1
+          },
+          "cpuLong": 0
+        },
+        {
+          "run": 4,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T20:23:55.997Z",
+            "cpuPct": 2.8,
+            "freeGb": 18,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 24.2
+              },
+              {
+                "name": "grep",
+                "corePct": 1.6
+              },
+              {
+                "name": "audiodg",
+                "corePct": 1.6
+              },
+              {
+                "name": "Spotify",
+                "corePct": 0.8
+              },
+              {
+                "name": "Raycast",
+                "corePct": 0.8
+              },
+              {
+                "name": "tail",
+                "corePct": 0
+              },
+              {
+                "name": "brave",
+                "corePct": 0
+              },
+              {
+                "name": "bash",
+                "corePct": 0
+              }
+            ],
+            "warnings": []
+          },
+          "firstWindowMs": 145.89850000012666,
+          "windowMs": 351.9412000000011,
+          "readyMs": 649.628600000171,
+          "domMs": null,
+          "domError": null,
+          "title": "Prism Launcher 11.1.1",
+          "interventions": [
+            {
+              "atMs": 163.15159999998286,
+              "action": "Finish per UI-Automation",
+              "ok": true,
+              "ms": 17.235399999888614
+            }
+          ],
+          "mem30": {
+            "workingSetMiB": 108.3,
+            "privateMiB": 42.9,
+            "processes": 1,
+            "names": {
+              "prismlauncher": 1
+            }
+          },
+          "cpu10to30": 0
+        },
+        {
+          "run": 5,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T20:25:43.300Z",
+            "cpuPct": 3.6,
+            "freeGb": 17.9,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 22.7
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 3.9
+              },
+              {
+                "name": "grep",
+                "corePct": 2.3
+              },
+              {
+                "name": "audiodg",
+                "corePct": 2.3
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 1.6
+              },
+              {
+                "name": "codex",
+                "corePct": 1.6
+              },
+              {
+                "name": "tail",
+                "corePct": 0.8
+              },
+              {
+                "name": "asus_framework",
+                "corePct": 0.8
+              }
+            ],
+            "warnings": []
+          },
+          "firstWindowMs": 151.8691000000108,
+          "windowMs": 354.9860000000335,
+          "readyMs": 662.4494999998715,
+          "domMs": null,
+          "domError": null,
+          "title": "Prism Launcher 11.1.1",
+          "interventions": [
+            {
+              "atMs": 169.56969999987632,
+              "action": "Finish per UI-Automation",
+              "ok": true,
+              "ms": 17.68170000007376
+            }
+          ],
+          "mem30": {
+            "workingSetMiB": 107.6,
+            "privateMiB": 43,
+            "processes": 1,
+            "names": {
+              "prismlauncher": 1
+            }
+          },
+          "cpu10to30": 0.08
+        }
+      ],
+      "summary": {
+        "firstStartWindowMs": 1365.0694999999978,
+        "firstStartReadyMs": 3825.6296,
+        "windowMs": {
+          "n": 4,
+          "median": 361.34875000001193,
+          "p25": 354.2248000000254,
+          "p75": 370.9016999999985,
+          "min": 351.9412000000011,
+          "max": 380.4723000000231,
+          "mean": 363.777750000012,
+          "sd": 13.0586009042582,
+          "cv": 0.03589719520849686
+        },
+        "readyMs": {
+          "n": 4,
+          "median": 670.506699999969,
+          "p25": 659.2442749999464,
+          "p75": 680.667525000048,
+          "min": 649.628600000171,
+          "max": 686.9783999999927,
+          "mean": 669.4051000000254,
+          "sd": 16.655277581355264,
+          "cv": 0.024880715102640585
+        },
+        "ram30MiB": {
+          "n": 4,
+          "median": 107.94999999999999,
+          "p25": 107.475,
+          "p75": 108.5,
+          "min": 107.1,
+          "max": 109.1,
+          "mean": 108.025,
+          "sd": 0.8693867570496654,
+          "cv": 0.008048014413790005
+        },
+        "private30MiB": {
+          "n": 4,
+          "median": 42.95,
+          "p25": 42.7,
+          "p75": 43.325,
+          "min": 42.1,
+          "max": 44.3,
+          "mean": 43.075,
+          "sd": 0.910585891976514,
+          "cv": 0.02113954479341878
+        },
+        "ramLongMiB": {
+          "n": 2,
+          "median": 106.65,
+          "p25": 105.525,
+          "p75": 107.775,
+          "min": 104.4,
+          "max": 108.9,
+          "mean": 106.65,
+          "sd": 3.181980515339464,
+          "cv": 0.029835729163989345
+        },
+        "privateLongMiB": {
+          "n": 2,
+          "median": 41.9,
+          "p25": 41.7,
+          "p75": 42.099999999999994,
+          "min": 41.5,
+          "max": 42.3,
+          "mean": 41.9,
+          "sd": 0.565685424949236,
+          "cv": 0.013500845464182244
+        },
+        "cpu10to30Pct": {
+          "n": 4,
+          "median": 0.04,
+          "p25": 0,
+          "p75": 0.1,
+          "min": 0,
+          "max": 0.16,
+          "mean": 0.06,
+          "sd": 0.07659416862050705,
+          "cv": 1.276569477008451
+        },
+        "cpuLongPct": {
+          "n": 2,
+          "median": 0.01,
+          "p25": 0.005,
+          "p75": 0.015,
+          "min": 0,
+          "max": 0.02,
+          "mean": 0.01,
+          "sd": 0.01414213562373095,
+          "cv": 1.4142135623730951
+        }
+      }
+    }
+  },
+  "meta": {
+    "startedAt": "2026-11-21T20:02:18.989Z",
+    "args": [
+      "--phase",
+      "setup,idle,install"
+    ],
+    "pins": {
+      "mcVersion": "1.21.11",
+      "memory": {
+        "minMb": 1024,
+        "maxMb": 4096
+      },
+      "java": {
+        "name": "Eclipse Temurin JRE 21.0.13.1+2",
+        "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13.1%2B2/OpenJDK21U-jre_x64_windows_hotspot_21.0.13.1_2.zip",
+        "sha256": "e15ee1e54a5a3b38027a09cedfa87bc3348d7dd3ce50866dd3d9671d7fffc6c1"
+      },
+      "modpack": {
+        "name": "Fabulously Optimized 12.3.0 for 1.21.11",
+        "project": "1KVo5zza",
+        "version": "K0lc692U",
+        "url": "https://cdn.modrinth.com/data/1KVo5zza/versions/K0lc692U/Fabulously.Optimized-v13.3.0-mr.1.mrpack",
+        "sha512": "13a3a2a1e9795056ef2ef343baf3c75eff8af7dd2b300e716a382707622943c1201968bf2748e19d7ff64efbe55b6e73c9567d0b555f4bd34b5725d532b08546"
+      },
+      "logMarker": "Sound engine started"
+    },
+    "finishedAt": "2026-11-21T20:26:17.056Z",
+    "system": {
+      "platform": "Windows_NT 10.0.26200",
+      "osName": "Microsoft Windows 11 Pro",
+      "osBuild": "26200",
+      "cpu": "12th Gen Intel(R) Core(TM) i5-12600K",
+      "cores": 10,
+      "threads": 16,
+      "ramGb": 31.7,
+      "gpu": [
+        "Intel(R) Arc(TM) A750 Graphics"
+      ],
+      "disks": [
+        "CT2000P3PSSD8 (SSD, NVMe)",
+        "CT500P3SSD8 (SSD, NVMe)"
+      ],
+      "webview2Runtime": "157.0.4341.60",
+      "powerPlan": "Höchstleistung",
+      "node": "v24.15.0"
+    }
+  }
+}

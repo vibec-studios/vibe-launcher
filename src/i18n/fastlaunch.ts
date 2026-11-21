@@ -1,0 +1,28 @@
+export default {
+  de: {
+    "settings.java_cds": "Schnellstart (Java-Klassenarchiv)",
+    "settings.java_cds.desc": "Merkt sich beim ersten Spielen die geladenen Java-Klassen und startet Vanilla, Forge und NeoForge danach spürbar schneller (Fabric/Quilt profitieren nicht). Der erste Start und das erste Beenden dauern einmalig etwas länger; braucht je Instanz etwa 50–150 MB.",
+    "isettings.java_cds": "Schnellstart (Java-Klassenarchiv)",
+    "isettings.java_cds.desc": "Für diese Instanz abweichend von der globalen Einstellung ein- oder ausschalten.",
+    "isettings.java_cds.global": "Wie global ({state})",
+    "isettings.java_cds.on": "An",
+    "isettings.java_cds.off": "Aus",
+    "disk.cat.fast_cache": "Schnellstart-Cache",
+    "disk.cat.fast_cache.desc": "Java-Klassenarchive der Instanzen und entsignierte Kopien der Minecraft-JARs. Werden beim nächsten Start automatisch neu erstellt.",
+    "disk.confirm.fast_cache": "Schnellstart-Cache leeren?",
+    "disk.confirm.fast_cache.text": "Etwa {size} werden frei. Die nächsten Starts sind einmalig langsamer, bis die Archive neu erstellt sind.",
+  },
+  en: {
+    "settings.java_cds": "Quick start (Java class archive)",
+    "settings.java_cds.desc": "Remembers the loaded Java classes the first time you play and then starts Vanilla, Forge and NeoForge noticeably faster (Fabric/Quilt do not benefit). The first start and first exit take a little longer once; needs about 50–150 MB per instance.",
+    "isettings.java_cds": "Quick start (Java class archive)",
+    "isettings.java_cds.desc": "Turn it on or off for this instance, independent of the global setting.",
+    "isettings.java_cds.global": "Like global ({state})",
+    "isettings.java_cds.on": "On",
+    "isettings.java_cds.off": "Off",
+    "disk.cat.fast_cache": "Quick start cache",
+    "disk.cat.fast_cache.desc": "Java class archives of your instances and unsigned copies of the Minecraft JARs. Recreated automatically on the next start.",
+    "disk.confirm.fast_cache": "Clear quick start cache?",
+    "disk.confirm.fast_cache.text": "About {size} will be freed. The next starts are slower once until the archives are recreated.",
+  },
+};

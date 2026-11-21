@@ -1,0 +1,409 @@
+{
+  "phase": "install",
+  "params": {
+    "runs": 3,
+    "pack": {
+      "name": "Fabulously Optimized 12.3.0 for 1.21.11",
+      "project": "1KVo5zza",
+      "version": "K0lc692U",
+      "url": "https://cdn.modrinth.com/data/1KVo5zza/versions/K0lc692U/Fabulously.Optimized-v13.3.0-mr.1.mrpack",
+      "sha512": "13a3a2a1e9795056ef2ef343baf3c75eff8af7dd2b300e716a382707622943c1201968bf2748e19d7ff64efbe55b6e73c9567d0b555f4bd34b5725d532b08546"
+    },
+    "packIndex": {
+      "name": "Fabulously Optimized",
+      "versionId": "12.3.0",
+      "dependencies": {
+        "fabric-loader": "0.19.3",
+        "minecraft": "1.21.11"
+      },
+      "files": 50,
+      "mods": 48,
+      "downloadBytes": 48172965
+    },
+    "mcVersion": "1.21.11"
+  },
+  "launchers": {
+    "prism": {
+      "name": "Prism Launcher",
+      "version": "11.1.1",
+      "runs": [
+        {
+          "run": 1,
+          "background": {
+            "at": "2026-11-21T20:31:05.313Z",
+            "cpuPct": 3.4,
+            "freeGb": 17.1,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 21.1
+              },
+              {
+                "name": "audiodg",
+                "corePct": 2.3
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 1.6
+              },
+              {
+                "name": "brave",
+                "corePct": 0.8
+              },
+              {
+                "name": "Spotify",
+                "corePct": 0.8
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 0.8
+              },
+              {
+                "name": "typeperf",
+                "corePct": 0.8
+              },
+              {
+                "name": "powershell",
+                "corePct": 0.8
+              }
+            ],
+            "warnings": []
+          },
+          "startup": {
+            "firstWindowMs": 188.27880000000005,
+            "windowMs": 591.7124000000003,
+            "readyMs": 925.9112999999998,
+            "domMs": null,
+            "domError": null,
+            "title": "Prism Launcher 11.1.1",
+            "interventions": [
+              {
+                "atMs": 325.59689999999955,
+                "action": "Finish per UI-Automation",
+                "ok": true,
+                "ms": 137.09200000000055
+              }
+            ]
+          },
+          "vanilla": {
+            "createMs": null,
+            "installMs": null,
+            "totalMs": 45915.039300000004,
+            "instanceDir": "<work>\\data\\prism\\install-1\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "note": "Prism lädt beim Import auch die Spieldateien (ein Schritt). Parallele Downloads: 16, Vibe: 16 (Standard).",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 523.7
+          },
+          "pack": {
+            "importMs": null,
+            "installMs": null,
+            "totalMs": 2656.7225000000035,
+            "instanceDir": "<work>\\data\\prism\\install-1\\instances\\pack",
+            "id": "pack",
+            "instanceMiB": 46.4,
+            "dataGrowthMiB": 51.2
+          },
+          "dataTotalMiB": 575.3
+        },
+        {
+          "run": 2,
+          "background": {
+            "at": "2026-11-21T20:32:04.113Z",
+            "cpuPct": 3.1,
+            "freeGb": 17.2,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 18
+              },
+              {
+                "name": "brave",
+                "corePct": 3.1
+              },
+              {
+                "name": "powershell",
+                "corePct": 1.6
+              },
+              {
+                "name": "audiodg",
+                "corePct": 1.6
+              },
+              {
+                "name": "tail",
+                "corePct": 0.8
+              },
+              {
+                "name": "RustDesk",
+                "corePct": 0.8
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 0.8
+              },
+              {
+                "name": "explorer",
+                "corePct": 0.8
+              }
+            ],
+            "warnings": []
+          },
+          "startup": {
+            "firstWindowMs": 160.5063999999984,
+            "windowMs": 413.17609999999695,
+            "readyMs": 728.7131999999983,
+            "domMs": null,
+            "domError": null,
+            "title": "Prism Launcher 11.1.1",
+            "interventions": [
+              {
+                "atMs": 185.29709999999614,
+                "action": "Finish per UI-Automation",
+                "ok": true,
+                "ms": 24.727399999996123
+              }
+            ]
+          },
+          "vanilla": {
+            "createMs": null,
+            "installMs": null,
+            "totalMs": 50979.02560000001,
+            "instanceDir": "<work>\\data\\prism\\install-2\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "note": "Prism lädt beim Import auch die Spieldateien (ein Schritt). Parallele Downloads: 16, Vibe: 16 (Standard).",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 523.7
+          },
+          "pack": {
+            "importMs": null,
+            "installMs": null,
+            "totalMs": 2453.7944000000134,
+            "instanceDir": "<work>\\data\\prism\\install-2\\instances\\pack",
+            "id": "pack",
+            "instanceMiB": 46.4,
+            "dataGrowthMiB": 51.2
+          },
+          "dataTotalMiB": 575.3
+        },
+        {
+          "run": 3,
+          "background": {
+            "at": "2026-11-21T20:33:07.753Z",
+            "cpuPct": 4.1,
+            "freeGb": 17.3,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 17.2
+              },
+              {
+                "name": "brave",
+                "corePct": 10.2
+              },
+              {
+                "name": "RustDesk",
+                "corePct": 0.8
+              },
+              {
+                "name": "typeperf",
+                "corePct": 0.8
+              },
+              {
+                "name": "powershell",
+                "corePct": 0.8
+              },
+              {
+                "name": "audiodg",
+                "corePct": 0.8
+              },
+              {
+                "name": "claude",
+                "corePct": 0.8
+              },
+              {
+                "name": "tail",
+                "corePct": 0
+              }
+            ],
+            "warnings": []
+          },
+          "startup": {
+            "firstWindowMs": 159.03010000000359,
+            "windowMs": 399.5506000000023,
+            "readyMs": 1590.7204000000056,
+            "domMs": null,
+            "domError": null,
+            "title": "Prism Launcher 11.1.1",
+            "interventions": [
+              {
+                "atMs": 180.67889999999898,
+                "action": "Finish per UI-Automation",
+                "ok": true,
+                "ms": 21.62269999999262
+              }
+            ]
+          },
+          "vanilla": {
+            "createMs": null,
+            "installMs": null,
+            "totalMs": 69021.2849,
+            "instanceDir": "<work>\\data\\prism\\install-3\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "note": "Prism lädt beim Import auch die Spieldateien (ein Schritt). Parallele Downloads: 16, Vibe: 16 (Standard).",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 523.7
+          },
+          "pack": {
+            "importMs": null,
+            "installMs": null,
+            "totalMs": 2548.7161000000197,
+            "instanceDir": "<work>\\data\\prism\\install-3\\instances\\pack",
+            "id": "pack",
+            "instanceMiB": 46.4,
+            "dataGrowthMiB": 51.2
+          },
+          "dataTotalMiB": 575.3
+        }
+      ],
+      "summary": {
+        "vanillaCreateMs": null,
+        "vanillaInstallMs": null,
+        "vanillaTotalMs": {
+          "n": 3,
+          "median": 50979.02560000001,
+          "p25": 48447.032450000006,
+          "p75": 60000.15525,
+          "min": 45915.039300000004,
+          "max": 69021.2849,
+          "mean": 55305.11660000001,
+          "sd": 12145.408347893886,
+          "cv": 0.2196073183560359
+        },
+        "packImportMs": null,
+        "packInstallMs": null,
+        "packTotalMs": {
+          "n": 3,
+          "median": 2548.7161000000197,
+          "p25": 2501.2552500000165,
+          "p75": 2602.7193000000116,
+          "min": 2453.7944000000134,
+          "max": 2656.7225000000035,
+          "mean": 2553.077666666679,
+          "sd": 101.5343335539377,
+          "cv": 0.03976938691665492
+        },
+        "vanillaInstanceMiB": {
+          "n": 3,
+          "median": 0,
+          "p25": 0,
+          "p75": 0,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "sd": 0,
+          "cv": 0
+        },
+        "vanillaDataGrowthMiB": {
+          "n": 3,
+          "median": 523.7,
+          "p25": 523.7,
+          "p75": 523.7,
+          "min": 523.7,
+          "max": 523.7,
+          "mean": 523.7,
+          "sd": 0,
+          "cv": 0
+        },
+        "packInstanceMiB": {
+          "n": 3,
+          "median": 46.4,
+          "p25": 46.4,
+          "p75": 46.4,
+          "min": 46.4,
+          "max": 46.4,
+          "mean": 46.4,
+          "sd": 0,
+          "cv": 0
+        },
+        "packDataGrowthMiB": {
+          "n": 3,
+          "median": 51.2,
+          "p25": 51.2,
+          "p75": 51.2,
+          "min": 51.2,
+          "max": 51.2,
+          "mean": 51.20000000000001,
+          "sd": 8.702335715267317e-15,
+          "cv": 1.6996749443881474e-16
+        },
+        "dataTotalMiB": {
+          "n": 3,
+          "median": 575.3,
+          "p25": 575.3,
+          "p75": 575.3,
+          "min": 575.3,
+          "max": 575.3,
+          "mean": 575.3,
+          "sd": 0,
+          "cv": 0
+        },
+        "domReadyMs": null,
+        "notes": [
+          "Prism lädt beim Import auch die Spieldateien (ein Schritt). Parallele Downloads: 16, Vibe: 16 (Standard)."
+        ],
+        "errors": []
+      }
+    }
+  },
+  "meta": {
+    "startedAt": "2026-11-21T20:31:03.251Z",
+    "args": [
+      "--phase",
+      "install",
+      "--launchers",
+      "prism",
+      "--prism-downloads",
+      "16"
+    ],
+    "pins": {
+      "mcVersion": "1.21.11",
+      "memory": {
+        "minMb": 1024,
+        "maxMb": 4096
+      },
+      "java": {
+        "name": "Eclipse Temurin JRE 21.0.13.1+2",
+        "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13.1%2B2/OpenJDK21U-jre_x64_windows_hotspot_21.0.13.1_2.zip",
+        "sha256": "e15ee1e54a5a3b38027a09cedfa87bc3348d7dd3ce50866dd3d9671d7fffc6c1"
+      },
+      "modpack": {
+        "name": "Fabulously Optimized 12.3.0 for 1.21.11",
+        "project": "1KVo5zza",
+        "version": "K0lc692U",
+        "url": "https://cdn.modrinth.com/data/1KVo5zza/versions/K0lc692U/Fabulously.Optimized-v13.3.0-mr.1.mrpack",
+        "sha512": "13a3a2a1e9795056ef2ef343baf3c75eff8af7dd2b300e716a382707622943c1201968bf2748e19d7ff64efbe55b6e73c9567d0b555f4bd34b5725d532b08546"
+      },
+      "logMarker": "Sound engine started"
+    },
+    "finishedAt": "2026-11-21T20:34:28.684Z",
+    "system": {
+      "platform": "Windows_NT 10.0.26200",
+      "osName": "Microsoft Windows 11 Pro",
+      "osBuild": "26200",
+      "cpu": "12th Gen Intel(R) Core(TM) i5-12600K",
+      "cores": 10,
+      "threads": 16,
+      "ramGb": 31.7,
+      "gpu": [
+        "Intel(R) Arc(TM) A750 Graphics"
+      ],
+      "disks": [
+        "CT2000P3PSSD8 (SSD, NVMe)",
+        "CT500P3SSD8 (SSD, NVMe)"
+      ],
+      "webview2Runtime": "157.0.4341.60",
+      "powerPlan": "Höchstleistung",
+      "node": "v24.15.0"
+    }
+  }
+}

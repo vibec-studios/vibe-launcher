@@ -72,6 +72,7 @@ export interface Settings {
   afk?: import("@/features/afk/types").AfkSettings;
   lean?: { enabled: boolean; reopen: boolean };
   prefer_dgpu?: boolean;
+  java_cds?: boolean;
 }
 
 export interface StoreConfig {

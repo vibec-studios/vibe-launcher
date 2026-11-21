@@ -43,6 +43,7 @@ impl AppState {
         if let Err(e) = paths.ensure() {
             tracing::error!("Datenordner {:?} nicht anlegbar: {e}", paths.root);
         }
+        crate::minecraft::java::use_probe_store(paths.meta().join("java-probe.json"));
         let settings = Arc::new(RwLock::new(Settings::load_for(&paths)));
         let net = Arc::new(Net::new(settings.read().concurrent_downloads as usize));
         let host = Arc::new(LauncherHost { settings: settings.clone(), state: Default::default() });

@@ -1,5 +1,7 @@
 # Schnellere Instanz-Starts – Messung & Umsetzungsplan
 
+> **Umsetzung (21.11.2026, Branch `henny/launch-speed-appcds`):** Hebel 1 und 2 sind umgesetzt, Hebel 3 (Defender) wurde gestrichen. Details und Nachher-Messung im Abschnitt [Umsetzung und Nachher-Messung](#umsetzung-und-nachher-messung) am Ende.
+
 Stand: 21.11.2026, Code-Stand `195a33f` (vor dem Rust-Umbau R-A/R-B/R-C). Nur gemessen, kein Produktcode geändert.
 Alle Skripte liegen in `bench/` (siehe Anhang), Rohdaten im Scratchpad des Agenten (nicht eingecheckt).
 
@@ -414,3 +416,72 @@ node bench/launcher.mjs launch bench-fabric warm1 fabric      # Vorbereitung mes
 cp <java-runtime> jre/delta-cds && jre/delta-cds/bin/java -Xshare:dump
 BENCH_JRE=<temp>/jre bash bench/run_jvm_series.sh             # bzw. run_jvm_pairs.sh
 ```
+
+---
+
+## Umsetzung und Nachher-Messung
+
+Stand 21.11.2026, Branch `henny/launch-speed-appcds` (auf `integ/refactor`). Hebel 3 (Defender-Ausnahme) wurde vom Nutzer gestrichen und ist nicht umgesetzt.
+
+### Hebel 1 – Vorbereitung
+
+| Punkt aus dem Plan | Umsetzung |
+|---|---|
+| 1. nur noch eine Prüfung | `install/local.rs::resolve_local` prüft nur noch `resolved` (`check_files`); `vanilla` wird nur noch für Java-Version/-Komponente, Asset-Index-ID und Log-Konfiguration gelesen. |
+| 2. Assets ordnerweise | `install/check.rs::missing_assets`: Soll-Objekte nach Hash-Präfix gruppiert, je `objects/xx` ein `read_dir`, Größe aus `DirEntry::metadata` (unter Windows aus `FindNextFile`, ohne Datei-Handle), auf 4 Threads verteilt. Einzelprüfung bleibt nur für Libraries, Client-JAR, Log-Konfiguration und Index. |
+| 3. Asset-Index einmal parsen | `resolve_local` gibt den geparsten Index zurück, `prepare` nutzt ihn für `materialize_assets`. |
+| 4. Java-Probe dauerhaft | `vibe-server-core/src/minecraft/java/probe.rs`: `meta/java-probe.json`, Schlüssel Pfad, gültig nur bei gleicher Größe+mtime von `java(w).exe` **und** `jvm.dll`/`libjvm`. Kaputte Datei → leerer Cache. |
+| 5. kein Statuswechsel im Schnellpfad | `install_instance_opts`: Ist die Instanz installiert und der Installations-Lock frei, läuft `local::prepare` **ohne** `Installing → Installed` (keine zwei `instance.json`-Schreibvorgänge, keine zwei `instance://changed`). Der Lock wird dabei per `try_lock` gehalten, damit ein eventueller Java-Download nicht mit einer parallelen Installation kollidiert; ist er belegt, gilt der alte Weg. |
+| 6. `deps::check` einmal | **nicht umgesetzt** (≈ 15 ms, liegt in `content/`). |
+| „Reparieren“ | unverändert volle Prüfung (`force`), löscht zusätzlich die CDS-Archive der Instanz. |
+
+### Hebel 2 – AppCDS (`src-tauri/src/minecraft/cds/`)
+
+- `rules.rs`: nur Vanilla/Forge/NeoForge, Java ≥ 19, keine eigenen `-Xshare`/`SharedArchiveFile`/`ArchiveClassesAtExit`/`AOTCache`/`UseCompressedOops`-Argumente, Heap < 32 GB. **Leerzeichen** im Datenordner- oder Java-Pfad schalten CDS bei Java < 21.0.11 ab (Mojangs 21.0.7 archiviert dort nichts).
+- `base.rs`: fehlt `bin/server/classes.jsa` bei einer verwalteten Runtime (unter `java/`), läuft einmalig `java -Xshare:dump` im Hintergrund (ohne Fenster, 120 s Zeitlimit); Marker `.vibe-cds` mit Größe+mtime von `jvm.dll` erkennt Runtime-Updates. Fremde JDKs werden nie verändert. Der Start wartet nie darauf.
+- `jar.rs`: entsignierte Kopie des Client-JARs (Signaturdateien weg, Manifest nur `Manifest-Version`+`Main-Class`, alle anderen Einträge per `raw_copy_file` unverändert), Ablage `meta/cds/<sha1 aus dem Versions-JSON>/<originaler Dateiname>` (Name bleibt, weil Forge/NeoForge ihn in `-DignoreList` erwarten). Erstellung im Hintergrund (`.part` + rename); das Original bleibt unangetastet.
+- `fingerprint.rs`: SHA1 über Java-Pfad, Java-Version, Größe+mtime von `java.exe`/`jvm.dll`, Profil-ID (Loader+Version), Main-Class, kompletten `-cp`/`-p`-Wert und Größe+mtime jedes Eintrags → Archiv `<spielordner>/.vibe/cds-<fp>.jsa`; andere `cds-*.jsa` werden beim Start gelöscht.
+- `mod.rs`: `-XX:SharedArchiveFile=… -XX:+AutoCreateSharedArchive` direkt vor der Main-Class (auch mit Wrapper). Zweite Sitzung derselben Instanz: nur `SharedArchiveFile`, und nur wenn das Archiv existiert. **Rückfall:** Endet eine Sitzung mit CDS in < 30 s als Absturz, wird das Archiv gelöscht und für diesen Fingerabdruck `cds-off-<fp>` gesetzt → ab dann ohne CDS, bis sich Java/Loader/Mods ändern. Jede andere Abweichung (Grundarchiv fehlt, Kopie noch nicht fertig, Fehler) startet einfach ohne CDS und schreibt eine Log-Zeile „Java-Schnellstart (CDS): …“.
+- Einstellungen: global „Schnellstart (Java-Klassenarchiv)“ (`settings.java_cds`, Standard an) unter Einstellungen → Java & RAM, je Instanz Auswahl „Wie global / An / Aus“ (`java.cds`) im Java-Tab der Instanz. Beides ist im Simple Mode ausgeblendet (Java-Runtime-Bereich).
+- Speicherplatz-Tab: neue Kategorie „Schnellstart-Cache“ (`fast_cache`: `meta/cds/` + `instances/*/minecraft/.vibe/cds-*`), leerbar außer bei laufenden Instanzen; zählt nicht doppelt in die Summe.
+
+### Nachher-Messung (ein kurzer Durchlauf)
+
+Debug-Build dieses Branches (`--features tauri/custom-protocol`), eigener Temp-Datenordner (ohne Leerzeichen), Offline-Testprofil, Mojang `java-runtime-delta` 21.0.7, 4096 MB, Skripte wie oben (`launcher.mjs`, `wrap.py`, `jvmbench.py`). Kein anderes Minecraft lief; die Fremdlast durch andere Agenten-Builds war wieder hoch. **n ist klein (1–3 pro Variante)**, die Zahlen sind eine Stichprobe, keine Messreihe. „Vorher“ bei der Vorbereitung sind die Werte aus der Messung oben (gleicher PC, gleiche Methode, alter Code-Stand `195a33f`); der alte Stand wurde nicht neu gebaut.
+
+**Vorbereitung im Launcher (Klick → Wrapper-Start, warm, ms)**
+
+| | Vanilla 1.21.11 vorher | Vanilla nachher | NeoForge 1.21.1 vorher | NeoForge nachher |
+|---|---:|---:|---:|---:|
+| Spieldateien prüfen (`missing_files` ×2 → `check_files` ×1) | 280 (157+123) | **48–58** | 266 (147+119) | **48–51** |
+| Java ermitteln (warm / 1. Start nach Launcher-Neustart) | 0,5 / ~190 | 2–3 / **2–3** (Datei-Cache) | 0,5 / ~190 | 2–3 / **2–3** |
+| Ende der Launch-Aufgabe (`task_done`, inkl. UI-Aufruf) | ≈ 340 | **99–107** | ≈ 325 | **128–136** |
+| Klick → Wrapper-Start gesamt¹ | 407 | **147–153** | 416 | **170–179** |
+
+¹ inklusive ~60–80 ms Python-Start des Mess-Wrappers. Der Launcher selbst braucht also warm ~70–110 ms; reine Vorbereitung (`install_instance_opts`, Stufe „Spieldateien“ bis „Account“) ≈ 55 ms. Release wird schneller sein (JSON-Parsing des Asset-Index ist im Debug-Build ein Großteil der restlichen ~50 ms). Kein Statuswechsel mehr im Schnellpfad.
+
+**JVM bis Hauptmenü (s ab Prozessstart; in Klammern `Setting user`)**
+
+| Variante | Vanilla 1.21.11 | NeoForge 1.21.1 (ohne Mods) |
+|---|---|---|
+| ohne CDS, allererster Start (kalt) | 31,3 (25,6) | 33,5 (25,8) |
+| ohne CDS, warm | 12,7 (8,7) | 25,3 (18,2) |
+| mit CDS, Erstell-Lauf (einmalig) | 57,4 (46,9), Beenden 8,9 s statt 5,2 s | 97,5 (85,7), Beenden 7,9 s statt 5,5 s |
+| **mit CDS, warm** | **9,5 (6,2) / 8,1 (5,0)** | **12,5 (9,9) / 11,0 (8,3)** |
+| Archiv / entsignierte JAR | 101 MB / 27 MB | 98 MB / 23 MB |
+
+Einordnung:
+- Vanilla warm −25 bis −36 % bis Hauptmenü, wie in der Vorab-Messung.
+- NeoForge warm −50 bis −57 % in dieser Stichprobe; der einzige warme Lauf ohne CDS (25,3 s) lag höher als in Reihe 2 oben (19–23 s, dort mit 30 Mods). Realistisch eher −20 bis −40 %.
+- Der Erstell-Lauf ist deutlich langsamer als oben gemessen (Vanilla +45 s statt +18 s, NeoForge +72 s statt +48 s), vermutlich wegen der hohen Fremdlast; er fällt einmal pro Fingerabdruck an (nach Java-, Loader- oder Mod-Änderung erneut).
+- Im Erstell-Lauf schreibt die JVM beim Beenden viele `[warning][cds] Skipping …`-Zeilen ins Spiel-Log (normal, keine Fehler).
+- Alle 10 Starts liefen bis zum Hauptmenü und ließen sich sauber schließen; das Archiv wurde in den warmen Läufen wiederverwendet (gleiche Größe, keine Neuerstellung).
+
+### Offen / nicht getestet
+
+- Weltbeitritt mit CDS (weiterhin nicht getestet), Forge (nur NeoForge gemessen), Java 25, Release-Build, Pfad mit Leerzeichen am echten System (nur Regel + Unit-Test).
+- NeoForge **mit** Mods nicht gemessen (Instanz ohne Mods).
+- Rückfall nach frühem Absturz nur per Unit-Test geprüft, nicht mit einer echt abstürzenden JVM.
+- Grundarchiv wird erst beim Start einer Instanz angestoßen (kein Hintergrund-Durchlauf direkt nach dem Launcher-Start); der erste CDS-Start einer neuen Runtime ist deshalb frühestens der übernächste Start.
+- `deps::check` läuft weiter zweimal pro Start (≈ 15 ms).
+- Kein Test für „0 `instance://changed`-Events beim Warmstart“ (braucht ein AppState-Testgerüst); im Code ist der Schnellpfad ohne `modify`.

@@ -1,0 +1,762 @@
+{
+  "phase": "install",
+  "params": {
+    "runs": 3,
+    "pack": {
+      "name": "Fabulously Optimized 12.3.0 for 1.21.11",
+      "project": "1KVo5zza",
+      "version": "K0lc692U",
+      "url": "https://cdn.modrinth.com/data/1KVo5zza/versions/K0lc692U/Fabulously.Optimized-v13.3.0-mr.1.mrpack",
+      "sha512": "13a3a2a1e9795056ef2ef343baf3c75eff8af7dd2b300e716a382707622943c1201968bf2748e19d7ff64efbe55b6e73c9567d0b555f4bd34b5725d532b08546"
+    },
+    "packIndex": {
+      "name": "Fabulously Optimized",
+      "versionId": "12.3.0",
+      "dependencies": {
+        "fabric-loader": "0.19.3",
+        "minecraft": "1.21.11"
+      },
+      "files": 50,
+      "mods": 48,
+      "downloadBytes": 48172965
+    },
+    "mcVersion": "1.21.11"
+  },
+  "launchers": {
+    "vibe": {
+      "name": "Vibe Launcher",
+      "version": "1.0.0-beta.7",
+      "runs": [
+        {
+          "run": 1,
+          "background": {
+            "at": "2026-11-21T20:26:19.107Z",
+            "cpuPct": 4.6,
+            "freeGb": 17.5,
+            "top": [
+              {
+                "name": "brave",
+                "corePct": 25.8
+              },
+              {
+                "name": "Discord",
+                "corePct": 20.3
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 1.6
+              },
+              {
+                "name": "DiscordSystemHelper",
+                "corePct": 0.8
+              },
+              {
+                "name": "powershell",
+                "corePct": 0.8
+              },
+              {
+                "name": "claude",
+                "corePct": 0.8
+              },
+              {
+                "name": "tail",
+                "corePct": 0
+              },
+              {
+                "name": "Spotify",
+                "corePct": 0
+              }
+            ],
+            "warnings": []
+          },
+          "startup": {
+            "firstWindowMs": 625.7425999999978,
+            "windowMs": 625.7457000000868,
+            "readyMs": 1992.2675000000745,
+            "domMs": 1574.439699999988,
+            "domError": null,
+            "title": "Vibe Launcher",
+            "interventions": []
+          },
+          "vanilla": {
+            "createMs": 20.16259999992326,
+            "installMs": 16030.812099999981,
+            "totalMs": 16051.030700000003,
+            "instanceDir": "<work>\\data\\vibe\\install-1\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 525
+          },
+          "pack": {
+            "importMs": 1334.1424000000115,
+            "installMs": 606.9111999999732,
+            "totalMs": 1941.0535999999847,
+            "instanceDir": "<work>\\data\\vibe\\install-1\\instances\\bench-pack",
+            "id": "bench-pack",
+            "instanceMiB": 46.3,
+            "dataGrowthMiB": 50.8
+          },
+          "dataTotalMiB": 590.5
+        },
+        {
+          "run": 2,
+          "background": {
+            "at": "2026-11-21T20:29:17.301Z",
+            "cpuPct": 4.1,
+            "freeGb": 17,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 25.8
+              },
+              {
+                "name": "brave",
+                "corePct": 0.8
+              },
+              {
+                "name": "Spotify",
+                "corePct": 0.8
+              },
+              {
+                "name": "codex",
+                "corePct": 0.8
+              },
+              {
+                "name": "typeperf",
+                "corePct": 0.8
+              },
+              {
+                "name": "powershell",
+                "corePct": 0.8
+              },
+              {
+                "name": "audiodg",
+                "corePct": 0.8
+              },
+              {
+                "name": "GameInputRawInputProxy",
+                "corePct": 0.8
+              }
+            ],
+            "warnings": []
+          },
+          "startup": {
+            "firstWindowMs": 600.4627000000328,
+            "windowMs": 600.4779000000563,
+            "readyMs": 5570.60120000015,
+            "domMs": 611.1363999999594,
+            "domError": null,
+            "title": "Vibe Launcher",
+            "interventions": []
+          },
+          "vanilla": {
+            "createMs": 23.475700000068173,
+            "installMs": 8960.651299999794,
+            "totalMs": 8984.12819999992,
+            "instanceDir": "<work>\\data\\vibe\\install-2\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 526.1
+          },
+          "pack": {
+            "importMs": 888.6371999999974,
+            "installMs": 234.79609999991953,
+            "totalMs": 1123.433299999917,
+            "instanceDir": "<work>\\data\\vibe\\install-2\\instances\\bench-pack",
+            "id": "bench-pack",
+            "instanceMiB": 46.3,
+            "dataGrowthMiB": 50.8
+          },
+          "dataTotalMiB": 590.5
+        },
+        {
+          "run": 3,
+          "background": {
+            "at": "2026-11-21T20:29:41.182Z",
+            "cpuPct": 8.6,
+            "freeGb": 17,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 21.1
+              },
+              {
+                "name": "brave",
+                "corePct": 3.9
+              },
+              {
+                "name": "audiodg",
+                "corePct": 2.3
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 1.6
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 0.8
+              },
+              {
+                "name": "node",
+                "corePct": 0.8
+              },
+              {
+                "name": "asus_framework",
+                "corePct": 0.8
+              },
+              {
+                "name": "typeperf",
+                "corePct": 0.8
+              }
+            ],
+            "warnings": []
+          },
+          "startup": {
+            "firstWindowMs": 612.7357000000775,
+            "windowMs": 612.7461000001058,
+            "readyMs": 1040.0898000001907,
+            "domMs": 632.4912000000477,
+            "domError": null,
+            "title": "Vibe Launcher",
+            "interventions": []
+          },
+          "vanilla": {
+            "createMs": 21.529700000071898,
+            "installMs": 8534.348299999954,
+            "totalMs": 8555.879200000083,
+            "instanceDir": "<work>\\data\\vibe\\install-3\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 525
+          },
+          "pack": {
+            "importMs": 788.6465000000317,
+            "installMs": 229.51959999999963,
+            "totalMs": 1018.1661000000313,
+            "instanceDir": "<work>\\data\\vibe\\install-3\\instances\\bench-pack",
+            "id": "bench-pack",
+            "instanceMiB": 46.3,
+            "dataGrowthMiB": 50.8
+          },
+          "dataTotalMiB": 590.5
+        }
+      ],
+      "summary": {
+        "vanillaCreateMs": {
+          "n": 3,
+          "median": 21.529700000071898,
+          "p25": 20.84614999999758,
+          "p75": 22.502700000070035,
+          "min": 20.16259999992326,
+          "max": 23.475700000068173,
+          "mean": 21.722666666687775,
+          "sd": 1.6649579584958565,
+          "cv": 0.07664611274678854
+        },
+        "vanillaInstallMs": {
+          "n": 3,
+          "median": 8960.651299999794,
+          "p25": 8747.499799999874,
+          "p75": 12495.731699999887,
+          "min": 8534.348299999954,
+          "max": 16030.812099999981,
+          "mean": 11175.270566666577,
+          "sd": 4210.421148578429,
+          "cv": 0.37676234534644804
+        },
+        "vanillaTotalMs": {
+          "n": 3,
+          "median": 8984.12819999992,
+          "p25": 8770.003700000001,
+          "p75": 12517.579449999961,
+          "min": 8555.879200000083,
+          "max": 16051.030700000003,
+          "mean": 11197.012700000001,
+          "sd": 4209.152807839509,
+          "cv": 0.3759174809044834
+        },
+        "packImportMs": {
+          "n": 3,
+          "median": 888.6371999999974,
+          "p25": 838.6418500000145,
+          "p75": 1111.3898000000045,
+          "min": 788.6465000000317,
+          "max": 1334.1424000000115,
+          "mean": 1003.8087000000136,
+          "sd": 290.41315403815184,
+          "cv": 0.2893112542640325
+        },
+        "packInstallMs": {
+          "n": 3,
+          "median": 234.79609999991953,
+          "p25": 232.15784999995958,
+          "p75": 420.85364999994636,
+          "min": 229.51959999999963,
+          "max": 606.9111999999732,
+          "mean": 357.07563333329745,
+          "sd": 216.3800317538717,
+          "cv": 0.6059781501581787
+        },
+        "packTotalMs": {
+          "n": 3,
+          "median": 1123.433299999917,
+          "p25": 1070.799699999974,
+          "p75": 1532.2434499999508,
+          "min": 1018.1661000000313,
+          "max": 1941.0535999999847,
+          "mean": 1360.884333333311,
+          "sd": 505.19063662875175,
+          "cv": 0.3712223179109957
+        },
+        "vanillaInstanceMiB": {
+          "n": 3,
+          "median": 0,
+          "p25": 0,
+          "p75": 0,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "sd": 0,
+          "cv": 0
+        },
+        "vanillaDataGrowthMiB": {
+          "n": 3,
+          "median": 525,
+          "p25": 525,
+          "p75": 525.55,
+          "min": 525,
+          "max": 526.1,
+          "mean": 525.3666666666667,
+          "sd": 0.6350852961086014,
+          "cv": 0.0012088420076935501
+        },
+        "packInstanceMiB": {
+          "n": 3,
+          "median": 46.3,
+          "p25": 46.3,
+          "p75": 46.3,
+          "min": 46.3,
+          "max": 46.3,
+          "mean": 46.29999999999999,
+          "sd": 8.702335715267317e-15,
+          "cv": 1.8795541501657275e-16
+        },
+        "packDataGrowthMiB": {
+          "n": 3,
+          "median": 50.8,
+          "p25": 50.8,
+          "p75": 50.8,
+          "min": 50.8,
+          "max": 50.8,
+          "mean": 50.79999999999999,
+          "sd": 8.702335715267317e-15,
+          "cv": 1.713058211666795e-16
+        },
+        "dataTotalMiB": {
+          "n": 3,
+          "median": 590.5,
+          "p25": 590.5,
+          "p75": 590.5,
+          "min": 590.5,
+          "max": 590.5,
+          "mean": 590.5,
+          "sd": 0,
+          "cv": 0
+        },
+        "domReadyMs": {
+          "n": 3,
+          "median": 632.4912000000477,
+          "p25": 621.8138000000035,
+          "p75": 1103.4654500000179,
+          "min": 611.1363999999594,
+          "max": 1574.439699999988,
+          "mean": 939.3557666666651,
+          "sd": 550.1024528706943,
+          "cv": 0.5856167305202702
+        },
+        "notes": [],
+        "errors": []
+      }
+    },
+    "prism": {
+      "name": "Prism Launcher",
+      "version": "11.1.1",
+      "runs": [
+        {
+          "run": 1,
+          "background": {
+            "at": "2026-11-21T20:26:47.837Z",
+            "cpuPct": 17,
+            "freeGb": 17.4,
+            "top": [
+              {
+                "name": "brave",
+                "corePct": 24.2
+              },
+              {
+                "name": "Discord",
+                "corePct": 23.4
+              },
+              {
+                "name": "Spotify",
+                "corePct": 3.1
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 0.8
+              },
+              {
+                "name": "DiscordSystemHelper",
+                "corePct": 0.8
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 0.8
+              },
+              {
+                "name": "explorer",
+                "corePct": 0.8
+              },
+              {
+                "name": "codex",
+                "corePct": 0.8
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 17 % CPU (gesamt) – Ergebnisse können verfälscht sein"
+            ]
+          },
+          "startup": {
+            "firstWindowMs": 159.3359000000637,
+            "windowMs": 459.3082000000868,
+            "readyMs": 1096.3459999999031,
+            "domMs": null,
+            "domError": null,
+            "title": "Prism Launcher 11.1.1",
+            "interventions": [
+              {
+                "atMs": 183.90720000001602,
+                "action": "Finish per UI-Automation",
+                "ok": true,
+                "ms": 24.53429999994114
+              }
+            ]
+          },
+          "vanilla": {
+            "createMs": null,
+            "installMs": null,
+            "totalMs": 71166.07259999984,
+            "instanceDir": "<work>\\data\\prism\\install-1\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "note": "Prism lädt beim Import auch die Spieldateien (ein Schritt). Parallele Downloads: 6 (Standard), Vibe: 16 (Standard).",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 523.7
+          },
+          "pack": {
+            "importMs": null,
+            "installMs": null,
+            "totalMs": 2872.6439000000246,
+            "instanceDir": "<work>\\data\\prism\\install-1\\instances\\pack",
+            "id": "pack",
+            "instanceMiB": 46.4,
+            "dataGrowthMiB": 51.2
+          },
+          "dataTotalMiB": 575.3
+        },
+        {
+          "run": 2,
+          "background": {
+            "at": "2026-11-21T20:28:12.526Z",
+            "cpuPct": 2.2,
+            "freeGb": 17.1,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 21.1
+              },
+              {
+                "name": "audiodg",
+                "corePct": 1.6
+              },
+              {
+                "name": "brave",
+                "corePct": 0.8
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 0.8
+              },
+              {
+                "name": "explorer",
+                "corePct": 0.8
+              },
+              {
+                "name": "powershell",
+                "corePct": 0.8
+              },
+              {
+                "name": "tail",
+                "corePct": 0
+              },
+              {
+                "name": "Spotify",
+                "corePct": 0
+              }
+            ],
+            "warnings": []
+          },
+          "startup": {
+            "firstWindowMs": 160.441900000209,
+            "windowMs": 395.9659000001848,
+            "readyMs": 713.5387000001501,
+            "domMs": null,
+            "domError": null,
+            "title": "Prism Launcher 11.1.1",
+            "interventions": [
+              {
+                "atMs": 181.34799999999814,
+                "action": "Finish per UI-Automation",
+                "ok": true,
+                "ms": 20.876700000138953
+              }
+            ]
+          },
+          "vanilla": {
+            "createMs": null,
+            "installMs": null,
+            "totalMs": 52593.54559999984,
+            "instanceDir": "<work>\\data\\prism\\install-2\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "note": "Prism lädt beim Import auch die Spieldateien (ein Schritt). Parallele Downloads: 6 (Standard), Vibe: 16 (Standard).",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 523.7
+          },
+          "pack": {
+            "importMs": null,
+            "installMs": null,
+            "totalMs": 2210.412299999967,
+            "instanceDir": "<work>\\data\\prism\\install-2\\instances\\pack",
+            "id": "pack",
+            "instanceMiB": 46.4,
+            "dataGrowthMiB": 51.2
+          },
+          "dataTotalMiB": 575.3
+        },
+        {
+          "run": 3,
+          "background": {
+            "at": "2026-11-21T20:29:59.966Z",
+            "cpuPct": 8.4,
+            "freeGb": 17,
+            "top": [
+              {
+                "name": "Discord",
+                "corePct": 21.9
+              },
+              {
+                "name": "powershell",
+                "corePct": 0.8
+              },
+              {
+                "name": "audiodg",
+                "corePct": 0.8
+              },
+              {
+                "name": "tail",
+                "corePct": 0
+              },
+              {
+                "name": "brave",
+                "corePct": 0
+              },
+              {
+                "name": "Spotify",
+                "corePct": 0
+              },
+              {
+                "name": "bash",
+                "corePct": 0
+              },
+              {
+                "name": "msedgewebview2",
+                "corePct": 0
+              }
+            ],
+            "warnings": []
+          },
+          "startup": {
+            "firstWindowMs": 161.76720000011846,
+            "windowMs": 396.6732000000775,
+            "readyMs": 1013.1735000000335,
+            "domMs": null,
+            "domError": null,
+            "title": "Prism Launcher 11.1.1",
+            "interventions": [
+              {
+                "atMs": 183.90090000000782,
+                "action": "Finish per UI-Automation",
+                "ok": true,
+                "ms": 22.104499999899417
+              }
+            ]
+          },
+          "vanilla": {
+            "createMs": null,
+            "installMs": null,
+            "totalMs": 49096.69169999985,
+            "instanceDir": "<work>\\data\\prism\\install-3\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "note": "Prism lädt beim Import auch die Spieldateien (ein Schritt). Parallele Downloads: 6 (Standard), Vibe: 16 (Standard).",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 523.7
+          },
+          "pack": {
+            "importMs": null,
+            "installMs": null,
+            "totalMs": 2324.0132999999914,
+            "instanceDir": "<work>\\data\\prism\\install-3\\instances\\pack",
+            "id": "pack",
+            "instanceMiB": 46.4,
+            "dataGrowthMiB": 51.2
+          },
+          "dataTotalMiB": 575.3
+        }
+      ],
+      "summary": {
+        "vanillaCreateMs": null,
+        "vanillaInstallMs": null,
+        "vanillaTotalMs": {
+          "n": 3,
+          "median": 52593.54559999984,
+          "p25": 50845.118649999844,
+          "p75": 61879.80909999984,
+          "min": 49096.69169999985,
+          "max": 71166.07259999984,
+          "mean": 57618.76996666651,
+          "sd": 11861.873936222153,
+          "cv": 0.20586822563349513
+        },
+        "packImportMs": null,
+        "packInstallMs": null,
+        "packTotalMs": {
+          "n": 3,
+          "median": 2324.0132999999914,
+          "p25": 2267.2127999999793,
+          "p75": 2598.328600000008,
+          "min": 2210.412299999967,
+          "max": 2872.6439000000246,
+          "mean": 2469.023166666661,
+          "sd": 354.13072315555024,
+          "cv": 0.14342948577256542
+        },
+        "vanillaInstanceMiB": {
+          "n": 3,
+          "median": 0,
+          "p25": 0,
+          "p75": 0,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "sd": 0,
+          "cv": 0
+        },
+        "vanillaDataGrowthMiB": {
+          "n": 3,
+          "median": 523.7,
+          "p25": 523.7,
+          "p75": 523.7,
+          "min": 523.7,
+          "max": 523.7,
+          "mean": 523.7,
+          "sd": 0,
+          "cv": 0
+        },
+        "packInstanceMiB": {
+          "n": 3,
+          "median": 46.4,
+          "p25": 46.4,
+          "p75": 46.4,
+          "min": 46.4,
+          "max": 46.4,
+          "mean": 46.4,
+          "sd": 0,
+          "cv": 0
+        },
+        "packDataGrowthMiB": {
+          "n": 3,
+          "median": 51.2,
+          "p25": 51.2,
+          "p75": 51.2,
+          "min": 51.2,
+          "max": 51.2,
+          "mean": 51.20000000000001,
+          "sd": 8.702335715267317e-15,
+          "cv": 1.6996749443881474e-16
+        },
+        "dataTotalMiB": {
+          "n": 3,
+          "median": 575.3,
+          "p25": 575.3,
+          "p75": 575.3,
+          "min": 575.3,
+          "max": 575.3,
+          "mean": 575.3,
+          "sd": 0,
+          "cv": 0
+        },
+        "domReadyMs": null,
+        "notes": [
+          "Prism lädt beim Import auch die Spieldateien (ein Schritt). Parallele Downloads: 6 (Standard), Vibe: 16 (Standard)."
+        ],
+        "errors": []
+      }
+    }
+  },
+  "meta": {
+    "startedAt": "2026-11-21T20:26:17.067Z",
+    "args": [
+      "--phase",
+      "setup,idle,install"
+    ],
+    "pins": {
+      "mcVersion": "1.21.11",
+      "memory": {
+        "minMb": 1024,
+        "maxMb": 4096
+      },
+      "java": {
+        "name": "Eclipse Temurin JRE 21.0.13.1+2",
+        "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13.1%2B2/OpenJDK21U-jre_x64_windows_hotspot_21.0.13.1_2.zip",
+        "sha256": "e15ee1e54a5a3b38027a09cedfa87bc3348d7dd3ce50866dd3d9671d7fffc6c1"
+      },
+      "modpack": {
+        "name": "Fabulously Optimized 12.3.0 for 1.21.11",
+        "project": "1KVo5zza",
+        "version": "K0lc692U",
+        "url": "https://cdn.modrinth.com/data/1KVo5zza/versions/K0lc692U/Fabulously.Optimized-v13.3.0-mr.1.mrpack",
+        "sha512": "13a3a2a1e9795056ef2ef343baf3c75eff8af7dd2b300e716a382707622943c1201968bf2748e19d7ff64efbe55b6e73c9567d0b555f4bd34b5725d532b08546"
+      },
+      "logMarker": "Sound engine started"
+    },
+    "finishedAt": "2026-11-21T20:30:59.655Z",
+    "system": {
+      "platform": "Windows_NT 10.0.26200",
+      "osName": "Microsoft Windows 11 Pro",
+      "osBuild": "26200",
+      "cpu": "12th Gen Intel(R) Core(TM) i5-12600K",
+      "cores": 10,
+      "threads": 16,
+      "ramGb": 31.7,
+      "gpu": [
+        "Intel(R) Arc(TM) A750 Graphics"
+      ],
+      "disks": [
+        "CT2000P3PSSD8 (SSD, NVMe)",
+        "CT500P3SSD8 (SSD, NVMe)"
+      ],
+      "webview2Runtime": "157.0.4341.60",
+      "powerPlan": "Höchstleistung",
+      "node": "v24.15.0"
+    }
+  }
+}

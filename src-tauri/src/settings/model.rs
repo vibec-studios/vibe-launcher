@@ -96,6 +96,7 @@ pub struct Settings {
     /// Weggeklickte Hinweise/Ankündigungen (je `id`, z. B. "domain-move-2026-11"; docs/DOMAINS.md)
     pub dismissed_notices: Vec<String>,
     pub prefer_dgpu: bool,
+    pub java_cds: bool,
     pub afk: crate::afk::AfkSettings,
     pub lean: crate::lean::LeanSettings,
 }

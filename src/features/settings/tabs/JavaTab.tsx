@@ -51,6 +51,9 @@ export function JavaTab({ s, update }: TabProps) {
         <SettingRow title={t("settings.auto_java")} description={t("settings.auto_java.desc")}>
           <Switch checked={s.auto_java} onChange={(auto_java) => update({ auto_java })} label={t("settings.auto_java")} />
         </SettingRow>
+        <SettingRow title={t("settings.java_cds")} description={t("settings.java_cds.desc")}>
+          <Switch checked={s.java_cds ?? true} onChange={(java_cds) => update({ java_cds })} label={t("settings.java_cds")} />
+        </SettingRow>
         <div className="border-t border-line">
           <div className="px-4 pb-1 pt-3">
             <div className="text-[13.5px] font-medium text-text">{t("settings.java.found")}</div>

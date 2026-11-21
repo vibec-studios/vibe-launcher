@@ -17,6 +17,8 @@ mod mojang;
 pub use mojang::*;
 mod adoptium;
 pub use adoptium::*;
+mod probe;
+pub use probe::*;
 
 const RUNTIMES_URL: &str = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
 const MARKER: &str = ".vibe-runtime.json";
@@ -114,44 +116,6 @@ pub fn parse_properties(out: &str) -> Option<(String, Option<String>, String)> {
         version = re.captures(out).map(|c| c[1].to_string());
     }
     Some((version?, vendor, arch.unwrap_or_else(|| "x64".into())))
-}
-
-type ProbeCache = Mutex<HashMap<PathBuf, (SystemTime, JavaInstall)>>;
-fn probe_cache() -> &'static ProbeCache {
-    static C: OnceLock<ProbeCache> = OnceLock::new();
-    C.get_or_init(Default::default)
-}
-
-/// Java-Programm ausführen und Version/Hersteller/Architektur bestimmen.
-pub async fn probe(path: &Path, managed: bool) -> AppResult<JavaInstall> {
-    let meta = std::fs::metadata(path).map_err(|_| AppError::Invalid(format!("Java nicht gefunden: {}", path.display())))?;
-    let mtime = meta.modified().unwrap_or(SystemTime::UNIX_EPOCH);
-    if let Some((t, j)) = probe_cache().lock().get(path) {
-        if *t == mtime {
-            let mut j = j.clone();
-            j.managed = managed;
-            return Ok(j);
-        }
-    }
-    let java = console_java(path);
-    let mut cmd = tokio::process::Command::new(&java);
-    cmd.args(["-XshowSettings:properties", "-version"])
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .kill_on_drop(true);
-    #[cfg(windows)]
-    cmd.creation_flags(CREATE_NO_WINDOW);
-    let out = tokio::time::timeout(Duration::from_secs(15), cmd.output())
-        .await
-        .map_err(|_| AppError::msg(format!("Java reagiert nicht: {}", path.display())))?
-        .map_err(|e| AppError::msg(format!("Java konnte nicht gestartet werden ({}): {e}", path.display())))?;
-    let text = format!("{}\n{}", String::from_utf8_lossy(&out.stderr), String::from_utf8_lossy(&out.stdout));
-    let (version, vendor, arch) =
-        parse_properties(&text).ok_or_else(|| AppError::msg(format!("{} ist keine gültige Java-Installation.", path.display())))?;
-    let j = JavaInstall { path: path.to_string_lossy().to_string(), major: parse_major(&version), version, vendor, arch, managed };
-    probe_cache().lock().insert(path.to_path_buf(), (mtime, j.clone()));
-    Ok(j)
 }
 
 // ------------------------------------------------------------------ Auswahl

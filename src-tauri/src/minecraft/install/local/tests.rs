@@ -51,9 +51,10 @@ async fn installed_vanilla_resolves_without_network() {
     let (paths, root) = setup();
     let env = Env::current();
     let inst = instance(LoaderKind::Vanilla, None, "1.20.1");
-    let (vanilla, resolved) = resolve_local(&paths, &inst, &env).await.unwrap().expect("Schnellpfad");
+    let Local { vanilla, resolved, index } = resolve_local(&paths, &inst, &env).await.unwrap().expect("Schnellpfad");
     assert_eq!(vanilla.id, "1.20.1");
     assert_eq!(resolved.id, "1.20.1");
+    assert_eq!(index.expect("Asset-Index").objects.len(), 1);
     std::fs::remove_file(paths.assets().join("objects").join("aa").join("aa11223344556677889900aabbccddeeff001122")).unwrap();
     assert_eq!(missing_files(&paths, &vanilla, &env).await.unwrap(), 1);
     assert!(resolve_local(&paths, &inst, &env).await.unwrap().is_none());
@@ -65,7 +66,7 @@ async fn installed_fabric_resolves_without_network() {
     let (paths, root) = setup();
     let env = Env::current();
     let inst = instance(LoaderKind::Fabric, Some("0.16.9"), "fabric-loader-0.16.9-1.20.1");
-    let (_, resolved) = resolve_local(&paths, &inst, &env).await.unwrap().expect("Schnellpfad");
+    let resolved = resolve_local(&paths, &inst, &env).await.unwrap().expect("Schnellpfad").resolved;
     assert_eq!(resolved.base_id, "1.20.1");
     let changed = instance(LoaderKind::Fabric, Some("0.17.0"), "fabric-loader-0.16.9-1.20.1");
     assert!(resolve_local(&paths, &changed, &env).await.unwrap().is_none());
@@ -80,5 +81,43 @@ async fn missing_version_json_is_not_fatal_for_fallback() {
     std::fs::remove_file(paths.version_json("1.20.1")).unwrap();
     let inst = instance(LoaderKind::Vanilla, None, "1.20.1");
     assert!(resolve_local(&paths, &inst, &Env::current()).await.is_err());
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[tokio::test]
+async fn single_check_matches_previous_sum() {
+    let (paths, root) = setup();
+    let env = Env::current();
+    let inst = instance(LoaderKind::Fabric, Some("0.16.9"), "fabric-loader-0.16.9-1.20.1");
+    let vanilla = meta::merge(&meta::load_chain(&paths, "1.20.1").unwrap(), &env);
+    let resolved = resolve_local(&paths, &inst, &env).await.unwrap().expect("Schnellpfad").resolved;
+    std::fs::remove_file(paths.libraries().join("com/example/lib/1.0/lib-1.0.jar")).unwrap();
+    std::fs::remove_file(paths.assets().join("objects").join("aa").join("aa11223344556677889900aabbccddeeff001122")).unwrap();
+    let old = missing_files(&paths, &vanilla, &env).await.unwrap() + missing_files(&paths, &resolved, &env).await.unwrap();
+    let new = missing_files(&paths, &resolved, &env).await.unwrap();
+    assert_eq!((new, old), (2, 4));
+    assert!(resolve_local(&paths, &inst, &env).await.unwrap().is_none());
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[tokio::test]
+async fn library_replaced_by_loader_is_no_false_alarm() {
+    let (paths, root) = setup();
+    let env = Env::current();
+    let forked = json!({
+        "id": "fabric-loader-0.16.9-1.20.1",
+        "inheritsFrom": "1.20.1",
+        "mainClass": "net.fabricmc.loader.impl.launch.knot.KnotClient",
+        "libraries": [
+            { "name": "net.fabricmc:fabric-loader:0.16.9", "url": format!("{DEAD}/maven/"), "size": 6 },
+            { "name": "com.example:lib:2.0", "downloads": { "artifact": { "path": "com/example/lib/2.0/lib-2.0.jar", "url": format!("{DEAD}/lib2.jar"), "size": 4 } } }
+        ]
+    });
+    write(&paths.version_json("fabric-loader-0.16.9-1.20.1"), forked.to_string().as_bytes());
+    write(&paths.libraries().join("com/example/lib/2.0/lib-2.0.jar"), b"lib2");
+    std::fs::remove_file(paths.libraries().join("com/example/lib/1.0/lib-1.0.jar")).unwrap();
+    let inst = instance(LoaderKind::Fabric, Some("0.16.9"), "fabric-loader-0.16.9-1.20.1");
+    let local = resolve_local(&paths, &inst, &env).await.unwrap().expect("ersetzte Library zählt nicht");
+    assert!(local.resolved.libraries.iter().all(|l| !l.name.ends_with(":1.0")));
     let _ = std::fs::remove_dir_all(root);
 }

@@ -256,6 +256,8 @@ pub fn scan(data: &Path, metas: &HashMap<String, InstanceMeta>, extra: &[(&'stat
     let vibey_dir = c.dir(&super::vibey::data_dir(data));
     let vibey = super::vibey::bytes(data);
     cats.push(Category { id: "vibey", bytes: vibey, cleanable: vibey });
+    let busy: HashSet<String> = metas.iter().filter(|(_, m)| m.running).map(|(id, _)| id.clone()).collect();
+    cats.push(Category { id: "fast_cache", bytes: super::fastcache::bytes(data, &HashSet::new()), cleanable: super::fastcache::bytes(data, &busy) });
     let known = ["instances", "backups", "meta", "java", "servers", "store", "cache", "logs", "vibey"];
     let mut other = 0;
     if let Ok(rd) = std::fs::read_dir(data) {
@@ -268,7 +270,7 @@ pub fn scan(data: &Path, metas: &HashMap<String, InstanceMeta>, extra: &[(&'stat
     for (id, p) in extra {
         cats.push(Category { id, bytes: c.dir(p), cleanable: 0 });
     }
-    let total = vibey_dir + cats.iter().filter(|x| !matches!(x.id, "mod_caches" | "instance_logs" | "orphan_world_backups" | "vibey")).map(|x| x.bytes).sum::<u64>();
+    let total = vibey_dir + cats.iter().filter(|x| !matches!(x.id, "mod_caches" | "instance_logs" | "orphan_world_backups" | "vibey" | "fast_cache")).map(|x| x.bytes).sum::<u64>();
     Usage {
         root: data.to_string_lossy().to_string(),
         total,

@@ -15,6 +15,7 @@ use std::path::{Path, PathBuf};
 mod local;
 
 mod assets;
+mod check;
 mod vanilla;
 
 use assets::*;
@@ -122,7 +123,22 @@ pub async fn install_instance_opts(state: &AppState, id: &str, sp: &SubProgress,
         let v = super::loaders::default_loader_version(state, inst.loader.kind, &inst.mc_version).await?;
         state.instances.modify(id, |i| i.loader.version = Some(v))?;
     }
+    let inst = state.instances.get(id)?;
+    if force {
+        super::cds::clear_instance(&state.paths.game_dir(id));
+    }
+    let quick = inst.install_state == InstallState::Installed && !force;
+    let mut tried = false;
     let lock = match state.install_lock.try_lock() {
+        Ok(g) if quick => {
+            tried = true;
+            match local::prepare(state, &inst, sp).await {
+                Ok(Some(p)) => return Ok(p),
+                Ok(None) => tracing::info!("Instanz {id}: lokale Dateien unvollständig, vollständige Prüfung"),
+                Err(e) => tracing::info!("Instanz {id}: Schnellstart nicht möglich ({e}), vollständige Prüfung"),
+            }
+            g
+        }
         Ok(g) => g,
         Err(_) => {
             sp.message("Warte auf eine andere Installation …");
@@ -135,7 +151,7 @@ pub async fn install_instance_opts(state: &AppState, id: &str, sp: &SubProgress,
     };
     let before = state.instances.get(id)?.install_state;
     state.instances.modify(id, |i| i.install_state = InstallState::Installing)?;
-    let res = do_install(state, id, sp, force, before == InstallState::Installed).await;
+    let res = do_install(state, id, sp, force, before == InstallState::Installed && !tried).await;
     drop(lock);
     match &res {
         Ok(p) => {
