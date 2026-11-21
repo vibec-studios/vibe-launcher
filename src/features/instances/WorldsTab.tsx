@@ -3,7 +3,7 @@
 import { VoiceWorldHint } from "./VoiceWorldHint";
 import { memo, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, Copy, FileArchive, FolderOpen, Globe2, Map, MoreHorizontal, Package, Play, SearchX, Trash2 } from "lucide-react";
+import { Archive, Copy, FileArchive, FolderOpen, Map, MoreHorizontal, Package, Play, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
 import type { Instance, World } from "@/lib/types";
@@ -217,7 +217,7 @@ export function WorldsTab({ instance }: { instance: Instance }) {
           </div>
         ) : q.data.length === 0 ? (
           <EmptyState
-            icon={<Globe2 size={34} />}
+            icon="globe"
             title={t("worlds.empty.title")}
             text={t("worlds.empty.text")}
             action={
@@ -228,7 +228,7 @@ export function WorldsTab({ instance }: { instance: Instance }) {
           />
         ) : list.length === 0 ? (
           <EmptyState
-            icon={<SearchX size={30} strokeWidth={1.6} />}
+            icon="search_none"
             title={t("instances.no_match")}
             text={t("worlds.no_match", { q: query.trim() })}
             action={

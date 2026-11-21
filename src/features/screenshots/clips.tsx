@@ -7,6 +7,7 @@ import { useEvent } from "@/lib/events";
 import { imageSrc } from "@/lib/format";
 import type { Clip } from "@/lib/types";
 import { cn } from "@/components/ui";
+import { PixelIcon } from "@/components/ui/pixel/PixelIcon";
 
 export const clipsKey = ["clips", "all"] as const;
 
@@ -91,7 +92,7 @@ export const ClipThumb = memo(function ClipThumb({ clip, className }: { clip: Cl
           className="absolute inset-0 grid place-items-center text-dim"
           style={{ background: "radial-gradient(120% 90% at 30% 20%, rgba(255,255,255,.06), transparent 60%)" }}
         >
-          <Film size={26} strokeWidth={1.5} />
+          <PixelIcon name="film_off" size={32} />
         </div>
       ) : (
         src && (

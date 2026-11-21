@@ -1,7 +1,7 @@
 // OWNER: Frontend-Agent A. Bibliothek: eine Werkzeugleiste (LibraryToolbar) über einem Raster rahmenloser
 // Instanz-Kacheln. Der Seitentitel steht in der Titelleiste.
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
-import { ChevronDown, PackageOpen, Plus, SearchX } from "lucide-react";
+import { ChevronDown, PackageOpen, Plus } from "lucide-react";
 import { useInstances } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { loaderNames } from "@/lib/format";
@@ -163,7 +163,7 @@ export function InstancesPage() {
           />
         ) : shown === 0 ? (
           <EmptyState
-            icon={<SearchX size={30} strokeWidth={1.6} />}
+            icon="search_none"
             title={t("instances.no_match")}
             text={q ? t("instances.no_match.text", { q: query }) : t(`instances.no_match.filter.${filter}`)}
             action={

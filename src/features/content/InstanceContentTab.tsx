@@ -19,12 +19,10 @@ import {
   Gauge,
   Activity,
   Video,
-  PackagePlus,
   Plus,
   Power,
   PowerOff,
   RefreshCw,
-  SearchX,
   SlidersHorizontal,
   Trash2,
   Upload,
@@ -693,7 +691,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
           <ErrorState error={failed.error} onRetry={() => lists.forEach((l) => l.refetch())} />
         ) : empty ? (
           <EmptyState
-            icon={<PackagePlus size={30} />}
+            icon="box"
             title={t("ipage.ct.empty")}
             text={t(vanilla ? "ipage.ct.empty.resourcepack" : "ipage.ct.empty.mod")}
             action={
@@ -758,7 +756,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             ) : visible.length === 0 ? (
               <EmptyState
                 className="border-t border-line"
-                icon={<SearchX size={28} />}
+                icon="search_none"
                 title={t("content.no_match")}
                 text={t("content.no_match_text")}
                 action={

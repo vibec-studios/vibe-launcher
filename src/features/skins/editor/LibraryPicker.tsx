@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { Shirt } from "lucide-react";
 import { Dialog, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
@@ -39,7 +38,7 @@ export function LibraryPicker({ open, onOpenChange, onPick }: { open: boolean; o
         ) : q.isError ? (
           <ErrorState error={q.error} onRetry={() => void q.refetch()} />
         ) : q.data.length === 0 ? (
-          <EmptyState icon={<Shirt size={24} />} title={t("skined.pick_empty")} />
+          <EmptyState icon="shirt" title={t("skined.pick_empty")} />
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-2">
             {q.data.map((s) => (

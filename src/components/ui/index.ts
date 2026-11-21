@@ -15,3 +15,4 @@ export { cn } from "./cn";
 export { pageWrap } from "./page";
 export * from "./PageLayout";
 export * from "./Choice";
+export * from "./pixel/PixelIcon";

@@ -5,7 +5,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { getRouteApi } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Camera, CircleHelp, Cloud, CloudUpload, Copy, Eye, FolderOpen, Library, RefreshCw, Trash2 } from "lucide-react";
+import { CircleHelp, Cloud, CloudUpload, Copy, Eye, FolderOpen, Library, RefreshCw, Trash2 } from "lucide-react";
 import { openHelp } from "@/features/help/store";
 import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
@@ -296,7 +296,7 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
             // Gefiltert, aber diese Instanz hat (noch) keine Aufnahmen: zurück zu allen bzw. in den Ordner
             <EmptyState
               className="mt-3 rounded-panel bg-surface"
-              icon={<Camera size={34} />}
+              icon="camera"
               title={t("shots.empty_filtered.title", { name: names.get(instance) ?? t("shots.this_instance") })}
               text={t("shots.empty_filtered.text")}
               action={
@@ -318,7 +318,7 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
           ) : (
             <EmptyState
               className="mt-3 rounded-panel bg-surface"
-              icon={<Camera size={34} />}
+              icon="camera"
               title={t("shots.empty.title")}
               text={t("shots.empty.text")}
               action={

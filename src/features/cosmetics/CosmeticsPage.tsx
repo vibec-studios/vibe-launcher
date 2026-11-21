@@ -6,7 +6,7 @@
 // Neue Items kommen ohne Update (catalog.updated → Katalog neu, Assets per SHA-256 nach).
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Check, CircleDot, ListFilter, Lock, PackagePlus, PenTool, Save, Search, Undo2, X } from "lucide-react";
+import { Check, CircleDot, ListFilter, Lock, PackagePlus, PenTool, Save, Undo2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Button, DropdownCheckItem, DropdownLabel, DropdownMenu, EmptyState, ErrorState, IconButton, PageToolbar, SearchInput, Spinner, Tooltip, cn, toast } from "@/components/ui";
 import { installInstance } from "@/components/instance/actions";
@@ -288,7 +288,7 @@ function Wardrobe({ access, actions }: { access: Exclude<Access, "loading">; act
           <div className="scroll min-h-0 flex-1" onMouseLeave={() => setHover(null)}>
             {shown.length === 0 ? (
               <EmptyState
-                icon={<Search size={28} strokeWidth={1.6} />}
+                icon="search_none"
                 title={t("cos.empty")}
                 text={q ? t("cos.empty_search") : t("cos.empty_cat")}
                 action={

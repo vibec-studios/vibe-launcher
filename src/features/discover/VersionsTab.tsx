@@ -115,7 +115,7 @@ export function VersionsTab({ project, instanceId }: { project: ProjectDetails; 
             </div>
           ))
         ) : filtered.length === 0 ? (
-          <EmptyState title={t("versions.empty")} text={t("versions.empty_text")} className="py-10" />
+          <EmptyState icon="search_none" title={t("versions.empty")} text={t("versions.empty_text")} className="py-10" />
         ) : (
           filtered.slice(0, limit).map((v) => (
             <VersionRow key={v.id} v={v} project={project} instanceId={instanceId} open={open === v.id} onToggle={() => setOpen((o) => (o === v.id ? null : v.id))} />

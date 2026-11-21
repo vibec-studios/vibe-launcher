@@ -2,7 +2,7 @@
 // alles Weitere im ⋯-Menü bzw. per Rechtsklick. Der Seitentitel steht in der Titelleiste.
 import { memo, useDeferredValue, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { MonitorSmartphone, MoreHorizontal, Network, PackageOpen, Plus, SearchX, Server as ServerIconLucide, Users } from "lucide-react";
+import { MonitorSmartphone, MoreHorizontal, Network, PackageOpen, Plus, Users } from "lucide-react";
 import { openPackToServer } from "@/features/serverpack/store";
 import { PackToServerHost } from "@/features/serverpack/PackToServerDialog";
 import { useServerStatus, useServers } from "@/lib/queries";
@@ -148,7 +148,7 @@ export function ServersPage() {
         ) : list.length === 0 ? (
           <EmptyState
             className="rounded-panel bg-surface py-14"
-            icon={<ServerIconLucide size={40} strokeWidth={1.4} />}
+            icon="server"
             title={t("srv.empty.title")}
             text={t("srv.empty.text")}
             action={
@@ -167,7 +167,7 @@ export function ServersPage() {
           />
         ) : sorted.length === 0 ? (
           <EmptyState
-            icon={<SearchX size={30} strokeWidth={1.6} />}
+            icon="search_none"
             title={t("srv.no_match", { q: query })}
             action={
               <Button size="sm" onClick={() => setQuery("")}>

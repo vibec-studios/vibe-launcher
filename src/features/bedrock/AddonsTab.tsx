@@ -2,7 +2,7 @@
 // entfernen. Dateien (.mcpack/.mcaddon/.mcworld/.mctemplate) per Drag & Drop oder Dateiauswahl, Suche auf CurseForge.
 import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, FileArchive, FolderOpen, Globe2, MoreHorizontal, Package, Search, Trash2, Upload } from "lucide-react";
+import { Check, FileArchive, FolderOpen, Globe2, MoreHorizontal, Search, Trash2, Upload } from "lucide-react";
 import type { Instance } from "@/lib/types";
 import { formatBytes, formatRelative } from "@/lib/format";
 import {
@@ -249,7 +249,7 @@ export function AddonsTab({ instance }: { instance: Instance }) {
           </div>
         ) : packs.data.length === 0 ? (
           <EmptyState
-            icon={<Package size={34} />}
+            icon="box"
             title={t("bedrock.addons.empty.title")}
             text={t("bedrock.addons.empty.text")}
             action={
@@ -264,7 +264,7 @@ export function AddonsTab({ instance }: { instance: Instance }) {
             }
           />
         ) : list.length === 0 ? (
-          <EmptyState title={t("instances.no_match")} text={t("bedrock.addons.no_match")} />
+          <EmptyState icon="search_none" title={t("instances.no_match")} text={t("bedrock.addons.no_match")} />
         ) : (
           <div className="flex flex-col">
             {list.map((p) => (

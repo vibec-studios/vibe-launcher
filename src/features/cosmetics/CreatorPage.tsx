@@ -359,7 +359,7 @@ function SubmissionsTab() {
         <span className="ml-auto text-[12px] text-dim">{t("cre.sub.live")}</span>
       </div>
       {q.data.length === 0 ? (
-        <EmptyState icon={<Inbox size={20} />} title={t("cre.sub.empty")} text={t("cre.sub.empty_text")} />
+        <EmptyState icon="inbox" title={t("cre.sub.empty")} text={t("cre.sub.empty_text")} />
       ) : (
         <div className="flex flex-col overflow-hidden rounded-card bg-surface">
           {q.data.map((s) => {

@@ -342,7 +342,7 @@ export function ServersTab({ instance }: { instance: Instance }) {
           </div>
         ) : list.length === 0 ? (
           <EmptyState
-            icon={<Server size={32} />}
+            icon="server"
             title={t("servers.empty.title")}
             text={t("servers.empty.text")}
             action={

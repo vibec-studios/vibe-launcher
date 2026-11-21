@@ -1,7 +1,7 @@
 // Crash-Diagnose: Ergebnis von `crash_analyze` mit Schuldigem, Klartext und Aktionen.
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cpu, Download, FileWarning, MapPin, MemoryStick, Power, PowerOff, Stethoscope, UploadCloud, Wrench } from "lucide-react";
+import { Cpu, Download, FileWarning, MapPin, MemoryStick, Power, PowerOff, UploadCloud, Wrench } from "lucide-react";
 import { api, errorMessage } from "@/lib/api";
 import { qk, waitForTask } from "@/lib/queries";
 import type { Diagnosis, DiagnosisAction, Instance, LoaderKind } from "@/lib/types";
@@ -10,6 +10,7 @@ import { useT, t as tt } from "@/i18n";
 import { uploadCrash } from "./LogsTab";
 import { openAutofix } from "@/features/content/autofixStore";
 import { DriverHelp } from "@/features/perf/DriverHelp";
+import { PixelIcon } from "@/components/ui/pixel/PixelIcon";
 
 export function useDiagnosis(instanceId: string, crashReport: string | null, exitCode: number | null, enabled = true) {
   return useQuery({
@@ -305,7 +306,7 @@ export function DiagnosisDialog({
         <p className="text-[13px] text-danger">{errorMessage(q.error)}</p>
       ) : !q.data?.length ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
-          <Stethoscope size={28} className="text-dim" />
+          <PixelIcon name="shield" className="text-muted" />
           <div className="text-[15px] font-semibold text-text">{t("diag.none.title")}</div>
           <p className="max-w-[440px] text-[13px] text-muted">{t("diag.none.text")}</p>
           <Button size="sm" className="mt-2" icon={<UploadCloud size={13} />} onClick={() => uploadCrash(inst.id, crashReport)}>

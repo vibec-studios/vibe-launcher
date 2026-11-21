@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from "react";
-import { AlertTriangle } from "lucide-react";
 import { t } from "@/i18n";
+import { PixelIcon } from "@/components/ui/pixel/PixelIcon";
 
 /** Fängt Render-Fehler einer Ansicht ab, damit nie die ganze App weiß/leer wird. */
 export class ErrorBoundary extends Component<{ children: ReactNode; compact?: boolean }, { error: Error | null }> {
@@ -18,7 +18,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode; compact?: bo
     if (!this.state.error) return this.props.children;
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-10 text-center">
-        <AlertTriangle size={28} className="text-danger" />
+        <PixelIcon name="error" className="text-muted" />
         <div className="text-title text-text">{t("error.boundary.title")}</div>
         <p className="text-[13px] text-muted">{t("error.boundary.text")}</p>
         <pre className="selectable mt-2 max-h-40 max-w-[640px] overflow-auto rounded-card bg-surface p-3 text-left font-mono text-[11px] text-dim">

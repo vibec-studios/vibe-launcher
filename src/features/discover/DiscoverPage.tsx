@@ -4,7 +4,7 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowLeft, Check, ChevronDown, Flame, Info, LayoutGrid, List, Plus, Puzzle, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Flame, Info, LayoutGrid, List, Plus, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LinkHint } from "@/features/mrlinks/LinkHint";
 import { Button, EmptyState, ErrorState, IconButton, PageToolbar, Segmented, Select, SearchInput, Skeleton, Spinner, Tooltip, cn } from "@/components/ui";
@@ -255,7 +255,7 @@ function InstanceDiscover() {
           )}
           {simpleNoTarget ? (
             <EmptyState
-              icon={<Puzzle size={28} />}
+              icon="puzzle"
               title={t("sdisc.no_target.title")}
               text={t("sdisc.no_target.text")}
               action={
@@ -266,7 +266,7 @@ function InstanceDiscover() {
             />
           ) : curseforgeBlocked ? (
             <EmptyState
-              icon={<Info size={28} />}
+              icon="info"
               title={t("discover.cf_title")}
               text={t("discover.cf_text")}
               action={

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, FolderSync, Layers, Monitor, ShieldCheck } from "lucide-react";
+import { Check, Copy, FolderSync, Layers, ShieldCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useInstances } from "@/lib/queries";
 import type { BedrockChannel, BedrockProfile } from "@/lib/types";
@@ -14,6 +14,7 @@ import { GroupField, IconPicker } from "@/features/instances/NewInstanceDialog";
 import { isBlockIcon, randomBlockIcon } from "@/components/instance/blocks/catalog";
 import { bedrockApi, bqk, channelStatus, isBedrock, useBedrockStatus } from "./api";
 import { NotInstalledNotice } from "./parts";
+import { PixelIcon } from "@/components/ui/pixel/PixelIcon";
 
 function Card({ on, onClick, icon, title, text, right, disabled }: { on: boolean; onClick: () => void; icon: React.ReactNode; title: string; text: string; right?: React.ReactNode; disabled?: boolean }) {
   return (
@@ -107,7 +108,7 @@ export function NewBedrockTab({ onDone, onBusy }: { onDone: () => void; onBusy: 
     return (
       <>
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-10 text-center">
-          <Monitor size={34} className="text-dim" />
+          <PixelIcon name="monitor" className="text-muted" />
           <div className="display text-[16px] text-text">{t("bedrock.unsupported.title")}</div>
           <p className="max-w-[460px] text-[13px] text-muted">{t("bedrock.unsupported.text")}</p>
         </div>

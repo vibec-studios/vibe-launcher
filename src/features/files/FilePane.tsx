@@ -92,7 +92,7 @@ function ImagePreview({ scope, file }: { scope: FileScope; file: FileContent }) 
     gcTime: 30_000,
     retry: false,
   });
-  if (q.isError) return <EmptyState icon={<AlertTriangle size={28} />} title={t("files.image.failed")} text={String((q.error as { message?: string })?.message ?? "")} className="h-full" />;
+  if (q.isError) return <EmptyState icon="error" title={t("files.image.failed")} text={String((q.error as { message?: string })?.message ?? "")} className="h-full" />;
   if (!q.data)
     return (
       <div className="flex h-full items-center justify-center gap-2 text-[13px] text-dim">

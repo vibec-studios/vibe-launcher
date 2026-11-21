@@ -32,7 +32,7 @@ export function AgentsDialog() {
       }
     >
       <div className="flex min-h-[220px] flex-col gap-2">
-        {agents.length === 0 ? <EmptyState title={t("rmt.agents.empty")} /> : agents.map((a) => <AgentRow key={a.key} agent={a} />)}
+        {agents.length === 0 ? <EmptyState icon="monitor" title={t("rmt.agents.empty")} /> : agents.map((a) => <AgentRow key={a.key} agent={a} />)}
       </div>
     </Dialog>
   );

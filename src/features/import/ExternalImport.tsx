@@ -1,7 +1,7 @@
 // OWNER: Content-Agent. Import-Dialog, Modus "Aus anderem Launcher": erkannte Launcher mit ihren Instanzen,
 // Auswahl, eigener Ordner, Import je Instanz (`importExternal`) mit Fortschritt, danach `instanceInstall`.
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Check, FolderOpen, FolderSearch, Terminal, Upload, X } from "lucide-react";
+import { AlertTriangle, Check, FolderOpen, Terminal, Upload, X } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { create } from "zustand";
 import { Button, EmptyState, IconButton, Input, Progress, SearchInput, Skeleton, Spinner, cn, toast } from "@/components/ui";
@@ -189,7 +189,7 @@ export function useExternalImport(active: boolean, folderOnly: boolean, onClose:
   } else if (allInstances.length === 0) {
     body = (
       <EmptyState
-        icon={<FolderSearch size={30} />}
+        icon="folder"
         title={tr(folderOnly ? (extra.length ? "ext.empty_group" : "import.folder.prompt") : "ext.none_title")}
         text={!folderOnly && detect.isError ? errorMessage(detect.error) : tr("ext.none_text")}
         action={chooseFolder}

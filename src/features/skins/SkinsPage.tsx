@@ -503,7 +503,7 @@ export function SkinsPage() {
               ) : libraryQ.isError ? (
                 <ErrorState error={libraryQ.error} onRetry={() => void libraryQ.refetch()} />
               ) : libraryQ.data.length === 0 ? (
-                <EmptyState className="h-full" icon={<Shirt size={28} />} title={t("skins.library_empty_title")} text={t("skins.library_empty_text")} action={<AddFileButton />} />
+                <EmptyState className="h-full" icon="shirt" title={t("skins.library_empty_title")} text={t("skins.library_empty_text")} action={<AddFileButton />} />
               ) : (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2">
                   {libraryQ.data.map((s) => (
