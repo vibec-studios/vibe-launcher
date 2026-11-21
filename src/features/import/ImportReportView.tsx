@@ -32,9 +32,9 @@ function Group({ title, hint, items, tone }: { title: string; hint: string; item
 export function ReportDetails({ r }: { r: ImportReport }) {
   const tr = useT();
   const counts = [
-    r.mods.length > 0 && tr("ext.rep.mods", { n: r.mods.length }),
-    r.jars.length > 0 && tr("ext.rep.jars", { n: r.jars.length }),
-    r.files > 0 && tr("ext.rep.files", { n: r.files }),
+    r.mods.length > 0 && tr(r.mods.length === 1 ? "ext.rep.mods_1" : "ext.rep.mods", { n: r.mods.length }),
+    r.jars.length > 0 && tr(r.jars.length === 1 ? "ext.rep.jars_1" : "ext.rep.jars", { n: r.jars.length }),
+    r.files > 0 && tr(r.files === 1 ? "ext.rep.files_1" : "ext.rep.files", { n: r.files }),
     r.sync_packs.length > 0 && tr("ext.rep.sync", { list: r.sync_packs.join(", ") }),
   ].filter(Boolean);
   const problems = r.failed.length + r.locked.length + r.unfit.length + r.norisk_only.length;

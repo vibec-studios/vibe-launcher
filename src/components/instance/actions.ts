@@ -28,10 +28,25 @@ interface DialogState {
   newExpert: boolean;
 }
 export const useInstanceDialogs = create<DialogState>(() => ({ exportFor: null, groupFor: null, iconFor: null, newOpen: false, newGoal: null, newExpert: false }));
+let newDialogTrigger: HTMLElement | null = null;
+
+export function openNewGame(goal: NewGameGoal | null) {
+  if (!useInstanceDialogs.getState().newOpen) {
+    const active = document.activeElement;
+    newDialogTrigger = active instanceof HTMLElement ? active : null;
+  }
+  useInstanceDialogs.setState({ newOpen: true, newGoal: goal, newExpert: false });
+}
+
 /** „Neue Instanz“ – im Simple-Modus der geführte Assistent, sonst der volle Dialog. */
-export const openNewInstance = () => useInstanceDialogs.setState({ newOpen: true, newGoal: null, newExpert: false });
-/** Assistent direkt mit gewähltem Ziel öffnen (Simple-Modus). */
-export const openNewGame = (goal: NewGameGoal | null) => useInstanceDialogs.setState({ newOpen: true, newGoal: goal, newExpert: false });
+export const openNewInstance = () => openNewGame(null);
+
+export function restoreNewInstanceFocus(event: Event) {
+  if (useInstanceDialogs.getState().newOpen) return;
+  event.preventDefault();
+  newDialogTrigger?.focus({ preventScroll: true });
+  newDialogTrigger = null;
+}
 /** Vom Assistenten in den vollen Dialog wechseln. */
 export const openExpertNewInstance = () => useInstanceDialogs.setState({ newOpen: true, newGoal: null, newExpert: true });
 export const openExport = (i: Instance) => useInstanceDialogs.setState({ exportFor: i });

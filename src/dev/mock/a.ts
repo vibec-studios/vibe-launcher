@@ -244,9 +244,10 @@ const handlers: Handlers = {
     return mockLaunch(id as string, (accountId as string | null) ?? null, (args.world as string | null) ?? null);
   },
   instance_kill: ({ id, runId }) => mockKill(id as string, (runId as string | null) ?? null),
-  console_open: () => {
+  console_open: ({ runId }) => {
     try {
-      window.open("/console.html", "_blank", "width=980,height=600");
+      const query = typeof runId === "string" ? `?run=${encodeURIComponent(runId)}` : "";
+      window.open(`/console.html${query}`, "_blank", "width=980,height=600");
     } catch {}
   },
   game_states: () => [...states.values()],

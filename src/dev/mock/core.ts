@@ -52,6 +52,13 @@ export const instances = new Map<string, Instance>(
   ].map((i) => [i.id, i]),
 );
 
+function updateInstance(id: string, patch: Partial<Instance>) {
+  const next = { ...instances.get(id)!, ...patch };
+  instances.set(next.id, next);
+  mockEmit("instance://changed", next);
+  return next;
+}
+
 let settings: Settings = {
   // Screenshots: localStorage vl.mock.lang = en
   language: mockFlag("vl.mock.lang") === "en" ? "en" : "de",
@@ -114,12 +121,7 @@ const handlers: Handlers = {
     mockEmit("instance://changed", i);
     return i;
   },
-  instance_update: ({ id, patch }) => {
-    const i = { ...instances.get(id as string)!, ...(patch as object) } as Instance;
-    instances.set(i.id, i);
-    mockEmit("instance://changed", i);
-    return i;
-  },
+  instance_update: ({ id, patch }) => updateInstance(id as string, patch as Partial<Instance>),
   instance_delete: ({ id }) => {
     instances.delete(id as string);
     mockEmit("instance://removed", { id: id as string });
@@ -132,7 +134,7 @@ const handlers: Handlers = {
     mockEmit("instance://changed", i);
     return i;
   },
-  instance_set_icon: ({ id }) => instances.get(id as string),
+  instance_set_icon: ({ id, path }) => updateInstance(id as string, { icon: path ? "/logo.png" : null }),
   instance_open_folder: () => null,
   settings_get: () => settings,
   stores_list: () => settings.stores.map((store) => ({

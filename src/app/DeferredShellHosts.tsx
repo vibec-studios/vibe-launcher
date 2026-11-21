@@ -1,4 +1,5 @@
 import { DeferredMount } from "@/components/DeferredMount";
+import { useAccountConflict } from "@/components/instance/AccountConflict";
 import { useInstanceDialogs } from "@/components/instance/actions";
 import { useAutofix } from "@/features/content/autofixStore";
 import { useFeedback } from "@/features/feedback/store";
@@ -25,7 +26,8 @@ const loadOnboarding = () => import("@/features/onboarding/Onboarding").then((m)
 const loadFriendsPanel = () => import("@/features/social/FriendsPanel").then((m) => m.FriendsPanel);
 
 export function DeferredShellHosts() {
-  const instance = useInstanceDialogs((s) => s.newOpen || !!s.exportFor || !!s.groupFor);
+  const instance = useInstanceDialogs((s) => s.newOpen || !!s.exportFor || !!s.groupFor || !!s.iconFor);
+  const accountConflict = useAccountConflict((s) => !!s.ask);
   const autofix = useAutofix((s) => !!s.req || !!s.pre);
   const server = useServerDialogs((s) => s.newOpen || !!s.eulaFor || s.quit !== null);
   const sets = useSetDialogs((s) => !!s.apply || !!s.fromInstance || s.importOpen || s.createOpen);
@@ -39,7 +41,7 @@ export function DeferredShellHosts() {
   return (
     <>
       <DeferredMount active={sets} load={loadModSetsHost} />
-      <DeferredMount active={instance} load={loadInstanceDialogs} />
+      <DeferredMount active={instance || accountConflict} load={loadInstanceDialogs} />
       <DeferredMount active={autofix} load={loadAutofixHost} />
       <DeferredMount active={server} load={loadServerDialogs} />
       <DeferredMount active={social} load={loadSocialDialogs} />

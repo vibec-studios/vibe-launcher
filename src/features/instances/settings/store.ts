@@ -11,13 +11,25 @@ interface State {
 }
 
 export const useInstanceSettings = create<State>(() => ({ instanceId: null, tab: "general" }));
+let settingsTrigger: HTMLElement | null = null;
 
 export function openInstanceSettings(instanceId: string, tab?: InstanceSettingsTab) {
-  useInstanceSettings.setState((s) => ({ instanceId, tab: tab ?? (s.instanceId === instanceId ? s.tab : "general") }));
+  const current = useInstanceSettings.getState();
+  if (current.instanceId === null) {
+    const active = document.activeElement;
+    settingsTrigger = active instanceof HTMLElement ? active : null;
+  }
+  useInstanceSettings.setState({ instanceId, tab: tab ?? (current.instanceId === instanceId ? current.tab : "general") });
 }
 
 export function closeInstanceSettings() {
   useInstanceSettings.setState({ instanceId: null });
+}
+
+export function restoreInstanceSettingsFocus() {
+  if (useInstanceSettings.getState().instanceId !== null) return;
+  settingsTrigger?.focus({ preventScroll: true });
+  settingsTrigger = null;
 }
 
 export function setInstanceSettingsTab(tab: InstanceSettingsTab) {

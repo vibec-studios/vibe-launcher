@@ -21,7 +21,7 @@ import { IconGallery } from "@/components/instance/blocks/IconGallery";
 import { isBlockIcon, randomBlockIcon } from "@/components/instance/blocks/catalog";
 import { LoaderIcon } from "@/components/instance/LoaderIcon";
 import { LOADERS, pickLoaderVersion, useLoaderGameVersions, useLoaderVersions, type VersionValue } from "@/components/instance/VersionPicker";
-import { installInstance, pickImage } from "@/components/instance/actions";
+import { installInstance, pickImage, restoreNewInstanceFocus } from "@/components/instance/actions";
 import { startModpackInstall } from "@/components/content/install";
 import { openImport } from "@/features/import/importStore";
 import { PackIcon } from "@/features/home/Discover";
@@ -122,7 +122,7 @@ export function IconPicker({
           align="start"
           sideOffset={8}
           collisionPadding={12}
-          className="z-[60] w-[316px] rounded-card bg-overlay p-3 shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="scroll z-[60] max-h-[var(--radix-popover-content-available-height)] w-[316px] rounded-card bg-overlay p-3 shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           <IconGallery value={icon} accent={accent} onChange={onIcon} onImage={async () => onIcon((await pickImage()) ?? icon)} />
           <div className="label mb-2 mt-3.5">{t("iconart.tint")}</div>
@@ -434,8 +434,8 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
         }}
       >
         {/* Links: Identität + Loader */}
-        <div className="flex w-[300px] shrink-0 flex-col gap-4">
-          <div className="flex items-start gap-3">
+        <div className="scroll -m-1 flex w-[308px] shrink-0 flex-col gap-4 p-1">
+          <div className="flex shrink-0 items-start gap-3">
             <IconPicker icon={icon} accent={accent} onIcon={setIcon} onAccent={setAccent} />
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <Input
@@ -453,14 +453,14 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
               <GroupField value={group} onChange={setGroup} groups={groups} />
             </div>
           </div>
-          <div className="flex min-h-0 flex-col gap-1.5">
+          <div className="flex shrink-0 flex-col gap-1.5">
             <span className="label">
               <Term id="loader">{t("newinst.loader")}</Term>
             </span>
             <LoaderCards value={ver.loader} onChange={(loader) => loader !== ver.loader && setVer({ ...ver, loader, loaderVersion: null })} />
           </div>
           {ver.loader !== "vanilla" && (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex shrink-0 flex-col gap-1.5">
               <span className="label">{t("cp.new.label")}</span>
               <ClientPackPicker mc={ver.mc} loader={ver.loader} value={pack} onChange={setPack} />
             </div>
@@ -758,10 +758,11 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
           onEscapeKeyDown={(e) => busy && e.preventDefault()}
           onPointerDownOutside={(e) => busy && e.preventDefault()}
           onInteractOutside={(e) => busy && e.preventDefault()}
+          onCloseAutoFocus={restoreNewInstanceFocus}
           aria-describedby={undefined}
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden",
-            "h-[min(620px,calc(100vh-64px))] w-[880px] max-w-[calc(100vw-48px)]",
+            "h-[min(620px,calc(100%-64px))] w-[880px] max-w-[calc(100%-48px)]",
             "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
           // Auswahl und Hauptaktion in der globalen Akzentfarbe; die Instanzfarbe gehört nur dem Icon

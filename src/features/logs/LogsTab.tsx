@@ -393,8 +393,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
       .instanceLogSession(id, runId)
       .then((lines) => {
         if (dead) return;
-        const curLines = useGameStore.getState().logs[runId];
-        if (!curLines || curLines.length < lines.length) useGameStore.getState().setLogs(runId, lines);
+        useGameStore.getState().hydrateLogs(runId, lines);
       })
       .catch(() => {});
     return () => {
