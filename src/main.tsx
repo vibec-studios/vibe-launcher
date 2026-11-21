@@ -13,6 +13,7 @@ import { queryClient } from "@/lib/queries";
 import { router } from "@/app/router";
 import { installGuards } from "@/app/guards";
 import { EventBridge } from "@/app/EventBridge";
+import { RemoteBridge } from "@/features/remote/RemoteBridge";
 import { TextMenuHost } from "@/app/TextMenu";
 import { ConfirmHost, Toaster, TooltipProvider } from "@/components/ui";
 import { GlobalDropZone } from "@/features/import/GlobalDropZone";
@@ -34,6 +35,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={350} skipDelayDuration={150}>
         <EventBridge />
+        <RemoteBridge />
         <RouterProvider router={router} />
         <GlobalDropZone />
         <ConfirmHost />

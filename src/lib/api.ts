@@ -2,9 +2,10 @@
 // für snake_case-Parameter in Rust (z. B. `instance_id` -> `instanceId`).
 import { invoke } from "@tauri-apps/api/core";
 import type * as T from "./types";
+import { routeRemote } from "@/features/remote/dispatch";
 
 function call<R>(cmd: string, args?: Record<string, unknown>): Promise<R> {
-  return invoke<R>(cmd, args);
+  return routeRemote<R>(cmd, args) ?? invoke<R>(cmd, args);
 }
 
 /** Fehler aus dem Backend in lesbaren Text umwandeln. */

@@ -16,6 +16,8 @@ import { ChoiceCard } from "./new/ChoiceCard";
 import { StepBar } from "./new/StepBar";
 import { FromInstance, NEW_WORLD } from "./new/FromInstance";
 import { AdvancedPort, RamField } from "./new/Resources";
+import { TargetField } from "@/features/remote/TargetField";
+import { remoteServerCreate } from "@/features/remote/dispatch";
 
 type Kind = "instance" | "vanilla" | "mods" | "plugins";
 const DEFAULT_PORT = 25565;
@@ -53,6 +55,7 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
   const [copyConfigs, setCopyConfigs] = useState(true);
   const [world, setWorld] = useState(NEW_WORLD);
   const [busy, setBusy] = useState(false);
+  const [target, setTarget] = useState("local");
 
   const inst = useMemo(() => instances.find((i) => i.id === instId) ?? null, [instances, instId]);
 
@@ -142,7 +145,7 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
               memory_mb: ram,
             };
     try {
-      const res = await api.serverCreate(req);
+      const res = target !== "local" && kind !== "instance" ? await remoteServerCreate(target, req) : await api.serverCreate(req);
       onOpenChange(false);
       nav({ to: "/servers/$id", params: { id: res.server.id }, search: { tab: "console" } });
     } catch (e) {
@@ -324,6 +327,7 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
                 />
               </Field>
               <RamField ram={ram} setRam={setRam} total={total} />
+              <TargetField value={target} onChange={setTarget} localOnly={kind === "instance"} />
             </div>
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3.5">

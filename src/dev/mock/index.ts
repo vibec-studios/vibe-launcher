@@ -28,6 +28,7 @@ import worldMap from "./world-map";
 import socialw4 from "./socialw4";
 import vibemedia from "./vibemedia";
 import { withLiveModrinth } from "./modrinth-live";
+import { withRemote } from "./remote";
 import type { Handlers } from "./util";
 
 if (location.pathname.endsWith("console.html")) mockWindows("console", "main");
@@ -61,7 +62,7 @@ base.instance_refresh = async (args) => {
 };
 
 // VITE_MOCK_MODRINTH=live: Entdecken/Projektseite gegen die echte Modrinth-API
-const handlers: Handlers = import.meta.env.VITE_MOCK_MODRINTH === "live" ? withLiveModrinth(base) : base;
+const handlers: Handlers = withRemote(import.meta.env.VITE_MOCK_MODRINTH === "live" ? withLiveModrinth(base) : base);
 
 // Screenshots (Lade-/Fehlerzustände): localStorage vl.mock.latency = Millisekunden je Command (Standard 120),
 // vl.mock.fail = "cmd1,cmd2" -> diese Commands schlagen mit einer Netzwerk-Fehlermeldung fehl.
