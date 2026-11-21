@@ -3,20 +3,16 @@
 // gespielten Instanzen und Welten/Server zum direkten Starten. Rechts das, was sich seit dem letzten Mal getan hat:
 // Freunde online/hostend (nur mit Vibe), Updates für die eigenen Instanzen. Unten Anregungen (beliebte Modpacks).
 // Ohne Instanz: drei klare Einstiege statt einer leeren Seite.
-import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { PackageOpen, Plus } from "lucide-react";
-import { useEvent } from "@/lib/events";
-import { useAccounts, useInstances } from "@/lib/queries";
-import { formatDuration } from "@/lib/format";
 import { Button, Skeleton, cn, pageWrap } from "@/components/ui";
 import { openNewInstance } from "@/components/instance/actions";
 import { openImport } from "@/features/import/ImportDialog";
-import { useWeekPlaytime } from "@/features/stats/StatsPage";
 import { useVibe } from "@/lib/vibe";
 import { useT } from "@/i18n";
-import { byRecent, useSpots } from "./data";
+import { useGreeting, useHomeData } from "./useHomeData";
+import { HomeV2 } from "./v2/HomeV2";
+import { useLiveAppearance } from "@/lib/appearance";
 import { ContinueCard } from "./Continue";
 import { JumpBackIn, RecentInstances } from "./Recent";
 import { FriendsBlock, VibeNews } from "./Side";
@@ -26,16 +22,11 @@ import { PopularPacks, StartHere } from "./Discover";
 import { SimpleHome } from "./SimpleHome";
 import { useSimple } from "@/lib/mode";
 
-const RECENT = 8;
-const SPOTS = 8;
-
 function Header({ count, loading }: { count: number; loading?: boolean }) {
   const t = useT();
-  const { data: accounts = [], isPending } = useAccounts();
-  const active = accounts.find((a) => a.active) ?? accounts[0];
-  const week = useWeekPlaytime();
+  const g = useGreeting(count);
   // Beim Start nicht erst „Willkommen“ und dann „Willkommen zurück, Name“ zeigen
-  if (loading || (isPending && !accounts.length))
+  if (loading || g.pending)
     return (
       <header className="flex min-h-[44px] flex-col justify-end gap-1.5" aria-busy>
         <Skeleton className="h-[22px] w-72" />
@@ -45,21 +36,13 @@ function Header({ count, loading }: { count: number; loading?: boolean }) {
   return (
     <header className="flex min-w-0 items-end gap-3">
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-title text-text">
-          {count > 0
-            ? active
-              ? t("home.welcome_name", { name: active.username })
-              : t("home.welcome")
-            : active
-              ? t("home.hello_name", { name: active.username })
-              : t("home.hello")}
-        </h1>
+        <h1 className="truncate text-title text-text">{g.title}</h1>
         {count > 0 && (
           <p className="mt-0.5 truncate text-meta text-muted">
-            {count === 1 ? t("home.summary_one") : t("home.summary", { n: count })}
+            {g.summary}
             {" · "}
             <Link to="/stats" className="underline decoration-line2 underline-offset-2 transition-colors duration-100 hover:text-text">
-              {t("home.week", { time: week.data && week.data >= 60 ? formatDuration(week.data) : "0 min" })}
+              {g.week}
             </Link>
           </p>
         )}
@@ -79,36 +62,17 @@ function Header({ count, loading }: { count: number; loading?: boolean }) {
 }
 
 export function HomePage() {
-  // Simple-Modus: eigene, ruhige Startseite (großer Spielen-Knopf + „Neues Spiel“-Kacheln)
-  return useSimple() ? <SimpleHome /> : <ExpertHome />;
+  // Simple-Modus: eigene, ruhige Startseite (großer Spielen-Knopf + „Neues Spiel“-Kacheln); Design v2: eigenes Layout
+  const v2 = useLiveAppearance((s) => s.a.design === "v2");
+  if (useSimple()) return <SimpleHome />;
+  return v2 ? <HomeV2 /> : <ExpertHome />;
 }
 
 function ExpertHome() {
-  const { data, isLoading } = useInstances();
   const vibe = useVibe();
   const [ref, tier] = useTier<HTMLDivElement>();
   const [leftRef, leftHeight] = useHeight<HTMLDivElement>();
-  const list = useMemo(() => byRecent(data ?? []), [data]);
-  const hero = list[0];
-  const { spots, loading: spotsLoading } = useSpots(list);
-
-  // Letzter Einstieg der Hero-Instanz (zuletzt gespielte Welt oder zuletzt besuchter Server)
-  const heroSpot = hero ? (spots.find((s) => s.instance.id === hero.id) ?? null) : null;
-  const others = useMemo(() => list.slice(1, 1 + RECENT), [list]);
-  const restSpots = useMemo(() => spots.filter((s) => s !== heroSpot).slice(0, SPOTS), [spots, heroSpot]);
-
-  // Nach dem Spielen: Wochenzeit, Server und Welten neu laden
-  const qc = useQueryClient();
-  useEvent("game://state", (s) => {
-    if (s.state === "stopped") {
-      qc.invalidateQueries({ queryKey: ["playtime"] });
-      qc.invalidateQueries({ queryKey: ["servers-recent"] });
-      qc.invalidateQueries({ queryKey: ["worlds", s.instance_id] });
-    }
-  });
-
-  const loading = isLoading && !data;
-  const empty = !loading && !hero;
+  const { list, hero, heroSpot, others, restSpots, spotsLoading, loading, empty } = useHomeData();
 
   return (
     <div className="scroll h-full">

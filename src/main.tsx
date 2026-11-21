@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./styles/globals.css";
+import "./styles/themes.css";
+import "./styles/v2.css";
 import { queryClient } from "@/lib/queries";
 import { router } from "@/app/router";
 import { installGuards } from "@/app/guards";

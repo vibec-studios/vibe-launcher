@@ -24,7 +24,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
   return (
     <D.Root open={open} onOpenChange={(o) => (!locked || o) && onOpenChange(o)}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
+        <D.Overlay className="vl-overlay fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
         <D.Content
           onEscapeKeyDown={(e) => locked && e.preventDefault()}
           onPointerDownOutside={(e) => locked && e.preventDefault()}
@@ -32,14 +32,14 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
           aria-describedby={description ? undefined : undefined}
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100vh-80px)] max-w-[calc(100vw-48px)] -translate-x-1/2 -translate-y-1/2 flex-col",
-            "rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
+            "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
             widths[size],
             className,
           )}
         >
-          <div className="flex items-start gap-4 px-6 pb-3 pt-5">
+          <div className="vl-dialog-head flex items-start gap-4 px-6 pb-3 pt-5">
             <div className="min-w-0 flex-1">
-              <D.Title className="text-title text-text">{title}</D.Title>
+              <D.Title className="vl-dialog-title text-title text-text">{title}</D.Title>
               {description ? (
                 <D.Description className="mt-1.5 text-[13px] text-muted">{description}</D.Description>
               ) : (
@@ -52,8 +52,8 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
               </D.Close>
             )}
           </div>
-          {children !== undefined && <div className="scroll min-h-0 flex-1 px-6 py-3">{children}</div>}
-          {footer && <div className="flex items-center justify-end gap-2 px-6 pb-5 pt-3">{footer}</div>}
+          {children !== undefined && <div className="vl-dialog-body scroll min-h-0 flex-1 px-6 py-3">{children}</div>}
+          {footer && <div className="vl-dialog-foot flex items-center justify-end gap-2 px-6 pb-5 pt-3">{footer}</div>}
         </D.Content>
       </D.Portal>
     </D.Root>

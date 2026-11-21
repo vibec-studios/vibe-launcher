@@ -8,12 +8,12 @@ export const SettingsCard = forwardRef<
   { title: ReactNode; right?: ReactNode; children: ReactNode; className?: string; danger?: boolean; id?: string }
 >(function SettingsCard({ title, right, children, className, danger, id }, ref) {
   return (
-    <section ref={ref} id={id} className={cn("flex flex-col gap-2", className)}>
-      <header className="flex min-h-7 items-center gap-3 px-1">
-        <h3 className={cn("flex-1 text-[12.5px] font-semibold", danger ? "text-danger" : "text-muted")}>{title}</h3>
+    <section ref={ref} id={id} className={cn("vl-scard flex flex-col gap-2", className)}>
+      <header className="vl-scard-head flex min-h-7 items-center gap-3 px-1">
+        <h3 className={cn("vl-scard-title flex-1 text-[12.5px] font-semibold", danger ? "text-danger" : "text-muted")}>{title}</h3>
         {right}
       </header>
-      <div className={cn("rounded-card bg-surface", danger && "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-danger)_30%,transparent)]")}>{children}</div>
+      <div className={cn("vl-scard-body rounded-card bg-surface", danger && "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-danger)_30%,transparent)]")}>{children}</div>
     </section>
   );
 });
@@ -37,12 +37,12 @@ export function SettingRow({
 }) {
   const text = (
     <div className="min-w-0 flex-1">
-      <div className="text-[13.5px] font-medium text-text">{title}</div>
-      {description && <div className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{description}</div>}
+      <div className="vl-srow-title text-[13.5px] font-medium text-text">{title}</div>
+      {description && <div className="vl-srow-desc mt-0.5 text-[12.5px] leading-relaxed text-muted">{description}</div>}
     </div>
   );
   return (
-    <div className={cn("flex gap-x-8 gap-y-2.5 border-line px-4 py-3 [&+&]:border-t", stacked ? "flex-col" : "items-center", className)}>
+    <div className={cn("vl-srow flex gap-x-8 gap-y-2.5 border-line px-4 py-3 [&+&]:border-t", stacked ? "flex-col" : "items-center", className)}>
       {icon ? (
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className="shrink-0">{icon}</div>
@@ -120,7 +120,7 @@ export function NumberInput({
           }
         }}
         className={cn(
-          "h-9 w-full rounded-ctl border border-transparent bg-field px-3 font-mono text-[13px] text-text outline-none transition-colors duration-150 placeholder:text-dim",
+          "vl-field h-9 w-full rounded-ctl border border-transparent bg-field px-3 font-mono text-[13px] text-text outline-none transition-colors duration-150 placeholder:text-dim",
           "hover:bg-white/[.07] focus:border-accent/70 disabled:opacity-50",
           unit && "pr-10",
         )}

@@ -132,13 +132,15 @@ fn legacy_onboarding_done() -> bool {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct Appearance {
-    /// Theme-Voreinstellung: "standard" | "winter" | "graphite" (Einzelwerte bleiben frei anpassbar)
+    /// Design-Generation: "v1" (Standard) | "v2" (Beta)
+    pub design: String,
+    /// Theme-Voreinstellung, z. B. "standard" | "winter" | "ocean" (Einzelwerte bleiben frei anpassbar)
     pub theme: String,
     /// Im Dezember/Januar automatisch das Winter-Theme zeigen
     pub seasonal: bool,
     /// Akzentfarbe als Hex ("#8b6cff")
     pub accent: String,
-    /// Hintergrund-Ton: "dark" (Schwarz) | "dim" (Dunkelgrau) | "oled"
+    /// Hintergrund-Ton: "dark" (Schwarz) | "dim" (Dunkelgrau) | "oled" | "light" (hell)
     pub tone: String,
     /// Ecken: "square" (Standard) | "slight" | "round"
     pub radius: String,
@@ -260,6 +262,7 @@ pub struct Background {
 impl Default for Appearance {
     fn default() -> Self {
         Appearance {
+            design: "v1".into(),
             theme: "standard".into(),
             seasonal: false,
             accent: "#8b6cff".into(),
@@ -311,7 +314,12 @@ impl Appearance {
             }
         };
         fix_hex(&mut self.accent, &d.accent);
-        pick(&mut self.theme, &["standard", "winter", "graphite"], &d.theme);
+        pick(
+            &mut self.theme,
+            &["standard", "winter", "graphite", "light", "midnight", "ocean", "forest", "sunset", "sakura", "nether", "end", "retro", "contrast"],
+            &d.theme,
+        );
+        pick(&mut self.design, &["v1", "v2"], &d.design);
         pick(&mut self.app_icon, crate::platform::app_icon::MOTIFS, &d.app_icon);
         fix_hex(&mut self.app_icon_color, &d.app_icon_color);
         pick(&mut self.font, &["inter", "system"], &d.font);
@@ -343,7 +351,7 @@ impl Appearance {
         fix_hex(&mut self.status.warn, &d.status.warn);
         fix_hex(&mut self.status.danger, &d.status.danger);
         self.effects.snow_amount = self.effects.snow_amount.clamp(10, 100);
-        pick(&mut self.tone, &["dark", "dim", "oled"], &d.tone);
+        pick(&mut self.tone, &["dark", "dim", "oled", "light"], &d.tone);
         pick(&mut self.radius, &["square", "slight", "round"], &d.radius);
         pick(&mut self.density, &["compact", "normal"], &d.density);
         self.ui_scale = self.ui_scale.clamp(80, 130);
@@ -656,7 +664,8 @@ mod tests {
     fn appearance_sanitize() {
         let mut a = Appearance {
             accent: "FF00AA".into(),
-            tone: "light".into(),
+            tone: "sepia".into(),
+            design: "v3".into(),
             radius: "round".into(),
             density: "dense".into(),
             ui_scale: 400,
@@ -666,6 +675,7 @@ mod tests {
         a.sanitize();
         assert_eq!(a.accent, "#ff00aa");
         assert_eq!(a.tone, "dark");
+        assert_eq!(a.design, "v1");
         assert_eq!(a.radius, "round");
         assert_eq!(a.density, "normal");
         assert_eq!(a.ui_scale, 130);

@@ -42,7 +42,7 @@ export function spotName(s: Spot) {
 }
 
 /** Hinweis rechts unten: Updates, Modpack-Version, „wird installiert“ – nur, wenn es etwas zu sagen gibt. */
-function Notice({ instance: i }: { instance: Instance }) {
+export function Notice({ instance: i }: { instance: Instance }) {
   const t = useT();
   const nav = useNavigate();
   const { phase } = useRunPhase(i.id);
@@ -79,6 +79,16 @@ function Notice({ instance: i }: { instance: Instance }) {
   );
 }
 
+/** Zeile unter dem Namen: Loader/Version, zuletzt gespielt, Spielzeit. */
+export function continueMeta(i: Instance, t: ReturnType<typeof useT>): string[] {
+  const loader = i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]} ${i.loader.version ?? ""}`.trim();
+  return [
+    i.bedrock ? (i.bedrock.channel === "preview" ? "Minecraft Bedrock Preview" : "Minecraft Bedrock") : `${loader} · Minecraft ${i.mc_version}`,
+    i.last_played ? formatRelative(i.last_played) : t("home.never"),
+    i.play_time_secs >= 60 ? t("home.played", { time: formatDuration(i.play_time_secs) }) : null,
+  ].filter((x): x is string => !!x);
+}
+
 export function ContinueCard({ instance: i, spot }: { instance: Instance; spot: Spot | null }) {
   const t = useT();
   const nav = useNavigate();
@@ -86,12 +96,7 @@ export function ContinueCard({ instance: i, spot }: { instance: Instance; spot: 
   const { phase } = useRunPhase(i.id);
   const accent = instanceAccent(i.id, i.accent);
   const open = () => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "content" } });
-  const loader = i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]} ${i.loader.version ?? ""}`.trim();
-  const meta = [
-    i.bedrock ? (i.bedrock.channel === "preview" ? "Minecraft Bedrock Preview" : "Minecraft Bedrock") : `${loader} · Minecraft ${i.mc_version}`,
-    i.last_played ? formatRelative(i.last_played) : t("home.never"),
-    i.play_time_secs >= 60 ? t("home.played", { time: formatDuration(i.play_time_secs) }) : null,
-  ].filter(Boolean);
+  const meta = continueMeta(i, t);
 
   return (
     <section aria-label={t("home.continue")} className="@container flex min-w-0 gap-5 rounded-panel bg-surface p-5" style={accentVars(accent)}>

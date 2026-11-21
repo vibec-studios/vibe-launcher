@@ -4,7 +4,7 @@ import { cn } from "./cn";
 
 // Gefülltes Feld ohne sichtbaren Rahmen; Fokus zeigt den Akzent.
 const base =
-  "w-full rounded-ctl bg-field border border-transparent text-text placeholder:text-dim px-3 outline-none transition-colors duration-150 " +
+  "vl-field w-full rounded-ctl bg-field border border-transparent text-text placeholder:text-dim px-3 outline-none transition-colors duration-150 " +
   "hover:bg-white/[.07] focus:border-accent/70 focus:bg-white/[.06] disabled:opacity-50";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {

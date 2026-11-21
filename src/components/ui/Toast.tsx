@@ -54,7 +54,7 @@ export function Toaster() {
         <div
           key={t.id}
           className={cn(
-            "pointer-events-auto flex gap-3 rounded-card bg-overlay px-4 py-3 shadow-e2 animate-slide-up",
+            "vl-toast pointer-events-auto flex gap-3 rounded-card bg-overlay px-4 py-3 shadow-e2 animate-slide-up",
           )}
         >
           <span className="mt-0.5">

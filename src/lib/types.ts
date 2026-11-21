@@ -176,7 +176,8 @@ export interface Settings {
 export type UiMode = "simple" | "expert";
 
 /** dark = Schwarz (Standard), dim = Dunkelgrau, oled = auch Flächen fast schwarz */
-export type AppearanceTone = "dark" | "dim" | "oled";
+export type AppearanceTone = "dark" | "dim" | "oled" | "light";
+export type AppearanceDesign = "v1" | "v2";
 export type AppearanceRadius = "square" | "slight" | "round";
 export type AppearanceDensity = "compact" | "normal";
 export type BackgroundKind = "none" | "gradient" | "image" | "animated";
@@ -184,7 +185,20 @@ export type BackgroundGradient = "accent" | "dusk" | "ocean" | "ember" | "forest
 export type BackgroundAnimated = "aurora" | "particles" | "waves" | "blocks" | "custom";
 
 /** Voreinstellungen, die mehrere Werte zugleich setzen (siehe THEMES in src/lib/appearance.ts) */
-export type ThemeId = "standard" | "winter" | "graphite";
+export type ThemeId =
+  | "standard"
+  | "winter"
+  | "graphite"
+  | "light"
+  | "midnight"
+  | "ocean"
+  | "forest"
+  | "sunset"
+  | "sakura"
+  | "nether"
+  | "end"
+  | "retro"
+  | "contrast";
 export type AppearanceFont = "inter" | "system";
 export type AppearanceHeadings = "default" | "pixel";
 export type AppearanceContrast = "normal" | "high";
@@ -194,6 +208,8 @@ export type AppearanceMotion = "normal" | "more";
 export type NavKey = "home" | "instances" | "servers" | "social" | "discover" | "skins" | "cosmetics" | "screenshots";
 
 export interface Appearance {
+  /** Design-Generation: v1 (Standard) oder v2 (Beta) */
+  design: AppearanceDesign;
   /** Gewähltes Theme; die Einzelwerte bleiben danach frei anpassbar */
   theme: ThemeId;
   /** Im Dezember/Januar automatisch das Winter-Theme zeigen */

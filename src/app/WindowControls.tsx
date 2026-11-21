@@ -25,7 +25,7 @@ export function WindowControls() {
       <button aria-label={t("window.maximize")} className={btn} onClick={() => getCurrentWindow().toggleMaximize()}>
         {max ? <Copy size={13} strokeWidth={1.5} className="-scale-x-100" /> : <Square size={13} strokeWidth={1.5} />}
       </button>
-      <button aria-label={t("window.close")} className={cn(btn, "hover:bg-[#e81123] hover:text-white")} onClick={() => getCurrentWindow().close()}>
+      <button aria-label={t("window.close")} className={cn(btn, "hover:bg-[#e81123] hover:text-[#fff]")} onClick={() => getCurrentWindow().close()}>
         <X size={17} strokeWidth={1.5} />
       </button>
     </div>
