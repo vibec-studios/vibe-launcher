@@ -10,13 +10,13 @@ import type { AppAction, Instance } from "@/lib/types";
 import { instanceAccent } from "@/lib/format";
 import { useVibe } from "@/lib/vibe";
 import { Button, Dialog, Select, Skeleton } from "@/components/ui";
-import { openInstall } from "@/components/content/InstallDialog";
+import { openInstall } from "@/components/content/installStore";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { useT } from "@/i18n";
 import { InstanceIcon } from "./InstanceIcon";
 import { useInstanceActions } from "./actions";
 import { ServerStatusLine } from "./motd";
-import { openInviteAccept, openPackImport } from "@/features/social/dialogs";
+import { openInviteAccept, openPackImport } from "@/features/social/dialogStore";
 import { PlayJoinDialog } from "@/features/play/PlayJoinDialog";
 import { onAppAction } from "@/lib/appActions";
 
@@ -224,7 +224,7 @@ function VibeAction({ a, onDone }: { a: Extract<AppAction, { kind: "pack" | "inv
   );
 }
 
-/** Wird einmal global eingebunden (InstanceDialogs). */
+/** Wird einmal global eingebunden. */
 export function ActionHost() {
   const [queue, setQueue] = useState<AppAction[]>([]);
   useEffect(() => {

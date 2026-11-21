@@ -25,7 +25,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { openNewServer } from "@/features/servers/actions";
-import { openShare } from "@/features/social/dialogs";
+import { openShare } from "@/features/social/dialogStore";
 import { useVibe } from "@/lib/vibe";
 import {
   ContextItem,

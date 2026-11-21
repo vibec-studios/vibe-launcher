@@ -7,7 +7,7 @@ import { Link } from "@tanstack/react-router";
 import { PackageOpen, Plus } from "lucide-react";
 import { Button, Skeleton, cn, pageWrap } from "@/components/ui";
 import { openNewInstance } from "@/components/instance/actions";
-import { openImport } from "@/features/import/ImportDialog";
+import { openImport } from "@/features/import/importStore";
 import { useVibe } from "@/lib/vibe";
 import { useT } from "@/i18n";
 import { useGreeting, useHomeData } from "./useHomeData";

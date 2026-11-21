@@ -1,7 +1,7 @@
 import { queryClient, qk } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { closeSettings, openSettings } from "@/features/settings/store";
-import { openImport, useImportDialog } from "@/features/import/ImportDialog";
+import { openImport, useImportDialog } from "@/features/import/importStore";
 import { closeInstanceSettings, openInstanceSettings } from "@/features/instances/settings/store";
 import { useLang } from "@/i18n";
 import type { TourAction } from "../types";

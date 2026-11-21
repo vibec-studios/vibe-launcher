@@ -5,7 +5,7 @@ import { Button } from "@/components/ui";
 import { useT } from "@/i18n";
 import { useVibe } from "@/lib/vibe";
 import { AccessStrip } from "@/features/access/AccessStrip";
-import { openInviteFriends } from "./dialogs";
+import { openInviteFriends } from "./dialogStore";
 import { login, requireClient, useSocial, vqk } from "./service";
 
 export function HostingInvite({ serverId, relay }: { serverId: string; relay: boolean }) {

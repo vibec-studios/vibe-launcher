@@ -10,26 +10,13 @@ import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatLoader, formatRelative } from "@/lib/format";
 import { qk, useTask, useJavaInstances } from "@/lib/queries";
-import type { Instance, ProjectHit, ProjectVersion } from "@/lib/types";
+import type { Instance, ProjectVersion } from "@/lib/types";
 import { InstanceBadge } from "./InstanceBadge";
 import { startContentInstall, startManualDownload, startModpackInstall } from "./install";
+import { useInstallDialog, type InstallTarget } from "./installStore";
 import { ManualBadge } from "./ManualBadge";
 import { ProjectIcon } from "./ProjectIcon";
 import { compatibility, contentKindOf, loaderFilterFor, navigateTo, type Compat } from "./util";
-
-export type InstallProject = Pick<ProjectHit, "source" | "id" | "slug" | "title" | "icon_url" | "project_type" | "loaders" | "game_versions" | "author" | "manual_download">;
-
-interface InstallTarget {
-  project: InstallProject;
-  instanceId?: string | null;
-  versionId?: string | null;
-}
-
-const useInstallDialog = create<{ target: InstallTarget | null; seq: number }>(() => ({ target: null, seq: 0 }));
-
-export function openInstall(target: InstallTarget) {
-  useInstallDialog.setState((s) => ({ target, seq: s.seq + 1 }));
-}
 
 export function InstallDialogHost() {
   const target = useInstallDialog((s) => s.target);

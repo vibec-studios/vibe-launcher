@@ -11,7 +11,7 @@ import { Button, EmptyState, ErrorState, IconButton, SearchInput, Select, cn } f
 import { InstanceCard, InstanceCardSkeleton, InstanceListHeader, InstanceListRow } from "@/components/instance/InstanceCard";
 import { openNewInstance, useInstanceActions } from "@/components/instance/actions";
 import { Logo3D } from "@/components/Logo3D";
-import { openImport } from "@/features/import/ImportDialog";
+import { openImport } from "@/features/import/importStore";
 import { HelpLink } from "@/features/help/HelpButton";
 import { useT } from "@/i18n";
 import { cachedAppearance } from "@/lib/appearance";

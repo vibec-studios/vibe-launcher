@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, FileArchive, FolderInput, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { create } from "zustand";
 import { Button, Dialog, Field, Input, Progress, Segmented, Skeleton } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
@@ -20,22 +19,7 @@ import { useMemo } from "react";
 import type { ImportFile } from "@/lib/types";
 import { SideFilterBar, SideTag, countSides, sideMatches, type SideFilter } from "@/components/content/sides";
 import { HelpLink } from "@/features/help/HelpButton";
-
-export type ImportMode = "file" | "launcher";
-interface ImportState {
-  open: boolean;
-  path: string | null;
-  /** "file" = Modpack-Datei, "launcher" = aus anderem Launcher übernehmen */
-  mode: ImportMode;
-}
-export const useImportDialog = create<ImportState>(() => ({ open: false, path: null, mode: "file" }));
-
-/** Import-Dialog öffnen, optional direkt mit einer Datei oder im Launcher-Modus. */
-export function openImport(path: string | null = null, mode?: ImportMode) {
-  useImportDialog.setState((s) => ({ open: true, path, mode: path ? "file" : (mode ?? s.mode) }));
-}
-
-export const PACK_EXTENSIONS = ["mrpack", "zip", "vlpack"];
+import { PACK_EXTENSIONS, useImportDialog, type ImportMode } from "./importStore";
 
 const formatNames: Record<PackFormat, string> = {
   mrpack: "Modrinth (.mrpack)",

@@ -59,6 +59,7 @@ import { ContentRow, GRID, ROW_H, RowSkeleton, SelectBox, SimpleContentRow, type
 import { useSimple } from "@/lib/mode";
 import { startManualDownload } from "@/components/content/install";
 import { RefreshButton } from "@/features/instances/RefreshButton";
+import { addContentFiles } from "./addContentFiles";
 
 export type TypeFilter = "all" | ContentKind;
 const STATUS: ContentFilter[] = ["updates", "enabled", "disabled"];
@@ -69,18 +70,6 @@ const discoverType: Record<ContentKind, string> = { mod: "mod", resourcepack: "r
 /** Eindeutiger Schlüssel über alle Arten (gleiche Dateinamen in mods/ und resourcepacks/ sind möglich). */
 const itemKey = (kind: ContentKind, file: string) => `${kind}:${contentKey(file)}`;
 const keyOf = (c: Pick<ContentItem, "kind" | "file_name">) => itemKey(c.kind, c.file_name);
-
-/** Dateien zu einer Instanz hinzufügen (Dialog, Drag & Drop, globale Ablage). */
-export async function addContentFiles(instanceId: string, kind: ContentKind, paths: string[]) {
-  if (!paths.length) return;
-  try {
-    const added = await api.contentAddFiles(instanceId, kind, paths);
-    queryClient.invalidateQueries({ queryKey: ["content", instanceId] });
-    toast.success(tt("content.added", { n: added.length || paths.length }));
-  } catch (e) {
-    toast.error(e, tt("content.add_failed"));
-  }
-}
 
 export function InstanceContentTab({ instance, initialType = "all" }: { instance: Instance; initialType?: TypeFilter }) {
   const t = useT();

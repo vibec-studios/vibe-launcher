@@ -1,8 +1,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useT } from "@/i18n";
-import { FeedbackButton } from "@/features/feedback/FeedbackDialog";
+import { FeedbackButton } from "@/features/feedback/FeedbackButtons";
 import { HelpButton } from "@/features/help/HelpButton";
-import { FriendsPanelToggle } from "@/features/social/FriendsPanel";
+import { FriendsPanelToggle } from "@/features/social/FriendsPanelToggle";
 import { TaskDock } from "../TaskDock";
 import { UpdateButton } from "../UpdateNotice";
 import { AccountMenu } from "../AccountMenu";

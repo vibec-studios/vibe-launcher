@@ -18,7 +18,7 @@ import { WorldsTab } from "./WorldsTab";
 import { ServersTab } from "./ServersTab";
 import { DiagnosisCard, DiagnosisDialog, diagText, useDiagnosis } from "@/features/logs/Diagnosis";
 import { AutofixButton } from "@/features/content/AutoFix";
-import { ReportProblemButton } from "@/features/feedback/FeedbackDialog";
+import { ReportProblemButton } from "@/features/feedback/FeedbackButtons";
 import { InstanceSettingsDialog } from "./settings/InstanceSettingsDialog";
 import { openInstanceSettings, useInstanceSettings } from "./settings/store";
 import { BackupsTab } from "@/features/backups/BackupsTab";

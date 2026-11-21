@@ -8,7 +8,7 @@ import type { Diagnosis, DiagnosisAction, Instance, LoaderKind } from "@/lib/typ
 import { Button, Dialog, Skeleton, cn, toast } from "@/components/ui";
 import { useT, t as tt } from "@/i18n";
 import { uploadCrash } from "./LogsTab";
-import { openAutofix } from "@/features/content/AutoFix";
+import { openAutofix } from "@/features/content/autofixStore";
 import { DriverHelp } from "@/features/perf/DriverHelp";
 
 export function useDiagnosis(instanceId: string, crashReport: string | null, exitCode: number | null, enabled = true) {

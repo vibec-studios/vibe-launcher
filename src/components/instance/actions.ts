@@ -7,7 +7,7 @@ import { qk, queryClient, waitForTask } from "@/lib/queries";
 import type { Instance, Settings } from "@/lib/types";
 import { confirm, toast } from "@/components/ui";
 import { t } from "@/i18n";
-import { askBeforeLaunch, launchCheckSkipped, openAutofix } from "@/features/content/AutoFix";
+import { askBeforeLaunch, launchCheckSkipped, openAutofix } from "@/features/content/autofixStore";
 
 export const FOLDERS = ["", "mods", "config", "saves", "resourcepacks", "shaderpacks", "screenshots", "logs"] as const;
 

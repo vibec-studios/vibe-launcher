@@ -12,7 +12,7 @@ import type { FeedbackKind, FeedbackPreview, FeedbackSendResult } from "@/lib/ty
 import { Button, Checkbox, Dialog, Field, IconButton, Input, Select, Spinner, Textarea, Tooltip, cn, toast } from "@/components/ui";
 import { useLang, useT } from "@/i18n";
 import { copyText } from "@/features/files/util";
-import { closeFeedback, openFeedback, resetFeedback, setFeedback, useFeedback } from "./store";
+import { closeFeedback, resetFeedback, setFeedback, useFeedback } from "./store";
 
 const MIN = 10;
 const MAX = 5000;
@@ -531,37 +531,5 @@ function renderTicketSentence(s: string, ticket: string): ReactNode {
       <span className="font-mono text-brand">{ticket}</span>
       {b}
     </>
-  );
-}
-
-// ------------------------------------------------------------------ Einstiegspunkte
-
-/** Knopf in der Titelleiste (auch im Simple-Modus). Wählt die Instanz der aktuellen Seite vor. */
-export function FeedbackButton() {
-  const t = useT();
-  const path = useRouterState({ select: (s) => s.location.pathname });
-  const instId = path.startsWith("/instances/") ? decodeURIComponent(path.split("/")[2] ?? "") : null;
-  return (
-    <Tooltip content={t("fb.button")} side="bottom">
-      <button
-        aria-label={t("fb.button")}
-        data-testid="fb-open"
-        data-tour="feedback"
-        onClick={() => void openFeedback({ source: "button", ...(instId ? { instanceId: instId } : {}) })}
-        className="grid h-8 w-8 place-items-center rounded-ctl text-muted transition-colors duration-100 hover:bg-white/[.06] hover:text-text"
-      >
-        <MessageSquareWarning size={16} />
-      </button>
-    </Tooltip>
-  );
-}
-
-/** „Problem melden“ (Absturzanzeige, Autofix): öffnet den Dialog mit Instanz + Logs. */
-export function ReportProblemButton({ instanceId, source = "crash", size = "sm" }: { instanceId: string; source?: "crash" | "autofix"; size?: "sm" | "md" }) {
-  const t = useT();
-  return (
-    <Button size={size} variant="subtle" icon={<MessageSquareWarning size={13} />} onClick={() => void openFeedback({ kind: "bug", instanceId, attachLogs: true, source })}>
-      {t("fb.crash.report")}
-    </Button>
   );
 }

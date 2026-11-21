@@ -10,7 +10,7 @@ import { qk, useJavaInstances } from "@/lib/queries";
 import type { ProjectDetails, ProjectVersion } from "@/lib/types";
 import { RichText } from "@/components/content/RichText";
 import { Pill, prettyLoader } from "@/components/content/Pill";
-import { openInstall } from "@/components/content/InstallDialog";
+import { openInstall } from "@/components/content/installStore";
 import { compareMc } from "@/components/content/util";
 
 const ALL = "__all";
