@@ -102,7 +102,7 @@ pub const THEME_IDS: &[&str] = &[
 ];
 
 /// Bekannte Seitenleisten-Einträge (Standard-Reihenfolge).
-pub const NAV_KEYS: [&str; 8] = ["home", "instances", "servers", "social", "discover", "skins", "cosmetics", "screenshots"];
+pub const NAV_KEYS: [&str; 7] = ["home", "instances", "servers", "social", "discover", "skins", "screenshots"];
 
 impl Default for Sidebar {
     fn default() -> Self {

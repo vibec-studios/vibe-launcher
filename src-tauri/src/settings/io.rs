@@ -34,12 +34,13 @@ impl Settings {
         }
     }
 
-    /// Weggeklickte Hinweise: nur gültige IDs, ohne Doppelte, höchstens 200 (die neuesten).
+    /// Weggeklickte Hinweise: nur gültige IDs (auch `<art>:<id>`, z. B. `vibey-eol:<instanz>`), ohne Doppelte,
+    /// höchstens 200 (die neuesten).
     pub fn sanitize_notices(&mut self) {
         let mut out: Vec<String> = Vec::new();
         for id in &self.dismissed_notices {
             let id = id.trim();
-            if crate::vibe::announcements::valid_id(id) && !out.iter().any(|x| x == id) {
+            if valid_notice_id(id) && !out.iter().any(|x| x == id) {
                 out.push(id.to_string());
             }
         }
@@ -79,5 +80,13 @@ impl Settings {
             .or_else(|| option_env!("VIBE_MSA_CLIENT_ID").map(str::to_string))
             .map(|k| k.trim().to_string())
             .filter(|k| !k.is_empty())
+    }
+}
+
+fn valid_notice_id(id: &str) -> bool {
+    use crate::vibe::announcements::valid_id;
+    match id.split_once(':') {
+        Some((kind, rest)) => valid_id(kind) && valid_id(rest),
+        None => valid_id(id),
     }
 }
