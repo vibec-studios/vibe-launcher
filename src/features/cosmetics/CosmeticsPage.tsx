@@ -8,7 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Check, CircleDot, ListFilter, Lock, PackagePlus, PenTool, Save, Search, Undo2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Button, DropdownCheckItem, DropdownLabel, DropdownMenu, EmptyState, ErrorState, IconButton, SearchInput, Spinner, Tooltip, cn, toast } from "@/components/ui";
+import { Button, DropdownCheckItem, DropdownLabel, DropdownMenu, EmptyState, ErrorState, IconButton, PageToolbar, SearchInput, Spinner, Tooltip, cn, toast } from "@/components/ui";
 import { installInstance } from "@/components/instance/actions";
 import { useLang, useT } from "@/i18n";
 import { queryClient, waitForTask } from "@/lib/queries";
@@ -69,7 +69,7 @@ export function CosmeticsPage() {
           </IconButton>
         </span>
       </Tooltip>
-      <Button size="sm" variant="ghost" icon={<PenTool size={14} />} onClick={() => nav({ to: "/cosmetics/creator" })}>
+      <Button variant="ghost" icon={<PenTool size={15} />} onClick={() => nav({ to: "/cosmetics/creator" })}>
         {t("cos.creator")}
       </Button>
     </>
@@ -92,10 +92,10 @@ export function CosmeticsPage() {
 /** Kompakte Werkzeugleiste: links Kategorien/Suche/Filter, rechts Aktionen. */
 function Toolbar({ children, actions }: { children?: ReactNode; actions: ReactNode }) {
   return (
-    <div className="flex h-12 shrink-0 items-center gap-2 px-6 [[data-design=v2]_&]:h-auto [[data-design=v2]_&]:min-h-12 [[data-design=v2]_&]:py-1">
-      {children}
-      <div className="flex-1" />
-      {actions}
+    <div className="shrink-0 px-6 pb-4 pt-4">
+      <PageToolbar actions={actions}>
+        {children}
+      </PageToolbar>
     </div>
   );
 }
@@ -246,7 +246,7 @@ function Wardrobe({ access, actions }: { access: Exclude<Access, "loading">; act
           </>
         }
       >
-        <div className="flex min-w-0 shrink gap-0.5 overflow-x-auto rounded-ctl bg-field p-0.5 [scrollbar-width:none] [[data-design=v2]_&]:flex-wrap [[data-design=v2]_&]:overflow-visible" role="tablist" aria-label={t("cos.categories")}>
+        <div className="flex min-w-0 shrink flex-wrap gap-0.5 rounded-ctl bg-field p-0.5" role="tablist" aria-label={t("cos.categories")}>
           {(["all", ...CATEGORIES] as Filter[]).map((c) => (
             <button
               key={c}
@@ -254,7 +254,7 @@ function Wardrobe({ access, actions }: { access: Exclude<Access, "loading">; act
               aria-selected={filter === c}
               onClick={() => setFilter(c)}
               className={cn(
-                "flex h-7 shrink-0 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-2.5 text-[13px] font-semibold transition-colors duration-100",
+                "flex h-8 shrink-0 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-2.5 text-[13px] font-semibold transition-colors duration-100",
                 filter === c ? "bg-surface3 text-text" : "text-muted hover:text-text",
               )}
             >
@@ -263,7 +263,7 @@ function Wardrobe({ access, actions }: { access: Exclude<Access, "loading">; act
             </button>
           ))}
         </div>
-        <SearchInput value={q} onChange={setQ} placeholder={t("cos.search")} className="w-[220px] min-w-[150px] shrink-0 [[data-design=v2]_&]:w-[190px]" />
+        <SearchInput value={q} onChange={setQ} placeholder={t("cos.search")} className="w-[220px] min-w-[160px] shrink-0 [[data-design=v2]_&]:w-[190px]" />
         {!guest && (
           <DropdownMenu
             align="start"
@@ -287,7 +287,23 @@ function Wardrobe({ access, actions }: { access: Exclude<Access, "loading">; act
         <section className="flex min-w-0 flex-1 flex-col">
           <div className="scroll min-h-0 flex-1" onMouseLeave={() => setHover(null)}>
             {shown.length === 0 ? (
-              <EmptyState icon={<Search size={20} />} title={t("cos.empty")} text={q ? t("cos.empty_search") : t("cos.empty_cat")} />
+              <EmptyState
+                icon={<Search size={28} strokeWidth={1.6} />}
+                title={t("cos.empty")}
+                text={q ? t("cos.empty_search") : t("cos.empty_cat")}
+                action={
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setQ("");
+                      setOnlyOwned(false);
+                      setFilter("all");
+                    }}
+                  >
+                    {q ? t("layout.search.reset") : t("layout.show_all")}
+                  </Button>
+                }
+              />
             ) : (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 p-0.5">
                 {shown.map((i) => (

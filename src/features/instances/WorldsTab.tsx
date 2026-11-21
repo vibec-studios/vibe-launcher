@@ -2,7 +2,7 @@
 // öffnen, Backup erstellen, in andere Instanz kopieren, Löschen. Werkzeuge in der gemeinsamen Zeile (PageTools).
 import { memo, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, Copy, FileArchive, FolderOpen, Globe2, MoreHorizontal, Play, Trash2 } from "lucide-react";
+import { Archive, Copy, FileArchive, FolderOpen, Globe2, MoreHorizontal, Play, SearchX, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
 import type { Instance, World } from "@/lib/types";
@@ -169,13 +169,13 @@ export function WorldsTab({ instance }: { instance: Instance }) {
   return (
     <div data-tour="worlds-list" className="scroll h-full">
       <PageTools>
-        <SearchInput value={query} onChange={setQuery} placeholder={t("worlds.search")} className="w-[240px] min-w-[140px] shrink [&_input]:h-8" />
+        <SearchInput value={query} onChange={setQuery} placeholder={t("worlds.search")} className="w-[240px] min-w-[140px] shrink" />
         <div className="flex-1" />
         {/* Beschriftete Hauptaktion statt zwei unklarer Symbole (wie „Server hinzufügen“ nebenan) */}
         <IconButton label={t("worlds.open_saves_tip")} tip variant="ghost" onClick={() => api.instanceOpenFolder(instance.id, "saves").catch((e) => toast.error(e))}>
           <FolderOpen size={16} />
         </IconButton>
-        <Button size="sm" variant="ghost" icon={<FileArchive size={14} />} title={t("worlds.import")} onClick={() => importWorldZip(instance)}>
+        <Button variant="ghost" icon={<FileArchive size={15} />} title={t("worlds.import")} onClick={() => importWorldZip(instance)}>
           {t("worlds.import_short")}
         </Button>
       </PageTools>
@@ -206,7 +206,16 @@ export function WorldsTab({ instance }: { instance: Instance }) {
             }
           />
         ) : list.length === 0 ? (
-          <EmptyState title={t("instances.no_match")} text={t("worlds.no_match", { q: query.trim() })} />
+          <EmptyState
+            icon={<SearchX size={30} strokeWidth={1.6} />}
+            title={t("instances.no_match")}
+            text={t("worlds.no_match", { q: query.trim() })}
+            action={
+              <Button size="sm" onClick={() => setQuery("")}>
+                {t("layout.search.reset")}
+              </Button>
+            }
+          />
         ) : (
           <div className="flex flex-col">
             {list.map((w) => (

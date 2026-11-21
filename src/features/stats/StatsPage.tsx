@@ -8,7 +8,7 @@ import { BarChart3, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
 import { formatDuration, instanceAccent } from "@/lib/format";
-import { Button, EmptyState, ErrorState, Segmented, Skeleton, Tooltip, cn, pageWrap } from "@/components/ui";
+import { Button, EmptyState, ErrorState, Page, PageToolbar, Segmented, Skeleton, ToolbarMeta, Tooltip, cn } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { useLang, useT } from "@/i18n";
 import { sumIn } from "./playtime";
@@ -116,11 +116,10 @@ export function StatsPage() {
   const empty = !!q.data && data.total < 60;
 
   return (
-    <div className="scroll h-full">
-      <div className={cn(pageWrap, "flex flex-col gap-4 pb-10 pt-4")}>
-        {/* Werkzeugleiste: Zeitraum links, der genaue Zeitraum als Einordnung rechts */}
-        <div className="flex h-8 items-center gap-3">
+    <Page width="wide">
+        <PageToolbar actions={period && <ToolbarMeta>{period}</ToolbarMeta>}>
           <Segmented<Range>
+            size="md"
             value={range}
             onChange={setRange}
             items={[
@@ -129,9 +128,7 @@ export function StatsPage() {
               { value: "year", label: t("stats.range.year") },
             ]}
           />
-          <div className="flex-1" />
-          {period && <span className="text-meta tabular-nums text-dim">{period}</span>}
-        </div>
+        </PageToolbar>
 
         {q.isError ? (
           <div className="rounded-panel bg-surface">
@@ -276,8 +273,7 @@ export function StatsPage() {
             </section>
           </>
         )}
-      </div>
-    </div>
+    </Page>
   );
 }
 

@@ -6,7 +6,7 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowLeft, Check, ChevronDown, Flame, Info, LayoutGrid, List, Plus, Puzzle, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, EmptyState, ErrorState, IconButton, Segmented, Select, SearchInput, Skeleton, Spinner, Tooltip, cn } from "@/components/ui";
+import { Button, EmptyState, ErrorState, IconButton, PageToolbar, Segmented, Select, SearchInput, Skeleton, Spinner, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { formatLoader } from "@/lib/format";
@@ -210,21 +210,23 @@ export function DiscoverPage() {
         <FilterSidebar type={effectiveType} source={source} sourcePicker={sourcePicker} />
         <div data-tour="discover-results" className="flex min-w-0 flex-1 flex-col">
           {/* Eine Werkzeugleiste: Typ · Suche (Sortierung über den Ergebnissen, Quelle in der Filterleiste) */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2 px-6 pt-3">
-            <div data-tour="discover-types">
-              <Segmented value={effectiveType} onChange={setType} items={typeItems} />
-            </div>
-            <SearchInput
-              data-tour="discover-search"
-              value={text}
-              onChange={setText}
-              placeholder={t(`discover.search.${effectiveType}`)}
-              className="min-w-[180px] flex-1"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Escape" && text) setText("");
-              }}
-            />
+          <div className="shrink-0 px-6 pt-4">
+            <PageToolbar>
+              <div data-tour="discover-types" className="flex">
+                <Segmented size="md" value={effectiveType} onChange={setType} items={typeItems} />
+              </div>
+              <SearchInput
+                data-tour="discover-search"
+                value={text}
+                onChange={setText}
+                placeholder={t(`discover.search.${effectiveType}`)}
+                className="min-w-[180px] flex-1"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Escape" && text) setText("");
+                }}
+              />
+            </PageToolbar>
           </div>
           {browsing ? (
             <div className="h-3 shrink-0" />
@@ -675,7 +677,7 @@ function FilterSidebar({ type, source, sourcePicker }: { type: ProjectType; sour
   const loaderApplies = type === "mod" || type === "modpack";
 
   return (
-    <aside className="scroll flex w-[220px] shrink-0 flex-col px-3 pb-6 pt-3">
+    <aside className="scroll flex w-[220px] shrink-0 flex-col px-3 pb-6 pt-4">
       <div className="mb-1 flex h-9 shrink-0 items-center gap-2 pl-2">
         <span className="flex-1 text-section text-text">{t("discover.filters")}</span>
         {active && (

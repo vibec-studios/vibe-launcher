@@ -175,7 +175,7 @@ function SubNav({ items, value, onChange }: { items: SubItem[]; value: InstanceT
             aria-selected={active}
             onClick={() => onChange(it.value)}
             className={cn(
-              "flex h-7 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-2.5 text-[12.5px] font-semibold whitespace-nowrap transition-colors duration-100",
+              "flex h-8 items-center gap-1.5 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-3 text-[13px] font-semibold whitespace-nowrap transition-colors duration-100",
               active ? "bg-surface3 text-text" : "text-muted hover:text-text",
             )}
           >
@@ -287,9 +287,9 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
           <InstanceContentTab instance={inst} initialType={initialType} />
         ) : area === "worlds" ? (
           <div className="flex h-full flex-col">
-            <div className={cn(wrap, "flex h-14 shrink-0 items-center gap-2 pt-2")}>
+            <div className={cn(wrap, "flex h-[60px] shrink-0 items-center gap-2 pt-3")}>
               <SubNav items={worldItems} value={active} onChange={setTab} />
-              <div ref={setSlot} className="flex min-w-0 flex-1 items-center gap-1" />
+              <div ref={setSlot} className="flex min-w-0 flex-1 items-center gap-2" />
             </div>
             <ToolbarSlot.Provider value={slot}>
               <div className="relative min-h-0 flex-1">{active === "servers" ? <ServersTab instance={inst} /> : <WorldsTab instance={inst} />}</div>

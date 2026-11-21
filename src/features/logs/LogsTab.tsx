@@ -524,7 +524,6 @@ export function LogsTab({ instance }: { instance: Instance }) {
       <PageTools>
         <div className="w-[210px] shrink-0 max-[1100px]:w-[170px]">
           <Select
-            size="sm"
             variant="ghost"
             value={selectValue}
             onChange={(v) => useLogSource.setState((s) => ({ src: { ...s.src, [id]: v } }))}
@@ -536,7 +535,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
             value={query}
             onChange={setQuery}
             placeholder={t("logs.search")}
-            className="w-[240px] min-w-[120px] shrink [&_input]:h-8"
+            className="w-[240px] min-w-[120px] shrink"
             data-allow-find="1"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -554,10 +553,10 @@ export function LogsTab({ instance }: { instance: Instance }) {
               <span className="min-w-[52px] shrink-0 text-center font-mono text-[11px] text-dim">
                 {matches.length ? `${curPos >= 0 ? curPos + 1 : "–"}/${matches.length.toLocaleString()}` : "0/0"}
               </span>
-              <IconButton label={t("logs.prev")} size="sm" variant="ghost" disabled={!matches.length} onClick={() => go(-1)}>
+              <IconButton label={t("logs.prev")} variant="ghost" disabled={!matches.length} onClick={() => go(-1)}>
                 <ChevronUp size={15} />
               </IconButton>
-              <IconButton label={t("logs.next")} size="sm" variant="ghost" disabled={!matches.length} onClick={() => go(1)}>
+              <IconButton label={t("logs.next")} variant="ghost" disabled={!matches.length} onClick={() => go(1)}>
                 <ChevronDown size={15} />
               </IconButton>
             </>

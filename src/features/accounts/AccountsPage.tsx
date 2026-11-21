@@ -12,6 +12,8 @@ import {
   EmptyState,
   ErrorState,
   IconButton,
+  Page,
+  PageToolbar,
   Skeleton,
   Spinner,
   confirm,
@@ -69,19 +71,20 @@ export function AccountsPage() {
   const accounts = q.data ?? [];
 
   return (
-    <div className="scroll h-full">
-      <div className="mx-auto w-full max-w-[860px] px-6 pb-12 pt-3">
-        {/* Werkzeugleiste: Seitentitel steht in der Titelleiste, hier nur Kurzbeschreibung + Hauptaktion */}
-        <div className="flex min-h-12 items-center gap-4">
-          <p className="min-w-0 flex-1 text-[13px] text-muted">{t("accounts.lead")}</p>
-          {accounts.length > 0 && (
-            <Button size="sm" variant="primary" icon={<LogIn size={14} />} onClick={() => setMsa(true)}>
-              {t("accounts.add_msa")}
-            </Button>
-          )}
-        </div>
+    <Page width="narrow">
+        <PageToolbar
+          actions={
+            accounts.length > 0 && (
+              <Button variant="primary" icon={<LogIn size={15} />} onClick={() => setMsa(true)}>
+                {t("accounts.add_msa")}
+              </Button>
+            )
+          }
+        >
+          <p className="min-w-0 text-[13px] text-muted">{t("accounts.lead")}</p>
+        </PageToolbar>
 
-        <div className="mt-2 rounded-card bg-surface">
+        <div className="rounded-card bg-surface">
           {q.isPending ? (
             [0, 1].map((i) => (
               <div key={i} className="flex h-16 items-center gap-3.5 border-line px-4 [&+&]:border-t">
@@ -102,13 +105,12 @@ export function AccountsPage() {
         </div>
 
         {/* Zwei kurze Hinweise statt eines Textblocks */}
-        <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-4 px-1 min-[760px]:grid-cols-2">
+        <div className="mt-1 grid grid-cols-1 gap-x-8 gap-y-4 px-1 min-[760px]:grid-cols-2">
           <InfoNote icon={<ShieldCheck size={15} />} title={t("accounts.info.secure")} text={t("accounts.info.secure_text")} />
           <InfoNote icon={<Gamepad2 size={15} />} title={t("accounts.info.java")} text={t("accounts.info.java_text")} />
         </div>
-      </div>
-      <MsaDialog open={msa} onOpenChange={setMsa} />
-    </div>
+        <MsaDialog open={msa} onOpenChange={setMsa} />
+    </Page>
   );
 }
 

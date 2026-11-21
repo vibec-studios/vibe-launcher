@@ -5,12 +5,13 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { getRouteApi } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Camera, Copy, Eye, FolderOpen, RefreshCw, Trash2 } from "lucide-react";
+import { Camera, CircleHelp, Copy, Eye, FolderOpen, Library, RefreshCw, Trash2 } from "lucide-react";
+import { openHelp } from "@/features/help/store";
 import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
 import type { Screenshot } from "@/lib/types";
 import { formatBytes, formatDate, imageSrc } from "@/lib/format";
-import { Button, ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, Segmented, Select, Skeleton, cn, confirm, toast } from "@/components/ui";
+import { Button, ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, PageToolbar, Segmented, Select, Skeleton, ToolbarMeta, cn, confirm, toast } from "@/components/ui";
 import { t as tt, useLang, useT } from "@/i18n";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { ShotThumb, bucket, useScreenshots, useShotFocus } from "./shots";
@@ -93,6 +94,7 @@ export function ScreenshotsPage() {
   const switcher = (
     <div data-tour="gallery-switch" className="flex shrink-0">
     <Segmented<"shots" | "clips">
+      size="md"
       value={tab === "clips" ? "clips" : "shots"}
       onChange={(v) => nav({ search: { instance, tab: v === "clips" ? "clips" : undefined }, replace: true })}
       items={[
@@ -222,33 +224,36 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
   return (
     <div className="flex h-full flex-col">
       {/* Werkzeugleiste wie in der Bibliothek: Filter links, Anzahl als Einordnung, Aktionen rechts */}
-      <div className="flex shrink-0 items-center gap-3 px-6 pb-1 pt-4">
-        {switcher}
-        <div data-tour="gallery-filter" className="w-[240px]">
-          <Select<string>
-            size="sm"
-            value={instance ?? ALL}
-            onChange={(v) => nav({ search: { instance: v === ALL ? undefined : v }, replace: true })}
-            options={filterOptions}
-          />
-        </div>
-        {q.data && shots.length > 0 && (
-          <span className="text-meta tabular-nums text-dim">{t(shots.length === 1 ? "shots.count_one" : "shots.count", { n: shots.length.toLocaleString() })}</span>
-        )}
-        <div className="flex-1" />
-        {instance && (
-          <IconButton
-            label={t("common.open_folder")}
-            tip
-            variant="ghost"
-            onClick={() => api.instanceOpenFolder(instance, "screenshots").catch((e) => toast.error(e))}
-          >
-            <FolderOpen size={16} />
-          </IconButton>
-        )}
-        <IconButton label={t("shots.reload")} tip variant="ghost" onClick={() => q.refetch()}>
-          <RefreshCw size={15} className={cn(q.isFetching && "animate-spin")} />
-        </IconButton>
+      <div className="shrink-0 px-6 pb-1 pt-4">
+        <PageToolbar
+          actions={
+            <>
+              {q.data && shots.length > 0 && <ToolbarMeta>{t(shots.length === 1 ? "shots.count_one" : "shots.count", { n: shots.length.toLocaleString() })}</ToolbarMeta>}
+              {instance && (
+                <IconButton
+                  label={t("common.open_folder")}
+                  tip
+                  variant="ghost"
+                  onClick={() => api.instanceOpenFolder(instance, "screenshots").catch((e) => toast.error(e))}
+                >
+                  <FolderOpen size={16} />
+                </IconButton>
+              )}
+              <IconButton label={t("shots.reload")} tip variant="ghost" onClick={() => q.refetch()}>
+                <RefreshCw size={15} className={cn(q.isFetching && "animate-spin")} />
+              </IconButton>
+            </>
+          }
+        >
+          {switcher}
+          <div data-tour="gallery-filter" className="w-[240px] min-w-[160px] shrink">
+            <Select<string>
+              value={instance ?? ALL}
+              onChange={(v) => nav({ search: { instance: v === ALL ? undefined : v }, replace: true })}
+              options={filterOptions}
+            />
+          </div>
+        </PageToolbar>
       </div>
 
       <div ref={scrollRef} data-tour="gallery-grid" className="scroll min-h-0 flex-1 px-6 pb-8">
@@ -298,6 +303,16 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
               icon={<Camera size={34} />}
               title={t("shots.empty.title")}
               text={t("shots.empty.text")}
+              action={
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button variant="primary" icon={<Library size={15} />} onClick={() => nav({ to: "/instances" })}>
+                    {t("layout.go_library")}
+                  </Button>
+                  <Button variant="subtle" icon={<CircleHelp size={15} />} onClick={() => openHelp("gallery")}>
+                    {t("layout.howto")}
+                  </Button>
+                </div>
+              }
             />
           )
         ) : (

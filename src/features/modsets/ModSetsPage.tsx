@@ -16,6 +16,7 @@ import {
   Pencil,
   Plus,
   Search,
+  SearchX,
   Share2,
   Trash2,
   Users,
@@ -25,6 +26,7 @@ import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import {
   Button,
+  ChoiceCard,
   DropdownItem,
   DropdownLabel,
   DropdownMenu,
@@ -33,11 +35,14 @@ import {
   ErrorState,
   IconButton,
   Input,
+  Page,
+  PageToolbar,
   SearchInput,
   Segmented,
   Select,
   Skeleton,
   Tabs,
+  ToolbarButton,
   Tooltip,
   cn,
   confirm,
@@ -231,18 +236,6 @@ function SetRow({ set }: { set: ModSetInfo }) {
   );
 }
 
-function WayCard({ icon, title, text, onClick }: { icon: ReactNode; title: string; text: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex items-start gap-3 rounded-card bg-surface p-4 text-left transition-colors duration-100 hover:bg-surface2">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl bg-brand/15 text-brand">{icon}</span>
-      <span className="min-w-0">
-        <span className="block text-[13.5px] font-semibold text-text">{title}</span>
-        <span className="mt-0.5 block text-meta text-muted">{text}</span>
-      </span>
-    </button>
-  );
-}
-
 function Ways() {
   const t = useT();
   const nav = useNavigate();
@@ -256,11 +249,11 @@ function Ways() {
     }
   };
   return (
-    <div className="grid grid-cols-2 gap-2 @min-[1100px]:grid-cols-4">
-      <WayCard icon={<Search size={17} />} title={t("sets.way.search")} text={t("sets.way.search_text")} onClick={openCreateSet} />
-      <WayCard icon={<ClipboardPaste size={17} />} title={t("sets.way.paste")} text={t("sets.way.paste_text")} onClick={() => void pasteNew()} />
-      <WayCard icon={<FolderInput size={17} />} title={t("sets.way.instance")} text={t("sets.way.instance_text")} onClick={() => openSetFromInstance(null)} />
-      <WayCard icon={<PackageOpen size={17} />} title={t("sets.way.import")} text={t("sets.way.import_text")} onClick={openImportSet} />
+    <div className="grid grid-cols-2 gap-3 @min-[1100px]:grid-cols-4">
+      <ChoiceCard arrow icon={<Search size={18} />} title={t("sets.way.search")} text={t("sets.way.search_text")} onClick={openCreateSet} />
+      <ChoiceCard arrow icon={<ClipboardPaste size={18} />} title={t("sets.way.paste")} text={t("sets.way.paste_text")} onClick={() => void pasteNew()} />
+      <ChoiceCard arrow icon={<FolderInput size={18} />} title={t("sets.way.instance")} text={t("sets.way.instance_text")} onClick={() => openSetFromInstance(null)} />
+      <ChoiceCard arrow icon={<PackageOpen size={18} />} title={t("sets.way.import")} text={t("sets.way.import_text")} onClick={openImportSet} />
     </div>
   );
 }
@@ -275,23 +268,20 @@ function SetsOverview() {
     .filter((s) => !q || s.name.toLowerCase().includes(q) || s.entries.some((e) => e.title.toLowerCase().includes(q)))
     .sort((a, b) => b.updated - a.updated);
   return (
-    <div className="@container scroll h-full">
-      <div className="flex flex-col gap-4 px-6 pb-10 pt-4">
-        <div className="flex items-center gap-2">
-          {list.length > 0 && <SearchInput value={query} onChange={setQuery} placeholder={t("sets.search")} className="w-[240px] min-w-[150px]" />}
-          <div className="flex-1" />
-          <Button size="sm" variant="subtle" data-tour="modsets-import" icon={<PackageOpen size={14} />} onClick={openImportSet}>
-            {t("sets.import")}
-          </Button>
-          {list.length > 0 && (
-            <Button size="sm" variant="subtle" icon={<FolderInput size={14} />} onClick={() => openSetFromInstance(null)}>
-              {t("sets.way.instance")}
-            </Button>
-          )}
-          <Button size="sm" variant="primary" data-tour="modsets-new" icon={<Plus size={15} />} onClick={openCreateSet}>
-            {t("sets.new")}
-          </Button>
-        </div>
+    <Page className="@container">
+        <PageToolbar
+          actions={
+            <>
+              <ToolbarButton variant="subtle" data-tour="modsets-import" icon={<PackageOpen size={15} />} label={t("sets.import")} onClick={openImportSet} />
+              {list.length > 0 && <ToolbarButton variant="subtle" icon={<FolderInput size={15} />} label={t("sets.way.instance")} onClick={() => openSetFromInstance(null)} />}
+              <Button variant="primary" data-tour="modsets-new" icon={<Plus size={16} />} onClick={openCreateSet}>
+                {t("sets.new")}
+              </Button>
+            </>
+          }
+        >
+          {list.length > 0 && <SearchInput value={query} onChange={setQuery} placeholder={t("sets.search")} className="min-w-[160px] max-w-[320px] flex-1 basis-[240px]" />}
+        </PageToolbar>
         {isError && !data ? (
           <ErrorState error={error} onRetry={() => refetch()} />
         ) : isLoading && !data ? (
@@ -314,7 +304,15 @@ function SetsOverview() {
           <>
             <p className="max-w-[760px] text-[13px] text-muted">{t("sets.intro")}</p>
             {shown.length === 0 ? (
-              <EmptyState title={t("sets.no_match", { q: query })} />
+              <EmptyState
+                icon={<SearchX size={30} strokeWidth={1.6} />}
+                title={t("sets.no_match", { q: query })}
+                action={
+                  <Button size="sm" onClick={() => setQuery("")}>
+                    {t("layout.search.reset")}
+                  </Button>
+                }
+              />
             ) : (
               <div data-tour="modsets-list" className="-mx-3 flex flex-col">
                 {shown.map((s) => (
@@ -324,8 +322,7 @@ function SetsOverview() {
             )}
           </>
         )}
-      </div>
-    </div>
+    </Page>
   );
 }
 
@@ -628,7 +625,7 @@ function SetEditor({ id }: { id: string }) {
   if (isError && !data) return <ErrorState error={error} onRetry={() => refetch()} />;
   if (isLoading || !data)
     return (
-      <div className="flex flex-col gap-3 px-6 pt-4">
+      <div className="flex flex-col gap-4 px-6 pt-4">
         <Skeleton className="h-16 w-[420px]" />
         <Skeleton className="h-[300px]" />
       </div>
@@ -651,8 +648,7 @@ function SetEditor({ id }: { id: string }) {
   };
 
   return (
-    <div className="@container scroll h-full">
-      <div className="flex flex-col gap-4 px-6 pb-10 pt-4">
+    <Page className="@container">
         <button onClick={() => nav({ to: "/modsets", search: {} })} className="flex w-fit items-center gap-1.5 text-[12.5px] font-semibold text-muted hover:text-text">
           <ArrowLeft size={14} />
           {t("sets.back")}
@@ -723,8 +719,7 @@ function SetEditor({ id }: { id: string }) {
             <AddPanel set={set} initial={search.add ?? "search"} />
           </div>
         )}
-      </div>
-    </div>
+    </Page>
   );
 }
 

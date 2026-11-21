@@ -26,13 +26,13 @@ export function SocialPage() {
       <Gate>
         <div className="flex min-h-0 flex-1">
           <aside className="flex w-[264px] shrink-0 flex-col border-r border-line max-[900px]:w-[228px]">
-            <div className="flex h-12 shrink-0 items-center gap-1 px-2">
+            <div className="flex h-9 shrink-0 items-center gap-1 px-2 mb-2 mt-4">
               <button
                 onClick={() => nav({ to: "/social", search: {} })}
                 aria-current={!chat ? "page" : undefined}
                 title={me ? t("social.signed_in_as", { name: me.name }) : undefined}
                 className={cn(
-                  "flex h-8 min-w-0 flex-1 items-center gap-2.5 rounded-ctl px-2.5 text-left text-[13px] font-semibold transition-colors duration-100",
+                  "flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-ctl px-2.5 text-left text-[13px] font-semibold transition-colors duration-100",
                   !chat ? "bg-white/[.07] text-text" : "text-muted hover:bg-white/[.04] hover:text-text",
                 )}
               >
