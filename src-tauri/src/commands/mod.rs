@@ -1,3 +1,4 @@
+pub mod appearance;
 pub mod auth;
 pub mod bedrock;
 pub mod content;

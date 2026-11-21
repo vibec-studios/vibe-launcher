@@ -43,6 +43,8 @@ export const api = {
   settingsSet: (settings: T.Settings) => call<T.Settings>("settings_set", { settings }),
   /** Hintergrund-Datei in den Datenordner kopieren; gibt den neuen Pfad zurück. */
   appearanceImportBackground: (path: string, slot: "image" | "video") => call<string>("appearance_import_background", { path, slot }),
+  appearanceThemeWrite: (path: string, content: string) => call<void>("appearance_theme_write", { path, content }),
+  appearanceThemeRead: (path: string) => call<string>("appearance_theme_read", { path }),
   /** Eigenes Bild fürs App-Icon (bzw. `slot` "discord" für den Discord-Status) übernehmen; gibt den gespeicherten Pfad zurück. */
   appIconImport: (path: string, slot?: "discord") => call<string>("app_icon_import", { path, slot: slot ?? null }),
   /** App-Icon-Vorschau als data:-URL. */

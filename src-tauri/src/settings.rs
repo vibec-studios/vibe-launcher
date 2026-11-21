@@ -1,6 +1,7 @@
 //! Globale Launcher-Einstellungen (`settings.json`).
 mod discord;
 mod syslang;
+pub mod theme;
 use crate::error::AppResult;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -142,23 +143,27 @@ pub struct Appearance {
     pub accent: String,
     /// Hintergrund-Ton: "dark" (Schwarz) | "dim" (Dunkelgrau) | "oled" | "light" (hell)
     pub tone: String,
-    /// Ecken: "square" (Standard) | "slight" | "round"
+    /// Ecken: "square" (Standard) | "slight" | "round" | "custom"
     pub radius: String,
+    /// Eigener Eckenradius in px (0–24), wirkt bei `radius` = "custom"
+    pub radius_px: u32,
     /// Dichte: "compact" | "normal"
     pub density: String,
     /// UI-Skalierung in Prozent (80–130)
     pub ui_scale: u32,
     pub background: Background,
-    /// Schrift: "inter" | "system"
+    /// Schrift: "inter" | "inter_tight" | "system" | "mono"
     pub font: String,
-    /// Überschriften: "default" | "pixel"
+    /// Überschriften: "default" | "pixel" | "pixel_all" (auch Knöpfe, Reiter, Beschriftungen)
     pub headings: String,
     /// Schriftgröße in Prozent (90–115), unabhängig von der UI-Skalierung
     pub font_scale: u32,
     /// Kontrast: "normal" | "high"
     pub contrast: String,
-    /// Kartenstil: "flat" | "outlined"
+    /// Kartenstil: "flat" | "outlined" | "raised" | "pixel"
     pub cards: String,
+    /// Glas-Effekt 0–100 (0 = aus)
+    pub glass: u32,
     pub sidebar: Sidebar,
     /// Instanz-Kacheln: "large" | "small"
     pub icon_size: String,
@@ -176,6 +181,10 @@ pub struct Appearance {
     pub app_icon_color: String,
     /// Eigenes Bild fürs App-Icon (in `<daten>/app-icon/` kopiert)
     pub app_icon_image: Option<String>,
+    /// Selbst gespeicherte Themes
+    pub custom_themes: Vec<theme::CustomTheme>,
+    /// Id des zuletzt angewendeten eigenen Themes
+    pub active_custom: Option<String>,
 }
 
 /// Seitenleiste.
@@ -190,6 +199,8 @@ pub struct Sidebar {
     pub order: Vec<String>,
     /// Ausgeblendete Einträge
     pub hidden: Vec<String>,
+    /// "solid" (auf dem Rahmen) | "floating" (eigene Platte) | "tinted" (Akzent-Tönung)
+    pub style: String,
 }
 
 /// Statusfarben als Hex.
@@ -213,6 +224,12 @@ pub struct Effects {
     pub frost: bool,
 }
 
+/// Bekannte Theme-Voreinstellungen (siehe THEMES in `src/lib/appearance.ts`).
+pub const THEME_IDS: &[&str] = &[
+    "standard", "winter", "graphite", "light", "midnight", "ocean", "forest", "sunset", "sakura", "nether", "end", "retro", "contrast", "pixel",
+    "pixel_light",
+];
+
 /// Bekannte Seitenleisten-Einträge (Standard-Reihenfolge).
 pub const NAV_KEYS: [&str; 8] = ["home", "instances", "servers", "social", "discover", "skins", "cosmetics", "screenshots"];
 
@@ -223,6 +240,7 @@ impl Default for Sidebar {
             instances: true,
             order: NAV_KEYS.iter().map(|s| s.to_string()).collect(),
             hidden: Vec::new(),
+            style: "solid".into(),
         }
     }
 }
@@ -243,9 +261,9 @@ impl Default for Effects {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct Background {
-    /// "none" | "gradient" | "image" | "animated"
+    /// "none" | "color" | "gradient" | "image" | "animated"
     pub kind: String,
-    /// Verlauf-Vorlage (z. B. "accent", "dusk", "ocean", "ember")
+    /// Verlauf-Vorlage (z. B. "accent", "dusk", "pixel") oder "custom" (eigene Farben)
     pub gradient: String,
     /// Animierte Vorlage ("aurora", "particles", "waves", "blocks") oder "custom" (eigene Datei)
     pub animated: String,
@@ -257,6 +275,12 @@ pub struct Background {
     pub dim: u32,
     /// Unschärfe in Pixeln (0–40)
     pub blur: u32,
+    /// Einfarbiger Hintergrund (Hex)
+    pub color: String,
+    /// Eigener Verlauf: Start- und Endfarbe (Hex), Winkel 0–360°
+    pub gradient_from: String,
+    pub gradient_to: String,
+    pub gradient_angle: u32,
 }
 
 impl Default for Appearance {
@@ -268,6 +292,7 @@ impl Default for Appearance {
             accent: "#8b6cff".into(),
             tone: "dark".into(),
             radius: "square".into(),
+            radius_px: 6,
             density: "normal".into(),
             ui_scale: 100,
             background: Background::default(),
@@ -276,6 +301,7 @@ impl Default for Appearance {
             font_scale: 100,
             contrast: "normal".into(),
             cards: "flat".into(),
+            glass: 0,
             sidebar: Sidebar::default(),
             icon_size: "large".into(),
             library_view: "grid".into(),
@@ -286,6 +312,8 @@ impl Default for Appearance {
             app_icon: "seal".into(),
             app_icon_color: crate::platform::app_icon::DEFAULT_COLOR.into(),
             app_icon_image: None,
+            custom_themes: Vec::new(),
+            active_custom: None,
         }
     }
 }
@@ -300,13 +328,23 @@ impl Default for Background {
             video: None,
             dim: 45,
             blur: 0,
+            color: "#1a1030".into(),
+            gradient_from: "#2b1655".into(),
+            gradient_to: "#ff9e6d".into(),
+            gradient_angle: 160,
         }
     }
 }
 
 impl Appearance {
-    /// Unbekannte Werte auf Standard zurücksetzen, Zahlen begrenzen.
+    /// Unbekannte Werte auf Standard zurücksetzen, Zahlen begrenzen, eigene Themes bereinigen.
     pub fn sanitize(&mut self) {
+        self.sanitize_values();
+        theme::sanitize(self);
+    }
+
+    /// Wie `sanitize`, aber ohne die Liste der eigenen Themes.
+    pub(crate) fn sanitize_values(&mut self) {
         let d = Appearance::default();
         let pick = |v: &mut String, allowed: &[&str], def: &str| {
             if !allowed.contains(&v.as_str()) {
@@ -316,21 +354,23 @@ impl Appearance {
         fix_hex(&mut self.accent, &d.accent);
         pick(
             &mut self.theme,
-            &["standard", "winter", "graphite", "light", "midnight", "ocean", "forest", "sunset", "sakura", "nether", "end", "retro", "contrast"],
+            THEME_IDS,
             &d.theme,
         );
         pick(&mut self.design, &["v1", "v2"], &d.design);
         pick(&mut self.app_icon, crate::platform::app_icon::MOTIFS, &d.app_icon);
         fix_hex(&mut self.app_icon_color, &d.app_icon_color);
-        pick(&mut self.font, &["inter", "system"], &d.font);
-        pick(&mut self.headings, &["default", "pixel"], &d.headings);
+        pick(&mut self.font, &["inter", "inter_tight", "system", "mono"], &d.font);
+        pick(&mut self.headings, &["default", "pixel", "pixel_all"], &d.headings);
         self.font_scale = self.font_scale.clamp(90, 115);
         pick(&mut self.contrast, &["normal", "high"], &d.contrast);
-        pick(&mut self.cards, &["flat", "outlined"], &d.cards);
+        pick(&mut self.cards, &["flat", "outlined", "raised", "pixel"], &d.cards);
+        self.glass = self.glass.min(100);
         pick(&mut self.icon_size, &["large", "small"], &d.icon_size);
         pick(&mut self.library_view, &["grid", "list"], &d.library_view);
         pick(&mut self.motion, &["normal", "more"], &d.motion);
         pick(&mut self.sidebar.mode, &["compact", "wide"], &d.sidebar.mode);
+        pick(&mut self.sidebar.style, &["solid", "floating", "tinted"], &d.sidebar.style);
         // Reihenfolge: nur bekannte Einträge, jeder genau einmal; fehlende hinten anhängen
         let mut order: Vec<String> = Vec::new();
         for k in self.sidebar.order.iter().chain(d.sidebar.order.iter()) {
@@ -352,13 +392,18 @@ impl Appearance {
         fix_hex(&mut self.status.danger, &d.status.danger);
         self.effects.snow_amount = self.effects.snow_amount.clamp(10, 100);
         pick(&mut self.tone, &["dark", "dim", "oled", "light"], &d.tone);
-        pick(&mut self.radius, &["square", "slight", "round"], &d.radius);
+        pick(&mut self.radius, &["square", "slight", "round", "custom"], &d.radius);
+        self.radius_px = self.radius_px.min(24);
         pick(&mut self.density, &["compact", "normal"], &d.density);
         self.ui_scale = self.ui_scale.clamp(80, 130);
         let b = &mut self.background;
         let db = Background::default();
-        pick(&mut b.kind, &["none", "gradient", "image", "animated"], &db.kind);
-        pick(&mut b.gradient, &["accent", "dusk", "ocean", "ember", "forest"], &db.gradient);
+        pick(&mut b.kind, &["none", "color", "gradient", "image", "animated"], &db.kind);
+        pick(&mut b.gradient, &["accent", "dusk", "ocean", "ember", "forest", "pixel", "custom"], &db.gradient);
+        fix_hex(&mut b.color, &db.color);
+        fix_hex(&mut b.gradient_from, &db.gradient_from);
+        fix_hex(&mut b.gradient_to, &db.gradient_to);
+        b.gradient_angle = b.gradient_angle.min(360);
         pick(&mut b.animated, &["aurora", "particles", "waves", "blocks", "custom"], &db.animated);
         b.dim = b.dim.min(90);
         b.blur = b.blur.min(40);
@@ -699,6 +744,7 @@ mod tests {
                 instances: false,
                 order: vec!["skins".into(), "bogus".into(), "home".into(), "skins".into()],
                 hidden: vec!["home".into(), "servers".into(), "nope".into()],
+                style: "floating".into(),
             },
             status: StatusColors { ok: "00FF00".into(), warn: "zzz".into(), danger: "#FF0000".into() },
             effects: Effects { snow_amount: 0, ..Effects::default() },
@@ -710,6 +756,7 @@ mod tests {
         assert_eq!(a.motion, "normal");
         assert_eq!(a.sidebar.mode, "compact");
         assert!(!a.sidebar.instances);
+        assert_eq!(a.sidebar.style, "floating");
         // gewählte Reihenfolge zuerst, Rest angehängt, keine Doppelten
         assert_eq!(a.sidebar.order[0], "skins");
         assert_eq!(a.sidebar.order[1], "home");
@@ -731,5 +778,121 @@ mod tests {
         assert!(a.sidebar.instances);
         assert_eq!(a.sidebar.order.len(), NAV_KEYS.len());
         assert!(a.effects.snow);
+    }
+
+    #[test]
+    fn appearance_new_options_sanitize() {
+        let mut a = Appearance {
+            theme: "pixel".into(),
+            radius: "custom".into(),
+            radius_px: 99,
+            font: "inter_tight".into(),
+            headings: "pixel_all".into(),
+            cards: "pixel".into(),
+            glass: 250,
+            sidebar: Sidebar { style: "neon".into(), ..Sidebar::default() },
+            background: Background {
+                kind: "color".into(),
+                gradient: "custom".into(),
+                color: "ABCDEF".into(),
+                gradient_from: "nope".into(),
+                gradient_angle: 999,
+                ..Background::default()
+            },
+            ..Appearance::default()
+        };
+        a.sanitize();
+        assert_eq!(a.theme, "pixel");
+        assert_eq!(a.radius, "custom");
+        assert_eq!(a.radius_px, 24);
+        assert_eq!(a.font, "inter_tight");
+        assert_eq!(a.headings, "pixel_all");
+        assert_eq!(a.cards, "pixel");
+        assert_eq!(a.glass, 100);
+        assert_eq!(a.sidebar.style, "solid");
+        assert_eq!(a.background.kind, "color");
+        assert_eq!(a.background.gradient, "custom");
+        assert_eq!(a.background.color, "#abcdef");
+        assert_eq!(a.background.gradient_from, "#2b1655");
+        assert_eq!(a.background.gradient_angle, 360);
+
+        let mut b = Appearance { font: "comic".into(), cards: "glass".into(), headings: "fancy".into(), ..Appearance::default() };
+        b.sanitize();
+        assert_eq!(b.font, "inter");
+        assert_eq!(b.cards, "flat");
+        assert_eq!(b.headings, "default");
+    }
+
+    #[test]
+    fn appearance_old_json_gets_customize_defaults() {
+        let a: Appearance = serde_json::from_str(r##"{"theme":"ocean","background":{"kind":"gradient","gradient":"dusk"},"sidebar":{"mode":"wide"}}"##).unwrap();
+        assert_eq!(a.radius_px, 6);
+        assert_eq!(a.glass, 0);
+        assert_eq!(a.sidebar.style, "solid");
+        assert_eq!(a.background.color, "#1a1030");
+        assert_eq!(a.background.gradient_angle, 160);
+        assert!(a.custom_themes.is_empty());
+        assert_eq!(a.active_custom, None);
+        let back: Appearance = serde_json::from_str(&serde_json::to_string(&a).unwrap()).unwrap();
+        assert_eq!(back, a);
+    }
+
+    #[test]
+    fn custom_themes_sanitize() {
+        use theme::{CustomTheme, ThemeValues, MAX_CUSTOM_THEMES};
+        let good = CustomTheme {
+            id: "t1".into(),
+            name: "  Mein\u{7}Theme  ".into(),
+            values: ThemeValues {
+                theme: "summer".into(),
+                accent: "FFB37D".into(),
+                cards: "pixel".into(),
+                glass: 500,
+                sidebar_style: "tinted".into(),
+                background: Background { kind: "animated".into(), animated: "custom".into(), video: Some("x.mp4".into()), ..Background::default() },
+                ..ThemeValues::default()
+            },
+        };
+        let mut a = Appearance {
+            custom_themes: vec![
+                good.clone(),
+                CustomTheme { id: "t1".into(), name: "doppelt".into(), ..CustomTheme::default() },
+                CustomTheme { id: "../böse".into(), name: "x".into(), ..CustomTheme::default() },
+                CustomTheme { id: "t2".into(), name: "   ".into(), ..CustomTheme::default() },
+            ],
+            active_custom: Some("weg".into()),
+            ..Appearance::default()
+        };
+        a.sanitize();
+        assert_eq!(a.custom_themes.len(), 2);
+        let t = &a.custom_themes[0];
+        assert_eq!(t.name, "MeinTheme");
+        assert_eq!(t.values.theme, "standard");
+        assert_eq!(t.values.accent, "#ffb37d");
+        assert_eq!(t.values.cards, "pixel");
+        assert_eq!(t.values.glass, 100);
+        assert_eq!(t.values.sidebar_style, "tinted");
+        assert_eq!(t.values.background.animated, "aurora");
+        assert_eq!(t.values.background.video, None);
+        assert_eq!(a.custom_themes[1].name, "Theme");
+        assert_eq!(a.active_custom, None);
+
+        let mut many = Appearance {
+            custom_themes: (0..40).map(|i| CustomTheme { id: format!("t{i}"), name: format!("T{i}"), ..CustomTheme::default() }).collect(),
+            active_custom: Some("t3".into()),
+            ..Appearance::default()
+        };
+        many.sanitize();
+        assert_eq!(many.custom_themes.len(), MAX_CUSTOM_THEMES);
+        assert_eq!(many.active_custom.as_deref(), Some("t3"));
+    }
+
+    #[test]
+    fn custom_theme_partial_json() {
+        let a: Appearance = serde_json::from_str(r##"{"custom_themes":[{"id":"a1","name":"Alt","values":{"accent":"#123456"}}],"active_custom":"a1"}"##).unwrap();
+        assert_eq!(a.custom_themes[0].values.accent, "#123456");
+        assert_eq!(a.custom_themes[0].values.tone, "dark");
+        assert_eq!(a.custom_themes[0].values.background.kind, "none");
+        assert_eq!(a.active_custom.as_deref(), Some("a1"));
     }
 }

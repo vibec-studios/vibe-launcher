@@ -409,7 +409,7 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
   letter-spacing: 0.02em;
 }
 /* Pixel-Überschriften: Silkscreen ist breit und hoch – etwas kleiner setzen, ohne Laufweite */
-:root[data-headings="pixel"] :is(.display, .text-hero, .text-title, h1, h2) {
+:root:is([data-headings="pixel"], [data-headings="pixel_all"]) :is(.display, .text-hero, .text-title, h1, h2) {
   font-family: var(--font-heading);
   font-weight: 400;
   letter-spacing: 0;
@@ -453,7 +453,7 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
   /* Nur Flächen/Karten – Knöpfe und Reiter bleiben flach */
   :root[data-cards="outlined"] .bg-surface:not(button, a, [role="button"], [role="tab"], [role="radio"]) { box-shadow: inset 0 0 0 1px var(--line-2); }
   /* Heller Ton: weiße Karten auf hellgrauer Fläche brauchen eine Haarlinie */
-  :root[data-tone="light"]:not([data-cards="outlined"]) .bg-surface:not(button, a, [role="button"], [role="tab"], [role="radio"]) { box-shadow: inset 0 0 0 1px var(--line-1); }
+  :root[data-tone="light"]:not([data-cards="outlined"], [data-cards="raised"], [data-cards="pixel"]) .bg-surface:not(button, a, [role="button"], [role="tab"], [role="radio"]) { box-shadow: inset 0 0 0 1px var(--line-1); }
 }
 
 /* ------------------------------------------------------------------ Bewegung

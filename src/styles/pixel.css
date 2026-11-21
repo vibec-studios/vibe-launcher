@@ -1,0 +1,179 @@
+/* Vibe Pixel: Stil der Website vibe.axolite.app für die Desktop-App adaptiert (siehe docs/DESIGN-V2.md).
+   Paletten: data-theme="pixel" (Nachtlila, Pfirsich-Akzent) und "pixel_light" (warmes Papier, Violett).
+   Bausteine: data-cards="pixel" = eckig, 2-px-Kanten, harte Stufen statt weicher Schatten, Knöpfe als Pixel-Blöcke.
+   Schrift: data-headings="pixel_all" setzt zusätzlich Knöpfe, Reiter und Beschriftungen in Silkscreen.
+   Wird nach v2.css geladen und gilt für v1 und v2. */
+
+/* ------------------------------------------------------------------ Paletten */
+
+:root[data-theme="pixel"] {
+  --tint: #5a2fa0;
+  --tint-amt: 14%;
+  --tint-text: 5%;
+  --t3-lift: 30%;
+}
+:root[data-theme="pixel"][data-tone="dark"] {
+  --tone-frame: #0f0919;
+  --tone-canvas: #170e26;
+  --tone-s1: #221934;
+  --tone-s2: #2c2241;
+  --tone-s3: #372b50;
+  --tone-overlay: #1d1430;
+  --t1: #f6f3ff;
+  --t2: #c2bbd6;
+  --t3: #9d96b4;
+  --line-1: rgb(240 235 255 / 0.09);
+  --line-2: rgb(240 235 255 / 0.17);
+  --field: rgb(240 235 255 / 0.06);
+}
+:root[data-theme="pixel_light"] {
+  --tint: #b8a27a;
+  --tint-amt: 6%;
+  --tint-text: 3%;
+  --t3-lift: 18%;
+}
+:root[data-theme="pixel_light"][data-tone="light"] {
+  --ink: #18161e;
+  --tone-frame: #e9e7e1;
+  --tone-canvas: #f5f4f1;
+  --tone-s1: #fffefc;
+  --tone-s2: #f0efeb;
+  --tone-s3: #e4e3de;
+  --tone-overlay: #fffefc;
+  --t1: #151419;
+  --t2: #4d4b55;
+  --t3: #5b5963;
+  --line-1: rgb(24 22 30 / 0.1);
+  --line-2: rgb(24 22 30 / 0.18);
+}
+
+/* ------------------------------------------------------------------ Pixel-Bausteine (Kartenstil „Pixel“) */
+
+:root[data-cards="pixel"] {
+  --px-edge: var(--line-2);
+  --px-step: rgb(0 0 0 / 0.32);
+  --px-ring: rgb(0 0 0 / 0.28);
+  --px-drop: rgb(0 0 0 / 0.35);
+  --sh-1: 0 0 0 2px var(--line-1);
+  --sh-2: 0 0 0 2px var(--px-edge), 0 6px 0 var(--px-drop);
+  --sh-3: 0 0 0 2px var(--px-edge), 0 8px 0 var(--px-drop);
+}
+:root[data-cards="pixel"][data-tone="light"] {
+  --px-step: rgb(24 22 30 / 0.2);
+  --px-ring: rgb(24 22 30 / 0.16);
+  --px-drop: rgb(24 22 30 / 0.14);
+}
+:root[data-cards="pixel"][data-radius][data-design] {
+  --r: 0px;
+  --r-dot: 0px;
+  --r-xs: 0px;
+  --r-ctl: 0px;
+  --r-card: 0px;
+  --r-panel: 0px;
+  --r-pill: 0px;
+}
+:root[data-design="v2"][data-cards="pixel"] {
+  --sh-1: 0 0 0 2px var(--line-1), 0 4px 0 var(--px-drop);
+  --v2-panel-edge: 0 0 0 2px var(--line-1), 0 6px 0 var(--px-drop);
+  --v2-glow: 0 0 #0000;
+  --v2-halo: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+@layer base {
+  :root[data-cards="pixel"] .bg-surface:not(button, a, [role="button"], [role="tab"], [role="radio"]) {
+    box-shadow: inset 0 0 0 2px var(--line-1);
+  }
+}
+
+:root[data-cards="pixel"] ::selection { background: var(--ui-accent); color: var(--ui-on-accent); }
+
+/* Knöpfe: Fläche mit 3-px-Stufe unten, Hover hebt an, Klick drückt. Kein Verlauf, kein Leuchten. */
+:root[data-cards="pixel"] .vl-btn {
+  border-width: 0;
+  padding-bottom: 3px;
+  background-image: none;
+  filter: none;
+  box-shadow: inset 0 -3px 0 var(--px-step), 0 0 0 2px var(--px-ring);
+  transition: translate 0.06s steps(1), box-shadow 0.06s steps(1), background-color 0.1s;
+}
+:root[data-cards="pixel"] .vl-btn:hover { translate: 0 -1px; filter: none; }
+:root[data-cards="pixel"] .vl-btn:active { translate: 0 1px; box-shadow: inset 0 -1px 0 var(--px-step), 0 0 0 2px var(--px-ring); }
+:root[data-cards="pixel"] :is(.vl-btn-primary, .vl-btn-accent):hover { background-color: color-mix(in srgb, var(--accent) 88%, #fff); }
+:root[data-cards="pixel"] .vl-btn-primary:hover { background-color: color-mix(in srgb, var(--ui-accent) 88%, #fff); }
+:root[data-cards="pixel"] .vl-btn-ghost { background-color: var(--surface-3); }
+:root[data-cards="pixel"] .vl-btn-ghost:hover { background-color: color-mix(in srgb, var(--ink) 14%, var(--surface-2)); box-shadow: inset 0 -3px 0 var(--px-step), 0 0 0 2px var(--px-ring); }
+:root[data-cards="pixel"] :is(.vl-btn-subtle, .vl-btn-outline) { box-shadow: none; padding-bottom: 0; }
+:root[data-cards="pixel"] :is(.vl-btn-subtle, .vl-btn-outline):is(:hover, :active) { translate: none; box-shadow: none; }
+:root[data-cards="pixel"] .vl-btn-outline { box-shadow: inset 0 0 0 2px var(--line-2); }
+:root[data-cards="pixel"] .vl-btn-outline:hover { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ink) 30%, transparent); }
+:root[data-cards="pixel"] .vl-btn-danger { box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--ui-danger) 30%, transparent), 0 0 0 2px color-mix(in srgb, var(--ui-danger) 25%, transparent); }
+:root[data-cards="pixel"] .vl-btn:disabled { translate: none; }
+
+:root[data-cards="pixel"] .vl-ibtn-filled { box-shadow: inset 0 -2px 0 var(--px-step); }
+:root[data-cards="pixel"] .vl-ibtn-accent { box-shadow: inset 0 -2px 0 var(--px-step); }
+:root[data-cards="pixel"] .vl-ibtn-active { box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* Felder: 2-px-Kante, Fokus in Akzentfarbe */
+:root[data-cards="pixel"] .vl-field { border-width: 2px; border-color: var(--line-2); }
+:root[data-cards="pixel"] .vl-field:hover { border-color: color-mix(in srgb, var(--ink) 26%, transparent); }
+:root[data-cards="pixel"] :is(.vl-field:focus, .vl-field:focus-visible, .vl-field[data-state="open"], .vl-field:focus-within) {
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
+/* Reiter: Pixel-Reiter mit 4-px-Unterkante */
+:root[data-cards="pixel"] .vl-tab[aria-selected="true"] {
+  background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 0 -4px 0 var(--accent);
+}
+:root[data-cards="pixel"] .vl-tab:not([aria-selected="true"]):hover { background-color: var(--field); box-shadow: inset 0 -4px 0 var(--line-2); }
+
+/* Segmente und Chips wie die Filter-Chips der Website */
+:root[data-cards="pixel"] .vl-seg { box-shadow: inset 0 0 0 2px var(--line-1); }
+:root[data-cards="pixel"] .vl-seg-item[aria-checked="true"] {
+  background-color: var(--ui-accent);
+  color: var(--ui-on-accent);
+  box-shadow: inset 0 -2px 0 var(--px-step);
+}
+:root[data-cards="pixel"] .vl-chip:not(.bg-accent) { box-shadow: inset 0 0 0 2px var(--line-1); }
+:root[data-cards="pixel"] .vl-tag { box-shadow: inset 0 0 0 1px var(--line-1); }
+:root[data-cards="pixel"] .vl-switch > span { box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.2); }
+:root[data-cards="pixel"] .vl-slider-thumb { box-shadow: 0 0 0 2px var(--px-ring), inset 0 -2px 0 rgb(0 0 0 / 0.2); }
+
+/* Karten, Kacheln, Einstellungen */
+:root[data-cards="pixel"] .vl-scard-body:not([class*="shadow-"]) { box-shadow: 0 0 0 2px var(--line-1), 0 4px 0 var(--px-drop); }
+:root[data-cards="pixel"] .vl-inst-card:hover { box-shadow: 0 0 0 2px var(--line-2), 0 4px 0 var(--px-drop); }
+:root[data-cards="pixel"] .vl-inst-card .vl-zoom { box-shadow: inset 0 0 0 2px var(--line-1); }
+
+/* Dialoge, Menüs, Toasts: harte Kante, harter Schatten, kein Glas */
+:root[data-cards="pixel"] .vl-overlay { backdrop-filter: none; }
+:root[data-cards="pixel"] .vl-dialog { box-shadow: 0 0 0 2px var(--line-2), 8px 8px 0 var(--px-drop); }
+:root[data-cards="pixel"] .vl-dialog-foot { border-top-width: 2px; }
+:root[data-cards="pixel"] .vl-menu { box-shadow: 0 0 0 2px var(--line-2), 0 6px 0 var(--px-drop); }
+:root[data-cards="pixel"] .vl-menu-item[data-highlighted] { box-shadow: inset 3px 0 0 var(--ui-accent); }
+:root[data-cards="pixel"] .vl-toast { box-shadow: 0 0 0 2px var(--line-2), 0 6px 0 var(--px-drop); }
+
+/* Leerzustand: Icon in einem Pixel-Feld statt Kreis */
+:root[data-cards="pixel"] .vl-empty .vl-empty-icon { border-radius: 0; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+
+/* Seitenleiste: aktive Seite als Pixel-Reiter (Akzentfläche, 3-px-Kante links) */
+:root[data-cards="pixel"] :is(.vl-rail, .vl2-rail) button[aria-current="page"] {
+  background-color: color-mix(in srgb, var(--ui-accent) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--ui-accent);
+}
+:root[data-cards="pixel"] :is(.vl-rail, .vl2-rail) button:not([aria-current="page"]):hover { box-shadow: inset 3px 0 0 var(--line-2); }
+
+/* Scrollbalken eckig */
+:root[data-cards="pixel"] ::-webkit-scrollbar-thumb { border-width: 3px; }
+
+/* ------------------------------------------------------------------ Pixel-Schrift auch für Bedienelemente */
+
+:root[data-headings="pixel_all"] { --font-heading: "Silkscreen", "Courier New", monospace; }
+:root[data-headings="pixel_all"] :is(.vl-btn, .vl-tab, .vl-seg-item, .vl-scard-title, .vl-section-title, .label, .vl-dialog-title, .vl-empty-title) {
+  font-family: "Silkscreen", "Courier New", monospace;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  font-size-adjust: 0.4;
+}
+:root[data-headings="pixel_all"] :is(.vl-scard-title, .label) { color: var(--text-2); }
