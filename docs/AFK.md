@@ -4,8 +4,9 @@ Eine Instanz läuft ganz normal mit allen Mods, aber ohne sichtbares Fenster, mi
 Der Launcher zeigt Status, Chat (mit Eingabe), Ereignisse und Ressourcen und holt das Fenster jederzeit zurück.
 Gilt für **jede** Java-Instanz (Vanilla, Fabric, Quilt, Forge, NeoForge, Modpacks), nicht für Bedrock.
 
-Datei-Vertrag mit dem Spiel: `contracts/afk/afk-files.md` (Owner: Client-Agent A2, vibey-client `tools/afk-agent`,
-Doku dort `docs/AFK-AGENT.md`). Der Launcher setzt Schema 1 um.
+Datei-Vertrag mit dem Spiel: [AFK-FILES.md](AFK-FILES.md). Der Helfer (Java-Agent) liegt in diesem Repo unter
+`tools/afk-agent`, Doku [AFK-AGENT.md](AFK-AGENT.md), Recherche zu echtem Headless-Betrieb
+[AFK-HEADLESS-RESEARCH.md](AFK-HEADLESS-RESEARCH.md). Der Launcher setzt Schema 1 um.
 
 ## Bedienung
 
@@ -24,7 +25,7 @@ in der AFK-Ansicht und im Sitzungs-Log.
 
 | Datei | Aufgabe |
 | --- | --- |
-| `agent.rs` | Helfer-Jar: **gepinnte Version + SHA-256** (`AGENT_VERSION`, `AGENT_SHA256`), Download von `github.com/vibec-studios/vibey-client/releases/download/afk-agent-v<v>/vibe-afk-agent-<v>.jar` nach `<daten>/tools/afk-agent/<v>/vibe-afk-agent.jar`, Hash-Prüfung bei jedem Start. Debug-Builds: `VIBE_AFK_AGENT_JAR=<pfad>` ersetzt den Download. Mappings (`downloads.client_mappings` der Vanilla-Version, SHA-1 geprüft) nach `<daten>/afk/mappings/<version>.txt`. Unterstützungs-Matrix (Spielzustand/Senden: Vanilla/Fabric/Quilt ab 1.14.4, NeoForge ab 1.20.5, Forge ab 1.20.6; Fenster per Helfer ab LWJGL 3 = 1.13). |
+| `agent.rs` | Helfer-Jar: **gepinnte Version + SHA-256** (`AGENT_VERSION`, `AGENT_SHA256`), Download von `github.com/<GH_REPO>/releases/download/afk-agent-v<v>/vibe-afk-agent-<v>.jar` (0.1.0: `vibec-studios/vibey-client`, ab 0.1.1: `vibec-studios/vibe-launcher`) nach `<daten>/tools/afk-agent/<v>/vibe-afk-agent.jar`, Hash-Prüfung bei jedem Start. Debug-Builds: `VIBE_AFK_AGENT_JAR=<pfad>` ersetzt den Download. Mappings (`downloads.client_mappings` der Vanilla-Version, SHA-1 geprüft) nach `<daten>/afk/mappings/<version>.txt`. Unterstützungs-Matrix (Spielzustand/Senden: Vanilla/Fabric/Quilt ab 1.14.4, NeoForge ab 1.20.5, Forge ab 1.20.6; Fenster per Helfer ab LWJGL 3 = 1.13). |
 | `launch.rs` | `prepare` (aus `minecraft/launch.rs`, vor „Startbefehl“): nur wenn Flag an und (AFK-Start oder „AFK jederzeit möglich“). Löscht `afk-events*.jsonl`, `afk-outbox.jsonl`, `afk-state.json`, schreibt `afk.json` (Modus, `background_fps: 2`, Ton aus, Fenster aus, Reconnect, Alarme, Mappings), setzt **ein** argv-Element `-javaagent:<jar>=<instanz>/.vibe` vor die Hauptklasse. |
 | `overlay.rs` | Temporäre Änderung in `options.txt` mit Sicherung `.vibe/afk-options-backup.json`. Mit Helfer nur `pauseOnLostFocus:false` (Einzelspieler läuft weiter), ohne Helfer zusätzlich `maxFps:10`, `enableVsync:false`, `renderDistance:2`, `simulationDistance:5`, `soundCategory_master:0.0`, `particles:2`. Wiederherstellen setzt nur Werte zurück, die noch dem überlagerten Wert entsprechen (im Spiel geänderte Werte bleiben), entfernt neu hinzugefügte Schlüssel, erhält Reihenfolge und Zeilenenden. |
 | `runtime.rs` | Abfrage jede Sekunde (nur wenn AFK-Sitzungen existieren): Ereignisse ab Byte-Offset mit `seq`-Prüfung und Rotation (`afk-events.1.jsonl`), `afk-state.json` (Fähigkeiten, Spielzustand, Herzschlag; > 15 s alt → Helfer gilt als fehlend), Fenster-Rückfall, Benachrichtigungen. Beim Prozessende (`process.rs`, vor dem Melden von „stopped“): `afk.json` löschen, Überlagerung zurücknehmen. Beim Launcher-Start: liegengebliebene Überlagerungen wiederherstellen (Absturz), außer ein Java-Prozess läuft noch in dem Spielordner. |
@@ -56,6 +57,27 @@ Sitzung (zusammen mit `vl.mock.sessions = "survival"`) eine Hintergrund-Sitzung 
 simuliert Helfer-Start, Chat, Status, Erwähnung und wenig Gesundheit; Senden erzeugt `outbox_ack` und eine Chat-Zeile.
 `vl.mock.afk.ready = 1` zeigt den Helfer als bereits geladen.
 
+## Helfer bauen und veröffentlichen
+
+Eigenständiger Gradle-Build mit eigenem Wrapper (`tools/afk-agent`, keine Abhängigkeit zum Launcher-Code):
+
+```
+cd tools/afk-agent
+./gradlew --max-workers=2 test shadowJar sha256
+```
+
+Ergebnis: `tools/afk-agent/build/libs/vibe-afk-agent-<v>.jar` + `.sha256`. Der Build ist reproduzierbar: aus dem
+übernommenen Stand entsteht genau das veröffentlichte 0.1.0 (`67bf7fa4…fedca45`, 229 407 Bytes).
+
+Neue Version:
+1. `agent_version` in `tools/afk-agent/gradle.properties` erhöhen, nach `main` mergen.
+2. `git tag afk-agent-v<v> && git push origin afk-agent-v<v>` → `.github/workflows/afk-agent.yml` testet, baut und
+   legt das Release „Vibe AFK Agent <v>“ mit Jar + `.sha256` an (nie „Latest“, kostenloser `ubuntu-latest`-Runner).
+   `release.yml` (`v*`), `agent-release.yml` (`agent-v*`) und `dev.yml` reagieren nicht; das Download-Center im
+   Backend ignoriert `afk-agent-v*`.
+3. In `src-tauri/src/afk/agent.rs` `AGENT_VERSION` und `AGENT_SHA256` (aus der `.sha256`-Datei) setzen, beim ersten
+   Release aus diesem Repo (0.1.1) außerdem `GH_REPO = "vibec-studios/vibe-launcher"`.
+
 ## Tests
 
 - Rust: `cargo test --lib afk::` – Datei-Vertrag (afk.json-Form, afk-state.json, Offset/`seq`/Rotation, Outbox),
@@ -66,8 +88,8 @@ simuliert Helfer-Start, Chat, Status, Erwähnung und wenig Gesundheit; Senden er
 
 ## Bekannte Grenzen
 
-- Der gepinnte Hash ist der des lokal gebauten Agent-Jars 0.1.0. Sobald A2 das Release `afk-agent-v0.1.0` veröffentlicht,
-  muss `AGENT_SHA256` dem Hash aus dessen `.sha256`-Datei entsprechen (bei reproduzierbarem Build identisch).
+- Der Helfer 0.1.0 kommt noch aus dem eingestellten Repo `vibec-studios/vibey-client` (Release bleibt nach dem
+  Archivieren erreichbar). `AGENT_SHA256` stimmt mit dessen `.sha256`-Datei überein.
 - „In den Hintergrund“ bei einer normal gestarteten Sitzung ohne Helfer kann Bildrate/Ton nicht senken und
   `pauseOnLostFocus` nicht mehr ändern (das Spiel liest `options.txt` nur beim Start).
 - Die Outbox wird nicht gekürzt (Agent-Grenze 256 KiB ≈ 2000 Nachrichten pro Sitzung).
