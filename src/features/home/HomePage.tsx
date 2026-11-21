@@ -13,7 +13,7 @@ import { formatDuration } from "@/lib/format";
 import { Button, Skeleton, cn, pageWrap } from "@/components/ui";
 import { openNewInstance } from "@/components/instance/actions";
 import { openImport } from "@/features/import/ImportDialog";
-import { useWeekPlaytime } from "@/features/stats/StatsPage";
+import { useWeekPlaytime } from "@/features/stats/playtime";
 import { useVibe } from "@/lib/vibe";
 import { useT } from "@/i18n";
 import { byRecent, useSpots } from "./data";

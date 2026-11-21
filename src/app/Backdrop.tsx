@@ -268,21 +268,27 @@ function Media({ a, paused }: { a: Appearance; paused: boolean }) {
   return null;
 }
 
+function MovingMedia({ appearance }: { appearance: Appearance }) {
+  const { paused } = useMotion();
+  return <Media a={appearance} paused={paused} />;
+}
+
 /**
  * Hintergrund-Ebene. Standard: fest hinter dem ganzen Fenster (z-index -1).
  * `contained`: füllt den Eltern-Container (Vorschau im Einstellungs-Tab).
  */
 export function Backdrop({ appearance: a, contained, className }: { appearance: Appearance; contained?: boolean; className?: string }) {
-  const { paused } = useMotion();
   if (!hasBackground(a)) return null;
   const blur = a.background.blur;
+  const moving = a.background.kind === "animated" ||
+    (a.background.kind === "image" && /\.(gif|webp)$/i.test(a.background.image ?? ""));
   return (
     <div aria-hidden className={cn(contained ? "absolute inset-0" : "fixed inset-0 -z-10", "pointer-events-none overflow-hidden", className)}>
       <div
         className="absolute inset-0"
         style={blur > 0 ? { filter: `blur(${contained ? blur / 3 : blur}px)`, transform: "scale(1.08)" } : undefined}
       >
-        <Media a={a} paused={paused} />
+        {moving ? <MovingMedia appearance={a} /> : <Media a={a} paused={false} />}
       </div>
       <div className="absolute inset-0" style={{ background: `rgb(0 0 0 / ${a.background.dim / 100})` }} />
     </div>

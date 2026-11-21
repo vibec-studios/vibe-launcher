@@ -7,11 +7,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { BarChart3, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
-import type { PlaySession } from "@/lib/types";
 import { formatDuration, instanceAccent } from "@/lib/format";
 import { Button, EmptyState, ErrorState, Segmented, Skeleton, Tooltip, cn, pageWrap } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { useLang, useT } from "@/i18n";
+import { sumIn } from "./playtime";
 
 type Range = "week" | "month" | "year";
 
@@ -33,27 +33,6 @@ function buckets(range: Range, now = Date.now()): { start: number; edges: number
   const today = startOfDay(now);
   const edges = Array.from({ length: days }, (_, i) => today - (days - 1 - i) * DAY);
   return { start: edges[0], edges };
-}
-
-export function sumIn(sessions: PlaySession[], from: number, to = Infinity): number {
-  let ms = 0;
-  for (const s of sessions) ms += Math.max(0, Math.min(s.end, to) - Math.max(s.start, from));
-  return ms / 1000;
-}
-
-/** Spielzeit der laufenden Woche (ab Montag) in Sekunden – für die Startseite. */
-export function useWeekPlaytime() {
-  const monday = (() => {
-    const d = new Date();
-    const day = (d.getDay() + 6) % 7;
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate() - day).getTime();
-  })();
-  return useQuery({
-    queryKey: ["playtime", "week", monday],
-    queryFn: () => api.playtimeSessions(monday),
-    select: (l) => sumIn(l, monday),
-    staleTime: 60_000,
-  });
 }
 
 /** Dauer für Kennzahlen: ab 100 h ohne Minuten („421 h“ statt „421 h 14 min“). */

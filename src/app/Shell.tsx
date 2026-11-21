@@ -6,7 +6,7 @@
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { BEDROCK_COLOR } from "@/features/bedrock/parts";
 import { ChevronLeft, ChevronRight, Compass, Home, Images, LibraryBig, Plus, Server as ServerIcon, Settings as SettingsIcon, Shirt, Sparkles, Square, Users } from "lucide-react";
-import { memo, type ReactNode } from "react";
+import { lazy, memo, Suspense, useState, type ReactNode } from "react";
 import { ContextMenu, Spinner, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { isRunning, useGameStore, useInstance, useInstances, useInstanceTasks, useServer, useServerStore } from "@/lib/queries";
@@ -36,7 +36,6 @@ import { CosmeticsBridge } from "@/features/cosmetics/CosmeticsBridge";
 import { SocialDialogs } from "@/features/social/dialogs";
 import { FriendsPanel, FriendsPanelToggle } from "@/features/social/FriendsPanel";
 import { useSocialBadge } from "@/features/social/hooks";
-import { SettingsDialog } from "@/features/settings/SettingsDialog";
 import { openSettings, useSettingsDialog } from "@/features/settings/store";
 import { AppearanceHost } from "./AppearanceHost";
 import { ModSetsHost } from "@/features/modsets/dialogs";
@@ -367,6 +366,19 @@ function Topbar() {
 
 // ------------------------------------------------------------------ Rahmen
 
+const SettingsDialog = lazy(() => import("@/features/settings/SettingsDialog").then((module) => ({ default: module.SettingsDialog })));
+
+function SettingsHost() {
+  const open = useSettingsDialog((s) => s.open);
+  const [wasOpened, setWasOpened] = useState(open);
+  if (open && !wasOpened) setWasOpened(true);
+  return wasOpened && (
+    <Suspense fallback={null}>
+      <SettingsDialog />
+    </Suspense>
+  );
+}
+
 export function Shell() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return (
@@ -404,7 +416,7 @@ export function Shell() {
       <CosmeticsBridge />
       <SocialDialogs />
       <AuthBridge />
-      <SettingsDialog />
+      <SettingsHost />
       <ErrorBoundary>
         <FeedbackDialog />
       </ErrorBoundary>
