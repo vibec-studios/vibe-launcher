@@ -8,10 +8,10 @@ import { useT, t as tt } from "@/i18n";
 import { qk, queryClient } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { hitTarget, useDragState } from "@/components/content/dragdrop";
-import { InstallDialogHost } from "@/components/content/InstallDialog";
+import { ContentDialogHosts } from "./ContentDialogHosts";
 import { currentPath, fileExt } from "@/components/content/util";
-import { addContentFiles } from "@/features/content/InstanceContentTab";
-import { ImportDialog, PACK_EXTENSIONS, openImport } from "./ImportDialog";
+import { addContentFiles } from "@/features/content/addContentFiles";
+import { PACK_EXTENSIONS, openImport } from "./importStore";
 
 type Hint = { kind: "pack" } | { kind: "jar"; instance: Instance | null } | { kind: "none" };
 
@@ -84,8 +84,7 @@ export function GlobalDropZone() {
 
   return (
     <>
-      <ImportDialog />
-      <InstallDialogHost />
+      <ContentDialogHosts />
       {showOverlay && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 top-[48px] z-[90] flex items-center justify-center bg-bg/85 animate-fade-in">
           <div className="absolute inset-4 rounded-panel border-2 border-dashed border-accent/60" />

@@ -36,7 +36,8 @@ import { enqueueAppAction } from "@/lib/appActions";
 import type { Invite, Pack } from "@/lib/vibe-sdk";
 import { openSettings } from "@/features/settings/store";
 import { AddFriendSearch, Avatar, BlockedList, GroupLabel, RequestRow } from "./FriendsList";
-import { PackIcon, openInviteAccept, openPackImport, openShare } from "./dialogs";
+import { PackIcon } from "./dialogs";
+import { openInviteAccept, openPackImport, openShare } from "./dialogStore";
 import { errText, removeInviteLocal, requireClient, useSocial, vqk } from "./service";
 
 type PageDialog = "add" | "share" | "import" | "blocked" | null;

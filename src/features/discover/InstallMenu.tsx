@@ -14,7 +14,7 @@ import { qk, useTask, useJavaInstances } from "@/lib/queries";
 import type { Instance, ProjectHit } from "@/lib/types";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { ManualBadge } from "@/components/content/ManualBadge";
-import { openInstall, type InstallProject } from "@/components/content/InstallDialog";
+import { openInstall, type InstallProject } from "@/components/content/installStore";
 import { installKey, packKey, startContentInstall, startManualDownload, useExpected, useInstallTasks } from "@/components/content/install";
 import { compatibility, contentKindOf, navigateTo } from "@/components/content/util";
 

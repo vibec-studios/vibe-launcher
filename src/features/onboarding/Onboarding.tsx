@@ -37,7 +37,7 @@ import { PlayerHead } from "@/components/PlayerHead";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { instanceAccent } from "@/lib/format";
 import { MsaDialog } from "@/features/accounts/MsaDialog";
-import { openImport } from "@/features/import/ImportDialog";
+import { openImport } from "@/features/import/importStore";
 import { SkinImportDialog, useSkinImportScan } from "@/features/skins/SkinImport";
 import { openNewGame, openNewInstance } from "@/components/instance/actions";
 import { GoalTiles } from "@/features/instances/simple/goals";
@@ -49,14 +49,6 @@ import { useVibeAccess } from "@/features/access/store";
 
 type StepId = "welcome" | "mode" | "account" | "vibe" | "import" | "game";
 
-export function Onboarding() {
-  const settings = useSettings().data;
-  const manual = useOnboarding((s) => s.open);
-  const show = manual || (!!settings && !settings.onboarding_done);
-  if (!show) return null;
-  return <OnboardingFlow />;
-}
-
 function useImportFinds(enabled: boolean) {
   const launchers = useQuery({ queryKey: ["launchers"], queryFn: api.launchersDetect, staleTime: 60_000, retry: 0, enabled });
   const skins = useSkinImportScan(enabled);
@@ -66,7 +58,7 @@ function useImportFinds(enabled: boolean) {
   return { found, newSkins, pending, any: found.length > 0 || newSkins > 0 };
 }
 
-function OnboardingFlow() {
+export function Onboarding() {
   const t = useT();
   const nav = useNavigate();
   const mode = useMode();

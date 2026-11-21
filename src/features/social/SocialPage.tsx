@@ -9,7 +9,7 @@ import { ChatView } from "./ChatView";
 import { Gate } from "./Gate";
 import { Overview } from "./Overview";
 import { InboxButton, PageDialogs } from "./PageActions";
-import { openNewGroup } from "./dialogs";
+import { openNewGroup } from "./dialogStore";
 import { useSocial } from "./service";
 
 const route = getRouteApi("/social");

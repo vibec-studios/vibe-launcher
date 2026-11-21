@@ -9,42 +9,38 @@ import { ChevronLeft, ChevronRight, Plus, Settings as SettingsIcon } from "lucid
 import { lazy, memo, Suspense, useState, type ReactNode } from "react";
 import { ContextMenu, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
-import { ServerDialogs } from "@/features/servers/ServerDialogs";
 import { instanceAccent } from "@/lib/format";
 import type { Instance } from "@/lib/types";
 import { useLiveAppearance } from "@/lib/appearance";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { Logo3D } from "@/components/Logo3D";
 import { InstanceContextMenuContent } from "@/components/instance/InstanceMenu";
+import { ActionHost } from "@/components/instance/ActionHost";
 import { openNewInstance } from "@/components/instance/actions";
-import { InstanceDialogs } from "@/features/instances/InstanceDialogs";
 import { TaskDock } from "./TaskDock";
 import { UpdateButton } from "./UpdateNotice";
 import { NoticeBar } from "./Notices";
 import { AccountMenu } from "./AccountMenu";
 import { ModeHost, useSimple } from "@/lib/mode";
-import { Onboarding } from "@/features/onboarding/Onboarding";
 import { SimpleTour } from "@/features/onboarding/SimpleTour";
 import { SimpleModeHint } from "@/features/onboarding/SimpleModeHint";
 import { ImportSettingsHint, SettingsReviewDialog } from "@/features/import/SettingsOffer";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { DeferredShellHosts, FriendsPanelHost } from "./DeferredShellHosts";
+import { LibraryPreload } from "./LibraryPreload";
 import { AuthBridge } from "@/features/accounts/AuthBridge";
 import { VibeBridge } from "@/features/social/VibeBridge";
 import { CosmeticsBridge } from "@/features/cosmetics/CosmeticsBridge";
-import { SocialDialogs } from "@/features/social/dialogs";
-import { FriendsPanel, FriendsPanelToggle } from "@/features/social/FriendsPanel";
+import { FriendsPanelToggle } from "@/features/social/FriendsPanelToggle";
 import { openSettings, useSettingsDialog } from "@/features/settings/store";
 import { AppearanceHost } from "./AppearanceHost";
-import { ModSetsHost } from "@/features/modsets/dialogs";
 import { goBack, goForward } from "./backNav";
 import { NAV, RunningGames, useInstanceActivity, usePageTitle, useRailModel } from "./nav";
 import { RailV2 } from "./v2/RailV2";
 import { TopbarV2 } from "./v2/TopbarV2";
 import { WindowControls } from "./WindowControls";
-import { FeedbackButton, FeedbackDialog } from "@/features/feedback/FeedbackDialog";
+import { FeedbackButton } from "@/features/feedback/FeedbackButtons";
 import { HelpButton } from "@/features/help/HelpButton";
-import { HelpCenter } from "@/features/help/HelpCenter";
-import { TourHost } from "@/features/help/tour/TourHost";
 
 // ------------------------------------------------------------------ Seitenleiste
 // Kompakt (nur Icons, Standard) oder breit mit Beschriftung; Reihenfolge/Sichtbarkeit der Einträge und die
@@ -267,7 +263,7 @@ export function Shell() {
     <div className="flex h-full">
       <ModeHost />
       <AppearanceHost />
-      <ModSetsHost />
+      <LibraryPreload />
       {v2 ? <RailV2 /> : <Rail />}
       <div className="flex min-w-0 flex-1 flex-col">
         {v2 ? <TopbarV2 /> : <Topbar />}
@@ -287,34 +283,23 @@ export function Shell() {
           </main>
           {path !== "/social" && (
             <ErrorBoundary>
-              <FriendsPanel />
+              <FriendsPanelHost />
             </ErrorBoundary>
           )}
         </div>
       </div>
-      <InstanceDialogs />
-      <ServerDialogs />
+      <ActionHost />
+      <DeferredShellHosts />
       <VibeBridge />
       <CosmeticsBridge />
-      <SocialDialogs />
       <AuthBridge />
       <SettingsHost />
-      <ErrorBoundary>
-        <FeedbackDialog />
-      </ErrorBoundary>
       <SimpleModeHint />
       <ErrorBoundary>
         <ImportSettingsHint />
         <SettingsReviewDialog />
       </ErrorBoundary>
-      <ErrorBoundary>
-        <HelpCenter />
-      </ErrorBoundary>
       <SimpleTour />
-      <ErrorBoundary>
-        <TourHost />
-      </ErrorBoundary>
-      <Onboarding />
     </div>
   );
 }

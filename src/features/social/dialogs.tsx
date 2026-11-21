@@ -6,7 +6,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { copyText as writeText } from "@/components/content/util";
 import { Check, Copy, Link2, PackageOpen, Server as ServerIcon, Share2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { create } from "zustand";
 import { api, errorMessage, isCancelled } from "@/lib/api";
 import { sqk, useServers, useServerStore, waitForTask, useJavaInstances } from "@/lib/queries";
 import type { Instance, LoaderKind, Server } from "@/lib/types";
@@ -22,34 +21,11 @@ import { Avatar } from "./FriendsList";
 import { useFriends } from "./hooks";
 import { GateState } from "./Gate";
 import { errText, openSocial, removeInviteLocal, requireClient, useSocial, vibeClient, vqk } from "./service";
-
-// ------------------------------------------------------------------ Store
-
-type AcceptReq = { inviteId: string } | { invite: Invite } | { host: HostSession };
-
-interface DialogState {
-  inviteFriends: { userIds?: string[]; chatId?: string; serverId?: string } | null;
-  accept: AcceptReq | null;
-  share: { instanceId: string } | null;
-  pack: { code: string } | null;
-  newGroup: boolean;
-  addMembers: string | null;
-  rename: { chatId: string; name: string } | null;
-}
-
-const useDialogs = create<DialogState>(() => ({ inviteFriends: null, accept: null, share: null, pack: null, newGroup: false, addMembers: null, rename: null }));
-
-export const openInviteFriends = (o: DialogState["inviteFriends"]) => useDialogs.setState({ inviteFriends: o ?? {} });
-export const openInviteAccept = (o: AcceptReq) => useDialogs.setState({ accept: o });
-export const openShare = (instanceId: string) => useDialogs.setState({ share: { instanceId } });
-export const openPackImport = (code: string) => useDialogs.setState({ pack: { code: code.trim().toUpperCase() } });
-export const openNewGroup = () => useDialogs.setState({ newGroup: true });
-export const openAddMembers = (chatId: string) => useDialogs.setState({ addMembers: chatId });
-export const openRenameGroup = (chatId: string, name: string) => useDialogs.setState({ rename: { chatId, name } });
+import { openPackImport, useSocialDialogs, type AcceptReq, type DialogState } from "./dialogStore";
 
 export function SocialDialogs() {
-  const d = useDialogs();
-  const close = (k: keyof DialogState) => () => useDialogs.setState({ [k]: k === "newGroup" ? false : null } as Partial<DialogState>);
+  const d = useSocialDialogs();
+  const close = (k: keyof DialogState) => () => useSocialDialogs.setState({ [k]: k === "newGroup" ? false : null } as Partial<DialogState>);
   return (
     <>
       {d.inviteFriends && <InviteFriendsDialog init={d.inviteFriends} onClose={close("inviteFriends")} />}

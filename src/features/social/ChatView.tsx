@@ -14,7 +14,8 @@ import { Avatar, startDm } from "./FriendsList";
 import { chatTitle, dmPartner, idGte, useTypingUsers } from "./hooks";
 import { ActivityIcon, isPlaying, loaderName, usePresenceParts } from "./presence";
 import { errText, markRead, requireClient, sendMessage, sendTyping, useSocial, vibeClient, vqk, type MessagesPage } from "./service";
-import { PackIcon, openAddMembers, openInviteAccept, openInviteFriends, openPackImport, openRenameGroup } from "./dialogs";
+import { PackIcon } from "./dialogs";
+import { openAddMembers, openInviteAccept, openInviteFriends, openPackImport, openRenameGroup } from "./dialogStore";
 import { SealArt } from "./Overview";
 
 const GROUP_GAP_MS = 5 * 60_000;

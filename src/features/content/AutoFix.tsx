@@ -2,9 +2,9 @@
 // („Das wird gemacht“) mit abwählbaren Schritten, ausführen (vorher Snapshot) und Zusammenfassung mit „Rückgängig“.
 // Nach einem Absturz stehen die erkannten Ursachen oben (Erklärung, Fundstelle, zugehörige Schritte); der Bericht
 // zeigt je Ursache „behoben“ / „nicht automatisch lösbar“ und bietet „Testen“ (erneute Prüfung ohne den alten Absturz).
-// Außerdem die Rückfrage vor dem Start („Trotzdem starten“ / „Beheben und starten“). Global eingebunden (InstanceDialogs).
+// Außerdem die Rückfrage vor dem Start („Trotzdem starten“ / „Beheben und starten“).
 import { useQuery } from "@tanstack/react-query";
-import { ReportProblemButton } from "@/features/feedback/FeedbackDialog";
+import { ReportProblemButton } from "@/features/feedback/FeedbackButtons";
 import {
   AlertTriangle,
   ArrowUpCircle,
@@ -28,7 +28,6 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { create } from "zustand";
 import { Button, Checkbox, Dialog, Progress, Skeleton, cn, confirm, toast } from "@/components/ui";
 import { useInstanceActions } from "@/components/instance/actions";
 import { openExternal } from "@/components/content/util";
@@ -41,41 +40,7 @@ import { loaderNames } from "@/lib/format";
 import type { Diagnosis, FixAction, FixBackup, FixPlan, FixReport, FixStep, Instance, LoaderKind, QuickCheck, Unfixable } from "@/lib/types";
 import { Evidence, diagText } from "@/features/logs/Diagnosis";
 import { uploadCrash } from "@/features/logs/LogsTab";
-
-// ------------------------------------------------------------------ Store
-
-export interface FixRequest {
-  instanceId: string;
-  /** Ausdrücklich gewählter Absturz (Crash-Banner/-Dialog) */
-  crashReport?: string | null;
-  exitCode?: number | null;
-  /** Nach dem Beheben „Jetzt starten“ anbieten */
-  launchAfter?: boolean;
-}
-
-type PreChoice = "fix" | "launch" | "cancel";
-
-interface AutofixStore {
-  req: FixRequest | null;
-  pre: { inst: Instance; q: QuickCheck; resolve: (c: PreChoice) => void } | null;
-}
-
-const useAutofix = create<AutofixStore>(() => ({ req: null, pre: null }));
-
-export function openAutofix(req: FixRequest) {
-  useAutofix.setState({ req });
-}
-
-/** Rückfrage vor dem Start, wenn bekannte Probleme vorliegen. */
-export function askBeforeLaunch(inst: Instance, q: QuickCheck): Promise<PreChoice> {
-  return new Promise((resolve) => useAutofix.setState({ pre: { inst, q, resolve } }));
-}
-
-/** „Trotzdem starten“ gilt für diese Sitzung, solange sich die Zahl der Probleme nicht ändert. */
-const skipped = new Map<string, number>();
-export function launchCheckSkipped(id: string, errors: number) {
-  return skipped.get(id) === errors;
-}
+import { openAutofix, skipLaunchCheck, useAutofix, type FixRequest, type PreChoice } from "./autofixStore";
 
 // ------------------------------------------------------------------ Texte
 
@@ -812,7 +777,7 @@ function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () => void 
 function PreLaunchDialog({ inst, q, resolve }: { inst: Instance; q: QuickCheck; resolve: (c: PreChoice) => void }) {
   const t = useT();
   const done = (c: PreChoice) => {
-    if (c === "launch") skipped.set(inst.id, q.errors);
+    if (c === "launch") skipLaunchCheck(inst.id, q.errors);
     useAutofix.setState({ pre: null });
     resolve(c);
   };

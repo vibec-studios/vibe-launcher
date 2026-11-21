@@ -13,7 +13,7 @@ import { useSocial } from "@/features/social/service";
 import { useFriends, useOnline } from "@/features/social/hooks";
 import { Avatar, startDm } from "@/features/social/FriendsList";
 import { usePresenceText } from "@/features/social/presence";
-import { openInviteAccept } from "@/features/social/dialogs";
+import { openInviteAccept } from "@/features/social/dialogStore";
 import { useT } from "@/i18n";
 import { useUpdateEntries } from "./updates";
 import { MoreLink, SectionHead } from "./Recent";

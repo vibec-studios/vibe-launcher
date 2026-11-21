@@ -5,7 +5,7 @@ import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
 import type { ContentItem } from "@/lib/types";
-import { openShare } from "@/features/social/dialogs";
+import { openShare } from "@/features/social/dialogStore";
 
 export function manualMods(items: ContentItem[] | undefined): ContentItem[] {
   return (items ?? []).filter((m) => m.enabled && m.source !== "modrinth" && m.source !== "curseforge");

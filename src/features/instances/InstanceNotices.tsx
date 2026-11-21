@@ -7,7 +7,7 @@ import { AlertTriangle, ArrowUpCircle, ArrowUpRight, Download, Layers, MemorySti
 import { forwardRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Tooltip, cn } from "@/components/ui";
 import { DepsPanel, useDepIssues } from "@/features/content/DepsPanel";
-import { openAutofix } from "@/features/content/AutoFix";
+import { openAutofix } from "@/features/content/autofixStore";
 import { useSimple } from "@/lib/mode";
 import { MissingPanel, useMissingDownloads } from "@/features/content/MissingPanel";
 import { useKeepWatching } from "@/features/content/useKeepWatching";

@@ -22,7 +22,7 @@ import { LoaderIcon } from "@/components/instance/LoaderIcon";
 import { LOADERS, pickLoaderVersion, useLoaderGameVersions, useLoaderVersions, type VersionValue } from "@/components/instance/VersionPicker";
 import { installInstance, pickImage } from "@/components/instance/actions";
 import { startModpackInstall } from "@/components/content/install";
-import { openImport } from "@/features/import/ImportDialog";
+import { openImport } from "@/features/import/importStore";
 import { PackIcon } from "@/features/home/Discover";
 import { usePopularModpacks } from "@/features/home/data";
 import { useT } from "@/i18n";

@@ -28,7 +28,7 @@ import { ActivityIcon, PresenceDot, usePresenceParts, usePresenceText } from "./
 import { ProfilePopover } from "./ProfilePopover";
 import { renderFace, useRender } from "./skinRender";
 import { errText, openDm, openSocial, refreshRequests, removeFriendLocal, requireClient, useSocial, vqk } from "./service";
-import { openInviteAccept, openInviteFriends } from "./dialogs";
+import { openInviteAccept, openInviteFriends } from "./dialogStore";
 
 type AvatarUser = Pick<PublicUser, "id" | "name"> & { skin?: { url: string | null } | null };
 

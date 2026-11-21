@@ -12,7 +12,7 @@ import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { prettyLoader } from "@/components/content/Pill";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { ManualBadge } from "@/components/content/ManualBadge";
-import { openInstall } from "@/components/content/InstallDialog";
+import { openInstall } from "@/components/content/installStore";
 import { startContentInstall, startManualDownload } from "@/components/content/install";
 import { compatibility, copyText, openExternal, projectWebUrl } from "@/components/content/util";
 import { CategoryIcon, categoryLabel, fmtNum } from "./categoryIcons";

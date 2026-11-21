@@ -9,7 +9,7 @@ import { formatDate } from "@/lib/format";
 import type { Friend, HostSession } from "@/lib/vibe-sdk";
 import { ActionItems, Avatar, UserBadge, friendActions, skinUrlOf, startDm } from "./FriendsList";
 import { ActivityIcon, PresenceDot, isPlaying, usePresenceParts } from "./presence";
-import { openInviteAccept, openInviteFriends } from "./dialogs";
+import { openInviteAccept, openInviteFriends } from "./dialogStore";
 import { useSocial } from "./service";
 
 const SkinViewer3D = lazy(() => import("@/features/skins/SkinViewer3D"));

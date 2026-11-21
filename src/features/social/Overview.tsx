@@ -14,7 +14,7 @@ import { Avatar, FriendListRow, skinUrlOf } from "./FriendsList";
 import { useFriends } from "./hooks";
 import { loaderName, since } from "./presence";
 import { SocialActions, openPageDialog } from "./PageActions";
-import { openInviteAccept } from "./dialogs";
+import { openInviteAccept } from "./dialogStore";
 import { renderBody, useRender } from "./skinRender";
 import { errText, refreshRequests, removeInviteLocal, requireClient, useSocial, vqk } from "./service";
 

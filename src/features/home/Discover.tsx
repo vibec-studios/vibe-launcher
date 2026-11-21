@@ -7,7 +7,7 @@ import type { ProjectHit } from "@/lib/types";
 import { formatCount } from "@/lib/format";
 import { Skeleton } from "@/components/ui";
 import { openNewInstance } from "@/components/instance/actions";
-import { openImport } from "@/features/import/ImportDialog";
+import { openImport } from "@/features/import/importStore";
 import { useT } from "@/i18n";
 import { useFitColumns, usePopularModpacks } from "./data";
 import { MoreLink, SectionHead } from "./Recent";

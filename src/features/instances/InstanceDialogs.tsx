@@ -8,8 +8,6 @@ import { Button, Dialog } from "@/components/ui";
 import { ExportDialog } from "@/features/export/ExportDialog";
 import { useT } from "@/i18n";
 import { GroupInput, NewInstanceDialog } from "./NewInstanceDialog";
-import { ActionHost } from "@/components/instance/ActionHost";
-import { AutofixHost } from "@/features/content/AutoFix";
 import { useSimple } from "@/lib/mode";
 import { SimpleNewGameDialog } from "./simple/SimpleNewGame";
 
@@ -69,8 +67,6 @@ export function InstanceDialogs() {
       <SimpleNewGameDialog open={newOpen && guided} goal={newGoal} onOpenChange={onOpenChange} />
       <GroupDialog />
       <IconDialog />
-      <ActionHost />
-      <AutofixHost />
       {exportFor && <ExportDialog instance={exportFor} open onOpenChange={(o) => !o && useInstanceDialogs.setState({ exportFor: null })} />}
     </>
   );
