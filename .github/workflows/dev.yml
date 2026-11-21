@@ -8,7 +8,7 @@ name: Dev-Build
 on:
   push:
     branches: [main]
-    paths-ignore: ["**.md", "docs/**", ".github/workflows/ci.yml", ".github/workflows/release.yml"]
+    paths-ignore: ["**.md", "docs/**", ".github/workflows/ci.yml", ".github/workflows/release.yml", "tools/afk-agent/**", ".github/workflows/afk-agent.yml"]
   workflow_dispatch:
     inputs:
       publish:

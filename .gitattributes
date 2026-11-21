@@ -2,3 +2,8 @@ agent/dist/install.sh text eol=lf
 agent/dist/install.ps1 text eol=lf
 agent/dist/Dockerfile text eol=lf
 *.sh text eol=lf
+# AFK-Helfer (tools/afk-agent): Ressourcen landen gehasht im Jar, gleiche Bytes wie in CI
+tools/afk-agent/src/main/resources/** text eol=lf
+tools/afk-agent/gradlew text eol=lf
+tools/afk-agent/gradlew.bat text eol=crlf
+*.jar binary
