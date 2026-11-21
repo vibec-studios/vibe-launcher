@@ -1,0 +1,188 @@
+diff --git a/src-tauri/src/commands/content.rs b/src-tauri/src/commands/content.rs
+index ef5c8e0..09066ed 100644
+--- a/src-tauri/src/commands/content.rs
++++ b/src-tauri/src/commands/content.rs
+@@ -402,7 +402,10 @@ pub async fn instance_refresh(state: State<'_, AppState>, instance_id: String) -
+ /// Schnelle Prüfung ohne Netz (vor dem Start).
+ #[tauri::command]
+ pub async fn autofix_quick(state: State<'_, AppState>, instance_id: String) -> AppResult<autofix::QuickCheck> {
+-    autofix::quick(&state, &instance_id).await
++    let __b = std::time::Instant::now();
++    let r = autofix::quick(&state, &instance_id).await;
++    tracing::info!("BENCH ui.autofix_quick {}us", __b.elapsed().as_micros());
++    r
+ }
+ 
+ /// Client/Server-Einordnung aller Inhalte (lädt fehlende Angaben nach).
+diff --git a/src-tauri/src/commands/game.rs b/src-tauri/src/commands/game.rs
+index 198af56..9da1f39 100644
+--- a/src-tauri/src/commands/game.rs
++++ b/src-tauri/src/commands/game.rs
+@@ -72,6 +72,7 @@ pub async fn instance_launch(
+     offline: Option<bool>,
+     afk: Option<bool>,
+ ) -> AppResult<String> {
++    let __b = std::time::Instant::now();
+     crate::content::migration::guard(&state, &id)?;
+     let inst = state.instances.get(&id)?;
+     let afk = afk == Some(true);
+@@ -112,8 +113,11 @@ pub async fn instance_launch(
+     if offline == Some(true) {
+         state.auth.grant_offline(account_id.as_deref());
+     }
++    tracing::info!("BENCH cmd.gates_begin {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     crate::platform::on_launch(&state, &id, &run, world.clone(), server.clone());
++    tracing::info!("BENCH cmd.platform_on_launch_optsync {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     crate::console::on_launch(&state, &run);
++    tracing::info!("BENCH cmd.console {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     let st = state.inner().clone();
+     let iid = id.clone();
+     let rid = run.clone();
+diff --git a/src-tauri/src/content/autoupdate.rs b/src-tauri/src/content/autoupdate.rs
+index 2242dc4..d085066 100644
+--- a/src-tauri/src/content/autoupdate.rs
++++ b/src-tauri/src/content/autoupdate.rs
+@@ -53,7 +53,9 @@ async fn apply_all(state: &AppState, inst: &Instance, task: &TaskHandle) -> AppR
+ pub async fn before_launch(state: &AppState, id: &str, task: &TaskHandle) {
+     let Ok(inst) = state.instances.get(id) else { return };
+     // Abhängigkeits-Check: nur Warnung im Log, der Start geht weiter
++    let __b = std::time::Instant::now();
+     super::deps::warn_before_launch(state, id).await;
++    tracing::info!("BENCH pre.deps_check {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     if !enabled_for(&state.settings(), &inst) {
+         return;
+     }
+diff --git a/src-tauri/src/minecraft/install/local.rs b/src-tauri/src/minecraft/install/local.rs
+index 4525b23..9a1fbf2 100644
+--- a/src-tauri/src/minecraft/install/local.rs
++++ b/src-tauri/src/minecraft/install/local.rs
+@@ -38,6 +38,7 @@ fn loader_ready(paths: &Paths, inst: &Instance, mc: &str, version_id: &str) -> b
+ 
+ pub(super) async fn resolve_local(paths: &Paths, inst: &Instance, env: &Env) -> AppResult<Option<(Resolved, Resolved)>> {
+     let Some(version_id) = inst.version_id.clone().filter(|v| !v.is_empty()) else { return Ok(None) };
++    let __b = std::time::Instant::now();
+     let mc = inst.mc_version.trim();
+     if !loader_ready(paths, inst, mc, &version_id) {
+         return Ok(None);
+@@ -47,7 +48,12 @@ pub(super) async fn resolve_local(paths: &Paths, inst: &Instance, env: &Env) ->
+     if resolved.base_id != mc {
+         return Ok(None);
+     }
+-    if missing_files(paths, &vanilla, env).await? + missing_files(paths, &resolved, env).await? > 0 {
++    tracing::info!("BENCH local.loader_ready_load_chain {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
++    let __m1 = missing_files(paths, &vanilla, env).await?;
++    tracing::info!("BENCH local.missing_vanilla {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
++    let __m2 = missing_files(paths, &resolved, env).await?;
++    tracing::info!("BENCH local.missing_resolved {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
++    if __m1 + __m2 > 0 {
+         return Ok(None);
+     }
+     Ok(Some((vanilla, resolved)))
+@@ -61,7 +67,9 @@ pub(super) async fn prepare(state: &AppState, inst: &Instance, sp: &SubProgress)
+     sp.message("Java wird geprüft …");
+     let major = meta::required_java(&vanilla);
+     let component = vanilla.java.as_ref().and_then(|j| j.component.clone());
++    let __b = std::time::Instant::now();
+     let java = crate::minecraft::java::resolve(state, inst, major, component.as_deref(), false, &sp.sub(0.0, 0.6)).await?;
++    tracing::info!("BENCH local.java_resolve {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     sp.check()?;
+     let game_dir = paths.game_dir(&inst.id);
+     tokio::fs::create_dir_all(&game_dir).await?;
+@@ -70,6 +78,7 @@ pub(super) async fn prepare(state: &AppState, inst: &Instance, sp: &SubProgress)
+         (Some(a), Some(p)) => materialize_assets(paths, &a.id, &read_asset_index(p).await?, &game_dir).await?,
+         _ => paths.assets(),
+     };
++    tracing::info!("BENCH local.asset_index_materialize {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     sp.message("Abschluss …");
+     let natives_dir = paths.natives_dir(&resolved.id);
+     let (r2, libs, nd, p2) = (resolved.clone(), paths.libraries(), natives_dir.clone(), paths.clone());
+@@ -78,6 +87,7 @@ pub(super) async fn prepare(state: &AppState, inst: &Instance, sp: &SubProgress)
+         link_client_jar(&p2, &r2)
+     })
+     .await??;
++    tracing::info!("BENCH local.natives_clientjar {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     sp.progress(1.0);
+     tracing::info!("Instanz {}: Schnellstart mit vorhandenen Dateien", inst.id);
+     Ok(Some(Prepared { resolved, java, game_assets, client_jar, log_config: v.log_config, natives_dir }))
+diff --git a/src-tauri/src/minecraft/launch.rs b/src-tauri/src/minecraft/launch.rs
+index 492a4de..35c5170 100644
+--- a/src-tauri/src/minecraft/launch.rs
++++ b/src-tauri/src/minecraft/launch.rs
+@@ -246,26 +246,34 @@ pub async fn launch(
+     server: Option<String>,
+     task: &TaskHandle,
+ ) -> AppResult<()> {
++    let __b = std::time::Instant::now(); let __all = __b;
+     let gm = state.game.clone();
+     let inst = state.instances.get(id)?;
+     let slot = gm.state_of(run).map(|s| s.slot).unwrap_or(1);
+     let label = if slot > 1 { format!(" (Sitzung #{slot})") } else { String::new() };
+     gm.launcher_line(run, LogLevel::Launcher, format!("Vibe Launcher {} – {}{label} wird vorbereitet", env!("CARGO_PKG_VERSION"), inst.name));
+     if gm.others_active(id, run) == 0 {
++        tracing::info!("BENCH pre.vibey {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+         crate::vibey_client::before_launch(state, id, task).await;
++        tracing::info!("BENCH pre.vibey_done {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+         crate::content::autoupdate::before_launch(state, id, task).await;
++        tracing::info!("BENCH pre.deps_autoupdate {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+         crate::content::worldbackup::before_launch(state, id, task).await;
++        tracing::info!("BENCH pre.worldbackup {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     } else {
+         gm.launcher_line(run, LogLevel::Launcher, "Die Instanz läuft bereits – automatische Updates und Welt-Backups werden für diese weitere Sitzung übersprungen.".into());
+     }
+     task.check()?;
++    let __b = std::time::Instant::now();
+     let prep = super::install::install_instance_opts(state, id, &task.sub(0.0, 0.9), false).await?;
++    tracing::info!("BENCH install_total {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     task.check()?;
+     task.stage("Account wird geprüft …", Some(0.92));
+     let acc = state.auth.launch_account(state, account_id.as_deref()).await.map_err(|e| match e {
+         AppError::NotConfigured(_) => AppError::NotConfigured("Kein Account ausgewählt – bitte unter „Accounts“ anmelden.".into()),
+         e => e,
+     })?;
++    tracing::info!("BENCH account {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     gm.set_secret(run, &acc.access_token);
+     gm.set_account(run, &acc.username, &acc.uuid);
+     if let Some(other) = gm.account_in_use(&acc.uuid, run) {
+@@ -280,6 +288,7 @@ pub async fn launch(
+     let inst = state.instances.get(id)?;
+     let settings = state.settings();
+     let mut plan = build(state, &inst, &prep, &acc, &settings)?;
++    tracing::info!("BENCH build_plan {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     if let Some(cfg) = prep.log_config.as_deref().filter(|_| slot > 1) {
+         if let Some(p) = redirect_logs(&mut plan, cfg, slot) {
+             gm.launcher_line(run, LogLevel::Launcher, format!("Log-Datei dieser Sitzung: logs/vibe-session-{slot}/latest.log ({})", p.display()));
+@@ -313,7 +322,9 @@ pub async fn launch(
+     if let Some(w) = log4shell_warning(&prep.resolved.base_id, prep.resolved.logging.is_some() && prep.log_config.is_some()) {
+         gm.launcher_line(run, LogLevel::Warn, w);
+     }
++    tracing::info!("BENCH log_lines {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     crate::afk::prepare(state, id, run, &prep, &mut plan).await;
++    tracing::info!("BENCH afk {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     gm.launcher_line(run, LogLevel::Launcher, format!("Startbefehl: {}", plan.display));
+     if let Some(cmd) = inst.hooks.pre_launch.as_deref().filter(|c| !c.trim().is_empty()) {
+         task.stage("Pre-Launch-Befehl läuft …", Some(0.95));
+@@ -322,11 +333,13 @@ pub async fn launch(
+     }
+     task.stage("Spiel wird gestartet …", Some(0.97));
+ 
++    tracing::info!("BENCH prelaunch_hook {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     tokio::fs::create_dir_all(&plan.cwd).await?;
+     // java.exe statt javaw.exe (CREATE_NO_WINDOW verhindert das Konsolenfenster): Startfehler der
+     // JVM landen so im Log statt in einem blockierenden Windows-Dialog.
+     let program = super::java::console_java(&plan.program);
+     crate::platform::gpupref::apply_for_launch(&state.paths, settings.prefer_dgpu, &program);
++    tracing::info!("BENCH gpupref {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     let mut cmd = tokio::process::Command::new(&program);
+     cmd.args(&plan.args)
+         .current_dir(&plan.cwd)
+@@ -339,7 +352,10 @@ pub async fn launch(
+     #[cfg(unix)]
+     cmd.process_group(0);
+     let child = cmd.spawn().map_err(|e| AppError::msg(format!("Spiel konnte nicht gestartet werden ({}): {e}", program.display())))?;
++    tracing::info!("BENCH spawn {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
+     gm.attach(state.clone(), run.to_string(), child);
++    tracing::info!("BENCH attach {}us", __b.elapsed().as_micros()); let __b = std::time::Instant::now();
++    tracing::info!("BENCH launch_fn_total {}us", __all.elapsed().as_micros());
+     Ok(())
+ }
+ 
