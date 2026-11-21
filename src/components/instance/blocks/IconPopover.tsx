@@ -30,7 +30,7 @@ export function IconPopover({
           align={align}
           sideOffset={8}
           collisionPadding={12}
-          className="z-[60] w-[316px] rounded-card bg-overlay p-3 shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="scroll z-[60] max-h-[var(--radix-popover-content-available-height)] w-[316px] rounded-card bg-overlay p-3 shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           <IconGallery value={value} seed={seed} accent={accent} onChange={onChange} onImage={onImage} onReset={onReset} />
         </Popover.Content>

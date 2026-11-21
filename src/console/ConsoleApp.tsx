@@ -25,6 +25,7 @@ function StatusDot({ r }: { r: GameState }) {
 function Tab({ r, inst, on, onClick }: { r: GameState; inst?: Instance; on: boolean; onClick: () => void }) {
   return (
     <button
+      aria-pressed={on}
       onClick={onClick}
       className={`flex h-8 shrink-0 items-center gap-2 rounded-ctl px-3 text-[12.5px] font-medium transition-colors ${on ? "bg-surface3 text-text" : "text-muted hover:bg-white/[.05] hover:text-text"}`}
     >
@@ -41,6 +42,7 @@ function Btn({ label, onClick, children, active, danger, disabled }: { label: st
     <button
       title={label}
       aria-label={label}
+      aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
       className={`flex h-8 items-center gap-1.5 rounded-ctl px-2.5 text-[12.5px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-40 ${
@@ -57,7 +59,7 @@ async function copy(text: string) {
     const m = await import("@tauri-apps/plugin-clipboard-manager");
     await m.writeText(text);
   } catch {
-    await navigator.clipboard?.writeText(text).catch(() => {});
+    await navigator.clipboard.writeText(text);
   }
 }
 
@@ -103,7 +105,7 @@ export function ConsoleApp() {
     copy(formatLines(shown)).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
-    });
+    }).catch(() => {});
   };
 
   return (
@@ -116,9 +118,9 @@ export function ConsoleApp() {
         ))}
       </div>
 
-      <div className="flex h-11 shrink-0 items-center gap-1.5 border-b border-line px-2">
-        <label className="flex h-8 w-[230px] items-center gap-2 rounded-ctl bg-surface2 px-2.5 text-muted focus-within:text-text">
-          <Search size={14} />
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-line px-2 py-1.5">
+        <label className="flex h-8 min-w-[100px] max-w-[230px] flex-[1_1_100px] items-center gap-2 rounded-ctl bg-surface2 px-2.5 text-muted focus-within:text-text">
+          <Search size={14} className="shrink-0" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -126,10 +128,11 @@ export function ConsoleApp() {
             className="h-full min-w-0 flex-1 bg-transparent text-[12.5px] text-text outline-none placeholder:text-dim"
           />
         </label>
-        <div className="flex items-center gap-0.5">
+        <div className="flex flex-wrap items-center gap-0.5">
           {CATS.map((c) => (
             <button
               key={c}
+              aria-pressed={cats.includes(c)}
               onClick={() => toggle(c)}
               className={`flex h-8 items-center gap-1.5 rounded-ctl px-2 text-[12px] transition-colors ${cats.includes(c) ? "text-text hover:bg-white/[.05]" : "text-dim line-through opacity-60 hover:opacity-100"}`}
             >
@@ -139,25 +142,26 @@ export function ConsoleApp() {
             </button>
           ))}
         </div>
-        <div className="flex-1" />
-        <Btn label={ct("console.follow")} active={follow} onClick={() => setFollow(!follow)}>
-          <ArrowDownToLine size={14} />
-        </Btn>
-        <Btn label={ct("console.wrap")} active={wrap} onClick={() => setWrap(!wrap)}>
-          <WrapText size={14} />
-        </Btn>
-        <Btn label={ct("console.copy")} disabled={!shown.length} onClick={doCopy}>
-          <Copy size={14} />
-          {copied ? ct("console.copied") : ct("console.copy")}
-        </Btn>
-        <Btn label={ct("console.folder")} disabled={!current} onClick={() => current && api.instanceOpenFolder(current.instance_id, "logs").catch(() => {})}>
-          <FolderOpen size={14} />
-          {ct("console.folder")}
-        </Btn>
-        <Btn label={ct("console.stop")} danger disabled={!isActive(current ?? undefined)} onClick={() => current && api.instanceKill(current.instance_id, current.run_id).catch(() => {})}>
-          <Square size={11} fill="currentColor" />
-          {ct("console.stop")}
-        </Btn>
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          <Btn label={ct("console.follow")} active={follow} onClick={() => setFollow(!follow)}>
+            <ArrowDownToLine size={14} />
+          </Btn>
+          <Btn label={ct("console.wrap")} active={wrap} onClick={() => setWrap(!wrap)}>
+            <WrapText size={14} />
+          </Btn>
+          <Btn label={ct("console.copy")} disabled={!shown.length} onClick={doCopy}>
+            <Copy size={14} />
+            {copied ? ct("console.copied") : ct("console.copy")}
+          </Btn>
+          <Btn label={ct("console.folder")} disabled={!current} onClick={() => current && api.instanceOpenFolder(current.instance_id, "logs").catch(() => {})}>
+            <FolderOpen size={14} />
+            {ct("console.folder")}
+          </Btn>
+          <Btn label={ct("console.stop")} danger disabled={!isActive(current ?? undefined)} onClick={() => current && api.instanceKill(current.instance_id, current.run_id).catch(() => {})}>
+            <Square size={11} fill="currentColor" />
+            {ct("console.stop")}
+          </Btn>
+        </div>
       </div>
 
       {current ? (

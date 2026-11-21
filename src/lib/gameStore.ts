@@ -12,6 +12,7 @@ interface GameStore {
   setState: (s: GameState) => void;
   setAll: (list: GameState[]) => void;
   appendLogs: (runId: string, lines: LogLine[]) => void;
+  hydrateLogs: (runId: string, lines: LogLine[]) => void;
   setLogs: (runId: string, lines: LogLine[]) => void;
 }
 
@@ -41,9 +42,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   appendLogs: (runId, lines) => {
     const cur = get().logs[runId] ?? [];
-    const next = cur.length + lines.length > MAX_LOG ? cur.slice(cur.length + lines.length - MAX_LOG) : cur.slice();
-    next.push(...lines);
-    set({ logs: { ...get().logs, [runId]: next } });
+    const last = cur.at(-1)?.seq ?? 0;
+    const pending = lines.filter((line) => line.seq > last);
+    if (!pending.length) return;
+    const next = cur.slice(Math.max(0, cur.length + pending.length - MAX_LOG));
+    next.push(...pending.slice(-MAX_LOG));
+    get().setLogs(runId, next);
+  },
+  hydrateLogs: (runId, lines) => {
+    if (!lines.length) return;
+    const cur = get().logs[runId] ?? [];
+    const last = lines[lines.length - 1].seq;
+    get().setLogs(runId, [...lines, ...cur.filter((line) => line.seq > last)].slice(-MAX_LOG));
   },
   setLogs: (runId, lines) => set({ logs: { ...get().logs, [runId]: lines } }),
 }));

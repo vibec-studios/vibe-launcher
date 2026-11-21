@@ -4,10 +4,10 @@ import { catOf, levelTag, type LevelCat } from "@/features/logs/levels";
 import type { LogLine } from "@/lib/types";
 
 const color: Record<LevelCat, string> = {
-  info: "#d6d6dc",
+  info: "var(--color-text)",
   warn: "var(--ui-warn)",
   error: "var(--ui-danger)",
-  debug: "#7a7a85",
+  debug: "var(--color-muted)",
   launcher: "var(--ui-accent)",
 };
 
@@ -28,8 +28,8 @@ const Row = memo(function Row({ line, q, wrap }: { line: LogLine; q: string; wra
   const cat = catOf(line.level);
   return (
     <div className={`flex gap-3 px-3 font-mono text-[12px] leading-5 ${wrap ? "whitespace-pre-wrap break-all" : "h-5 whitespace-pre"} ${cat === "error" ? "bg-danger/[.06]" : ""}`}>
-      <span className="w-[58px] shrink-0 select-none text-dim/70">{line.time ?? ""}</span>
-      <span className="w-[46px] shrink-0 select-none text-[10px] font-semibold" style={{ color: cat === "info" ? "#6b6b75" : color[cat] }}>
+      <span className="w-[58px] shrink-0 select-none text-dim">{line.time ?? ""}</span>
+      <span className="w-[46px] shrink-0 select-none text-[10px] font-semibold" style={{ color: cat === "info" ? "var(--color-dim)" : color[cat] }}>
         {line.time || line.level === "launcher" ? levelTag(line.level) : ""}
       </span>
       <span className={`min-w-0 flex-1 ${wrap ? "" : "overflow-hidden text-ellipsis"}`} style={{ color: color[cat] }}>
@@ -55,7 +55,7 @@ export function LogView({ lines, q, wrap, follow, onFollow }: { lines: LogLine[]
   return (
     <div
       ref={ref}
-      className="scroll min-h-0 flex-1 overflow-auto bg-[#08080a] py-1"
+      className="scroll min-h-0 flex-1 overflow-auto bg-bg py-1"
       onWheel={(e) => e.deltaY < 0 && follow && onFollow(false)}
       onScroll={(e) => {
         const el = e.currentTarget;

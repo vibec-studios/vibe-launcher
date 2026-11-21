@@ -22,7 +22,7 @@ interface State {
   close: (c: Choice) => void;
 }
 
-const useAsk = create<State>((set, get) => ({
+export const useAccountConflict = create<State>((set, get) => ({
   ask: null,
   resolve: null,
   open: (ask) =>
@@ -42,12 +42,12 @@ export async function chooseLaunchAccount(accounts: Account[], instances: Instan
   const busy = accountBusy(useGameStore.getState().runs, account.uuid);
   if (!busy) return { accountId };
   const busyName = instances?.find((i) => i.id === busy.instance_id)?.name ?? busy.instance_id;
-  return useAsk.getState().open({ account, busy, busyName, accounts });
+  return useAccountConflict.getState().open({ account, busy, busyName, accounts });
 }
 
 export function AccountConflictHost() {
   const t = useT();
-  const { ask, close } = useAsk();
+  const { ask, close } = useAccountConflict();
   const runs = useGameStore((s) => s.runs);
   const others = ask?.accounts.filter((a) => a.id !== ask.account.id) ?? [];
   return (

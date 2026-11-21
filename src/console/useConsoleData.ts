@@ -56,8 +56,7 @@ export function useConsoleData() {
       .instanceLogSession(current.instance_id, run)
       .then((lines) => {
         if (dead) return;
-        const cur = useGameStore.getState().logs[run];
-        if (!cur || cur.length < lines.length) useGameStore.getState().setLogs(run, lines);
+        useGameStore.getState().hydrateLogs(run, lines);
       })
       .catch(() => {});
     return () => {

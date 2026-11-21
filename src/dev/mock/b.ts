@@ -616,7 +616,7 @@ const handlers: Handlers = {
       loader: { kind: "fabric", version: "0.16.9" },
       file_count: files.length,
       files,
-      icon: "https://cdn.modrinth.com/data/1KVo5zza/icon.png",
+      icon: "https://cdn.modrinth.com/data/1KVo5zza/d8152911f8fd5d7e9a8c499fe89045af81fe816e_96.webp",
       author: "Vibe Craft Studios",
     };
   },

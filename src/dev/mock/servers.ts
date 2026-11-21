@@ -346,6 +346,7 @@ type MockAddon = {
   version_id: string | null; title: string | null; page_url: string | null;
 };
 const addonItems = new Map<string, MockAddon[]>();
+const ferriteCoreIcon = "https://cdn.modrinth.com/data/uXXizFIs/222a126f26f8f9ae1eb339f3b767677f18bff31f_96.webp";
 function addonDefaults(plugins: boolean): MockAddon[] {
   const mk = (slug: string, title: string, version: string, author: string, description: string, icon: string | null, extra: Partial<MockAddon> = {}): MockAddon => ({
     file_name: `${slug}-${version}.jar`, enabled: true, size: 400_000 + slug.length * 91_000, modified: Date.now() - 86400_000 * (slug.length % 9),
@@ -360,7 +361,7 @@ function addonDefaults(plugins: boolean): MockAddon[] {
   return [
     mk("fabric-api", "Fabric API", "0.110.5", "modmuss50", "Lightweight and modular API providing common hooks.", "https://cdn.modrinth.com/data/P7dR8mSH/icon.png"),
     mk("lithium", "Lithium", "0.14.3", "jellysquid3", "No-compromises game logic optimization mod.", "https://cdn.modrinth.com/data/gvQqBUqZ/icon.png"),
-    mk("ferritecore", "FerriteCore", "7.1.1", "malte0811", "Memory usage optimizations.", "https://cdn.modrinth.com/data/uXXizFIs/icon.png"),
+    mk("ferritecore", "FerriteCore", "7.1.1", "malte0811", "Memory usage optimizations.", ferriteCoreIcon),
     mk("chunky", "Chunky", "1.4.27", "pop4959", "Pre-generates chunks, quickly and efficiently.", null),
     { ...mk("spark", "spark", "1.10.119", "lucko", "A performance profiler for Minecraft clients, servers and proxies.", null), enabled: false, file_name: "spark-1.10.119.jar.disabled" },
   ];
@@ -545,7 +546,7 @@ const handlers: Handlers = {
     const all = [
       { source: "modrinth", id: "P7dR8mSH", slug: "fabric-api", title: "Fabric API", description: "Lightweight and modular API providing common hooks.", author: "modmuss50", icon_url: "https://cdn.modrinth.com/data/P7dR8mSH/icon.png", downloads: 288_600_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/fabric-api" },
       { source: "modrinth", id: "gvQqBUqZ", slug: "lithium", title: "Lithium", description: "No-compromises game logic optimization mod.", author: "jellysquid3", icon_url: "https://cdn.modrinth.com/data/gvQqBUqZ/icon.png", downloads: 144_200_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/lithium" },
-      { source: "modrinth", id: "uXXizFIs", slug: "ferritecore", title: "FerriteCore", description: "Memory usage optimizations.", author: "malte0811", icon_url: "https://cdn.modrinth.com/data/uXXizFIs/icon.png", downloads: 168_200_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/ferritecore" },
+      { source: "modrinth", id: "uXXizFIs", slug: "ferritecore", title: "FerriteCore", description: "Memory usage optimizations.", author: "malte0811", icon_url: ferriteCoreIcon, downloads: 168_200_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/ferritecore" },
       { source: "modrinth", id: "fALzjamp", slug: "chunky", title: "Chunky", description: "Pre-generates chunks, quickly and efficiently.", author: "pop4959", icon_url: null, downloads: 12_400_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/chunky" },
       { source: "modrinth", id: "l6YH9Als", slug: "spark", title: "spark", description: "A performance profiler for Minecraft clients, servers and proxies.", author: "lucko", icon_url: null, downloads: 30_100_000, updated: new Date().toISOString(), page_url: "https://modrinth.com/mod/spark" },
     ];

@@ -59,6 +59,9 @@ const failing = new Set((mockFlag("vl.mock.fail") ?? "").split(",").filter(Boole
 
 mockIPC(
   async (cmd, args) => {
+    if (cmd === "plugin:clipboard-manager|write_text") {
+      return navigator.clipboard.writeText((args as { text: string }).text);
+    }
     const h = handlers[cmd];
     if (h) {
       // Etwas Latenz, damit Ladezustände sichtbar werden (Settings/Instanzen immer schnell, sonst startet nichts)

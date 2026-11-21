@@ -13,7 +13,7 @@ import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { accentVars } from "@/components/instance/accent";
 import { useVibe } from "@/lib/vibe";
 import { useT } from "@/i18n";
-import { INSTANCE_SETTINGS_TABS, closeInstanceSettings, setInstanceSettingsTab, useInstanceSettings, type InstanceSettingsTab } from "./store";
+import { INSTANCE_SETTINGS_TABS, closeInstanceSettings, restoreInstanceSettingsFocus, setInstanceSettingsTab, useInstanceSettings, type InstanceSettingsTab } from "./store";
 import { AdvancedTab, ClientTab, GeneralTab, JavaTab, LaunchTab, VersionTab, VibeTab, type TabProps } from "./tabs";
 import { useClientPacks } from "./ClientPacks";
 import { InstanceSyncTab } from "@/components/instance/OptSync";
@@ -46,11 +46,12 @@ export function InstanceSettingsDialog({ instance: inst }: { instance: Instance 
             e.preventDefault();
             (e.currentTarget as HTMLElement | null)?.focus();
           }}
+          onCloseAutoFocus={restoreInstanceSettingsFocus}
           tabIndex={-1}
           className={cn(
             "outline-none",
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2",
-            "h-[min(780px,calc(100vh-48px))] w-[min(1100px,calc(100vw-48px))] overflow-hidden",
+            "h-[min(780px,calc(100%-48px))] w-[min(1100px,calc(100%-48px))] overflow-hidden",
             "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
           style={accentVars(instanceAccent(inst.id, inst.accent))}

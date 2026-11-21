@@ -212,7 +212,7 @@ export function mockKill(id: string, runId?: string | null) {
 
 export function mockSessionLog(id: string, runId?: string | null): LogLine[] {
   const run = resolveRun((runId as string) || id);
-  return run ? (session.get(run) ?? []) : [];
+  return run ? (session.get(run)?.slice() ?? []) : [];
 }
 
 export function mockFlood(id: string, n: number) {

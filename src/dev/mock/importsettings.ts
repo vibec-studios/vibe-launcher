@@ -1,6 +1,6 @@
 // Mock: Einstellungen aus anderen Launchern (Import-Dialog „Übernimmt …“, Hinweis unten links, Liste „Ansehen“).
 // Screenshots: localStorage vl.mock.isx = 0 -> keine abweichenden Instanzen (Hinweis erscheint nicht).
-import type { DataEntry, ExtSettings, ExternalInstance, ExternalLauncher, Loader, SettingsOffer } from "@/lib/types";
+import type { DataEntry, ExtSettings, ExternalInstance, ExternalLauncher, ImportReport, Loader, SettingsOffer } from "@/lib/types";
 import { newInstance } from "./b";
 import { instances } from "./core";
 import { fakeTask, type Handlers } from "./util";
@@ -191,6 +191,7 @@ const offers = (): SettingsOffer[] =>
 let applied = new Set<string>();
 const imported = new Map<string, string>();
 const scanned = new Map<string, ExternalInstance>();
+const reports = new Map<string, ImportReport>();
 
 const handlers: Handlers = {
   launchers_detect: () => launchers.map((launcher) => ({
@@ -204,14 +205,21 @@ const handlers: Handlers = {
     scanned.set(dir, instance);
     return { id: "folder", name, path: dir, instances: [instance] };
   },
-  import_external: ({ sourcePath, name, mcVersion, loader }) => {
+  import_external: ({ launcher, sourcePath, name, mcVersion, loader }) => {
     const path = String(sourcePath);
     const external = scanned.get(path) ?? launchers.flatMap((launcher) => launcher.instances).find((instance) => instance.source_path === path);
     if (!external) throw { kind: "not_found", message: "Instanz nicht gefunden" };
     const selectedLoader = (loader as Loader | null) ?? external.loader;
     const instance = newInstance(String(name ?? external.name), String(mcVersion ?? external.mc_version), selectedLoader.kind, selectedLoader.version, null);
-    return fakeTask("import_external", instance.name, instance.id, 1500, () => { imported.set(path, instance.id); });
+    return fakeTask("import_external", instance.name, instance.id, 1500, () => {
+      imported.set(path, instance.id);
+      reports.set(instance.id, {
+        launcher: String(launcher), at: Date.now(), files: 1, bytes: 256,
+        mods: [], jars: [], from_cache: [], failed: [], locked: [], norisk_only: [], unfit: [], sync_packs: [], warnings: [],
+      });
+    });
   },
+  import_report: ({ instanceId }) => reports.get(String(instanceId)) ?? null,
   skin_import_scan: () => ({ sources: [], new_count: 0, auto_import: false }),
   import_settings_pending: () => offers().filter((o) => !applied.has(o.instance_id)),
   import_settings_offer: ({ instanceId }) => {
