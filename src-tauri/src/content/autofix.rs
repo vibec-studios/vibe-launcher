@@ -519,7 +519,7 @@ pub fn last_report(state: &AppState, instance_id: &str) -> Option<FixReport> {
 }
 
 fn last_crash(state: &AppState, instance_id: &str) -> Option<(Option<String>, Option<i32>)> {
-    state.game.states().into_iter().find(|s| s.instance_id == instance_id && s.crashed).map(|s| (s.crash_report, s.exit_code))
+    state.game.latest_crash(instance_id).map(|s| (s.crash_report, s.exit_code))
 }
 
 pub async fn quick(state: &AppState, instance_id: &str) -> AppResult<QuickCheck> {

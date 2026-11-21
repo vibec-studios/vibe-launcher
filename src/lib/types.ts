@@ -144,6 +144,7 @@ export interface Settings {
   discord_image: string | null;
   wrapper_command: string | null;
   open_log_on_launch: boolean;
+  console_on_launch: boolean;
   reduce_motion: boolean;
   /** Mods/Packs/Shader vor jedem Start automatisch aktualisieren (je Instanz überschreibbar) */
   auto_update_content: boolean;
@@ -467,13 +468,21 @@ export interface LoaderVersion {
 export type RunState = "preparing" | "running" | "stopped";
 
 export interface GameState {
+  run_id: string;
   instance_id: string;
+  slot: number;
   state: RunState;
   pid: number | null;
+  created_at: number;
   started_at: number | null;
+  ended_at: number | null;
   exit_code: number | null;
   crashed: boolean;
   crash_report: string | null;
+  account_name: string | null;
+  account_uuid: string | null;
+  world: string | null;
+  server: string | null;
 }
 
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "stdout" | "stderr" | "launcher";

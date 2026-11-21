@@ -8,7 +8,8 @@ export interface EventMap {
   "instance://changed": Instance;
   "instance://removed": { id: string };
   "game://state": GameState;
-  "game://log": { instance_id: string; lines: LogLine[] };
+  "game://log": { run_id: string; instance_id: string; lines: LogLine[] };
+  "console://select": string;
   "content://changed": { instance_id: string };
   /** Manuell geladene Datei aus dem Download-Ordner übernommen */
   "content://manual-arrived": ManualArrived;

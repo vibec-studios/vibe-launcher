@@ -44,12 +44,13 @@ import help from "./help";
 import access from "./access";
 import iconart from "./iconart";
 import customize from "./customize";
+import sessions from "./sessions";
 
 export type Lang = "de" | "en";
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, clips, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, clips, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize, sessions];
 const dicts: Record<Lang, Dict> = { de: {}, en: {} };
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);

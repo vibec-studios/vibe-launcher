@@ -228,12 +228,12 @@ function Topbar() {
       <div data-tauri-drag-region className="h-full flex-1" />
       <div className="flex items-center gap-1.5 pr-3">
         <UpdateButton />
-        <RunningGames />
         <TaskDock />
         <HelpButton />
         <FeedbackButton />
         <FriendsPanelToggle />
         <span className="mx-0.5 h-5 w-px bg-line2" aria-hidden />
+        <RunningGames />
         <AccountMenu />
       </div>
       <WindowControls />

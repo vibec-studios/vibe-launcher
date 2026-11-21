@@ -79,6 +79,7 @@ let settings: Settings = {
   discord_image: null,
   wrapper_command: null,
   open_log_on_launch: false,
+  console_on_launch: false,
   reduce_motion: false,
   auto_update_content: false,
   snapshot_keep: 10,

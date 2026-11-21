@@ -35,10 +35,16 @@ export default defineConfig(() => ({
   },
   clearScreen: false,
   // Alle Abhängigkeiten beim Start vorab bündeln – kein Neuladen mitten in der Sitzung (Dev)
-  optimizeDeps: { entries: ["index.html", "src/**/*.tsx"] },
+  optimizeDeps: { entries: ["index.html", "console.html", "src/**/*.tsx"] },
   build: {
     target: "es2022",
     chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL("./index.html", import.meta.url)),
+        console: fileURLToPath(new URL("./console.html", import.meta.url)),
+      },
+    },
   },
   server: {
     port: 1420,

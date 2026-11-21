@@ -4,26 +4,7 @@ import type { LogLevel, LogLine } from "@/lib/types";
 import { toast } from "@/components/ui";
 import { t } from "@/i18n";
 
-export type LevelCat = "debug" | "info" | "warn" | "error" | "launcher";
-export const CATS: LevelCat[] = ["info", "warn", "error", "debug", "launcher"];
-
-export function catOf(l: LogLevel): LevelCat {
-  switch (l) {
-    case "trace":
-    case "debug":
-      return "debug";
-    case "warn":
-      return "warn";
-    case "error":
-    case "fatal":
-    case "stderr":
-      return "error";
-    case "launcher":
-      return "launcher";
-    default:
-      return "info";
-  }
-}
+export { CATS, catOf, formatLine, formatLines, levelTag, type LevelCat } from "./levels";
 
 const LEVELS: Record<string, LogLevel> = {
   TRACE: "trace",
@@ -62,32 +43,6 @@ export function parseLog(text: string, crash = false): LogLine[] {
   }
   return out;
 }
-
-const LEVEL_TAG: Record<LogLevel, string> = {
-  trace: "TRACE",
-  debug: "DEBUG",
-  info: "INFO",
-  warn: "WARN",
-  error: "ERROR",
-  fatal: "FATAL",
-  stdout: "OUT",
-  stderr: "ERR",
-  launcher: "LAUNCH",
-};
-
-/** Eine Zeile im üblichen Log4j-Format (für Kopieren/Upload). */
-export function formatLine(l: LogLine): string {
-  if (!l.time) return l.text;
-  return `[${l.time}] [${l.thread ?? "main"}/${LEVEL_TAG[l.level]}]${l.logger ? ` [${l.logger}]` : ""}: ${l.text}`;
-}
-
-export function formatLines(lines: LogLine[]): string {
-  let s = "";
-  for (let i = 0; i < lines.length; i++) s += (i ? "\n" : "") + formatLine(lines[i]);
-  return s;
-}
-
-export const levelTag = (l: LogLevel) => LEVEL_TAG[l];
 
 export async function writeClipboard(text: string) {
   try {

@@ -65,6 +65,8 @@ pub struct Settings {
     pub wrapper_command: Option<String>,
     /// Konsole beim Start automatisch öffnen
     pub open_log_on_launch: bool,
+    /// Eigenes Konsolenfenster beim Spielstart öffnen
+    pub console_on_launch: bool,
     /// Animationen reduzieren (zusätzlich zur System-Einstellung)
     pub reduce_motion: bool,
     /// Mods/Resourcepacks/Shader vor jedem Spielstart automatisch aktualisieren (je Instanz überschreibbar)
@@ -487,6 +489,7 @@ impl Default for Settings {
             discord_image: None,
             wrapper_command: None,
             open_log_on_launch: false,
+            console_on_launch: false,
             reduce_motion: false,
             auto_update_content: false,
             stores: crate::content::store::default_stores(),

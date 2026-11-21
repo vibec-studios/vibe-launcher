@@ -3,7 +3,7 @@
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { create } from "zustand";
 import { api } from "./api";
-import type { GameState, Instance, LogLine, Server, ServerStatus, TaskInfo } from "./types";
+import type { Instance, LogLine, Server, ServerStatus, TaskInfo } from "./types";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -125,41 +125,9 @@ export function waitForTask(id: string): Promise<TaskInfo> {
   });
 }
 
-interface GameStore {
-  states: Record<string, GameState>;
-  /** Log-Puffer je Instanz (max. 50 000 Zeilen) */
-  logs: Record<string, LogLine[]>;
-  setState: (s: GameState) => void;
-  setAll: (list: GameState[]) => void;
-  appendLogs: (instanceId: string, lines: LogLine[]) => void;
-  setLogs: (instanceId: string, lines: LogLine[]) => void;
-}
-
 const MAX_LOG = 50_000;
 
-export const useGameStore = create<GameStore>((set, get) => ({
-  states: {},
-  logs: {},
-  setState: (s) => set({ states: { ...get().states, [s.instance_id]: s } }),
-  setAll: (list) => set({ states: Object.fromEntries(list.map((s) => [s.instance_id, s])) }),
-  appendLogs: (id, lines) => {
-    const cur = get().logs[id] ?? [];
-    let next = cur.length + lines.length > MAX_LOG ? cur.slice(cur.length + lines.length - MAX_LOG) : cur.slice();
-    // Neue Sitzung (seq beginnt von vorn) -> Puffer leeren
-    if (lines.length && cur.length && lines[0].seq <= cur[cur.length - 1].seq) next = [];
-    next.push(...lines);
-    set({ logs: { ...get().logs, [id]: next } });
-  },
-  setLogs: (id, lines) => set({ logs: { ...get().logs, [id]: lines } }),
-}));
-
-export function useGameState(instanceId: string): GameState | undefined {
-  return useGameStore((s) => s.states[instanceId]);
-}
-
-export function isRunning(s: GameState | undefined) {
-  return !!s && (s.state === "running" || s.state === "preparing");
-}
+export { isRunning, useActiveRuns, useGameState, useGameStore, useInstanceRuns, useRun } from "./gameStore";
 
 // ------------------------------------------------------------------ Lokale Server
 

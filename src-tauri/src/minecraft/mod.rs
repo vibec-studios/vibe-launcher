@@ -15,6 +15,7 @@ pub mod logs;
 pub mod meta;
 pub mod prelaunch;
 pub mod process;
+pub mod sessions;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McVersion {
@@ -45,15 +46,26 @@ pub enum RunState {
 /// Payload von `game://state`.
 #[derive(Debug, Clone, Serialize)]
 pub struct GameState {
+    /// Eigene ID der Sitzung (eine Instanz kann mehrfach laufen)
+    pub run_id: String,
     pub instance_id: String,
+    /// Laufende Nummer unter den gleichzeitigen Sitzungen der Instanz (1, 2, …)
+    pub slot: u32,
     pub state: RunState,
     pub pid: Option<u32>,
+    pub created_at: i64,
     pub started_at: Option<i64>,
+    pub ended_at: Option<i64>,
     pub exit_code: Option<i32>,
     /// Beendet mit Fehlercode / Crash-Report erkannt
     pub crashed: bool,
     /// Pfad zum neuen Crash-Report, falls einer entstanden ist
     pub crash_report: Option<String>,
+    pub account_name: Option<String>,
+    /// UUID ohne Bindestriche
+    pub account_uuid: Option<String>,
+    pub world: Option<String>,
+    pub server: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]

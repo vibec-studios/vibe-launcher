@@ -3,6 +3,7 @@ pub mod auth;
 pub mod bedrock;
 pub mod client_packs;
 pub mod commands;
+pub mod console;
 #[cfg(debug_assertions)]
 mod devlive;
 pub mod content;
@@ -139,6 +140,9 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+                console::close(window.app_handle());
+            }
             // Lokale Server laufen noch -> Frontend fragt, ob sie gestoppt werden sollen
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {
@@ -222,6 +226,7 @@ pub fn run() {
             commands::game::instance_launch,
             commands::game::instance_kill,
             commands::game::game_states,
+            commands::game::console_open,
             commands::game::instance_log_session,
             commands::game::instance_log_files,
             commands::game::instance_log_read,

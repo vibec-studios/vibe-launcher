@@ -1,5 +1,6 @@
 // Dialoge, die aus Instanz-Menüs geöffnet werden (Export, Gruppe, Neue Instanz). Wird auf jeder Seite von
 // Frontend A einmal eingebunden.
+import { AccountConflictHost } from "@/components/instance/AccountConflict";
 import { useEffect, useState } from "react";
 import { useInstanceDialogs, setGroup } from "@/components/instance/actions";
 import { IconDialog } from "./IconDialog";
@@ -67,6 +68,7 @@ export function InstanceDialogs() {
       <SimpleNewGameDialog open={newOpen && guided} goal={newGoal} onOpenChange={onOpenChange} />
       <GroupDialog />
       <IconDialog />
+      <AccountConflictHost />
       {exportFor && <ExportDialog instance={exportFor} open onOpenChange={(o) => !o && useInstanceDialogs.setState({ exportFor: null })} />}
     </>
   );

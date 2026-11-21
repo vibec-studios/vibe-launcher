@@ -262,6 +262,7 @@ pub fn build(state: &AppState, inst: &Instance, prep: &Prepared, acc: &LaunchAcc
 pub async fn launch(
     state: &AppState,
     id: &str,
+    run: &str,
     account_id: Option<String>,
     world: Option<String>,
     server: Option<String>,
@@ -269,12 +270,16 @@ pub async fn launch(
 ) -> AppResult<()> {
     let gm = state.game.clone();
     let inst = state.instances.get(id)?;
-    gm.launcher_line(id, LogLevel::Launcher, format!("Vibe Launcher {} – {} wird vorbereitet", env!("CARGO_PKG_VERSION"), inst.name));
-    // Inhalte automatisch aktualisieren (Content-Modul; schlägt nie fehl)
-    // Vibey Client (falls für die Instanz eingeschaltet) still aktualisieren
-    crate::vibey_client::before_launch(state, id, task).await;
-    crate::content::autoupdate::before_launch(state, id, task).await;
-    crate::content::worldbackup::before_launch(state, id, task).await;
+    let slot = gm.state_of(run).map(|s| s.slot).unwrap_or(1);
+    let label = if slot > 1 { format!(" (Sitzung #{slot})") } else { String::new() };
+    gm.launcher_line(run, LogLevel::Launcher, format!("Vibe Launcher {} – {}{label} wird vorbereitet", env!("CARGO_PKG_VERSION"), inst.name));
+    if gm.others_active(id, run) == 0 {
+        crate::vibey_client::before_launch(state, id, task).await;
+        crate::content::autoupdate::before_launch(state, id, task).await;
+        crate::content::worldbackup::before_launch(state, id, task).await;
+    } else {
+        gm.launcher_line(run, LogLevel::Launcher, "Die Instanz läuft bereits – automatische Updates und Welt-Backups werden für diese weitere Sitzung übersprungen.".into());
+    }
     task.check()?;
     let prep = super::install::install_instance_opts(state, id, &task.sub(0.0, 0.9), false).await?;
     task.check()?;
@@ -283,11 +288,25 @@ pub async fn launch(
         AppError::NotConfigured(_) => AppError::NotConfigured("Kein Account ausgewählt – bitte unter „Accounts“ anmelden.".into()),
         e => e,
     })?;
-    gm.set_secret(id, &acc.access_token);
+    gm.set_secret(run, &acc.access_token);
+    gm.set_account(run, &acc.username, &acc.uuid);
+    if let Some(other) = gm.account_in_use(&acc.uuid, run) {
+        let name = state.instances.get(&other.instance_id).map(|i| i.name).unwrap_or(other.instance_id);
+        gm.launcher_line(
+            run,
+            LogLevel::Warn,
+            format!("Achtung: {} spielt bereits in „{name}“ (Sitzung #{}). Server trennen meist die ältere Verbindung.", acc.username, other.slot),
+        );
+    }
     task.check()?;
     let inst = state.instances.get(id)?;
     let settings = state.settings();
     let mut plan = build(state, &inst, &prep, &acc, &settings)?;
+    if let Some(cfg) = prep.log_config.as_deref().filter(|_| slot > 1) {
+        if let Some(p) = redirect_logs(&mut plan, cfg, slot) {
+            gm.launcher_line(run, LogLevel::Launcher, format!("Log-Datei dieser Sitzung: logs/vibe-session-{slot}/latest.log ({})", p.display()));
+        }
+    }
     // Quick Play (ab 1.20): direkt in eine Einzelspielerwelt starten
     if let Some(w) = world {
         // Der Barrierefreiheits-Willkommensbildschirm beim allerersten Start würde Quick Play blockieren
@@ -308,15 +327,15 @@ pub async fn launch(
     }
     let j = &prep.java;
     gm.launcher_line(
-        id,
+        run,
         LogLevel::Launcher,
         format!("Java {} ({}, {}): {}", j.version, j.vendor.clone().unwrap_or_else(|| "unbekannt".into()), j.arch, j.path),
     );
-    gm.launcher_line(id, LogLevel::Launcher, format!("Version: {} · Spielordner: {}", prep.resolved.id, plan.cwd.display()));
-    gm.launcher_line(id, LogLevel::Launcher, format!("Startbefehl: {}", plan.display));
+    gm.launcher_line(run, LogLevel::Launcher, format!("Version: {} · Spielordner: {}", prep.resolved.id, plan.cwd.display()));
+    gm.launcher_line(run, LogLevel::Launcher, format!("Startbefehl: {}", plan.display));
     if let Some(cmd) = inst.hooks.pre_launch.as_deref().filter(|c| !c.trim().is_empty()) {
         task.stage("Pre-Launch-Befehl läuft …", Some(0.95));
-        super::hooks::run(state, &inst, "Pre-Launch", cmd, Some(&prep.java.path)).await?;
+        super::hooks::run(state, &inst, run, "Pre-Launch", cmd, Some(&prep.java.path)).await?;
         task.check()?;
     }
     task.stage("Spiel wird gestartet …", Some(0.97));
@@ -338,8 +357,27 @@ pub async fn launch(
     #[cfg(unix)]
     cmd.process_group(0);
     let child = cmd.spawn().map_err(|e| AppError::msg(format!("Spiel konnte nicht gestartet werden ({}): {e}", program.display())))?;
-    gm.attach(state.clone(), id.to_string(), child);
+    gm.attach(state.clone(), run.to_string(), child);
     Ok(())
+}
+
+fn redirect_logs(plan: &mut LaunchPlan, cfg: &std::path::Path, slot: u32) -> Option<PathBuf> {
+    let xml = std::fs::read_to_string(cfg).ok()?;
+    let out = super::sessions::rewrite_log_config(&xml, slot)?;
+    let name = cfg.file_name()?.to_string_lossy().to_string();
+    let target = cfg.with_file_name(format!("vibe-session-{slot}-{name}"));
+    std::fs::write(&target, out).ok()?;
+    let from = cfg.to_string_lossy().to_string();
+    let to = target.to_string_lossy().to_string();
+    let mut hit = false;
+    for a in plan.args.iter_mut().filter(|a| a.contains(&from)) {
+        *a = a.replace(&from, &to);
+        hit = true;
+    }
+    hit.then(|| {
+        plan.display = plan.display.replace(&from, &to);
+        target
+    })
 }
 
 /// `onboardAccessibility:false` in options.txt setzen (nur dieser Schlüssel, Rest bleibt unverändert).

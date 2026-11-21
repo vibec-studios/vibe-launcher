@@ -104,9 +104,10 @@ export const api = {
   /** `server`: Adresse (host[:port]) – direkt auf diesen Server (Quick Play ab 1.20, sonst --server/--port). */
   instanceLaunch: (id: string, accountId?: string | null, world?: string | null, server?: string | null, offline?: boolean) =>
     call<string>("instance_launch", { id, accountId: accountId ?? null, world: world ?? null, server: server ?? null, offline: offline ?? null }),
-  instanceKill: (id: string) => call<void>("instance_kill", { id }),
+  instanceKill: (id: string, runId?: string | null) => call<void>("instance_kill", { id, runId: runId ?? null }),
+  consoleOpen: (runId?: string | null) => call<void>("console_open", { runId: runId ?? null }),
   gameStates: () => call<T.GameState[]>("game_states"),
-  instanceLogSession: (id: string) => call<T.LogLine[]>("instance_log_session", { id }),
+  instanceLogSession: (id: string, runId?: string | null) => call<T.LogLine[]>("instance_log_session", { id, runId: runId ?? null }),
   instanceLogFiles: (id: string) => call<T.LogFile[]>("instance_log_files", { id }),
   instanceLogRead: (id: string, name: string) => call<string>("instance_log_read", { id, name }),
   mclogsUpload: (content: string) => call<T.MclogsResult>("mclogs_upload", { content }),

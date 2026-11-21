@@ -23,13 +23,15 @@ import {
   SquareTerminal,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { qk, useGameState, useGameStore } from "@/lib/queries";
+import { qk, useGameState, useGameStore, useInstanceRuns } from "@/lib/queries";
+import { isActive } from "@/lib/sessions";
 import type { Instance, LogFile, LogLine } from "@/lib/types";
 import { formatBytes, formatRelative } from "@/lib/format";
 import { ContextItem, ContextMenu, ContextSeparator, DropdownCheckItem, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, EmptyState, ErrorState, IconButton, SearchInput, Select, Skeleton, Spinner, cn, toast } from "@/components/ui";
 import { PageTools } from "@/features/instances/toolbar";
 import { useT } from "@/i18n";
 import { DiagnosisDialog } from "./Diagnosis";
+import { openConsole } from "@/components/instance/actions";
 import { CATS, catOf, copyText, formatLine, formatLines, levelTag, matchLogFile, parseLog, uploadToMclogs, type LevelCat } from "./logText";
 
 // ------------------------------------------------------------------ Gewählte Quelle je Instanz
@@ -53,7 +55,8 @@ export async function uploadCrash(instanceId: string, crashPath: string | null) 
       );
       if (name) return void (await uploadToMclogs(await api.instanceLogRead(instanceId, name)));
     }
-    const lines = useGameStore.getState().logs[instanceId] ?? (await api.instanceLogSession(instanceId));
+    const run = useGameStore.getState().states[instanceId]?.run_id;
+    const lines = (run ? useGameStore.getState().logs[run] : undefined) ?? (await api.instanceLogSession(instanceId, run));
     await uploadToMclogs(formatLines(lines));
   } catch (e) {
     toast.error(e);
@@ -354,10 +357,16 @@ const EMPTY: LogLine[] = [];
 export function LogsTab({ instance }: { instance: Instance }) {
   const t = useT();
   const id = instance.id;
-  const game = useGameState(id);
-  const running = game?.state === "running" || game?.state === "preparing";
-  const liveLines = useGameStore((s) => s.logs[id] ?? EMPTY);
+  const primary = useGameState(id);
+  const runs = useInstanceRuns(id);
+  const multi = runs.length > 1;
   const requested = useLogSource((s) => s.src[id] ?? LIVE);
+  const reqLive = requested === LIVE || requested.startsWith("live:");
+  const pickedRun = requested.startsWith("live:") ? runs.find((r) => r.run_id === requested.slice(5)) : undefined;
+  const game = pickedRun ?? primary;
+  const runId = game?.run_id;
+  const running = isActive(game);
+  const liveLines = useGameStore((s) => (runId ? s.logs[runId] : undefined) ?? EMPTY);
   const [wrap, setWrapState] = useState<boolean>(() => loadPref("vl.logs.wrap", false));
   const [diagOpen, setDiagOpen] = useState(false);
   const [cats, setCatsState] = useState<LevelCat[]>(() => loadPref("vl.logs.cats", CATS));
@@ -378,19 +387,20 @@ export function LogsTab({ instance }: { instance: Instance }) {
 
   // Sitzungspuffer einmalig nachladen (falls der Tab nach dem Start geöffnet wird)
   useEffect(() => {
+    if (!runId) return;
     let dead = false;
     api
-      .instanceLogSession(id)
+      .instanceLogSession(id, runId)
       .then((lines) => {
         if (dead) return;
-        const curLines = useGameStore.getState().logs[id];
-        if (!curLines || curLines.length < lines.length) useGameStore.getState().setLogs(id, lines);
+        const curLines = useGameStore.getState().logs[runId];
+        if (!curLines || curLines.length < lines.length) useGameStore.getState().setLogs(runId, lines);
       })
       .catch(() => {});
     return () => {
       dead = true;
     };
-  }, [id]);
+  }, [id, runId]);
 
   // Dateiliste; nach Spielende neu laden
   const files = useQuery({ queryKey: qk.logFiles(id), queryFn: () => api.instanceLogFiles(id), staleTime: 15_000 });
@@ -401,7 +411,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
   }, [stopped, game?.started_at]);
 
   const fileNames = useMemo(() => (files.data ?? []).map((f) => f.name), [files.data]);
-  const source = requested === LIVE ? LIVE : (matchLogFile(fileNames, requested) ?? (files.data ? LIVE : requested));
+  const source = reqLive ? LIVE : (matchLogFile(fileNames, requested) ?? (files.data ? LIVE : requested));
   const fileInfo: LogFile | undefined = files.data?.find((f) => f.name === source);
   const isFile = source !== LIVE;
 
@@ -475,8 +485,16 @@ export function LogsTab({ instance }: { instance: Instance }) {
     setUploading(false);
   };
 
+  const liveOptions = multi
+    ? runs.map((r) => ({
+        value: `live:${r.run_id}`,
+        label: `${t("logs.live")} · ${t("sess.session", { n: r.slot })}`,
+        hint: isActive(r) ? `● ${r.account_name ?? "live"}` : t("logs.session"),
+      }))
+    : [{ value: LIVE, label: t("logs.live"), hint: running ? "● live" : t("logs.session") }];
+  const selectValue = source === LIVE && multi && runId ? `live:${runId}` : source;
   const sourceOptions = [
-    { value: LIVE, label: t("logs.live"), hint: running ? "● live" : t("logs.session") },
+    ...liveOptions,
     ...(files.data ?? []).map((f) => ({
       value: f.name,
       label: f.kind === "crash" ? `${t("logs.crash")} · ${f.name.split("/").pop()}` : (f.name.split("/").pop() ?? f.name),
@@ -509,7 +527,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
           <Select
             size="sm"
             variant="ghost"
-            value={source}
+            value={selectValue}
             onChange={(v) => useLogSource.setState((s) => ({ src: { ...s.src, [id]: v } }))}
             options={sourceOptions}
           />
@@ -582,6 +600,9 @@ export function LogsTab({ instance }: { instance: Instance }) {
         <IconButton label={t("diag.open")} tip variant="ghost" data-tour="logs-diagnose" onClick={() => setDiagOpen(true)}>
           <Stethoscope size={16} />
         </IconButton>
+        <IconButton label={t("sess.console")} tip variant="ghost" onClick={() => openConsole(runId)}>
+          <SquareTerminal size={16} />
+        </IconButton>
         <IconButton label={t("logs.wrap")} tip variant="ghost" active={wrap} onClick={() => setWrap(!wrap)}>
           <WrapText size={16} />
         </IconButton>
@@ -603,7 +624,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
               {t("logs.reload")}
             </DropdownItem>
           ) : (
-            <DropdownItem icon={<Eraser size={14} />} disabled={!liveLines.length} onSelect={() => useGameStore.getState().setLogs(id, [])}>
+            <DropdownItem icon={<Eraser size={14} />} disabled={!liveLines.length} onSelect={() => runId && useGameStore.getState().setLogs(runId, [])}>
               {t("logs.clear")}
             </DropdownItem>
           )}

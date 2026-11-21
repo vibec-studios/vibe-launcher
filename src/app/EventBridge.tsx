@@ -46,7 +46,7 @@ export function EventBridge() {
   });
 
   useEvent("game://state", (s) => useGameStore.getState().setState(s));
-  useEvent("game://log", ({ instance_id, lines }) => useGameStore.getState().appendLogs(instance_id, lines));
+  useEvent("game://log", ({ run_id, lines }) => useGameStore.getState().appendLogs(run_id, lines));
 
   useEvent("content://changed", ({ instance_id }) => {
     queryClient.invalidateQueries({ queryKey: ["content", instance_id] });

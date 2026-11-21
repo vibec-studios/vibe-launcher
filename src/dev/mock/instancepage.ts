@@ -2,7 +2,7 @@
 // Serverliste). Macht „survival“ zu einer realistisch gefüllten Modpack-Instanz. Nur für VITE_MOCK=1.
 import type { DepIssue, Diagnosis, FileEntry, FixBackup, FixPlan, FixReport, Instance, ModSets, OptSyncInfo, PerfCandidate, ProjectVersion, ServerEntry, SnapshotInfo, SnapshotScope, SyncKey, WorldBackup } from "@/lib/types";
 import { instances } from "./core";
-import { states } from "./a";
+import { emptyState, latestState, states } from "./sessions";
 import { fakeTask, type Handlers } from "./util";
 
 const now = Date.now();
@@ -207,17 +207,17 @@ const crashFlag = (() => {
 })();
 if (crashFlag && instances.has(crashFlag)) {
   const t = Date.now() - 4 * 60_000;
-  states.set(crashFlag, {
-    instance_id: crashFlag,
-    state: "stopped",
-    pid: null,
+  const st = emptyState(crashFlag, {
+    created_at: t,
     started_at: t,
+    ended_at: t + 60_000,
     exit_code: -1,
     crashed: true,
     crash_report: `C:\\Users\\steve\\AppData\\Roaming\\VibeLauncher\\instances\\${crashFlag}\\minecraft\\crash-reports\\${CRASH_FILE}`,
   });
+  states.set(st.run_id, st);
 }
-const crashedNow = (id: unknown) => id === "survival" && !!states.get("survival")?.crashed && (!fixReport || fixReport.undone);
+const crashedNow = (id: unknown) => id === "survival" && !!latestState("survival")?.crashed && (!fixReport || fixReport.undone);
 
 let fixReport: FixReport | null = null;
 let repaired = false;
@@ -422,7 +422,7 @@ const handlers: Handlers = {
   },
   screenshots_list: () => [],
   // Die Analyse liest weiter dasselbe Log – auch nach dem Beheben (erst der nächste Start ändert es)
-  crash_analyze: ({ instanceId }) => (instanceId === "survival" && states.get("survival")?.crashed ? crashDiags : []),
+  crash_analyze: ({ instanceId }) => (instanceId === "survival" && latestState("survival")?.crashed ? crashDiags : []),
 };
 
 export default handlers;

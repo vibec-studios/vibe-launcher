@@ -1,12 +1,10 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ChevronRight, Compass, Home, Images, LibraryBig, Server as ServerIcon, Shirt, Sparkles, Square, Users } from "lucide-react";
+import { ChevronRight, Compass, Home, Images, LibraryBig, Server as ServerIcon, Shirt, Sparkles, Users } from "lucide-react";
 import type { ReactNode } from "react";
-import { Spinner, Tooltip } from "@/components/ui";
 import { useT } from "@/i18n";
 import { isRunning, useGameStore, useInstance, useInstances, useInstanceTasks, useServer, useServerStore } from "@/lib/queries";
 import type { NavKey } from "@/lib/types";
 import { useLiveAppearance } from "@/lib/appearance";
-import { killInstance } from "@/components/instance/actions";
 import { useSimple } from "@/lib/mode";
 import { useVibe } from "@/lib/vibe";
 import { useSocialBadge } from "@/features/social/hooks";
@@ -93,35 +91,4 @@ export function usePageTitle(): ReactNode {
   return null;
 }
 
-export function RunningGames() {
-  const t = useT();
-  const nav = useNavigate();
-  const states = useGameStore((s) => s.states);
-  const { data: instances = [] } = useInstances();
-  const running = instances.filter((i) => isRunning(states[i.id]));
-  if (!running.length) return null;
-  return (
-    <div className="flex items-center gap-1.5">
-      {running.slice(0, 2).map((i) => {
-        const preparing = states[i.id]?.state === "preparing";
-        return (
-          <div key={i.id} className="vl-running flex h-8 items-center overflow-hidden rounded-ctl bg-surface2">
-            <button
-              className="flex h-full items-center gap-2 pl-2.5 pr-2.5 text-[13px] font-medium text-text hover:bg-white/[.04]"
-              onClick={() => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "logs" } })}
-            >
-              {preparing ? <Spinner size={10} className="text-warn" /> : <span className="h-2 w-2 rounded-dot bg-ok" />}
-              <span className="max-w-[160px] truncate">{i.name}</span>
-            </button>
-            <Tooltip content={t("common.stop")} side="bottom">
-              <button aria-label={t("common.stop")} onClick={() => killInstance(i)} className="grid h-full w-8 place-items-center text-muted hover:bg-danger hover:text-black">
-                <Square size={11} fill="currentColor" />
-              </button>
-            </Tooltip>
-          </div>
-        );
-      })}
-      {running.length > 2 && <span className="text-[12px] text-dim">+{running.length - 2}</span>}
-    </div>
-  );
-}
+export { RunningGames } from "./RunningSessions";

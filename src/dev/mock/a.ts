@@ -1,8 +1,9 @@
 // Mock-Handler Frontend-A (OWNER: Frontend-Agent A): Versionen, Loader, Installieren/Starten mit
 // simulierten game://state- und game://log-Events, Logs, mclo.gs, Java, Welten.
-import type { ContentItem, GameState, JavaInstall, LoaderKind, LogFile, LogLine, LogLevel, McVersion, World } from "@/lib/types";
+import type { ContentItem, JavaInstall, LoaderKind, LogFile, McVersion, World } from "@/lib/types";
 import { instances } from "./core";
-import { fakeTask, mockEmit, tasks, type Handlers } from "./util";
+import { fakeTask, mockEmit, type Handlers } from "./util";
+import { latestState, mockFlood, mockKill, mockLaunch, mockSessionLog, states, TEXTS, THREADS } from "./sessions";
 
 // ------------------------------------------------------------------ Versionen
 
@@ -90,140 +91,12 @@ function loaderVersions(loader: LoaderKind, mc: string) {
   }
 }
 
-// ------------------------------------------------------------------ Spiel-Simulation
+// ------------------------------------------------------------------ Spiel-Simulation (mehrere Sitzungen, siehe sessions.ts)
 
-export const states = new Map<string, GameState>();
-const session = new Map<string, LogLine[]>();
-const timers = new Map<string, ReturnType<typeof setInterval>>();
-const seqs = new Map<string, number>();
-
-const THREADS = ["Render thread", "Server thread", "Worker-Main-3", "main", "Netty Client IO #1", "Sound engine"];
-const LOGGERS = ["net.minecraft.client.Minecraft", "FabricLoader", "Iris", "Sodium", "ModernFix", "net.minecraft.server.MinecraftServer", "Mixin"];
-const TEXTS: [LogLevel, string][] = [
-  ["info", "Loaded 127 recipes"],
-  ["info", "Reloading ResourceManager: vanilla, fabric, sodium, iris, hh-armors"],
-  ["info", "Sound engine started"],
-  ["info", "Created: 1024x1024x4 minecraft:textures/atlas/blocks.png-atlas"],
-  ["warn", "Missing sound for event: minecraft:item.goat_horn.play"],
-  ["info", "Connecting to localhost, 25565"],
-  ["debug", "Received chunk packet for [12, -4] (16 sections)"],
-  ["info", "[CHAT] Steve joined the game"],
-  ["warn", "Can't keep up! Is the server overloaded? Running 2143ms or 42 ticks behind"],
-  ["info", "Saving chunks for level 'ServerLevel[Neue Welt]'/minecraft:overworld"],
-  ["error", "Failed to load texture hh-armors:textures/item/void_blade_glow.png"],
-  ["info", "Preparing spawn area: 84%"],
-  ["debug", "Uploading chunk mesh batch (64 sections) in 3.2 ms"],
-  ["info", "Shader pack 'Complementary Reimagined r5.4' loaded in 812 ms"],
-];
-
-function line(id: string, level: LogLevel, text: string, now = new Date()): LogLine {
-  const seq = (seqs.get(id) ?? 0) + 1;
-  seqs.set(id, seq);
-  const time = level === "launcher" ? now.toTimeString().slice(0, 8) : now.toTimeString().slice(0, 8);
-  return {
-    seq,
-    time,
-    level,
-    thread: level === "launcher" ? null : THREADS[seq % THREADS.length],
-    logger: level === "launcher" ? null : LOGGERS[seq % LOGGERS.length],
-    text,
-  };
-}
-
-function push(id: string, lines: LogLine[]) {
-  const buf = session.get(id) ?? [];
-  buf.push(...lines);
-  if (buf.length > 50_000) buf.splice(0, buf.length - 50_000);
-  session.set(id, buf);
-  mockEmit("game://log", { instance_id: id, lines });
-}
-
-function setState(s: GameState) {
-  states.set(s.instance_id, s);
-  mockEmit("game://state", s);
-}
-
-function stop(id: string, crashed = false) {
-  clearInterval(timers.get(id));
-  timers.delete(id);
-  const prev = states.get(id);
-  const inst = instances.get(id);
-  if (inst && prev?.started_at) {
-    const next = { ...inst, last_played: Date.now(), play_time_secs: inst.play_time_secs + Math.round((Date.now() - prev.started_at) / 1000) };
-    instances.set(id, next);
-    mockEmit("instance://changed", next);
-  }
-  if (crashed) {
-    push(id, [
-      line(id, "error", "Unreported exception thrown!"),
-      line(id, "fatal", 'java.lang.NullPointerException: Cannot invoke "net.minecraft.class_1297.method_5667()" because "entity" is null'),
-      { ...line(id, "stderr", "\tat net.minecraft.class_310.method_1514(class_310.java:1312)"), time: null },
-      { ...line(id, "stderr", "\tat net.minecraft.client.main.Main.main(Main.java:265)"), time: null },
-      line(id, "launcher", "Spiel abgestürzt (Exit-Code -1). Crash-Report: crash-reports/crash-2026-11-17_14.02.11-client.txt"),
-    ]);
-  } else push(id, [line(id, "launcher", "Spiel beendet (Exit-Code 0)")]);
-  setState({
-    instance_id: id,
-    state: "stopped",
-    pid: null,
-    started_at: prev?.started_at ?? null,
-    exit_code: crashed ? -1 : 0,
-    crashed,
-    crash_report: crashed
-      ? `C:\\Users\\steve\\AppData\\Roaming\\VibeLauncher\\instances\\${id}\\minecraft\\crash-reports\\crash-2026-11-17_14.02.11-client.txt`
-      : null,
-  });
-}
-
-function launch(id: string): string {
-  const inst = instances.get(id);
-  if (!inst) throw { kind: "not_found", message: "Instanz nicht gefunden" };
-  if (timers.has(id) || states.get(id)?.state === "preparing") throw { kind: "invalid", message: "Läuft bereits" };
-  seqs.set(id, 0);
-  session.set(id, []);
-  setState({ instance_id: id, state: "preparing", pid: null, started_at: null, exit_code: null, crashed: false, crash_report: null });
-  push(id, [line(id, "launcher", `Bereite ${inst.name} vor (Minecraft ${inst.mc_version}, ${inst.loader.kind})`)]);
-  const crash = inst.loader.kind === "forge";
-  return fakeTask("launch", `Starte ${inst.name}`, id, 2200, () => {
-    if (inst.install_state !== "installed") {
-      const next = { ...instances.get(id)!, install_state: "installed" as const };
-      instances.set(id, next);
-      mockEmit("instance://changed", next);
-    }
-    const started = Date.now();
-    setState({ instance_id: id, state: "running", pid: 12345, started_at: started, exit_code: null, crashed: false, crash_report: null });
-    push(id, [
-      line(id, "launcher", "Java: C:\\Users\\steve\\AppData\\Roaming\\VibeLauncher\\java\\21\\bin\\javaw.exe (21.0.5, Temurin)"),
-      line(id, "launcher", "Startbefehl: javaw -Xms512M -Xmx4096M -XX:+UseG1GC … net.fabricmc.loader.impl.launch.knot.KnotClient"),
-      line(id, "info", `Loading Minecraft ${inst.mc_version} with Fabric Loader 0.17.2`),
-      line(id, "info", "Loading 84 mods:"),
-      ...Array.from({ length: 30 }, (_, i) => ({ ...line(id, "info", `\t- mod-${i + 1} ${1 + (i % 4)}.${i % 10}.${i}`), time: null })),
-    ]);
-    let n = 0;
-    timers.set(
-      id,
-      setInterval(() => {
-        n++;
-        const batch = Array.from({ length: 1 + (n % 4) }, (_, k) => {
-          const [lvl, txt] = TEXTS[(n * 3 + k) % TEXTS.length];
-          return line(id, lvl, txt);
-        });
-        push(id, batch);
-        if (crash && n === 30) stop(id, true);
-      }, 140),
-    );
-  });
-}
+export { states };
 
 /** Zum Testen in der Konsole: `__mockFlood("survival", 50000)` */
-(window as unknown as { __mockFlood: (id: string, n: number) => void }).__mockFlood = (id, n) => {
-  const lines: LogLine[] = [];
-  for (let i = 0; i < n; i++) {
-    const [lvl, txt] = TEXTS[i % TEXTS.length];
-    lines.push(line(id, lvl, `${txt} #${i}`));
-  }
-  push(id, lines);
-};
+(window as unknown as { __mockFlood: (id: string, n: number) => void }).__mockFlood = mockFlood;
 
 // ------------------------------------------------------------------ Log-Dateien
 
@@ -236,7 +109,7 @@ function logFiles(id: string): LogFile[] {
     { name: "logs/2026-11-16-1.log.gz", size: 19_920, modified: now - 90000_000, kind: "log" },
     { name: "logs/2026-11-12-1.log.gz", size: 31_004, modified: now - 86400_000 * 5, kind: "log" },
   ];
-  if (id === "old-forge" || states.get(id)?.crashed)
+  if (id === "old-forge" || latestState(id)?.crashed)
     files.push({ name: "crash-reports/crash-2026-11-17_14.02.11-client.txt", size: 8_211, modified: now - 600_000, kind: "crash" });
   return files;
 }
@@ -358,7 +231,8 @@ const handlers: Handlers = {
       mockEmit("instance://changed", done);
     });
   },
-  instance_launch: ({ id, accountId, offline }) => {
+  instance_launch: (args) => {
+    const { id, accountId, offline } = args;
     let off = false;
     try {
       off = localStorage.getItem("mock.offline") === "1";
@@ -367,22 +241,16 @@ const handlers: Handlers = {
       setTimeout(() => mockEmit("auth://offline-available", { instance_id: id as string, account_id: (accountId as string | null) ?? null, message: "Microsoft nicht erreichbar" }), 400);
       return "mock-offline";
     }
-    return launch(id as string);
+    return mockLaunch(id as string, (accountId as string | null) ?? null, (args.world as string | null) ?? null);
   },
-  instance_kill: ({ id }) => {
-    const s = states.get(id as string);
-    if (s?.state === "preparing") {
-      for (const t of tasks.values())
-        if (t.instance_id === id && t.status === "running") {
-          const c = { ...t, status: "cancelled" as const };
-          tasks.set(t.id, c);
-          mockEmit("task://update", c);
-        }
-    }
-    stop(id as string);
+  instance_kill: ({ id, runId }) => mockKill(id as string, (runId as string | null) ?? null),
+  console_open: () => {
+    try {
+      window.open("/console.html", "_blank", "width=980,height=600");
+    } catch {}
   },
   game_states: () => [...states.values()],
-  instance_log_session: ({ id }) => session.get(id as string) ?? [],
+  instance_log_session: ({ id, runId }) => mockSessionLog(id as string, (runId as string | null) ?? null),
   instance_log_files: ({ id }) => logFiles(id as string),
   instance_log_read: ({ name }) => fileText(name as string),
   mclogs_upload: ({ content }) => {

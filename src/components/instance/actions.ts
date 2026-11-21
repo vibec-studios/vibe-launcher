@@ -4,10 +4,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { create } from "zustand";
 import { api, errorMessage } from "@/lib/api";
 import { qk, queryClient, waitForTask } from "@/lib/queries";
-import type { Instance, Settings } from "@/lib/types";
+import type { Account, Instance, Settings } from "@/lib/types";
 import { confirm, toast } from "@/components/ui";
 import { t } from "@/i18n";
 import { askBeforeLaunch, launchCheckSkipped, openAutofix } from "@/features/content/autofixStore";
+import { chooseLaunchAccount } from "./AccountConflict";
 
 export const FOLDERS = ["", "mods", "config", "saves", "resourcepacks", "shaderpacks", "screenshots", "logs"] as const;
 
@@ -65,7 +66,14 @@ export const resetIcon = (i: Instance) => api.instanceSetIcon(i.id, null).catch(
 export const setAccent = (i: Instance, accent: string | null) => api.instanceUpdate(i.id, { accent }).catch((e) => toast.error(e));
 export const setGroup = (i: Instance, group: string | null) => api.instanceUpdate(i.id, { group: group?.trim() || null }).catch((e) => toast.error(e));
 export const openFolder = (i: Instance, sub?: string) => api.instanceOpenFolder(i.id, sub || null).catch((e) => toast.error(e));
-export const killInstance = (i: Instance) => api.instanceKill(i.id).catch((e) => toast.error(e, t("inst.kill_failed")));
+export const killInstance = (i: Instance, runId?: string | null) => api.instanceKill(i.id, runId).catch((e) => toast.error(e, t("inst.kill_failed")));
+export const openConsole = (runId?: string | null) => api.consoleOpen(runId).catch((e) => toast.error(e));
+
+async function launchAccount(i: Instance): Promise<{ accountId: string | null } | null> {
+  if (i.bedrock) return { accountId: null };
+  const accounts = queryClient.getQueryData<Account[]>(qk.accounts) ?? (await api.accountsList().catch(() => [] as Account[]));
+  return chooseLaunchAccount(accounts, queryClient.getQueryData<Instance[]>(qk.instances), null);
+}
 
 export async function repairInstance(i: Instance) {
   try {
@@ -96,6 +104,8 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
   /** `world`: per Quick Play direkt in diese Welt (Ordnername unter saves/).
    *  Vor dem Start: bekannte Mod-Probleme -> Rückfrage „Trotzdem starten“ / „Beheben und starten“. */
   const launch = async (i: Instance, world?: string | null, server?: string | null, opts?: { skipCheck?: boolean }) => {
+    const pick = await launchAccount(i);
+    if (!pick) return;
     if (!opts?.skipCheck && i.loader.kind !== "vanilla") {
       const q = await api.autofixQuick(i.id).catch(() => null);
       if (q && q.errors > 0 && !launchCheckSkipped(i.id, q.errors)) {
@@ -108,7 +118,7 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
       }
     }
     try {
-      await api.instanceLaunch(i.id, null, world ?? null, server ?? null);
+      await api.instanceLaunch(i.id, pick.accountId, world ?? null, server ?? null);
       const s = queryClient.getQueryData<Settings>(qk.settings);
       if (s?.open_log_on_launch) open(i, "logs");
     } catch (e) {
@@ -145,7 +155,9 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
     }
   };
 
-  return { open, launch, duplicate, remove };
+  const launchAgain = (i: Instance) => launch(i, null, null, { skipCheck: true });
+
+  return { open, launch, launchAgain, duplicate, remove };
 }
 
 /** Quick Play (`--quickPlaySingleplayer`) gibt es ab Minecraft 1.20 bzw. Snapshot 23w14a. */

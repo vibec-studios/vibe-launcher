@@ -1,36 +1,24 @@
-//! Laufende Spielprozesse: Zustände, Log-Puffer, Events, Beenden, Crash-Erkennung.
+//! Laufende Spielprozesse: Sitzungen (eine Instanz kann mehrfach laufen), Log-Puffer, Events, Beenden, Crash-Erkennung.
 use super::logs::{decode_line, LineParser, Parsed};
-use super::{GameState, LogLevel, LogLine, RunState};
+use super::sessions::{BeginOpts, Registry};
+use super::{GameState, LogLevel, LogLine};
 use crate::error::{AppError, AppResult};
 use crate::events;
 use crate::paths::Paths;
 use crate::state::AppState;
 use parking_lot::Mutex;
-use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Weak};
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
 use tokio::io::AsyncBufReadExt;
 
-const MAX_LINES: usize = 50_000;
-
-struct Session {
-    state: GameState,
-    log: VecDeque<LogLine>,
-    seq: u64,
-    pending: Vec<LogLine>,
-    killed: bool,
-    task_id: Option<String>,
-    /// Zugangstoken – wird in Log-Zeilen maskiert
-    secret: Option<String>,
-}
-
-/// Verwaltet laufende Spielprozesse und ihre Log-Puffer.
+/// Verwaltet laufende Spielsitzungen und ihre Log-Puffer. Schlüssel (`key`) ist eine Run-ID oder eine
+/// Instanz-ID (dann die neueste, bevorzugt laufende Sitzung der Instanz).
 pub struct GameManager {
     paths: Paths,
     app: AppHandle,
     me: Weak<GameManager>,
-    sessions: Mutex<HashMap<String, Session>>,
+    reg: Mutex<Registry>,
     flusher: std::sync::Once,
     /// Installationen laufen nacheinander (gemeinsame Dateien in meta/)
     pub(crate) install_lock: tokio::sync::Mutex<()>,
@@ -42,32 +30,53 @@ impl GameManager {
             paths,
             app,
             me: me.clone(),
-            sessions: Mutex::new(HashMap::new()),
+            reg: Mutex::new(Registry::default()),
             flusher: std::sync::Once::new(),
             install_lock: tokio::sync::Mutex::new(()),
         })
     }
 
     pub fn states(&self) -> Vec<GameState> {
-        self.sessions.lock().values().map(|s| s.state.clone()).collect()
+        self.reg.lock().states()
     }
 
-    /// Läuft oder wird gerade gestartet.
+    pub fn state_of(&self, key: &str) -> Option<GameState> {
+        self.reg.lock().get(key).map(|s| s.state.clone())
+    }
+
+    pub fn latest_crash(&self, instance_id: &str) -> Option<GameState> {
+        self.reg.lock().latest_crash(instance_id)
+    }
+
+    /// Mindestens eine Sitzung läuft oder wird gerade gestartet.
     pub fn is_running(&self, instance_id: &str) -> bool {
-        self.sessions.lock().get(instance_id).is_some_and(|s| s.state.state != RunState::Stopped)
+        self.reg.lock().is_active(instance_id)
     }
 
-    /// Prozess läuft (nicht nur Vorbereitung).
+    /// Mindestens ein Prozess der Instanz läuft (nicht nur Vorbereitung).
     pub fn is_process_running(&self, instance_id: &str) -> bool {
-        self.sessions.lock().get(instance_id).is_some_and(|s| s.state.state == RunState::Running)
+        self.reg.lock().is_process_running(instance_id)
     }
 
     pub fn running_count(&self) -> usize {
-        self.sessions.lock().values().filter(|s| s.state.state != RunState::Stopped).count()
+        self.reg.lock().running_count()
     }
 
     pub(crate) fn any_running(&self) -> bool {
-        self.sessions.lock().values().any(|s| s.state.state == RunState::Running)
+        self.reg.lock().any_running()
+    }
+
+    pub fn active_runs(&self, instance_id: &str) -> Vec<String> {
+        self.reg.lock().active_runs(instance_id)
+    }
+
+    /// Andere aktive Sitzungen derselben Instanz.
+    pub fn others_active(&self, instance_id: &str, run_id: &str) -> usize {
+        self.reg.lock().others_active(instance_id, run_id)
+    }
+
+    pub fn account_in_use(&self, uuid: &str, except_run: &str) -> Option<GameState> {
+        self.reg.lock().account_in_use(uuid, except_run)
     }
 
     fn emit_state(&self, st: &GameState) {
@@ -88,164 +97,158 @@ impl GameManager {
     }
 
     fn flush(&self) {
-        let batches: Vec<(String, Vec<LogLine>)> = {
-            let mut map = self.sessions.lock();
-            map.iter_mut().filter(|(_, s)| !s.pending.is_empty()).map(|(k, s)| (k.clone(), std::mem::take(&mut s.pending))).collect()
-        };
-        for (id, lines) in batches {
-            events::emit(&self.app, events::GAME_LOG, &serde_json::json!({ "instance_id": id, "lines": lines }));
+        let batches = self.reg.lock().take_pending();
+        for b in batches {
+            events::emit(&self.app, events::GAME_LOG, &serde_json::json!({ "run_id": b.run_id, "instance_id": b.instance_id, "lines": b.lines }));
         }
     }
 
-    /// Neue Sitzung beginnen (Zustand "preparing"). Fehler, wenn die Instanz schon läuft.
-    pub fn begin(&self, instance_id: &str) -> AppResult<()> {
-        self.ensure_flusher();
-        let st = {
-            let mut map = self.sessions.lock();
-            if map.get(instance_id).is_some_and(|s| s.state.state != RunState::Stopped) {
-                return Err(AppError::Invalid("Die Instanz läuft bereits oder wird gerade gestartet.".into()));
-            }
-            let st = GameState {
-                instance_id: instance_id.to_string(),
-                state: RunState::Preparing,
-                pid: None,
-                started_at: None,
-                exit_code: None,
-                crashed: false,
-                crash_report: None,
-            };
-            map.insert(
-                instance_id.to_string(),
-                Session { state: st.clone(), log: VecDeque::new(), seq: 0, pending: Vec::new(), killed: false, task_id: None, secret: None },
-            );
-            st
-        };
-        self.emit_state(&st);
-        Ok(())
+    /// Neue Sitzung beginnen (Zustand "preparing"). Gibt die Run-ID zurück.
+    pub fn begin(&self, instance_id: &str) -> AppResult<String> {
+        self.begin_with(instance_id, BeginOpts { exclusive: false, world: None, server: None })
     }
 
-    pub fn set_task(&self, instance_id: &str, task_id: &str) {
-        if let Some(s) = self.sessions.lock().get_mut(instance_id) {
+    /// Wie `begin`, aber nur, wenn die Instanz noch nicht läuft (Bedrock).
+    pub fn begin_exclusive(&self, instance_id: &str) -> AppResult<String> {
+        self.begin_with(instance_id, BeginOpts { exclusive: true, world: None, server: None })
+    }
+
+    pub fn begin_with(&self, instance_id: &str, opts: BeginOpts<'_>) -> AppResult<String> {
+        self.ensure_flusher();
+        let st = self.reg.lock().begin(instance_id, opts, crate::util::now_ms()).map_err(AppError::Invalid)?;
+        self.emit_state(&st);
+        Ok(st.run_id)
+    }
+
+    pub fn set_task(&self, key: &str, task_id: &str) {
+        if let Some(s) = self.reg.lock().get_mut(key) {
             s.task_id = Some(task_id.to_string());
         }
     }
 
     /// Token, das in Ausgaben der Sitzung unkenntlich gemacht wird.
-    pub fn set_secret(&self, instance_id: &str, secret: &str) {
+    pub fn set_secret(&self, key: &str, secret: &str) {
         if secret.len() < 8 {
             return;
         }
-        if let Some(s) = self.sessions.lock().get_mut(instance_id) {
+        if let Some(s) = self.reg.lock().get_mut(key) {
             s.secret = Some(secret.to_string());
         }
     }
 
-    /// Vorbereitung gescheitert/abgebrochen -> "stopped".
-    pub fn fail(&self, instance_id: &str, err: &AppError) {
-        if !matches!(err, AppError::Cancelled) {
-            self.launcher_line(instance_id, LogLevel::Error, format!("Start fehlgeschlagen: {err}"));
-        } else {
-            self.launcher_line(instance_id, LogLevel::Launcher, "Start abgebrochen.".to_string());
-        }
+    /// Account der Sitzung (für Anzeige und Warnung bei doppelter Nutzung).
+    pub fn set_account(&self, run_id: &str, name: &str, uuid: &str) {
         let st = {
-            let mut map = self.sessions.lock();
-            let Some(s) = map.get_mut(instance_id) else { return };
-            if s.state.state == RunState::Running {
-                return;
-            }
-            s.state.state = RunState::Stopped;
+            let mut reg = self.reg.lock();
+            let Some(s) = reg.get_mut(run_id) else { return };
+            s.state.account_name = Some(name.to_string());
+            s.state.account_uuid = Some(uuid.replace('-', ""));
             s.state.clone()
         };
         self.emit_state(&st);
     }
 
-    pub fn push(&self, instance_id: &str, lines: Vec<Parsed>) {
-        if lines.is_empty() {
-            return;
+    /// Vorbereitung gescheitert/abgebrochen -> "stopped".
+    pub fn fail(&self, key: &str, err: &AppError) {
+        if !matches!(err, AppError::Cancelled) {
+            self.launcher_line(key, LogLevel::Error, format!("Start fehlgeschlagen: {err}"));
+        } else {
+            self.launcher_line(key, LogLevel::Launcher, "Start abgebrochen.".to_string());
         }
-        let mut map = self.sessions.lock();
-        let Some(s) = map.get_mut(instance_id) else { return };
-        for p in lines {
-            s.seq += 1;
-            let text = match &s.secret {
-                Some(t) if p.text.contains(t.as_str()) => p.text.replace(t.as_str(), "••••••"),
-                _ => p.text,
-            };
-            let l = LogLine { seq: s.seq, time: p.time, level: p.level, thread: p.thread, logger: p.logger, text };
-            if s.log.len() >= MAX_LINES {
-                s.log.pop_front();
-            }
-            s.log.push_back(l.clone());
-            s.pending.push(l);
-        }
-    }
-
-    /// Eigene Meldung des Launchers ins Log.
-    pub fn launcher_line(&self, instance_id: &str, level: LogLevel, text: String) {
-        let time = Some(chrono::Local::now().format("%H:%M:%S").to_string());
-        let lines = text
-            .lines()
-            .map(|t| Parsed { time: time.clone(), level, thread: None, logger: Some("Vibe Launcher".into()), text: t.to_string() })
-            .collect();
-        self.push(instance_id, lines);
-    }
-
-    pub fn session_log(&self, instance_id: &str) -> Vec<LogLine> {
-        self.sessions.lock().get(instance_id).map(|s| s.log.iter().cloned().collect()).unwrap_or_default()
-    }
-
-    /// Prozess(baum) beenden bzw. laufende Vorbereitung abbrechen.
-    pub fn kill(&self, state: &AppState, instance_id: &str) -> AppResult<()> {
-        let (pid, task) = {
-            let mut map = self.sessions.lock();
-            let s = map.get_mut(instance_id).ok_or_else(|| AppError::Invalid("Die Instanz läuft nicht.".into()))?;
-            if s.state.state == RunState::Stopped {
-                return Err(AppError::Invalid("Die Instanz läuft nicht.".into()));
-            }
-            s.killed = true;
-            (s.state.pid, s.task_id.clone())
-        };
-        match pid {
-            Some(pid) => {
-                self.launcher_line(instance_id, LogLevel::Launcher, "Spiel wird beendet …".into());
-                kill_tree(pid);
-            }
-            None => {
-                if let Some(t) = task {
-                    state.tasks.cancel(&t);
-                }
-            }
-        }
-        Ok(())
-    }
-
-    /// Nicht selbst gestarteten Prozess (Bedrock) als laufend melden. Die Sitzung muss mit `begin` angelegt sein.
-    pub fn mark_running(&self, instance_id: &str, pid: Option<u32>, started_ms: i64) {
+        self.flush();
         let st = {
-            let mut map = self.sessions.lock();
-            map.get_mut(instance_id).map(|s| {
-                s.state.state = RunState::Running;
-                s.state.pid = pid;
-                s.state.started_at = Some(started_ms);
-                s.state.clone()
-            })
+            let mut reg = self.reg.lock();
+            if reg.get(key).is_none_or(|s| s.state.state != super::RunState::Preparing) {
+                return;
+            }
+            reg.mark_stopped(key, crate::util::now_ms(), |_| {})
         };
         if let Some(st) = st {
             self.emit_state(&st);
         }
     }
 
+    pub fn push(&self, key: &str, lines: Vec<Parsed>) {
+        if lines.is_empty() {
+            return;
+        }
+        self.reg.lock().push(key, lines);
+    }
+
+    /// Eigene Meldung des Launchers ins Log.
+    pub fn launcher_line(&self, key: &str, level: LogLevel, text: String) {
+        let time = Some(chrono::Local::now().format("%H:%M:%S").to_string());
+        let lines = text
+            .lines()
+            .map(|t| Parsed { time: time.clone(), level, thread: None, logger: Some("Vibe Launcher".into()), text: t.to_string() })
+            .collect();
+        self.push(key, lines);
+    }
+
+    pub fn session_log(&self, key: &str) -> Vec<LogLine> {
+        self.reg.lock().get(key).map(|s| s.log.iter().cloned().collect()).unwrap_or_default()
+    }
+
+    /// Prozess(baum) beenden bzw. laufende Vorbereitung abbrechen. Mit einer Instanz-ID: alle Sitzungen der Instanz.
+    pub fn kill(&self, state: &AppState, key: &str) -> AppResult<()> {
+        let runs = {
+            let reg = self.reg.lock();
+            if reg.is_run(key) {
+                vec![key.to_string()]
+            } else {
+                reg.active_runs(key)
+            }
+        };
+        let mut any = false;
+        for run in runs {
+            let (pid, task) = {
+                let mut reg = self.reg.lock();
+                let Some(s) = reg.get_mut(&run) else { continue };
+                if s.state.state == super::RunState::Stopped {
+                    continue;
+                }
+                s.killed = true;
+                (s.state.pid, s.task_id.clone())
+            };
+            any = true;
+            match pid {
+                Some(pid) => {
+                    self.launcher_line(&run, LogLevel::Launcher, "Spiel wird beendet …".into());
+                    kill_tree(pid);
+                }
+                None => {
+                    if let Some(t) = task {
+                        state.tasks.cancel(&t);
+                    }
+                }
+            }
+        }
+        if !any {
+            return Err(AppError::Invalid("Die Instanz läuft nicht.".into()));
+        }
+        Ok(())
+    }
+
+    /// Nicht selbst gestarteten Prozess (Bedrock) als laufend melden. Die Sitzung muss mit `begin` angelegt sein.
+    pub fn mark_running(&self, key: &str, pid: Option<u32>, started_ms: i64) {
+        let st = self.reg.lock().mark_running(key, pid, started_ms);
+        if let Some(st) = st {
+            self.emit_state(&st);
+        }
+    }
+
     /// Externe Sitzung beendet (Bedrock). Meldung kommt ins Log.
-    pub fn mark_stopped(&self, instance_id: &str, crashed: bool, msg: String) {
-        self.launcher_line(instance_id, if crashed { LogLevel::Error } else { LogLevel::Launcher }, msg);
+    pub fn mark_stopped(&self, key: &str, crashed: bool, msg: String) {
+        self.launcher_line(key, if crashed { LogLevel::Error } else { LogLevel::Launcher }, msg);
         self.flush();
         let st = {
-            let mut map = self.sessions.lock();
-            map.get_mut(instance_id).map(|s| {
-                s.state.state = RunState::Stopped;
-                s.state.crashed = crashed;
-                s.state.clone()
-            })
+            let mut reg = self.reg.lock();
+            let now = crate::util::now_ms();
+            let st = reg.mark_stopped(key, now, |s| s.crashed = crashed);
+            if let Some(st) = &st {
+                reg.clock_stop(&st.instance_id, now);
+            }
+            st
         };
         if let Some(st) = st {
             self.emit_state(&st);
@@ -253,27 +256,19 @@ impl GameManager {
     }
 
     /// Wurde die Sitzung über „Stoppen“ beendet?
-    pub fn was_killed(&self, instance_id: &str) -> bool {
-        self.sessions.lock().get(instance_id).is_some_and(|s| s.killed)
+    pub fn was_killed(&self, key: &str) -> bool {
+        self.reg.lock().get(key).is_some_and(|s| s.killed)
     }
 
     /// Gestarteten Prozess übernehmen: Ausgabe lesen, auf Ende warten, Zustand melden.
-    pub fn attach(&self, state: AppState, instance_id: String, mut child: tokio::process::Child) {
+    pub fn attach(&self, state: AppState, run_id: String, mut child: tokio::process::Child) {
         let pid = child.id();
         let started_ms = crate::util::now_ms();
         let started_sys = std::time::SystemTime::now();
-        let st = {
-            let mut map = self.sessions.lock();
-            map.get_mut(&instance_id).map(|s| {
-                s.state.state = RunState::Running;
-                s.state.pid = pid;
-                s.state.started_at = Some(started_ms);
-                s.state.clone()
-            })
-        };
-        if let Some(st) = st {
-            self.emit_state(&st);
-        }
+        let st = self.reg.lock().mark_running(&run_id, pid, started_ms);
+        let Some(st) = st else { return };
+        let instance_id = st.instance_id.clone();
+        self.emit_state(&st);
         let _ = state.instances.modify(&instance_id, |i| i.last_played = Some(started_ms));
         apply_launch_behavior(&state, true);
 
@@ -282,7 +277,7 @@ impl GameManager {
         let stderr = child.stderr.take();
         let mk_reader = |stream: Option<Box<dyn tokio::io::AsyncRead + Unpin + Send>>, is_err: bool| {
             let me = me.clone();
-            let id = instance_id.clone();
+            let id = run_id.clone();
             tauri::async_runtime::spawn(async move {
                 let Some(stream) = stream else { return };
                 let mut reader = tokio::io::BufReader::with_capacity(64 * 1024, stream);
@@ -319,40 +314,53 @@ impl GameManager {
             .await;
             let Some(gm) = me.upgrade() else { return };
             let code = status.as_ref().ok().and_then(|s| s.code());
-            let crash_report = find_new_crash_report(&game_dir, started_sys);
-            let killed = gm.sessions.lock().get(&instance_id).is_some_and(|s| s.killed);
-            let crashed = !killed && (crash_report.is_some() || code.is_some_and(|c| c != 0) || status.is_err());
-            let secs = (crate::util::now_ms() - started_ms).max(0) as u64 / 1000;
+            let (killed, concurrent) = {
+                let reg = gm.reg.lock();
+                (reg.get(&run_id).is_some_and(|s| s.killed), reg.had_concurrent(&run_id))
+            };
+            let failed = code.is_some_and(|c| c != 0) || status.is_err();
+            let crash_report = if killed || (concurrent && !failed) {
+                None
+            } else {
+                find_new_crash_report(&game_dir, started_sys).filter(|r| gm.reg.lock().claim_report(r))
+            };
+            let crashed = !killed && (crash_report.is_some() || failed);
             let msg = match (killed, crashed, code) {
                 (true, _, _) => "Spiel wurde beendet.".to_string(),
                 (_, true, Some(c)) => format!("Spiel ist abgestürzt (Exit-Code {c})."),
                 (_, true, None) => "Spiel ist abgestürzt.".to_string(),
                 _ => format!("Spiel beendet (Exit-Code {}).", code.unwrap_or(0)),
             };
-            gm.launcher_line(&instance_id, if crashed { LogLevel::Error } else { LogLevel::Launcher }, msg);
+            gm.launcher_line(&run_id, if crashed { LogLevel::Error } else { LogLevel::Launcher }, msg);
             if let Some(r) = &crash_report {
-                gm.launcher_line(&instance_id, LogLevel::Error, format!("Crash-Report: {r}"));
+                gm.launcher_line(&run_id, LogLevel::Error, format!("Crash-Report: {r}"));
+            }
+            if concurrent {
+                if let Some(p) = gm.save_session_log(&run_id, &game_dir) {
+                    gm.launcher_line(&run_id, LogLevel::Launcher, format!("Sitzungs-Log gespeichert: {}", p.display()));
+                }
             }
             gm.flush();
-            let st = {
-                let mut map = gm.sessions.lock();
-                map.get_mut(&instance_id).map(|s| {
-                    s.state.state = RunState::Stopped;
-                    s.state.exit_code = code;
-                    s.state.crashed = crashed;
-                    s.state.crash_report = crash_report.clone();
-                    s.state.clone()
-                })
+            let (st, secs) = {
+                let mut reg = gm.reg.lock();
+                let now = crate::util::now_ms();
+                let st = reg.mark_stopped(&run_id, now, |s| {
+                    s.exit_code = code;
+                    s.crashed = crashed;
+                    s.crash_report = crash_report.clone();
+                });
+                (st, reg.clock_stop(&instance_id, now))
             };
             if let Some(st) = st {
                 gm.emit_state(&st);
             }
-            let _ = state.instances.modify(&instance_id, |i| i.play_time_secs = i.play_time_secs.saturating_add(secs));
-            // Post-Exit-Hook der Instanz (Fehler nur ins Log)
+            if let Some(secs) = secs {
+                let _ = state.instances.modify(&instance_id, |i| i.play_time_secs = i.play_time_secs.saturating_add(secs));
+            }
             if let Ok(inst) = state.instances.get(&instance_id) {
                 if let Some(cmd) = inst.hooks.post_exit.clone().filter(|c| !c.trim().is_empty()) {
-                    if let Err(e) = super::hooks::run(&state, &inst, "Post-Exit", &cmd, None).await {
-                        gm.launcher_line(&instance_id, LogLevel::Error, e.to_string());
+                    if let Err(e) = super::hooks::run(&state, &inst, &run_id, "Post-Exit", &cmd, None).await {
+                        gm.launcher_line(&run_id, LogLevel::Error, e.to_string());
                     }
                 }
             }
@@ -360,6 +368,20 @@ impl GameManager {
                 apply_launch_behavior(&state, false);
             }
         });
+    }
+
+    fn save_session_log(&self, run_id: &str, game_dir: &std::path::Path) -> Option<std::path::PathBuf> {
+        let (slot, text) = {
+            let reg = self.reg.lock();
+            let s = reg.get(run_id)?;
+            let text: String = s.log.iter().map(|l| format!("[{}] {}\n", l.time.as_deref().unwrap_or("--:--:--"), l.text)).collect();
+            (s.state.slot, text)
+        };
+        let dir = game_dir.join("logs").join("vibe-sessions");
+        let stamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S");
+        let file = dir.join(format!("{stamp}-session-{slot}.log"));
+        std::fs::create_dir_all(&dir).and_then(|_| std::fs::write(&file, text)).ok()?;
+        Some(file)
     }
 }
 
