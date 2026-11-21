@@ -115,7 +115,7 @@ function UpdateLine({ instance: i, mods }: { instance: Instance; mods: number })
       onClick={() => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "content" } })}
       className="group flex min-h-12 w-full min-w-0 items-center gap-2.5 px-3 py-2 text-left transition-colors duration-100 hover:bg-white/[.03]"
     >
-      <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={28} />
+      <InstanceIcon icon={i.icon} seed={i.id} accent={instanceAccent(i.id, i.accent)} size={28} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13px] font-semibold leading-tight text-text">{i.name}</span>
         {lines.map((l) => (

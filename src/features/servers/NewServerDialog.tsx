@@ -415,7 +415,7 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
             </div>
             {inst && (
               <div className="flex items-center gap-3 rounded-card bg-surface px-3 py-2.5">
-                <InstanceIcon icon={inst.icon} accent={instanceAccent(inst.id, inst.accent)} size={36} />
+                <InstanceIcon icon={inst.icon} seed={inst.id} accent={instanceAccent(inst.id, inst.accent)} size={36} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[13px] font-semibold text-text">{inst.name}</div>
                   <div className="text-[12px] text-muted">

@@ -107,6 +107,7 @@ const RailInstance = memo(function RailInstance({ instance: i, active, wide }: {
             <span className="relative">
               <InstanceIcon
                 icon={i.icon}
+                seed={i.id}
                 accent={instanceAccent(i.id, i.accent)}
                 size={wide ? 26 : 34}
                 className={cn(active && !wide && "outline outline-1 outline-offset-2 outline-white/40")}

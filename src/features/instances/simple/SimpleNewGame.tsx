@@ -13,6 +13,7 @@ import { accentPalette, formatCount } from "@/lib/format";
 import type { ProjectHit } from "@/lib/types";
 import { Button, ErrorState, Input, SearchInput, Skeleton, Spinner, cn, toast } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
+import { randomBlockIcon } from "@/components/instance/blocks/catalog";
 import { installInstance, openExpertNewInstance } from "@/components/instance/actions";
 import { startModpackInstall } from "@/components/content/install";
 import { PackIcon } from "@/features/home/Discover";
@@ -253,6 +254,7 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
   const plan = usePlan(goal);
   const [name, setName] = useState(() => defaultName(goal));
   const [accent, setAccent] = useState(() => accentPalette[Math.floor(Math.random() * accentPalette.length)]);
+  const [icon, setIcon] = useState(randomBlockIcon);
   const [busy, setBusy] = useState(false);
   const ready = !plan.loading && !plan.unavailable && !!plan.mc && (plan.loader === "vanilla" || !!plan.loaderVersion);
   const valid = ready && name.trim().length > 0;
@@ -267,6 +269,7 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
         mc_version: plan.mc!,
         loader: { kind: plan.loader, version: plan.loader === "vanilla" ? null : plan.loaderVersion },
         accent,
+        icon,
         group: null,
       });
       onDone();
@@ -301,7 +304,15 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
         <div className="flex w-[300px] shrink-0 flex-col gap-5">
           {/* Vorschau, wie das Spiel in der Liste aussieht (statt eines losen Ziel-Symbols ohne Bedeutung) */}
           <div className="flex items-center gap-4 rounded-card bg-surface p-3">
-            <InstanceIcon icon={null} accent={accent} size={56} />
+            <button
+              type="button"
+              title={t("iconart.shuffle")}
+              aria-label={t("iconart.shuffle")}
+              onClick={() => setIcon(randomBlockIcon())}
+              className="shrink-0 rounded-card outline-none transition-transform duration-100 hover:scale-105 focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <InstanceIcon icon={icon} accent={accent} size={56} />
+            </button>
             <div className="min-w-0">
               <div className="truncate text-[15px] font-semibold text-text">{name.trim() || t("wiz.name")}</div>
               <div className="mt-0.5 truncate text-[12.5px] text-muted">{plan.mc ? `Minecraft ${plan.mc}` : t("wiz.sum.version_auto")}</div>

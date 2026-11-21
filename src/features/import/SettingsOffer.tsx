@@ -318,7 +318,7 @@ function OfferCard({
       {!single && (
         <header className="flex items-center gap-3 px-3 pb-1 pt-3">
           <Checkbox checked={all} mixed={some} onChange={onAll} label={o.instance_name} />
-          <InstanceIcon icon={instance?.icon ?? null} accent={instanceAccent(o.instance_id, instance?.accent ?? null)} size={28} />
+          <InstanceIcon icon={instance?.icon ?? null} seed={o.instance_id} accent={instanceAccent(o.instance_id, instance?.accent ?? null)} size={28} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13.5px] font-semibold text-text">{o.instance_name}</div>
             <div className="truncate text-[12px] text-dim">{t("isx.from", { launcher: o.launcher_name })}</div>

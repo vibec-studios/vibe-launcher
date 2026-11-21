@@ -7,15 +7,17 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import * as Popover from "@radix-ui/react-popover";
-import { Check, ChevronDown, ChevronRight, Download, FolderInput, HardDriveDownload, ImageIcon, PackageOpen, RotateCcw } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Download, FolderInput, HardDriveDownload, ImageIcon, PackageOpen } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGameVersions, useInstances, useSystemInfo } from "@/lib/queries";
 import type { LoaderKind, McVersion, ProjectHit } from "@/lib/types";
-import { accentPalette, formatCount, imageSrc, loaderNames } from "@/lib/format";
+import { accentPalette, formatCount, loaderNames } from "@/lib/format";
 import { Button, DropdownItem, DropdownMenu, ErrorState, Input, SearchInput, Segmented, Select, Skeleton, cn, toast } from "@/components/ui";
 import * as D from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
+import { IconGallery } from "@/components/instance/blocks/IconGallery";
+import { isBlockIcon, randomBlockIcon } from "@/components/instance/blocks/catalog";
 import { LoaderIcon } from "@/components/instance/LoaderIcon";
 import { LOADERS, pickLoaderVersion, useLoaderGameVersions, useLoaderVersions, type VersionValue } from "@/components/instance/VersionPicker";
 import { installInstance, pickImage } from "@/components/instance/actions";
@@ -107,7 +109,7 @@ export function IconPicker({
     <Popover.Root>
       <Popover.Trigger asChild>
         <button type="button" aria-label={t("inst.icon.choose")} className="group relative shrink-0 outline-none">
-          <InstanceIcon icon={icon ? imageSrc(icon) : null} accent={accent} size={64} />
+          <InstanceIcon icon={icon} accent={accent} size={64} />
           <span className="absolute inset-0 grid place-items-center bg-black/55 text-text opacity-0 transition-opacity duration-100 group-hover:opacity-100 group-focus-visible:opacity-100 group-data-[state=open]:opacity-100">
             <ImageIcon size={18} />
           </span>
@@ -119,20 +121,10 @@ export function IconPicker({
           align="start"
           sideOffset={8}
           collisionPadding={12}
-          className="z-[60] w-[248px] rounded-card bg-overlay p-3 shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="z-[60] w-[316px] rounded-card bg-overlay p-3 shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
-          <div className="label mb-2">{t("newinst.icon")}</div>
-          <div className="flex gap-2">
-            <Button size="sm" icon={<ImageIcon size={14} />} className="flex-1" onClick={async () => onIcon((await pickImage()) ?? icon)}>
-              {t("newinst.icon.own")}
-            </Button>
-            {icon && (
-              <Button size="sm" variant="subtle" icon={<RotateCcw size={13} />} onClick={() => onIcon(null)}>
-                {t("newinst.icon.reset")}
-              </Button>
-            )}
-          </div>
-          <div className="label mb-2 mt-3.5">{t("newinst.color")}</div>
+          <IconGallery value={icon} accent={accent} onChange={onIcon} onImage={async () => onIcon((await pickImage()) ?? icon)} />
+          <div className="label mb-2 mt-3.5">{t("iconart.tint")}</div>
           <div className="grid grid-cols-8 gap-1">
             {accentPalette.map((c) => (
               <button
@@ -372,7 +364,7 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
   const [nameTouched, setNameTouched] = useState(false);
   const [accent, setAccent] = useState(() => accentPalette[Math.floor(Math.random() * accentPalette.length)]);
   const [group, setGroup] = useState("");
-  const [icon, setIcon] = useState<string | null>(null);
+  const [icon, setIcon] = useState<string | null>(randomBlockIcon);
   const [pack, setPack] = useState<string | null>(null);
   // „Mit Mod-Sets starten“: nach dem Anlegen alles Passende aus diesen Sets installieren
   const [setIds, setSetIds] = useState<string[]>([]);
@@ -409,9 +401,10 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
         mc_version: ver.mc!,
         loader: { kind: ver.loader, version: needsLv ? ver.loaderVersion : null },
         accent,
+        icon: isBlockIcon(icon) ? icon : null,
         group: group.trim() || null,
       });
-      if (icon) await api.instanceSetIcon(inst.id, icon).catch((e) => toast.error(e, t("inst.icon.failed")));
+      if (icon && !isBlockIcon(icon)) await api.instanceSetIcon(inst.id, icon).catch((e) => toast.error(e, t("inst.icon.failed")));
       onDone();
       nav({ to: "/instances/$id", params: { id: inst.id }, search: { tab: "content" } });
       installInstance(inst.id);

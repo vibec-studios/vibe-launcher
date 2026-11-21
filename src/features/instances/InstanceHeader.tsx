@@ -5,12 +5,13 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Box, Clock, MoreHorizontal, Package, Settings, Timer } from "lucide-react";
 import type { ReactNode } from "react";
-import { DropdownMenu, IconButton, Skeleton, Tooltip, cn } from "@/components/ui";
+import { DropdownMenu, IconButton, Skeleton, cn } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { StatusHint } from "@/components/instance/InstanceCard";
 import { InstanceDropdownContent } from "@/components/instance/InstanceMenu";
 import { PlayButton } from "@/components/instance/PlayButton";
-import { setIcon } from "@/components/instance/actions";
+import { resetIcon, setIcon, setInstanceIcon } from "@/components/instance/actions";
+import { IconPopover } from "@/components/instance/blocks/IconPopover";
 import { useT } from "@/i18n";
 import { useSimple } from "@/lib/mode";
 import { AutofixButton } from "@/features/content/AutoFix";
@@ -96,11 +97,18 @@ export function InstanceHeader({
     <header className="shrink-0">
       {/* Kopfblock: großes Icon, Name, Meta-Zeile; rechts Spielen, Einstellungen, Mehr */}
       <div className={cn(pageX, "flex items-center gap-5 pb-4 pt-6")}>
-        <Tooltip content={t("inst.icon.choose")}>
-          <button onClick={() => setIcon(instance)} className="shrink-0" aria-label={t("inst.icon.choose")}>
-            <InstanceIcon icon={instance.icon} accent={accent} size={72} />
+        <IconPopover
+          value={instance.icon}
+          seed={instance.id}
+          accent={accent}
+          onChange={(icon) => setInstanceIcon(instance, icon)}
+          onImage={() => setIcon(instance)}
+          onReset={instance.icon ? () => resetIcon(instance) : undefined}
+        >
+          <button className="shrink-0 rounded-card outline-none focus-visible:ring-2 focus-visible:ring-accent" aria-label={t("inst.icon.choose")} title={t("inst.icon.choose")}>
+            <InstanceIcon icon={instance.icon} seed={instance.id} accent={accent} size={72} />
           </button>
-        </Tooltip>
+        </IconPopover>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
             <h1 className="truncate text-[26px] font-bold leading-tight tracking-[-0.015em] text-text" title={instance.name}>

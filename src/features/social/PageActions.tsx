@@ -283,7 +283,7 @@ function SharePackDialog() {
                   }}
                   className="group flex h-12 w-full items-center gap-3 border-line px-3 text-left transition-colors duration-100 hover:bg-white/[.04] [&+&]:border-t"
                 >
-                  <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={32} />
+                  <InstanceIcon icon={i.icon} seed={i.id} accent={instanceAccent(i.id, i.accent)} size={32} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13.5px] font-semibold leading-tight text-text">{i.name}</span>
                     <span className="block truncate text-caption text-dim">

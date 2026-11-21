@@ -83,7 +83,7 @@ function Body({ instance }: { instance: Instance }) {
     <>
       <aside className="flex w-[232px] shrink-0 flex-col bg-bg max-[880px]:w-[60px]">
         <div className="flex h-[64px] shrink-0 items-center gap-3 px-5 max-[880px]:justify-center max-[880px]:px-0">
-          <InstanceIcon icon={d.icon} accent={accent} size={30} />
+          <InstanceIcon icon={d.icon} seed={d.id} accent={accent} size={30} />
           <div className="min-w-0 max-[880px]:sr-only">
             <D.Title className="truncate text-[14px] font-semibold text-text">{d.name}</D.Title>
             <div className="truncate text-[12px] text-muted">{t("isd.title")}</div>

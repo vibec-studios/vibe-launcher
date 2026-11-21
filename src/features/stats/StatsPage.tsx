@@ -187,7 +187,7 @@ export function StatsPage() {
                 value={
                   top1 ? (
                     <span className="flex min-w-0 items-center gap-2.5">
-                      <InstanceIcon icon={topInst?.icon} accent={instanceAccent(top1.id, topInst?.accent ?? null)} size={24} />
+                      <InstanceIcon icon={topInst?.icon} seed={top1.id} accent={instanceAccent(top1.id, topInst?.accent ?? null)} size={24} />
                       <span className="truncate">{topInst?.name ?? t("stats.deleted")}</span>
                     </span>
                   ) : (
@@ -257,7 +257,7 @@ export function StatsPage() {
                       className="group flex h-12 w-full min-w-0 items-center gap-4 px-5 text-left text-[13px] transition-colors duration-100 enabled:hover:bg-white/[.03] disabled:pointer-events-auto disabled:cursor-default"
                     >
                       <span className="flex w-[220px] min-w-0 shrink-0 items-center gap-2.5 max-[1100px]:w-[180px]">
-                        <InstanceIcon icon={inst?.icon} accent={accent} size={28} />
+                        <InstanceIcon icon={inst?.icon} seed={r.id} accent={accent} size={28} />
                         <span className={cn("truncate font-semibold", inst ? "text-text" : "text-dim")}>{inst?.name ?? t("stats.deleted")}</span>
                       </span>
                       <span className="h-1.5 min-w-[60px] flex-1 overflow-hidden rounded-pill bg-white/[.06]">

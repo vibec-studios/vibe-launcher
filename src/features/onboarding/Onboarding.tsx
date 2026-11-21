@@ -567,7 +567,7 @@ function GameStep({ mode, onFinish }: { mode: UiMode; onFinish: (after?: () => v
         <div className="mb-6 flex flex-wrap items-center gap-2">
           {instances.slice(0, 4).map((i) => (
             <span key={i.id} className="flex h-11 min-w-0 max-w-[220px] items-center gap-2.5 rounded-card bg-surface pl-1.5 pr-3.5">
-              <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={32} />
+              <InstanceIcon icon={i.icon} seed={i.id} accent={instanceAccent(i.id, i.accent)} size={32} />
               <span className="truncate text-[13.5px] font-semibold text-text">{i.name}</span>
             </span>
           ))}

@@ -114,7 +114,7 @@ function ConfirmShell({
 function InstanceLine({ i }: { i: Instance }) {
   return (
     <div className="flex items-center gap-3">
-      <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={44} />
+      <InstanceIcon icon={i.icon} seed={i.id} accent={instanceAccent(i.id, i.accent)} size={44} />
       <div className="min-w-0">
         <div className="truncate text-[15px] font-semibold text-text">{i.name}</div>
         <div className="truncate text-meta text-muted">

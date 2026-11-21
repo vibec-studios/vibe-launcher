@@ -324,7 +324,7 @@ export function SyncOverview() {
               const keys = [...AREAS, ...ALL].filter((k) => c.categories.includes(k));
               return (
                 <div key={i.id} className="flex items-center gap-3 rounded-ctl bg-surface2 px-3 py-2">
-                  <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={28} />
+                  <InstanceIcon icon={i.icon} seed={i.id} accent={instanceAccent(i.id, i.accent)} size={28} />
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="truncate text-[13.5px] font-semibold text-text">{i.name}</span>

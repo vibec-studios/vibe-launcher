@@ -382,9 +382,7 @@ pub async fn shortcut_create(
 ) -> AppResult<String> {
     let inst = state.instances.get(&instance_id)?;
     let dir = shortcuts::target_dir(&location)?;
-    let icon_src = inst
-        .icon
-        .as_deref()
+    let icon_src = crate::instance::icon::file_path(inst.icon.as_deref())
         .map(PathBuf::from)
         .filter(|p| p.is_file());
     let cache = state

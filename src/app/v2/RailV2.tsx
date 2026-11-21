@@ -74,7 +74,7 @@ const RailInstance = memo(function RailInstance({ instance: i, active, wide }: {
             )}
           >
             <span className="relative">
-              <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={wide ? 26 : 32} className="rounded-[var(--r-xs)]" />
+              <InstanceIcon icon={i.icon} seed={i.id} accent={instanceAccent(i.id, i.accent)} size={wide ? 26 : 32} className="rounded-[var(--r-xs)]" />
               {(running || busy) && (
                 <span className={cn("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-dot shadow-[0_0_0_2px_var(--tone-frame)]", running ? "bg-ok" : "bg-warn")} />
               )}
