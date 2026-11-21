@@ -32,7 +32,7 @@ import { openExternal } from "@/components/content/util";
 import { useT, t as tt } from "@/i18n";
 import { openServerFolder } from "./actions";
 import { addonApi, aqk, serverSoftware, type Addon, type AddonList, type AddonUpdate } from "./addonsApi";
-import { serverTargetKey } from "@/features/installtarget/registry";
+import { serverKeyOf } from "@/features/installtarget/registry";
 import { PackCard } from "@/features/serverpack/PackCard";
 
 function refresh(id: string) {
@@ -225,7 +225,7 @@ function FindCard({ server, plugins }: { server: Server; plugins: boolean }) {
   const nav = useNavigate();
   const [query, setQuery] = useState("");
   const go = (q?: string, extra?: string) =>
-    nav({ to: "/discover", search: { server: serverTargetKey({ origin: "local", id: server.id }), q: q?.trim() || undefined, p: extra } });
+    nav({ to: "/discover", search: { server: serverKeyOf(server.id), q: q?.trim() || undefined, p: extra } });
   return (
     <SettingsCard title={plugins ? t("srv.addons.find.plugins") : t("srv.addons.find.mods")}>
       <div className="flex flex-col gap-3 p-4" data-testid="addons-find">

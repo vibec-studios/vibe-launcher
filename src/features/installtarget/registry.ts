@@ -25,12 +25,21 @@ export function serverTargetKey(t: Pick<ServerInstallTarget, "origin" | "id" | "
   return t.origin === "remote" ? `remote:${t.agentId ?? ""}:${t.id}` : `local:${t.id}`;
 }
 
+const REMOTE_ID = /^rem~([^~]+)~(.+)$/;
+
+export function serverKeyOf(serverId: string): string {
+  const m = REMOTE_ID.exec(serverId);
+  return m ? serverTargetKey({ origin: "remote", agentId: m[1], id: m[2] }) : serverTargetKey({ origin: "local", id: serverId });
+}
+
 export function parseServerTargetKey(key: string | undefined | null): ServerInstallTarget | null {
   if (!key) return null;
   if (key.startsWith("local:")) {
     const id = key.slice(6);
+    if (REMOTE_ID.test(id)) return parseServerTargetKey(serverKeyOf(id));
     return id ? { kind: "server", origin: "local", id } : null;
   }
+  if (REMOTE_ID.test(key)) return parseServerTargetKey(serverKeyOf(key));
   if (key.startsWith("remote:")) {
     const rest = key.slice(7);
     const i = rest.indexOf(":");

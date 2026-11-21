@@ -2,7 +2,7 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Compass, Copy, FolderOpen, FolderTree, Gamepad2, ImageIcon, PackageOpen, Play, RotateCcw, RotateCw, Skull, Square, SquareTerminal, Trash2, Wrench } from "lucide-react";
-import { serverTargetKey } from "@/features/installtarget/registry";
+import { serverKeyOf } from "@/features/installtarget/registry";
 import { openPackToServer } from "@/features/serverpack/store";
 import {
   Button,
@@ -251,10 +251,10 @@ function MenuBody({ server: s, kit, onPage, onDeleted }: { server: Server; kit: 
           {t("srv.icon.reset")}
         </Item>
       </Sub>
-      <Item icon={<Compass size={14} />} disabled={!s.platform && s.loader.kind === "vanilla"} onSelect={() => nav({ to: "/discover", search: { server: serverTargetKey({ origin: "local", id: s.id }) } })}>
+      <Item icon={<Compass size={14} />} disabled={!s.platform && s.loader.kind === "vanilla"} onSelect={() => nav({ to: "/discover", search: { server: serverKeyOf(s.id) } })}>
         {s.platform ? t("st.menu.find_plugins") : t("st.menu.find_mods")}
       </Item>
-      <Item icon={<PackageOpen size={14} />} disabled={active} onSelect={() => openPackToServer({ serverKey: serverTargetKey({ origin: "local", id: s.id }) })}>
+      <Item icon={<PackageOpen size={14} />} disabled={active} onSelect={() => openPackToServer({ serverKey: serverKeyOf(s.id) })}>
         {t("sp.menu.apply")}
       </Item>
       <Item icon={<Wrench size={14} />} disabled={active || !!task} onSelect={() => repairServer(s)}>

@@ -5,7 +5,7 @@ import { useT, t as tt } from "@/i18n";
 import { formatBytes, formatLoader, formatRelative } from "@/lib/format";
 import { queryClient, sqk, useServerStatus, isServerActive, waitForTask } from "@/lib/queries";
 import type { Server } from "@/lib/types";
-import { serverTargetKey } from "@/features/installtarget/registry";
+import { serverKeyOf } from "@/features/installtarget/registry";
 import { packApi, pqk, type PackSnapshot } from "./api";
 import { openPackToServer } from "./store";
 
@@ -47,7 +47,7 @@ export function PackCard({ server }: { server: Server }) {
     <SettingsCard
       title={t("sp.card.title")}
       right={
-        <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={() => openPackToServer({ serverKey: serverTargetKey({ origin: "local", id: server.id }) })}>
+        <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={() => openPackToServer({ serverKey: serverKeyOf(server.id) })}>
           {m ? t("sp.card.update") : t("sp.card.apply")}
         </Button>
       }
