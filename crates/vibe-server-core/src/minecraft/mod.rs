@@ -8,6 +8,7 @@ pub mod log4shell;
 pub mod logparse;
 pub mod meta;
 pub mod process;
+pub mod adopt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McVersion {
