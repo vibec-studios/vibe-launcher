@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="de" data-tone="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" href="./logo.png" />
+    <title>Vibe Panel</title>
+    <script>
+      try {
+        var p = localStorage.getItem("vibe-panel.tone");
+        var t = p === "light" || p === "dark" ? p : matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.dataset.tone = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
