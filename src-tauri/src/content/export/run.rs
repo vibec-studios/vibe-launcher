@@ -1,124 +1,4 @@
-//! Export einer Instanz als `.mrpack`, CurseForge-ZIP oder `.vlpack`.
-//! Dateien mit bekannter Herkunft werden als Download-Verweis exportiert, alles andere als Override.
-use super::import::{cf_loader_id, VlFile, VlPack};
-use super::index::{self, ContentIndex, IndexEntry};
-use super::{local, modrinth as mr, *};
-use crate::error::{AppError, AppResult};
-use crate::state::AppState;
-use crate::tasks::TaskHandle;
-use crate::util::safe_join;
-use serde_json::json;
-use std::io::Write;
-use std::path::{Path, PathBuf};
-
-/// Standardmäßig ausgewählte Einträge (Pack-relevante Ordner/Dateien).
-const DEFAULT_ON: &[&str] = &[
-    "mods", "config", "defaultconfigs", "kubejs", "scripts", "resourcepacks", "shaderpacks", "datapacks", "global_packs",
-    "openloader", "patchouli_books", "options.txt", "optionsshaders.txt", "optionsof.txt",
-];
-
-fn dir_size(p: &Path) -> u64 {
-    walkdir::WalkDir::new(p).into_iter().flatten().filter(|e| e.file_type().is_file()).filter_map(|e| e.metadata().ok()).map(|m| m.len()).sum()
-}
-
-pub async fn entries(state: &AppState, instance_id: &str) -> AppResult<Vec<ExportEntry>> {
-    state.instances.get(instance_id)?;
-    let game = state.paths.game_dir(instance_id);
-    tokio::task::spawn_blocking(move || {
-        let Ok(rd) = std::fs::read_dir(&game) else { return Ok(vec![]) };
-        let mut v: Vec<ExportEntry> = rd
-            .flatten()
-            .filter_map(|e| {
-                let name = e.file_name().to_string_lossy().to_string();
-                let m = e.metadata().ok()?;
-                let is_dir = m.is_dir();
-                Some(ExportEntry {
-                    size: if is_dir { dir_size(&e.path()) } else { m.len() },
-                    default_selected: DEFAULT_ON.contains(&name.as_str()),
-                    path: name,
-                    is_dir,
-                })
-            })
-            .collect();
-        v.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then(a.path.to_lowercase().cmp(&b.path.to_lowercase())));
-        Ok(v)
-    })
-    .await?
-}
-
-/// Datei im Export.
-struct Src {
-    rel: String,
-    abs: PathBuf,
-    size: u64,
-}
-
-fn collect(game: &Path, include: &[String]) -> AppResult<Vec<Src>> {
-    let mut out = Vec::new();
-    let mut seen = HashSet::new();
-    for inc in include {
-        let base = safe_join(game, inc).ok_or_else(|| AppError::Invalid(format!("Ungültiger Pfad: {inc}")))?;
-        if !base.exists() {
-            continue;
-        }
-        for e in walkdir::WalkDir::new(&base).into_iter().flatten() {
-            if !e.file_type().is_file() {
-                continue;
-            }
-            let Ok(rel) = e.path().strip_prefix(game) else { continue };
-            let rel = rel.to_string_lossy().replace('\\', "/");
-            if rel.ends_with(".part") || !seen.insert(rel.clone()) {
-                continue;
-            }
-            out.push(Src { size: e.metadata().map(|m| m.len()).unwrap_or(0), rel, abs: e.path().to_path_buf() });
-        }
-    }
-    Ok(out)
-}
-
-/// Index-Eintrag zu einer aktivierten Datei in einem Inhaltsordner, wenn der Hash noch passt.
-fn known<'a>(idx: &'a ContentIndex, rel: &str) -> Option<&'a IndexEntry> {
-    let (folder, file) = rel.split_once('/')?;
-    if file.contains('/') || file.ends_with(".disabled") || ContentKind::from_folder(folder).is_none() {
-        return None;
-    }
-    let key = index::key(folder, file);
-    let e = idx.files.get(&key)?;
-    let local = idx.local.get(&key)?.sha1.as_ref()?;
-    match &e.sha1 {
-        Some(s) if !s.eq_ignore_ascii_case(local) => None,
-        _ => Some(e),
-    }
-}
-
-fn compression(rel: &str) -> zip::CompressionMethod {
-    let l = rel.to_ascii_lowercase();
-    if [".jar", ".zip", ".png", ".jpg", ".ogg", ".gz", ".mrpack"].iter().any(|e| l.ends_with(e)) {
-        zip::CompressionMethod::Stored
-    } else {
-        zip::CompressionMethod::Deflated
-    }
-}
-
-fn side(v: Option<&str>) -> &'static str {
-    match v {
-        Some("unsupported") => "unsupported",
-        Some("optional") => "optional",
-        _ => "required",
-    }
-}
-
-fn require_loader_version(inst: &crate::instance::Instance) -> AppResult<Option<String>> {
-    if inst.loader.kind == LoaderKind::Vanilla {
-        return Ok(None);
-    }
-    inst.loader
-        .version
-        .clone()
-        .filter(|v| !v.is_empty())
-        .map(Some)
-        .ok_or_else(|| AppError::Invalid("Die Loader-Version der Instanz ist nicht festgelegt – bitte in den Instanz-Einstellungen wählen".into()))
-}
+use super::*;
 
 pub async fn run_export(state: AppState, task: TaskHandle, instance_id: String, opts: ExportOptions) -> AppResult<()> {
     let inst = state.instances.get(&instance_id)?;
@@ -241,7 +121,7 @@ pub async fn run_export(state: AppState, task: TaskHandle, instance_id: String, 
     sub_files.sort_by_key(|v| v.to_string());
     vl_files.sort_by(|a, b| a.path.cmp(&b.path));
 
-    let icon_bytes: Option<Vec<u8>> = crate::instance::icon::file_path(inst.icon.as_deref()).and_then(|p| std::fs::read(p).ok()).filter(|b| super::meta::image_mime(b).is_some());
+    let icon_bytes: Option<Vec<u8>> = crate::instance::icon::file_path(inst.icon.as_deref()).and_then(|p| std::fs::read(p).ok()).filter(|b| crate::content::meta::image_mime(b).is_some());
 
     let (meta_name, meta_json): (&str, Vec<u8>) = match opts.format {
         PackFormat::Mrpack => {
@@ -350,39 +230,4 @@ pub async fn run_export(state: AppState, task: TaskHandle, instance_id: String, 
     .await??;
     task.message(format!("Export fertig: {n_refs} Verweise, {} Dateien", files.len() - n_refs));
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn known_entries() {
-        let mut idx = ContentIndex::default();
-        idx.files.insert(
-            "mods/a.jar".into(),
-            IndexEntry {
-                source: Source::Modrinth,
-                project_id: "P".into(),
-                version_id: "V".into(),
-                sha1: Some("aa".into()),
-                sha512: None,
-                title: None,
-                icon_url: None,
-                version_number: None,
-                url: None,
-                size: None,
-                date: None,
-                release_type: None,
-                side: None,
-            },
-        );
-        idx.local.insert("mods/a.jar".into(), index::LocalMeta { sha1: Some("AA".into()), ..Default::default() });
-        assert!(known(&idx, "mods/a.jar").is_some());
-        assert!(known(&idx, "mods/a.jar.disabled").is_none());
-        assert!(known(&idx, "config/a.jar").is_none());
-        idx.local.insert("mods/a.jar".into(), index::LocalMeta { sha1: Some("bb".into()), ..Default::default() });
-        assert!(known(&idx, "mods/a.jar").is_none(), "Datei wurde ersetzt");
-        assert_eq!(compression("mods/x.JAR"), zip::CompressionMethod::Stored);
-        assert_eq!(compression("config/x.toml"), zip::CompressionMethod::Deflated);
-    }
 }
