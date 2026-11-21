@@ -21,8 +21,6 @@ const PAGES = {
   screenshots: "#/screenshots",
   servers: "#/servers",
   social: "#/social",
-  cosmetics: "#/cosmetics",
-  "cosmetics-creator": "#/cosmetics/creator",
 };
 
 const DIALOGS = [
