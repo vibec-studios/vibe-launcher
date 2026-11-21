@@ -1,0 +1,39 @@
+.vl-pi {
+  --pi-a: var(--pi-accent, var(--accent));
+  --pi-i: var(--pi-ink, currentColor);
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+.vl-pi-o { fill: var(--pi-i); }
+.vl-pi-m { fill: var(--pi-i); fill-opacity: 0.5; }
+.vl-pi-l { fill: var(--pi-i); fill-opacity: 0.13; }
+.vl-pi-a, .vl-pi-c { fill: var(--pi-a); }
+.vl-pi-h { fill: color-mix(in srgb, var(--pi-a) 55%, #fff); }
+.vl-pi-d { fill: color-mix(in srgb, var(--pi-a) 70%, #000); }
+.vl-pi-r { fill: var(--ui-danger); }
+.vl-pi-y { fill: var(--ui-warn); }
+.vl-pi-g { fill: var(--ui-ok); }
+.vl-pi-k { fill: color-mix(in srgb, var(--ui-ok) 35%, #000); }
+.vl-pi-c { animation: vl-pi-blink 1.1s steps(1) infinite; }
+
+@keyframes vl-pi-blink { 50% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .vl-pi-c { animation: none; }
+}
+html[data-reduce-motion="true"] .vl-pi-c { animation: none; }
+
+.vl-empty-icon > .vl-pi { --pi-ink: var(--text-2); }
+
+:root[data-tone="light"] .vl-pi-l { fill-opacity: 0.08; }
+
+:root[data-design="v2"] .vl-empty .vl-empty-icon:has(> .vl-pi) {
+  width: 76px;
+  height: 76px;
+}
+
+:root[data-cards="pixel"] .vl-empty .vl-empty-icon:has(> .vl-pi) {
+  padding: 10px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+:root[data-cards="pixel"][data-design="v2"] .vl-empty .vl-empty-icon:has(> .vl-pi) { padding: 0; }

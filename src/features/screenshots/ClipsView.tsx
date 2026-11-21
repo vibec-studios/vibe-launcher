@@ -3,7 +3,7 @@
 // Player-Dialog mit Bearbeiten. Der Launcher löscht nur auf Wunsch und lädt nichts hoch.
 import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CircleHelp, Clapperboard, Eye, FolderOpen, Play, RefreshCw, Star, Trash2 } from "lucide-react";
+import { CircleHelp, Eye, FolderOpen, Play, RefreshCw, Star, Trash2 } from "lucide-react";
 import { openHelp } from "@/features/help/store";
 import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
@@ -274,7 +274,7 @@ export function ClipsView({
           filtered ? (
             <EmptyState
               className="mt-3 rounded-panel bg-surface"
-              icon={<Clapperboard size={34} />}
+              icon="film"
               title={t("clips.empty_filtered.title")}
               text={t("clips.empty_filtered.text")}
               action={
@@ -292,7 +292,7 @@ export function ClipsView({
           ) : (
             <EmptyState
               className="mt-3 rounded-panel bg-surface"
-              icon={<Clapperboard size={34} />}
+              icon="film"
               title={t("clips.empty.title")}
               text={t("clips.empty.text")}
               action={

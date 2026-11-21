@@ -143,7 +143,7 @@ export function DiscoveryView() {
           ) : withFriends.length === 0 ? (
             <EmptyState
               className="rounded-panel bg-surface"
-              icon={<Compass size={32} />}
+              icon="compass"
               title={qq || cat ? t("discovery.empty_filtered") : t("discovery.empty")}
               text={t("discovery.empty_text")}
               action={

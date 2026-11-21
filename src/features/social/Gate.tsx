@@ -1,7 +1,7 @@
 // Freundliche Zustände, wenn (noch) keine Verbindung besteht: Dienste aus, kein Account, nicht angemeldet,
 // Backend nicht erreichbar. Blockiert nie den Rest des Launchers.
 import { useNavigate } from "@tanstack/react-router";
-import { CloudOff, Link2Off, LogIn, Settings as SettingsIcon, UserRound, WifiOff } from "lucide-react";
+import { LogIn, Settings as SettingsIcon, WifiOff } from "lucide-react";
 import { useState } from "react";
 import { Button, Spinner, cn } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -10,6 +10,7 @@ import { AccessNotice } from "@/features/access/AccessNotice";
 import { JoinWaitlistButton } from "@/features/access/JoinDialog";
 import { useKnownApproved } from "@/features/access/hooks";
 import { connect, useSocial, type Conn } from "./service";
+import { PixelIcon, type PixelMotif } from "@/components/ui/pixel/PixelIcon";
 
 /** Zeigt `children`, sobald Daten da sind; sonst einen passenden Zustand. */
 export function Gate({ children, compact }: { children: React.ReactNode; compact?: boolean }) {
@@ -47,7 +48,7 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   const knownOk = useKnownApproved();
   const box = cn("flex h-full flex-col items-center justify-center gap-3 px-6 text-center", compact ? "py-8" : "py-16");
   // Ruhig: Symbol ohne Kachel, kleine Überschrift, ein Satz, höchstens eine Aktion
-  const icon = (n: React.ReactNode) => <div className="text-dim">{n}</div>;
+  const icon = (n: PixelMotif) => <PixelIcon name={n} size={compact ? 32 : 48} className="text-muted" />;
   const title = "text-[15px] font-semibold text-text";
 
   if (conn === "no_access") return <AccessNotice compact={compact} />;
@@ -62,7 +63,7 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   if (conn === "offline") {
     return (
       <div className={box}>
-        {icon(<WifiOff size={22} />)}
+        {icon("offline")}
         <h3 className={title}>{t("social.conn.offline_title")}</h3>
         <p className="max-w-sm text-[13px] text-muted">{t("social.conn.offline_text")}</p>
       </div>
@@ -71,7 +72,7 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   if (conn === "off") {
     return (
       <div className={box}>
-        {icon(<CloudOff size={22} />)}
+        {icon("cloud_off")}
         <h3 className={title}>{t("social.conn.off_title")}</h3>
         <p className="max-w-sm text-[13px] text-muted">{knownOk ? t("social.conn.off_text") : t("access.join.desc")}</p>
         {knownOk ? (
@@ -87,7 +88,7 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   if (conn === "no_account") {
     return (
       <div className={box}>
-        {icon(<UserRound size={22} />)}
+        {icon("user")}
         <h3 className={title}>{t("social.conn.no_account_title")}</h3>
         <p className="max-w-sm text-[13px] text-muted">{t("social.conn.no_account_text")}</p>
         <Button size="sm" variant="primary" onClick={() => nav({ to: "/accounts" })}>
@@ -99,7 +100,7 @@ export function GateState({ conn, compact }: { conn: Conn; compact?: boolean }) 
   // logged_out
   return (
     <div className={box}>
-      {icon(unlinked ? <Link2Off size={22} /> : <LogIn size={22} />)}
+      {icon(unlinked ? "user" : "key")}
       <h3 className={title}>
 
         {unlinked ? t("social.conn.unlinked_title") : error ? t("social.conn.failed_title") : t("social.conn.login_title")}

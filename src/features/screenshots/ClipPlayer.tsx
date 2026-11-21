@@ -1,7 +1,7 @@
 // Clip abspielen (HTML5-Video über das Asset-Protokoll), Kill-Marken, Infos und Bearbeiten (Behalten, Titel, Tags).
 // Der Launcher ändert nur `kept`, `title`, `tags` (docs/CLIPS.md §10.3 im Vibey Client).
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { FolderOpen, History, Scissors, Skull, Star, Swords, Trash2, VideoOff, X } from "lucide-react";
+import { FolderOpen, History, Scissors, Skull, Star, Swords, Trash2, X } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Clip, ClipExport } from "@/lib/types";
 import { formatBytes, formatDate, imageSrc } from "@/lib/format";
@@ -9,6 +9,7 @@ import { Button, Dialog, Field, Input, Tag, Tooltip, cn, toast } from "@/compone
 import { useT } from "@/i18n";
 import { ReasonIcon, clipName, clipWhere, formatClipLength, reasonColor, reasonKey } from "./clips";
 import { ClipEditor } from "./ClipEditor";
+import { PixelIcon } from "@/components/ui/pixel/PixelIcon";
 
 const TITLE_MAX = 100;
 const TAGS_MAX = 16;
@@ -136,7 +137,7 @@ function PlayerBody({
         {failed ? (
           <div className="grid aspect-video place-items-center p-6 text-center text-[13px] text-muted">
             <div className="flex max-w-[360px] flex-col items-center gap-3">
-              <VideoOff size={28} className="text-dim" />
+              <PixelIcon name="film_off" className="text-muted" />
               {t("clips.video_error")}
             </div>
           </div>

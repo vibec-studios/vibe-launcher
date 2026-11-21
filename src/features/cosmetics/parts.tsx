@@ -14,6 +14,7 @@ import { useKnownApproved } from "@/features/access/hooks";
 import { RARITY_COLOR, loadBundle, useThumbnail, type Access } from "./data";
 import type { CatalogItem } from "./types";
 import type { Bundle } from "./vibey3d";
+import { PixelIcon, type PixelMotif } from "@/components/ui/pixel/PixelIcon";
 
 /** Freundlicher Zustand, solange keine Vibe-Verbindung möglich ist. */
 export function AccessState({ access, title }: { access: Access; title?: string }) {
@@ -22,14 +23,14 @@ export function AccessState({ access, title }: { access: Access; title?: string 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const knownOk = useKnownApproved();
-  const icon = (n: ReactNode) => <div className="mb-1 text-dim">{n}</div>;
+  const icon = (n: PixelMotif) => <PixelIcon name={n} className="mb-1 text-muted" />;
   if (access === "no_access") return <AccessNotice />;
   let body: ReactNode;
   if (access === "loading") body = <Spinner size={18} className="text-brand" />;
   else if (access === "off")
     body = (
       <>
-        {icon(<CloudOff size={22} />)}
+        {icon("cloud_off")}
         <h3 className="text-title text-text">{t("cos.gate.off_title")}</h3>
         <p className="max-w-md text-[13px] leading-relaxed text-muted">{knownOk ? t("cos.gate.off_text") : t("access.join.desc")}</p>
         {knownOk ? (
@@ -44,7 +45,7 @@ export function AccessState({ access, title }: { access: Access; title?: string 
   else if (access === "no_account")
     body = (
       <>
-        {icon(<UserRound size={22} />)}
+        {icon("user")}
         <h3 className="text-title text-text">{t("cos.gate.account_title")}</h3>
         <p className="max-w-md text-[13px] leading-relaxed text-muted">{t("cos.gate.account_text")}</p>
         <Button size="sm" onClick={() => nav({ to: "/accounts" })}>
@@ -55,7 +56,7 @@ export function AccessState({ access, title }: { access: Access; title?: string 
   else
     body = (
       <>
-        {icon(<LogIn size={22} />)}
+        {icon("key")}
         <h3 className="text-title text-text">{t("cos.gate.login_title")}</h3>
         <p className="max-w-md text-[13px] leading-relaxed text-muted">{t("cos.gate.login_text")}</p>
         {err && <p className="max-w-md text-[12px] text-danger">{err}</p>}

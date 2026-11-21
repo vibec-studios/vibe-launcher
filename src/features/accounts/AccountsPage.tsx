@@ -1,5 +1,5 @@
 // OWNER: Frontend-Agent B. Minecraft-Konten (nur Microsoft): flache Liste, aktiv setzen, auffrischen, entfernen, Anmeldung.
-import { AlertTriangle, Copy, Gamepad2, LogIn, MoreHorizontal, RefreshCw, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
+import { AlertTriangle, Copy, Gamepad2, LogIn, MoreHorizontal, RefreshCw, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { Fragment, memo, useState, type ReactNode } from "react";
 import {
   Button,
@@ -131,7 +131,7 @@ function EmptyAccounts({ onLogin }: { onLogin: () => void }) {
   return (
     <EmptyState
       className="py-12"
-      icon={<UserRound size={26} />}
+      icon="user"
       title={t("accounts.empty.title")}
       text={t("accounts.empty.text")}
       action={

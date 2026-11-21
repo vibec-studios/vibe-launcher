@@ -2,9 +2,10 @@
 import * as Sw from "@radix-ui/react-switch";
 import * as Sl from "@radix-ui/react-slider";
 import type { ReactNode } from "react";
-import { AlertTriangle, Check, Minus } from "lucide-react";
+import { Check, Minus } from "lucide-react";
 import { cn } from "./cn";
 import { Button } from "./Button";
+import { PixelIcon, isPixelMotif, type PixelMotif } from "./pixel/PixelIcon";
 import { t } from "@/i18n";
 import { errorHint } from "@/lib/errorHints";
 
@@ -140,11 +141,11 @@ export function Skeleton({ className, style }: { className?: string; style?: Rea
   return <div className={cn("skeleton", className)} style={style} />;
 }
 
-export function EmptyState({ icon, title, text, action, className }: { icon?: ReactNode; title: ReactNode; text?: ReactNode; action?: ReactNode; className?: string }) {
+export function EmptyState({ icon, title, text, action, className }: { icon?: ReactNode | PixelMotif; title: ReactNode; text?: ReactNode; action?: ReactNode; className?: string }) {
   return (
     <div className={cn("vl-empty flex flex-col items-center justify-center gap-3 px-6 py-16 text-center", className)}>
       {/* .vl-empty-icon: im Winter-Theme sitzt ein kleines Pixel-Schneehäubchen auf dem Icon (globals.css) */}
-      {icon && <div className="vl-empty-icon mb-1 text-dim">{icon}</div>}
+      {icon && <div className="vl-empty-icon mb-1 text-dim">{isPixelMotif(icon) ? <PixelIcon name={icon} /> : icon}</div>}
       <div className="vl-empty-title display text-[16px]">{title}</div>
       {text && <p className="max-w-[420px] text-[13px] text-muted">{text}</p>}
       {action && <div className="mt-2">{action}</div>}
@@ -157,7 +158,7 @@ export function ErrorState({ error, onRetry, className }: { error: unknown; onRe
   const msg = typeof error === "string" ? error : error && typeof error === "object" && "message" in error ? String((error as { message: unknown }).message) : String(error);
   return (
     <div className={cn("flex flex-col items-center justify-center gap-3 px-6 py-14 text-center", className)}>
-      <AlertTriangle size={28} className="text-danger" />
+      <PixelIcon name="error" size={40} className="text-muted" />
       {hint && <p className="max-w-[520px] text-[13.5px] font-medium text-text">{t(`usab.err.${hint}`)}</p>}
       <p className={cn("selectable max-w-[520px] text-muted", hint ? "text-[12px]" : "text-[13px]")}>{msg}</p>
       {onRetry && (

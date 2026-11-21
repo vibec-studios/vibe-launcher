@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { create } from "zustand";
-import { Download, ExternalLink, Search } from "lucide-react";
+import { Download, ExternalLink } from "lucide-react";
 import { useSystemInfo, waitForTask } from "@/lib/queries";
 import type { Instance, ProjectHit } from "@/lib/types";
 import { formatCount } from "@/lib/format";
@@ -93,7 +93,7 @@ function SearchBody({ instance }: { instance: Instance }) {
     staleTime: 60_000,
   });
 
-  if (!cf) return <EmptyState title={t("bedrock.search.no_key")} text={t("bedrock.search.no_key_text")} />;
+  if (!cf) return <EmptyState icon="key" title={t("bedrock.search.no_key")} text={t("bedrock.search.no_key_text")} />;
   return (
     <div className="flex h-[min(560px,calc(100vh-220px))] flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -112,7 +112,7 @@ function SearchBody({ instance }: { instance: Instance }) {
             ))}
           </div>
         ) : results.data.hits.length === 0 ? (
-          <EmptyState icon={<Search size={28} />} title={t("bedrock.search.none")} className="py-10" />
+          <EmptyState icon="search_none" title={t("bedrock.search.none")} className="py-10" />
         ) : (
           <div className="divide-y divide-line">
             {results.data.hits.map((h) => (

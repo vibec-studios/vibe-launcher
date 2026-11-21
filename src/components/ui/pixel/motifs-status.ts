@@ -1,0 +1,103 @@
+import { disc, recolor, slash, type Rows } from "./grid";
+
+const warning: Rows = [
+  "................",
+  ".......oo.......",
+  "......oyyo......",
+  "......oyyo......",
+  ".....oyyyyo.....",
+  ".....oyooyo.....",
+  "....oyyooyyo....",
+  "....oyyooyyo....",
+  "...oyyyooyyyo...",
+  "...oyyyooyyyo...",
+  "..oyyyyyyyyyyo..",
+  "..oyyyyooyyyyo..",
+  ".oyyyyyooyyyyyo.",
+  ".oyyyyyyyyyyyyo.",
+  ".oooooooooooooo.",
+  "................",
+];
+
+const info = disc([
+  "llllll",
+  "llllllllll",
+  "lllllaalllll",
+  "lllllaalllll",
+  "llllllllllll",
+  "llllaaalllll",
+  "lllllaalllll",
+  "lllllaalllll",
+  "lllllaalllll",
+  "llllaaaallll",
+  "llllllllll",
+  "llllll",
+]);
+
+const shield: Rows = [
+  "................",
+  "................",
+  "..oooooooooooo..",
+  "..oggggggggggo..",
+  "..oggggggggggo..",
+  "..oggggggggggo..",
+  "..oggggggggkgo..",
+  "..ogggggggkggo..",
+  "..oggkgggkgggo..",
+  "..ogggkgkggggo..",
+  "..oggggkgggggo..",
+  "...oggggggggo...",
+  "....oggggggo....",
+  ".....oggggo.....",
+  "......oooo......",
+  "................",
+];
+
+const cloud: Rows = [
+  "................",
+  "................",
+  "................",
+  "................",
+  "......oooo......",
+  ".....ohhhho.....",
+  "..ooohaaaaao....",
+  ".ohhaaaaaaaaooo.",
+  "ohaaaaaaaaaaaao.",
+  "oaaaaaaaaaaaaaao",
+  "oaaaaaaaaaaaaaao",
+  "oaaaaaaaaaaaaaao",
+  "oddddddddddddddo",
+  ".oooooooooooooo.",
+  "................",
+  "................",
+];
+
+const wifi: Rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "..oo........oo..",
+  ".o............o.",
+  "o....oooooo....o",
+  "....o......o....",
+  "...o........o...",
+  "......oooo......",
+  ".....o....o.....",
+  "................",
+  ".......aa.......",
+  ".......aa.......",
+  "................",
+  "................",
+];
+
+export const STATUS_MOTIFS = {
+  warning,
+  error: recolor(warning, { y: "r" }),
+  info,
+  shield,
+  ban: slash(disc([])),
+  cloud,
+  cloud_off: slash(recolor(cloud, { a: "l", h: "l", d: "m" })),
+  offline: slash(recolor(wifi, { a: "m" })),
+} satisfies Record<string, Rows>;

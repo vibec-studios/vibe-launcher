@@ -113,7 +113,7 @@ export function BedrockBackupsTab({ instance }: { instance: Instance }) {
             <Skeleton className="h-10" />
           </div>
         ) : q.data.length === 0 ? (
-          <EmptyState icon={<Archive size={34} />} title={t("bedrock.backups.empty.title")} text={t("bedrock.backups.empty.text")} />
+          <EmptyState icon="chest" title={t("bedrock.backups.empty.title")} text={t("bedrock.backups.empty.text")} />
         ) : (
           <div className="flex flex-col gap-4">
             {groups.map(([folder, g]) => (

@@ -238,9 +238,9 @@ export function SettingsReviewDialog() {
       </div>
     );
   } else if (q.isError) {
-    body = <EmptyState icon={<AlertTriangle size={28} />} title={t("isx.failed")} text={errorMessage(q.error)} className="py-10" />;
+    body = <EmptyState icon="error" title={t("isx.failed")} text={errorMessage(q.error)} className="py-10" />;
   } else if (!offers.length) {
-    body = <EmptyState icon={<History size={28} />} title={t("isx.empty_title")} text={t("isx.empty_text")} className="py-10" />;
+    body = <EmptyState icon="clock" title={t("isx.empty_title")} text={t("isx.empty_text")} className="py-10" />;
   } else {
     body = (
       <div className="flex flex-col gap-4">

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CloudUpload, Copy, ImageOff, MessageSquare, MoreHorizontal, Trash2 } from "lucide-react";
+import { Copy, ImageOff, MessageSquare, MoreHorizontal, Trash2 } from "lucide-react";
 import { Button, Dialog, DropdownItem, DropdownMenu, EmptyState, ErrorState, IconButton, Skeleton, confirm, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { formatBytes, formatRelative } from "@/lib/format";
@@ -99,7 +99,7 @@ export function CloudShotsDialog({ open, onClose }: { open: boolean; onClose: ()
               ))}
             </div>
           ) : shots.length === 0 ? (
-            <EmptyState icon={<CloudUpload size={30} />} title={t("shotshare.cloud.empty")} text={t("shotshare.cloud.empty_text")} />
+            <EmptyState icon="cloud" title={t("shotshare.cloud.empty")} text={t("shotshare.cloud.empty_text")} />
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
               {shots.map((s) => (

@@ -40,6 +40,7 @@ import { AddFriendSearch, Avatar, BlockedList, GroupLabel, RequestRow } from "./
 import { PackIcon } from "./dialogs";
 import { openInviteAccept, openPackImport, openShare } from "./dialogStore";
 import { errText, removeInviteLocal, requireClient, useSocial, vqk } from "./service";
+import { PixelIcon } from "@/components/ui/pixel/PixelIcon";
 
 type PageDialog = "add" | "share" | "import" | "blocked" | null;
 const usePageDialog = create<{ open: PageDialog }>(() => ({ open: null }));
@@ -126,6 +127,7 @@ export function InboxButton() {
           <div className="scroll min-h-0 flex-1 pb-1.5">
             {!invites.length && !requests.length ? (
               <div className="px-6 py-10 text-center">
+                <PixelIcon name="inbox" size={32} className="mx-auto mb-2 text-muted" />
                 <p className="text-[13px] font-semibold text-text">{t("social.inbox.empty")}</p>
                 <p className="mt-1 text-[12px] text-muted">{t("social.inbox.empty_text")}</p>
               </div>

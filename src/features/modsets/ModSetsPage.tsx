@@ -16,7 +16,6 @@ import {
   Pencil,
   Plus,
   Search,
-  SearchX,
   Share2,
   Trash2,
   Users,
@@ -295,7 +294,7 @@ function SetsOverview() {
           <div className="flex flex-col gap-4">
             <EmptyState
               className="rounded-panel bg-surface py-12"
-              icon={<Layers size={40} strokeWidth={1.4} />}
+              icon="layers"
               title={t("sets.empty.title")}
               text={<span className="mx-auto block max-w-[520px]">{t("sets.empty.text")}</span>}
             />
@@ -306,7 +305,7 @@ function SetsOverview() {
             <p className="max-w-[760px] text-[13px] text-muted">{t("sets.intro")}</p>
             {shown.length === 0 ? (
               <EmptyState
-                icon={<SearchX size={30} strokeWidth={1.6} />}
+                icon="search_none"
                 title={t("sets.no_match", { q: query })}
                 action={
                   <Button size="sm" onClick={() => setQuery("")}>
@@ -724,7 +723,7 @@ function SetEditor({ id }: { id: string }) {
                 </div>
               )}
               {set.entries.length === 0 ? (
-                <EmptyState className="rounded-panel border border-dashed border-line2 py-14" icon={<Layers size={30} strokeWidth={1.5} />} title={t("sets.content_empty")} text={t("sets.content_empty_text")} />
+                <EmptyState className="rounded-panel border border-dashed border-line2 py-14" icon="layers" title={t("sets.content_empty")} text={t("sets.content_empty_text")} />
               ) : (
                 <div className="-mx-3 flex flex-col">
                   {shown.map((e) => (

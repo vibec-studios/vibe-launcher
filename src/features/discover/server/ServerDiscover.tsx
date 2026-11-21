@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpCircle, Check, Download, Info, Puzzle, RotateCcw, ServerOff, X } from "lucide-react";
+import { ArrowLeft, ArrowUpCircle, Check, Download, RotateCcw, X } from "lucide-react";
 import { create } from "zustand";
 import { Button, EmptyState, ErrorState, IconButton, PageToolbar, SearchInput, Skeleton, Spinner, Tag, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -126,7 +126,7 @@ export function ServerDiscover({ serverKey }: { serverKey: string }) {
           </div>
           {missing ? (
             <EmptyState
-              icon={<ServerOff size={28} />}
+              icon="server_off"
               title={t("st.missing.title")}
               text={t("st.missing.text")}
               action={
@@ -143,7 +143,7 @@ export function ServerDiscover({ serverKey }: { serverKey: string }) {
             </div>
           ) : !kind ? (
             <EmptyState
-              icon={<Puzzle size={28} />}
+              icon="puzzle"
               title={t("st.vanilla.title")}
               text={t("st.vanilla.text")}
               action={
@@ -287,7 +287,7 @@ function ServerResults({
           ))}
         </div>
       ) : hits.length === 0 ? (
-        <EmptyState icon={<Info size={26} />} title={t("discover.empty")} text={t("st.empty_text")} className="flex-1" />
+        <EmptyState icon="info" title={t("discover.empty")} text={t("st.empty_text")} className="flex-1" />
       ) : (
         <div ref={scroller} className={cn("scroll min-h-0 flex-1 px-3 pb-6", res.isPlaceholderData && "opacity-60")} data-testid="server-results">
           {hits.map((h) => {

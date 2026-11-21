@@ -4,7 +4,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { BarChart3, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
 import { formatDuration, instanceAccent } from "@/lib/format";
@@ -147,7 +147,7 @@ export function StatsPage() {
         ) : empty ? (
           <div className="rounded-panel bg-surface">
             <EmptyState
-              icon={<BarChart3 size={32} />}
+              icon="chart"
               title={t(`stats.empty.title.${range}`)}
               text={t("stats.empty.text")}
               action={

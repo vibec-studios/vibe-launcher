@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Ban, Crown, DoorOpen, Globe, Lock, MoreHorizontal, ShieldCheck, Trash2, UserPlus, UserRound, Users } from "lucide-react";
+import { Crown, DoorOpen, Globe, Lock, MoreHorizontal, ShieldCheck, Trash2, UserPlus, UserRound, Users } from "lucide-react";
 import type { HostPanel, HostPrivacy, HostRole } from "@/lib/vibe-sdk";
 import {
   Button,
@@ -65,7 +65,7 @@ export function PlayersSection({ panel }: { panel: HostPanel }) {
         <RoleTag role="host" />
       </div>
       {players.length === 0 ? (
-        <EmptyState icon={<Users size={22} />} title={t("hpanel.players.empty")} text={t("hpanel.players.empty_text")} className="py-8" />
+        <EmptyState icon="friends" title={t("hpanel.players.empty")} text={t("hpanel.players.empty_text")} className="py-8" />
       ) : (
         <ul className="divide-y divide-line rounded-card bg-surface">
           {players.map((p) => (
@@ -198,7 +198,7 @@ export function BansSection({ panel }: { panel: HostPanel }) {
   const t = useT();
   const id = panel.session.id;
   const host = panel.myRole === "host";
-  if (!panel.kicks.length) return <EmptyState icon={<Ban size={22} />} title={t("hpanel.bans.empty")} text={t("hpanel.bans.empty_text")} className="py-8" />;
+  if (!panel.kicks.length) return <EmptyState icon="ban" title={t("hpanel.bans.empty")} text={t("hpanel.bans.empty_text")} className="py-8" />;
   return (
     <ul className="divide-y divide-line rounded-card bg-surface">
       {panel.kicks.map((k) => (

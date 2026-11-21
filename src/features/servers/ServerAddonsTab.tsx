@@ -150,7 +150,7 @@ function InstalledList({ server, list, updates }: { server: Server; list: AddonL
   if (list.items.length === 0) {
     return (
       <EmptyState
-        icon={<Package size={22} />}
+        icon="box"
         title={list.target.plugins ? t("srv.addons.empty.plugins") : t("srv.addons.empty.mods")}
         text={t("srv.addons.empty.text")}
         className="py-10"

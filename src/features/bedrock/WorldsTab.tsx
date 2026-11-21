@@ -2,7 +2,7 @@
 // exportieren, importieren, löschen (vorher automatische Sicherung, dann Papierkorb).
 import { memo, useDeferredValue, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, FileArchive, FolderOpen, Globe2, MoreHorizontal, Trash2, Upload } from "lucide-react";
+import { Archive, FileArchive, FolderOpen, MoreHorizontal, Trash2, Upload } from "lucide-react";
 import type { Instance } from "@/lib/types";
 import { formatBytes, formatRelative } from "@/lib/format";
 import { Button, DropdownItem, DropdownMenu, DropdownSeparator, EmptyState, ErrorState, IconButton, SearchInput, Skeleton, confirm, toast } from "@/components/ui";
@@ -130,9 +130,9 @@ export function BedrockWorldsTab({ instance }: { instance: Instance }) {
             ))}
           </div>
         ) : q.data.length === 0 ? (
-          <EmptyState icon={<Globe2 size={34} />} title={t("worlds.empty.title")} text={noPlayer ? t("bedrock.worlds.empty_new") : t("bedrock.worlds.empty")} />
+          <EmptyState icon="globe" title={t("worlds.empty.title")} text={noPlayer ? t("bedrock.worlds.empty_new") : t("bedrock.worlds.empty")} />
         ) : list.length === 0 ? (
-          <EmptyState title={t("instances.no_match")} text={t("worlds.no_match", { q: query.trim() })} />
+          <EmptyState icon="search_none" title={t("instances.no_match")} text={t("worlds.no_match", { q: query.trim() })} />
         ) : (
           <div className="flex flex-col">
             {list.map((w) => (

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Button, Dialog, EmptyState, toast } from "@/components/ui";
-import { Sparkles } from "lucide-react";
 import { Term } from "@/features/help/glossary/Term";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
@@ -73,7 +72,7 @@ export function CleanupDialog({ instanceId, items, onClose }: { instanceId: stri
       }
     >
       {unused.length === 0 ? (
-        <EmptyState icon={<Sparkles size={26} />} title={t("org.cleanup.empty")} text={t("org.cleanup.empty_text")} />
+        <EmptyState icon="sparkle" title={t("org.cleanup.empty")} text={t("org.cleanup.empty_text")} />
       ) : (
         <div className="flex flex-col gap-3 pb-1">
           <p className="text-[13px] leading-relaxed text-muted">

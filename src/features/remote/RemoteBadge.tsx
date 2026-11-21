@@ -1,10 +1,11 @@
-import { Cloud, ExternalLink, FolderOpen, Network } from "lucide-react";
+import { Cloud, ExternalLink, Network } from "lucide-react";
 import { Button, Tooltip, cn } from "@/components/ui";
 import type { Server } from "@/lib/types";
 import { useT } from "@/i18n";
 import { useAgentConn } from "./ConnDot";
 import { openAgentPanel } from "./panel";
 import { agentByKey } from "./store";
+import { PixelIcon } from "@/components/ui/pixel/PixelIcon";
 
 export function RemoteBadge({ server, className }: { server: Server; className?: string }) {
   const t = useT();
@@ -51,7 +52,7 @@ export function RemoteFilesHint({ server }: { server: Server }) {
   return (
     <div className="flex h-full items-center justify-center p-8">
       <div className="flex max-w-[480px] flex-col items-center gap-3 rounded-panel bg-surface px-8 py-10 text-center">
-        <FolderOpen size={34} strokeWidth={1.5} className="text-dim" />
+        <PixelIcon name="folder" className="text-muted" />
         <div className="text-[15px] font-semibold text-text">{t("rmt.files.title")}</div>
         <p className="text-[13px] leading-relaxed text-muted">{t("rmt.files.text", { name: server.remote?.agent_name ?? "" })}</p>
         <PanelButton server={server} size="md" />

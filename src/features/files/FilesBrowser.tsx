@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useBlocker } from "@tanstack/react-router";
-import { ChevronsDownUp, FilePlus, FileText, FolderInput, FolderPlus, FolderTree, RefreshCw, Upload } from "lucide-react";
+import { ChevronsDownUp, FilePlus, FileText, FolderInput, FolderPlus, RefreshCw, Upload } from "lucide-react";
 import { api } from "@/lib/api";
 import type { FileContent, FileEntry, FileScope, FileSearchHit, FileValidationError } from "@/lib/types";
 import {
@@ -768,7 +768,7 @@ export function FilesBrowser({ scope, running, runningText, initialExpanded = []
               <ContextMenu content={<RootMenu actions={actions} />}>
                 <div className="h-full" data-drop-dir="">
                   {!rootCount ? (
-                    <EmptyState icon={<FolderTree size={28} />} title={t("files.empty.title")} text={t("files.empty.text")} className="py-10" />
+                    <EmptyState icon="folder" title={t("files.empty.title")} text={t("files.empty.text")} className="py-10" />
                   ) : (
                     <FileTree
                       ref={tree}
@@ -822,7 +822,7 @@ export function FilesBrowser({ scope, running, runningText, initialExpanded = []
             running={running}
             runningText={runningText}
             actions={actions}
-            empty={<EmptyState icon={<FileText size={30} />} title={t("files.pick.title")} text={t("files.pick.text")} className="flex-1" />}
+            empty={<EmptyState icon="file" title={t("files.pick.title")} text={t("files.pick.text")} className="flex-1" />}
           />
         </section>
       </div>

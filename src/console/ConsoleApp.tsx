@@ -8,6 +8,7 @@ import type { GameState, Instance, LogLine } from "@/lib/types";
 import { ct } from "./i18n";
 import { LogView } from "./LogView";
 import { useConsoleData } from "./useConsoleData";
+import { PixelIcon } from "@/components/ui/pixel/PixelIcon";
 
 const EMPTY: LogLine[] = [];
 const DOT: Record<LevelCat, string> = { info: "bg-text", warn: "bg-warn", error: "bg-danger", debug: "bg-dim", launcher: "bg-brand" };
@@ -169,7 +170,7 @@ export function ConsoleApp() {
       ) : (
         <div className="grid flex-1 place-items-center text-center">
           <div>
-            <SquareTerminal size={30} className="mx-auto mb-3 text-dim" />
+            <PixelIcon name="terminal" className="mx-auto mb-3 text-muted" />
             <div className="text-[14px] font-semibold">{ct("console.empty")}</div>
             <div className="mt-1 text-[12.5px] text-muted">{ct("console.empty_text")}</div>
           </div>

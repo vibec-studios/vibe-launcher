@@ -512,7 +512,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
   ) : (
     <EmptyState
       className="py-10"
-      icon={<SquareTerminal size={30} strokeWidth={1.6} />}
+      icon="terminal"
       title={t("logs.empty_live.title")}
       text={files.data?.length ? t("logs.empty_live.text_files") : t("logs.empty_live.text")}
     />
