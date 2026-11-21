@@ -105,6 +105,9 @@ export function SettingsDialog() {
             e.preventDefault();
             (e.currentTarget as HTMLElement | null)?.focus();
           }}
+          onEscapeKeyDown={(e) => {
+            if (e.target instanceof HTMLElement && e.target.closest("[data-esc-local]")) e.preventDefault();
+          }}
           tabIndex={-1}
           className={cn(
             "outline-none",

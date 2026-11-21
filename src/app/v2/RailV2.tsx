@@ -45,7 +45,7 @@ function Item({
             : "text-muted hover:bg-[var(--v2-hover)] hover:text-text",
         )}
       >
-        {active && <span aria-hidden className={cn("absolute top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-pill bg-brand", wide ? "-left-3" : "-left-[14px]")} />}
+        {active && <span aria-hidden className={cn("vl2-mark absolute top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-pill bg-brand", wide ? "-left-3" : "-left-[14px]")} />}
         <span className={cn("grid shrink-0 place-items-center [&>svg]:h-[19px] [&>svg]:w-[19px]", active && "text-brand")}>{icon}</span>
         {wide && <span className="min-w-0 flex-1 truncate text-left">{label}</span>}
         {badge}

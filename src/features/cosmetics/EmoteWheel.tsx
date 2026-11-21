@@ -161,7 +161,7 @@ export function EmoteWheelDialog({
                   <span className="truncate px-1.5 pb-1 text-[11px] text-text">{itemName(e, lang)}</span>
                   {used >= 0 && <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-pill bg-accent px-1 text-[10px] font-semibold text-[var(--on-accent)]">{used + 1}</span>}
                   {!mine && (
-                    <span className="absolute left-1 top-1 grid h-5 w-5 place-items-center rounded-xs bg-black/80 text-muted">
+                    <span className="absolute left-1 top-1 grid h-5 w-5 place-items-center rounded-xs bg-black/80 text-[#fff]/75">
                       <Lock size={10} />
                     </span>
                   )}

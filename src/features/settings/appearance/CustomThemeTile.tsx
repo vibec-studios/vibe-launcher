@@ -72,6 +72,7 @@ export function CustomThemeTile({ theme, active, modified, ...act }: { theme: Cu
         {editing ? (
           <input
             autoFocus
+            data-esc-local
             spellCheck={false}
             aria-label={t("ct.rename")}
             value={name}
@@ -93,7 +94,7 @@ export function CustomThemeTile({ theme, active, modified, ...act }: { theme: Cu
             {theme.name}
           </button>
         )}
-        {modified && !editing && <span className="shrink-0 text-[11px] text-dim">{t("ap.theme.modified")}</span>}
+        {modified && !editing && <span role="img" aria-label={t("ap.theme.modified")} title={t("ap.theme.modified")} className="h-1.5 w-1.5 shrink-0 rounded-full bg-warn" />}
         <DropdownMenu
           trigger={
             <IconButton label={t("ct.actions", { name: theme.name })} size="sm" variant="ghost" className="h-6 w-6 shrink-0">

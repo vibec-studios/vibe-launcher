@@ -68,8 +68,8 @@ const Tile = memo(function Tile({
         <ShotThumb path={shot.path} className="absolute inset-0" />
         <span className="pointer-events-none absolute inset-0 bg-white/0 transition-colors duration-100 group-hover:bg-white/[.04] group-data-[state=open]:bg-white/[.04]" />
         <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/60 px-2.5 py-1.5 text-[12px] opacity-0 transition-opacity duration-100 group-hover:opacity-100 group-data-[state=open]:opacity-100">
-          <span className="truncate font-medium text-text">{instanceName}</span>
-          <span className="shrink-0 text-muted">{new Date(shot.taken_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
+          <span className="truncate font-medium text-[#fff]">{instanceName}</span>
+          <span className="shrink-0 text-[#fff]/70">{new Date(shot.taken_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
         </span>
       </button>
     </ContextMenu>
