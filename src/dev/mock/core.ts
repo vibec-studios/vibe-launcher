@@ -77,7 +77,7 @@ let settings: Settings = {
   msa_client_id: null,
   check_updates: true,
   update_channel: "release",
-  vibe: { enabled: true, social: true, presence: true, hosting: true, sharing: true },
+  vibe: { enabled: mockFlag("vl.mock.onboarding") !== "1", social: true, presence: true, hosting: true, sharing: true },
   discord_rpc: true,
   discord_details: true,
   discord_large: "logo",
@@ -93,7 +93,7 @@ let settings: Settings = {
   fix_backup: { mode: "recommended", areas: ["mods", "configs", "options"] },
   world_backup_on_launch: false,
   world_backups_keep: 5,
-  minecraftcapes: true,
+  minecraftcapes: mockFlag("vl.mock.onboarding") !== "1",
   // Screenshots: localStorage vl.mock.mode = simple|expert, vl.mock.onboarding = 1 (Erststart)
   ui_mode: mockFlag("vl.mock.mode") === "simple" ? "simple" : "expert",
   onboarding_done: mockFlag("vl.mock.onboarding") !== "1",

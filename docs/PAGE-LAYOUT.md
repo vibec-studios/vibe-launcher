@@ -47,3 +47,10 @@ Gemeinsame Bausteine in `src/components/ui/PageLayout.tsx` und `src/components/u
 ## Bibliothek
 
 Sortierung, Gruppierung und Ansicht (Kacheln/Liste) liegen in einem Menü „Sortierung und Ansicht“ (`src/features/instances/LibraryToolbar.tsx`). So passt die Leiste bei 1280 px in DE und EN in eine Zeile.
+
+## UI-Skalierung und Popover
+
+Die UI-Skalierung nutzt im Launcher den Webview-Zoom. Im Mock und als Rückfall setzt `setZoom` (`src/lib/appearance.ts`) CSS-`zoom` auf `<html>`,
+dazu `--ui-zoom` und `data-css-zoom`. `src/styles/zoom.css` hebt den Zoom für die Radix-Popper-Hülle auf und setzt ihn auf den Inhalt,
+damit Menüs, Selects, Popover und Tooltips am Auslöser sitzen und im Fenster bleiben. Hohe Popover begrenzen sich mit
+`max-h-[var(--vl-popper-max-h)]` plus `overflow-y-auto` auf den freien Platz (so schon in `Menu.tsx`).

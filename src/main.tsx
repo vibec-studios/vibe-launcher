@@ -8,6 +8,7 @@ import "./styles/themes.css";
 import "./styles/v2.css";
 import "./styles/custom.css";
 import "./styles/pixel.css";
+import "./styles/zoom.css";
 import { queryClient } from "@/lib/queries";
 import { router } from "@/app/router";
 import { installGuards } from "@/app/guards";

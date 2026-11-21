@@ -454,14 +454,20 @@ function setZoom(scale: number) {
   const f = scale / 100;
   if (import.meta.env.VITE_MOCK === "1") {
     // Browser-Vorschau: CSS-Zoom statt Webview-Zoom
-    document.documentElement.style.zoom = String(f);
+    setCssZoom(f);
     return;
   }
   getCurrentWebview()
     .setZoom(f)
-    .catch(() => {
-      document.documentElement.style.zoom = String(f);
-    });
+    .then(() => setCssZoom(1))
+    .catch(() => setCssZoom(f));
+}
+
+function setCssZoom(f: number) {
+  const root = document.documentElement;
+  root.style.zoom = f === 1 ? "" : String(f);
+  root.style.setProperty("--ui-zoom", String(f));
+  root.toggleAttribute("data-css-zoom", f !== 1);
 }
 
 /** Zuletzt gespeicherte Darstellung (ohne saisonales Theme) – z. B. Standardansicht der Bibliothek. */
