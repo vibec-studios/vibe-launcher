@@ -1,4 +1,5 @@
 //! Vibe Launcher – Backend.
+pub mod afk;
 pub mod auth;
 pub mod bedrock;
 pub mod client_packs;
@@ -100,6 +101,7 @@ pub fn run() {
             platform::app_icon::apply(app.handle(), &appearance);
             platform::init(app.handle());
             play::skin_bridge::init(app.handle());
+            afk::init(app.handle());
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 // Schema `vibelauncher://` beim Nutzer registrieren (Installer macht das ebenfalls);
@@ -243,6 +245,11 @@ pub fn run() {
             commands::game::instance_kill,
             commands::game::game_states,
             commands::game::console_open,
+            afk::commands::afk_support,
+            afk::commands::afk_sessions,
+            afk::commands::afk_events,
+            afk::commands::afk_set_background,
+            afk::commands::afk_send,
             commands::game::instance_log_session,
             commands::game::instance_log_files,
             commands::game::instance_log_read,

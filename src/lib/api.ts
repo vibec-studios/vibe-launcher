@@ -104,8 +104,8 @@ export const api = {
   instanceInstall: (id: string, force = false) => call<string>("instance_install", { id, force }),
   /** `world`: Ordnername unter saves/ – startet per Quick Play direkt in diese Welt (ab Minecraft 1.20). */
   /** `server`: Adresse (host[:port]) – direkt auf diesen Server (Quick Play ab 1.20, sonst --server/--port). */
-  instanceLaunch: (id: string, accountId?: string | null, world?: string | null, server?: string | null, offline?: boolean) =>
-    call<string>("instance_launch", { id, accountId: accountId ?? null, world: world ?? null, server: server ?? null, offline: offline ?? null }),
+  instanceLaunch: (id: string, accountId?: string | null, world?: string | null, server?: string | null, offline?: boolean, afk?: boolean) =>
+    call<string>("instance_launch", { id, accountId: accountId ?? null, world: world ?? null, server: server ?? null, offline: offline ?? null, afk: afk ?? null }),
   instanceKill: (id: string, runId?: string | null) => call<void>("instance_kill", { id, runId: runId ?? null }),
   consoleOpen: (runId?: string | null) => call<void>("console_open", { runId: runId ?? null }),
   gameStates: () => call<T.GameState[]>("game_states"),

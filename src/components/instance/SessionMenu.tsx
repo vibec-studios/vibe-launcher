@@ -5,6 +5,7 @@ import { useT } from "@/i18n";
 import { isActive } from "@/lib/sessions";
 import type { GameState, Instance } from "@/lib/types";
 import { killInstance, openConsole, useInstanceActions } from "./actions";
+import { AfkSessionItems } from "@/features/afk/AfkMenu";
 
 export function SessionMenuItems({ instance, runs }: { instance: Instance; runs: GameState[] }) {
   const t = useT();
@@ -33,6 +34,7 @@ export function SessionMenuItems({ instance, runs }: { instance: Instance; runs:
           ))}
         </>
       )}
+      <AfkSessionItems instance={instance} runs={runs} />
     </>
   );
 }

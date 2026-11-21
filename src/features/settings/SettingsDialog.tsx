@@ -61,6 +61,7 @@ import { SkinImportSettings } from "@/features/skins/SkinImport";
 import { VibeTab } from "./VibeCard";
 import { openFeedback } from "@/features/feedback/store";
 import { AppearanceTab } from "./AppearanceTab";
+import { AfkSettingsCard } from "@/features/afk/AfkSettingsCard";
 import { SETTINGS_TABS, closeSettings, setSettingsTab, useSettingsDialog, type SettingsTab } from "./store";
 import { setMode, useSimple, type UiMode } from "@/lib/mode";
 import { simpleHides, useExpert } from "@/lib/simple-mode";
@@ -610,6 +611,8 @@ function GameTab({ s, update }: TabProps) {
         </SettingRow>
       </SettingsCard>
       </div>
+
+      <AfkSettingsCard s={s} update={update} />
     </>
   );
 }

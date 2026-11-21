@@ -47,6 +47,7 @@ import access from "./access";
 import iconart from "./iconart";
 import customize from "./customize";
 import sessions from "./sessions";
+import afk from "./afk";
 import usability from "./usability";
 import layout from "./layout";
 import uic from "./uic";
@@ -67,7 +68,7 @@ export { LANGUAGES, intlLocale, isLang, languageName, normalizeLang, type Lang }
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, clips, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize, sessions, usability, layout, uic, organize, privacy, portable, skineditor, packupdate, wave4, servertarget];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, clips, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize, sessions, usability, layout, uic, organize, privacy, portable, skineditor, packupdate, wave4, servertarget, afk];
 const dicts: Partial<Record<Lang, Dict>> & { de: Dict; en: Dict } = { de: {}, en: {} };
 bundles.push(worldMap);
 bundles.push(modMap);

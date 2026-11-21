@@ -118,7 +118,7 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
 
   /** `world`: per Quick Play direkt in diese Welt (Ordnername unter saves/).
    *  Vor dem Start: bekannte Mod-Probleme -> Rückfrage „Trotzdem starten“ / „Beheben und starten“. */
-  const launch = async (i: Instance, world?: string | null, server?: string | null, opts?: { skipCheck?: boolean }) => {
+  const launch = async (i: Instance, world?: string | null, server?: string | null, opts?: { skipCheck?: boolean; afk?: boolean }) => {
     const pick = await launchAccount(i);
     if (!pick) return;
     if (!opts?.skipCheck && i.loader.kind !== "vanilla") {
@@ -133,7 +133,7 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
       }
     }
     try {
-      await api.instanceLaunch(i.id, pick.accountId, world ?? null, server ?? null);
+      await api.instanceLaunch(i.id, pick.accountId, world ?? null, server ?? null, undefined, opts?.afk);
       const s = queryClient.getQueryData<Settings>(qk.settings);
       if (s?.open_log_on_launch) open(i, "logs");
     } catch (e) {

@@ -12,6 +12,7 @@ import { useInstanceRuns } from "@/lib/gameStore";
 import { isActive } from "@/lib/sessions";
 import { SessionMenuTrigger } from "./SessionMenu";
 import { PrelaunchSkip, prelaunchLabel } from "./PrelaunchStep";
+import { AfkSplitTrigger, useAfkEnabled } from "@/features/afk/AfkMenu";
 
 export const PlayButton = memo(function PlayButton({
   instance,
@@ -30,6 +31,7 @@ export const PlayButton = memo(function PlayButton({
   const { phase, task } = useRunPhase(instance.id);
   const runs = useInstanceRuns(instance.id);
   const activeCount = runs.filter(isActive).length;
+  const afk = useAfkEnabled() && !instance.bedrock;
 
   if (size === "icon" && phase === "running") {
     const label = activeCount > 1 ? t("sess.stop_all") : t("common.stop");
@@ -145,15 +147,22 @@ export const PlayButton = memo(function PlayButton({
     );
   }
 
-  return (
+  const play = (
     <Button
       variant="accent"
       size={size === "lg" ? "lg" : "md"}
-      className={cn(h, className)}
+      className={cn(h, afk && "rounded-r-none", className)}
       icon={<Play size={15} fill="currentColor" />}
       onClick={() => launch(instance)}
     >
       {t("common.play")}
     </Button>
+  );
+  if (!afk) return play;
+  return (
+    <div className="flex items-stretch">
+      {play}
+      <AfkSplitTrigger instance={instance} />
+    </div>
   );
 });

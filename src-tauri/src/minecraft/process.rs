@@ -173,6 +173,7 @@ impl GameManager {
         if lines.is_empty() {
             return;
         }
+        crate::afk::observe_log(key, &lines);
         self.reg.lock().push(key, lines);
     }
 
@@ -346,6 +347,7 @@ impl GameManager {
                     gm.launcher_line(&run_id, LogLevel::Launcher, format!("Sitzungs-Log gespeichert: {}", p.display()));
                 }
             }
+            crate::afk::on_exit(&state, &run_id, &instance_id);
             gm.flush();
             let (st, secs) = {
                 let mut reg = gm.reg.lock();

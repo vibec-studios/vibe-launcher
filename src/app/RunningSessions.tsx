@@ -12,6 +12,7 @@ import { instanceAccent } from "@/lib/format";
 import { formatUptime } from "@/lib/sessions";
 import type { GameState, Instance } from "@/lib/types";
 import { SessionResources } from "@/features/perf/SessionResources";
+import { AfkChipBadge, AfkHost, AfkRowToggle } from "@/features/afk/AfkChip";
 
 function useNow(on: boolean) {
   const [now, setNow] = useState(() => Date.now());
@@ -43,6 +44,7 @@ function SingleChip({ run, inst }: { run: GameState; inst: Instance }) {
         <Dot run={run} />
         <span className="max-w-[160px] truncate">{label(run, inst)}</span>
       </button>
+      <AfkChipBadge run={run} inst={inst} />
       <Tooltip content={t("common.stop")} side="bottom">
         <button aria-label={t("common.stop")} onClick={() => killInstance(inst, run.run_id)} className="grid h-full w-8 place-items-center text-muted hover:bg-danger hover:text-black">
           <Square size={11} fill="currentColor" />
@@ -77,6 +79,7 @@ function Row({ run, inst, now, onDone }: { run: GameState; inst: Instance | unde
         </span>
       </button>
       <div className="flex shrink-0 items-center gap-0.5">
+        <AfkRowToggle run={run} />
         <IconButton label={t("sess.console")} tip variant="ghost" size="sm" onClick={() => openConsole(run.run_id)}>
           <SquareTerminal size={14} />
         </IconButton>
@@ -142,6 +145,7 @@ export function RunningGames() {
     <>
       <SessionResources runs={shown} name={(run) => label(run, byId.get(run.instance_id))} />
       {chips}
+      <AfkHost />
     </>
   );
 }

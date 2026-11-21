@@ -313,6 +313,7 @@ pub async fn launch(
     if let Some(w) = log4shell_warning(&prep.resolved.base_id, prep.resolved.logging.is_some() && prep.log_config.is_some()) {
         gm.launcher_line(run, LogLevel::Warn, w);
     }
+    crate::afk::prepare(state, id, run, &prep, &mut plan).await;
     gm.launcher_line(run, LogLevel::Launcher, format!("Startbefehl: {}", plan.display));
     if let Some(cmd) = inst.hooks.pre_launch.as_deref().filter(|c| !c.trim().is_empty()) {
         task.stage("Pre-Launch-Befehl läuft …", Some(0.95));
