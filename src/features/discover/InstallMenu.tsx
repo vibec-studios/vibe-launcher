@@ -17,6 +17,7 @@ import { ManualBadge } from "@/components/content/ManualBadge";
 import { openInstall, type InstallProject } from "@/components/content/installStore";
 import { installKey, packKey, startContentInstall, startManualDownload, useExpected, useInstallTasks } from "@/components/content/install";
 import { compatibility, contentKindOf, navigateTo } from "@/components/content/util";
+import { ServerPickerSection } from "./server/ServerPickerSection";
 
 type P = InstallProject & Pick<ProjectHit, "game_versions" | "loaders" | "manual_download">;
 
@@ -265,6 +266,7 @@ function PickerList({ project, close }: { project: P; close: () => void }) {
           ))}
         </div>
       )}
+      <ServerPickerSection project={project} close={close} />
       <div className="-mx-1 my-1 h-px bg-line" />
       <button
         onClick={() => {

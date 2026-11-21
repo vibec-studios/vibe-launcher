@@ -22,6 +22,7 @@ pub mod platform;
 pub mod play;
 pub mod portable;
 pub mod server;
+pub mod serverpack;
 pub mod settings;
 pub mod state;
 pub mod tasks;
@@ -339,6 +340,13 @@ pub fn run() {
             commands::server::servers_quit,
             commands::server::server_extras_get,
             commands::server::server_extras_set,
+            commands::server_target::server_addon_check,
+            commands::server_pack::server_pack_preview,
+            commands::server_pack::server_pack_apply,
+            commands::server_pack::server_pack_bundle,
+            commands::server_pack::server_pack_status,
+            commands::server_pack::server_pack_restore,
+            commands::server_pack::server_pack_snapshot_delete,
             // content
             commands::content::curseforge_available,
             commands::content::content_search,

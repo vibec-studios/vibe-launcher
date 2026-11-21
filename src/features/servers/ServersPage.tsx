@@ -2,7 +2,9 @@
 // alles Weitere im ⋯-Menü bzw. per Rechtsklick. Der Seitentitel steht in der Titelleiste.
 import { memo, useDeferredValue, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { MoreHorizontal, Plus, SearchX, Server as ServerIconLucide, Users } from "lucide-react";
+import { MoreHorizontal, PackageOpen, Plus, SearchX, Server as ServerIconLucide, Users } from "lucide-react";
+import { openPackToServer } from "@/features/serverpack/store";
+import { PackToServerHost } from "@/features/serverpack/PackToServerDialog";
 import { useServerStatus, useServers } from "@/lib/queries";
 import type { Server } from "@/lib/types";
 import { formatLoader } from "@/lib/format";
@@ -103,12 +105,18 @@ export function ServersPage() {
 
   return (
     <Page>
+        <PackToServerHost />
         {list.length > 0 && (
           <PageToolbar
             actions={
-              <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
-                {t("srv.new")}
-              </Button>
+              <>
+                <Button variant="subtle" icon={<PackageOpen size={15} />} onClick={() => openPackToServer()} data-testid="servers-pack">
+                  {t("sp.menu.from_pack")}
+                </Button>
+                <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
+                  {t("srv.new")}
+                </Button>
+              </>
             }
           >
             <SearchInput value={query} onChange={setQuery} placeholder={t("srv.search")} className="min-w-[160px] max-w-[320px] flex-1 basis-[240px]" />
@@ -130,9 +138,14 @@ export function ServersPage() {
             title={t("srv.empty.title")}
             text={t("srv.empty.text")}
             action={
-              <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
-                {t("srv.new")}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
+                  {t("srv.new")}
+                </Button>
+                <Button variant="subtle" icon={<PackageOpen size={15} />} onClick={() => openPackToServer()}>
+                  {t("sp.menu.from_pack")}
+                </Button>
+              </div>
             }
           />
         ) : sorted.length === 0 ? (

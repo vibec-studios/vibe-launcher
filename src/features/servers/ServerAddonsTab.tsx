@@ -1,11 +1,12 @@
 // Plugins (Paper/Purpur/Folia: plugins/) bzw. Mods (Fabric & Co.: mods/) eines Servers: links die installierten
-// Dateien (aktivieren/deaktivieren, entfernen, Updates), rechts Suche + Installation über Modrinth und Hangar.
-import { useDeferredValue, useState } from "react";
-import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowUpCircle, Download, ExternalLink, FolderOpen, MoreHorizontal, Package, RefreshCw, Trash2 } from "lucide-react";
+// Dateien (aktivieren/deaktivieren, entfernen, Updates), rechts der Weg zur Entdecken-Seite (Server als Ziel) und Modpacks.
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowUpCircle, Compass, ExternalLink, FolderOpen, MoreHorizontal, Package, RefreshCw, Trash2 } from "lucide-react";
 import { queryClient, useServerStatus } from "@/lib/queries";
 import type { Server } from "@/lib/types";
-import { formatBytes, formatCount, formatRelative } from "@/lib/format";
+import { formatBytes, formatLoader } from "@/lib/format";
 import {
   Button,
   ContextItem,
@@ -18,12 +19,9 @@ import {
   ErrorState,
   IconButton,
   SearchInput,
-  Segmented,
-  Select,
   SettingsCard,
   Skeleton,
   Switch,
-  Tag,
   Tooltip,
   cn,
   confirm,
@@ -33,8 +31,9 @@ import {
 import { openExternal } from "@/components/content/util";
 import { useT, t as tt } from "@/i18n";
 import { openServerFolder } from "./actions";
-import { ServerProjectOverlay, type AddonRef } from "./ServerProjectOverlay";
-import { addonApi, aqk, type Addon, type AddonHit, type AddonList, type AddonSource, type AddonUpdate } from "./addonsApi";
+import { addonApi, aqk, serverSoftware, type Addon, type AddonList, type AddonUpdate } from "./addonsApi";
+import { serverTargetKey } from "@/features/installtarget/registry";
+import { PackCard } from "@/features/serverpack/PackCard";
 
 function refresh(id: string) {
   queryClient.invalidateQueries({ queryKey: aqk.addons(id) });
@@ -221,139 +220,33 @@ function InstalledList({ server, list, updates }: { server: Server; list: AddonL
   );
 }
 
-function SearchPanel({ server, list, onOpen }: { server: Server; list: AddonList; onOpen: (r: AddonRef) => void }) {
+function FindCard({ server, plugins }: { server: Server; plugins: boolean }) {
   const t = useT();
-  const hangar = !!list.target.hangar;
-  const [source, setSource] = useState<AddonSource>("modrinth");
+  const nav = useNavigate();
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState("relevance");
-  const q = useDeferredValue(query.trim());
-  const src: AddonSource = hangar ? source : "modrinth";
-  const res = useQuery({
-    queryKey: aqk.search(server.id, src, q, sort),
-    queryFn: () => addonApi.search(server.id, src, q, sort, 0),
-    staleTime: 5 * 60_000,
-    placeholderData: keepPreviousData,
-  });
-  const installed = new Set(list.items.map((a) => a.project_id).filter(Boolean) as string[]);
-  // Gleiches Projekt aus der anderen Quelle (Modrinth/Hangar) am Namen erkennen
-  const names = new Set(list.items.flatMap((a) => [a.title, a.name]).filter(Boolean).map((n) => n!.toLowerCase()));
-  const [busy, setBusy] = useState<string | null>(null);
-  const install = useMutation({
-    mutationFn: (h: AddonHit) => addonApi.install(server.id, h.source, h.id),
-    onMutate: (h) => setBusy(h.id),
-    onSuccess: (files, h) => {
-      toast.success(
-        files.length > 1
-          ? tt("srv.addons.installed_deps", {
-              name: h.title,
-              n: files.length - 1,
-            })
-          : tt("srv.addons.installed", { name: h.title }),
-        tt("srv.addons.restart_hint"),
-      );
-      refresh(server.id);
-    },
-    onError: (e) => toast.error(e, tt("srv.addons.install_failed")),
-    onSettled: () => setBusy(null),
-  });
-
+  const go = (q?: string, extra?: string) =>
+    nav({ to: "/discover", search: { server: serverTargetKey({ origin: "local", id: server.id }), q: q?.trim() || undefined, p: extra } });
   return (
-    <SettingsCard
-      title={list.target.plugins ? t("srv.addons.find.plugins") : t("srv.addons.find.mods")}
-      right={
-        hangar ? (
-          <Segmented<AddonSource>
-            value={source}
-            onChange={setSource}
-            items={[
-              { value: "modrinth", label: "Modrinth" },
-              { value: "hangar", label: "Hangar" },
-            ]}
-          />
-        ) : undefined
-      }
-    >
-      <div className="flex items-center gap-2 border-b border-line p-3">
-        <div className="min-w-0 flex-1">
-          <SearchInput value={query} onChange={setQuery} placeholder={list.target.plugins ? t("srv.addons.search.plugins") : t("srv.addons.search.mods")} />
-        </div>
-        <div className="w-[150px] shrink-0">
-          <Select
-            value={sort}
-            onChange={setSort}
-            options={[
-              { value: "relevance", label: t("srv.addons.sort.relevance") },
-              { value: "downloads", label: t("srv.addons.sort.downloads") },
-              { value: "updated", label: t("srv.addons.sort.updated") },
-            ]}
-          />
-        </div>
+    <SettingsCard title={plugins ? t("srv.addons.find.plugins") : t("srv.addons.find.mods")}>
+      <div className="flex flex-col gap-3 p-4" data-testid="addons-find">
+        <p className="text-[13px] leading-relaxed text-muted">
+          {t(plugins ? "st.find.text_plugins" : "st.find.text_mods", { software: serverSoftware(server, formatLoader), mc: server.mc_version })}
+        </p>
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            go(query);
+          }}
+        >
+          <div className="min-w-0 flex-1">
+            <SearchInput value={query} onChange={setQuery} placeholder={plugins ? t("srv.addons.search.plugins") : t("srv.addons.search.mods")} />
+          </div>
+          <Button type="submit" variant="primary" icon={<Compass size={14} />}>
+            {t("st.find.open")}
+          </Button>
+        </form>
       </div>
-      {res.isError && !res.data ? (
-        <ErrorState error={res.error} onRetry={() => res.refetch()} className="py-8" />
-      ) : !res.data ? (
-        <div className="flex flex-col gap-2 p-3">
-          {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className="h-12" />
-          ))}
-        </div>
-      ) : res.data.hits.length === 0 ? (
-        <div className="px-4 py-10 text-center text-[13px] text-dim">{t("srv.addons.no_results")}</div>
-      ) : (
-        <div className={cn(res.isFetching && "opacity-70")}>
-          {res.data.hits.map((h) => {
-            const have = installed.has(h.id) || names.has(h.title.toLowerCase());
-            return (
-              <div key={`${h.source}:${h.id}`} className={rowCls}>
-                <button type="button" className="shrink-0" aria-label={h.title} onClick={() => onOpen({ source: h.source, id: h.id })}>
-                  <AddonIcon src={h.icon_url} size={36} />
-                </button>
-                <div className="min-w-0 flex-1">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <button
-                      type="button"
-                      className="truncate text-left text-[13px] font-semibold text-text hover:underline"
-                      onClick={() => onOpen({ source: h.source, id: h.id })}
-                    >
-                      {h.title}
-                    </button>
-                    <span className="shrink-0 truncate text-caption text-dim">{t("srv.addons.by", { author: h.author })}</span>
-                  </div>
-                  <div className="truncate text-caption text-muted" title={h.description}>
-                    {h.description}
-                  </div>
-                  <div className="text-caption text-dim">
-                    {t("srv.addons.downloads", { n: formatCount(h.downloads) })}
-                    {h.updated ? ` · ${formatRelative(h.updated)}` : ""}
-                  </div>
-                </div>
-                {have ? (
-                  <Tag color="var(--color-ok)">{t("srv.addons.installed_tag")}</Tag>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="subtle"
-                    icon={<Download size={14} />}
-                    loading={busy === h.id}
-                    disabled={!!busy && busy !== h.id}
-                    onClick={() => install.mutate(h)}
-                  >
-                    {t("srv.addons.install")}
-                  </Button>
-                )}
-              </div>
-            );
-          })}
-          {res.data.total > res.data.hits.length && (
-            <div className="px-4 py-2.5 text-center text-caption text-dim">
-              {t("srv.addons.more", {
-                n: formatCount(res.data.total - res.data.hits.length),
-              })}
-            </div>
-          )}
-        </div>
-      )}
     </SettingsCard>
   );
 }
@@ -376,12 +269,9 @@ export function ServerAddonsTab({ server }: { server: Server }) {
   const [updating, setUpdating] = useState(false);
   const plugins = !!server.platform;
   const ups = updates.data ?? [];
-  // Projekt-Overlay (Stapel für Abhängigkeiten)
-  const [stack, setStack] = useState<AddonRef[]>([]);
 
   return (
     <div className="relative flex h-full flex-col">
-      {stack.length > 0 && list.data && <ServerProjectOverlay server={server} list={list.data} stack={stack} onStack={setStack} />}
       <div className="flex h-12 shrink-0 items-center gap-2 px-6">
         <p className="min-w-0 flex-1 truncate text-meta text-dim">
           {running
@@ -443,7 +333,10 @@ export function ServerAddonsTab({ server }: { server: Server }) {
             >
               <InstalledList server={server} list={list.data} updates={ups} />
             </SettingsCard>
-            <SearchPanel server={server} list={list.data} onOpen={(r) => setStack([r])} />
+            <div className="flex flex-col gap-5">
+              <FindCard server={server} plugins={plugins} />
+              {!plugins && <PackCard server={server} />}
+            </div>
           </div>
         )}
       </div>
