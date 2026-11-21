@@ -7,7 +7,7 @@ import { qk, waitForTask } from "@/lib/queries";
 import type { Diagnosis, DiagnosisAction, Instance, LoaderKind } from "@/lib/types";
 import { Button, Dialog, Skeleton, cn, toast } from "@/components/ui";
 import { useT, t as tt } from "@/i18n";
-import { uploadCrash } from "./LogsTab";
+import { uploadCrash } from "./source";
 import { openAutofix } from "@/features/content/autofixStore";
 import { DriverHelp } from "@/features/perf/DriverHelp";
 import { PixelIcon } from "@/components/ui/pixel/PixelIcon";
