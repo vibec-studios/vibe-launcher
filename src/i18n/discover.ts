@@ -259,6 +259,9 @@ export default {
     "drop.one_pack": "Es wird jeweils ein Modpack importiert – das erste wurde gewählt.",
 
     "export.title": "Instanz exportieren",
+    "export.next": "Weiter",
+    "export.review": "Export prüfen",
+    "export.metadata": "Versionsnummer, Autor und Beschreibung",
     "export.description": "{name} als Modpack-Datei speichern.",
     "export.format": "Format",
     "export.format.mrpack": "Modrinth",
@@ -543,6 +546,9 @@ export default {
     "drop.one_pack": "One modpack is imported at a time – the first one was picked.",
 
     "export.title": "Export instance",
+    "export.next": "Continue",
+    "export.review": "Review export",
+    "export.metadata": "Version number, author and description",
     "export.description": "Save {name} as a modpack file.",
     "export.format": "Format",
     "export.format.mrpack": "Modrinth",

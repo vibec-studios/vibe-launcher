@@ -27,12 +27,12 @@ function initialChoice(it: PreviewItem): Choice {
 
 function Row({ icon, title, meta, right, children, dim, onClick }: { icon: ReactNode; title: ReactNode; meta?: ReactNode; right?: ReactNode; children?: ReactNode; dim?: boolean; onClick?: () => void }) {
   return (
-    <div className={cn("rounded-ctl px-2 py-1.5", onClick && "cursor-default hover:bg-white/[.03]")} onClick={onClick}>
+    <div className={cn("rounded-card border border-line bg-surface px-3 py-2.5", onClick && "cursor-pointer hover:bg-surface2")} onClick={onClick}>
       <div className="flex items-center gap-3">
         {icon}
         <div className={cn("min-w-0 flex-1", dim && "opacity-70")}>
-          <div className="truncate text-[13.5px] font-semibold text-text">{title}</div>
-          {meta && <div className="text-meta text-muted">{meta}</div>}
+          <div className="break-words text-[15px] font-semibold text-text">{title}</div>
+          {meta && <div className="text-[13px] text-muted">{meta}</div>}
         </div>
         {right}
       </div>
@@ -43,11 +43,11 @@ function Row({ icon, title, meta, right, children, dim, onClick }: { icon: React
 
 function SectionTitle({ icon, children, count }: { icon: ReactNode; children: ReactNode; count: number }) {
   return (
-    <div className="flex items-center gap-2 px-2 pb-1 pt-3 text-[12.5px] font-semibold text-muted first:pt-0">
+    <h2 className="flex items-center gap-2 pt-3 text-[16px] font-semibold text-text first:pt-0">
       {icon}
       {children}
       <span className="tabular-nums text-dim">{count}</span>
-    </div>
+    </h2>
   );
 }
 
@@ -162,14 +162,14 @@ export function ApplyDialog({ instanceId, setIds, only, onClose }: { instanceId:
     if (q.isPending)
       return (
         <div className="flex flex-col gap-2">
-          <div className="mb-1 text-[13px] text-muted">{t("apply.loading")}</div>
+          <div className="mb-1 text-[14px] text-muted">{t("apply.loading")}</div>
           {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="h-[46px]" />
           ))}
         </div>
       );
     if (q.isError) return <ErrorState error={q.error} onRetry={() => q.refetch()} className="py-8" />;
-    if (!items.length || (groups.installed.length === items.length && !showInstalled))
+    if (!items.length)
       return (
         <div className="flex flex-col items-center gap-2 py-10 text-center text-[13px] text-muted">
           <ShieldCheck size={28} className="text-ok" />
@@ -177,7 +177,7 @@ export function ApplyDialog({ instanceId, setIds, only, onClose }: { instanceId:
         </div>
       );
     return (
-      <div className="-mx-2 flex flex-col">
+      <div className="flex flex-col gap-2">
         {groups.install.length > 0 && (
           <>
             <SectionTitle icon={<Download size={13} className="text-brand" />} count={groups.install.length}>
@@ -328,7 +328,8 @@ export function ApplyDialog({ instanceId, setIds, only, onClose }: { instanceId:
       onOpenChange={(o) => !o && onClose()}
       title={title}
       description={summary || undefined}
-      size="lg"
+      size="xl"
+      className="[&_.vl-dialog-foot]:flex-wrap"
       locked={running}
       footer={
         finished ? (
@@ -337,10 +338,6 @@ export function ApplyDialog({ instanceId, setIds, only, onClose }: { instanceId:
           </Button>
         ) : taskId ? null : (
           <>
-            <span className="mr-auto flex items-center gap-1.5 text-[12px] text-dim">
-              <ShieldCheck size={13} />
-              {t("apply.backup")}
-            </span>
             {only && (
               <Button variant="subtle" onClick={() => void dismiss()}>
                 {t("apply.dismiss")}
@@ -349,13 +346,19 @@ export function ApplyDialog({ instanceId, setIds, only, onClose }: { instanceId:
             <Button variant="subtle" onClick={onClose}>
               {t("common.cancel")}
             </Button>
-            <Button variant="primary" icon={<Download size={14} />} disabled={!picks.length} loading={starting} onClick={() => void start()}>
-              {picks.length ? t("apply.install_n", { n: picks.length }) : t("apply.nothing")}
+            <Button variant="primary" icon={<Download size={14} />} disabled={!picks.length} loading={starting || q.isPending} onClick={() => void start()}>
+              {q.isPending ? t("common.install") : picks.length ? t("apply.install_n", { n: picks.length }) : t("apply.nothing")}
             </Button>
           </>
         )
       }
     >
+      {q.data && !taskId && (
+        <p className="mb-4 flex items-center gap-2 rounded-card bg-ok/[.08] px-4 py-3 text-[14px] text-text">
+          <ShieldCheck size={17} className="shrink-0 text-ok" />
+          {t("apply.backup")}
+        </p>
+      )}
       {body()}
     </Dialog>
   );

@@ -33,7 +33,7 @@ export function SetPicker({ mc, loader, value, onChange }: { mc: string | null; 
         <Popover.Trigger asChild>
           <button
             disabled={!sets.length}
-            className="flex h-8 w-full items-center justify-between gap-2 rounded-ctl bg-field px-3 text-left text-[13px] text-text outline-none transition-colors hover:bg-white/[.07] focus-visible:ring-1 focus-visible:ring-accent/70 disabled:opacity-50 data-[state=open]:bg-white/[.07]"
+            className="flex min-h-10 w-full items-center justify-between gap-2 rounded-ctl bg-field px-3 text-left text-[14px] text-text outline-none transition-colors hover:bg-surface2 focus-visible:ring-1 focus-visible:ring-accent/70 disabled:opacity-50 data-[state=open]:bg-surface2"
           >
             <span className={cn("flex min-w-0 items-center gap-2", !chosen.length && "text-dim")}>
               <Layers size={14} className="shrink-0 text-dim" />
@@ -43,14 +43,14 @@ export function SetPicker({ mc, loader, value, onChange }: { mc: string | null; 
           </button>
         </Popover.Trigger>
         <Popover.Portal>
-          <Popover.Content align="start" sideOffset={6} collisionPadding={12} className="z-[70] w-[300px] rounded-card bg-overlay p-1.5 shadow-e2 outline-none">
+          <Popover.Content align="start" sideOffset={6} collisionPadding={12} className="scroll z-[70] max-h-[var(--radix-popover-content-available-height)] w-[min(360px,var(--radix-popover-content-available-width))] rounded-card border border-line bg-overlay p-2 shadow-e2 outline-none">
             {sets.map((s) => (
-              <div key={s.id} onClick={() => toggle(s.id)} className="flex items-center gap-2.5 rounded-ctl px-2 py-1.5 hover:bg-white/[.05]">
+              <div key={s.id} onClick={() => toggle(s.id)} className="flex cursor-pointer items-center gap-3 rounded-ctl px-2 py-2.5 hover:bg-surface2">
                 <Checkbox checked={value.includes(s.id)} onChange={() => {}} label={s.name} />
                 <SetCover set={s} size={28} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-semibold text-text">{s.name}</div>
-                  <div className="text-[11.5px] text-dim">{countLabel(t, s.entries.length)}</div>
+                  <div className="break-words text-[15px] font-semibold text-text">{s.name}</div>
+                  <div className="text-[13px] text-muted">{countLabel(t, s.entries.length)}</div>
                 </div>
               </div>
             ))}

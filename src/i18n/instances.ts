@@ -119,6 +119,10 @@ export default {
 
     // Neue Instanz
     "newinst.title": "Neue Instanz",
+    "newinst.step.game": "Minecraft einrichten",
+    "newinst.step.game_desc": "Wähle zuerst, ob du mit Mods spielen möchtest, und dann eine passende Minecraft-Version.",
+    "newinst.step.details": "Name und Extras",
+    "newinst.next": "Weiter",
     "newinst.desc": "Wähle Version und Loader. Minecraft, Loader und Java werden danach automatisch installiert.",
     "newinst.name": "Name",
     "newinst.name_placeholder": "Meine Instanz",
@@ -322,6 +326,10 @@ export default {
     "inst.crash.logs": "Open logs",
 
     "newinst.title": "New instance",
+    "newinst.step.game": "Set up Minecraft",
+    "newinst.step.game_desc": "Choose whether you want to play with mods, then pick a compatible Minecraft version.",
+    "newinst.step.details": "Name and extras",
+    "newinst.next": "Continue",
     "newinst.desc": "Pick a version and loader. Minecraft, the loader and Java are installed automatically afterwards.",
     "newinst.name": "Name",
     "newinst.name_placeholder": "My instance",

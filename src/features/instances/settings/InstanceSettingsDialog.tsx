@@ -80,15 +80,15 @@ function Body({ instance }: { instance: Instance }) {
 
   return (
     <>
-      <aside className="flex w-[232px] shrink-0 flex-col bg-bg max-[880px]:w-[60px]">
-        <div className="flex h-[64px] shrink-0 items-center gap-3 px-5 max-[880px]:justify-center max-[880px]:px-0">
+      <aside className="flex w-[208px] shrink-0 flex-col border-r border-line bg-bg max-[680px]:w-[60px]">
+        <div className="flex min-h-[72px] shrink-0 items-center gap-3 px-4 py-3 max-[680px]:justify-center max-[680px]:px-0">
           <InstanceIcon icon={d.icon} seed={d.id} accent={accent} size={30} />
-          <div className="min-w-0 max-[880px]:sr-only">
-            <D.Title className="truncate text-[14px] font-semibold text-text">{d.name}</D.Title>
-            <div className="truncate text-[12px] text-muted">{t("isd.title")}</div>
+          <div className="min-w-0 max-[680px]:sr-only">
+            <D.Title className="text-[14px] font-semibold text-text">{t("isd.title")}</D.Title>
+            <div className="truncate text-[13px] text-muted" title={d.name}>{d.name}</div>
           </div>
         </div>
-        <nav role="tablist" aria-orientation="vertical" className="scroll flex min-h-0 flex-1 flex-col gap-0.5 px-2.5 max-[880px]:items-center max-[880px]:px-0">
+        <nav role="tablist" aria-orientation="vertical" className="scroll flex min-h-0 flex-1 flex-col gap-1 px-2.5 max-[680px]:items-center max-[680px]:px-0">
           {tabs.map((id) => {
             const active = id === tab;
             return (
@@ -99,36 +99,36 @@ function Body({ instance }: { instance: Instance }) {
                   aria-label={t(`isd.tab.${id}`)}
                   onClick={() => setInstanceSettingsTab(id)}
                   className={cn(
-                    "relative flex h-9 shrink-0 items-center gap-3 rounded-ctl px-3 text-left text-[13.5px] font-medium transition-colors duration-100",
-                    "max-[880px]:h-10 max-[880px]:w-10 max-[880px]:justify-center max-[880px]:px-0",
-                    active ? "bg-white/[.08] text-text" : "text-muted hover:bg-white/[.05] hover:text-text",
+                    "relative flex min-h-10 shrink-0 items-center gap-3 rounded-ctl px-3 py-2 text-left text-[14px] font-medium transition-colors duration-100",
+                    "max-[680px]:w-10 max-[680px]:justify-center max-[680px]:px-0",
+                    active ? "bg-accent/[.12] text-text" : "text-muted hover:bg-surface2 hover:text-text",
                   )}
                 >
                   <span className={active ? "text-accent" : "text-dim"}>{ICONS[id]}</span>
-                  <span className="flex-1 truncate max-[880px]:hidden">{t(`isd.tab.${id}`)}</span>
-                  {id === "vibe" && vibeyOn && <Sparkles size={12} className="text-brand max-[880px]:hidden" />}
+                  <span className="min-w-0 flex-1 break-words max-[680px]:hidden">{t(`isd.tab.${id}`)}</span>
+                  {id === "vibe" && vibeyOn && <Sparkles size={12} className="shrink-0 text-brand max-[680px]:hidden" />}
                 </button>
               </Tooltip>
             );
           })}
         </nav>
-        <div className="flex h-11 shrink-0 items-center px-5 max-[880px]:justify-center max-[880px]:px-0">
+        <div className="flex min-h-11 shrink-0 items-center px-4 max-[680px]:justify-center max-[680px]:px-0">
           <SaveIndicator state={state} />
         </div>
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-[64px] shrink-0 items-center gap-4 pl-7 pr-4">
+        <header className="flex min-h-[72px] shrink-0 items-center gap-4 border-b border-line py-3 pl-6 pr-4">
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[16px] font-semibold text-text">{t(`isd.tab.${tab}`)}</h2>
-            <p className="truncate text-[12.5px] text-muted">{t(`isd.tab.${tab}.desc`)}</p>
+            <h2 className="break-words text-[18px] font-semibold text-text">{t(`isd.tab.${tab}`)}</h2>
+            <p className="break-words text-[14px] text-muted">{t(`isd.tab.${tab}.desc`)}</p>
           </div>
           <D.Close aria-label={t("common.close")} className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text">
             <X size={18} />
           </D.Close>
         </header>
         <div key={tab} className="scroll min-h-0 flex-1">
-          <div className="vl-settings flex flex-col gap-5 px-7 pb-10 pt-1 animate-fade-in">
+          <div className="vl-settings mx-auto flex w-full max-w-[900px] flex-col gap-5 px-6 pb-10 pt-5 animate-fade-in">
             <TabContent tab={tab} {...props} />
           </div>
         </div>
@@ -158,7 +158,7 @@ function TabContent({ tab, ...p }: TabProps & { tab: InstanceSettingsTab }) {
   }
 }
 
-const NARROW = "(max-width: 880px)";
+const NARROW = "(max-width: 680px)";
 function useNarrow() {
   const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW).matches);
   useEffect(() => {

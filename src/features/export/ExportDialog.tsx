@@ -2,9 +2,9 @@
 // Format wählen, Metadaten, Dateibaum (exportEntries) mit Checkboxen, Speicherort, Fortschritt, "Im Ordner zeigen".
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { AlertTriangle, Check, CheckCircle2, ChevronRight, File, Folder, FolderOpen, Minus, PackageOpen } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, ChevronRight, File, Folder, FolderOpen, Minus, PackageOpen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Dialog, Field, Input, Progress, Segmented, Skeleton, Textarea, cn, toast } from "@/components/ui";
+import { Button, Dialog, Field, Input, Progress, Skeleton, Textarea, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatBytes } from "@/lib/format";
@@ -94,6 +94,7 @@ function compactInclude(nodes: Node[], sel: Set<string>): string[] {
 export function ExportDialog({ instance, open, onOpenChange }: { instance: Instance; open: boolean; onOpenChange: (open: boolean) => void }) {
   const t = useT();
   const { data: accounts } = useAccounts();
+  const [step, setStep] = useState<"format" | "review">("format");
   const [format, setFormat] = useState<Fmt>("mrpack");
   const [name, setName] = useState(instance.name);
   const [version, setVersion] = useState("1.0.0");
@@ -107,6 +108,7 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
   // Beim Öffnen zurücksetzen
   useEffect(() => {
     if (!open) return;
+    setStep("format");
     setName(instance.source?.name ?? instance.name);
     setVersion(instance.source?.version_name ?? "1.0.0");
     setAuthor((a) => a || (accounts?.find((x) => x.active)?.username ?? ""));
@@ -140,7 +142,7 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
   }, [entriesQ.data, tree]);
 
   const task = useTask(taskId);
-  const running = busy || task?.status === "running";
+  const running = busy || (!!taskId && (!task || task.status === "running"));
   const done = task?.status === "done";
   const failed = task?.status === "failed" || task?.status === "cancelled";
 
@@ -155,6 +157,7 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
 
   const start = async () => {
     setError(null);
+    setBusy(true);
     const ext = FORMATS.find((f) => f.value === format)!.ext;
     try {
       const { save } = await import("@tauri-apps/plugin-dialog");
@@ -165,7 +168,6 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
         filters: [{ name: t(`export.format.${format}`), extensions: [ext] }],
       });
       if (!target) return;
-      setBusy(true);
       const id = await api.exportInstance(instance.id, {
         format,
         dest: target,
@@ -184,13 +186,16 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
     }
   };
 
+  const reviewing = step === "review" && !running && !done;
+  const choosing = step === "format" && !running && !done;
   return (
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
       title={t("export.title")}
       description={t("export.description", { name: instance.name })}
-      size="lg"
+      size="xl"
+      className="[&_.vl-dialog-foot]:flex-wrap"
       footer={
         done ? (
           <>
@@ -205,12 +210,15 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t("install.background")}
           </Button>
+        ) : choosing ? (
+          <>
+            <Button variant="subtle" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
+            <Button variant="primary" icon={<ArrowRight size={16} />} onClick={() => setStep("review")}>{t("export.next")}</Button>
+          </>
         ) : (
           <>
-            <Button variant="subtle" onClick={() => onOpenChange(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button variant="primary" icon={<PackageOpen size={14} />} onClick={start} disabled={!name.trim() || !entriesQ.data || sel.size === 0}>
+            <Button variant="subtle" className="mr-auto" icon={<ArrowLeft size={16} />} onClick={() => setStep("format")}>{t("common.back")}</Button>
+            <Button variant="primary" icon={<PackageOpen size={16} />} onClick={start} disabled={!name.trim() || !entriesQ.data || sel.size === 0}>
               {failed ? t("common.retry") : t("export.start")}
             </Button>
           </>
@@ -218,66 +226,75 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
       }
     >
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-2" aria-label={t("export.format")}>
-          <Segmented<Fmt>
-            className="self-start"
-            value={format}
-            onChange={setFormat}
-            items={FORMATS.map((f) => ({
-              value: f.value,
-              disabled: running || done,
-              label: (
-                <span className="flex items-center gap-1.5">
-                  {t(`export.format.${f.value}`)}
-                  <span className="text-caption font-normal text-dim">.{f.ext}</span>
+        {choosing && (
+          <div className="grid gap-3" role="group" aria-label={t("export.format")}>
+            {FORMATS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                aria-pressed={format === f.value}
+                onClick={() => setFormat(f.value)}
+                className={cn(
+                  "flex min-w-0 items-center gap-4 rounded-card border p-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
+                  format === f.value ? "border-accent bg-accent/[.08]" : "border-line bg-surface hover:bg-surface2",
+                )}
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl bg-surface3 text-accent"><PackageOpen size={20} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-[16px] font-semibold text-text">{t(`export.format.${f.value}`)}</span>
+                    <span className="text-[13px] text-muted">.{f.ext}</span>
+                  </span>
+                  <span className="mt-0.5 block text-[14px] text-muted">{t(`export.format_text.${f.value}`)}</span>
                 </span>
-              ),
-            }))}
-          />
-          <p className="px-1 text-meta leading-snug text-muted">{t(`export.format_text.${format}`)}</p>
-        </div>
-
-        <div className="grid grid-cols-[minmax(0,1fr)_140px] gap-3">
-          <Field label={t("export.name")}>
-            <Input value={name} onChange={(e) => setName(e.target.value)} disabled={running || done} />
-          </Field>
-          <Field label={t("export.version")}>
-            <Input value={version} onChange={(e) => setVersion(e.target.value)} disabled={running || done} />
-          </Field>
-          <Field label={t("export.author")} className="col-span-2">
-            <Input value={author} onChange={(e) => setAuthor(e.target.value)} disabled={running || done} placeholder={t("export.optional")} />
-          </Field>
-          <Field label={t("export.desc")} className="col-span-2">
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} disabled={running || done} placeholder={t("export.optional")} />
-          </Field>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="label">{t("export.files")}</span>
-            <span className="text-caption tabular-nums text-dim">
-              {entriesQ.data && t("export.selected", { n: sel.size, total: allLeaves.length, size: formatBytes(selSize) })}
-            </span>
+                <span className="w-5 shrink-0 text-accent">{format === f.value && <Check size={20} />}</span>
+              </button>
+            ))}
           </div>
-          {entriesQ.isPending ? (
-            <div className="flex h-[248px] flex-col gap-1 rounded-card bg-surface p-2">
-              {Array.from({ length: 7 }, (_, i) => (
-                <Skeleton key={i} className="h-7" style={{ width: `${90 - (i % 3) * 15}%` }} />
-              ))}
+        )}
+        {reviewing && (
+          <>
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-[17px] font-semibold text-text">{t("export.review")}</h2>
+              <span className="text-[14px] text-muted">{t(`export.format.${format}`)}</span>
             </div>
-          ) : entriesQ.isError ? (
-            <div className="flex h-[120px] flex-col items-center justify-center gap-2 rounded-card bg-surface text-center">
-              <span className="text-meta text-danger">{errorMessage(entriesQ.error)}</span>
-              <Button size="sm" onClick={() => entriesQ.refetch()}>
-                {t("common.retry")}
-              </Button>
-            </div>
-          ) : (
-            <FileTree tree={tree} sel={sel} setSel={setSel} disabled={running || done} />
-          )}
-        </div>
-
-        {(task || error) && (
+            <Field label={t("export.name")}>
+              <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+            </Field>
+            <details className="rounded-card border border-line bg-surface">
+              <summary className="cursor-pointer px-4 py-3 text-[14px] font-medium text-text">{t("export.metadata")}</summary>
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-3 px-4 pb-4">
+                <Field label={t("export.version")}>
+                  <Input value={version} onChange={(e) => setVersion(e.target.value)} />
+                </Field>
+                <Field label={t("export.author")}>
+                  <Input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder={t("export.optional")} />
+                </Field>
+                <Field label={t("export.desc")} className="col-span-2">
+                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("export.optional")} />
+                </Field>
+              </div>
+            </details>
+            {entriesQ.isPending ? (
+              <Skeleton className="h-12" />
+            ) : entriesQ.isError ? (
+              <div role="alert" className="flex flex-wrap items-center gap-3 rounded-card bg-danger/[.08] p-4">
+                <span className="min-w-0 flex-1 break-words text-[14px] text-danger">{errorMessage(entriesQ.error)}</span>
+                <Button onClick={() => entriesQ.refetch()}>{t("common.retry")}</Button>
+              </div>
+            ) : (
+              <details className="rounded-card border border-line bg-surface">
+                <summary className="cursor-pointer px-4 py-3 text-[14px] font-medium text-text">
+                  {t("export.files")}
+                  <span className="ml-2 font-normal text-muted">{t("export.selected", { n: sel.size, total: allLeaves.length, size: formatBytes(selSize) })}</span>
+                </summary>
+                <FileTree tree={tree} sel={sel} setSel={setSel} />
+              </details>
+            )}
+          </>
+        )}
+        {running && !task && <p role="status" className="text-[14px] text-muted">{t("export.running")}</p>}
+        {!choosing && (task || error) && (
           <div className="flex flex-col gap-2 animate-fade-in">
             {task && !done && (
               <>
@@ -311,7 +328,7 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
   );
 }
 
-function FileTree({ tree, sel, setSel, disabled }: { tree: Node[]; sel: Set<string>; setSel: (s: Set<string>) => void; disabled: boolean }) {
+function FileTree({ tree, sel, setSel }: { tree: Node[]; sel: Set<string>; setSel: (s: Set<string>) => void }) {
   const t = useT();
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const rows = useMemo(() => {
@@ -324,7 +341,7 @@ function FileTree({ tree, sel, setSel, disabled }: { tree: Node[]; sel: Set<stri
     return out;
   }, [tree, expanded]);
   const ref = useRef<HTMLDivElement>(null);
-  const v = useVirtualizer({ count: rows.length, getScrollElement: () => ref.current, estimateSize: () => 30, overscan: 12 });
+  const v = useVirtualizer({ count: rows.length, getScrollElement: () => ref.current, estimateSize: () => 36, overscan: 12 });
 
   const toggle = (n: Node) => {
     const next = new Set(sel);
@@ -346,8 +363,8 @@ function FileTree({ tree, sel, setSel, disabled }: { tree: Node[]; sel: Set<stri
           return (
             <div
               key={n.path}
-              className="absolute inset-x-0 flex h-[30px] items-center gap-1.5 pr-3 text-[12.5px] hover:bg-white/[.03]"
-              style={{ top: it.start, paddingLeft: 8 + n.depth * 18 }}
+              className="absolute inset-x-0 flex h-9 items-center gap-1.5 pr-3 text-[14px] hover:bg-white/[.03]"
+              style={{ top: it.start, paddingLeft: 8 + Math.min(n.depth, 12) * 18 }}
             >
               {n.isDir && n.children.length > 0 ? (
                 <button
@@ -368,7 +385,6 @@ function FileTree({ tree, sel, setSel, disabled }: { tree: Node[]; sel: Set<stri
               <button
                 role="checkbox"
                 aria-checked={state === "mixed" ? "mixed" : state === "on"}
-                disabled={disabled}
                 onClick={() => toggle(n)}
                 className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:opacity-60"
               >

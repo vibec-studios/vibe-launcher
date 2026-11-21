@@ -88,10 +88,10 @@ async function pickDir(title: string): Promise<string | null> {
 const norm = (p: string) => p.replace(/\//g, "\\").replace(/\\+$/, "").toLowerCase();
 
 /** Inhalt + Fußzeile des Launcher-Imports. */
-export function useExternalImport(active: boolean, onClose: () => void): { body: ReactNode; footer: ReactNode; busy: boolean; progressView: boolean } {
+export function useExternalImport(active: boolean, folderOnly: boolean, onClose: () => void): { body: ReactNode; footer: ReactNode; progressView: boolean; busy: boolean } {
   const tech = useExpert("tech-details");
   const tr = useT();
-  const detect = useQuery({ queryKey: ["launchers"], queryFn: api.launchersDetect, enabled: active, staleTime: 0, retry: 0 });
+  const detect = useQuery({ queryKey: ["launchers"], queryFn: api.launchersDetect, enabled: active && !folderOnly, staleTime: 0, retry: 0 });
   const [extra, setExtra] = useState<ExternalLauncher[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [versions, setVersions] = useState<Record<string, string>>({});
@@ -105,13 +105,13 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
   const showProgress = batch.length > 0;
 
   const launchers = useMemo(() => {
-    const all = [...(detect.data ?? []), ...extra];
+    const all = folderOnly ? extra : [...(detect.data ?? []), ...extra];
     // Doppelte Instanzen (gleicher Pfad) nur einmal zeigen
     const seen = new Set<string>();
     return all
       .map((l) => ({ ...l, instances: l.instances.filter((i) => (seen.has(norm(i.source_path)) ? false : (seen.add(norm(i.source_path)), true))) }))
       .filter((l, i, arr) => arr.findIndex((x) => norm(x.path) === norm(l.path) && x.id === l.id) === i);
-  }, [detect.data, extra]);
+  }, [detect.data, extra, folderOnly]);
 
   const kindOf = useMemo(() => {
     const m = new Map<string, LauncherKind>();
@@ -126,7 +126,9 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
   const chosen = allInstances.filter((i) => selected[i.source_path] && !needsVersion(i));
   const allVisibleSelected = visible.length > 0 && visible.every((i) => selected[i.source_path]);
   // Bereiche, die bei mindestens einer Instanz vorkommen (nur die werden zur Wahl gestellt)
-  const offered = SETTING_KEYS.filter((k) => allInstances.some((i) => i.settings && hasKey(i.settings, k)));
+  const offered = SETTING_KEYS.filter((k) =>
+    (tech || k === "window" || k === "notes" || k === "group") && allInstances.some((i) => i.settings && hasKey(i.settings, k)),
+  );
   const toggleKey = (k: ExtSettingKey) => setKeys((ks) => (ks.includes(k) ? ks.filter((x) => x !== k) : [...ks, k]));
   const someVisibleSelected = visible.some((i) => selected[i.source_path]);
 
@@ -156,6 +158,12 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
     void runImports(picks, keys);
   };
 
+  const chooseFolder = (
+    <Button variant={allInstances.length ? "subtle" : "primary"} icon={scanning ? <Spinner /> : <FolderOpen size={16} />} onClick={chooseDir} disabled={scanning}>
+      {tr("ext.choose_dir")}
+    </Button>
+  );
+
   // ---------------------------------------------------------------- Ansichten
 
   let body: ReactNode;
@@ -167,7 +175,7 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
         ))}
       </div>
     );
-  } else if (detect.isPending) {
+  } else if (!folderOnly && detect.isPending) {
     body = (
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-[13px] text-muted">
@@ -182,43 +190,36 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
     body = (
       <EmptyState
         icon={<FolderSearch size={30} />}
-        title={tr("ext.none_title")}
-        text={detect.isError ? errorMessage(detect.error) : tr("ext.none_text")}
-        action={
-          <Button variant="primary" icon={scanning ? <Spinner /> : <FolderOpen size={14} />} onClick={chooseDir} disabled={scanning}>
-            {tr("ext.choose_dir")}
-          </Button>
-        }
-        className="py-10"
+        title={tr(folderOnly ? (extra.length ? "ext.empty_group" : "import.folder.prompt") : "ext.none_title")}
+        text={!folderOnly && detect.isError ? errorMessage(detect.error) : tr("ext.none_text")}
+        action={chooseFolder}
+        className="rounded-card border border-line bg-surface py-10"
       />
     );
   } else {
     body = (
       <div className="flex min-h-0 flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <label className="flex cursor-pointer items-center gap-2.5 rounded-ctl text-[13px] text-muted hover:text-text">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-ctl text-[14px] font-medium text-text">
             <SelectBox state={allVisibleSelected ? "on" : someVisibleSelected ? "mixed" : "off"} onClick={() => toggleMany(visible, !allVisibleSelected)} label={tr("ext.select_all")} />
             {tr("ext.select_all")}
           </label>
-          <span className="text-meta text-dim">{tr("ext.selected", { n: chosen.length, total: allInstances.length })}</span>
+          <span className="text-[14px] text-muted" aria-live="polite">{tr("ext.selected", { n: chosen.length, total: allInstances.length })}</span>
           <div className="flex-1" />
           {allInstances.length > 6 && <SearchInput value={query} onChange={setQuery} placeholder={tr("ext.search")} className="w-[220px]" />}
-          <IconButton label={tr("ext.choose_dir")} tip variant="ghost" disabled={scanning} onClick={chooseDir}>
-            {scanning ? <Spinner /> : <FolderOpen size={16} />}
-          </IconButton>
+          {chooseFolder}
         </div>
-        {offered.length > 0 && <SettingsBar offered={offered} keys={keys} onToggle={toggleKey} />}
-        <div className="scroll -mx-1 flex max-h-[calc(100vh-430px)] min-h-[180px] flex-col gap-4 overflow-y-auto px-1">
+        <div className="flex flex-col gap-4">
           {launchers.map((l) => {
             const list = l.instances.filter(matches);
             if (q && list.length === 0) return null;
             const groupOn = list.length > 0 && list.every((i) => selected[i.source_path]);
             const groupSome = list.some((i) => selected[i.source_path]);
             return (
-              <section key={`${l.id}|${l.path}`} className="flex flex-col">
+              <section key={`${l.id}|${l.path}`} className="flex flex-col gap-1 rounded-card border border-line bg-surface p-3">
                 <div className="flex items-center gap-2.5 px-2 pb-1.5">
                   <SelectBox state={groupOn ? "on" : groupSome ? "mixed" : "off"} onClick={() => toggleMany(list, !groupOn)} label={l.name} />
-                  <span className="text-section text-text">{l.name}</span>
+                  <span className="min-w-0 break-words text-[16px] font-semibold text-text">{l.name}</span>
                   <span className="text-meta tabular-nums text-dim">{l.instances.length}</span>
                   {/* Ordnerpfad nur im Experten-Modus (Simple: Tooltip reicht) */}
                   <span className="selectable min-w-0 flex-1 truncate text-right text-caption text-dim" title={l.path}>
@@ -263,6 +264,12 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
           })}
           {q && visible.length === 0 && <div className="py-8 text-center text-[13px] text-dim">{tr("ext.no_match")}</div>}
         </div>
+        {offered.length > 0 && (
+          <details className="rounded-card border border-line bg-surface">
+            <summary className="cursor-pointer px-4 py-3 text-[14px] font-medium text-text">{tr("ext.set.title")}</summary>
+            <SettingsBar offered={offered} keys={keys} onToggle={toggleKey} />
+          </details>
+        )}
       </div>
     );
   }
@@ -291,24 +298,33 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
         </>
       )}
     </>
-  ) : (
-    <>
-      {scanError && (
-        <span className="mr-auto flex min-w-0 items-center gap-1.5 text-meta text-danger" title={scanError}>
-          <AlertTriangle size={14} className="shrink-0" />
-          <span className="truncate">{tr("ext.scan_failed")}: {scanError}</span>
-        </span>
-      )}
-      <Button variant="subtle" onClick={onClose}>
-        {tr("common.cancel")}
-      </Button>
+  ) : allInstances.length > 0 ? (
+    <div className="ml-auto">
       <Button variant="primary" icon={<Upload size={14} />} disabled={chosen.length === 0} onClick={start}>
         {chosen.length === 0 ? tr("import.start") : chosen.length === 1 ? tr("ext.import_1") : tr("ext.import_n", { n: chosen.length })}
       </Button>
-    </>
-  );
+    </div>
+  ) : null;
 
-  return { body, footer, busy, progressView: showProgress };
+  return {
+    body: (
+      <div className="flex flex-col gap-3">
+        {scanError && !showProgress && (
+          <div role="alert" className="flex items-start gap-2 rounded-card bg-danger/[.08] p-3 text-[14px] text-danger">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            <div className="min-w-0 break-words">
+              <div className="font-semibold">{tr("ext.scan_failed")}</div>
+              <div className="selectable">{scanError}</div>
+            </div>
+          </div>
+        )}
+        {body}
+      </div>
+    ),
+    footer,
+    progressView: showProgress,
+    busy,
+  };
 }
 
 // ------------------------------------------------------------------ Einstellungen mitnehmen
@@ -320,9 +336,6 @@ function SettingsBar({ offered, keys, onToggle }: { offered: ExtSettingKey[]; ke
   return (
     <div className="flex flex-col gap-2 rounded-card bg-white/[.03] px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-[12.5px] font-semibold text-text" title={tr("ext.set.hint")}>
-          {tr("ext.set.title")}
-        </span>
         {offered.map((k) => {
           const on = keys.includes(k);
           return (
@@ -379,8 +392,8 @@ function InstanceRow({
       role="row"
       onClick={onToggle}
       className={cn(
-        "group flex cursor-default items-center gap-3 rounded-ctl px-2 py-2 transition-colors duration-100 hover:bg-white/[.03]",
-        selected && "bg-white/[.05] hover:bg-white/[.06]",
+        "group flex cursor-pointer flex-wrap items-center gap-3 rounded-ctl border border-transparent px-2 py-3 transition-colors duration-100 hover:bg-surface2",
+        selected && "border-accent/35 bg-accent/[.08] hover:bg-accent/[.12]",
       )}
     >
       <SelectBox
@@ -393,13 +406,13 @@ function InstanceRow({
       />
       <ProjectIcon src={inst.icon} size={36} />
       <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-[13.5px] font-semibold text-text">{inst.name}</span>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2">
+          <span className="min-w-0 break-words text-[16px] font-semibold text-text">{inst.name}</span>
           {inst.imported_as && <span className="shrink-0 rounded-xs bg-white/[.06] px-1.5 py-px text-caption text-muted">{tr("ext.imported")}</span>}
         </div>
-        <div className="truncate text-meta text-dim">{sub.join(" · ")}</div>
+        <div className="break-words text-[14px] text-muted">{sub.join(" · ")}</div>
         {takes.length > 0 && (
-          <div className="mt-0.5 truncate text-[12px] text-muted" title={takes.join(" · ")}>
+          <div className="mt-1 break-words text-[13px] text-muted" title={takes.join(" · ")}>
             {tr("ext.set.takes", { list: takes.join(" · ") })}
           </div>
         )}
@@ -420,7 +433,8 @@ function InstanceRow({
         )}
       </div>
       {!inst.mc_version && (
-        <div className="w-[120px] shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="w-[144px] shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="text-[13px] text-muted">{tr("ext.version_needed")}</div>
           <Input value={version} onChange={(e) => onVersion(e.target.value)} placeholder={tr("ext.version_placeholder")} aria-label={tr("ext.version_needed")} invalid={selected && !version.trim()} />
         </div>
       )}
@@ -434,27 +448,27 @@ function JobRow({ job }: { job: Job | undefined }) {
   if (!job) return null;
   const status = job.status;
   return (
-    <div className="flex flex-col gap-1.5 border-line px-1 py-2.5 [&+&]:border-t">
+    <div className="flex flex-col gap-1.5 border-line px-1 py-3 [&+&]:border-t">
       <div className="flex items-center gap-2.5">
         {status === "done" ? (
-          <Check size={15} className="shrink-0 text-ok" />
+          <Check size={17} className="shrink-0 text-ok" />
         ) : status === "failed" ? (
-          <AlertTriangle size={15} className="shrink-0 text-danger" />
+          <AlertTriangle size={17} className="shrink-0 text-danger" />
         ) : status === "running" ? (
           <Spinner />
         ) : (
           <span className="h-[14px] w-[14px] shrink-0 rounded-dot bg-surface3" />
         )}
-        <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-text">{job.name}</span>
-        <span className="shrink-0 text-[12px] text-dim">
+        <span className="min-w-0 flex-1 break-words text-[15px] font-semibold text-text">{job.name}</span>
+        <span className="shrink-0 text-[13px] text-muted">
           {tr(`ext.status.${status}`)}
           {status === "running" && task?.progress != null ? ` · ${Math.round(task.progress * 100)} %` : ""}
         </span>
       </div>
       {status === "running" && <Progress value={task?.progress ?? null} />}
-      {status === "running" && task?.message && <div className="truncate text-[12px] text-dim">{task.message}</div>}
+      {status === "running" && task?.message && <div className="truncate text-[13px] text-muted">{task.message}</div>}
       {status === "done" && job.instanceId && <ImportReportView instanceId={job.instanceId} fallback={task?.message ?? null} />}
-      {status === "failed" && <div className="selectable break-words text-[12px] text-danger">{job.error}</div>}
+      {status === "failed" && <div className="selectable break-words text-[14px] text-danger">{job.error}</div>}
     </div>
   );
 }

@@ -244,12 +244,11 @@ export function VersionTab({ instance: i }: TabProps) {
   };
 
   return (
-    <SettingsCard title={t("isd.section.installed")}>
+    <SettingsCard title={t(editing ? "isd.version.configure" : "isd.section.installed")}>
       {!editing ? (
         // „Ändern“ gehört zur Zeile, nicht in die Abschnitts-Überschrift
         <SettingRow title={`Minecraft ${i.mc_version}`} description={i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]} ${i.loader.version ?? ""}`}>
           <Button
-            size="sm"
             disabled={phase !== "idle"}
             onClick={() => {
               setVer({ mc: i.mc_version, loader: i.loader.kind, loaderVersion: i.loader.version });
@@ -260,16 +259,26 @@ export function VersionTab({ instance: i }: TabProps) {
           </Button>
         </SettingRow>
       ) : (
-        <div className="flex flex-col gap-5 px-4 py-5">
-          <div className="flex items-start gap-3 border border-warn/30 bg-warn/[.06] px-4 py-3 text-[13px] text-warn">
+        <div className="flex flex-col gap-4 px-4 py-4">
+          <div className="flex items-start gap-3 rounded-card border border-warn/30 bg-warn/[.06] px-4 py-3 text-[14px] text-warn">
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <span>
               {t("isettings.version.warn")}
               {installedPacks.length > 0 && ` ${t("isd.version.packs", { list: installedPacks.map((p) => t(`cp.${p.id}.name`)).join(", ") })}`}
             </span>
           </div>
-          <VersionPicker value={ver} onChange={setVer} listHeight={300} />
-          <div className="flex justify-end gap-3">
+          <VersionPicker value={ver} onChange={setVer} listHeight={200} />
+          <div className="grid grid-cols-2 gap-3 rounded-card border border-line bg-surface p-4 max-[560px]:grid-cols-1" aria-live="polite">
+            <div>
+              <div className="text-[13px] text-muted">{t("isd.version.current")}</div>
+              <div className="break-words text-[15px] font-semibold text-text">Minecraft {i.mc_version} · {loaderNames[i.loader.kind]}</div>
+            </div>
+            <div>
+              <div className="text-[13px] text-muted">{t("isd.version.target")}</div>
+              <div className="break-words text-[15px] font-semibold text-text">{ver.mc ? `Minecraft ${ver.mc} · ${loaderNames[ver.loader]}` : t("newinst.pick_version_first")}</div>
+            </div>
+          </div>
+          <div className="flex flex-wrap justify-end gap-3">
             <Button variant="subtle" onClick={() => setEditing(false)}>
               {t("common.cancel")}
             </Button>
