@@ -1,0 +1,18 @@
+name: vibe-agent
+
+services:
+  vibe-agent:
+    image: ghcr.io/vibec-studios/vibe-agent:latest
+    container_name: vibe-agent
+    restart: unless-stopped
+    stop_grace_period: 90s
+    ports:
+      - "25580:25580"
+      - "25565:25565"
+    volumes:
+      - vibe-agent-data:/data
+    environment:
+      TZ: Europe/Berlin
+
+volumes:
+  vibe-agent-data:

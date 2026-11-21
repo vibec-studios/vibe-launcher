@@ -1,5 +1,7 @@
 node_modules
 dist
+!agent/dist/
+.docker-bin
 dist-ssr
 *.local
 .env

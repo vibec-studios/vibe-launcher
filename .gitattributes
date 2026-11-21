@@ -1,0 +1,4 @@
+agent/dist/install.sh text eol=lf
+agent/dist/install.ps1 text eol=lf
+agent/dist/Dockerfile text eol=lf
+*.sh text eol=lf
