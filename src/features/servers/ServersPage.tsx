@@ -103,7 +103,7 @@ export function ServersPage() {
         <div className="flex items-center gap-2">
           {list.length > 0 && <SearchInput value={query} onChange={setQuery} placeholder={t("srv.search")} className="w-[220px] min-w-[150px]" />}
           <div className="flex-1" />
-          <Button size="sm" variant="primary" icon={<Plus size={15} />} onClick={() => openNewServer()}>
+          <Button size="sm" variant="primary" data-tour="servers-new" icon={<Plus size={15} />} onClick={() => openNewServer()}>
             {t("srv.new")}
           </Button>
         </div>
@@ -123,7 +123,7 @@ export function ServersPage() {
             title={t("srv.empty.title")}
             text={t("srv.empty.text")}
             action={
-              <Button variant="primary" icon={<Plus size={16} />} onClick={() => openNewServer()}>
+              <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
                 {t("srv.new")}
               </Button>
             }
@@ -132,7 +132,7 @@ export function ServersPage() {
           <EmptyState title={t("srv.no_match", { q: query })} />
         ) : (
           <>
-            <div className="-mx-3 flex flex-col">
+            <div data-tour="servers-list" className="-mx-3 flex flex-col">
               {sorted.map((s) => (
                 <ServerRow key={s.id} server={s} />
               ))}

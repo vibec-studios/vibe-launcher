@@ -12,6 +12,7 @@ import { InstanceCard, InstanceCardSkeleton, InstanceListHeader, InstanceListRow
 import { openNewInstance, useInstanceActions } from "@/components/instance/actions";
 import { Logo3D } from "@/components/Logo3D";
 import { openImport } from "@/features/import/ImportDialog";
+import { HelpLink } from "@/features/help/HelpButton";
 import { useT } from "@/i18n";
 import { cachedAppearance } from "@/lib/appearance";
 
@@ -201,10 +202,11 @@ export function InstancesPage() {
                   {t("nav.modsets")}
                 </Button>
                 {/* Leere Bibliothek: Importieren/Neu stehen groß im Leerzustand, nicht doppelt hier oben */}
-                <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={() => openImport()}>
+                <Button size="sm" variant="subtle" data-tour="instances-import" icon={<PackageOpen size={14} />} onClick={() => openImport()}>
                   {t("home.action.import")}
                 </Button>
-                <Button size="sm" variant="primary" icon={<Plus size={15} />} onClick={openNewInstance}>
+                <HelpLink guide="import" />
+                <Button size="sm" variant="primary" data-tour="instances-new" icon={<Plus size={15} />} onClick={openNewInstance}>
                   {t("inst.new")}
                 </Button>
               </>
@@ -228,10 +230,10 @@ export function InstancesPage() {
             text={t("instances.empty.text")}
             action={
               <div className="flex gap-2">
-                <Button variant="primary" icon={<Plus size={16} />} onClick={openNewInstance}>
+                <Button variant="primary" data-tour="instances-new" icon={<Plus size={16} />} onClick={openNewInstance}>
                   {t("inst.new")}
                 </Button>
-                <Button icon={<PackageOpen size={15} />} onClick={() => openImport()}>
+                <Button data-tour="instances-import" icon={<PackageOpen size={15} />} onClick={() => openImport()}>
                   {t("home.action.import")}
                 </Button>
               </div>

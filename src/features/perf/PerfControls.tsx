@@ -5,6 +5,7 @@ import { patchSettings } from "@/lib/mode";
 import { useSettings, useSystemInfo } from "@/lib/queries";
 import type { Instance, JavaOptions } from "@/lib/types";
 import { levelOf, levelsFor, PERF_LEVELS, type PerfLevel } from "./ram";
+import { HelpLink } from "@/features/help/HelpButton";
 
 const gb = (mb: number) => Math.round((mb / 1024) * 10) / 10;
 
@@ -81,7 +82,7 @@ export function SimplePerfCard({ d, update }: { d: Instance; update: (p: { java:
     update({ java: { ...d.java, min_memory_mb: mb === null ? null : Math.min(d.java.min_memory_mb ?? 1024, mb), max_memory_mb: mb } });
   };
   return (
-    <SettingsCard title={t("perf.card")}>
+    <SettingsCard title={t("perf.card")} right={<HelpLink guide="performance" />}>
       {!d.bedrock && (
         <SettingRow title={t("perf.level")} description={t("perf.level.desc")}>
           <div className="w-[200px]">

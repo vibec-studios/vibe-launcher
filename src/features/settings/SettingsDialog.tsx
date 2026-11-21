@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Check,
+  CircleHelp,
   Cloud,
   Coffee,
   Download,
@@ -59,6 +60,8 @@ import { AppearanceTab } from "./AppearanceTab";
 import { SETTINGS_TABS, closeSettings, setSettingsTab, useSettingsDialog, type SettingsTab } from "./store";
 import { setMode, useSimple, type UiMode } from "@/lib/mode";
 import { restartOnboarding, startTour } from "@/features/onboarding/store";
+import { openHelp } from "@/features/help/store";
+import { HelpLink } from "@/features/help/HelpButton";
 import { PlayerHead } from "@/components/PlayerHead";
 import { useAccounts } from "@/lib/queries";
 import { useNavigate } from "@tanstack/react-router";
@@ -151,6 +154,7 @@ function SettingsBody() {
               <button
                 key={id}
                 role="tab"
+                data-tour={`settings-tab-${id}`}
                 aria-selected={active}
                 aria-label={t(`settings.tab.${id}`)}
                 onClick={() => setSettingsTab(id)}
@@ -198,7 +202,7 @@ function SettingsBody() {
           </D.Close>
         </header>
         <div key={tab} className="scroll min-h-0 flex-1">
-          <div className="vl-settings mx-auto flex w-full max-w-[860px] flex-col gap-6 px-7 pb-10 pt-2 animate-fade-in">
+          <div data-tour="settings-content" className="vl-settings mx-auto flex w-full max-w-[860px] flex-col gap-6 px-7 pb-10 pt-2 animate-fade-in">
             {!s ? <LoadingCards /> : <TabContent tab={tab} s={s} update={update} />}
           </div>
         </div>
@@ -394,7 +398,7 @@ function JavaTab({ s, update }: TabProps) {
   const total = sys.data?.total_memory_mb ?? 8192;
   return (
     <>
-      <SettingsCard title={t("settings.section.memory")}>
+      <SettingsCard title={t("settings.section.memory")} right={<HelpLink guide="performance" />}>
         <SettingRow title={t("settings.ram")} description={t("settings.ram.desc", { total: Math.round(total / 1024) })} stacked>
           <MemoryField min={s.min_memory_mb} max={s.max_memory_mb} total={total} onChange={(v, d) => update({ min_memory_mb: v.min, max_memory_mb: v.max }, d)} />
         </SettingRow>
@@ -541,6 +545,7 @@ function GameTab({ s, update }: TabProps) {
         <MasterOptSync />
       </SettingsCard>
 
+      <div data-tour="settings-backups">
       <SettingsCard title={t("settings.section.backups")}>
         <SettingRow title={t("settings.backups.snapshot_keep")} description={t("settings.backups.snapshot_keep.desc")}>
           <NumberInput
@@ -573,6 +578,7 @@ function GameTab({ s, update }: TabProps) {
           />
         </SettingRow>
       </SettingsCard>
+      </div>
     </>
   );
 }
@@ -676,6 +682,21 @@ function AboutTab() {
       <SettingsCard title={t("settings.section.links")}>
         <LinkRow href={WEBSITE} icon={<Globe size={15} />} title={t("settings.website")} text={WEBSITE_LABEL} />
         <LinkRow href={GITHUB} icon={<GitBranch size={15} />} title="GitHub" text={t("settings.about.opensource")} />
+      </SettingsCard>
+      <SettingsCard title={t("help.settings.title")}>
+        <SettingRow title={t("help.settings.title")} description={t("help.settings.desc")}>
+          <Button
+            size="sm"
+            icon={<CircleHelp size={13} />}
+            data-testid="settings-help-open"
+            onClick={() => {
+              closeSettings();
+              openHelp();
+            }}
+          >
+            {t("help.settings.open")}
+          </Button>
+        </SettingRow>
       </SettingsCard>
       <SettingsCard title={t("fb.button")}>
         <SettingRow title={t("fb.title")} description={t("fb.desc")}>

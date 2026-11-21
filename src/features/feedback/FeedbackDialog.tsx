@@ -546,6 +546,7 @@ export function FeedbackButton() {
       <button
         aria-label={t("fb.button")}
         data-testid="fb-open"
+        data-tour="feedback"
         onClick={() => void openFeedback({ source: "button", ...(instId ? { instanceId: instId } : {}) })}
         className="grid h-8 w-8 place-items-center rounded-ctl text-muted transition-colors duration-100 hover:bg-white/[.06] hover:text-text"
       >

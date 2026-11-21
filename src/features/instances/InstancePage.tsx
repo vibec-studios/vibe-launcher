@@ -32,6 +32,7 @@ import { VibeyClientBadge } from "@/features/cosmetics/VibeyClientSlot";
 import { ToolbarSlot } from "./toolbar";
 import { useSimple } from "@/lib/mode";
 import { BedrockInstanceView } from "@/features/bedrock/BedrockInstanceView";
+import { HelpLink } from "@/features/help/HelpButton";
 
 const route = getRouteApi("/instances/$id");
 const wrap = "w-full px-6";
@@ -52,7 +53,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
   if (simple) {
     // Simple: verständliche Meldung mit „Beheben“ – keine Exit-Codes, Dateinamen, Logs
     return (
-      <div className="shrink-0 bg-danger/[.08] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-danger)_25%,transparent)] animate-fade-in">
+      <div data-tour="crash-banner" className="shrink-0 bg-danger/[.08] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-danger)_25%,transparent)] animate-fade-in">
         <div className={cn(wrap, "flex items-center gap-3 py-3")}>
           <AlertTriangle size={18} className="shrink-0 text-danger" />
           <div className="min-w-0 flex-1">
@@ -61,6 +62,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
           </div>
           <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null, launchAfter: true }} size="md" label={t("crash.offer.fix")} />
           <ReportProblemButton instanceId={instance.id} size="md" />
+          <HelpLink guide="autofix" />
           <IconButton label={t("common.close")} size="sm" className="border-transparent" onClick={() => setDismissed(key)}>
             <X size={15} />
           </IconButton>
@@ -76,7 +78,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
       ? t("crash.offer.none")
       : null;
   return (
-    <div className="shrink-0 bg-danger/[.08] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-danger)_25%,transparent)] animate-fade-in">
+    <div data-tour="crash-banner" className="shrink-0 bg-danger/[.08] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-danger)_25%,transparent)] animate-fade-in">
       <div className={cn(wrap, "flex items-center gap-3 py-2.5")}>
         <AlertTriangle size={18} className="shrink-0 text-danger" />
         <div className="min-w-0 flex-1">
@@ -87,6 +89,7 @@ function CrashBanner({ instance }: { instance: Instance }) {
           </div>
         </div>
         <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null }} label={t("crash.offer.fix")} />
+        <HelpLink guide="autofix" />
         <Button size="sm" icon={<Stethoscope size={13} />} onClick={() => setDetails(true)}>
           {t("diag.open")}
           {diag.data && diag.data.length > 0 && <span className="text-[12px] text-muted">{diag.data.length}</span>}
@@ -278,7 +281,9 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
         notices={<InstanceNotices instance={inst} tab={active} />}
       />
       <CrashBanner instance={inst} />
-      <PlayLinkBar instanceId={inst.id} className="border-b border-line" />
+      <div data-tour="play-link">
+        <PlayLinkBar instanceId={inst.id} className="border-b border-line" />
+      </div>
       <div className="relative min-h-0 flex-1">
         {area === "content" ? (
           <InstanceContentTab instance={inst} initialType={initialType} />

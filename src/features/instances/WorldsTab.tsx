@@ -167,7 +167,7 @@ export function WorldsTab({ instance }: { instance: Instance }) {
   );
 
   return (
-    <div className="scroll h-full">
+    <div data-tour="worlds-list" className="scroll h-full">
       <PageTools>
         <SearchInput value={query} onChange={setQuery} placeholder={t("worlds.search")} className="w-[240px] min-w-[140px] shrink [&_input]:h-8" />
         <div className="flex-1" />

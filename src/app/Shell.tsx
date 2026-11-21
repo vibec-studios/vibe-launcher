@@ -43,6 +43,9 @@ import { ModSetsHost } from "@/features/modsets/dialogs";
 import { goBack, goForward } from "./backNav";
 import { WindowControls } from "./WindowControls";
 import { FeedbackButton, FeedbackDialog } from "@/features/feedback/FeedbackDialog";
+import { HelpButton } from "@/features/help/HelpButton";
+import { HelpCenter } from "@/features/help/HelpCenter";
+import { TourHost } from "@/features/help/tour/TourHost";
 
 // ------------------------------------------------------------------ Seitenleiste
 // Kompakt (nur Icons, Standard) oder breit mit Beschriftung; Reihenfolge/Sichtbarkeit der Einträge und die
@@ -217,6 +220,7 @@ function Rail() {
         <Tooltip content={wide ? null : t("rail.new_instance")} side="right">
           <button
             aria-label={t("rail.new_instance")}
+            data-tour="new-instance"
             onClick={openNewInstance}
             className={cn(
               "flex shrink-0 items-center rounded-ctl text-dim transition-colors duration-100 hover:bg-white/[.05] hover:text-text",
@@ -355,6 +359,7 @@ function Topbar() {
         <UpdateButton />
         <RunningGames />
         <TaskDock />
+        <HelpButton />
         <FeedbackButton />
         <FriendsPanelToggle />
         <span className="mx-0.5 h-5 w-px bg-line2" aria-hidden />
@@ -413,7 +418,13 @@ export function Shell() {
         <ImportSettingsHint />
         <SettingsReviewDialog />
       </ErrorBoundary>
+      <ErrorBoundary>
+        <HelpCenter />
+      </ErrorBoundary>
       <SimpleTour />
+      <ErrorBoundary>
+        <TourHost />
+      </ErrorBoundary>
       <Onboarding />
     </div>
   );

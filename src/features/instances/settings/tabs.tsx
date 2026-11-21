@@ -26,6 +26,7 @@ import { ClientPacks, useClientPacks } from "./ClientPacks";
 import { closeInstanceSettings } from "./store";
 import { ImportSettingsRow } from "@/features/import/SettingsOffer";
 import { GpuRow, SimplePerfCard } from "@/features/perf/PerfControls";
+import { HelpLink } from "@/features/help/HelpButton";
 
 export interface TabProps {
   instance: Instance;
@@ -91,7 +92,9 @@ function SimpleGeneralTab({ instance, d, update, local, reset }: TabProps) {
           <AccentPicker value={accent} onChange={(c) => update({ accent: c })} />
         </SettingRow>
       </SettingsCard>
-      <SimplePerfCard d={d} update={update} />
+      <div data-tour="instance-perf">
+        <SimplePerfCard d={d} update={update} />
+      </div>
       <p className="px-1 text-[12.5px] text-dim">{t("simple.isd.auto")}</p>
       <ImportSettingsRow instance={instance} />
       <SettingsCard title={t("isettings.danger")} danger>
@@ -317,7 +320,8 @@ export function JavaTab({ instance, d, update }: TabProps) {
         </SettingRow>
       </SettingsCard>
 
-      <SettingsCard title={t("isd.section.performance")}>
+      <div data-tour="instance-perf">
+      <SettingsCard title={t("isd.section.performance")} right={<HelpLink guide="performance" />}>
         <SettingRow
           title={t("isettings.ram")}
           description={
@@ -378,6 +382,7 @@ export function JavaTab({ instance, d, update }: TabProps) {
           />
         </SettingRow>
       </SettingsCard>
+      </div>
     </>
   );
 }

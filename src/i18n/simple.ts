@@ -103,17 +103,6 @@ export default {
     // ---------------------------------------------------------------- Einführung (Simple)
     "tour.count": "{n} von {total}",
     "tour.skip": "Überspringen",
-    "tour.done": "Los geht's",
-    "tour.play.title": "Hier startest du dein Spiel",
-    "tour.play.text": "Ein Klick auf „Spielen“ startet dein zuletzt gespieltes Spiel – alles Nötige lädt der Launcher selbst.",
-    "tour.new.title": "Neues Spiel erstellen",
-    "tour.new.text": "Wähle einfach, was du vorhast – Version und Einrichtung übernimmt der Launcher.",
-    "tour.library.title": "Meine Spiele",
-    "tour.library.text": "Alle deine Spiele auf einen Blick. Dort fügst du Mods hinzu, siehst deine Welten oder behebst Probleme.",
-    "tour.discover.title": "Entdecken",
-    "tour.discover.text": "Mods, Texturpakete, Shader und Modpacks finden – sie landen direkt im gewählten Spiel.",
-    "tour.account.title": "Dein Konto",
-    "tour.account.text": "Hier wechselst du Konten und Skins – und schaltest jederzeit in den Experten-Modus.",
 
     // ---------------------------------------------------------------- Hinweis für bestehende Nutzer
     "hint.simple.title": "Neu: Einfacher Modus",
@@ -380,17 +369,6 @@ export default {
     // ---------------------------------------------------------------- Tour (Simple)
     "tour.count": "{n} of {total}",
     "tour.skip": "Skip",
-    "tour.done": "Let's go",
-    "tour.play.title": "Start your game here",
-    "tour.play.text": "One click on “Play” starts your most recent game – the launcher downloads everything it needs.",
-    "tour.new.title": "Create a new game",
-    "tour.new.text": "Just pick what you want to do – the launcher takes care of version and setup.",
-    "tour.library.title": "My games",
-    "tour.library.text": "All your games at a glance. Add mods, see your worlds or fix problems there.",
-    "tour.discover.title": "Discover",
-    "tour.discover.text": "Find mods, texture packs, shaders and modpacks – they go straight into the selected game.",
-    "tour.account.title": "Your account",
-    "tour.account.text": "Switch accounts and skins here – and switch to Expert mode any time.",
 
     // ---------------------------------------------------------------- Hint for existing users
     "hint.simple.title": "New: Simple mode",
