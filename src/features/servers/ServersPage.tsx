@@ -2,7 +2,9 @@
 // alles Weitere im ⋯-Menü bzw. per Rechtsklick. Der Seitentitel steht in der Titelleiste.
 import { memo, useDeferredValue, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { MonitorSmartphone, MoreHorizontal, Network, Plus, SearchX, Server as ServerIconLucide, Users } from "lucide-react";
+import { MonitorSmartphone, MoreHorizontal, Network, PackageOpen, Plus, SearchX, Server as ServerIconLucide, Users } from "lucide-react";
+import { openPackToServer } from "@/features/serverpack/store";
+import { PackToServerHost } from "@/features/serverpack/PackToServerDialog";
 import { useServerStatus, useServers } from "@/lib/queries";
 import type { Server } from "@/lib/types";
 import { formatLoader } from "@/lib/format";
@@ -109,6 +111,7 @@ export function ServersPage() {
 
   return (
     <Page>
+        <PackToServerHost />
         {list.length > 0 && (
           <PageToolbar
             actions={
@@ -120,6 +123,9 @@ export function ServersPage() {
                 )}
                 <Button variant="ghost" icon={<Network size={15} />} title={t("rmt.add.tip")} onClick={openAddRemote}>
                   {t("rmt.add")}
+                </Button>
+                <Button variant="subtle" icon={<PackageOpen size={15} />} onClick={() => openPackToServer()} data-testid="servers-pack">
+                  {t("sp.menu.from_pack")}
                 </Button>
                 <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
                   {t("srv.new")}
@@ -152,6 +158,9 @@ export function ServersPage() {
                 </Button>
                 <Button variant="ghost" icon={<Network size={15} />} title={t("rmt.add.tip")} onClick={openAddRemote}>
                   {t("rmt.add")}
+                </Button>
+                <Button variant="subtle" icon={<PackageOpen size={15} />} onClick={() => openPackToServer()}>
+                  {t("sp.menu.from_pack")}
                 </Button>
               </div>
             }

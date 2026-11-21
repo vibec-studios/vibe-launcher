@@ -21,6 +21,8 @@ import { byRecent } from "@/features/home/data";
 import { openNewGame } from "@/components/instance/actions";
 import { LoaderIcon } from "@/components/instance/LoaderIcon";
 import { Browse } from "./Browse";
+import { ServerDiscover } from "./server/ServerDiscover";
+import { TargetPicker } from "./TargetPicker";
 import { DiscoverProjectOverlay, useProjectOverlayNav } from "./ProjectOverlay";
 import { CategoryIcon, catIconKey, catLabel, fmtNum } from "./categoryIcons";
 import { ROW_H, ResultRow, ResultTile, RowSkeleton, TILE_H, TILE_MIN_W, TileSkeleton } from "./ResultCard";
@@ -41,6 +43,11 @@ function instanceTabFor(type: ProjectType) {
 }
 
 export function DiscoverPage() {
+  const server = route.useSearch({ select: (s) => s.server });
+  return server ? <ServerDiscover serverKey={server} /> : <InstanceDiscover />;
+}
+
+function InstanceDiscover() {
   const t = useT();
   const search = route.useSearch();
   const navigate = route.useNavigate();
@@ -605,7 +612,7 @@ function TargetBanner({ instanceId, type }: { instanceId: string; type: ProjectT
 }
 
 /** Einklappbare Filtergruppe ohne Rahmen: ruhige Überschrift, Inhalt darunter. */
-function FilterGroup({
+export function FilterGroup({
   id,
   title,
   children,
@@ -637,7 +644,7 @@ function FilterGroup({
 }
 
 /** Kompakte Auswahlzeile ohne Kästchen: ausgewählt = hellere Schrift + Fläche + Haken rechts. */
-function CheckRow({ on, label, onClick, radio, icon }: { on: boolean; label: React.ReactNode; onClick: () => void; radio?: boolean; icon?: React.ReactNode }) {
+export function CheckRow({ on, label, onClick, radio, icon }: { on: boolean; label: React.ReactNode; onClick: () => void; radio?: boolean; icon?: React.ReactNode }) {
   return (
     <button
       role={radio ? "radio" : "checkbox"}
@@ -657,6 +664,7 @@ function CheckRow({ on, label, onClick, radio, icon }: { on: boolean; label: Rea
 
 function FilterSidebar({ type, source, sourcePicker }: { type: ProjectType; source: Source; sourcePicker: React.ReactNode }) {
   const t = useT();
+  const simple = useSimple();
   const f = useDiscoverFilters();
   const gv = useGameVersions();
   const settings = useSettings();
@@ -689,6 +697,11 @@ function FilterSidebar({ type, source, sourcePicker }: { type: ProjectType; sour
         )}
       </div>
       <>
+      {!simple && (
+        <FilterGroup id="target" title={t("st.target.title")}>
+          <TargetPicker />
+        </FilterGroup>
+      )}
       <FilterGroup id="source" title={t("discover.source")}>
         {sourcePicker}
       </FilterGroup>

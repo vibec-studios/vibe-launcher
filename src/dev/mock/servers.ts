@@ -55,6 +55,7 @@ const servers = new Map<string, Server>(
       source_instance: "survival",
     }),
     mkServer("kreativ", "Kreativwelt", { accent: "#ffb547", port: 25566, connection: "relay", eula: false, last_started: now - 86400_000 * 3 }),
+    mkServer("lobby", "Lobby", { accent: "#7aa2ff", port: 25567, platform: { kind: "paper", build: "130" }, created_at: now - 86400_000 * 2 }),
   ].map((s) => [s.id, s]),
 );
 
@@ -365,7 +366,7 @@ setTimeout(() => boot("survival-smp", ["Steve", "Alex"]), 50);
 
 type MockAddon = {
   file_name: string; enabled: boolean; size: number; modified: number; sha1: string | null; name: string | null; version: string | null;
-  authors: string[]; description: string | null; icon: string | null; source: "modrinth" | null; project_id: string | null; slug: string | null;
+  authors: string[]; description: string | null; icon: string | null; source: "modrinth" | "hangar" | null; project_id: string | null; slug: string | null;
   version_id: string | null; title: string | null; page_url: string | null;
 };
 const addonItems = new Map<string, MockAddon[]>();
@@ -389,6 +390,19 @@ function addonDefaults(plugins: boolean): MockAddon[] {
     { ...mk("spark", "spark", "1.10.119", "lucko", "A performance profiler for Minecraft clients, servers and proxies.", null), enabled: false, file_name: "spark-1.10.119.jar.disabled" },
   ];
 }
+
+export const mockAddonStore = {
+  items: (id: string) => {
+    const s = get(id);
+    const items = addonItems.get(s.id) ?? addonDefaults(!!s.platform);
+    addonItems.set(s.id, items);
+    return items;
+  },
+  set: (id: string, list: MockAddon[]) => addonItems.set(get(id).id, list),
+  server: (id: string) => get(id),
+  running: (id: string) => status(get(id).id).state !== "stopped" && status(get(id).id).state !== "crashed",
+  save: (s: Server) => save(s),
+};
 
 const handlers: Handlers = {
   servers_list: () => [...servers.values()],
@@ -574,7 +588,7 @@ const handlers: Handlers = {
     const plugins = !!s.platform;
     const items = (addonItems.get(s.id) ?? addonDefaults(plugins)).map((x) => ({ ...x }));
     addonItems.set(s.id, items);
-    return { target: { folder: plugins ? "plugins" : "mods", plugins, loaders: plugins ? ["paper"] : [s.loader.kind], mc: s.mc_version, hangar: null }, items };
+    return { target: { folder: plugins ? "plugins" : "mods", plugins, loaders: plugins ? ["paper", "spigot", "bukkit"] : [s.loader.kind], mc: s.mc_version, hangar: plugins && s.platform?.kind !== "folia" ? "PAPER" : null }, items };
   },
   server_addon_search: ({ query }) => {
     const all = [

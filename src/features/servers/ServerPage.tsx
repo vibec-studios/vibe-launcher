@@ -21,6 +21,7 @@ import { ServerFilesTab } from "@/features/files";
 import { ServerAddonsTab } from "./ServerAddonsTab";
 import { serverSoftware } from "./addonsApi";
 import { PanelButton, RemoteBadge, RemoteFilesHint } from "@/features/remote/RemoteBadge";
+import { PackToServerHost } from "@/features/serverpack/PackToServerDialog";
 
 const route = getRouteApi("/servers/$id");
 const wrap = "w-full px-6";
@@ -183,6 +184,7 @@ export function ServerPage() {
 
   return (
     <div className="flex h-full flex-col" style={accentVars(serverAccent(server))}>
+      <PackToServerHost />
       <header className="shrink-0 border-b border-line bg-panel">
         <div className={cn(wrap, "flex items-center gap-3 pb-1 pt-4")}>
           <Tooltip content={t("srv.icon.choose")}>

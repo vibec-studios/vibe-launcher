@@ -21,6 +21,7 @@ import { PlayJoinDialog } from "@/features/play/PlayJoinDialog";
 import { AccessInviteDialog } from "@/features/accessinvite/Redeem";
 import { onAppAction } from "@/lib/appActions";
 import { LinkTargetNote, VersionLinkResolver } from "@/features/mrlinks/LinkTargetNote";
+import { LinkServerTargets } from "@/features/mrlinks/LinkServerTargets";
 
 function InstallBody({ a, onDone }: { a: Extract<AppAction, { kind: "install" }>; onDone: () => void }) {
   const t = useT();
@@ -71,6 +72,7 @@ function InstallBody({ a, onDone }: { a: Extract<AppAction, { kind: "install" }>
         </div>
       )}
       {q.data && <LinkTargetNote type={q.data.project_type} version={a.version ? (versionLabel ?? a.version) : null} />}
+      {q.data && <LinkServerTargets project={q.data} onDone={onDone} />}
     </ConfirmShell>
   );
 }

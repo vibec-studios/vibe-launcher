@@ -22,6 +22,7 @@ export interface DiscoverSearch {
   instance?: string;
   /** Geöffnetes Projekt-Overlay: `quelle:id` */
   p?: string;
+  server?: string;
 }
 
 export interface ProjectSearch {
@@ -58,6 +59,7 @@ const discoverRoute = createRoute({
     q: typeof s.q === "string" ? s.q : undefined,
     instance: typeof s.instance === "string" ? s.instance : undefined,
     p: typeof s.p === "string" && s.p.length <= 200 ? s.p : undefined,
+    server: typeof s.server === "string" && s.server.length <= 200 ? s.server : undefined,
   }),
 });
 
