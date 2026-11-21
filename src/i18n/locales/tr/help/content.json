@@ -123,7 +123,9 @@
         "“Bağlantı” altında arkadaşlarının nasıl katılacağını seçersin: yerel/LAN, Vibe Relay veya playit.gg.",
         "Beyaz listeyi, operatörleri ve yasakları “Oyuncular” altında, eklentileri ve modları “Eklentiler” altında yönet."
       ],
-      "tips": ["Sunucu senin bilgisayarında çalışır. Yalnızca bilgisayarın açıkken erişilebilir."],
+      "tips": [
+        "Sunucu senin bilgisayarında çalışır. Yalnızca bilgisayarın açıkken erişilebilir."
+      ],
       "keywords": "sunucu paper spigot konsol beyaz liste eklenti bağlantı"
     },
     "skins": {
@@ -150,7 +152,9 @@
         "Modları arama ile veya bir liste yapıştırarak ekle.",
         "Seti “Uygula” ile bir kuruluma uygula. Launcher o Minecraft sürümü için uygun sürümleri bulur."
       ],
-      "tips": ["Setler dışa ve içe aktarılabilir – arkadaşlarla paylaşmak için harika."],
+      "tips": [
+        "Setler dışa ve içe aktarılabilir – arkadaşlarla paylaşmak için harika."
+      ],
       "keywords": "set liste koleksiyon favori modlar uygula"
     },
     "gallery": {
@@ -162,7 +166,9 @@
         "Yalnızca bir oyunun görsellerini görmek için kuruluma göre filtrele.",
         "Büyük görmek, kopyalamak veya klasörünü açmak için bir görsele ya da klibe tıkla."
       ],
-      "tips": ["Oyunda F2 ile ekran görüntüsü al."],
+      "tips": [
+        "Oyunda F2 ile ekran görüntüsü al."
+      ],
       "keywords": "ekran görüntüsü görsel video klip galeri kayıt"
     },
     "waitlist": {
@@ -204,7 +210,9 @@
         "Hatalar için log ve ekran görüntüsü ekleyebilirsin. Bu, sebebi bulmaya yardımcı olur.",
         "“Gönder”e tıkla. Bir bilet numarası alırsın. Bununla ilgili Discord'da yazarsan numarayı belirt."
       ],
-      "tips": ["Bir çökmeden sonra, doğru logları zaten içeren bir “Sorunu bildir” düğmesi vardır."],
+      "tips": [
+        "Bir çökmeden sonra, doğru logları zaten içeren bir “Sorunu bildir” düğmesi vardır."
+      ],
       "keywords": "geri bildirim hata bildirim fikir öneri destek bilet"
     },
     "performance": {
@@ -222,6 +230,37 @@
         "Fazla RAM oyunu yavaşlatabilir bile."
       ],
       "keywords": "ram bellek performans fps lag yavaş java"
+    },
+    "privacy": {
+      "title": "Gizlilik ve şeffaflık",
+      "summary": "Vibe Launcher reklam göstermez ve telemetri toplamaz. İşte neyi, nereye, ne zaman gönderdiği ve nasıl kapatılacağı.",
+      "steps": [
+        "Ayarlar → Gizlilik'i aç. En üstte sözümüz var: reklam yok, telemetri yok, Vibe sadece senin onayınla.",
+        "“Anahtarların” altında güncelleme kontrolünü, Discord durumunu, MinecraftCapes'i ve çevrimiçi durumunu ayarlarsın.",
+        "“Ne nereye gönderiliyor” her hizmeti, ne aldığını ve bunun ne zaman olduğunu listeler.",
+        "Hata raporları ancak sen inceleyip “Gönder”e tıkladıktan sonra gönderilir. Loglar önce temizlenir."
+      ],
+      "tips": [
+        "Yeni kurulumda Vibe hizmetleri kapalıdır. Onları kurulum sırasında veya Ayarlar → Vibe ve hesap altından açarsın.",
+        "Oturum verilerin dosyalarda değil, Windows kasasında (Kimlik Bilgileri Yöneticisi) tutulur."
+      ],
+      "keywords": "gizlilik veri telemetri takip reklam gönderme kvkk şeffaflık privacy"
+    },
+    "portable": {
+      "title": "Taşınabilir mod (USB bellek)",
+      "summary": "Başlatıcı kurulum olmadan bir USB bellekten çalışabilir. O zaman tüm veriler dosyanın yanındaki “VibeData” klasöründe tutulur.",
+      "steps": [
+        "Ayarlar → Genel'i aç ve “Taşınabilir mod” altında “Taşınabilir kopya oluştur …”a tıkla.",
+        "USB belleğinde bir klasör seç. Başlatıcı kendini oraya kopyalar ve yanına bir “portable.txt” dosyası koyar.",
+        "Diğer bilgisayarda “vibe-launcher.exe”yi USB bellekten başlat. Orada bir kez Microsoft ile giriş yap.",
+        "Sana ait olmayan bilgisayarlarda “Kapatırken bu bilgisayardan çıkış yap”ı aç. Böylece geride oturum verisi kalmaz."
+      ],
+      "tips": [
+        "Oturum verileri asla USB bellekte saklanmaz. Kaybedersen kimse onunla hesabına giremez.",
+        "Taşınabilir başlatıcı kendini güncellemez. Yeni başlatıcıdan aynı klasöre taşınabilir kopyayı yeniden oluştur; verilerin korunur.",
+        "Düğme olmadan: vibe-launcher.exe'yi bir klasöre kopyala ve yanına “portable.txt” adında boş bir dosya oluştur."
+      ],
+      "keywords": "taşınabilir usb bellek kurulumsuz yanında götür okul başka bilgisayar portable"
     }
   },
   "tours": {
@@ -232,54 +271,122 @@
           "title": "Oyununu buradan başlat",
           "text": "“Oyna”ya tek tık son oyununu başlatır. Launcher gereken her şeyi indirir.",
           "variants": {
-            "new-game": { "title": "Yeni bir oyun oluştur", "text": "Ne yapmak istediğini seçmen yeterli. Sürüm ve kurulumla launcher ilgilenir." },
-            "new-instance": { "title": "Yeni bir oyun oluştur", "text": "Ne yapmak istediğini seçmen yeterli. Sürüm ve kurulumla launcher ilgilenir." }
+            "new-game": {
+              "title": "Yeni bir oyun oluştur",
+              "text": "Ne yapmak istediğini seçmen yeterli. Sürüm ve kurulumla launcher ilgilenir."
+            },
+            "new-instance": {
+              "title": "Yeni bir oyun oluştur",
+              "text": "Ne yapmak istediğini seçmen yeterli. Sürüm ve kurulumla launcher ilgilenir."
+            }
           }
         },
-        { "title": "Oyunlarım", "text": "Tüm oyunların bir bakışta. Orada mod ekler, dünyalarını görür veya sorunları düzeltirsin." },
-        { "title": "Keşfet", "text": "Mod, kaynak paketi, shader ve mod paketi bul. Doğrudan seçili oyuna eklenirler." },
-        { "title": "Hesabın", "text": "Hesap ve skin'i burada değiştir, istediğin zaman uzman moduna geç." },
-        { "title": "Yardım ve rehberler", "text": "Adım adım rehberler ve diğer turlar her zaman burada." }
+        {
+          "title": "Oyunlarım",
+          "text": "Tüm oyunların bir bakışta. Orada mod ekler, dünyalarını görür veya sorunları düzeltirsin."
+        },
+        {
+          "title": "Keşfet",
+          "text": "Mod, kaynak paketi, shader ve mod paketi bul. Doğrudan seçili oyuna eklenirler."
+        },
+        {
+          "title": "Hesabın",
+          "text": "Hesap ve skin'i burada değiştir, istediğin zaman uzman moduna geç."
+        },
+        {
+          "title": "Yardım ve rehberler",
+          "text": "Adım adım rehberler ve diğer turlar her zaman burada."
+        }
       ]
     },
     "first-instance": {
       "title": "İlk kurulum",
       "steps": [
-        { "title": "Yeni kurulum", "text": "Bu artı, hangi sayfada olursan ol, istediğin zaman yeni bir kurulum oluşturur." },
-        { "title": "Ya da doğrudan kütüphanede", "text": "Bu da çalışır. Sonra sürüm ve loader seç, gerisini launcher indirir." },
-        { "title": "Zaten başka bir launcher mı kullanıyorsun?", "text": "“İçe aktar” mevcut kurulumlarını dünyaları ve ayarlarıyla taşır." },
-        { "title": "Kütüphanen", "text": "Tüm kurulumlar burada. Modlarını, dünyalarını ve ayarlarını görmek için birine tıkla." }
+        {
+          "title": "Yeni kurulum",
+          "text": "Bu artı, hangi sayfada olursan ol, istediğin zaman yeni bir kurulum oluşturur."
+        },
+        {
+          "title": "Ya da doğrudan kütüphanede",
+          "text": "Bu da çalışır. Sonra sürüm ve loader seç, gerisini launcher indirir."
+        },
+        {
+          "title": "Zaten başka bir launcher mı kullanıyorsun?",
+          "text": "“İçe aktar” mevcut kurulumlarını dünyaları ve ayarlarıyla taşır."
+        },
+        {
+          "title": "Kütüphanen",
+          "text": "Tüm kurulumlar burada. Modlarını, dünyalarını ve ayarlarını görmek için birine tıkla."
+        }
       ]
     },
     "modpack": {
       "title": "Mod paketi yükle",
       "steps": [
-        { "title": "Keşfet", "text": "Modrinth ve CurseForge'daki modları ve mod paketlerini burada bul." },
-        { "title": "Bir tür seç", "text": "“Mod paketleri” zaten seçili. Modlara, shader'lara veya kaynak paketlerine buradan geç." },
-        { "title": "Ara", "text": "Mod paketinin adını yaz. Solda sürüme, loader'a ve kategoriye göre filtrele." },
-        { "title": "Yükle", "text": "Bir mod paketini aç ve “Yükle”ye tıkla. Her şeyin dahil olduğu yeni bir kurulum oluşturulur." }
+        {
+          "title": "Keşfet",
+          "text": "Modrinth ve CurseForge'daki modları ve mod paketlerini burada bul."
+        },
+        {
+          "title": "Bir tür seç",
+          "text": "“Mod paketleri” zaten seçili. Modlara, shader'lara veya kaynak paketlerine buradan geç."
+        },
+        {
+          "title": "Ara",
+          "text": "Mod paketinin adını yaz. Solda sürüme, loader'a ve kategoriye göre filtrele."
+        },
+        {
+          "title": "Yükle",
+          "text": "Bir mod paketini aç ve “Yükle”ye tıkla. Her şeyin dahil olduğu yeni bir kurulum oluşturulur."
+        }
       ]
     },
     "mods": {
       "title": "Modları yönet",
       "steps": [
-        { "title": "İçerik ekle", "text": "Bu kurulumun sürümüne ve loader'ına göre filtrelenmiş “Keşfet”i açar." },
-        { "title": "Kendi dosyaların", "text": "Bir .jar dosyan mı var? Buradan ekle ya da pencereye sürükle." },
+        {
+          "title": "İçerik ekle",
+          "text": "Bu kurulumun sürümüne ve loader'ına göre filtrelenmiş “Keşfet”i açar."
+        },
+        {
+          "title": "Kendi dosyaların",
+          "text": "Bir .jar dosyan mı var? Buradan ekle ya da pencereye sürükle."
+        },
         {
           "title": "Güncellemeler",
           "text": "Güncellemeler var. Tek tık tüm modları aynı anda günceller.",
-          "variants": { "content-refresh": { "title": "Güncellemeleri denetle", "text": "“Tekrar denetle” (veya F5) güncellemeleri ve sorunları arar. Varsa yanında “Tümünü güncelle” görünür." } }
+          "variants": {
+            "content-refresh": {
+              "title": "Güncellemeleri denetle",
+              "text": "“Tekrar denetle” (veya F5) güncellemeleri ve sorunları arar. Varsa yanında “Tümünü güncelle” görünür."
+            }
+          }
         },
-        { "title": "İçeriğin", "text": "Her satırdaki anahtar bir modu silmeden kapatır." }
+        {
+          "title": "İçeriğin",
+          "text": "Her satırdaki anahtar bir modu silmeden kapatır."
+        }
       ]
     },
     "import": {
       "title": "İçe aktar",
       "steps": [
-        { "title": "İçe aktar", "text": "Mod paketi dosyalarını veya başka launcher'lardaki kurulumların tamamını buradan taşı." },
-        { "title": "Dosya veya launcher", "text": "“Başka bir launcher'dan” Modrinth App, CurseForge, Prism, MultiMC ve diğerlerini otomatik arar." },
-        { "title": "Seç", "text": "Kurulumları işaretle ve “İçe aktar”a tıkla. Launcher'ın eksikse klasörünü kendin seç." },
-        { "title": "Sonra daha fazlasını içe aktar", "text": "Eski launcher'ında yeni kurulumlar mı var? İçe aktarmayı tekrar aç. Zaten içe aktarılanlar işaretlidir." }
+        {
+          "title": "İçe aktar",
+          "text": "Mod paketi dosyalarını veya başka launcher'lardaki kurulumların tamamını buradan taşı."
+        },
+        {
+          "title": "Dosya veya launcher",
+          "text": "“Başka bir launcher'dan” Modrinth App, CurseForge, Prism, MultiMC ve diğerlerini otomatik arar."
+        },
+        {
+          "title": "Seç",
+          "text": "Kurulumları işaretle ve “İçe aktar”a tıkla. Launcher'ın eksikse klasörünü kendin seç."
+        },
+        {
+          "title": "Sonra daha fazlasını içe aktar",
+          "text": "Eski launcher'ında yeni kurulumlar mı var? İçe aktarmayı tekrar aç. Zaten içe aktarılanlar işaretlidir."
+        }
       ]
     },
     "autofix": {
@@ -289,83 +396,186 @@
           "title": "Sorunları düzelt",
           "text": "Tek tık ve launcher sebebi arar, önerilerini gösterir ve önce bir yedek alır.",
           "variants": {
-            "crash-banner": { "title": "Çökme algılandı", "text": "Bir çökmeden sonra bu bildirim en olası sebeple burada görünür. “Düzelt” oyunu otomatik onarır." },
-            "logs-diagnose": { "title": "Tanı", "text": "Bir çökmeden sonra üstte “Düzelt” içeren kırmızı bir bildirim görünür. Burada, tanıda ayrıntıları görür ve “Sorunları düzelt”i de başlatabilirsin." }
+            "crash-banner": {
+              "title": "Çökme algılandı",
+              "text": "Bir çökmeden sonra bu bildirim en olası sebeple burada görünür. “Düzelt” oyunu otomatik onarır."
+            },
+            "logs-diagnose": {
+              "title": "Tanı",
+              "text": "Bir çökmeden sonra üstte “Düzelt” içeren kırmızı bir bildirim görünür. Burada, tanıda ayrıntıları görür ve “Sorunları düzelt”i de başlatabilirsin."
+            }
           }
         },
-        { "title": "Tekrar başlat", "text": "Sonra tekrar “Oyna”ya tıkla. Launcher başlatmadan önce bir kez daha denetler." },
-        { "title": "Hiçbir şey işe yaramıyor mu?", "text": "O zaman geri bildirimle bize bir hata bildirimi gönder. Loglar eklenebilir." }
+        {
+          "title": "Tekrar başlat",
+          "text": "Sonra tekrar “Oyna”ya tıkla. Launcher başlatmadan önce bir kez daha denetler."
+        },
+        {
+          "title": "Hiçbir şey işe yaramıyor mu?",
+          "text": "O zaman geri bildirimle bize bir hata bildirimi gönder. Loglar eklenebilir."
+        }
       ]
     },
     "backups": {
       "title": "Yedekler",
       "steps": [
-        { "title": "Anlık görüntü oluştur", "text": "Bu kurulumun modlarını, ayar dosyalarını ve paketlerini kaydeder, ör. büyük bir güncellemeden önce. Dünyaları “Dünyalar” alanında yedekle." },
-        { "title": "Yedeklerin", "text": "Anlık görüntüler ve dünya yedekleri burada listelenir. “Geri yükle” seni geri götürür." },
-        { "title": "Otomatik yedekler", "text": "Launcher'ın ne zaman kendiliğinden yedek alacağını ve kaç yedek saklayacağını ayarlardan seç." }
+        {
+          "title": "Anlık görüntü oluştur",
+          "text": "Bu kurulumun modlarını, ayar dosyalarını ve paketlerini kaydeder, ör. büyük bir güncellemeden önce. Dünyaları “Dünyalar” alanında yedekle."
+        },
+        {
+          "title": "Yedeklerin",
+          "text": "Anlık görüntüler ve dünya yedekleri burada listelenir. “Geri yükle” seni geri götürür."
+        },
+        {
+          "title": "Otomatik yedekler",
+          "text": "Launcher'ın ne zaman kendiliğinden yedek alacağını ve kaç yedek saklayacağını ayarlardan seç."
+        }
       ]
     },
     "hosting": {
       "title": "Arkadaşlarla oyna",
       "steps": [
-        { "title": "Dünyaların", "text": "Dünyayı Vibey Client ile başlat ve oyunda “Arkadaşlara aç”ı seç. Gerisini Vibe Relay halleder." },
-        { "title": "Oyun bağlantısı", "text": "Barındırırken oyun bağlantın burada görünür. Kopyala ya da doğrudan arkadaşlarına gönder." },
-        { "title": "Arkadaşlar", "text": "Kimin çevrimiçi olduğunu gör ve arkadaşlarını doğrudan dünyana davet et." },
-        { "title": "Kendi sunucun", "text": "Dünya sen olmadan da çalışsın mı? Bir sunucu oluştur ve bağlantı olarak “Vibe Relay”i seç." }
+        {
+          "title": "Dünyaların",
+          "text": "Dünyayı Vibey Client ile başlat ve oyunda “Arkadaşlara aç”ı seç. Gerisini Vibe Relay halleder."
+        },
+        {
+          "title": "Oyun bağlantısı",
+          "text": "Barındırırken oyun bağlantın burada görünür. Kopyala ya da doğrudan arkadaşlarına gönder."
+        },
+        {
+          "title": "Arkadaşlar",
+          "text": "Kimin çevrimiçi olduğunu gör ve arkadaşlarını doğrudan dünyana davet et."
+        },
+        {
+          "title": "Kendi sunucun",
+          "text": "Dünya sen olmadan da çalışsın mı? Bir sunucu oluştur ve bağlantı olarak “Vibe Relay”i seç."
+        }
       ]
     },
     "servers": {
       "title": "Sunucular",
       "steps": [
-        { "title": "Yeni sunucu", "text": "Bir platform ve sürüm seç. Launcher sunucuyu indirir ve kurar." },
-        { "title": "Sunucuların", "text": "Konsol, oyuncular, dünyalar, eklentiler ve arkadaşlar için bağlantı için bir sunucuyu aç." },
-        { "title": "Her zaman burada", "text": "Sunucularını istediğin zaman burada bul. Yeşil nokta birinin çalıştığını gösterir." }
+        {
+          "title": "Yeni sunucu",
+          "text": "Bir platform ve sürüm seç. Launcher sunucuyu indirir ve kurar."
+        },
+        {
+          "title": "Sunucuların",
+          "text": "Konsol, oyuncular, dünyalar, eklentiler ve arkadaşlar için bağlantı için bir sunucuyu aç."
+        },
+        {
+          "title": "Her zaman burada",
+          "text": "Sunucularını istediğin zaman burada bul. Yeşil nokta birinin çalıştığını gösterir."
+        }
       ]
     },
     "skins": {
       "title": "Skinler",
       "steps": [
-        { "title": "Önizleme", "text": "Skin'in şu an böyle görünüyor. Döndürmek için karakteri sürükle." },
-        { "title": "Skinlerin", "text": "Yeni skinler yükle ya da kayıtlı birini seç ve uygula." },
-        { "title": "Kozmetikler", "text": "Vibey Client için pelerinler, şapkalar ve emote'lar burada." }
+        {
+          "title": "Önizleme",
+          "text": "Skin'in şu an böyle görünüyor. Döndürmek için karakteri sürükle."
+        },
+        {
+          "title": "Skinlerin",
+          "text": "Yeni skinler yükle ya da kayıtlı birini seç ve uygula."
+        },
+        {
+          "title": "Kozmetikler",
+          "text": "Vibey Client için pelerinler, şapkalar ve emote'lar burada."
+        }
       ]
     },
     "modsets": {
       "title": "Mod setleri",
       "steps": [
-        { "title": "Yeni set", "text": "Favori modlarının bir listesini oluştur. Her sürüm için çalışır." },
-        { "title": "İçe aktar", "text": "Arkadaşlarından veya bir dosyadan setleri buradan al." },
-        { "title": "Setlerin", "text": "Mod eklemek veya bir kuruluma uygulamak için bir seti aç." }
+        {
+          "title": "Yeni set",
+          "text": "Favori modlarının bir listesini oluştur. Her sürüm için çalışır."
+        },
+        {
+          "title": "İçe aktar",
+          "text": "Arkadaşlarından veya bir dosyadan setleri buradan al."
+        },
+        {
+          "title": "Setlerin",
+          "text": "Mod eklemek veya bir kuruluma uygulamak için bir seti aç."
+        }
       ]
     },
     "gallery": {
       "title": "Galeri",
       "steps": [
-        { "title": "Ekran görüntüleri ve klipler", "text": "Görseller ile Vibey Client klipleri arasında buradan geçiş yap." },
-        { "title": "Kuruluma göre filtrele", "text": "Yalnızca belirli bir kurulumun görsellerini göster." },
-        { "title": "Görüntüle", "text": "Büyük açmak, kopyalamak veya klasöründe göstermek için bir görsele tıkla." }
+        {
+          "title": "Ekran görüntüleri ve klipler",
+          "text": "Görseller ile Vibey Client klipleri arasında buradan geçiş yap."
+        },
+        {
+          "title": "Kuruluma göre filtrele",
+          "text": "Yalnızca belirli bir kurulumun görsellerini göster."
+        },
+        {
+          "title": "Görüntüle",
+          "text": "Büyük açmak, kopyalamak veya klasöründe göstermek için bir görsele tıkla."
+        }
       ]
     },
     "waitlist": {
       "title": "Vibe beta",
       "steps": [
-        { "title": "Vibe ve hesap", "text": "Vibe'a buradan giriş yap. Vibe beta aşamasında, önce bir bekleme listesine girersin." },
-        { "title": "Erişimin", "text": "Durumun burada gösterilir. Onaylanınca arkadaşlar, barındırma ve kozmetikler çalışır." }
+        {
+          "title": "Vibe ve hesap",
+          "text": "Vibe'a buradan giriş yap. Vibe beta aşamasında, önce bir bekleme listesine girersin."
+        },
+        {
+          "title": "Erişimin",
+          "text": "Durumun burada gösterilir. Onaylanınca arkadaşlar, barındırma ve kozmetikler çalışır."
+        }
       ]
     },
     "feedback": {
       "title": "Geri bildirim",
       "steps": [
-        { "title": "Geri bildirim gönder", "text": "Hata mı fikir mi? Bize buradan yaz. Log ve ekran görüntüsü eklenebilir." },
-        { "title": "Yardım", "text": "Ve takıldığında tüm rehberleri ve turları burada bulursun." }
+        {
+          "title": "Geri bildirim gönder",
+          "text": "Hata mı fikir mi? Bize buradan yaz. Log ve ekran görüntüsü eklenebilir."
+        },
+        {
+          "title": "Yardım",
+          "text": "Ve takıldığında tüm rehberleri ve turları burada bulursun."
+        }
       ]
     },
     "performance": {
       "title": "Performans ve RAM",
       "steps": [
-        { "title": "Kurulum ayarları", "text": "Dişli bu kurulumun ayarlarını açar." },
-        { "title": "Bu kurulumun performansı", "text": "Bu kurulumun ne kadar bellek alacağını ayarla. “Özel değerler” varsayılanları geçersiz kılar." },
-        { "title": "Herkes için bellek", "text": "Bu değerler kendi ayarı olmayan tüm kurulumlar için geçerlidir. Modlarla 4–6 GB iyi bir başlangıçtır." }
+        {
+          "title": "Kurulum ayarları",
+          "text": "Dişli bu kurulumun ayarlarını açar."
+        },
+        {
+          "title": "Bu kurulumun performansı",
+          "text": "Bu kurulumun ne kadar bellek alacağını ayarla. “Özel değerler” varsayılanları geçersiz kılar."
+        },
+        {
+          "title": "Herkes için bellek",
+          "text": "Bu değerler kendi ayarı olmayan tüm kurulumlar için geçerlidir. Modlarla 4–6 GB iyi bir başlangıçtır."
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Gizlilik",
+      "steps": [
+        {
+          "title": "Gizlilik",
+          "text": "Başlatıcının ne gönderdiği ve nasıl kapatılacağı hakkında her şey."
+        },
+        {
+          "title": "Ne nereye gidiyor",
+          "text": "Her hizmet, ne aldığı ve ne zaman. Sözümüz en üstte."
+        }
       ]
     }
   }

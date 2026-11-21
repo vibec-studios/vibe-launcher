@@ -149,5 +149,18 @@
   "isx.data.warn_world": "Vibe'daki dünyayı değiştirir – önce bir dünya yedeği alınır.",
   "isx.data.removed_hint": "İçe aktarmayla geldi ve Vibe'da silindi – bu yüzden önceden seçili değil.",
   "isx.row.desc_data_1": "{launcher} kaynağından 1 öğe Vibe'da eksik – ör. mod verileri veya bir dünya.",
-  "isx.row.desc_data_n": "{launcher} kaynağından {n} öğe Vibe'da eksik – ör. mod verileri veya dünyalar."
+  "isx.row.desc_data_n": "{launcher} kaynağından {n} öğe Vibe'da eksik – ör. mod verileri veya dünyalar.",
+  "import.choose_source": "İçe aktarmak istediğin içerik nerede?",
+  "import.source.file": "Bir mod paketi dosyasından",
+  "import.source.file.desc": "Bir Modrinth, CurseForge veya Vibe Launcher dosyası aç.",
+  "import.source.launcher": "Başka bir başlatıcıdan",
+  "import.source.launcher.desc": "Vibe'ın bilgisayarında bulduğu oyun profillerinden seç.",
+  "import.source.folder": "Bir klasörden",
+  "import.source.folder.desc": "Bir oyun profilinin veya başlatıcının konumuna git.",
+  "import.folder.prompt": "Bilgisayarında bir oyun profili bul",
+  "import.back_to_source": "Kaynağa geri dön",
+  "import.review_title": "İçe aktarmayı gözden geçir",
+  "import.review_description": "Mod paketini gözden geçir ve yeni kurulumuna bir ad ver.",
+  "import.progress_title": "İçe aktarılıyor",
+  "import.finished_title": "İçe aktarma tamamlandı"
 }

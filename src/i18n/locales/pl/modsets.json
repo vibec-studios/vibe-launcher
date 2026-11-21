@@ -186,5 +186,7 @@
   "imenu.profiles": "Profile – która zawartość jest włączona",
   "imenu.profile_to_set": "Zamień „{name}” w zestaw modów",
   "imenu.profile_to_set_done": "Utworzono zestaw modów „{name}”",
-  "imenu.profile_to_set_skipped": "Pominięto pliki bez znanego pochodzenia: {n}"
+  "imenu.profile_to_set_skipped": "Pominięto pliki bez znanego pochodzenia: {n}",
+  "sets.template": "Stosuj do nowych instancji",
+  "import.paste_label": "Wklej kod udostępniania lub listę modów"
 }

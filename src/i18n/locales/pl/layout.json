@@ -1,0 +1,9 @@
+{
+  "layout.search.reset": "Wyczyść wyszukiwanie",
+  "layout.no_match": "Nic nie znaleziono",
+  "layout.no_match.text": "Nic nie pasuje do „{q}”. Sprawdź pisownię albo spróbuj czegoś innego.",
+  "layout.go_library": "Przejdź do biblioteki",
+  "layout.howto": "Jak to działa",
+  "layout.show_all": "Pokaż wszystko",
+  "layout.sort_view": "Sortowanie i widok"
+}

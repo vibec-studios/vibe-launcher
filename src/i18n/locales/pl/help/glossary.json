@@ -78,5 +78,32 @@
   "account": {
     "title": "Konto Microsoft",
     "text": "Minecraft: Java Edition jest powiązany z twoim kontem Microsoft. Logowanie odbywa się bezpośrednio u Microsoftu – launcher nigdy nie widzi twojego hasła."
+  },
+  "seed": {
+    "title": "Ziarno (seed)",
+    "text": "Wartość startowa, z której Minecraft generuje teren świata. To samo ziarno, wersja gry i ustawienia odtworzą oryginalny teren."
+  },
+  "dependency": {
+    "title": "Zależność",
+    "text": "Mod, którego inny mod potrzebuje do działania, np. Fabric API. Vibe instaluje zależności automatycznie i mówi ci, gdy żaden mod już ich nie potrzebuje.",
+    "example": "Mod Menu potrzebuje Fabric API – bez Fabric API Mod Menu się nie uruchomi."
+  },
+  "portable": {
+    "title": "Przenośny",
+    "text": "Przenośny launcher nie wymaga instalacji. Wszystko trzyma w folderze „VibeData” tuż obok, np. na pendrivie, i nie zmienia nic na PC.",
+    "example": "Podłącz pendrive, uruchom vibe-launcher.exe, graj dalej – także na innym PC."
+  },
+  "telemetry": {
+    "title": "Telemetria",
+    "text": "Dane o użyciu wysyłane automatycznie, np. które przyciski klikasz albo jak często grasz. Vibe Launcher niczego takiego nie zbiera."
+  },
+  "skinlayer": {
+    "title": "Warstwa zewnętrzna (skin)",
+    "text": "Skin ma dwie warstwy: bazowa leży bezpośrednio na postaci, zewnętrzna unosi się lekko nad nią. Użyj jej na włosy, czapki, kurtki albo okulary – może być przezroczysta.",
+    "example": "Namaluj kaptur na zewnętrznej warstwie głowy – w grze będzie lekko odstawał."
+  },
+  "skinmodel": {
+    "title": "Classic i Slim",
+    "text": "Dwa modele postaci w Minecrafcie. Classic ma ręce szerokie na 4 piksele, Slim tylko na 3. Model możesz zmienić w każdej chwili."
   }
 }

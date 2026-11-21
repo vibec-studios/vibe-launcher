@@ -257,5 +257,21 @@
   "action.invite.title": "Zaproszenie",
   "action.vibe_soon": "To pojawi się z backendem Vibe – gdy będzie online, podgląd otworzy się tutaj.",
   "action.vibe_off": "Usługi Vibe są wyłączone. Możesz je włączyć w ustawieniach.",
-  "action.open_settings": "Otwórz ustawienia"
+  "action.open_settings": "Otwórz ustawienia",
+  "diag.native_memory.title": "Java osiągnęła limit pamięci",
+  "diag.native_memory.text": "Javie zabrakło miejsca na kolejny bufor, skompilowany kod albo wątek w tle. Zamknij programy zużywające dużo pamięci i uruchom grę ponownie.",
+  "diag.disk_full.title": "Za mało miejsca na dysku",
+  "diag.disk_full.text": "Minecraft nie mógł zapisać pliku. Zwolnij miejsce na dysku z instancją i spróbuj ponownie.",
+  "diag.invalid_jvm_flag.title": "Java odrzuciła opcję uruchamiania",
+  "diag.invalid_jvm_flag.text": "Jakaś opcja ma literówkę albo ta wersja Javy jej nie obsługuje. Sprawdź własne argumenty Javy w ustawieniach.",
+  "diag.corrupt_archive.title": "Nie udało się otworzyć uszkodzonego archiwum",
+  "diag.corrupt_archive.text": "Minecraft nie mógł odczytać archiwum ZIP lub JAR. Sprawdź nazwę pliku w logu, a potem pobierz dany mod lub paczkę ponownie.",
+  "diag.locked_world.title": "Ten świat jest już otwarty",
+  "diag.locked_world.text": "Minecraft blokuje świat, gdy jest otwarty w innej sesji. Wyjdź ze świata w tamtej sesji i otwórz go tutaj ponownie.",
+  "optsync.cat.keybinds": "Sterowanie",
+  "sync.cat.keybinds.desc": "Klawisze i przyciski myszy w grze, też przypisania modów w tym samym formacie.",
+  "sync.area.hotbars": "Zapisane paski szybkiego dostępu",
+  "sync.area.hotbars.desc": "Współdziel zapisane paski z trybu kreatywnego między instancjami z tą samą wersją Minecrafta.",
+  "sync.area.command_history": "Historia komend",
+  "sync.area.command_history.desc": "Współdziel 50 ostatnich komend wpisanych z / w grze. Historia zostaje na tym urządzeniu i jest wspólna dla biorących udział instancji."
 }

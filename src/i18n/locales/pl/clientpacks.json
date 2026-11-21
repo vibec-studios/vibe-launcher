@@ -97,5 +97,8 @@
   "cp.new.label": "Paczka klienta",
   "cp.new.none": "Bez paczki klienta",
   "cp.new.unavailable": "niedostępne",
-  "cp.new.after": "{name} zostanie zainstalowany po utworzeniu"
+  "cp.new.after": "{name} zostanie zainstalowany po utworzeniu",
+  "isd.version.configure": "Wybierz nową wersję",
+  "isd.version.current": "Obecnie zainstalowana",
+  "isd.version.target": "Wybrana"
 }

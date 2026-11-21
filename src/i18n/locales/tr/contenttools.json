@@ -230,5 +230,10 @@
   "fix.pre.text_1": "{name}: modlarla ilgili 1 sorun bulundu – oyun büyük ihtimalle bu haliyle açılmaz.",
   "fix.pre.hint": "“Düzelt ve başlat” önce neyin değişeceğini gösterir. Her şey geri alınabilir.",
   "fix.pre.launch": "Yine de başlat",
-  "fix.pre.fix": "Düzelt ve başlat"
+  "fix.pre.fix": "Düzelt ve başlat",
+  "fix.unfixable.native_memory": "Tekrar olursa, özel Java bellek seçeneklerini varsayılana sıfırla.",
+  "fix.unfixable.disk_full": "Sistem sürücüsünü de kontrol et, Java geçici dosyalar için onu kullanır.",
+  "fix.unfixable.invalid_jvm_flag": "Reddedilen seçeneği logda bulursan, onu özel Java argümanlarından kaldır.",
+  "fix.unfixable.corrupt_archive": "Minecraft'ın kendi dosyaları için ilgili oyun sürümünü yeniden kurmak çoğu zaman işe yarar.",
+  "fix.unfixable.locked_world": "Gerekirse diğer oyun oturumunu kapat. Kilit dosyası kaydını korur."
 }

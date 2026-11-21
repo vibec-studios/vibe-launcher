@@ -257,5 +257,21 @@
   "action.invite.title": "Davet",
   "action.vibe_soon": "Bu, Vibe backend'iyle gelecek – çevrimiçi olunca önizleme burada açılacak.",
   "action.vibe_off": "Vibe hizmetleri kapalı. Ayarlardan açabilirsin.",
-  "action.open_settings": "Ayarları aç"
+  "action.open_settings": "Ayarları aç",
+  "diag.native_memory.title": "Java bir bellek sınırına ulaştı",
+  "diag.native_memory.text": "Java'nın başka bir arabellek, derlenmiş kod veya arka plan iş parçacığı için yeri kalmadı. Çok bellek kullanan programları kapat ve oyunu yeniden başlat.",
+  "diag.disk_full.title": "Yeterli disk alanı yok",
+  "diag.disk_full.text": "Minecraft bir dosya yazamadı. Kurulumun bulunduğu sürücüde yer aç ve tekrar dene.",
+  "diag.invalid_jvm_flag.title": "Java bir başlatma seçeneğini reddetti",
+  "diag.invalid_jvm_flag.text": "Bir seçenek yanlış yazılmış veya bu Java sürümü tarafından desteklenmiyor. Ayarlardaki özel Java argümanlarını kontrol et.",
+  "diag.corrupt_archive.title": "Hasarlı bir arşiv açılamadı",
+  "diag.corrupt_archive.text": "Minecraft bir ZIP veya JAR arşivini okuyamadı. Logda dosya adını bul, sonra ilgili modu veya paketi yeniden indir.",
+  "diag.locked_world.title": "Bu dünya zaten açık",
+  "diag.locked_world.text": "Minecraft, başka bir oturumda açıkken dünyayı kilitler. O oturumda dünyadan çık ve burada yeniden aç.",
+  "optsync.cat.keybinds": "Tuş atamaları",
+  "sync.cat.keybinds.desc": "Oyun içi tuşlar ve fare düğmeleri, aynı biçimi kullanan mod atamaları dahil.",
+  "sync.area.hotbars": "Kayıtlı hotbar'lar",
+  "sync.area.hotbars.desc": "Kayıtlı Yaratıcı hotbar'larını aynı Minecraft sürümündeki kurulumlar arasında paylaş.",
+  "sync.area.command_history": "Komut geçmişi",
+  "sync.area.command_history.desc": "Oyunda / ile girdiğin son 50 komutu paylaş. Geçmiş bu cihazda kalır ve katılan kurulumlar arasında paylaşılır."
 }

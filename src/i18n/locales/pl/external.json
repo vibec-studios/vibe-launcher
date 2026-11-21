@@ -149,5 +149,18 @@
   "isx.data.warn_world": "Zastępuje świat w Vibe – najpierw powstaje kopia zapasowa świata.",
   "isx.data.removed_hint": "Przyszło z importem i zostało usunięte w Vibe – dlatego nie jest zaznaczone.",
   "isx.row.desc_data_1": "W Vibe brakuje 1 wpisu z {launcher} – np. danych modów albo świata.",
-  "isx.row.desc_data_n": "W Vibe brakuje wpisów z {launcher} ({n}) – np. danych modów albo światów."
+  "isx.row.desc_data_n": "W Vibe brakuje wpisów z {launcher} ({n}) – np. danych modów albo światów.",
+  "import.choose_source": "Skąd pochodzi zawartość do zaimportowania?",
+  "import.source.file": "Z pliku modpacka",
+  "import.source.file.desc": "Otwórz plik z Modrinth, CurseForge albo Vibe Launcher.",
+  "import.source.launcher": "Z innego launchera",
+  "import.source.launcher.desc": "Wybierz z profili gry, które Vibe znajdzie na twoim komputerze.",
+  "import.source.folder": "Z folderu",
+  "import.source.folder.desc": "Wskaż miejsce profilu gry albo launchera.",
+  "import.folder.prompt": "Znajdź profil gry na swoim komputerze",
+  "import.back_to_source": "Wróć do wyboru źródła",
+  "import.review_title": "Sprawdź import",
+  "import.review_description": "Sprawdź modpack i nazwij nową instancję.",
+  "import.progress_title": "Importowanie",
+  "import.finished_title": "Import zakończony"
 }
