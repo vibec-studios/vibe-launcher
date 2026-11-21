@@ -83,7 +83,7 @@ pub async fn skin_apply_library(state: State<'_, AppState>, account_id: Option<S
 }
 
 /// Körper von `skin_apply_library`.
-pub(crate) async fn apply_library(state: &AppState, account_id: Option<String>, id: String, variant: Option<SkinVariant>) -> AppResult<SkinProfile> {
+async fn apply_library(state: &AppState, account_id: Option<String>, id: String, variant: Option<SkinVariant>) -> AppResult<SkinProfile> {
     let st = state.clone();
     let (png, lib_variant) = st.auth.skins.bytes(&id)?;
     let variant = variant.unwrap_or(lib_variant);

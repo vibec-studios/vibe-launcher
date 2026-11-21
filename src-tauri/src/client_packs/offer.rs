@@ -19,7 +19,7 @@ pub struct PackInstall {
 pub struct PackOffer {
     pub id: &'static str,
     pub category: Category,
-    /// "vibe" | "norisk" | "modrinth"
+    /// "norisk" | "modrinth"
     pub source: &'static str,
     pub group: Option<&'static str>,
     pub vendor: Option<&'static str>,
@@ -28,7 +28,7 @@ pub struct PackOffer {
     pub projects: Vec<&'static str>,
     /// Passt zur Instanz? `None` = unbekannt (Quelle nicht erreichbar)
     pub available: Option<bool>,
-    /// Warum nicht: "loader" | "version" | "vibe_off" | "unreachable"
+    /// Warum nicht: "loader" | "version" | "unreachable"
     pub reason: Option<&'static str>,
     pub error: Option<String>,
     /// Unterstützte MC-Versionen für den Loader (Hinweis bei „passt nicht“)
@@ -71,12 +71,12 @@ pub(super) fn base_offer(d: &PackDef) -> PackOffer {
 /// Packs mit Verfügbarkeit für Minecraft-Version + Loader, bei `instance` zusätzlich mit Installationsstand.
 pub async fn overview(state: &AppState, instance: Option<&Instance>, mc: &str, loader: LoaderKind) -> PacksOverview {
     let vibe_enabled = state.settings().vibe.enabled;
-    let futs = PACKS.iter().map(|d| offer(state, d, instance, mc, loader, vibe_enabled));
+    let futs = PACKS.iter().map(|d| offer(state, d, instance, mc, loader));
     let packs = futures::future::join_all(futs).await;
     PacksOverview { mc_version: mc.to_string(), loader, vibe_enabled, packs }
 }
 
-pub(super) async fn offer(state: &AppState, d: &'static PackDef, instance: Option<&Instance>, mc: &str, loader: LoaderKind, vibe_enabled: bool) -> PackOffer {
+pub(super) async fn offer(state: &AppState, d: &'static PackDef, instance: Option<&Instance>, mc: &str, loader: LoaderKind) -> PackOffer {
     let mut o = base_offer(d);
     let loader_ok = d.loaders.contains(&loader);
     if !loader_ok {
@@ -84,52 +84,6 @@ pub(super) async fn offer(state: &AppState, d: &'static PackDef, instance: Optio
         o.reason = Some("loader");
     }
     match d.source {
-        PackSource::Vibey => {
-            if let Some(inst) = instance {
-                let s = vibey_client::install::load(state, &inst.id);
-                if s.enabled {
-                    let st = vibey_client::install::status(state, &inst.id).await.ok();
-                    o.installed = Some(PackInstall {
-                        version: st.as_ref().and_then(|x| x.installed_version.clone()).or(s.version.clone()),
-                        files: s.file.clone().into_iter().collect(),
-                        mc_version: s.mc_version.clone(),
-                        loader: s.loader.clone(),
-                        installed_at: s.installed_at,
-                        disabled_by_user: st.as_ref().is_some_and(|x| x.disabled_by_user),
-                        missing: st.as_ref().is_some_and(|x| !x.present),
-                        mismatch: s.mc_version.as_deref().is_some_and(|v| v != inst.mc_version),
-                    });
-                    if let Some(st) = &st {
-                        o.update_available = st.update_available;
-                    }
-                }
-            }
-            if !vibe_enabled {
-                o.available = Some(false);
-                o.reason = Some("vibe_off");
-                return o;
-            }
-            if !loader_ok {
-                return o;
-            }
-            match vibey_client::latest(state, false).await {
-                Ok(rel) => {
-                    let lname = vibey_client::install::loader_name(loader).unwrap_or("");
-                    let f = rel.file_for(lname, mc);
-                    o.available = Some(f.is_some());
-                    if f.is_none() {
-                        o.reason = Some("version");
-                    }
-                    o.mc_versions = rel.mc_versions(lname);
-                    o.mc_versions.reverse();
-                    o.latest_version = Some(rel.version.clone());
-                }
-                Err(e) => {
-                    o.reason = Some("unreachable");
-                    o.error = Some(e.to_string());
-                }
-            }
-        }
         PackSource::Norisk(flavor) => {
             let rec = instance.and_then(|i| load(state, &i.id).get(d.id).cloned().map(|r| (i, r)));
             if let Some((inst, r)) = &rec {

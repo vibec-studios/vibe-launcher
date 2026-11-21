@@ -15,3 +15,10 @@ fn names() {
     assert!(loader_kind("neoforge").is_ok());
     assert!(loader_kind("rift").is_err());
 }
+
+#[test]
+fn vibey_client_in_links_is_skipped() {
+    assert!(crate::client_packs::def("vibey").is_none());
+    assert!(skipped_pack_note("vibey").contains("Vibey Client"));
+    assert!(skipped_pack_note("gibtsnicht").contains("gibtsnicht"));
+}

@@ -11,6 +11,15 @@ pub fn new_instance_name(link: &PlayLink) -> String {
     }
 }
 
+/// Hinweis, wenn der Link ein Client-Pack nennt, das der Launcher nicht (mehr) anbietet.
+pub fn skipped_pack_note(cp: &str) -> String {
+    if cp == "vibey" {
+        "Der Einladende nutzt den Vibey Client. Den gibt es nicht mehr – du trittst ohne ihn bei.".to_string()
+    } else {
+        format!("Client-Pack „{cp}“ ist unbekannt – du trittst ohne es bei.")
+    }
+}
+
 /// Task-Körper: passende Instanz nehmen oder anlegen, Inhalte und Client-Pack installieren.
 /// Setzt die Instanz der Aufgabe (`task.instance_id`), damit das Frontend danach starten kann.
 pub async fn run_setup(state: AppState, task: TaskHandle, link: PlayLink, instance_id: Option<String>) -> AppResult<()> {
@@ -104,8 +113,11 @@ pub async fn run_setup(state: AppState, task: TaskHandle, link: PlayLink, instan
         tracing::warn!("Spiel-Link {}: {w}", link.code);
     }
 
-    // Client-Pack (z. B. Vibey Client) – nicht kritisch
-    if let Some(cp) = link.client_pack.as_deref() {
+    // Client-Pack – nicht kritisch
+    if let Some(cp) = link.client_pack.as_deref().filter(|c| crate::client_packs::def(c).is_none()) {
+        tracing::info!("Spiel-Link {}: Client-Pack {cp} wird nicht angeboten, Beitritt ohne", link.code);
+        state.game.launcher_line(&inst.id, crate::minecraft::LogLevel::Launcher, skipped_pack_note(cp));
+    } else if let Some(cp) = link.client_pack.as_deref() {
         let installed = crate::client_packs::installed_ids(&state, &inst.id);
         if !installed.iter().any(|x| x == cp) {
             match crate::client_packs::precheck(&state, &inst.id, cp, true) {

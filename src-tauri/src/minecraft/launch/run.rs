@@ -16,7 +16,6 @@ pub async fn launch(
     let label = if slot > 1 { format!(" (Sitzung #{slot})") } else { String::new() };
     gm.launcher_line(run, LogLevel::Launcher, format!("Vibe Launcher {} – {}{label} wird vorbereitet", env!("CARGO_PKG_VERSION"), inst.name));
     if gm.others_active(id, run) == 0 {
-        crate::vibey_client::before_launch(state, id, task).await;
         crate::content::autoupdate::before_launch(state, id, task).await;
         crate::content::worldbackup::before_launch(state, id, task).await;
     } else {

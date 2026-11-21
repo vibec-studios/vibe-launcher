@@ -66,13 +66,6 @@ impl InstanceStore {
         self.map.read().get(id).cloned().ok_or_else(|| AppError::NotFound(format!("Instanz {id}")))
     }
 
-    /// Freier Anzeigename: `Name`, `Name (2)`, `Name (3)` … (Groß-/Kleinschreibung egal). Für automatisch
-    /// angelegte Instanzen (z. B. „Vibey Client“), damit nicht zwei gleich heißen.
-    pub fn unique_name(&self, base: &str) -> String {
-        let map = self.map.read();
-        free_name(base, |n| map.values().any(|i| i.name.trim().eq_ignore_ascii_case(n)))
-    }
-
     pub(super) fn unique_id(&self, name: &str) -> String {
         let base = slugify(name);
         let map = self.map.read();
@@ -274,13 +267,4 @@ impl InstanceStore {
         let dest_s = dest.to_string_lossy().to_string();
         self.modify(id, |i| i.icon = Some(dest_s))
     }
-}
-
-/// `base`, sonst `base (2)`, `base (3)` … – der erste Name, den `taken` nicht kennt.
-pub(super) fn free_name(base: &str, taken: impl Fn(&str) -> bool) -> String {
-    let base = base.trim();
-    if !taken(base) {
-        return base.to_string();
-    }
-    (2..).map(|n| format!("{base} ({n})")).find(|n| !taken(n)).unwrap_or_else(|| base.to_string())
 }

@@ -134,7 +134,17 @@ pub fn allowed_host(u: &Url) -> bool {
 pub fn file_from_url(u: &Url) -> Option<String> {
     let last = u.path_segments()?.next_back()?;
     let name = urlencoding::decode(last).ok()?.into_owned();
-    crate::vibey_client::safe_file_name(&name, ".jar").ok()
+    safe_jar_name(&name)
+}
+
+/// Nur ein Dateiname (`….jar`), keine Pfade.
+pub fn safe_jar_name(name: &str) -> Option<String> {
+    let ok = !name.is_empty()
+        && name.len() <= 128
+        && name.ends_with(".jar")
+        && !name.starts_with('.')
+        && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_' | b'+'));
+    ok.then(|| name.to_string())
 }
 
 /// Version aus dem Jar-Namen (`26.4.3940900+fabric.26.3`), `None` bei unbekanntem Schema.

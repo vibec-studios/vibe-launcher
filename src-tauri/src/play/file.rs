@@ -76,7 +76,7 @@ pub fn build_instance_file(inst: &Instance, idx: &ContentIndex, client_pack: Opt
     }
 }
 
-/// Client-Pack für den Vertrag: zuerst einer aus der Gruppe „Client“ (Vibey, NoRisk …), sonst das erste.
+/// Client-Pack für den Vertrag: zuerst einer aus der Gruppe „Client“ (NoRisk, Essential …), sonst das erste.
 pub(super) fn main_client_pack(ids: &[String]) -> Option<String> {
     ids.iter()
         .find(|id| crate::client_packs::def(id).is_some_and(|d| d.group == Some("client")))

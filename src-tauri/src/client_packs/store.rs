@@ -78,12 +78,8 @@ pub(super) fn present(state: &AppState, id: &str, p: &InstalledPack, idx: &Conte
     p.files.is_empty() && p.projects.is_empty()
 }
 
-/// IDs der installierten Packs (inklusive Vibey Client, falls eingeschaltet).
+/// IDs der installierten Packs.
 pub fn installed_ids(state: &AppState, id: &str) -> Vec<String> {
     let idx = ContentIndex::load(&state.paths, id);
-    let mut out: Vec<String> = load(state, id).packs.iter().filter(|p| present(state, id, p, &idx)).map(|p| p.id.clone()).collect();
-    if vibey_client::install::load(state, id).enabled {
-        out.insert(0, "vibey".into());
-    }
-    out
+    load(state, id).packs.iter().filter(|p| present(state, id, p, &idx)).map(|p| p.id.clone()).collect()
 }

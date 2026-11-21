@@ -95,3 +95,13 @@ fn file_and_version() {
     assert!(file_from_url(&Url::parse("https://maven.norisk.gg/a/evil.exe").unwrap()).is_none());
     assert!(file_from_url(&Url::parse("https://maven.norisk.gg/a/..%2Fevil.jar").unwrap()).is_none());
 }
+
+#[test]
+fn jar_names() {
+    assert!(safe_jar_name("nrc-mini-26.4.1+fabric.26.3.jar").is_some());
+    assert!(safe_jar_name("../evil.jar").is_none());
+    assert!(safe_jar_name("a/b.jar").is_none());
+    assert!(safe_jar_name("x.exe").is_none());
+    assert!(safe_jar_name(".jar").is_none());
+    assert!(safe_jar_name("").is_none());
+}

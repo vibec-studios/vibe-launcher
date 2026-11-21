@@ -85,7 +85,7 @@ pub struct InstanceFile {
     pub known_files: Vec<String>,
 }
 
-/// `<spielordner>/.vibe/session.json` (schema 1), geschrieben vom Vibey Client.
+/// `<spielordner>/.vibe/session.json` (schema 1), geschrieben vom (eingestellten) Vibey Client.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct Session {
     pub schema: u32,

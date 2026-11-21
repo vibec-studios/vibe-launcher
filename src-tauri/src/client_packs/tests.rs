@@ -17,8 +17,14 @@ fn definitions_are_consistent() {
             assert!(p.vendor.is_some() && p.homepage.is_some(), "Community-Pack {} ohne Herkunft", p.id);
         }
     }
-    assert_eq!(def("vibey").unwrap().category, Category::Official);
     assert!(def("gibtsnicht").is_none());
+}
+
+#[test]
+fn vibey_client_is_no_longer_offered() {
+    assert!(def("vibey").is_none());
+    assert!(PACKS.iter().all(|p| p.id != "vibey"));
+    assert!(to_replace("vibey", &ids(&["norisk"])).is_empty());
 }
 
 /// Pack außerhalb der Client-Gruppe (z. B. ein späteres Performance-Pack)
@@ -35,7 +41,7 @@ const EXTRA: PackDef = PackDef {
 
 #[test]
 fn clients_exclude_each_other() {
-    let clients: Vec<&PackDef> = ["vibey", "norisk", "norisk-mini", "essential"].iter().map(|id| def(id).unwrap()).collect();
+    let clients: Vec<&PackDef> = ["norisk", "norisk-mini", "essential"].iter().map(|id| def(id).unwrap()).collect();
     for a in &clients {
         assert!(!excludes(a, a));
         for b in &clients {
@@ -50,22 +56,22 @@ fn clients_exclude_each_other() {
 
 #[test]
 fn replacement_on_switch() {
-    // Wechsel Vibey -> NoRisk: Vibey muss raus, unbekannte/fremde Einträge bleiben unberührt
-    assert_eq!(to_replace("norisk", &ids(&["vibey"])), ids(&["vibey"]));
-    // NoRisk -> Mini, Mini -> Essential, Essential -> Vibey
+    // NoRisk -> Mini, Mini -> Essential, Essential -> NoRisk
     assert_eq!(to_replace("norisk-mini", &ids(&["norisk"])), ids(&["norisk"]));
     assert_eq!(to_replace("essential", &ids(&["norisk-mini"])), ids(&["norisk-mini"]));
-    assert_eq!(to_replace("vibey", &ids(&["essential"])), ids(&["essential"]));
+    assert_eq!(to_replace("norisk", &ids(&["essential"])), ids(&["essential"]));
+    // Alter Eintrag „vibey“ ist kein Pack mehr und bleibt unberührt
+    assert!(to_replace("norisk", &ids(&["vibey"])).is_empty());
     // Erneut installieren (Update) ersetzt nichts
     assert!(to_replace("norisk", &ids(&["norisk"])).is_empty());
     assert!(to_replace("essential", &ids(&["essential"])).is_empty());
     // Nichts installiert
-    assert!(to_replace("vibey", &[]).is_empty());
+    assert!(to_replace("norisk", &[]).is_empty());
     // Unbekannte Einträge werden ignoriert
-    assert!(to_replace("vibey", &ids(&["alt"])).is_empty());
-    assert!(to_replace("alt", &ids(&["vibey"])).is_empty());
+    assert!(to_replace("norisk", &ids(&["alt"])).is_empty());
+    assert!(to_replace("alt", &ids(&["norisk"])).is_empty());
     // Mehrere (inkonsistenter Altzustand): alle Clients raus
-    assert_eq!(to_replace("essential", &ids(&["vibey", "norisk"])), ids(&["vibey", "norisk"]));
+    assert_eq!(to_replace("essential", &ids(&["norisk-mini", "norisk"])), ids(&["norisk-mini", "norisk"]));
 }
 
 #[test]

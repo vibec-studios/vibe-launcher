@@ -1,14 +1,4 @@
 #[test]
-fn free_names() {
-    let taken = |list: &'static [&'static str]| move |n: &str| list.iter().any(|x| x.eq_ignore_ascii_case(n));
-    assert_eq!(super::free_name("Vibey Client", taken(&[])), "Vibey Client");
-    assert_eq!(super::free_name("Vibey Client", taken(&["vibey client"])), "Vibey Client (2)");
-    assert_eq!(super::free_name("Vibey Client", taken(&["Vibey Client", "Vibey Client (2)"])), "Vibey Client (3)");
-    // Lücken werden gefüllt
-    assert_eq!(super::free_name("Vibey Client", taken(&["Vibey Client", "Vibey Client (3)"])), "Vibey Client (2)");
-}
-
-#[test]
 fn patch_null_clears() {
     let p: super::InstancePatch = serde_json::from_str(r#"{"accent":null,"auto_update_content":true}"#).unwrap();
     assert_eq!(p.accent, Some(None));

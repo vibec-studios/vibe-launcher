@@ -31,7 +31,6 @@ pub mod tasks;
 pub mod updater;
 pub mod util;
 pub mod vibe;
-pub mod vibey_client;
 
 use state::AppState;
 use tauri::Manager;

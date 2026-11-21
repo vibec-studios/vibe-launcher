@@ -3,14 +3,11 @@ use super::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Category {
-    Official,
     Community,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PackSource {
-    /// Vibey Client über `/api/v1/client/latest` (vorhandene Verteilung)
-    Vibey,
     /// Öffentliche Download-Liste von norisk.gg
     Norisk(norisk::Flavor),
     /// Modrinth-Projekte als (Projekt-ID, Mod-IDs zur Erkennung schon vorhandener Dateien), mit Pflicht-Abhängigkeiten
@@ -20,7 +17,6 @@ pub enum PackSource {
 impl PackSource {
     pub(super) fn kind(&self) -> &'static str {
         match self {
-            PackSource::Vibey => "vibe",
             PackSource::Norisk(_) => "norisk",
             PackSource::Modrinth(_) => "modrinth",
         }
@@ -47,16 +43,6 @@ pub struct PackDef {
 pub const GROUP_CLIENT: &str = "client";
 
 pub static PACKS: &[PackDef] = &[
-    PackDef {
-        id: "vibey",
-        category: Category::Official,
-        source: PackSource::Vibey,
-        group: Some(GROUP_CLIENT),
-        loaders: &[LoaderKind::Fabric, LoaderKind::Neoforge],
-        conflicts: &[],
-        vendor: None,
-        homepage: None,
-    },
     PackDef {
         id: "norisk",
         category: Category::Community,

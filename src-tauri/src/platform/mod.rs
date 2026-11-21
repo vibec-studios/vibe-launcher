@@ -90,7 +90,7 @@ pub fn on_launch(state: &AppState, id: &str, run: &str, world: Option<String>, s
     if extra {
         return;
     }
-    // Vertrag mit dem Vibey Client: `.vibe/instance.json` vor jedem Start (docs/PLAY-LINKS.md §2)
+    // Vertrag `.vibe/instance.json` vor jedem Start (docs/PLAY-LINKS.md §2; Leser war der eingestellte Vibey Client)
     if let Err(e) = crate::play::write_instance_file(state, id) {
         tracing::warn!(".vibe/instance.json für {id} nicht geschrieben: {e}");
     }
@@ -111,7 +111,7 @@ pub fn init(app: &AppHandle) {
     };
     let rpc = p.discord.available();
     app.manage(p);
-    // `session.json` der laufenden Instanzen regelmäßig nachlesen (der Vibey Client aktualisiert sie)
+    // `session.json` der laufenden Instanzen regelmäßig nachlesen (schrieb der eingestellte Vibey Client)
     if rpc {
         let h = app.clone();
         std::thread::Builder::new()
