@@ -1,0 +1,945 @@
+{
+  "phase": "idle",
+  "params": {
+    "runs": 5,
+    "longRuns": 2,
+    "shortMs": 30000,
+    "longMs": 300000
+  },
+  "launchers": {
+    "vibe": {
+      "name": "Vibe Launcher",
+      "version": "1.0.0-beta.7",
+      "runs": [
+        {
+          "run": 1,
+          "firstStart": true,
+          "background": {
+            "at": "2026-11-21T18:29:43.521Z",
+            "cpuPct": 21.1,
+            "freeGb": 13.9,
+            "top": [
+              {
+                "name": "java",
+                "corePct": 140.6
+              },
+              {
+                "name": "find",
+                "corePct": 100
+              },
+              {
+                "name": "Discord",
+                "corePct": 19.5
+              },
+              {
+                "name": "claude",
+                "corePct": 3.1
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 2.3
+              },
+              {
+                "name": "powershell",
+                "corePct": 1.6
+              },
+              {
+                "name": "brave",
+                "corePct": 0.8
+              },
+              {
+                "name": "bash",
+                "corePct": 0.8
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 21 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (141 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "firstWindowMs": 683.5606000000007,
+          "windowMs": 683.6618000000008,
+          "readyMs": 2026.0584000000008,
+          "domMs": null,
+          "domError": null,
+          "title": "Vibe Launcher",
+          "interventions": [],
+          "mem30": {
+            "workingSetMiB": 427.7,
+            "privateMiB": 238.1,
+            "processes": 7,
+            "names": {
+              "msedgewebview2": 6,
+              "vibe-launcher": 1
+            }
+          },
+          "cpu10to30": 0.31
+        },
+        {
+          "run": 2,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T18:36:01.366Z",
+            "cpuPct": 34.7,
+            "freeGb": 11,
+            "top": [
+              {
+                "name": "rustc",
+                "corePct": 125
+              },
+              {
+                "name": "find",
+                "corePct": 79.7
+              },
+              {
+                "name": "node",
+                "corePct": 79.7
+              },
+              {
+                "name": "msedgewebview2",
+                "corePct": 25.8
+              },
+              {
+                "name": "Discord",
+                "corePct": 25
+              },
+              {
+                "name": "claude",
+                "corePct": 20.3
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 14.8
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 10.2
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 35 % CPU (gesamt) – Ergebnisse können verfälscht sein"
+            ]
+          },
+          "firstWindowMs": 4717.107399999979,
+          "windowMs": 4717.111800000013,
+          "readyMs": 7486.319300000032,
+          "domMs": null,
+          "domError": null,
+          "title": "Vibe Launcher",
+          "interventions": [],
+          "mem30": {
+            "workingSetMiB": 434.9,
+            "privateMiB": 232.4,
+            "processes": 7,
+            "names": {
+              "msedgewebview2": 6,
+              "vibe-launcher": 1
+            }
+          },
+          "cpu10to30": 2.18,
+          "memLong": {
+            "workingSetMiB": 433.7,
+            "privateMiB": 223.7,
+            "processes": 7
+          },
+          "cpuLong": 1.2
+        },
+        {
+          "run": 3,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T18:41:07.383Z",
+            "cpuPct": 62.6,
+            "freeGb": 12.4,
+            "top": [
+              {
+                "name": "node",
+                "corePct": 213.3
+              },
+              {
+                "name": "find",
+                "corePct": 99.2
+              },
+              {
+                "name": "java",
+                "corePct": 99.2
+              },
+              {
+                "name": "rustc",
+                "corePct": 90.6
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 57.8
+              },
+              {
+                "name": "Discord",
+                "corePct": 40.6
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 16.4
+              },
+              {
+                "name": "claude",
+                "corePct": 12.5
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 63 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (99 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "firstWindowMs": 858.6010999999708,
+          "windowMs": 858.6167999999598,
+          "readyMs": 1397.7876999999862,
+          "domMs": null,
+          "domError": null,
+          "title": "Vibe Launcher",
+          "interventions": [],
+          "mem30": {
+            "workingSetMiB": 420.2,
+            "privateMiB": 215.4,
+            "processes": 7,
+            "names": {
+              "msedgewebview2": 6,
+              "vibe-launcher": 1
+            }
+          },
+          "cpu10to30": 0.31,
+          "memLong": {
+            "workingSetMiB": 422.6,
+            "privateMiB": 214.5,
+            "processes": 7
+          },
+          "cpuLong": 0.98
+        },
+        {
+          "run": 4,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T18:51:56.820Z",
+            "cpuPct": 84.9,
+            "freeGb": 5.7,
+            "top": [
+              {
+                "name": "node",
+                "corePct": 241.4
+              },
+              {
+                "name": "java",
+                "corePct": 235.2
+              },
+              {
+                "name": "rustc",
+                "corePct": 178.9
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 157
+              },
+              {
+                "name": "find",
+                "corePct": 87.5
+              },
+              {
+                "name": "Discord",
+                "corePct": 43
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 10.2
+              },
+              {
+                "name": "claude",
+                "corePct": 7.8
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 85 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (235 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "firstWindowMs": 1009.6447000000626,
+          "windowMs": 1009.6478000001516,
+          "readyMs": 1860.2957000001334,
+          "domMs": null,
+          "domError": null,
+          "title": "Vibe Launcher",
+          "interventions": [],
+          "mem30": {
+            "workingSetMiB": 433.9,
+            "privateMiB": 222,
+            "processes": 7,
+            "names": {
+              "msedgewebview2": 6,
+              "vibe-launcher": 1
+            }
+          },
+          "cpu10to30": 0.55
+        },
+        {
+          "run": 5,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T18:52:33.931Z",
+            "cpuPct": 96.3,
+            "freeGb": 6.3,
+            "top": [
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 400
+              },
+              {
+                "name": "node",
+                "corePct": 190.6
+              },
+              {
+                "name": "rustc",
+                "corePct": 146.1
+              },
+              {
+                "name": "find",
+                "corePct": 68.8
+              },
+              {
+                "name": "Discord",
+                "corePct": 46.1
+              },
+              {
+                "name": "claude",
+                "corePct": 14.8
+              },
+              {
+                "name": "SDXHelper",
+                "corePct": 10.2
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 4.7
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 96 % CPU (gesamt) – Ergebnisse können verfälscht sein"
+            ]
+          },
+          "firstWindowMs": 1126.3616000001784,
+          "windowMs": 1126.3646000002045,
+          "readyMs": 2386.3945000001695,
+          "domMs": null,
+          "domError": null,
+          "title": "Vibe Launcher",
+          "interventions": [],
+          "mem30": {
+            "workingSetMiB": 428.8,
+            "privateMiB": 215.8,
+            "processes": 7,
+            "names": {
+              "msedgewebview2": 6,
+              "vibe-launcher": 1
+            }
+          },
+          "cpu10to30": 0.39
+        }
+      ],
+      "summary": {
+        "firstStartWindowMs": 683.6618000000008,
+        "firstStartReadyMs": 2026.0584000000008,
+        "windowMs": {
+          "n": 4,
+          "median": 1068.006200000178,
+          "p25": 971.8900500001037,
+          "p75": 2024.0514000001567,
+          "min": 858.6167999999598,
+          "max": 4717.111800000013,
+          "mean": 1927.9352500000823,
+          "sd": 1862.6786377283643,
+          "cv": 0.9661520726530026
+        },
+        "readyMs": {
+          "n": 4,
+          "median": 2123.3451000001514,
+          "p25": 1744.6687000000966,
+          "p75": 3661.375700000135,
+          "min": 1397.7876999999862,
+          "max": 7486.319300000032,
+          "mean": 3282.6993000000803,
+          "sd": 2831.3664039358687,
+          "cv": 0.862511654337575
+        },
+        "ram30MiB": {
+          "n": 4,
+          "median": 431.35,
+          "p25": 426.65,
+          "p75": 434.15,
+          "min": 420.2,
+          "max": 434.9,
+          "mean": 429.45000000000005,
+          "sd": 6.720367053467634,
+          "cv": 0.015648776466335158
+        },
+        "private30MiB": {
+          "n": 4,
+          "median": 218.9,
+          "p25": 215.70000000000002,
+          "p75": 224.6,
+          "min": 215.4,
+          "max": 232.4,
+          "mean": 221.4,
+          "sd": 7.931372306648241,
+          "cv": 0.03582372315559278
+        },
+        "ramLongMiB": {
+          "n": 2,
+          "median": 428.15,
+          "p25": 425.375,
+          "p75": 430.925,
+          "min": 422.6,
+          "max": 433.7,
+          "mean": 428.15,
+          "sd": 7.848885271170653,
+          "cv": 0.018332092190051743
+        },
+        "privateLongMiB": {
+          "n": 2,
+          "median": 219.1,
+          "p25": 216.8,
+          "p75": 221.39999999999998,
+          "min": 214.5,
+          "max": 223.7,
+          "mean": 219.1,
+          "sd": 6.505382386916229,
+          "cv": 0.02969138469610328
+        },
+        "cpu10to30Pct": {
+          "n": 4,
+          "median": 0.47000000000000003,
+          "p25": 0.37,
+          "p75": 0.9575,
+          "min": 0.31,
+          "max": 2.18,
+          "mean": 0.8575,
+          "sd": 0.8872945771651414,
+          "cv": 1.0347458625832553
+        },
+        "cpuLongPct": {
+          "n": 2,
+          "median": 1.0899999999999999,
+          "p25": 1.035,
+          "p75": 1.145,
+          "min": 0.98,
+          "max": 1.2,
+          "mean": 1.0899999999999999,
+          "sd": 0.15556349186104043,
+          "cv": 0.14271879987251418
+        }
+      }
+    },
+    "prism": {
+      "name": "Prism Launcher",
+      "version": "11.1.1",
+      "runs": [
+        {
+          "run": 1,
+          "firstStart": true,
+          "background": {
+            "at": "2026-11-21T18:30:19.496Z",
+            "cpuPct": 40.9,
+            "freeGb": 11.9,
+            "top": [
+              {
+                "name": "rustc",
+                "corePct": 198.4
+              },
+              {
+                "name": "java",
+                "corePct": 136.7
+              },
+              {
+                "name": "find",
+                "corePct": 100
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 33.6
+              },
+              {
+                "name": "Discord",
+                "corePct": 25.8
+              },
+              {
+                "name": "claude",
+                "corePct": 6.3
+              },
+              {
+                "name": "node",
+                "corePct": 3.9
+              },
+              {
+                "name": "powershell",
+                "corePct": 1.6
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 41 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (137 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "firstWindowMs": 232.11059999999998,
+          "windowMs": 560.5380999999979,
+          "readyMs": 1723.3387999999977,
+          "domMs": null,
+          "domError": null,
+          "title": "Prism Launcher 11.1.1",
+          "interventions": [
+            {
+              "atMs": 350.1278999999995,
+              "action": "Finish per UI-Automation",
+              "ok": true,
+              "ms": 117.79329999999754
+            }
+          ],
+          "mem30": {
+            "workingSetMiB": 107.4,
+            "privateMiB": 41.7,
+            "processes": 1,
+            "names": {
+              "prismlauncher": 1
+            }
+          },
+          "cpu10to30": 0
+        },
+        {
+          "run": 2,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T18:30:55.405Z",
+            "cpuPct": 42.3,
+            "freeGb": 11.2,
+            "top": [
+              {
+                "name": "rustc",
+                "corePct": 194.5
+              },
+              {
+                "name": "java",
+                "corePct": 140.6
+              },
+              {
+                "name": "find",
+                "corePct": 96.9
+              },
+              {
+                "name": "Discord",
+                "corePct": 47.7
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 21.9
+              },
+              {
+                "name": "node",
+                "corePct": 13.3
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 10.9
+              },
+              {
+                "name": "grep",
+                "corePct": 9.4
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 42 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (141 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "firstWindowMs": 292.724000000002,
+          "windowMs": 635.2859000000026,
+          "readyMs": 1536.420100000003,
+          "domMs": null,
+          "domError": null,
+          "title": "Prism Launcher 11.1.1",
+          "interventions": [
+            {
+              "atMs": 369.21630000000005,
+              "action": "Finish per UI-Automation",
+              "ok": true,
+              "ms": 76.45070000000123
+            }
+          ],
+          "mem30": {
+            "workingSetMiB": 108.7,
+            "privateMiB": 43.7,
+            "processes": 1,
+            "names": {
+              "prismlauncher": 1
+            }
+          },
+          "cpu10to30": 0,
+          "memLong": {
+            "workingSetMiB": 93.8,
+            "privateMiB": 42.4,
+            "processes": 1
+          },
+          "cpuLong": 0.08
+        },
+        {
+          "run": 3,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T18:46:14.871Z",
+            "cpuPct": 30,
+            "freeGb": 10.5,
+            "top": [
+              {
+                "name": "rustc",
+                "corePct": 114.8
+              },
+              {
+                "name": "find",
+                "corePct": 67.2
+              },
+              {
+                "name": "node",
+                "corePct": 65.6
+              },
+              {
+                "name": "claude",
+                "corePct": 25
+              },
+              {
+                "name": "Discord",
+                "corePct": 21.1
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 6.3
+              },
+              {
+                "name": "powershell",
+                "corePct": 4.7
+              },
+              {
+                "name": "audiodg",
+                "corePct": 3.1
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 30 % CPU (gesamt) – Ergebnisse können verfälscht sein"
+            ]
+          },
+          "firstWindowMs": 399.08869999996386,
+          "windowMs": 2908.978000000003,
+          "readyMs": 4821.941699999967,
+          "domMs": null,
+          "domError": null,
+          "title": "Prism Launcher 11.1.1",
+          "interventions": [
+            {
+              "atMs": 2463.738199999905,
+              "action": "Finish per UI-Automation",
+              "ok": true,
+              "ms": 2064.6075999999885
+            }
+          ],
+          "mem30": {
+            "workingSetMiB": 105.9,
+            "privateMiB": 41,
+            "processes": 1,
+            "names": {
+              "prismlauncher": 1
+            }
+          },
+          "cpu10to30": 0.23,
+          "memLong": {
+            "workingSetMiB": 90.9,
+            "privateMiB": 41,
+            "processes": 1
+          },
+          "cpuLong": 0.06
+        },
+        {
+          "run": 4,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T18:51:20.826Z",
+            "cpuPct": 62.3,
+            "freeGb": 7.6,
+            "top": [
+              {
+                "name": "rustc",
+                "corePct": 185.9
+              },
+              {
+                "name": "java",
+                "corePct": 139.8
+              },
+              {
+                "name": "find",
+                "corePct": 100
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 94.5
+              },
+              {
+                "name": "node",
+                "corePct": 53.1
+              },
+              {
+                "name": "Discord",
+                "corePct": 32.8
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 14.8
+              },
+              {
+                "name": "claude",
+                "corePct": 10.2
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 62 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (140 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "firstWindowMs": 251.4273000000976,
+          "windowMs": 2621.563700000057,
+          "readyMs": 3806.248399999924,
+          "domMs": null,
+          "domError": null,
+          "title": "Prism Launcher 11.1.1",
+          "interventions": [
+            {
+              "atMs": 2316.256500000134,
+              "action": "Finish per UI-Automation",
+              "ok": true,
+              "ms": 2064.8034999999218
+            }
+          ],
+          "mem30": {
+            "workingSetMiB": 104.2,
+            "privateMiB": 40.3,
+            "processes": 1,
+            "names": {
+              "prismlauncher": 1
+            }
+          },
+          "cpu10to30": 0
+        },
+        {
+          "run": 5,
+          "firstStart": false,
+          "background": {
+            "at": "2026-11-21T18:53:10.415Z",
+            "cpuPct": 80.3,
+            "freeGb": 5.8,
+            "top": [
+              {
+                "name": "java",
+                "corePct": 427.3
+              },
+              {
+                "name": "rustc",
+                "corePct": 186.7
+              },
+              {
+                "name": "node",
+                "corePct": 121.1
+              },
+              {
+                "name": "find",
+                "corePct": 93
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 57
+              },
+              {
+                "name": "Discord",
+                "corePct": 50.8
+              },
+              {
+                "name": "claude",
+                "corePct": 11.7
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 7
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 80 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (427 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "firstWindowMs": 333.4177999999374,
+          "windowMs": 2698.78460000013,
+          "readyMs": 6708.884899999946,
+          "domMs": null,
+          "domError": null,
+          "title": "Prism Launcher 11.1.1",
+          "interventions": [
+            {
+              "atMs": 2397.4609000000637,
+              "action": "Finish per UI-Automation",
+              "ok": true,
+              "ms": 2064.002500000177
+            }
+          ],
+          "mem30": {
+            "workingSetMiB": 107.8,
+            "privateMiB": 42.6,
+            "processes": 1,
+            "names": {
+              "prismlauncher": 1
+            }
+          },
+          "cpu10to30": 0
+        }
+      ],
+      "summary": {
+        "firstStartWindowMs": 560.5380999999979,
+        "firstStartReadyMs": 1723.3387999999977,
+        "windowMs": {
+          "n": 4,
+          "median": 2660.1741500000935,
+          "p25": 2124.9942500000434,
+          "p75": 2751.332950000098,
+          "min": 635.2859000000026,
+          "max": 2908.978000000003,
+          "mean": 2216.153050000048,
+          "sd": 1060.886165033839,
+          "cv": 0.4787061818829778
+        },
+        "readyMs": {
+          "n": 4,
+          "median": 4314.095049999945,
+          "p25": 3238.7913249999438,
+          "p75": 5293.677499999962,
+          "min": 1536.420100000003,
+          "max": 6708.884899999946,
+          "mean": 4218.37377499996,
+          "sd": 2154.813429155156,
+          "cv": 0.5108161448199731
+        },
+        "ram30MiB": {
+          "n": 4,
+          "median": 106.85,
+          "p25": 105.47500000000001,
+          "p75": 108.025,
+          "min": 104.2,
+          "max": 108.7,
+          "mean": 106.65,
+          "sd": 2.0074859899884716,
+          "cv": 0.01882312226899645
+        },
+        "private30MiB": {
+          "n": 4,
+          "median": 41.8,
+          "p25": 40.825,
+          "p75": 42.875,
+          "min": 40.3,
+          "max": 43.7,
+          "mean": 41.900000000000006,
+          "sd": 1.5383974345619125,
+          "cv": 0.036715929225821294
+        },
+        "ramLongMiB": {
+          "n": 2,
+          "median": 92.35,
+          "p25": 91.625,
+          "p75": 93.075,
+          "min": 90.9,
+          "max": 93.8,
+          "mean": 92.35,
+          "sd": 2.0506096654409816,
+          "cv": 0.022204760860216367
+        },
+        "privateLongMiB": {
+          "n": 2,
+          "median": 41.7,
+          "p25": 41.35,
+          "p75": 42.05,
+          "min": 41,
+          "max": 42.4,
+          "mean": 41.7,
+          "sd": 0.9899494936611655,
+          "cv": 0.023739796011059123
+        },
+        "cpu10to30Pct": {
+          "n": 4,
+          "median": 0,
+          "p25": 0,
+          "p75": 0.0575,
+          "min": 0,
+          "max": 0.23,
+          "mean": 0.0575,
+          "sd": 0.115,
+          "cv": 2
+        },
+        "cpuLongPct": {
+          "n": 2,
+          "median": 0.07,
+          "p25": 0.065,
+          "p75": 0.075,
+          "min": 0.06,
+          "max": 0.08,
+          "mean": 0.07,
+          "sd": 0.014142135623730954,
+          "cv": 0.2020305089104422
+        }
+      }
+    }
+  },
+  "meta": {
+    "startedAt": "2026-11-21T18:29:41.464Z",
+    "args": [
+      "--phase",
+      "idle,install"
+    ],
+    "pins": {
+      "mcVersion": "1.21.11",
+      "memory": {
+        "minMb": 1024,
+        "maxMb": 4096
+      },
+      "java": {
+        "name": "Eclipse Temurin JRE 21.0.13.1+2",
+        "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13.1%2B2/OpenJDK21U-jre_x64_windows_hotspot_21.0.13.1_2.zip",
+        "sha256": "e15ee1e54a5a3b38027a09cedfa87bc3348d7dd3ce50866dd3d9671d7fffc6c1"
+      },
+      "modpack": {
+        "name": "Fabulously Optimized 12.3.0 for 1.21.11",
+        "project": "1KVo5zza",
+        "version": "K0lc692U",
+        "url": "https://cdn.modrinth.com/data/1KVo5zza/versions/K0lc692U/Fabulously.Optimized-v13.3.0-mr.1.mrpack",
+        "sha512": "13a3a2a1e9795056ef2ef343baf3c75eff8af7dd2b300e716a382707622943c1201968bf2748e19d7ff64efbe55b6e73c9567d0b555f4bd34b5725d532b08546"
+      },
+      "logMarker": "Sound engine started"
+    },
+    "finishedAt": "2026-11-21T18:53:44.317Z",
+    "system": {
+      "platform": "Windows_NT 10.0.26200",
+      "osName": "Microsoft Windows 11 Pro",
+      "osBuild": "26200",
+      "cpu": "12th Gen Intel(R) Core(TM) i5-12600K",
+      "cores": 10,
+      "threads": 16,
+      "ramGb": 31.7,
+      "gpu": [
+        "Intel(R) Arc(TM) A750 Graphics"
+      ],
+      "disks": [
+        "CT2000P3PSSD8 (SSD, NVMe)",
+        "CT500P3SSD8 (SSD, NVMe)"
+      ],
+      "webview2Runtime": "157.0.4341.60",
+      "powerPlan": "Höchstleistung",
+      "node": "v24.15.0"
+    }
+  }
+}
