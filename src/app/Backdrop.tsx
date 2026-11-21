@@ -4,7 +4,7 @@
 // prefers-reduced-motion zeigen ein Standbild.
 import { memo, useEffect, useRef, type CSSProperties } from "react";
 import { useMotion } from "./motion";
-import { GRADIENTS, hasBackground, isVideoFile } from "@/lib/appearance";
+import { backgroundCss, hasBackground, isVideoFile } from "@/lib/appearance";
 import { imageSrc } from "@/lib/format";
 import type { Appearance } from "@/lib/types";
 import { cn } from "@/components/ui";
@@ -246,7 +246,8 @@ function Video({ src, paused }: { src: string; paused: boolean }) {
 
 function Media({ a, paused }: { a: Appearance; paused: boolean }) {
   const b = a.background;
-  if (b.kind === "gradient") return <div className="absolute inset-0" style={{ background: GRADIENTS[b.gradient]?.(a.accent) ?? GRADIENTS.accent(a.accent) }} />;
+  const css = backgroundCss(b, a.accent);
+  if (css) return <div className="absolute inset-0" style={{ background: css, imageRendering: b.gradient === "pixel" ? "pixelated" : undefined }} />;
   if (b.kind === "image" && b.image) {
     const src = imageSrc(b.image);
     if (!src) return null;

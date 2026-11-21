@@ -70,19 +70,90 @@ Saisonal (Winter im Dezember/Januar statt „Standard“) bleibt unverändert.
 | End | schwarz | #c39bff | Violett-Tönung, Karten mit Kante, Endstein-Gelb als „ok“ |
 | Retro-Pixel | dunkelgrau | #ffd23f | Pixel-Überschriften, Klötzchen-Knöpfe |
 | Hoher Kontrast | OLED | #ffd60a | Kontrast hoch, kräftige Linien, gelber Fokus |
+| Vibe Pixel | schwarz | #ffb37d | Website-Stil: Nachtlila, Pixel-Karten, Inter Tight, Hintergrund „Pixel-Nacht“ |
+| Vibe Pixel hell | hell | #6a4cf5 | warmes Papierweiß, Pixel-Karten, Inter Tight |
 
 Geprüft (Skript, alle Flächen canvas/s1/s2): Text 1–3, Status ok/warn/danger als Schrift, Akzent als Schrift und
 Schrift auf Akzent jeweils ≥ 4,5:1, in v1 und v2.
 
+## Vibe Pixel (Website-Stil)
+
+Adaptiert das Pixel-Design von vibe.axolite.app (`apps/web/public/site/pixel.css` im vibe-backend) für die App, nicht 1:1:
+
+- **Farben**: Seitenfarbe Nachtlila `#170e26`, Flächen = Seitenfarbe + 5/9/14 % Weiß, Akzent Pfirsich `#ffb37d` mit dunkler
+  Schrift, Status Mint/Gelb/Rosa wie auf der Website. Hell: Papier `#f5f4f1`, Flächen `#fffefc`, Violett `#6a4cf5`.
+- **Kartenstil „Pixel“** (`data-cards="pixel"`, mit jedem Theme kombinierbar): alle Radien 0, Kanten 2 px, harte
+  Schatten (4–8 px nach unten, ohne Unschärfe), keine Verläufe/Leuchten auf Knöpfen, Overlay ohne Unschärfe.
+  Knöpfe als Pixel-Blöcke mit 3-px-Stufe unten (Hover hebt 1 px, Klick drückt), Reiter mit 4-px-Unterkante, gewählte
+  Segmente in Akzentfarbe (wie die Filter-Chips der Website), Menüeinträge mit Akzentkante links, aktive Seite in
+  der Seitenleiste als Akzentfläche mit 3-px-Kante.
+- **Schrift**: Inter Tight (wie Website-Fließtext, `@fontsource-variable/inter-tight`, OFL, lokal gebündelt,
+  Dateien werden per `unicode-range` nur bei Bedarf geladen). Pixel-Überschriften wie gehabt; neu „Pixel überall“
+  (`data-headings="pixel_all"`) setzt auch Knöpfe, Reiter, Segmente, Karten- und Feldtitel in Silkscreen (Großbuchstaben).
+  Bewusst nicht Standard, weil lange deutsche Beschriftungen in Silkscreen sehr breit werden.
+- **Hintergrund „Pixel-Nacht“**: statisches SVG (Himmel in Bändern mit Dither-Kante, Sterne, Sonne, drei Hügelreihen),
+  aus der Akzentfarbe erzeugt und zwischengespeichert (`src/lib/pixelScene.ts`), kein Canvas, keine Animation.
+- Bewusst weggelassen: die animierte Landschaft (scene.js), Jahreszeiten-Farben, Pixelschrift für Fließtext.
+
+## Anpassung (Einstellungen → Darstellung)
+
+| Einstellung | Werte | Attribut/Variable |
+| --- | --- | --- |
+| Akzentfarbe | Vorschläge (inkl. aller Theme-Akzente), Farbwähler, Hex-Feld | `--ui-accent` |
+| Schriftart | Inter, Inter Tight, System, Mono (JetBrains Mono) | `data-font` |
+| Überschriften | wie Text, Pixel, Pixel überall | `data-headings` |
+| Ecken | eckig, leicht, rund, **eigene** (Regler 0–24 px) | `data-radius="custom"` + `--r-custom` |
+| Karten | flach, mit Kante, **erhaben**, **Pixel** | `data-cards` |
+| Seitenleiste – Stil | Rahmen, schwebend, getönt | `data-rail` |
+| Hintergrund | keiner, **Farbe**, Verlauf (Vorlagen, **Pixel-Nacht**, **eigener** mit 2 Farben + Winkel), Bild, Animiert | `data-bg` |
+| Glas-Effekt | 0–100 %, nur mit Hintergrund | `data-glass` + `--glass` |
+
+Im Pixel-Kartenstil sind Ecken immer 0 (der Ecken-Regler ist dann gedimmt). Glas macht Rahmen, Inhaltsfläche,
+Karten, Dialoge und Menüs durchscheinend und legt `backdrop-filter` auf Seitenleiste, Inhaltsfläche, Dialoge, Menüs,
+Toasts (Standard aus; kostet etwas GPU).
+
+CSS: `src/styles/custom.css` (Anpassungen) und `src/styles/pixel.css` (Vibe Pixel), beide nach `v2.css` geladen.
+
+### Eigene Themes
+
+- „Aktuelle speichern“ legt einen Schnappschuss an (`appearance.custom_themes`, max. 24): Basis-Theme (Palette),
+  Akzent, Ton, Ecken (+px), Kontrast, Karten, Überschriften, Schrift, Schriftgröße, Statusfarben, Glas,
+  Seitenleisten-Stil, Hintergrund (eigenes Bild nur lokal). Nicht enthalten: Seitenleisten-Reihenfolge, Bibliothek,
+  Bewegung, App-Icon, Skalierung.
+- Anwenden setzt die Werte und merkt `appearance.active_custom`; weicht die Darstellung danach ab, erscheint
+  „Änderungen speichern / Verwerfen“. Umbenennen (Doppelklick oder Menü), Überschreiben, Löschen (mit Rückfrage).
+- Teilen: **Code** `VIBE-THEME-1:<base64url(JSON)>` in die Zwischenablage, oder **Datei** `*.vibetheme` (JSON
+  `{ "format": "vibe-launcher-theme", "version": 1, "name", "values" }`, Rust-Befehle `appearance_theme_write/read`,
+  nur `.vibetheme`/`.json`, max. 64 KB). Geteilte Themes enthalten nie Bildpfade.
+- Import-Validierung (`src/lib/customThemes.ts`): Format/Version geprüft, jede Aufzählung gegen eine Positivliste,
+  Farben nur `#rrggbb`, Zahlen begrenzt, fehlende Felder bekommen Standardwerte, unbekannte Felder werden ignoriert,
+  max. 20 000 Zeichen. Ungültig → verständliche Meldung, nichts wird übernommen. Rust bereinigt beim Speichern
+  zusätzlich (`settings::theme::sanitize`: gültige/eindeutige Ids, Namen ≤ 40 Zeichen ohne Steuerzeichen, Werte wie
+  bei der Darstellung, Video/eigene Animation entfernt, unbekanntes `active_custom` → null).
+- „Alles zurücksetzen“ behält die eigenen Themes.
+
+Theme-Wechsel räumt auf: Setzt das vorherige Theme Schrift/Überschriften/Hintergrund (Vibe Pixel, Retro) und das neue
+nicht, gehen diese Werte auf Standard zurück, sonst bleiben eigene Werte erhalten.
+
 ## Mock
 
 - `localStorage vl.mock.design = v2` – v2 im Mock
-- `localStorage vl.mock.theme = light|midnight|ocean|forest|sunset|sakura|nether|end|retro|contrast|winter|graphite`
-- `window.__VL_MOCK_APPEARANCE = { tone: "light", radius: "round", sidebar: {…}, … }` per Init-Skript
+- `localStorage vl.mock.theme = pixel|pixel_light|light|midnight|ocean|forest|sunset|sakura|nether|end|retro|contrast|winter|graphite`
+  (setzt das Theme wie ein Klick, inkl. Schrift und Pixel-Hintergrund)
+- `localStorage vl.mock.custom = 1` – zwei Beispiel-Themes unter „Eigene Themes“ (Pixel-Morgen, Glas Ozean);
+  Theme-Dateien schreibt/liest der Mock im Speicher (`src/dev/mock/appearance.ts`)
+- `window.__VL_MOCK_APPEARANCE = { tone: "light", radius: "custom", radius_px: 12, cards: "pixel", glass: 60,
+  headings: "pixel_all", sidebar: { …, style: "floating" }, background: { …, kind: "color" }, … }` per Init-Skript
 - weitere Schalter wie bisher: `vl.mock.mode = simple`, `vl.mock.onboarding = 1`, `vl.mock.isx = 0` (ohne
   Einstellungs-Import-Hinweis), `vl.mock.notices = 1`, `vl.mock.many`
 
 ## Bekannte Lücken
+
+- Ton manuell zwischen hell und dunkel wechseln behält Akzent und Statusfarben des Themes; diese sind dann als Schrift
+  teils unter AA (gilt für alle Themes, z. B. Hell → Schwarz, Ozean → Hell). In ihrem eigenen Ton bestehen Vibe Pixel
+  (auch Dunkelgrau/OLED) und Vibe Pixel hell die Prüfung in v1 und v2.
+- Eigene Hintergrundfarben/-verläufe werden nicht auf Kontrast geprüft; die Flächen bleiben deckend genug
+  (Inhaltsfläche 55 %, mit Glas weniger) und die Abdunklung wirkt wie bei Bildern.
 
 - MOTD-Vorschau nutzt Minecraft-Farben (für dunklen Grund gedacht).
 - Standard/Winter/Graphit behalten in v1 ihren bisherigen, schwächeren Tertiärtext (v1 bleibt unverändert);

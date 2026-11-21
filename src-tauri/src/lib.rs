@@ -165,6 +165,8 @@ pub fn run() {
             commands::core::settings_get,
             commands::core::settings_set,
             commands::core::appearance_import_background,
+            commands::appearance::appearance_theme_write,
+            commands::appearance::appearance_theme_read,
             commands::core::app_icon_import,
             commands::core::app_icon_preview,
             commands::core::tasks_list,

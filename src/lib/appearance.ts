@@ -9,6 +9,7 @@ import { create } from "zustand";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Appearance, BackgroundGradient, NavKey, ThemeId } from "./types";
 import { onAccent } from "./format";
+import { pixelScene } from "./pixelScene";
 
 export const NAV_KEYS: NavKey[] = ["home", "instances", "servers", "social", "discover", "skins", "cosmetics", "screenshots"];
 
@@ -21,15 +22,29 @@ export const DEFAULT_APPEARANCE: Appearance = {
   accent: "#8b6cff",
   tone: "dark",
   radius: "square",
+  radius_px: 6,
   density: "normal",
   ui_scale: 100,
-  background: { kind: "none", gradient: "accent", animated: "aurora", image: null, video: null, dim: 45, blur: 0 },
+  background: {
+    kind: "none",
+    gradient: "accent",
+    animated: "aurora",
+    image: null,
+    video: null,
+    dim: 45,
+    blur: 0,
+    color: "#1a1030",
+    gradient_from: "#2b1655",
+    gradient_to: "#ff9e6d",
+    gradient_angle: 160,
+  },
   font: "inter",
   headings: "default",
   font_scale: 100,
   contrast: "normal",
   cards: "flat",
-  sidebar: { mode: "compact", instances: true, order: NAV_KEYS, hidden: [] },
+  glass: 0,
+  sidebar: { mode: "compact", instances: true, order: NAV_KEYS, hidden: [], style: "solid" },
   icon_size: "large",
   library_view: "grid",
   status: STATUS_DEFAULT,
@@ -39,6 +54,8 @@ export const DEFAULT_APPEARANCE: Appearance = {
   app_icon_color: "#8b6cff",
   app_icon_image: null,
   effects: { snow: true, snow_amount: 50, snow_settle: true, mascot: true, frost: true },
+  custom_themes: [],
+  active_custom: null,
 };
 
 export const ACCENT_PRESETS = ["#8b6cff", "#5aa9ff", "#3fe0c5", "#7ee07a", "#ffb547", "#ff7a45", "#ff6b9a", "#e05cff"];
@@ -46,7 +63,8 @@ export const ACCENT_PRESETS = ["#8b6cff", "#5aa9ff", "#3fe0c5", "#7ee07a", "#ffb
 // ------------------------------------------------------------------ Themes
 
 /** Werte, die ein Theme setzt (alles andere – Schrift, Seitenleiste, Skalierung … – bleibt beim Wechsel). */
-export type ThemeTokens = Pick<Appearance, "accent" | "tone" | "radius" | "contrast" | "cards" | "status"> & Partial<Pick<Appearance, "headings">>;
+export type ThemeTokens = Pick<Appearance, "accent" | "tone" | "radius" | "contrast" | "cards" | "status"> &
+  Partial<Pick<Appearance, "headings" | "font">> & { bg?: Pick<Appearance["background"], "kind" | "gradient" | "dim"> };
 export type ThemeExtra = "snow" | "mascot" | "frost";
 
 export interface ThemeDef {
@@ -211,6 +229,37 @@ export const THEMES: Record<ThemeId, ThemeDef> = {
     extras: [],
     swatch: { frame: "#110f0b", canvas: "#181611", surface: "#201d17", surface2: "#28241d", text: "#f6f1e4", muted: "#a59d8a" },
   },
+  pixel: {
+    id: "pixel",
+    tokens: {
+      accent: "#ffb37d",
+      tone: "dark",
+      radius: "square",
+      contrast: "normal",
+      cards: "pixel",
+      headings: "pixel",
+      font: "inter_tight",
+      bg: { kind: "gradient", gradient: "pixel", dim: 30 },
+      status: { ok: "#6ee7b7", warn: "#ffd27a", danger: "#ff7b8e" },
+    },
+    extras: [],
+    swatch: { frame: "#0f0919", canvas: "#170e26", surface: "#221934", surface2: "#2c2241", text: "#f6f3ff", muted: "#a59fba" },
+  },
+  pixel_light: {
+    id: "pixel_light",
+    tokens: {
+      accent: "#6a4cf5",
+      tone: "light",
+      radius: "square",
+      contrast: "normal",
+      cards: "pixel",
+      headings: "pixel",
+      font: "inter_tight",
+      status: { ok: "#08766a", warn: "#875000", danger: "#c81e45" },
+    },
+    extras: [],
+    swatch: { frame: "#e9e7e1", canvas: "#f5f4f1", surface: "#fffefc", surface2: "#f0efeb", text: "#151419", muted: "#5b5963" },
+  },
   contrast: {
     id: "contrast",
     tokens: {
@@ -225,12 +274,28 @@ export const THEMES: Record<ThemeId, ThemeDef> = {
     swatch: { frame: "#000000", canvas: "#000000", surface: "#0a0a0a", surface2: "#151515", text: "#ffffff", muted: "#d6d6dc" },
   },
 };
-export const THEME_IDS: ThemeId[] = ["standard", "light", "graphite", "midnight", "ocean", "forest", "sunset", "sakura", "nether", "end", "retro", "contrast", "winter"];
+export const THEME_IDS: ThemeId[] = ["standard", "pixel", "pixel_light", "light", "graphite", "midnight", "ocean", "forest", "sunset", "sakura", "nether", "end", "retro", "contrast", "winter"];
 
 /** Theme wählen: setzt dessen Werte, lässt Layout/Schrift/Hintergrund-Datei usw. unverändert. */
 export function applyTheme(a: Appearance, id: ThemeId): Appearance {
   const th = THEMES[id] ?? THEMES.standard;
-  return { ...a, theme: th.id, ...th.tokens, status: { ...th.tokens.status } };
+  const prev = (THEMES[a.theme] ?? THEMES.standard).tokens;
+  const { bg, ...tk } = th.tokens;
+  const background = bg
+    ? { ...a.background, ...bg }
+    : prev.bg && a.background.kind === prev.bg.kind && a.background.gradient === prev.bg.gradient
+      ? { ...a.background, kind: DEFAULT_APPEARANCE.background.kind, dim: DEFAULT_APPEARANCE.background.dim }
+      : a.background;
+  return {
+    ...a,
+    ...tk,
+    theme: th.id,
+    headings: tk.headings ?? (prev.headings ? DEFAULT_APPEARANCE.headings : a.headings),
+    font: tk.font ?? (prev.font ? DEFAULT_APPEARANCE.font : a.font),
+    status: { ...tk.status },
+    background,
+    active_custom: null,
+  };
 }
 
 /** Weicht die Darstellung von den Werten ihres Themes ab? (für „angepasst“ + Zurücksetzen) */
@@ -238,6 +303,7 @@ export function isThemeModified(a: Appearance): boolean {
   const tk = (THEMES[a.theme] ?? THEMES.standard).tokens;
   return (
     (tk.headings !== undefined && a.headings !== tk.headings) ||
+    (tk.font !== undefined && a.font !== tk.font) ||
     a.accent.toLowerCase() !== tk.accent ||
     a.tone !== tk.tone ||
     a.radius !== tk.radius ||
@@ -269,7 +335,8 @@ export function themeExtra(a: Appearance, extra: ThemeExtra): boolean {
 // ------------------------------------------------------------------ Hintergrund-Verläufe
 
 /** Statische Verläufe. `a` = Akzentfarbe. */
-export const GRADIENTS: Record<BackgroundGradient, (a: string) => string> = {
+export const GRADIENTS: Record<Exclude<BackgroundGradient, "custom">, (a: string) => string> = {
+  pixel: (a) => pixelScene(a),
   accent: (a) =>
     `radial-gradient(90% 70% at 12% 0%, color-mix(in srgb, ${a} 42%, transparent), transparent 70%), radial-gradient(70% 60% at 100% 100%, color-mix(in srgb, ${a} 22%, transparent), transparent 70%), #0b0b10`,
   dusk: () => "radial-gradient(80% 70% at 10% 0%, #5b2fd0aa, transparent 70%), radial-gradient(80% 70% at 100% 100%, #d0367a88, transparent 70%), linear-gradient(160deg, #120c24, #1a0b18)",
@@ -277,6 +344,14 @@ export const GRADIENTS: Record<BackgroundGradient, (a: string) => string> = {
   ember: () => "radial-gradient(80% 70% at 100% 0%, #d0582a99, transparent 70%), radial-gradient(70% 60% at 0% 100%, #8a1f3a88, transparent 70%), linear-gradient(160deg, #1a0d08, #140609)",
   forest: () => "radial-gradient(80% 70% at 0% 0%, #2f8a4a99, transparent 70%), radial-gradient(70% 60% at 100% 100%, #1f6a6a88, transparent 70%), linear-gradient(160deg, #07130b, #06110f)",
 };
+
+/** CSS-Hintergrund für „Farbe“ und „Verlauf“ (null = kein reiner CSS-Hintergrund). */
+export function backgroundCss(b: Appearance["background"], accent: string): string | null {
+  if (b.kind === "color") return b.color;
+  if (b.kind !== "gradient") return null;
+  if (b.gradient === "custom") return `linear-gradient(${b.gradient_angle}deg, ${b.gradient_from}, ${b.gradient_to})`;
+  return (GRADIENTS[b.gradient] ?? GRADIENTS.accent)(accent);
+}
 
 const CACHE_KEY = "vl.appearance";
 
@@ -295,17 +370,30 @@ function merge(a: Partial<Appearance> | null | undefined): Appearance {
     ...d,
     ...a,
     background: { ...d.background, ...a?.background },
-    sidebar: { ...sb, order, hidden: (sb.hidden ?? []).filter((k) => NAV_KEYS.includes(k) && k !== "home") },
+    sidebar: {
+      ...sb,
+      order,
+      hidden: (sb.hidden ?? []).filter((k) => NAV_KEYS.includes(k) && k !== "home"),
+      style: sb.style === "floating" || sb.style === "tinted" ? sb.style : "solid",
+    },
+    radius_px: clampNum(a?.radius_px, 0, 24, d.radius_px),
+    glass: clampNum(a?.glass, 0, 100, d.glass),
+    custom_themes: Array.isArray(a?.custom_themes) ? a.custom_themes : [],
+    active_custom: typeof a?.active_custom === "string" ? a.active_custom : null,
     status: { ...d.status, ...a?.status },
     effects: { ...d.effects, ...a?.effects },
-    theme: a?.theme && a.theme in THEMES ? a.theme : d.theme,
+    theme: a?.theme && Object.hasOwn(THEMES, a.theme) ? a.theme : d.theme,
     design: a?.design === "v2" ? "v2" : "v1",
   };
 }
 
+function clampNum(v: unknown, min: number, max: number, def: number): number {
+  return typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : def;
+}
+
 export function hasBackground(a: Appearance): boolean {
   const b = a.background;
-  if (b.kind === "gradient" || (b.kind === "animated" && b.animated !== "custom")) return true;
+  if (b.kind === "gradient" || b.kind === "color" || (b.kind === "animated" && b.animated !== "custom")) return true;
   if (b.kind === "image") return !!b.image;
   if (b.kind === "animated") return !!b.video;
   return false;
@@ -334,6 +422,8 @@ export function applyAppearance(input: Partial<Appearance> | null | undefined) {
   ds.nav = a.nav_animations ? "on" : "off";
   ds.frost = themeExtra(a, "frost") ? "on" : "off";
   ds.bg = hasBackground(a) ? "on" : "off";
+  ds.glass = a.glass > 0 ? "on" : "off";
+  ds.rail = a.sidebar.style;
   const st = root.style;
   st.setProperty("--ui-accent", a.accent);
   st.setProperty("--ui-on-accent", onAccent(a.accent));
@@ -343,6 +433,8 @@ export function applyAppearance(input: Partial<Appearance> | null | undefined) {
   st.setProperty("--font-scale", String(Math.min(115, Math.max(90, a.font_scale)) / 100));
   st.setProperty("--bg-dim", String(a.background.dim / 100));
   st.setProperty("--bg-blur", `${a.background.blur}px`);
+  st.setProperty("--r-custom", `${a.radius_px}px`);
+  st.setProperty("--glass", String(a.glass / 100));
   if (ds.frost === "on" && !st.getPropertyValue("--frost-l")) {
     st.setProperty("--frost-l", frostSvg(false));
     st.setProperty("--frost-r", frostSvg(true));

@@ -48,12 +48,14 @@ import {
 import { imageSrc } from "@/lib/format";
 import { AnimatedNumber, Button, IconButton, Input, Segmented, SettingRow, SettingsCard, Slider, Switch, Tag, Tooltip, cn, toast } from "@/components/ui";
 import { Backdrop } from "@/app/Backdrop";
+import { CustomThemesCard } from "./appearance/CustomThemesCard";
+import { GradientEditor, SolidColorEditor } from "./appearance/BackgroundEditors";
 import { Snowfall } from "@/app/Snowfall";
 import { useT } from "@/i18n";
 
 type Update = (p: Partial<Settings>, delay?: number) => void;
 
-const GRADIENT_KEYS: BackgroundGradient[] = ["accent", "dusk", "ocean", "ember", "forest"];
+const GRADIENT_KEYS: Exclude<BackgroundGradient, "custom">[] = ["pixel", "accent", "dusk", "ocean", "ember", "forest"];
 const ANIMATED: { key: BackgroundAnimated; icon: ReactNode }[] = [
   { key: "aurora", icon: <Rainbow size={18} /> },
   { key: "particles", icon: <Sparkles size={18} /> },
@@ -120,7 +122,11 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
             variant="subtle"
             icon={<RotateCcw size={13} />}
             onClick={() => {
-              set({ ...DEFAULT_APPEARANCE, background: { ...DEFAULT_APPEARANCE.background, image: b.image, video: b.video } });
+              set({
+                ...DEFAULT_APPEARANCE,
+                background: { ...DEFAULT_APPEARANCE.background, image: b.image, video: b.video },
+                custom_themes: a.custom_themes,
+              });
               toast.info(t("ap.reset.done"));
             }}
           >
@@ -136,15 +142,15 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
                 <ThemeTile
                   key={id}
                   id={id}
-                  active={a.theme === id}
-                  modified={a.theme === id && isThemeModified(a)}
+                  active={a.theme === id && !a.active_custom}
+                  modified={a.theme === id && !a.active_custom && isThemeModified(a)}
                   onClick={() => set(applyTheme(a, id))}
                 />
               ))}
             </div>
             <p className="text-[12.5px] leading-relaxed text-muted">{t(`ap.theme.${shown.theme}.desc`)}</p>
             <div className="flex flex-wrap items-center gap-2">
-              {isThemeModified(a) && (
+              {isThemeModified(a) && !a.active_custom && (
                 <Button size="sm" variant="subtle" icon={<RotateCcw size={13} />} onClick={() => set(applyTheme(a, a.theme))}>
                   {t("ap.theme.reset", { name: t(`ap.theme.${a.theme}`) })}
                 </Button>
@@ -172,6 +178,8 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
           <Switch checked={a.design === "v2"} onChange={(on) => set({ design: on ? "v2" : "v1" })} label={t("ap.design")} />
         </SettingRow>
       </SettingsCard>
+
+      {!simple && <CustomThemesCard a={a} set={(p) => set(p)} />}
 
       {theme.extras.length > 0 && (
         <SettingsCard title={t("ap.section.extras", { name: t(`ap.theme.${theme.id}`) })}>
@@ -253,7 +261,9 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
             onChange={(font) => set({ font })}
             items={[
               { value: "inter", label: <span style={{ fontFamily: "Inter" }}>Inter</span> },
+              { value: "inter_tight", label: <span style={{ fontFamily: "'Inter Tight Variable'" }}>Inter Tight</span> },
               { value: "system", label: <span style={{ fontFamily: "system-ui, 'Segoe UI'" }}>{t("ap.font.system")}</span> },
+              { value: "mono", label: <span style={{ fontFamily: "'JetBrains Mono'" }}>Mono</span> },
             ]}
           />
         </SettingRow>
@@ -264,6 +274,7 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
             items={[
               { value: "default", label: t("ap.headings.default") },
               { value: "pixel", label: <span style={{ fontFamily: "Silkscreen", fontWeight: 400, fontSize: 12 }}>PIXEL</span> },
+              { value: "pixel_all", label: t("ap.headings.pixel_all") },
             ]}
           />
         </SettingRow>
@@ -274,30 +285,49 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
 
       {/* ---------------------------------------------------------- Form & Dichte */}
       <SettingsCard title={t("ap.section.shape")}>
-        <SettingRow title={t("ap.radius")} description={t("ap.radius.desc")}>
+        <SettingRow
+          title={t("ap.radius")}
+          description={a.cards === "pixel" ? t("ap.radius.pixel_hint") : t("ap.radius.desc")}
+          className={cn(a.cards === "pixel" && "opacity-50")}
+        >
           <Segmented
             value={a.radius}
             onChange={(radius) => set({ radius })}
-            items={(["square", "slight", "round"] as const).map((v) => ({
+            items={(["square", "slight", "round", "custom"] as const).map((v) => ({
               value: v,
               label: (
                 <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 border-[1.5px] border-current opacity-80" style={{ borderRadius: v === "square" ? 0 : v === "slight" ? 2 : 4.5 }} />
+                  <span
+                    className="h-3 w-3 border-[1.5px] border-current opacity-80"
+                    style={{ borderRadius: v === "square" ? 0 : v === "slight" ? 2 : v === "round" ? 4.5 : Math.min(6, a.radius_px / 3) }}
+                  />
                   {t(`ap.radius.${v}`)}
                 </span>
               ),
             }))}
           />
         </SettingRow>
+        {a.radius === "custom" && a.cards !== "pixel" && (
+          <SettingRow title={t("ap.radius_px")} description={t("ap.radius_px.desc")}>
+            <SliderValue value={a.radius_px} min={0} max={24} step={1} unit="px" onChange={(radius_px) => set({ radius_px }, 200)} />
+          </SettingRow>
+        )}
         <SettingRow title={t("ap.cards")} description={t("ap.cards.desc")}>
           <Segmented
             value={a.cards}
             onChange={(cards) => set({ cards })}
-            items={(["flat", "outlined"] as const).map((v) => ({
+            items={(["flat", "outlined", "raised", "pixel"] as const).map((v) => ({
               value: v,
               label: (
                 <span className="flex items-center gap-1.5">
-                  <span className={cn("h-3 w-3.5 bg-white/15", v === "outlined" && "shadow-[inset_0_0_0_1.5px_currentColor]")} />
+                  <span
+                    className={cn(
+                      "h-3 w-3.5 bg-white/15",
+                      v === "outlined" && "shadow-[inset_0_0_0_1.5px_currentColor]",
+                      v === "raised" && "shadow-[0_2px_4px_rgb(0_0_0/0.5)]",
+                      v === "pixel" && "shadow-[inset_0_0_0_2px_currentColor,0_2px_0_currentColor]",
+                    )}
+                  />
                   {t(`ap.cards.${v}`)}
                 </span>
               ),
@@ -336,6 +366,13 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
             value={a.sidebar.mode}
             onChange={(mode) => setSidebar({ mode })}
             items={(["compact", "wide"] as const).map((v) => ({ value: v, label: t(`ap.sidebar.${v}`) }))}
+          />
+        </SettingRow>
+        <SettingRow title={t("ap.sidebar.style")} description={t("ap.sidebar.style.desc")}>
+          <Segmented
+            value={a.sidebar.style}
+            onChange={(style) => setSidebar({ style })}
+            items={(["solid", "floating", "tinted"] as const).map((v) => ({ value: v, label: t(`ap.sidebar.style.${v}`) }))}
           />
         </SettingRow>
         <SettingRow title={t("ap.sidebar.instances")} description={t("ap.sidebar.instances.desc")}>
@@ -441,17 +478,22 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
             <Segmented<BackgroundKind>
               value={b.kind}
               onChange={(kind) => setBg({ kind })}
-              items={(["none", "gradient", "image", "animated"] as const).map((v) => ({ value: v, label: t(`ap.bg.${v}`) }))}
+              items={(["none", "color", "gradient", "image", "animated"] as const).map((v) => ({ value: v, label: t(`ap.bg.${v}`) }))}
             />
+            {b.kind === "color" && <SolidColorEditor b={b} setBg={setBg} />}
             {b.kind === "gradient" && (
               <div className="flex flex-wrap gap-2">
                 {GRADIENT_KEYS.map((g) => (
                   <PresetTile key={g} label={t(`ap.grad.${g}`)} active={b.gradient === g} onClick={() => setBg({ gradient: g })}>
-                    <span className="absolute inset-0" style={{ background: GRADIENTS[g](a.accent) }} />
+                    <span className="absolute inset-0" style={{ background: GRADIENTS[g](a.accent), imageRendering: g === "pixel" ? "pixelated" : undefined }} />
                   </PresetTile>
                 ))}
+                <PresetTile label={t("ap.grad.custom")} active={b.gradient === "custom"} onClick={() => setBg({ gradient: "custom" })}>
+                  <span className="absolute inset-0" style={{ background: `linear-gradient(${b.gradient_angle}deg, ${b.gradient_from}, ${b.gradient_to})` }} />
+                </PresetTile>
               </div>
             )}
+            {b.kind === "gradient" && b.gradient === "custom" && <GradientEditor b={b} setBg={setBg} />}
             {b.kind === "image" && (
               <FilePick slot="image" path={b.image} onPicked={(image) => setBg({ image, kind: "image" })} onRemove={() => setBg({ image: null, kind: "none" })} />
             )}
@@ -476,6 +518,13 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
         </SettingRow>
         <SettingRow title={t("ap.blur")} description={t("ap.blur.desc")} className={cn(b.kind === "none" && "opacity-50")}>
           <SliderValue value={b.blur} min={0} max={40} step={2} unit="px" disabled={b.kind === "none"} onChange={(blur) => setBg({ blur }, 300)} />
+        </SettingRow>
+        <SettingRow
+          title={t("ap.glass")}
+          description={b.kind === "none" ? t("ap.glass.needs_bg") : a.cards === "pixel" ? t("ap.glass.pixel_hint") : t("ap.glass.desc")}
+          className={cn(b.kind === "none" && "opacity-50")}
+        >
+          <SliderValue value={a.glass} min={0} max={100} step={5} unit="%" disabled={b.kind === "none"} onChange={(glass) => set({ glass }, 250)} />
         </SettingRow>
       </SettingsCard>
 
@@ -575,7 +624,14 @@ function MiniPreview({ a }: { a: Appearance }) {
     <div className="relative h-[180px] w-[320px] shrink-0 overflow-hidden rounded-card bg-[var(--tone-frame)] shadow-[0_0_0_1px_var(--line-2)]" aria-label={t("ap.preview")}>
       <Backdrop appearance={a} contained />
       <div className="absolute inset-0 flex">
-        <div className={cn("flex shrink-0 flex-col gap-1.5 bg-bg pt-2", wide ? "w-[72px] items-stretch px-1.5" : "w-8 items-center")}>
+        <div
+          className={cn(
+            "flex shrink-0 flex-col gap-1.5 bg-bg pt-2",
+            wide ? "w-[72px] items-stretch px-1.5" : "w-8 items-center",
+            a.sidebar.style === "floating" && "my-1.5 ml-1.5 rounded-card bg-panel shadow-[0_0_0_1px_var(--line-1)]",
+          )}
+          style={a.sidebar.style === "tinted" ? { background: "color-mix(in srgb, var(--ui-accent) 11%, var(--frame))" } : undefined}
+        >
           {mascot ? (
             <img src="/logo-seal-winter.png" alt="" className="h-5 w-5 self-center object-contain [image-rendering:pixelated]" />
           ) : (
@@ -649,10 +705,13 @@ function ThemeTile({ id, active, modified, onClick }: { id: ThemeId; active: boo
   const th = THEMES[id];
   const sw = th.swatch;
   const ac = th.tokens.accent;
-  const r = { square: 0, slight: 2, round: 4 }[th.tokens.radius];
+  const r = { square: 0, slight: 2, round: 4, custom: 3 }[th.tokens.radius];
   const light = th.tokens.tone === "light";
+  const px = th.tokens.cards === "pixel";
   const edge =
-    th.tokens.cards === "outlined" || light ? `inset 0 0 0 1px ${light ? "rgb(10 12 18 / .1)" : "rgb(255 255 255 / .16)"}` : undefined;
+    th.tokens.cards === "outlined" || light || px
+      ? `inset 0 0 0 ${px ? 1.5 : 1}px ${light ? "rgb(10 12 18 / .14)" : "rgb(255 255 255 / .16)"}`
+      : undefined;
   return (
     <button onClick={onClick} aria-pressed={active} className="group flex min-w-0 flex-col gap-1.5 text-left">
       <span
@@ -673,7 +732,7 @@ function ThemeTile({ id, active, modified, onClick }: { id: ThemeId; active: boo
               className={th.tokens.headings === "pixel" ? "h-2 w-8" : "h-1.5 w-8"}
               style={{ background: sw.text, opacity: 0.85, borderRadius: th.tokens.headings === "pixel" ? 0 : r / 3 }}
             />
-            <span className="ml-auto h-2.5 w-5" style={{ background: ac, borderRadius: r / 2 }} />
+            <span className="ml-auto h-2.5 w-5" style={{ background: ac, borderRadius: r / 2, boxShadow: px ? "inset 0 -2px 0 rgb(0 0 0 / .3)" : undefined }} />
           </span>
           <span className="grid grid-cols-3 gap-1">
             {[0, 1, 2].map((i) => (
@@ -687,6 +746,11 @@ function ThemeTile({ id, active, modified, onClick }: { id: ThemeId; active: boo
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: th.tokens.status.danger }} />
           </span>
         </span>
+        {th.tokens.cards === "pixel" && (
+          <svg className="pointer-events-none absolute inset-x-0 bottom-0 h-[14px] w-full" viewBox="0 0 60 7" preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden>
+            <path d="M0 7V4h4V3h5v1h4V2h6v2h5V3h6V1h5v2h4v1h6V2h5v2h5v3z" fill={id === "pixel" ? "#2a1846" : "#d9d4ea"} />
+          </svg>
+        )}
         {id === "winter" && (
           // ein paar ruhende Flocken + Schneekante auf der Inhaltsfläche
           <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 120 66" preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden>

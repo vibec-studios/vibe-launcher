@@ -1,0 +1,71 @@
+/* Anpassung (Einstellungen → Darstellung): eigener Eckenradius, Schriften, Kartenstil „erhaben“, Glas,
+   Seitenleisten-Stil. Wirkt in v1 und v2. Gesetzt von applyAppearance (src/lib/appearance.ts):
+     data-radius="custom" + --r-custom   data-font="inter_tight|mono"   data-cards="raised"
+     data-glass="on" + --glass (0–1)     data-rail="solid|floating|tinted" */
+
+@import "@fontsource-variable/inter-tight/wght.css";
+
+/* ------------------------------------------------------------------ Ecken */
+
+:root[data-radius="custom"] { --r: var(--r-custom); --r-dot: 999px; }
+:root[data-design="v2"][data-radius="custom"] {
+  --r-xs: calc(var(--r-custom) * 0.5);
+  --r-ctl: var(--r-custom);
+  --r-card: calc(var(--r-custom) * 1.5);
+  --r-panel: calc(var(--r-custom) * 2);
+}
+
+/* ------------------------------------------------------------------ Schrift */
+
+:root[data-font="inter_tight"] { --ui-font: "Inter Tight Variable", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; }
+:root[data-font="mono"] { --ui-font: "JetBrains Mono", ui-monospace, Consolas, monospace; }
+:root[data-font="mono"] body { letter-spacing: -0.01em; }
+
+/* ------------------------------------------------------------------ Karten „erhaben“ */
+
+@layer base {
+  :root[data-cards="raised"] .bg-surface:not(button, a, [role="button"], [role="tab"], [role="radio"]) {
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 5%, transparent), 0 8px 22px -12px rgb(0 0 0 / 0.7);
+  }
+  :root[data-cards="raised"][data-tone="light"] .bg-surface:not(button, a, [role="button"], [role="tab"], [role="radio"]) {
+    box-shadow: inset 0 0 0 1px var(--line-1), 0 8px 22px -14px rgb(15 20 30 / 0.3);
+  }
+}
+:root[data-design="v2"][data-cards="raised"] { --sh-1: 0 0 0 1px var(--line-1), 0 10px 26px -12px rgb(0 0 0 / 0.65); }
+:root[data-design="v2"][data-cards="raised"][data-tone="light"] { --sh-1: 0 0 0 1px var(--line-1), 0 10px 26px -14px rgb(15 20 30 / 0.28); }
+
+/* ------------------------------------------------------------------ Glas (nur mit Hintergrund) */
+
+:root[data-glass="on"][data-bg="on"] {
+  --a-frame: calc(80% - var(--glass) * 45%);
+  --a-canvas: calc(62% - var(--glass) * 40%);
+  --a-surface: calc(90% - var(--glass) * 35%);
+  --a-overlay: calc(96% - var(--glass) * 26%);
+  --glass-blur: calc(6px + var(--glass) * 18px);
+}
+:root[data-glass="on"][data-bg="on"] :is(.vl-main, .vl-rail, .vl2-rail, .vl-dialog, .vl-menu, .vl-toast) {
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+}
+:root[data-glass="on"][data-bg="on"] :is(.vl-dialog, .vl-menu, .vl-toast) {
+  box-shadow: var(--sh-3), inset 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+/* ------------------------------------------------------------------ Seitenleiste */
+
+:root[data-rail="floating"] :is(.vl-rail, .vl2-rail) {
+  margin: 8px 0 8px 8px;
+  border-radius: var(--r-panel);
+  background-color: var(--canvas);
+  box-shadow: 0 0 0 1px var(--line-1), 0 10px 30px -18px rgb(0 0 0 / 0.6);
+}
+:root[data-design="v2"][data-rail="floating"] .vl2-rail { margin: 0 var(--gutter) var(--gutter) var(--gutter); padding-top: 10px; }
+:root[data-rail="floating"][data-tone="light"] :is(.vl-rail, .vl2-rail) { box-shadow: 0 0 0 1px var(--line-1), 0 10px 30px -18px rgb(15 20 30 / 0.25); }
+
+:root[data-rail="tinted"] :is(.vl-rail, .vl2-rail) {
+  background-color: color-mix(in srgb, var(--ui-accent) 11%, var(--frame));
+  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--ui-accent) 22%, transparent);
+}
+:root[data-rail="tinted"] :is(.vl-rail, .vl2-rail) button[aria-current="page"] {
+  background-color: color-mix(in srgb, var(--ui-accent) 22%, transparent);
+  color: var(--text-1);
+}
