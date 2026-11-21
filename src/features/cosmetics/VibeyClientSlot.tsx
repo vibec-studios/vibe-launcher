@@ -11,6 +11,7 @@ import { useT } from "@/i18n";
 import { useEvent } from "@/lib/events";
 import { isRunning, useGameState, waitForTask } from "@/lib/queries";
 import { useVibe } from "@/lib/vibe";
+import { useAccessBlocked } from "@/features/access/hooks";
 import type { Instance } from "@/lib/types";
 import { vapi } from "./api";
 import { cqk } from "./data";
@@ -49,6 +50,7 @@ export function VibeyClientSlot({ instance, className }: { instance: Instance; c
   });
 
   const vibe = useVibe();
+  const accessBlocked = useAccessBlocked();
   const s = q.data;
   // Für Forge/Quilt/Vanilla nichts anzeigen, solange nichts eingeschaltet ist
   if (!loaderOk && !s?.enabled) return null;
@@ -81,6 +83,9 @@ export function VibeyClientSlot({ instance, className }: { instance: Instance; c
     disabledReason = t("vc.vibe_off");
     line = disabledReason;
     tone = "warn";
+  } else if (accessBlocked && !s.enabled) {
+    disabledReason = t("access.vc");
+    line = disabledReason;
   } else if (s.enabled && s.present) {
     tone = "ok";
     line = s.disabled_by_user

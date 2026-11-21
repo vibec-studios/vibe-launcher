@@ -11,6 +11,7 @@ import { Button, SettingRow, SettingsCard, Skeleton, Spinner, confirm, cn, toast
 import { SaveIndicator, useAutoSave } from "@/components/instance/forms";
 import { useT } from "@/i18n";
 import { HostingInvite } from "@/features/social/HostingInvite";
+import { useAccessBlocked } from "@/features/access/hooks";
 import { AddressChip } from "./parts";
 import { ConnBadge, LanHint } from "./LanHint";
 
@@ -110,7 +111,8 @@ export function ConnectionTab({ server }: { server: Server }) {
   });
   const [resetting, setResetting] = useState(false);
 
-  const relayOk = !!settings?.vibe.enabled && !!settings?.vibe.hosting;
+  const accessBlocked = useAccessBlocked();
+  const relayOk = !!settings?.vibe.enabled && !!settings?.vibe.hosting && !accessBlocked;
   const running = st?.state === "running" || st?.state === "starting";
   const tunnel = st?.tunnel && st.tunnel.kind === d.connection ? st.tunnel : null;
   const usesTunnel = d.connection !== "local";
@@ -159,7 +161,7 @@ export function ConnectionTab({ server }: { server: Server }) {
                   current={d.connection}
                   icon={<Radio size={15} />}
                   title={t("srv.conn.relay")}
-                  text={relayOk ? t("srv.conn.relay.text") : t("srv.conn.relay.disabled")}
+                  text={relayOk ? t("srv.conn.relay.text") : accessBlocked ? t("access.relay") : t("srv.conn.relay.disabled")}
                   disabled={!relayOk && d.connection !== "relay"}
                   badge={relayOk ? <ConnBadge tone="accent">{t("srvh.badge.internet")}</ConnBadge> : undefined}
                   extra={

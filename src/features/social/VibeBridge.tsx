@@ -6,7 +6,9 @@ import { useVibe } from "@/lib/vibe";
 import { toast } from "@/components/ui";
 import { openSettings } from "@/features/settings/store";
 import { t } from "@/i18n";
-import { configure, markRead, setPresenceSources, setSocialHooks, useSocial } from "./service";
+import { startAccessPolling } from "@/features/access/poll";
+import { setWelcomeHook } from "@/features/access/store";
+import { configure, markRead, openSocial, setPresenceSources, setSocialHooks, useSocial } from "./service";
 
 const HINT_KEY = "vibe.auto_hint_shown";
 
@@ -22,6 +24,11 @@ export function VibeBridge() {
   useEffect(() => {
     void configure({ enabled: vibe.enabled, social: vibe.social, presence: vibe.presence, sharing: vibe.sharing, hosting: vibe.hosting });
   }, [vibe.enabled, vibe.social, vibe.presence, vibe.sharing, vibe.hosting, active]);
+
+  useEffect(() => {
+    setWelcomeHook(() => toast.success(t("access.welcome.title"), t("access.welcome.text"), { label: t("social.open_page"), onClick: () => openSocial() }));
+    return startAccessPolling();
+  }, []);
 
   useEffect(() => {
     setPresenceSources(instances, servers);

@@ -4,6 +4,7 @@ import { Mail } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useT } from "@/i18n";
 import { useVibe } from "@/lib/vibe";
+import { AccessStrip } from "@/features/access/AccessStrip";
 import { openInviteFriends } from "./dialogs";
 import { login, requireClient, useSocial, vqk } from "./service";
 
@@ -14,6 +15,7 @@ export function HostingInvite({ serverId, relay }: { serverId: string; relay: bo
   const ready = conn === "ready";
   const limits = useQuery({ queryKey: vqk.hostingLimits, queryFn: () => requireClient().hosting.limits(), enabled: ready && relay && vibe.hosting, staleTime: 30_000 });
   if (!vibe.social) return null;
+  if (conn === "no_access") return <AccessStrip className="mt-3 bg-surface2" />;
   return (
     <div className="flex flex-wrap items-center gap-3 pt-3">
       <p className="min-w-0 flex-1 text-[12px] text-dim">

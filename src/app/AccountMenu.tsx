@@ -14,6 +14,7 @@ import { useVibe } from "@/lib/vibe";
 import { setMode, useSimple } from "@/lib/mode";
 import { connect, unlink, useSocial } from "@/features/social/service";
 import { openSettings } from "@/features/settings/store";
+import { useVibeAccess } from "@/features/access/store";
 import type { Account } from "@/lib/types";
 
 /** Farbe des Vibe-Status-Punkts (null = kein Punkt). */
@@ -21,7 +22,7 @@ function useVibeDot() {
   const vibe = useVibe();
   const conn = useSocial((s) => s.conn);
   const on = vibe.enabled && conn !== "off" && conn !== "no_account";
-  const dot = conn === "ready" ? "bg-ok" : conn === "reconnecting" || conn === "connecting" || conn === "logging_in" ? "bg-warn" : conn === "offline" ? "bg-danger" : null;
+  const dot = conn === "ready" ? "bg-ok" : conn === "no_access" ? "bg-dim" : conn === "reconnecting" || conn === "connecting" || conn === "logging_in" ? "bg-warn" : conn === "offline" ? "bg-danger" : null;
   return { on, conn, dot: on ? dot : null };
 }
 
@@ -49,6 +50,7 @@ export function AccountMenu() {
   const others = accounts.filter((a) => a.id !== active?.id);
   const [msa, setMsa] = useState(false);
   const vibe = useVibeDot();
+  const accessStatus = useVibeAccess((s) => s.status);
   const simple = useSimple();
 
   return (
@@ -146,7 +148,7 @@ export function AccountMenu() {
                 <DropdownLabel>
                   <span className="flex items-center gap-1.5">
                     {vibe.dot && <span className={cn("h-1.5 w-1.5 rounded-dot", vibe.dot)} />}
-                    {t(`social.chip.${vibe.conn}`)}
+                    {vibe.conn === "no_access" ? t(`access.chip.${accessStatus}`) : t(`social.chip.${vibe.conn}`)}
                   </span>
                 </DropdownLabel>
                 {vibe.conn === "logged_out" ? (

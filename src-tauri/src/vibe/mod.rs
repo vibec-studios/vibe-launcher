@@ -362,14 +362,31 @@ pub async fn http(state: &AppState, req: HttpRequest) -> AppResult<HttpResponse>
 
 /// Fehlertext aus einer Backend-Antwort (`{ error: { message } }`).
 pub fn api_error(status: u16, body: &str) -> AppError {
-    let msg = serde_json::from_str::<serde_json::Value>(body)
-        .ok()
+    let v = serde_json::from_str::<serde_json::Value>(body).ok();
+    let code = v.as_ref().and_then(|v| v["error"]["code"].as_str()).unwrap_or_default();
+    if status == 403 {
+        if let Some(text) = access_text(code) {
+            return AppError::Access(text.into());
+        }
+    }
+    let msg = v
+        .as_ref()
         .and_then(|v| v["error"]["message"].as_str().map(str::to_string))
         .unwrap_or_else(|| format!("Vibe-Server antwortet mit HTTP {status}"));
     if status == 401 {
         AppError::Auth(msg)
     } else {
         AppError::Msg(msg)
+    }
+}
+
+/// Text für die Beta-Sperre (`ACCESS_*`), sonst None.
+pub fn access_text(code: &str) -> Option<&'static str> {
+    match code {
+        "ACCESS_PENDING" => Some("Vibe ist in der Beta: Du bist noch auf der Warteliste. Sobald du freigeschaltet bist, geht das hier."),
+        "ACCESS_REJECTED" => Some("Vibe ist in der Beta: Deine Anfrage wurde abgelehnt. In den Vibe-Einstellungen kannst du erneut anfragen."),
+        "ACCESS_NONE" => Some("Vibe ist in der Beta: Dafür brauchst du Zugang. Tritt in den Vibe-Einstellungen der Warteliste bei."),
+        _ => None,
     }
 }
 
@@ -444,5 +461,20 @@ mod tests {
         let e = api_error(429, r#"{"error":{"code":"rate_limited","message":"Zu schnell"}}"#);
         assert_eq!(e.to_string(), "Zu schnell");
         assert!(matches!(api_error(401, "{}"), AppError::Auth(_)));
+    }
+
+    #[test]
+    fn access_errors() {
+        for code in ["ACCESS_PENDING", "ACCESS_REJECTED", "ACCESS_NONE"] {
+            let e = api_error(403, &format!(r#"{{"error":{{"code":"{code}","message":"locked"}}}}"#));
+            assert!(matches!(e, AppError::Access(_)), "{code}");
+            assert_eq!(e.kind(), "access");
+            assert!(e.to_string().starts_with("Vibe ist in der Beta"));
+        }
+        let other = api_error(403, r#"{"error":{"code":"forbidden","message":"Nein"}}"#);
+        assert!(matches!(other, AppError::Msg(_)));
+        assert_eq!(other.to_string(), "Nein");
+        assert!(matches!(api_error(429, r#"{"error":{"code":"ACCESS_NONE"}}"#), AppError::Msg(_)));
+        assert!(access_text("access_none").is_none());
     }
 }

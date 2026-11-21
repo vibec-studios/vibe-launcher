@@ -6,6 +6,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button, Skeleton, Spinner, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { login } from "@/features/social/service";
+import { AccessNotice } from "@/features/access/AccessNotice";
+import { AccessStrip } from "@/features/access/AccessStrip";
+import { JoinWaitlistButton } from "@/features/access/JoinDialog";
+import { useKnownApproved } from "@/features/access/hooks";
 import { RARITY_COLOR, loadBundle, useThumbnail, type Access } from "./data";
 import type { CatalogItem } from "./types";
 import type { Bundle } from "./vibey3d";
@@ -16,7 +20,9 @@ export function AccessState({ access, title }: { access: Access; title?: string 
   const nav = useNavigate();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const knownOk = useKnownApproved();
   const icon = (n: ReactNode) => <div className="mb-1 text-dim">{n}</div>;
+  if (access === "no_access") return <AccessNotice />;
   let body: ReactNode;
   if (access === "loading") body = <Spinner size={18} className="text-brand" />;
   else if (access === "off")
@@ -24,10 +30,14 @@ export function AccessState({ access, title }: { access: Access; title?: string 
       <>
         {icon(<CloudOff size={22} />)}
         <h3 className="text-title text-text">{t("cos.gate.off_title")}</h3>
-        <p className="max-w-md text-[13px] leading-relaxed text-muted">{t("cos.gate.off_text")}</p>
-        <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => nav({ to: "/settings", search: { tab: "vibe" } })}>
-          {t("action.open_settings")}
-        </Button>
+        <p className="max-w-md text-[13px] leading-relaxed text-muted">{knownOk ? t("cos.gate.off_text") : t("access.join.desc")}</p>
+        {knownOk ? (
+          <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => nav({ to: "/settings", search: { tab: "vibe" } })}>
+            {t("action.open_settings")}
+          </Button>
+        ) : (
+          <JoinWaitlistButton />
+        )}
       </>
     );
   else if (access === "no_account")
@@ -81,7 +91,9 @@ export function AccessBanner({ access }: { access: Access }) {
   const nav = useNavigate();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const knownOk = useKnownApproved();
   if (access === "loading" || access === "ready") return null;
+  if (access === "no_access") return <AccessStrip className="mx-6 mb-3" />;
   const v =
     access === "off"
       ? { icon: <CloudOff size={16} />, title: t("cos.gate.off_title"), text: t("cos.guest.off_text") }
@@ -89,7 +101,9 @@ export function AccessBanner({ access }: { access: Access }) {
         ? { icon: <UserRound size={16} />, title: t("cos.gate.account_title"), text: t("cos.guest.account_text") }
         : { icon: <LogIn size={16} />, title: t("cos.gate.login_title"), text: t("cos.guest.login_text") };
   const action =
-    access === "off" ? (
+    access === "off" && !knownOk ? (
+      <JoinWaitlistButton />
+    ) : access === "off" ? (
       <Button size="sm" icon={<SettingsIcon size={14} />} onClick={() => nav({ to: "/settings", search: { tab: "vibe" } })}>
         {t("cos.guest.off_action")}
       </Button>

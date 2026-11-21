@@ -212,6 +212,7 @@ const host: HostSession = {
 /** Sitzung „verbunden“ setzen – auch erneut, falls der echte Verbindungsaufbau (ohne Backend) sie zurücksetzt. */
 function seedSocial() {
   if (flag("vl.mock.vibe") === "0" || flag("vl.mock.vibeauth") === "0") return;
+  if ((flag("vl.mock.access") ?? "approved") !== "approved") return;
   useSocial.setState({
     conn: "ready",
     friends: Object.fromEntries(friends.map((f) => [f.user.id, f])),
