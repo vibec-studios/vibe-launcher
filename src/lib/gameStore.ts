@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import type { GameState, LogLine } from "./types";
 import { activeRuns, aggregate, isActive, runsOf } from "./sessions";
+import { dropLogs, retainRuns } from "./runRetention";
 
 const MAX_LOG = 50_000;
 
@@ -21,24 +22,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
   states: {},
   logs: {},
   setState: (s) => {
-    const runs = { ...get().runs };
-    let logs = get().logs;
+    const before = get().runs;
+    const runs = { ...before };
     if (!runs[s.run_id] && s.state === "preparing") {
       for (const k in runs) {
-        if (runs[k].instance_id !== s.instance_id || isActive(runs[k])) continue;
-        delete runs[k];
-        if (logs[k]) {
-          logs = { ...logs };
-          delete logs[k];
-        }
+        if (runs[k].instance_id === s.instance_id && !isActive(runs[k])) delete runs[k];
       }
     }
     runs[s.run_id] = s;
-    set({ runs, states: aggregate(runs), logs });
+    const kept = retainRuns(runs);
+    set({ runs: kept, states: aggregate(kept), logs: dropLogs(get().logs, before, kept) });
   },
   setAll: (list) => {
     const runs = Object.fromEntries(list.map((s) => [s.run_id, s]));
-    set({ runs, states: aggregate(runs) });
+    set({ runs, states: aggregate(runs), logs: dropLogs(get().logs, get().runs, runs) });
   },
   appendLogs: (runId, lines) => {
     const cur = get().logs[runId] ?? [];
