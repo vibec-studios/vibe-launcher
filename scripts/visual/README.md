@@ -52,7 +52,7 @@ Szenen stehen in [`scenes.mjs`](scenes.mjs). Neue Szene: Eintrag mit `name`, `pa
 - **Rendern:** Chromium mit festem Farbprofil, ohne GPU, Subpixel-Schrift und LCD-Text.
 - **Mock:** `vl.mock.notices=1`, `vl.mock.isx=0` (keine Hinweis-Popups), `vl.mock.latency=1`.
 
-Zwei Läufe hintereinander ergeben 0 abweichende Pixel. Jede Szene wird so lange erneut fotografiert, bis zwei Aufnahmen gleich sind; sonst steht sie als „nicht stabil“ in der Ausgabe und in `manifest.json`.
+Zwei Läufe hintereinander ergeben 0 abweichende Pixel. Jede Szene wird so lange erneut fotografiert, bis zwei Aufnahmen gleich sind. Schlägt eine Szene fehl oder bleibt instabil (unter starker Rechnerlast lädt die Seite gelegentlich nicht), wird sie bis zu zweimal in einem frischen Browser-Kontext wiederholt („neuer Versuch“ in der Ausgabe); erst danach steht sie als Fehler bzw. „nicht stabil“ in der Ausgabe und in `manifest.json`.
 
 ## Ergebnis lesen
 

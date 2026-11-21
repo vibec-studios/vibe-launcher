@@ -98,7 +98,11 @@ async function main() {
   try {
     await pool(jobs, opts.jobs, async ({ variant, scene }, i) => {
       const file = `${variant}/${scene.name}.png`;
-      const res = await captureOne(browser, server.url, variant, scene);
+      let res = await captureOne(browser, server.url, variant, scene);
+      for (let attempt = 1; attempt < 3 && (res.error || !res.stable); attempt++) {
+        console.log(`[visual] ${file}: neuer Versuch (${res.error ?? "nicht stabil"})`);
+        res = await captureOne(browser, server.url, variant, scene);
+      }
       fs.mkdirSync(path.join(out, variant), { recursive: true });
       fs.writeFileSync(path.join(out, file), res.shot);
       manifest.shots.push({ variant, scene: scene.name, file, stable: res.stable, error: res.error, pageErrors: res.pageErrors });

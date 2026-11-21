@@ -31,7 +31,9 @@ export class Driver {
   }
 
   async ready(locator) {
-    await this.page.waitForFunction(() => typeof window.__TAURI_INTERNALS__?.invoke === "function", null, { timeout: 30_000, polling: 50 });
+    const mocked = () => this.page.evaluate(() => typeof window.__TAURI_INTERNALS__?.invoke === "function").catch(() => false);
+    for (let i = 0; i < 1200 && !(await mocked()); i++) await sleep(50);
+    if (!(await mocked())) throw new Error("Mock-Backend nicht geladen");
     await this.quiet();
     await this.until(() => locator.isVisible(), String(locator), 100);
     await this.quiet();
