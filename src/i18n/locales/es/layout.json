@@ -1,0 +1,9 @@
+{
+  "layout.search.reset": "Borrar búsqueda",
+  "layout.no_match": "No se encontró nada",
+  "layout.no_match.text": "Nada coincide con “{q}”. Revisa cómo lo escribiste o prueba otra cosa.",
+  "layout.go_library": "Ir a la biblioteca",
+  "layout.howto": "Cómo funciona",
+  "layout.show_all": "Mostrar todo",
+  "layout.sort_view": "Orden y vista"
+}

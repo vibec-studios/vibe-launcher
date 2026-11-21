@@ -13,5 +13,17 @@
   "dp.copy": "Copiar al mundo o mundos",
   "dp.copied": "Se crearon {n} copias de datapacks",
   "dp.copied_none": "Los datapacks ya estaban en los mundos elegidos",
-  "dp.copy_failed": "No se pudieron copiar los datapacks"
+  "dp.copy_failed": "No se pudieron copiar los datapacks",
+  "dp.world.manage": "Gestionar paquetes de datos",
+  "dp.world.title": "Paquetes de datos en “{world}”",
+  "dp.world.text": "añade o cambia reglas y contenido en este mundo.",
+  "dp.world.installed": "En este mundo",
+  "dp.world.available": "Añadir desde esta instancia",
+  "dp.world.empty": "Este mundo aún no tiene paquetes de datos.",
+  "dp.world.add": "Añadir archivo ZIP",
+  "dp.world.zip": "ZIP de paquete de datos",
+  "dp.world.remove": "Quitar {file}",
+  "dp.world.copy": "Copiar",
+  "dp.world.quit": "Cierra Minecraft antes de cambiar paquetes de datos.",
+  "dp.no_packs": "Primero añade un paquete de datos a esta instancia."
 }

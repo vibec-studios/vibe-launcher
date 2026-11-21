@@ -257,5 +257,21 @@
   "action.invite.title": "Invitation",
   "action.vibe_soon": "Ça arrivera avec le backend Vibe : dès qu'il sera en ligne, l'aperçu s'ouvrira ici.",
   "action.vibe_off": "Les services Vibe sont désactivés. Tu peux les activer dans les paramètres.",
-  "action.open_settings": "Ouvrir les paramètres"
+  "action.open_settings": "Ouvrir les paramètres",
+  "diag.native_memory.title": "Java a atteint une limite de mémoire",
+  "diag.native_memory.text": "Java n'avait plus de place pour un autre tampon, du code compilé ou un thread en arrière-plan. Ferme les programmes gourmands en mémoire et relance le jeu.",
+  "diag.disk_full.title": "Pas assez d'espace disque",
+  "diag.disk_full.text": "Minecraft n'a pas pu écrire un fichier. Libère de l'espace sur le disque de l'instance et réessaie.",
+  "diag.invalid_jvm_flag.title": "Java a refusé une option de lancement",
+  "diag.invalid_jvm_flag.text": "Une option est mal écrite ou pas prise en charge par cette version de Java. Vérifie tes arguments Java personnalisés dans les paramètres.",
+  "diag.corrupt_archive.title": "Une archive endommagée n'a pas pu être ouverte",
+  "diag.corrupt_archive.text": "Minecraft n'a pas pu lire une archive ZIP ou JAR. Cherche le nom du fichier dans le journal, puis retélécharge le mod ou le pack concerné.",
+  "diag.locked_world.title": "Ce monde est déjà ouvert",
+  "diag.locked_world.text": "Minecraft verrouille un monde tant qu'il est ouvert dans une autre session. Quitte le monde dans cette session et rouvre-le ici.",
+  "optsync.cat.keybinds": "Touches",
+  "sync.cat.keybinds.desc": "Touches et boutons de souris en jeu, y compris les raccourcis de mods au même format.",
+  "sync.area.hotbars": "Barres d'action sauvegardées",
+  "sync.area.hotbars.desc": "Partage les barres d'action sauvegardées du mode Créatif entre les instances de la même version de Minecraft.",
+  "sync.area.command_history": "Historique des commandes",
+  "sync.area.command_history.desc": "Partage les 50 dernières commandes tapées avec / en jeu. L'historique reste sur cet appareil et est partagé par les instances participantes."
 }

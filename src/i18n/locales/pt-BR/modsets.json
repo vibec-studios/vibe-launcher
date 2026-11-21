@@ -186,5 +186,7 @@
   "imenu.profiles": "Perfis – qual conteúdo está ativado",
   "imenu.profile_to_set": "Transformar “{name}” em conjunto de mods",
   "imenu.profile_to_set_done": "Conjunto de mods “{name}” criado",
-  "imenu.profile_to_set_skipped": "{n} arquivos sem origem conhecida ficaram de fora"
+  "imenu.profile_to_set_skipped": "{n} arquivos sem origem conhecida ficaram de fora",
+  "sets.template": "Aplicar a novas instâncias",
+  "import.paste_label": "Cole um código de compartilhamento ou uma lista de mods"
 }

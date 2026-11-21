@@ -230,5 +230,10 @@
   "fix.pre.text_1": "{name} : 1 problème de mod trouvé, le jeu ne démarrera probablement pas comme ça.",
   "fix.pre.hint": "« Corriger et lancer » montre d'abord ce qui va changer. Tout peut être annulé.",
   "fix.pre.launch": "Lancer quand même",
-  "fix.pre.fix": "Corriger et lancer"
+  "fix.pre.fix": "Corriger et lancer",
+  "fix.unfixable.native_memory": "Si ça recommence, remets les options mémoire Java personnalisées par défaut.",
+  "fix.unfixable.disk_full": "Vérifie aussi le disque système, Java l'utilise pour ses fichiers temporaires.",
+  "fix.unfixable.invalid_jvm_flag": "Si tu trouves l'option refusée dans le journal, retire-la de tes arguments Java personnalisés.",
+  "fix.unfixable.corrupt_archive": "Pour les fichiers de Minecraft lui-même, réinstaller la version du jeu concernée aide souvent.",
+  "fix.unfixable.locked_world": "Ferme l'autre session de jeu si besoin. Le fichier de verrouillage protège ta sauvegarde."
 }

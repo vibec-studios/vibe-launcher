@@ -78,5 +78,32 @@
   "account": {
     "title": "Compte Microsoft",
     "text": "Minecraft: Java Edition est lié à ton compte Microsoft. La connexion se fait directement chez Microsoft : le launcher ne voit jamais ton mot de passe."
+  },
+  "seed": {
+    "title": "Graine",
+    "text": "La valeur de départ que Minecraft utilise pour générer le terrain d'un monde. La même graine, la même version du jeu et les mêmes réglages recréent le terrain d'origine."
+  },
+  "dependency": {
+    "title": "Dépendance",
+    "text": "Un mod dont un autre mod a besoin pour fonctionner, par exemple Fabric API. Vibe installe les dépendances automatiquement et te prévient quand plus aucun mod n'en a besoin.",
+    "example": "Mod Menu a besoin de Fabric API – sans Fabric API, Mod Menu ne démarre pas."
+  },
+  "portable": {
+    "title": "Portable",
+    "text": "Un launcher portable n'a pas besoin d'installation. Il stocke tout dans le dossier « VibeData » juste à côté, par exemple sur une clé USB, et laisse le PC intact.",
+    "example": "Branche la clé, lance vibe-launcher.exe, continue à jouer – sur un autre PC aussi."
+  },
+  "telemetry": {
+    "title": "Télémétrie",
+    "text": "Des données d'utilisation envoyées automatiquement, par exemple les boutons sur lesquels tu cliques ou combien tu joues. Vibe Launcher ne collecte rien de tel."
+  },
+  "skinlayer": {
+    "title": "Couche externe (skin)",
+    "text": "Un skin a deux couches : la couche de base est collée au personnage, la couche externe flotte un peu au-dessus. Utilise-la pour les cheveux, chapeaux, vestes ou lunettes – elle peut être transparente.",
+    "example": "Dessine une capuche sur la couche externe de la tête – en jeu, elle dépasse un peu."
+  },
+  "skinmodel": {
+    "title": "Classique et Slim",
+    "text": "Les deux modèles de corps de Minecraft. Classique a des bras de 4 pixels de large, Slim seulement 3. Tu peux changer de modèle à tout moment."
   }
 }

@@ -149,5 +149,18 @@
   "isx.data.warn_world": "Remplace le monde dans Vibe ; une sauvegarde du monde est créée d'abord.",
   "isx.data.removed_hint": "Arrivé avec l'import puis supprimé dans Vibe : il n'est donc pas présélectionné.",
   "isx.row.desc_data_1": "1 élément de {launcher} manque dans Vibe, p. ex. des données de mods ou un monde.",
-  "isx.row.desc_data_n": "{n} éléments de {launcher} manquent dans Vibe, p. ex. des données de mods ou des mondes."
+  "isx.row.desc_data_n": "{n} éléments de {launcher} manquent dans Vibe, p. ex. des données de mods ou des mondes.",
+  "import.choose_source": "Où se trouve le contenu à importer ?",
+  "import.source.file": "Depuis un fichier de modpack",
+  "import.source.file.desc": "Ouvre un fichier Modrinth, CurseForge ou Vibe Launcher.",
+  "import.source.launcher": "Depuis un autre launcher",
+  "import.source.launcher.desc": "Choisis parmi les profils de jeu que Vibe trouve sur ton PC.",
+  "import.source.folder": "Depuis un dossier",
+  "import.source.folder.desc": "Va jusqu'à l'emplacement d'un profil de jeu ou d'un launcher.",
+  "import.folder.prompt": "Trouver un profil de jeu sur ton PC",
+  "import.back_to_source": "Retour à la source",
+  "import.review_title": "Vérifier l'import",
+  "import.review_description": "Vérifie le modpack et donne un nom à ta nouvelle instance.",
+  "import.progress_title": "Import en cours",
+  "import.finished_title": "Import terminé"
 }
