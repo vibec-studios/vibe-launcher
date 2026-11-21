@@ -47,6 +47,7 @@ pub fn set_background(state: &AppState, run_id: &str, background: bool) -> AppRe
         run.changed().or_else(|| Some(run.snapshot()))
     });
     let snap = snap.ok_or_else(|| AppError::Invalid("Diese Sitzung läuft nicht.".into()))?;
+    crate::minecraft::resume::refresh_afk(state, run_id);
     emit_snapshot(&state.app, &snap);
     let text = if background { "AFK: Sitzung läuft jetzt im Hintergrund." } else { "AFK: Bildschirm wird wieder angezeigt." };
     state.game.launcher_line(run_id, LogLevel::Launcher, text.into());
@@ -119,7 +120,10 @@ pub fn init(app: &AppHandle) {
     let _ = APP.set(app.clone());
     if let Some(state) = app.try_state::<AppState>() {
         let st = state.inner().clone();
-        tauri::async_runtime::spawn_blocking(move || recover(&st));
+        tauri::async_runtime::spawn_blocking(move || {
+            crate::minecraft::resume::on_startup(&st);
+            recover(&st);
+        });
     }
     let h = app.clone();
     std::thread::Builder::new()

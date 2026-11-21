@@ -17,6 +17,7 @@ pub use vibe_server_core::minecraft::meta;
 pub mod prelaunch;
 pub mod process;
 pub mod resources;
+pub mod resume;
 pub mod sessions;
 
 pub use vibe_server_core::minecraft::{JavaInstall, LoaderVersion, LogLevel, LogLine, McVersion};
@@ -57,6 +58,8 @@ pub struct GameState {
     pub account_uuid: Option<String>,
     pub world: Option<String>,
     pub server: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resumed: Option<String>,
 }
 
 
