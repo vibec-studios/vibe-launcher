@@ -98,6 +98,9 @@ const add = (name: string, variant: SkinVariant, source: string, data_url: strin
 };
 
 const handlers: Handlers = {
+  skin_import_scan: () => ({ sources: [], new_count: 0, auto_import: false }),
+  mccapes_profile: ({ accountId }) => ({ account_id: accountId, cape: null, ears: null, glint: false, upside_down: false, texture_error: false }),
+  mccapes_mod_status: () => [],
   skins_profile: (a) => profile(acc(a)),
   skin_upload_file: (a) =>
     update(acc(a), (p) => {

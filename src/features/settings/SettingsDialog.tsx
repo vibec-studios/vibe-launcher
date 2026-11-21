@@ -106,7 +106,7 @@ export function SettingsDialog() {
           className={cn(
             "outline-none",
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2",
-            "h-[min(780px,calc(100vh-48px))] w-[min(1100px,calc(100vw-48px))] overflow-hidden",
+            "h-[calc(100%-48px)] max-h-[780px] w-[calc(100%-48px)] max-w-[1100px] overflow-hidden",
             "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
         >

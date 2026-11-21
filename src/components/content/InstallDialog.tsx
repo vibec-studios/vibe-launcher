@@ -271,6 +271,7 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
     if (!versions.length) return;
     if (!versionId || !versions.some((v) => v.id === versionId)) setVersionId(versions[0].id);
   }, [versions, versionId]);
+  const selectedVersion = versions.find((v) => v.id === versionId);
 
   // Bereits installiert? (nur für die gewählte Instanz)
   const installedQ = useQuery({
@@ -284,32 +285,32 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
   const manual = !!project.manual_download;
   useEffect(() => {
     const go = (mode: "open" | "add") => {
-      if (!selected || !versionId) return;
+      if (!selected || !selectedVersion) return;
       setBusy(true);
       useManualMode.setState({ mode });
-      startManualDownload(selected.inst.id, project, versionId, { silent: true, open: mode === "open" })
+      startManualDownload(selected.inst.id, project, selectedVersion.id, { silent: true, open: mode === "open" })
         .then(onStart)
         .catch((e) => onError(errorMessage(e)))
         .finally(() => setBusy(false));
     };
     useStartAction.setState({
       label: manual ? t("manual.download") : installed ? t("install.reinstall") : t("common.install"),
-      disabled: !selected || !versionId || versionsQ.isFetching,
+      disabled: !selected || !selectedVersion || versionsQ.isFetching || versionsQ.isError,
       busy,
       manual,
       alt: manual ? { label: t("manual.add"), run: () => go("add") } : null,
       run: () => {
-        if (!selected || !versionId) return;
+        if (!selected || !selectedVersion) return;
         if (manual) return go("open");
         setBusy(true);
         useManualMode.setState({ mode: null });
-        startContentInstall(selected.inst.id, project, versionId, { silent: true })
+        startContentInstall(selected.inst.id, project, selectedVersion.id, { silent: true })
           .then(onStart)
           .catch((e) => onError(errorMessage(e)))
           .finally(() => setBusy(false));
       },
     });
-  }, [selected, versionId, versionsQ.isFetching, busy, installed, manual, project, onStart, onError, t]);
+  }, [selected, selectedVersion, versionsQ.isFetching, versionsQ.isError, busy, installed, manual, project, onStart, onError, t]);
 
   if (instancesQ.isPending) {
     return (
@@ -413,7 +414,7 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
           <Select value={versionId} onChange={setVersionId} options={versionOptions(t, versions)} />
         )}
         {selected && installed && <div className="text-[12px] text-dim">{t("install.already")}</div>}
-        {selected && versions[0] && <div className="text-[12px] text-dim">{t("install.published", { date: formatRelative(versions.find((v) => v.id === versionId)?.date ?? versions[0].date) })}</div>}
+        {selected && selectedVersion && <div className="text-[12px] text-dim">{t("install.published", { date: formatRelative(selectedVersion.date) })}</div>}
       </div>
     </div>
   );

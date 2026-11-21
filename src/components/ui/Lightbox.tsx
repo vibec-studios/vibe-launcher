@@ -1,7 +1,8 @@
 // Bild-Lightbox: Vollbild über dem Fenster, Pfeiltasten/Knöpfe zum Blättern, Esc schließt.
 import * as D from "@radix-ui/react-dialog";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImageOff, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useT } from "@/i18n";
 import { cn } from "./cn";
 import { Spinner } from "./Spinner";
 
@@ -25,20 +26,24 @@ export function Lightbox({
   onClose: () => void;
   labels?: { prev: string; next: string; close: string };
 }) {
+  const t = useT();
   const open = index !== null && images.length > 0;
   const i = index ?? 0;
   const img = images[i];
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => setLoaded(false), [img?.url]);
+  const src = img?.url || undefined;
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  useEffect(() => setStatus("loading"), [src]);
   const go = (d: number) => onIndexChange((i + d + images.length) % images.length);
 
   // Nachbarbilder vorladen, damit das Blättern ohne Warten geht
   useEffect(() => {
     if (!open || images.length < 2) return;
     for (const d of [1, -1]) {
+      const url = images[(i + d + images.length) % images.length].url;
+      if (!url) continue;
       const n = new Image();
       n.decoding = "async";
-      n.src = images[(i + d + images.length) % images.length].url;
+      n.src = url;
     }
   }, [open, i, images]);
 
@@ -65,18 +70,25 @@ export function Lightbox({
             </D.Close>
           </div>
           <div className="relative flex min-h-0 flex-1 items-center justify-center px-20" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            {img && (
+            {src && (
               <img
-                key={img.url}
-                src={img.url}
-                alt={img.title ?? ""}
+                key={src}
+                src={src}
+                alt={img?.title ?? ""}
                 decoding="async"
                 draggable={false}
-                onLoad={() => setLoaded(true)}
-                className={cn("h-full w-full object-contain transition-opacity duration-150", loaded ? "opacity-100" : "opacity-0")}
+                onLoad={() => setStatus("loaded")}
+                onError={() => setStatus("error")}
+                className={cn("h-full w-full object-contain transition-opacity duration-150", status === "loaded" ? "opacity-100" : "opacity-0")}
               />
             )}
-            {!loaded && <Spinner size={20} className="absolute text-muted" />}
+            {src && status === "loading" && <Spinner size={20} className="absolute text-muted" />}
+            {(!src || status === "error") && (
+              <div className="absolute flex flex-col items-center gap-2 text-center text-muted" role="status">
+                <ImageOff size={20} aria-hidden />
+                {t("common.image_load_failed")}
+              </div>
+            )}
             {images.length > 1 && (
               <>
                 <button

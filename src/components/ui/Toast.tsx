@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { errorMessage } from "@/lib/api";
+import { t as tr, useT } from "@/i18n";
 import { cn } from "./cn";
 
 type Tone = "info" | "success" | "error";
@@ -38,7 +39,7 @@ export const toast = {
   error: (titleOrError: unknown, text?: ReactNode) => {
     const isNode = typeof titleOrError === "string";
     return useToasts.getState().push(
-      isNode ? { tone: "error", title: titleOrError as string, text } : { tone: "error", title: text ?? "Fehler", text: errorMessage(titleOrError) },
+      isNode ? { tone: "error", title: titleOrError as string, text } : { tone: "error", title: text ?? tr("common.error"), text: errorMessage(titleOrError) },
       8000,
     );
   },
@@ -46,6 +47,8 @@ export const toast = {
 };
 
 export function Toaster() {
+  const t = useT();
+  const closeLabel = t("common.close");
   const items = useToasts((s) => s.items);
   const dismiss = useToasts((s) => s.dismiss);
   return (
@@ -75,7 +78,12 @@ export function Toaster() {
               </button>
             )}
           </div>
-          <button aria-label="Schließen" className="self-start text-dim hover:text-text" onClick={() => dismiss(t.id)}>
+          <button
+            aria-label={closeLabel}
+            className="self-start text-dim hover:text-text"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => dismiss(t.id)}
+          >
             <X size={14} />
           </button>
         </div>

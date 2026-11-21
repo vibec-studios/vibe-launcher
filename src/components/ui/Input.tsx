@@ -1,5 +1,6 @@
 import { forwardRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { Search, X } from "lucide-react";
+import { useT } from "@/i18n";
 import { cn } from "./cn";
 
 // Gefülltes Feld ohne sichtbaren Rahmen; Fokus zeigt den Akzent.
@@ -42,6 +43,7 @@ export interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElem
 
 /** Suchfeld mit Lupe und Löschen-Knopf. */
 export function SearchInput({ value, onChange, className, ...rest }: SearchInputProps) {
+  const t = useT();
   return (
     <Input
       className={className}
@@ -50,7 +52,7 @@ export function SearchInput({ value, onChange, className, ...rest }: SearchInput
       leading={<Search size={15} />}
       trailing={
         value ? (
-          <button type="button" aria-label="Leeren" className="grid h-6 w-6 place-items-center rounded-xs text-dim hover:text-text" onClick={() => onChange("")}>
+          <button type="button" aria-label={t("common.clear")} className="grid h-6 w-6 place-items-center rounded-xs text-dim hover:text-text" onClick={() => onChange("")}>
             <X size={14} />
           </button>
         ) : null

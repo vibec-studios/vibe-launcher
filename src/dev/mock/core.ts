@@ -145,6 +145,15 @@ const handlers: Handlers = {
   instance_set_icon: ({ id }) => instances.get(id as string),
   instance_open_folder: () => null,
   settings_get: () => settings,
+  stores_list: () => settings.stores.map((store) => ({
+    ...store,
+    builtin: store.id === "vibe-craft-studios",
+    homepage: null,
+    description: null,
+    project_count: null,
+    error: null,
+  })),
+  discord_available: () => true,
   appearance_import_background: ({ path }) => path as string,
   app_icon_import: ({ path }) => path as string,
   app_icon_preview: ({ motif, color }) =>

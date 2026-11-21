@@ -69,7 +69,7 @@ const shots = [
   {
     instance_id: "survival",
     file_name: "2026-11-18_19.42.10.png",
-    path: "C:/mock/shots/a.png",
+    path: landscape(1),
     size: 2_400_000,
     width: 1920,
     height: 1080,
@@ -78,7 +78,7 @@ const shots = [
   {
     instance_id: "vanilla",
     file_name: "2026-11-15_12.01.33.png",
-    path: "C:/mock/shots/b.png",
+    path: landscape(2),
     size: 2_100_000,
     width: 1920,
     height: 1080,
@@ -92,7 +92,7 @@ const shots = [
     return {
       instance_id: ["survival", "vanilla", "hh-armors", "old-forge"][n % 4],
       file_name: `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}_${p2(d.getHours())}.${p2(d.getMinutes())}.0${n % 10}.png`,
-      path: `C:/mock/shots/s${n + 3}.png`,
+      path: landscape(n + 3),
       size: 1_800_000 + n * 40_000,
       width: 1920,
       height: 1080,
@@ -122,10 +122,7 @@ const handlers: Handlers = {
   playtime_sessions: ({ since }) => (flag("vl.mock.stats") === "empty" ? [] : sessions.filter((s) => s.end > ((since as number | null) ?? 0))),
   screenshots_list: ({ instanceId }) =>
     flag("vl.mock.shots") === "empty" ? [] : shots.filter((x) => !instanceId || x.instance_id === instanceId),
-  screenshot_thumb: ({ path }) => {
-    const m = /s(\d+)\.png$/.exec(String(path));
-    return landscape(m ? Number(m[1]) : String(path).includes("a.png") ? 1 : 2);
-  },
+  screenshot_thumb: ({ path }) => path,
   worlds_list: (args) => [...((a.worlds_list(args) as World[]) ?? []), ...(extraWorlds[args.instanceId as string] ?? [])],
   servers_recent: () => servers.filter((s) => instances.has(s.instance_id)),
   server_ping: ({ address }) => ({
