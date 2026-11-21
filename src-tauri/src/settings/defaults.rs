@@ -46,6 +46,7 @@ impl Default for Settings {
             dismissed_notices: Vec::new(),
             prefer_dgpu: false,
             afk: crate::afk::AfkSettings::default(),
+            lean: crate::lean::LeanSettings::default(),
         }
     }
 }

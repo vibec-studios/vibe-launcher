@@ -97,6 +97,7 @@ pub struct Settings {
     pub dismissed_notices: Vec<String>,
     pub prefer_dgpu: bool,
     pub afk: crate::afk::AfkSettings,
+    pub lean: crate::lean::LeanSettings,
 }
 
 /// Sicherung vor automatischen Mod-Änderungen. `mode`: "recommended" (Mods, Configs, Optionen) | "mods" | "all" |
