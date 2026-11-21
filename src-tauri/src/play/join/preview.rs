@@ -1,41 +1,10 @@
-//! Beitreten über einen Spiel-Link: Details laden, Vorschau (was wird installiert, wie groß), Instanz einrichten.
-//! Den Start (Quick Play in `relay_host`) übernimmt danach das Frontend über den normalen Start-Weg.
-use super::{find_match, find_vibe_update, missing_mods, valid_code, LinkMod, LinkPack, PlayLink};
-use crate::content::index::ContentIndex;
-use crate::content::{curseforge as cf, import, install, local, modrinth as mr, Source};
-use crate::error::{AppError, AppResult};
-use crate::instance::{CreateInstance, Loader, LoaderKind};
-use crate::state::AppState;
-use crate::tasks::TaskHandle;
-use serde::Serialize;
-use std::time::Duration;
+use super::*;
 
-/// Link vom Backend laden. Unbekannt/abgelaufen -> `NotFound("play_link_expired")`.
-pub async fn fetch(state: &AppState, code: &str) -> AppResult<PlayLink> {
-    let code = code.trim().to_ascii_lowercase();
-    if !valid_code(&code) {
-        return Err(AppError::NotFound("play_link_expired".into()));
-    }
-    let base = crate::vibe::ensure(state, crate::vibe::Feature::Any)?;
-    let r = state.net.client.get(format!("{base}/api/v1/play-links/{code}")).timeout(Duration::from_secs(15)).send().await?;
-    let status = r.status().as_u16();
-    let body = r.text().await?;
-    match status {
-        200 => {
-            let link: PlayLink = serde_json::from_str(&body).map_err(|e| AppError::msg(format!("Antwort des Vibe-Servers ist ungültig: {e}")))?;
-            crate::platform::servers::parse_address(&link.relay_host).map_err(|_| AppError::Invalid("Ungültige Adresse im Spiel-Link".into()))?;
-            Ok(link)
-        }
-        404 => Err(AppError::NotFound("play_link_expired".into())),
-        _ => Err(crate::vibe::api_error(status, &body)),
-    }
-}
-
-fn loader_kind(s: &str) -> AppResult<LoaderKind> {
+pub(super) fn loader_kind(s: &str) -> AppResult<LoaderKind> {
     serde_json::from_value(serde_json::Value::String(s.to_string())).map_err(|_| AppError::Invalid(format!("Unbekannter Loader: {s}")))
 }
 
-fn source_of(s: &str) -> Option<Source> {
+pub(super) fn source_of(s: &str) -> Option<Source> {
     Source::parse(s).filter(|s| matches!(s, Source::Modrinth | Source::Curseforge))
 }
 
@@ -72,7 +41,7 @@ pub struct JoinPreview {
     pub vibe_pack: bool,
 }
 
-fn problem(p: &mut JoinPreview, kind: &str, detail: impl Into<String>) {
+pub(super) fn problem(p: &mut JoinPreview, kind: &str, detail: impl Into<String>) {
     p.problem = Some(kind.into());
     p.problem_detail = Some(detail.into());
 }
@@ -164,7 +133,7 @@ pub async fn preview(state: &AppState, link: &PlayLink) -> AppResult<JoinPreview
     Ok(p)
 }
 
-async fn vibe_preview(state: &AppState, link: &PlayLink, mut p: JoinPreview) -> AppResult<JoinPreview> {
+pub(super) async fn vibe_preview(state: &AppState, link: &PlayLink, mut p: JoinPreview) -> AppResult<JoinPreview> {
     let Some(vp) = link.vibe_pack.clone() else { return Ok(p) };
     p.vibe_pack = true;
     p.pack_title = Some(vp.name.clone()).filter(|n| !n.is_empty());
@@ -198,16 +167,16 @@ async fn vibe_preview(state: &AppState, link: &PlayLink, mut p: JoinPreview) -> 
     Ok(p)
 }
 
-struct PackPreview {
-    title: Option<String>,
-    icon: Option<String>,
-    version: Option<String>,
-    files: usize,
-    bytes: Option<u64>,
-    manual: Vec<String>,
+pub(super) struct PackPreview {
+    pub(super) title: Option<String>,
+    pub(super) icon: Option<String>,
+    pub(super) version: Option<String>,
+    pub(super) files: usize,
+    pub(super) bytes: Option<u64>,
+    pub(super) manual: Vec<String>,
 }
 
-async fn pack_preview(state: &AppState, pack: &LinkPack) -> AppResult<PackPreview> {
+pub(super) async fn pack_preview(state: &AppState, pack: &LinkPack) -> AppResult<PackPreview> {
     let src = source_of(&pack.source).ok_or_else(|| AppError::Invalid("Unbekannte Modpack-Quelle".into()))?;
     let brief = crate::content::provider::brief(state, src, &pack.project_id).await?;
     let mut out = PackPreview { title: Some(brief.title.clone()), icon: brief.icon_url.clone(), version: None, files: 0, bytes: None, manual: vec![] };
@@ -244,7 +213,7 @@ async fn pack_preview(state: &AppState, pack: &LinkPack) -> AppResult<PackPrevie
 }
 
 /// Größe der CurseForge-Dateien; gesperrte ohne Modrinth-Spiegel -> Titel für „selbst herunterladen“.
-async fn cf_sizes(state: &AppState, files: &[cf::CfFile]) -> (u64, Vec<String>) {
+pub(super) async fn cf_sizes(state: &AppState, files: &[cf::CfFile]) -> (u64, Vec<String>) {
     let bytes = files.iter().map(|f| f.file_length).sum();
     let locked: Vec<&cf::CfFile> = files.iter().filter(|f| f.locked()).collect();
     if locked.is_empty() {
@@ -263,7 +232,7 @@ async fn cf_sizes(state: &AppState, files: &[cf::CfFile]) -> (u64, Vec<String>) 
 }
 
 /// Größe der Inhalte aus dem Link (nur mit Versions-ID bekannt) -> (Bytes, alles bekannt, manuelle Downloads).
-async fn mods_size(state: &AppState, mods: &[&LinkMod]) -> (u64, bool, Vec<String>) {
+pub(super) async fn mods_size(state: &AppState, mods: &[&LinkMod]) -> (u64, bool, Vec<String>) {
     let mut known = true;
     let mut bytes = 0;
     let mr_ids: Vec<String> = mods.iter().filter(|m| m.source == "modrinth").filter_map(|m| m.version_id.clone()).collect();
@@ -293,151 +262,4 @@ async fn mods_size(state: &AppState, mods: &[&LinkMod]) -> (u64, bool, Vec<Strin
         manual = m;
     }
     (bytes, known, manual)
-}
-
-/// Name einer neuen Instanz: Modpack-Titel bzw. „<Welt> (<Host>)“.
-pub fn new_instance_name(link: &PlayLink) -> String {
-    if let Some(t) = link.pack.as_ref().and_then(|p| p.title.clone()).filter(|t| !t.trim().is_empty()) {
-        return t;
-    }
-    match link.world_name.as_deref().map(str::trim).filter(|w| !w.is_empty()) {
-        Some(w) => format!("{w} ({})", link.host.name),
-        None => format!("Welt von {}", link.host.name),
-    }
-}
-
-/// Task-Körper: passende Instanz nehmen oder anlegen, Inhalte und Client-Pack installieren.
-/// Setzt die Instanz der Aufgabe (`task.instance_id`), damit das Frontend danach starten kann.
-pub async fn run_setup(state: AppState, task: TaskHandle, link: PlayLink, instance_id: Option<String>) -> AppResult<()> {
-    let kind = loader_kind(&link.loader.kind)?;
-    let vibe = link.vibe_pack.as_ref().filter(|v| v.available).cloned();
-    let inst = match (instance_id, &vibe) {
-        (Some(id), Some(vp)) => {
-            let inst = state.instances.get(&id)?;
-            if super::vibe_pack_match(vp, &inst) == Some(super::VibeMatch::OtherVersion) {
-                task.stage(format!("Aktualisiere {} auf {} …", inst.name, vp.version), Some(0.02));
-                let input = crate::content::modpack_from::PackInput::Vibe { code: vp.code.clone(), version_id: Some(vp.version_id.clone()), link: Some(link.code.clone()) };
-                crate::content::modpack_from::run_update(state.clone(), task.clone(), inst.id.clone(), input).await?;
-                state.instances.get(&id)?
-            } else {
-                inst
-            }
-        }
-        (Some(id), None) => state.instances.get(&id)?,
-        (None, Some(_)) => {
-            let before: std::collections::HashSet<String> = state.instances.list().into_iter().map(|i| i.id).collect();
-            crate::vibe::packs::install_from(state.clone(), task.clone(), crate::vibe::pack_fetch::PackOrigin::PlayLink { link: link.code.clone() }, None).await?;
-            state
-                .instances
-                .list()
-                .into_iter()
-                .filter(|i| !before.contains(&i.id))
-                .max_by_key(|i| i.created_at)
-                .ok_or_else(|| AppError::msg("Die neue Instanz wurde nicht gefunden"))?
-        }
-        (None, None) => match &link.pack {
-            Some(pack) => {
-                let src = source_of(&pack.source).ok_or_else(|| AppError::Invalid("Unbekannte Modpack-Quelle".into()))?;
-                let before: std::collections::HashSet<String> = state.instances.list().into_iter().map(|i| i.id).collect();
-                import::run_modpack_install(state.clone(), task.clone(), src, pack.project_id.clone(), Some(pack.version_id.clone())).await?;
-                state
-                    .instances
-                    .list()
-                    .into_iter()
-                    .filter(|i| !before.contains(&i.id))
-                    .max_by_key(|i| i.created_at)
-                    .ok_or_else(|| AppError::msg("Die neue Instanz wurde nicht gefunden"))?
-            }
-            None => {
-                task.stage("Lege das Spiel an …", None);
-                let loader_version = match (&link.loader.version, kind) {
-                    (_, LoaderKind::Vanilla) => None,
-                    (Some(v), _) => Some(v.clone()),
-                    (None, k) => Some(crate::minecraft::loaders::default_loader_version(&state, k, &link.mc_version).await?),
-                };
-                state.instances.create(CreateInstance {
-                    name: new_instance_name(&link),
-                    mc_version: link.mc_version.clone(),
-                    loader: Loader { kind, version: loader_version },
-                    icon: None,
-                    accent: None,
-                    group: None,
-                })?
-            }
-        },
-    };
-    task.set_instance(inst.id.clone());
-    task.set_title(format!("Einladung von {}: {}", link.host.name, inst.name));
-    crate::events::emit(&state.app, crate::events::INSTANCE_CHANGED, &inst);
-    task.check()?;
-
-    // Fehlende Inhalte aus der Liste
-    let (_, idx) = local::refresh(&state, &inst.id, crate::content::ContentKind::Mod).await?;
-    let missing: Vec<(Source, String, Option<String>)> = missing_mods(&link, &idx)
-        .into_iter()
-        .filter_map(|m| Some((source_of(&m.source)?, m.project_id.clone(), m.version_id.clone())))
-        .collect();
-    let mut warnings = vec![];
-    let mut manual = 0;
-    if !missing.is_empty() {
-        let n = missing.len();
-        let chunks: Vec<_> = missing.chunks(100).map(|c| c.to_vec()).collect();
-        let steps = chunks.len() as f64;
-        for (i, roots) in chunks.into_iter().enumerate() {
-            task.check()?;
-            task.stage(format!("Installiere Inhalte ({}/{n}) …", (i * 100).min(n)), Some(0.1 + 0.8 * i as f64 / steps));
-            let idx = ContentIndex::load(&state.paths, &inst.id);
-            let planned = install::plan(&state, &inst, &idx, roots, &mut warnings).await?;
-            let sub = task.sub(0.1 + 0.8 * i as f64 / steps, 0.1 + 0.8 * (i + 1) as f64 / steps);
-            manual += install::apply(&state, &inst, planned, &sub).await?.len();
-        }
-        if manual > 0 {
-            crate::content::missing::watch(&state, &inst.id, crate::content::missing::WATCH_FOR);
-        }
-    }
-    for w in &warnings {
-        tracing::warn!("Spiel-Link {}: {w}", link.code);
-    }
-
-    // Client-Pack (z. B. Vibey Client) – nicht kritisch
-    if let Some(cp) = link.client_pack.as_deref() {
-        let installed = crate::client_packs::installed_ids(&state, &inst.id);
-        if !installed.iter().any(|x| x == cp) {
-            match crate::client_packs::precheck(&state, &inst.id, cp, true) {
-                Ok((_, _, others)) => {
-                    task.stage(format!("Installiere {} …", crate::client_packs::pretty(cp)), Some(0.92));
-                    if let Err(e) = crate::client_packs::install(state.clone(), task.clone(), inst.id.clone(), cp.to_string(), others).await {
-                        tracing::warn!("Client-Pack {cp} für Spiel-Link nicht installiert: {e}");
-                        warnings.push(format!("{}: {e}", crate::client_packs::pretty(cp)));
-                    }
-                }
-                Err(e) => tracing::info!("Client-Pack {cp} passt nicht zu {}: {e}", inst.id),
-            }
-        }
-    }
-    task.set_title(format!("Einladung von {}: {}", link.host.name, inst.name));
-    task.message(if manual > 0 { format!("Bereit – {manual} Datei(en) musst du noch selbst herunterladen") } else { "Bereit zum Beitreten".to_string() });
-    crate::events::emit(&state.app, crate::events::INSTANCE_CHANGED, &inst);
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn names() {
-        let mut l: PlayLink = serde_json::from_value(serde_json::json!({
-            "code": "k3x9q2", "url": "u", "host": { "uuid": "u", "name": "Henny" }, "relay_host": "a.axolite.cc",
-            "mc_version": "1.21.1", "loader": { "kind": "fabric" }, "world_name": "Neue Welt", "expires_at": "x"
-        }))
-        .unwrap();
-        assert_eq!(new_instance_name(&l), "Neue Welt (Henny)");
-        l.world_name = None;
-        assert_eq!(new_instance_name(&l), "Welt von Henny");
-        l.pack = Some(LinkPack { source: "modrinth".into(), project_id: "a".into(), version_id: "b".into(), title: Some("Cobblemon".into()) });
-        assert_eq!(new_instance_name(&l), "Cobblemon");
-        assert!(loader_kind("neoforge").is_ok());
-        assert!(loader_kind("rift").is_err());
-    }
 }
