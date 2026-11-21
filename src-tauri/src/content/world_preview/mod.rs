@@ -1,6 +1,7 @@
 mod anvil;
 mod colors;
 mod info;
+pub mod mods;
 
 use crate::error::{AppError, AppResult};
 use std::fs::{self, File};

@@ -35,7 +35,7 @@ function mapImage(isPlayer: boolean): string {
 
 const handlers: Handlers = {
   world_preview_info: () => info,
-  world_preview_render: async ({ center, ready }) => {
+  world_preview_render: async ({ center, dimension, ready }) => {
     const id = crypto.randomUUID();
     const controller = new AbortController();
     const channel = ready as Channel<string>;
@@ -50,7 +50,8 @@ const handlers: Handlers = {
         }, { once: true });
       });
       if (controller.signal.aborted) throw { kind: "cancelled" };
-      return { png: mapImage(center === "player"), position: center === "player" ? info.player : info.spawn, radius: 128 };
+      const position = center === "player" ? info.player! : info.spawn!;
+      return { png: mapImage(center === "player"), position: { ...position, dimension: (dimension as string | null) ?? position.dimension }, radius: 128 };
     } finally {
       jobs.delete(id);
       const { __TAURI_INTERNALS__: ipc } = window as unknown as {

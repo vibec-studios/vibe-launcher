@@ -31,12 +31,21 @@ pub fn render(
     world: &Path,
     cache: &Path,
     center: Center,
+    dimension: Option<&str>,
     cancel: &CancellationToken,
 ) -> AppResult<Option<MapPreview>> {
     check(cancel)?;
-    let Some(position) = read_position(world, center)? else {
+    let Some(mut position) = read_position(world, center)? else {
         return Ok(None);
     };
+    let mut label = center.name().to_string();
+    if let Some(dimension) = dimension {
+        let Some(moved) = position.in_dimension(dimension) else {
+            return Err(AppError::Invalid("Dimension".into()));
+        };
+        position = moved;
+        label = format!("{label}-{}", dimension.rsplit(':').next().unwrap_or("dim"));
+    }
     let Some(dir) = position.region(world) else {
         return Ok(None);
     };
@@ -78,7 +87,7 @@ pub fn render(
     }
     let key = hex::encode(revision.finalize());
     let world_key = hex::encode(Sha256::digest(world.as_os_str().as_encoded_bytes()));
-    let cache_file = cache_path(cache, &world_key, center, &key).ok();
+    let cache_file = cache_path(cache, &world_key, &label, &key).ok();
     if let Some(bytes) = cache_file.as_ref().and_then(|p| read_cache(p).ok()) {
         check(cancel)?;
         return Ok(Some(preview(bytes, position)));
@@ -125,7 +134,7 @@ pub fn render(
         .map_err(|e| AppError::msg(e.to_string()))?;
     check(cancel)?;
     if let Some(path) = cache_file {
-        let _ = save_cache(&path, &bytes, center);
+        let _ = save_cache(&path, &bytes, &label);
     }
     Ok(Some(preview(bytes, position)))
 }
@@ -168,7 +177,7 @@ fn stamp(hash: &mut Sha256, meta: &Metadata) {
     }
 }
 
-fn cache_path(root: &Path, world: &str, center: Center, key: &str) -> io::Result<PathBuf> {
+fn cache_path(root: &Path, world: &str, label: &str, key: &str) -> io::Result<PathBuf> {
     let root = root.canonicalize()?;
     let mut dir = root.clone();
     for name in ["world-preview", world] {
@@ -186,7 +195,7 @@ fn cache_path(root: &Path, world: &str, center: Center, key: &str) -> io::Result
     if !outside_worlds(&dir) {
         return Err(io::ErrorKind::PermissionDenied.into());
     }
-    Ok(dir.join(format!("{}-{key}.png", center.name())))
+    Ok(dir.join(format!("{label}--{key}.png")))
 }
 
 fn read_cache(path: &Path) -> io::Result<Vec<u8>> {
@@ -200,7 +209,7 @@ fn read_cache(path: &Path) -> io::Result<Vec<u8>> {
     Ok(bytes)
 }
 
-fn save_cache(path: &Path, bytes: &[u8], center: Center) -> io::Result<()> {
+fn save_cache(path: &Path, bytes: &[u8], label: &str) -> io::Result<()> {
     let tmp = path.with_extension(format!("{}.tmp", uuid::Uuid::new_v4()));
     let mut file = OpenOptions::new().write(true).create_new(true).open(&tmp)?;
     let result = file.write_all(bytes);
@@ -209,7 +218,7 @@ fn save_cache(path: &Path, bytes: &[u8], center: Center) -> io::Result<()> {
         let _ = fs::remove_file(&tmp);
         return Err(error);
     }
-    let prefix = format!("{}-", center.name());
+    let prefix = format!("{label}--");
     if let Some(parent) = path.parent() {
         for old in fs::read_dir(parent)?.flatten() {
             if old.path() != path

@@ -53,6 +53,7 @@ pub async fn world_preview_render(
     instance_id: String,
     folder: String,
     center: Center,
+    dimension: Option<String>,
     ready: Channel<String>,
 ) -> AppResult<Option<MapPreview>> {
     let saves = saves(&state, &instance_id)?;
@@ -71,6 +72,7 @@ pub async fn world_preview_render(
             &world_preview::world_dir(&saves, &folder)?,
             &cache,
             center,
+            dimension.as_deref(),
             &token,
         )
     })

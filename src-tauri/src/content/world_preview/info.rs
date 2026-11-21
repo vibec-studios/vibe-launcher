@@ -39,6 +39,30 @@ impl Position {
         (range.contains(&x) && range.contains(&z)).then_some(Self { x, z, dimension })
     }
 
+    pub fn in_dimension(self, dimension: &str) -> Option<Self> {
+        const VANILLA: [&str; 3] = [
+            "minecraft:overworld",
+            "minecraft:the_nether",
+            "minecraft:the_end",
+        ];
+        if !VANILLA.contains(&dimension) {
+            return None;
+        }
+        if self.dimension == dimension {
+            return Some(self);
+        }
+        let (x, z) = match (self.dimension.as_str(), dimension) {
+            ("minecraft:overworld", "minecraft:the_nether") => {
+                (self.x.div_euclid(8), self.z.div_euclid(8))
+            }
+            ("minecraft:the_nether", "minecraft:overworld") => {
+                (self.x.saturating_mul(8), self.z.saturating_mul(8))
+            }
+            _ => (0, 0),
+        };
+        Self::new(x, z, dimension.to_string())
+    }
+
     pub fn region(&self, world: &Path) -> Option<PathBuf> {
         let (namespace, name) = self.dimension.split_once(':')?;
         let modern = world

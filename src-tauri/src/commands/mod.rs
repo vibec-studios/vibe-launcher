@@ -3,6 +3,7 @@ pub mod auth;
 pub mod bedrock;
 pub mod content;
 pub mod world_preview;
+pub mod world_map;
 pub mod sets;
 pub mod organize;
 pub mod core;
