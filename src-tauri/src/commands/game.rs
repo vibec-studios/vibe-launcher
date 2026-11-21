@@ -70,9 +70,14 @@ pub async fn instance_launch(
     world: Option<String>,
     server: Option<String>,
     offline: Option<bool>,
+    afk: Option<bool>,
 ) -> AppResult<String> {
     crate::content::migration::guard(&state, &id)?;
     let inst = state.instances.get(&id)?;
+    let afk = afk == Some(true);
+    if afk && (inst.is_bedrock() || !state.settings().afk.enabled) {
+        return Err(AppError::Invalid("Der Hintergrund-Start (AFK) ist für diese Instanz nicht verfügbar.".into()));
+    }
     // Bedrock: eigener Ablauf (kein Java, kein Account – das Spiel meldet sich selbst bei Xbox an)
     if inst.is_bedrock() {
         return crate::bedrock::game::start(&state, &id);
@@ -101,6 +106,9 @@ pub async fn instance_launch(
     crate::content::migration::guard(&state, &id)?;
     let run = state.game.begin_with(&id, BeginOpts { exclusive: false, world: world.as_deref(), server: server.as_deref() })?;
     drop(guard);
+    if afk {
+        crate::afk::request(&state, &run)?;
+    }
     if offline == Some(true) {
         state.auth.grant_offline(account_id.as_deref());
     }

@@ -8,6 +8,8 @@ import type { GameState, Instance, LogLine } from "@/lib/types";
 import { ct } from "./i18n";
 import { LogView } from "./LogView";
 import { useConsoleData } from "./useConsoleData";
+import { AfkPanel } from "@/features/afk/AfkPanel";
+import { useConsoleAfk, ViewSwitch } from "@/features/afk/ConsoleAfk";
 
 const EMPTY: LogLine[] = [];
 const DOT: Record<LevelCat, string> = { info: "bg-text", warn: "bg-warn", error: "bg-danger", debug: "bg-dim", launcher: "bg-brand" };
@@ -82,6 +84,7 @@ export function ConsoleApp() {
   const [copied, setCopied] = useState(false);
   const dq = useDeferredValue(query.trim().toLowerCase());
   const now = useNow();
+  const afk = useConsoleAfk(current);
 
   const { shown, counts } = useMemo(() => {
     const counts: Record<LevelCat, number> = { info: 0, warn: 0, error: 0, debug: 0, launcher: 0 };
@@ -116,8 +119,13 @@ export function ConsoleApp() {
         {runs.map((r) => (
           <Tab key={r.run_id} r={r} inst={instances[r.instance_id]} on={r.run_id === current?.run_id} onClick={() => select(r.run_id)} />
         ))}
+        {afk.available && current && <ViewSwitch view={afk.view} onChange={afk.setView} background={afk.background} />}
       </div>
 
+      {afk.view === "afk" && current ? (
+        <AfkPanel run={current} session={afk.session} />
+      ) : (
+      <>
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-line px-2 py-1.5">
         <label className="flex h-8 min-w-[100px] max-w-[230px] flex-[1_1_100px] items-center gap-2 rounded-ctl bg-surface2 px-2.5 text-muted focus-within:text-text">
           <Search size={14} className="shrink-0" />
@@ -174,6 +182,8 @@ export function ConsoleApp() {
             <div className="mt-1 text-[12.5px] text-muted">{ct("console.empty_text")}</div>
           </div>
         </div>
+      )}
+      </>
       )}
 
       <div className="flex h-7 shrink-0 items-center gap-3 border-t border-line px-3 text-[11.5px] text-dim">

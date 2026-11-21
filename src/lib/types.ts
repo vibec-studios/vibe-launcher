@@ -173,6 +173,8 @@ export interface Settings {
   simple_tour_done: boolean;
   /** Weggeklickte Hinweise/Ankündigungen (je `id`, z. B. "domain-move-2026-11"; docs/DOMAINS.md) */
   dismissed_notices: string[];
+  /** AFK-Modus (Experimentell, docs/AFK.md) */
+  afk?: import("@/features/afk/types").AfkSettings;
   prefer_dgpu?: boolean;
 }
 

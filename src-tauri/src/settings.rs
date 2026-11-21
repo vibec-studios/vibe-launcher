@@ -103,6 +103,7 @@ pub struct Settings {
     /// Weggeklickte Hinweise/Ankündigungen (je `id`, z. B. "domain-move-2026-11"; docs/DOMAINS.md)
     pub dismissed_notices: Vec<String>,
     pub prefer_dgpu: bool,
+    pub afk: crate::afk::AfkSettings,
 }
 
 /// Sicherung vor automatischen Mod-Änderungen. `mode`: "recommended" (Mods, Configs, Optionen) | "mods" | "all" |
@@ -513,6 +514,7 @@ impl Default for Settings {
             simple_tour_done: false,
             dismissed_notices: Vec::new(),
             prefer_dgpu: false,
+            afk: crate::afk::AfkSettings::default(),
         }
     }
 }

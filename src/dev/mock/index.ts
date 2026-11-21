@@ -27,6 +27,7 @@ import packupdate from "./packupdate";
 import worldMap from "./world-map";
 import socialw4 from "./socialw4";
 import vibemedia from "./vibemedia";
+import { afkMock } from "./afk";
 import { withLiveModrinth } from "./modrinth-live";
 import type { Handlers } from "./util";
 
@@ -45,6 +46,7 @@ Object.assign(base, worldPreview);
 Object.assign(base, worldMap);
 Object.assign(base, socialw4);
 Object.assign(base, vibemedia);
+Object.assign(base, afkMock(base));
 // „Neu prüfen“: Updates, Probleme und Modpack-Prüfung der übrigen Mocks bündeln (etwas länger, damit der
 // Spinner am Knopf sichtbar ist; Screenshots: localStorage vl.mock.refresh = Millisekunden)
 base.instance_refresh = async (args) => {
