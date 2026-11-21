@@ -1,119 +1,6 @@
-use super::stream::{Eof, Reader};
-use super::tint::{self, Block, Climate, Tint, GRASS, WATER};
-use super::Canvas;
-use crate::content::world_preview::colors::Color;
+use super::*;
 
-const NOT_GRASS: u32 = 1;
-const OVERLAYS: u32 = 1 << 1;
-const VERTICAL_SLOPE: u32 = 1 << 4;
-const HEIGHT_BYTE: u32 = 1 << 6;
-const BIOME: u32 = 1 << 20;
-const STATE_NEW: u32 = 1 << 21;
-const BIOME_NEW: u32 = 1 << 22;
-const BIOME_NUMERIC: u32 = 1 << 23;
-const TOP_HEIGHT: u32 = 1 << 24;
-const OVERLAY_NOT_WATER: u32 = 1;
-const OVERLAY_OPACITY: u32 = 1 << 3;
-const OVERLAY_STATE_NEW: u32 = 1 << 10;
-pub const MAX_MAJOR: u16 = 8;
-pub const MAX_MINOR: i32 = 8;
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Decoded {
-    Image,
-    Empty,
-    Cancelled,
-    Unsupported { major: u16, minor: i32 },
-}
-
-#[derive(Clone, Copy)]
-struct Framing {
-    major: u16,
-    minor: i32,
-    v2: bool,
-}
-
-impl Framing {
-    fn legacy_slope(self) -> bool {
-        self.minor < 5 || (self.major <= 2 && !self.v2)
-    }
-
-    fn height_shift(self) -> u32 {
-        if self.minor >= 4 {
-            25
-        } else {
-            24
-        }
-    }
-}
-
-#[derive(Default)]
-struct Palettes {
-    states: Vec<Block>,
-    biomes: Vec<Climate>,
-}
-
-struct Overlay {
-    block: Block,
-    opacity: i32,
-}
-
-pub fn decode(stream: &[u8], canvas: &mut Canvas, cancelled: &dyn Fn() -> bool) -> Decoded {
-    let mut reader = Reader::new(stream);
-    let Ok(first) = reader.u8() else {
-        return Decoded::Empty;
-    };
-    let (framing, mut pending) = if first == 0xFF {
-        let Ok(packed) = reader.i32() else {
-            return Decoded::Empty;
-        };
-        let major = ((packed >> 16) & 0xFFFF) as u16;
-        let minor = packed & 0xFFFF;
-        if major > MAX_MAJOR || minor > MAX_MINOR {
-            return Decoded::Unsupported { major, minor };
-        }
-        let v2 = major == 2 && minor >= 5 && reader.u8().is_ok_and(|flag| flag == 1);
-        (Framing { major, minor, v2 }, None)
-    } else {
-        (
-            Framing {
-                major: 0,
-                minor: -1,
-                v2: false,
-            },
-            Some(first),
-        )
-    };
-    let mut palettes = Palettes::default();
-    loop {
-        if cancelled() {
-            return Decoded::Cancelled;
-        }
-        let marker = match pending.take() {
-            Some(marker) => marker,
-            None if reader.is_done() => break,
-            None => match reader.u8() {
-                Ok(marker) => marker,
-                Err(Eof) => break,
-            },
-        };
-        if marker & 0x88 != 0 {
-            break;
-        }
-        let cx = u32::from(marker >> 4);
-        let cz = u32::from(marker & 15);
-        if chunk(&mut reader, framing, &mut palettes, canvas, cx, cz).is_err() {
-            break;
-        }
-    }
-    if canvas.painted {
-        Decoded::Image
-    } else {
-        Decoded::Empty
-    }
-}
-
-fn chunk(
+pub(super) fn chunk(
     reader: &mut Reader,
     framing: Framing,
     palettes: &mut Palettes,
@@ -151,7 +38,7 @@ fn chunk(
     Ok(())
 }
 
-fn state(
+pub(super) fn state(
     reader: &mut Reader,
     framing: Framing,
     palettes: &mut Palettes,
@@ -181,7 +68,7 @@ fn state(
         }))
 }
 
-fn pixel(
+pub(super) fn pixel(
     reader: &mut Reader,
     params: u32,
     framing: Framing,
@@ -244,7 +131,7 @@ fn pixel(
     Ok((color, height))
 }
 
-fn biome(
+pub(super) fn biome(
     reader: &mut Reader,
     params: u32,
     framing: Framing,
@@ -276,7 +163,7 @@ fn biome(
         .unwrap_or_default())
 }
 
-fn overlay(reader: &mut Reader, framing: Framing, palettes: &mut Palettes) -> Result<Overlay, Eof> {
+pub(super) fn overlay(reader: &mut Reader, framing: Framing, palettes: &mut Palettes) -> Result<Overlay, Eof> {
     let params = reader.i32()? as u32;
     let block = if params & OVERLAY_NOT_WATER != 0 {
         state(reader, framing, palettes, params & OVERLAY_STATE_NEW != 0)?
