@@ -1,7 +1,5 @@
 // Mini-i18n: flache Schlüssel, Deutsch + Englisch. Jeder Bereich hat eine eigene Datei
 // (src/i18n/<bereich>.ts) mit `{ de: {...}, en: {...} }` – so gibt es keine Merge-Konflikte.
-// Weitere Sprachen liegen als JSON unter src/i18n/locales/<sprache>/<bereich>.json (docs/TRANSLATING.md)
-// und fallen für fehlende Schlüssel auf Englisch zurück.
 // Platzhalter: "Hallo {name}" + t("key", { name: "Steve" }).
 import { create } from "zustand";
 import common from "./common";
@@ -66,7 +64,6 @@ const locales = import.meta.glob<{ default: Dict; extras?: Record<string, unknow
 const loading = new Map<Lang, Promise<void>>();
 const extras: Partial<Record<Lang, Record<string, unknown>>> = {};
 
-/** Strukturierte Zusatz-Übersetzungen (z. B. Hilfe-Center) aus src/i18n/locales/<sprache>/help/<name>.json. */
 export function localeExtra<T>(lang: Lang, name: string): T | undefined {
   return extras[lang]?.[name] as T | undefined;
 }
@@ -97,7 +94,6 @@ interface LangState {
   /** Simple-Modus: Schlüssel mit `simple:`-Variante (src/i18n/simple.ts) nutzen einfache Wörter ohne Fachbegriffe.
    *  Gesetzt von `ModeHost` (src/lib/mode.tsx). */
   simple: boolean;
-  /** Zählt geladene Sprachpakete hoch, damit `useT` nach dem Nachladen neu rendert. */
   rev: number;
   setLang: (l: Lang) => void;
 }
@@ -115,7 +111,6 @@ export const useLang = create<LangState>((set) => ({
   },
 }));
 
-/** Lädt die gespeicherte Sprache vor dem ersten Rendern (main.tsx). */
 export const i18nReady: Promise<void> = loadLang(useLang.getState().lang);
 
 function localStorageGet(k: string): string | null {
