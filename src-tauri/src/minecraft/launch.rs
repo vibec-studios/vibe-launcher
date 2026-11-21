@@ -192,6 +192,10 @@ pub fn build(state: &AppState, inst: &Instance, prep: &Prepared, acc: &LaunchAcc
         jvm.push(substitute(&l.argument, &v));
     }
     jvm.extend(user_jvm.iter().map(|a| substitute(a, &vars)));
+    // Log4Shell: zusätzlich zu Mojangs Log-Konfiguration immer Lookups abschalten (Defense in depth)
+    if !jvm.iter().any(|a| a.starts_with("-Dlog4j2.formatMsgNoLookups")) {
+        jvm.push(super::log4shell::NO_LOOKUPS.into());
+    }
 
     // Spiel
     let mut game: Vec<String> = Vec::new();
@@ -332,6 +336,9 @@ pub async fn launch(
         format!("Java {} ({}, {}): {}", j.version, j.vendor.clone().unwrap_or_else(|| "unbekannt".into()), j.arch, j.path),
     );
     gm.launcher_line(run, LogLevel::Launcher, format!("Version: {} · Spielordner: {}", prep.resolved.id, plan.cwd.display()));
+    if let Some(w) = log4shell_warning(&prep.resolved.base_id, prep.resolved.logging.is_some() && prep.log_config.is_some()) {
+        gm.launcher_line(run, LogLevel::Warn, w);
+    }
     gm.launcher_line(run, LogLevel::Launcher, format!("Startbefehl: {}", plan.display));
     if let Some(cmd) = inst.hooks.pre_launch.as_deref().filter(|c| !c.trim().is_empty()) {
         task.stage("Pre-Launch-Befehl läuft …", Some(0.95));
@@ -359,6 +366,19 @@ pub async fn launch(
     let child = cmd.spawn().map_err(|e| AppError::msg(format!("Spiel konnte nicht gestartet werden ({}): {e}", program.display())))?;
     gm.attach(state.clone(), run.to_string(), child);
     Ok(())
+}
+
+/// Warnung, wenn eine anfällige Version (< 1.18.1) ohne Mojangs Log-Konfiguration startet.
+fn log4shell_warning(mc: &str, has_logging: bool) -> Option<String> {
+    use super::log4shell::{exposure, Exposure};
+    let e = exposure(mc);
+    if has_logging || !e.vulnerable() {
+        return None;
+    }
+    let extra = if e == Exposure::Legacy { " Bei 1.7–1.11 wirkt die JVM-Option nicht – bitte Instanz reparieren." } else { "" };
+    Some(format!(
+        "Log4Shell-Warnung: Die Versionsdaten von {mc} enthalten keine Log-Konfiguration (Mojangs Schutz fehlt, z. B. kaputte oder importierte Version-JSON). Aktiv ist nur -Dlog4j2.formatMsgNoLookups=true.{extra}"
+    ))
 }
 
 fn redirect_logs(plan: &mut LaunchPlan, cfg: &std::path::Path, slot: u32) -> Option<PathBuf> {
@@ -399,6 +419,16 @@ fn skip_onboarding(game_dir: &std::path::Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn log4shell_warn() {
+        assert!(log4shell_warning("1.16.5", true).is_none());
+        assert!(log4shell_warning("1.20.1", false).is_none());
+        assert!(log4shell_warning("1.6.4", false).is_none());
+        assert!(log4shell_warning("1.16.5", false).unwrap().contains("1.16.5"));
+        assert!(log4shell_warning("1.8.9", false).unwrap().contains("reparieren"));
+        assert!(!log4shell_warning("1.17.1", false).unwrap().contains("reparieren"));
+    }
+
     #[test]
     fn subst() {
         let mut v = HashMap::new();

@@ -433,6 +433,7 @@ impl ServerManager {
                 let Some(stream) = stream else { return };
                 let mut reader = tokio::io::BufReader::with_capacity(64 * 1024, stream);
                 let mut parser = LineParser::new(is_err);
+                let mut log4shell = crate::minecraft::log4shell::Watch::default();
                 let mut buf = Vec::new();
                 loop {
                     buf.clear();
@@ -440,6 +441,7 @@ impl ServerManager {
                         Ok(0) | Err(_) => break,
                         Ok(_) => {
                             let line = decode_line(&buf);
+                            let warnings = log4shell.check(&line);
                             let mut parsed = parser.feed(&line);
                             // JVM-Hinweise auf stderr („WARNING: …“) sind keine Fehler
                             for p in parsed.iter_mut() {
@@ -451,6 +453,9 @@ impl ServerManager {
                             if let Some(m) = me.upgrade() {
                                 let texts: Vec<String> = parsed.iter().map(|p| p.text.clone()).collect();
                                 m.push(&id, parsed);
+                                for w in warnings {
+                                    m.launcher_line(&id, LogLevel::Warn, w);
+                                }
                                 for t in &texts {
                                     m.inspect(&state, &id, t);
                                 }
@@ -686,10 +691,25 @@ async fn spawn_process(state: &AppState, id: &str) -> AppResult<()> {
         "-Dstdout.encoding=UTF-8".into(),
         "-Dstderr.encoding=UTF-8".into(),
     ];
-    if let Some(a) = &s.jvm_args {
-        args.extend(crate::minecraft::launch::split_args(a));
-    }
+    let user_jvm = s.jvm_args.as_deref().map(crate::minecraft::launch::split_args).unwrap_or_default();
+    // Log4Shell (CVE-2021-44228/-45046): JVM-Option immer, für 1.7–1.16.5 zusätzlich Mojangs gepatchte Log-Konfiguration
+    let own_log4j = crate::minecraft::log4shell::has_own_config(&user_jvm);
+    let log4j_cfg = if own_log4j {
+        None
+    } else {
+        match crate::minecraft::log4shell::ensure_server_config(&state.net, &state.paths.assets().join("log_configs"), &s.mc_version).await {
+            Ok(p) => p,
+            Err(e) => {
+                mgr.launcher_line(id, LogLevel::Warn, format!("Log4j-Schutzkonfiguration nicht verfügbar ({e}) – nur JVM-Option gesetzt."));
+                None
+            }
+        }
+    };
+    let log4j_args = crate::minecraft::log4shell::server_args(&user_jvm, log4j_cfg.as_deref());
+    args.extend(user_jvm);
+    args.extend(log4j_args);
     args.extend(spec.args.iter().cloned());
+    mgr.launcher_line(id, LogLevel::Launcher, log4shell_note(&s.mc_version, log4j_cfg.is_some(), own_log4j));
     args.push("nogui".into());
     mgr.launcher_line(id, LogLevel::Launcher, format!("Java: {}", java.display()));
     mgr.launcher_line(id, LogLevel::Launcher, format!("Startbefehl: java {}", args.join(" ")));
@@ -707,6 +727,20 @@ async fn spawn_process(state: &AppState, id: &str) -> AppResult<()> {
     let _ = state.servers.modify(id, |x| x.last_started = Some(crate::util::now_ms()));
     mgr.attach(state.clone(), id.to_string(), child);
     Ok(())
+}
+
+/// Hinweiszeile zum Log4Shell-Schutz fürs Server-Log.
+fn log4shell_note(mc: &str, config: bool, own_config: bool) -> String {
+    let how = if own_config {
+        "JVM-Option gesetzt, eigene Log4j-Konfiguration bleibt"
+    } else if config {
+        "JVM-Option + Mojangs gepatchte Log-Konfiguration"
+    } else if crate::minecraft::log4shell::exposure(mc).vulnerable() {
+        "JVM-Option gesetzt"
+    } else {
+        "Version bereits gepatcht, JVM-Option zusätzlich gesetzt"
+    };
+    format!("Log4Shell-Schutz aktiv ({how})")
 }
 
 /// ANSI-Farbcodes entfernen (Paper/Velocity färben die Konsole, falls sie ein Terminal vermuten).

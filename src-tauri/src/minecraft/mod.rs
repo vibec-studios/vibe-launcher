@@ -11,6 +11,7 @@ pub mod install;
 pub mod java;
 pub mod launch;
 pub mod loaders;
+pub mod log4shell;
 pub mod logs;
 pub mod meta;
 pub mod prelaunch;

@@ -286,6 +286,7 @@ impl GameManager {
                 let Some(stream) = stream else { return };
                 let mut reader = tokio::io::BufReader::with_capacity(64 * 1024, stream);
                 let mut parser = LineParser::new(is_err);
+                let mut log4shell = super::log4shell::Watch::default();
                 let mut buf = Vec::new();
                 loop {
                     buf.clear();
@@ -293,9 +294,13 @@ impl GameManager {
                         Ok(0) | Err(_) => break,
                         Ok(_) => {
                             let line = decode_line(&buf);
+                            let warnings = log4shell.check(&line);
                             let parsed = parser.feed(&line);
                             if let Some(gm) = me.upgrade() {
                                 gm.push(&id, parsed);
+                                for w in warnings {
+                                    gm.launcher_line(&id, LogLevel::Warn, w);
+                                }
                             }
                         }
                     }
