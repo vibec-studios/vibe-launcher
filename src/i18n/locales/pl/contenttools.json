@@ -230,5 +230,10 @@
   "fix.pre.text_1": "{name}: znaleziono 1 problem z modami – gra prawdopodobnie się tak nie uruchomi.",
   "fix.pre.hint": "„Napraw i uruchom” najpierw pokaże, co się zmieni. Wszystko da się cofnąć.",
   "fix.pre.launch": "Uruchom mimo to",
-  "fix.pre.fix": "Napraw i uruchom"
+  "fix.pre.fix": "Napraw i uruchom",
+  "fix.unfixable.native_memory": "Jeśli to się powtórzy, przywróć domyślne własne opcje pamięci Javy.",
+  "fix.unfixable.disk_full": "Sprawdź też dysk systemowy – Java trzyma tam pliki tymczasowe.",
+  "fix.unfixable.invalid_jvm_flag": "Jeśli znajdziesz odrzuconą opcję w logu, usuń ją ze swoich argumentów Javy.",
+  "fix.unfixable.corrupt_archive": "W przypadku plików samego Minecrafta często pomaga ponowna instalacja danej wersji gry.",
+  "fix.unfixable.locked_world": "W razie potrzeby zamknij drugą sesję gry. Plik blokady chroni twój zapis."
 }

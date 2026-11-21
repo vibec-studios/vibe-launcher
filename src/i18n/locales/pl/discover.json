@@ -272,5 +272,8 @@
   "export.running": "Eksportowanie",
   "export.failed": "Eksport nie powiódł się",
   "export.done": "Eksport zakończony",
-  "export.show_folder": "Pokaż w folderze"
+  "export.show_folder": "Pokaż w folderze",
+  "export.next": "Dalej",
+  "export.review": "Sprawdź eksport",
+  "export.metadata": "Numer wersji, autor i opis"
 }

@@ -13,5 +13,17 @@
   "dp.copy": "Dünya(lar)a kopyala",
   "dp.copied": "{n} veri paketi kopyası oluşturuldu",
   "dp.copied_none": "Veri paketleri zaten seçilen dünyalardaydı",
-  "dp.copy_failed": "Veri paketleri kopyalanamadı"
+  "dp.copy_failed": "Veri paketleri kopyalanamadı",
+  "dp.world.manage": "Veri paketlerini yönet",
+  "dp.world.title": "“{world}” içindeki veri paketleri",
+  "dp.world.text": "bu dünyadaki kuralları ve içeriği ekle ya da değiştir.",
+  "dp.world.installed": "Bu dünyada",
+  "dp.world.available": "Bu kurulumdan ekle",
+  "dp.world.empty": "Bu dünyada henüz veri paketi yok.",
+  "dp.world.add": "ZIP dosyası ekle",
+  "dp.world.zip": "Veri paketi ZIP",
+  "dp.world.remove": "{file} kaldır",
+  "dp.world.copy": "Kopyala",
+  "dp.world.quit": "Veri paketlerini değiştirmeden önce Minecraft'ı kapat.",
+  "dp.no_packs": "Önce bu kuruluma bir veri paketi ekle."
 }

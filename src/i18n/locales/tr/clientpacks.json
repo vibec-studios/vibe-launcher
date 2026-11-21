@@ -97,5 +97,8 @@
   "cp.new.label": "İstemci paketi",
   "cp.new.none": "İstemci paketi yok",
   "cp.new.unavailable": "mevcut değil",
-  "cp.new.after": "{name} oluşturulduktan sonra yüklenecek"
+  "cp.new.after": "{name} oluşturulduktan sonra yüklenecek",
+  "isd.version.configure": "Yeni bir sürüm seç",
+  "isd.version.current": "Şu an kurulu",
+  "isd.version.target": "Seçilen"
 }

@@ -186,5 +186,7 @@
   "imenu.profiles": "Profiller – hangi içerik açık",
   "imenu.profile_to_set": "“{name}” profilini mod setine dönüştür",
   "imenu.profile_to_set_done": "“{name}” mod seti oluşturuldu",
-  "imenu.profile_to_set_skipped": "Kaynağı bilinmeyen {n} dosya dışarıda bırakıldı"
+  "imenu.profile_to_set_skipped": "Kaynağı bilinmeyen {n} dosya dışarıda bırakıldı",
+  "sets.template": "Yeni kurulumlara uygula",
+  "import.paste_label": "Bir paylaşım kodu veya mod listesi yapıştır"
 }

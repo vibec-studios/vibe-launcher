@@ -87,5 +87,6 @@
   "newinst.import.drop": "Wskazówka: pliki możesz też po prostu przeciągnąć do okna.",
   "newinst.import.found": "Znalezione na tym PC",
   "newinst.import.instances_1": "1 instancja",
-  "newinst.import.instances_n": "Instancje: {n}"
+  "newinst.import.instances_n": "Instancje: {n}",
+  "newinst.pack.empty": "Nie znaleziono pasujących modpacków."
 }

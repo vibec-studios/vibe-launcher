@@ -123,7 +123,9 @@
         "W „Połączenie” wybierasz, jak dołączą znajomi: lokalnie/LAN, Vibe Relay albo playit.gg.",
         "Białą listę, operatorów i bany zarządzasz w „Gracze”, pluginy i mody w „Dodatki”."
       ],
-      "tips": ["Serwer działa na twoim PC. Jest dostępny tylko wtedy, gdy PC jest włączony."],
+      "tips": [
+        "Serwer działa na twoim PC. Jest dostępny tylko wtedy, gdy PC jest włączony."
+      ],
       "keywords": "serwer paper spigot konsola biała lista plugin połączenie"
     },
     "skins": {
@@ -150,7 +152,9 @@
         "Dodawaj mody przez wyszukiwanie albo wklejając listę.",
         "Zastosuj zestaw do instancji przez „Zastosuj”. Launcher znajdzie pasujące wersje dla tej wersji Minecrafta."
       ],
-      "tips": ["Zestawy można eksportować i importować – idealne do dzielenia się ze znajomymi."],
+      "tips": [
+        "Zestawy można eksportować i importować – idealne do dzielenia się ze znajomymi."
+      ],
       "keywords": "zestaw lista kolekcja ulubione mody zastosuj"
     },
     "gallery": {
@@ -162,7 +166,9 @@
         "Filtruj według instancji, żeby widzieć obrazy tylko z jednej gry.",
         "Kliknij obraz albo klip, żeby go powiększyć, skopiować albo otworzyć jego folder."
       ],
-      "tips": ["Zrzuty ekranu w grze robisz klawiszem F2."],
+      "tips": [
+        "Zrzuty ekranu w grze robisz klawiszem F2."
+      ],
       "keywords": "zrzut ekranu obraz wideo klip galeria nagrywanie"
     },
     "waitlist": {
@@ -204,7 +210,9 @@
         "Przy błędach możesz dołączyć logi i zrzut ekranu. To pomaga znaleźć przyczynę.",
         "Kliknij „Wyślij”. Dostaniesz numer zgłoszenia. Podaj go, jeśli napiszesz do nas o tym na Discordzie."
       ],
-      "tips": ["Po crashu jest przycisk „Zgłoś problem”, który od razu dołącza właściwe logi."],
+      "tips": [
+        "Po crashu jest przycisk „Zgłoś problem”, który od razu dołącza właściwe logi."
+      ],
       "keywords": "opinia błąd zgłoszenie pomysł sugestia wsparcie ticket"
     },
     "performance": {
@@ -222,6 +230,37 @@
         "Za dużo RAM może nawet spowolnić grę."
       ],
       "keywords": "ram pamięć wydajność fps lag wolno java"
+    },
+    "privacy": {
+      "title": "Prywatność i przejrzystość",
+      "summary": "Vibe Launcher nie pokazuje reklam i nie zbiera telemetrii. Oto, co wysyła, dokąd i kiedy – i jak to wyłączyć.",
+      "steps": [
+        "Otwórz Ustawienia → Prywatność. Na górze jest nasza obietnica: bez reklam, bez telemetrii, Vibe tylko za twoją zgodą.",
+        "W „Twoje przełączniki” ustawiasz sprawdzanie aktualizacji, status Discord, MinecraftCapes i swój status online.",
+        "„Co jest wysyłane dokąd” wymienia każdą usługę, co dostaje i kiedy to się dzieje.",
+        "Raporty błędów są wysyłane dopiero, gdy je sprawdzisz i klikniesz „Wyślij”. Logi są wcześniej czyszczone."
+      ],
+      "tips": [
+        "Przy nowej instalacji usługi Vibe są wyłączone. Włączasz je podczas konfiguracji albo w Ustawienia → Vibe i konto.",
+        "Twoje dane logowania są w sejfie Windows (Menedżer poświadczeń), nie w plikach."
+      ],
+      "keywords": "prywatność dane telemetria śledzenie reklamy wysyłanie rodo przejrzystość privacy"
+    },
+    "portable": {
+      "title": "Tryb przenośny (pendrive)",
+      "summary": "Launcher może działać z pendrive'a bez instalacji. Wszystkie dane są wtedy w folderze „VibeData” obok pliku.",
+      "steps": [
+        "Otwórz Ustawienia → Ogólne i kliknij „Utwórz kopię przenośną …” w sekcji „Tryb przenośny”.",
+        "Wybierz folder na pendrivie. Launcher skopiuje się tam i utworzy obok plik „portable.txt”.",
+        "Na drugim PC uruchom „vibe-launcher.exe” z pendrive'a. Zaloguj się tam raz przez Microsoft.",
+        "Na cudzych PC włącz „Wyloguj z tego PC przy zamykaniu”. Wtedy nie zostaną tam żadne dane logowania."
+      ],
+      "tips": [
+        "Dane logowania nigdy nie trafiają na pendrive. Jeśli go zgubisz, nikt nie wejdzie przez niego na twoje konto.",
+        "Przenośny launcher nie aktualizuje się sam. Po prostu utwórz kopię przenośną jeszcze raz z nowego launchera do tego samego folderu; twoje dane zostają.",
+        "Bez przycisku: skopiuj vibe-launcher.exe do folderu i utwórz obok pusty plik „portable.txt”."
+      ],
+      "keywords": "przenośny pendrive usb bez instalacji zabierz szkoła inny pc portable"
     }
   },
   "tours": {
@@ -232,54 +271,122 @@
           "title": "Tu zaczynasz grę",
           "text": "Jedno kliknięcie w „Graj” uruchamia ostatnią grę. Launcher pobierze wszystko, czego potrzeba.",
           "variants": {
-            "new-game": { "title": "Utwórz nową grę", "text": "Po prostu wybierz, co chcesz robić. Launcher zajmie się wersją i konfiguracją." },
-            "new-instance": { "title": "Utwórz nową grę", "text": "Po prostu wybierz, co chcesz robić. Launcher zajmie się wersją i konfiguracją." }
+            "new-game": {
+              "title": "Utwórz nową grę",
+              "text": "Po prostu wybierz, co chcesz robić. Launcher zajmie się wersją i konfiguracją."
+            },
+            "new-instance": {
+              "title": "Utwórz nową grę",
+              "text": "Po prostu wybierz, co chcesz robić. Launcher zajmie się wersją i konfiguracją."
+            }
           }
         },
-        { "title": "Moje gry", "text": "Wszystkie gry w jednym miejscu. Tam dodasz mody, zobaczysz światy albo naprawisz problemy." },
-        { "title": "Odkrywaj", "text": "Znajdź mody, paczki zasobów, shadery i modpacki. Trafiają prosto do wybranej gry." },
-        { "title": "Twoje konto", "text": "Tu zmienisz konto i skin, a w każdej chwili przełączysz się na tryb eksperta." },
-        { "title": "Pomoc i poradniki", "text": "Poradniki krok po kroku i kolejne przewodniki są zawsze tutaj." }
+        {
+          "title": "Moje gry",
+          "text": "Wszystkie gry w jednym miejscu. Tam dodasz mody, zobaczysz światy albo naprawisz problemy."
+        },
+        {
+          "title": "Odkrywaj",
+          "text": "Znajdź mody, paczki zasobów, shadery i modpacki. Trafiają prosto do wybranej gry."
+        },
+        {
+          "title": "Twoje konto",
+          "text": "Tu zmienisz konto i skin, a w każdej chwili przełączysz się na tryb eksperta."
+        },
+        {
+          "title": "Pomoc i poradniki",
+          "text": "Poradniki krok po kroku i kolejne przewodniki są zawsze tutaj."
+        }
       ]
     },
     "first-instance": {
       "title": "Pierwsza instancja",
       "steps": [
-        { "title": "Nowa instancja", "text": "Ten plus w każdej chwili tworzy nową instancję, niezależnie od strony." },
-        { "title": "Albo prosto w bibliotece", "text": "To też działa. Potem wybierz wersję i loader, a launcher pobierze resztę." },
-        { "title": "Używasz już innego launchera?", "text": "„Importuj” przeniesie istniejące instancje ze światami i ustawieniami." },
-        { "title": "Twoja biblioteka", "text": "Tu są wszystkie instancje. Kliknij jedną, żeby zobaczyć jej mody, światy i ustawienia." }
+        {
+          "title": "Nowa instancja",
+          "text": "Ten plus w każdej chwili tworzy nową instancję, niezależnie od strony."
+        },
+        {
+          "title": "Albo prosto w bibliotece",
+          "text": "To też działa. Potem wybierz wersję i loader, a launcher pobierze resztę."
+        },
+        {
+          "title": "Używasz już innego launchera?",
+          "text": "„Importuj” przeniesie istniejące instancje ze światami i ustawieniami."
+        },
+        {
+          "title": "Twoja biblioteka",
+          "text": "Tu są wszystkie instancje. Kliknij jedną, żeby zobaczyć jej mody, światy i ustawienia."
+        }
       ]
     },
     "modpack": {
       "title": "Zainstaluj modpack",
       "steps": [
-        { "title": "Odkrywaj", "text": "Tu znajdziesz mody i modpacki z Modrinth i CurseForge." },
-        { "title": "Wybierz typ", "text": "„Modpacki” są już wybrane. Tu przełączysz na mody, shadery albo paczki zasobów." },
-        { "title": "Szukaj", "text": "Wpisz nazwę modpacka. Po lewej filtrujesz według wersji, loadera i kategorii." },
-        { "title": "Zainstaluj", "text": "Otwórz modpack i kliknij „Zainstaluj”. Powstanie nowa instancja ze wszystkim w zestawie." }
+        {
+          "title": "Odkrywaj",
+          "text": "Tu znajdziesz mody i modpacki z Modrinth i CurseForge."
+        },
+        {
+          "title": "Wybierz typ",
+          "text": "„Modpacki” są już wybrane. Tu przełączysz na mody, shadery albo paczki zasobów."
+        },
+        {
+          "title": "Szukaj",
+          "text": "Wpisz nazwę modpacka. Po lewej filtrujesz według wersji, loadera i kategorii."
+        },
+        {
+          "title": "Zainstaluj",
+          "text": "Otwórz modpack i kliknij „Zainstaluj”. Powstanie nowa instancja ze wszystkim w zestawie."
+        }
       ]
     },
     "mods": {
       "title": "Zarządzaj modami",
       "steps": [
-        { "title": "Dodaj zawartość", "text": "Otwiera „Odkrywaj”, już przefiltrowane pod wersję i loader tej instancji." },
-        { "title": "Własne pliki", "text": "Masz plik .jar? Dodaj go tutaj albo po prostu przeciągnij do okna." },
+        {
+          "title": "Dodaj zawartość",
+          "text": "Otwiera „Odkrywaj”, już przefiltrowane pod wersję i loader tej instancji."
+        },
+        {
+          "title": "Własne pliki",
+          "text": "Masz plik .jar? Dodaj go tutaj albo po prostu przeciągnij do okna."
+        },
         {
           "title": "Aktualizacje",
           "text": "Są aktualizacje. Jedno kliknięcie aktualizuje wszystkie mody naraz.",
-          "variants": { "content-refresh": { "title": "Sprawdź aktualizacje", "text": "„Sprawdź ponownie” (albo F5) szuka aktualizacji i problemów. Jeśli są, obok pojawi się „Aktualizuj wszystko”." } }
+          "variants": {
+            "content-refresh": {
+              "title": "Sprawdź aktualizacje",
+              "text": "„Sprawdź ponownie” (albo F5) szuka aktualizacji i problemów. Jeśli są, obok pojawi się „Aktualizuj wszystko”."
+            }
+          }
         },
-        { "title": "Twoja zawartość", "text": "Przełącznik w każdym wierszu wyłącza mod bez usuwania go." }
+        {
+          "title": "Twoja zawartość",
+          "text": "Przełącznik w każdym wierszu wyłącza mod bez usuwania go."
+        }
       ]
     },
     "import": {
       "title": "Import",
       "steps": [
-        { "title": "Importuj", "text": "Tu przeniesiesz pliki modpacków albo całe instancje z innych launcherów." },
-        { "title": "Plik albo launcher", "text": "„Z innego launchera” automatycznie szuka Modrinth App, CurseForge, Prism, MultiMC i innych." },
-        { "title": "Wybierz", "text": "Zaznacz instancje i kliknij „Importuj”. Jeśli brakuje twojego launchera, wskaż jego folder samodzielnie." },
-        { "title": "Kolejny import później", "text": "Nowe instancje w starym launcherze? Po prostu otwórz import ponownie. Już zaimportowane są oznaczone." }
+        {
+          "title": "Importuj",
+          "text": "Tu przeniesiesz pliki modpacków albo całe instancje z innych launcherów."
+        },
+        {
+          "title": "Plik albo launcher",
+          "text": "„Z innego launchera” automatycznie szuka Modrinth App, CurseForge, Prism, MultiMC i innych."
+        },
+        {
+          "title": "Wybierz",
+          "text": "Zaznacz instancje i kliknij „Importuj”. Jeśli brakuje twojego launchera, wskaż jego folder samodzielnie."
+        },
+        {
+          "title": "Kolejny import później",
+          "text": "Nowe instancje w starym launcherze? Po prostu otwórz import ponownie. Już zaimportowane są oznaczone."
+        }
       ]
     },
     "autofix": {
@@ -289,83 +396,186 @@
           "title": "Napraw problemy",
           "text": "Jedno kliknięcie, a launcher szuka przyczyny, pokazuje propozycje i najpierw robi kopię zapasową.",
           "variants": {
-            "crash-banner": { "title": "Wykryto crash", "text": "Po crashu tu pojawi się to powiadomienie z najbardziej prawdopodobną przyczyną. „Napraw” naprawi grę automatycznie." },
-            "logs-diagnose": { "title": "Diagnoza", "text": "Po crashu u góry pojawi się czerwone powiadomienie z „Napraw”. Tutaj, w diagnozie, zobaczysz szczegóły i też uruchomisz „Napraw problemy”." }
+            "crash-banner": {
+              "title": "Wykryto crash",
+              "text": "Po crashu tu pojawi się to powiadomienie z najbardziej prawdopodobną przyczyną. „Napraw” naprawi grę automatycznie."
+            },
+            "logs-diagnose": {
+              "title": "Diagnoza",
+              "text": "Po crashu u góry pojawi się czerwone powiadomienie z „Napraw”. Tutaj, w diagnozie, zobaczysz szczegóły i też uruchomisz „Napraw problemy”."
+            }
           }
         },
-        { "title": "Uruchom ponownie", "text": "Potem po prostu kliknij znowu „Graj”. Launcher jeszcze raz sprawdzi wszystko przed startem." },
-        { "title": "Nic nie pomaga?", "text": "Wyślij nam wtedy zgłoszenie błędu przez opinię. Możesz dołączyć logi." }
+        {
+          "title": "Uruchom ponownie",
+          "text": "Potem po prostu kliknij znowu „Graj”. Launcher jeszcze raz sprawdzi wszystko przed startem."
+        },
+        {
+          "title": "Nic nie pomaga?",
+          "text": "Wyślij nam wtedy zgłoszenie błędu przez opinię. Możesz dołączyć logi."
+        }
       ]
     },
     "backups": {
       "title": "Kopie zapasowe",
       "steps": [
-        { "title": "Utwórz migawkę", "text": "Zapisuje mody, konfiguracje i paczki tej instancji, np. przed dużą aktualizacją. Światy zapisujesz w obszarze „Światy”." },
-        { "title": "Twoje kopie", "text": "Tu są migawki i kopie światów. „Przywróć” zabiera cię z powrotem." },
-        { "title": "Automatyczne kopie", "text": "W ustawieniach wybierzesz, kiedy launcher sam robi kopie i ile ich zachowuje." }
+        {
+          "title": "Utwórz migawkę",
+          "text": "Zapisuje mody, konfiguracje i paczki tej instancji, np. przed dużą aktualizacją. Światy zapisujesz w obszarze „Światy”."
+        },
+        {
+          "title": "Twoje kopie",
+          "text": "Tu są migawki i kopie światów. „Przywróć” zabiera cię z powrotem."
+        },
+        {
+          "title": "Automatyczne kopie",
+          "text": "W ustawieniach wybierzesz, kiedy launcher sam robi kopie i ile ich zachowuje."
+        }
       ]
     },
     "hosting": {
       "title": "Graj ze znajomymi",
       "steps": [
-        { "title": "Twoje światy", "text": "Uruchom świat z Vibey Client i wybierz w grze „Otwórz dla znajomych”. Resztą zajmie się Vibe Relay." },
-        { "title": "Link do gry", "text": "Gdy hostujesz, tu widać twój link do gry. Skopiuj go albo wyślij prosto do znajomych." },
-        { "title": "Znajomi", "text": "Zobacz, kto jest online, i zaproś znajomych prosto do swojego świata." },
-        { "title": "Własny serwer", "text": "Świat ma działać bez ciebie? Utwórz serwer i wybierz „Vibe Relay” jako połączenie." }
+        {
+          "title": "Twoje światy",
+          "text": "Uruchom świat z Vibey Client i wybierz w grze „Otwórz dla znajomych”. Resztą zajmie się Vibe Relay."
+        },
+        {
+          "title": "Link do gry",
+          "text": "Gdy hostujesz, tu widać twój link do gry. Skopiuj go albo wyślij prosto do znajomych."
+        },
+        {
+          "title": "Znajomi",
+          "text": "Zobacz, kto jest online, i zaproś znajomych prosto do swojego świata."
+        },
+        {
+          "title": "Własny serwer",
+          "text": "Świat ma działać bez ciebie? Utwórz serwer i wybierz „Vibe Relay” jako połączenie."
+        }
       ]
     },
     "servers": {
       "title": "Serwery",
       "steps": [
-        { "title": "Nowy serwer", "text": "Wybierz platformę i wersję. Launcher pobierze i skonfiguruje serwer." },
-        { "title": "Twoje serwery", "text": "Otwórz serwer, żeby zobaczyć konsolę, graczy, światy, dodatki i połączenie dla znajomych." },
-        { "title": "Zawsze tutaj", "text": "Tu w każdej chwili znajdziesz swoje serwery. Zielona kropka oznacza, że któryś działa." }
+        {
+          "title": "Nowy serwer",
+          "text": "Wybierz platformę i wersję. Launcher pobierze i skonfiguruje serwer."
+        },
+        {
+          "title": "Twoje serwery",
+          "text": "Otwórz serwer, żeby zobaczyć konsolę, graczy, światy, dodatki i połączenie dla znajomych."
+        },
+        {
+          "title": "Zawsze tutaj",
+          "text": "Tu w każdej chwili znajdziesz swoje serwery. Zielona kropka oznacza, że któryś działa."
+        }
       ]
     },
     "skins": {
       "title": "Skiny",
       "steps": [
-        { "title": "Podgląd", "text": "Tak teraz wygląda twój skin. Przeciągnij postać, żeby ją obrócić." },
-        { "title": "Twoje skiny", "text": "Wgraj nowe skiny albo wybierz zapisany i go zastosuj." },
-        { "title": "Kosmetyki", "text": "Tu są peleryny, czapki i emotki do Vibey Client." }
+        {
+          "title": "Podgląd",
+          "text": "Tak teraz wygląda twój skin. Przeciągnij postać, żeby ją obrócić."
+        },
+        {
+          "title": "Twoje skiny",
+          "text": "Wgraj nowe skiny albo wybierz zapisany i go zastosuj."
+        },
+        {
+          "title": "Kosmetyki",
+          "text": "Tu są peleryny, czapki i emotki do Vibey Client."
+        }
       ]
     },
     "modsets": {
       "title": "Zestawy modów",
       "steps": [
-        { "title": "Nowy zestaw", "text": "Utwórz listę ulubionych modów. Działa dla każdej wersji." },
-        { "title": "Importuj", "text": "Tu przejmiesz zestawy od znajomych albo z pliku." },
-        { "title": "Twoje zestawy", "text": "Otwórz zestaw, żeby dodać mody albo zastosować go do instancji." }
+        {
+          "title": "Nowy zestaw",
+          "text": "Utwórz listę ulubionych modów. Działa dla każdej wersji."
+        },
+        {
+          "title": "Importuj",
+          "text": "Tu przejmiesz zestawy od znajomych albo z pliku."
+        },
+        {
+          "title": "Twoje zestawy",
+          "text": "Otwórz zestaw, żeby dodać mody albo zastosować go do instancji."
+        }
       ]
     },
     "gallery": {
       "title": "Galeria",
       "steps": [
-        { "title": "Zrzuty i klipy", "text": "Tu przełączasz między obrazami a klipami z Vibey Client." },
-        { "title": "Filtruj według instancji", "text": "Pokazuj tylko obrazy z konkretnej instancji." },
-        { "title": "Podgląd", "text": "Kliknij obraz, żeby go powiększyć, skopiować albo pokazać w folderze." }
+        {
+          "title": "Zrzuty i klipy",
+          "text": "Tu przełączasz między obrazami a klipami z Vibey Client."
+        },
+        {
+          "title": "Filtruj według instancji",
+          "text": "Pokazuj tylko obrazy z konkretnej instancji."
+        },
+        {
+          "title": "Podgląd",
+          "text": "Kliknij obraz, żeby go powiększyć, skopiować albo pokazać w folderze."
+        }
       ]
     },
     "waitlist": {
       "title": "Beta Vibe",
       "steps": [
-        { "title": "Vibe i konto", "text": "Tu zalogujesz się do Vibe. Vibe jest w becie, najpierw trafiasz na listę oczekujących." },
-        { "title": "Twój dostęp", "text": "Tu widać twój status. Po akceptacji działają znajomi, hosting i kosmetyki." }
+        {
+          "title": "Vibe i konto",
+          "text": "Tu zalogujesz się do Vibe. Vibe jest w becie, najpierw trafiasz na listę oczekujących."
+        },
+        {
+          "title": "Twój dostęp",
+          "text": "Tu widać twój status. Po akceptacji działają znajomi, hosting i kosmetyki."
+        }
       ]
     },
     "feedback": {
       "title": "Opinia",
       "steps": [
-        { "title": "Wyślij opinię", "text": "Błąd albo pomysł? Napisz do nas tutaj. Możesz dołączyć logi i zrzut ekranu." },
-        { "title": "Pomoc", "text": "A tu znajdziesz wszystkie poradniki i przewodniki, gdy utkniesz." }
+        {
+          "title": "Wyślij opinię",
+          "text": "Błąd albo pomysł? Napisz do nas tutaj. Możesz dołączyć logi i zrzut ekranu."
+        },
+        {
+          "title": "Pomoc",
+          "text": "A tu znajdziesz wszystkie poradniki i przewodniki, gdy utkniesz."
+        }
       ]
     },
     "performance": {
       "title": "Wydajność i RAM",
       "steps": [
-        { "title": "Ustawienia instancji", "text": "Zębatka otwiera ustawienia tej instancji." },
-        { "title": "Wydajność tej instancji", "text": "Ustaw, ile pamięci dostaje ta instancja. „Własne wartości” nadpisują domyślne." },
-        { "title": "Pamięć dla wszystkich", "text": "Te wartości dotyczą wszystkich instancji bez własnych ustawień. Z modami 4–6 GB to dobry start." }
+        {
+          "title": "Ustawienia instancji",
+          "text": "Zębatka otwiera ustawienia tej instancji."
+        },
+        {
+          "title": "Wydajność tej instancji",
+          "text": "Ustaw, ile pamięci dostaje ta instancja. „Własne wartości” nadpisują domyślne."
+        },
+        {
+          "title": "Pamięć dla wszystkich",
+          "text": "Te wartości dotyczą wszystkich instancji bez własnych ustawień. Z modami 4–6 GB to dobry start."
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Prywatność",
+      "steps": [
+        {
+          "title": "Prywatność",
+          "text": "Wszystko o tym, co launcher wysyła i jak to wyłączyć."
+        },
+        {
+          "title": "Co trafia dokąd",
+          "text": "Każda usługa, co dostaje i kiedy. Na górze jest nasza obietnica."
+        }
       ]
     }
   }

@@ -272,5 +272,8 @@
   "export.running": "Dışa aktarılıyor",
   "export.failed": "Dışa aktarma başarısız",
   "export.done": "Dışa aktarma bitti",
-  "export.show_folder": "Klasörde göster"
+  "export.show_folder": "Klasörde göster",
+  "export.next": "Devam",
+  "export.review": "Dışa aktarmayı gözden geçir",
+  "export.metadata": "Sürüm numarası, yazar ve açıklama"
 }

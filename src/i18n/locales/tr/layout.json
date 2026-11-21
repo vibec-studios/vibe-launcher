@@ -1,0 +1,9 @@
+{
+  "layout.search.reset": "Aramayı temizle",
+  "layout.no_match": "Hiçbir şey bulunamadı",
+  "layout.no_match.text": "“{q}” ile eşleşen bir şey yok. Yazımı kontrol et ya da başka bir şey dene.",
+  "layout.go_library": "Kütüphaneye git",
+  "layout.howto": "Nasıl çalışır",
+  "layout.show_all": "Tümünü göster",
+  "layout.sort_view": "Sıralama ve görünüm"
+}

@@ -78,5 +78,32 @@
   "account": {
     "title": "Microsoft hesabı",
     "text": "Minecraft: Java Edition, Microsoft hesabına bağlıdır. Giriş doğrudan Microsoft'ta yapılır – launcher şifreni asla görmez."
+  },
+  "seed": {
+    "title": "Seed (tohum)",
+    "text": "Minecraft'ın bir dünyanın arazisini oluşturmak için kullandığı başlangıç değeri. Aynı seed, oyun sürümü ve ayarlar orijinal araziyi yeniden oluşturur."
+  },
+  "dependency": {
+    "title": "Bağımlılık",
+    "text": "Başka bir modun çalışmak için ihtiyaç duyduğu mod, örneğin Fabric API. Vibe bağımlılıkları otomatik kurar ve artık hiçbir mod onlara ihtiyaç duymadığında sana söyler.",
+    "example": "Mod Menu, Fabric API'ye ihtiyaç duyar – Fabric API olmadan Mod Menu başlamaz."
+  },
+  "portable": {
+    "title": "Taşınabilir",
+    "text": "Taşınabilir bir başlatıcı kurulum gerektirmez. Her şeyi hemen yanındaki “VibeData” klasöründe, örneğin bir USB bellekte saklar ve bilgisayarı değiştirmez.",
+    "example": "USB belleği tak, vibe-launcher.exe'yi başlat, oynamaya devam et – başka bir bilgisayarda da."
+  },
+  "telemetry": {
+    "title": "Telemetri",
+    "text": "Otomatik gönderilen kullanım verileri, örneğin hangi düğmelere tıkladığın veya ne sıklıkla oynadığın. Vibe Launcher böyle hiçbir şey toplamaz."
+  },
+  "skinlayer": {
+    "title": "Dış katman (skin)",
+    "text": "Bir skinin iki katmanı vardır: temel katman doğrudan figürün üzerinde durur, dış katman biraz üstünde süzülür. Saç, şapka, ceket veya gözlük için kullan – şeffaf olabilir.",
+    "example": "Kafanın dış katmanına bir kapüşon çiz – oyunda biraz dışarı çıkar."
+  },
+  "skinmodel": {
+    "title": "Classic ve Slim",
+    "text": "Minecraft'ın iki vücut modeli. Classic'in kolları 4 piksel, Slim'in sadece 3 piksel genişliğindedir. Modeli istediğin zaman değiştirebilirsin."
   }
 }

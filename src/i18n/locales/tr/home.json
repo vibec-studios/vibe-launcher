@@ -87,5 +87,6 @@
   "newinst.import.drop": "İpucu: dosyaları pencereye sürükleyip bırakabilirsin.",
   "newinst.import.found": "Bu bilgisayarda bulundu",
   "newinst.import.instances_1": "1 kurulum",
-  "newinst.import.instances_n": "{n} kurulum"
+  "newinst.import.instances_n": "{n} kurulum",
+  "newinst.pack.empty": "Eşleşen mod paketi bulunamadı."
 }
