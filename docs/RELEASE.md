@@ -36,6 +36,17 @@ git push origin main v1.1.0
 Der Workflow „Release“ baut, signiert und veröffentlicht das GitHub-Release (mit `latest.json`). Ab dann bieten alle
 Launcher im Release-Kanal das Update an.
 
+## Server-Agent (`vibe-agent`)
+
+Eigener Release-Strang mit Tags **`agent-v<version>`** (Workflow `.github/workflows/agent-release.yml`): statische
+Linux-Binaries (x64/arm64), Windows-x64, `SHA256SUMS`, Installationsskripte und Docker-Image
+`ghcr.io/vibec-studios/vibe-agent`. Diese Releases werden **nie als „latest“** markiert, damit der Launcher-Updater
+unberührt bleibt. Details: [REMOTE-AGENT-INSTALL.md](REMOTE-AGENT-INSTALL.md#13-für-entwickler-release-und-tests).
+
+```bash
+git tag agent-v0.1.0 && git push origin agent-v0.1.0
+```
+
 ## Plattformen (Repo-Variable `BUILD_PLATFORMS`)
 
 Release- und Dev-Builds bauen standardmäßig **nur Windows**. macOS und Linux sind pausiert, aber vollständig

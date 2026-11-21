@@ -1,0 +1,60 @@
+name: Agent vorbereiten
+description: Rust-Toolchain, Cargo-Cache für den Workspace des Agents und (falls vorhanden) Panel-Build über "pnpm run build:panel"
+inputs:
+  cache-key:
+    description: Cargo-Cache-Schlüssel (z. B. "agent-linux")
+    required: true
+  rust-targets:
+    description: Zusätzliche Rust-Targets, kommagetrennt
+    required: false
+    default: ""
+outputs:
+  target-dir:
+    description: Absoluter Cargo-Target-Ordner des Workspaces
+    value: ${{ steps.ws.outputs.target }}
+runs:
+  using: composite
+  steps:
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ inputs.rust-targets }}
+
+    - id: ws
+      name: Workspace ermitteln
+      shell: bash
+      run: node scripts/agent-workspace.mjs
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: ${{ steps.ws.outputs.root }} -> ${{ steps.ws.outputs.rel-target }}
+        shared-key: ${{ inputs.cache-key }}
+        save-if: ${{ startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' }}
+        cache-on-failure: true
+
+    - id: panel
+      name: Panel-Build nötig?
+      shell: bash
+      run: |
+        if [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.['build:panel'] ? 0 : 1)"; then
+          echo "needed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "Kein build:panel-Skript – Panel-Assets liegen schon im Repo oder baut build.rs."
+        fi
+
+    - if: steps.panel.outputs.needed == 'true'
+      uses: pnpm/action-setup@v4
+      with:
+        version: 11
+
+    - if: steps.panel.outputs.needed == 'true'
+      uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: pnpm
+
+    - if: steps.panel.outputs.needed == 'true'
+      name: Panel bauen
+      shell: bash
+      run: |
+        pnpm install --frozen-lockfile
+        pnpm run build:panel

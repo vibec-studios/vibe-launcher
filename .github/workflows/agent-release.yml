@@ -1,0 +1,267 @@
+name: Agent-Release
+
+on:
+  push:
+    tags: ["agent-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: agent-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  LINUX_TARGETS: x86_64-unknown-linux-musl aarch64-unknown-linux-musl
+  WINDOWS_TARGET: x86_64-pc-windows-msvc
+
+jobs:
+  check:
+    name: Version prüfen
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      prerelease: ${{ steps.ver.outputs.prerelease }}
+      publish: ${{ steps.ver.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: ws
+        run: node scripts/agent-workspace.mjs
+
+      - id: ver
+        name: Tag passt zu agent/Cargo.toml?
+        env:
+          VERSION: ${{ steps.ws.outputs.version }}
+        run: |
+          publish=false
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            tag="${GITHUB_REF_NAME#agent-v}"
+            if [ "$tag" != "$VERSION" ]; then
+              echo "::error::Tag agent-v$tag passt nicht zur Version von vibe-agent ($VERSION)"
+              exit 1
+            fi
+            publish=true
+          fi
+          case "$VERSION" in *-*) pre=true ;; *) pre=false ;; esac
+          echo "Version $VERSION, Vorabversion: $pre, veröffentlichen: $publish"
+          {
+            echo "version=$VERSION"
+            echo "prerelease=$pre"
+            echo "publish=$publish"
+          } >> "$GITHUB_OUTPUT"
+
+  runner:
+    uses: ./.github/workflows/pick-runner.yml
+
+  linux:
+    needs: [check, runner]
+    name: Linux (x64 + arm64, statisch)
+    runs-on: ${{ needs.runner.outputs.linux }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: prep
+        uses: ./.github/actions/agent-prepare
+        with:
+          cache-key: agent-linux
+          rust-targets: x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.14.1
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-zigbuild
+
+      - name: Bauen
+        env:
+          TARGET_DIR: ${{ steps.prep.outputs.target-dir }}
+        run: |
+          set -euo pipefail
+          mkdir -p out docker-bin/linux/amd64 docker-bin/linux/arm64
+          for t in $LINUX_TARGETS; do
+            cargo zigbuild --release --locked --manifest-path agent/Cargo.toml --bin vibe-agent --target "$t"
+            cp "$TARGET_DIR/$t/release/vibe-agent" "out/vibe-agent-$t"
+          done
+          cp out/vibe-agent-x86_64-unknown-linux-musl docker-bin/linux/amd64/vibe-agent
+          cp out/vibe-agent-aarch64-unknown-linux-musl docker-bin/linux/arm64/vibe-agent
+          file out/* || true
+          chmod +x out/*
+          ./out/vibe-agent-x86_64-unknown-linux-musl --version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-linux
+          path: out/*
+          if-no-files-found: error
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-docker-bin
+          path: docker-bin
+          if-no-files-found: error
+          retention-days: 7
+
+  windows:
+    needs: [check, runner]
+    name: Windows (x64)
+    runs-on: ${{ needs.runner.outputs.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: prep
+        uses: ./.github/actions/agent-prepare
+        with:
+          cache-key: agent-windows
+          rust-targets: x86_64-pc-windows-msvc
+
+      - name: Bauen (statische C-Laufzeit, kein VC++-Redistributable nötig)
+        shell: bash
+        env:
+          TARGET_DIR: ${{ steps.prep.outputs.target-dir }}
+          CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: -C target-feature=+crt-static
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cargo build --release --locked --manifest-path agent/Cargo.toml --bin vibe-agent --target "$WINDOWS_TARGET"
+          cp "$TARGET_DIR/$WINDOWS_TARGET/release/vibe-agent.exe" "out/vibe-agent-$WINDOWS_TARGET.exe"
+          "./out/vibe-agent-$WINDOWS_TARGET.exe" --version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-windows
+          path: out/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: [check, linux, windows]
+    if: needs.check.outputs.publish == 'true'
+    name: GitHub-Release veröffentlichen
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: agent-{linux,windows}
+          path: artifacts
+          merge-multiple: true
+
+      - name: Dateien + SHA256SUMS
+        run: |
+          set -euo pipefail
+          mkdir -p release-files
+          cp artifacts/vibe-agent-* release-files/
+          cp agent/dist/install.sh agent/dist/install.ps1 agent/dist/docker-compose.yml release-files/
+          for f in vibe-agent-x86_64-unknown-linux-musl vibe-agent-aarch64-unknown-linux-musl vibe-agent-x86_64-pc-windows-msvc.exe; do
+            [ -s "release-files/$f" ] || { echo "::error::$f fehlt"; exit 1; }
+          done
+          (cd release-files && sha256sum vibe-agent-* install.sh install.ps1 docker-compose.yml > SHA256SUMS)
+          cat release-files/SHA256SUMS
+
+      - name: Release-Text
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          cat > notes.md <<EOF
+          Vibe Server Agent $VERSION – verwaltet Minecraft-Server auf einem VPS/PC für den Vibe Launcher und das Vibe Panel.
+
+          **Linux (x64/arm64):**
+          \`\`\`sh
+          curl -fsSL https://vibe.axolite.app/agent/install.sh | sh
+          \`\`\`
+          **Windows (PowerShell):**
+          \`\`\`powershell
+          irm https://vibe.axolite.app/agent/install.ps1 | iex
+          \`\`\`
+          **Docker:** \`ghcr.io/vibec-studios/vibe-agent:$VERSION\`
+
+          Anleitung: https://github.com/$REPO/blob/main/docs/REMOTE-AGENT-INSTALL.md
+          EOF
+
+      - name: Veröffentlichen (nicht "latest" – der Launcher-Updater bleibt bei v*)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.check.outputs.version }}
+          PRERELEASE: ${{ needs.check.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" release-files/* --clobber
+          else
+            flags=(--title "Vibe Agent $VERSION" --notes-file notes.md --latest=false --verify-tag)
+            [ "$PRERELEASE" = true ] && flags+=(--prerelease)
+            gh release create "$tag" release-files/* "${flags[@]}"
+          fi
+
+  docker:
+    needs: [check, linux]
+    if: needs.check.outputs.publish == 'true'
+    name: Docker-Image (ghcr.io)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: agent-docker-bin
+          path: .docker-bin
+
+      - id: img
+        name: Image-Name
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/vibe-agent" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: agent/dist/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          build-args: BIN_SOURCE=prebuilt
+          push: true
+          provenance: false
+          tags: |
+            ${{ steps.img.outputs.name }}:${{ needs.check.outputs.version }}
+            ${{ steps.img.outputs.name }}:latest
+          labels: |
+            org.opencontainers.image.title=Vibe Server Agent
+            org.opencontainers.image.description=Verwaltet Minecraft-Server für den Vibe Launcher und das Vibe Panel
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.check.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=Apache-2.0
+          cache-from: type=gha,scope=agent
+          cache-to: type=gha,scope=agent,mode=max
+
+      - name: Image testen
+        env:
+          IMAGE: ${{ steps.img.outputs.name }}:${{ needs.check.outputs.version }}
+        run: docker run --rm "$IMAGE" --version
