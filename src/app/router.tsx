@@ -3,18 +3,7 @@
 import { createHashHistory, createRootRoute, createRoute, createRouter, lazyRouteComponent, redirect } from "@tanstack/react-router";
 import { Shell } from "./Shell";
 import { HomePage } from "@/features/home/HomePage";
-import { InstancesPage } from "@/features/instances/InstancesPage";
-import { InstancePage } from "@/features/instances/InstancePage";
-import { DiscoverPage } from "@/features/discover/DiscoverPage";
-import { AccountsPage } from "@/features/accounts/AccountsPage";
 import { isSettingsTab, openSettings, type SettingsTab } from "@/features/settings/store";
-import { SkinsPage } from "@/features/skins/SkinsPage";
-import { ScreenshotsPage } from "@/features/screenshots/ScreenshotsPage";
-import { StatsPage } from "@/features/stats/StatsPage";
-import { ServersPage } from "@/features/servers/ServersPage";
-import { ServerPage } from "@/features/servers/ServerPage";
-import { SocialPage } from "@/features/social/SocialPage";
-import { ModSetsPage } from "@/features/modsets/ModSetsPage";
 import type { ProjectType, Source } from "@/lib/types";
 
 export type InstanceTab = "content" | "resourcepacks" | "shaders" | "worlds" | "servers" | "backups" | "logs" | "files" | "settings";
@@ -43,12 +32,12 @@ const rootRoute = createRootRoute({ component: Shell });
 
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: "/", component: HomePage });
 
-const instancesRoute = createRoute({ getParentRoute: () => rootRoute, path: "/instances", component: InstancesPage });
+const instancesRoute = createRoute({ getParentRoute: () => rootRoute, path: "/instances", component: lazyRouteComponent(() => import("@/features/instances/InstancesPage"), "InstancesPage") });
 
 const instanceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/instances/$id",
-  component: InstancePage,
+  component: lazyRouteComponent(() => import("@/features/instances/InstancePage"), "InstancePage"),
   validateSearch: (s: Record<string, unknown>): { tab: InstanceTab } => ({
     tab: instanceTabs.includes(s.tab as InstanceTab)
       ? (s.tab as InstanceTab)
@@ -61,7 +50,7 @@ const instanceRoute = createRoute({
 const discoverRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/discover",
-  component: DiscoverPage,
+  component: lazyRouteComponent(() => import("@/features/discover/DiscoverPage"), "DiscoverPage"),
   validateSearch: (s: Record<string, unknown>): DiscoverSearch => ({
     source:
       s.source === "curseforge" ? "curseforge" : s.source === "modrinth" ? "modrinth" : typeof s.source === "string" && /^store:[\w-]+$/.test(s.source) ? (s.source as Source) : undefined,
@@ -102,14 +91,14 @@ export interface ModSetsSearch {
 const modsetsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/modsets",
-  component: ModSetsPage,
+  component: lazyRouteComponent(() => import("@/features/modsets/ModSetsPage"), "ModSetsPage"),
   validateSearch: (s: Record<string, unknown>): ModSetsSearch => ({
     set: typeof s.set === "string" && s.set.length <= 64 ? s.set : undefined,
     add: s.add === "paste" || s.add === "instance" || s.add === "search" ? s.add : undefined,
   }),
 });
 
-const accountsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/accounts", component: AccountsPage });
+const accountsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/accounts", component: lazyRouteComponent(() => import("@/features/accounts/AccountsPage"), "AccountsPage") });
 // Einstellungen sind ein Popup: `/settings?tab=…` öffnet es und bleibt auf der aktuellen Seite
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -121,23 +110,23 @@ const settingsRoute = createRoute({
     throw redirect({ href: prev && prev.pathname !== "/settings" ? prev.href : "/", replace: true });
   },
 });
-const skinsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/skins", component: SkinsPage });
-const statsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/stats", component: StatsPage });
+const skinsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/skins", component: lazyRouteComponent(() => import("@/features/skins/SkinsPage"), "SkinsPage") });
+const statsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/stats", component: lazyRouteComponent(() => import("@/features/stats/StatsPage"), "StatsPage") });
 const screenshotsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/screenshots",
-  component: ScreenshotsPage,
+  component: lazyRouteComponent(() => import("@/features/screenshots/ScreenshotsPage"), "ScreenshotsPage"),
   validateSearch: (s: Record<string, unknown>): { instance?: string; tab?: "clips" } => ({
     instance: typeof s.instance === "string" ? s.instance : undefined,
     tab: s.tab === "clips" ? "clips" : undefined,
   }),
 });
 
-const serversRoute = createRoute({ getParentRoute: () => rootRoute, path: "/servers", component: ServersPage });
+const serversRoute = createRoute({ getParentRoute: () => rootRoute, path: "/servers", component: lazyRouteComponent(() => import("@/features/servers/ServersPage"), "ServersPage") });
 const serverRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/servers/$id",
-  component: ServerPage,
+  component: lazyRouteComponent(() => import("@/features/servers/ServerPage"), "ServerPage"),
   validateSearch: (s: Record<string, unknown>): { tab: ServerTab } => ({
     tab: serverTabs.includes(s.tab as ServerTab) ? (s.tab as ServerTab) : "console",
   }),
@@ -146,7 +135,7 @@ const serverRoute = createRoute({
 const socialRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/social",
-  component: SocialPage,
+  component: lazyRouteComponent(() => import("@/features/social/SocialPage"), "SocialPage"),
   validateSearch: (s: Record<string, unknown>): { chat?: string } => ({ chat: typeof s.chat === "string" && s.chat.length <= 64 ? s.chat : undefined }),
 });
 
