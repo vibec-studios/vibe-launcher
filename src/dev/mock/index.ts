@@ -26,6 +26,7 @@ import worldPreview from "./world-preview";
 import packupdate from "./packupdate";
 import worldMap from "./world-map";
 import socialw4 from "./socialw4";
+import vibemedia from "./vibemedia";
 import { withLiveModrinth } from "./modrinth-live";
 import type { Handlers } from "./util";
 
@@ -43,6 +44,7 @@ const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancep
 Object.assign(base, worldPreview);
 Object.assign(base, worldMap);
 Object.assign(base, socialw4);
+Object.assign(base, vibemedia);
 // „Neu prüfen“: Updates, Probleme und Modpack-Prüfung der übrigen Mocks bündeln (etwas länger, damit der
 // Spinner am Knopf sichtbar ist; Screenshots: localStorage vl.mock.refresh = Millisekunden)
 base.instance_refresh = async (args) => {

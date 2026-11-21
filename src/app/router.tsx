@@ -136,7 +136,10 @@ const socialRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/social",
   component: lazyRouteComponent(() => import("@/features/social/SocialPage"), "SocialPage"),
-  validateSearch: (s: Record<string, unknown>): { chat?: string } => ({ chat: typeof s.chat === "string" && s.chat.length <= 64 ? s.chat : undefined }),
+  validateSearch: (s: Record<string, unknown>): { chat?: string; view?: "servers" } => ({
+    chat: typeof s.chat === "string" && s.chat.length <= 64 ? s.chat : undefined,
+    view: s.view === "servers" ? "servers" : undefined,
+  }),
 });
 
 // Cosmetics (three.js nur bei Bedarf laden; nur mit Vibe, sonst Umleitung zur Startseite)

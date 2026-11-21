@@ -57,13 +57,13 @@ pub fn valid_code(code: &str) -> bool {
     (4..=16).contains(&code.len()) && code.bytes().all(|b| b.is_ascii_alphanumeric())
 }
 
-fn tmp_path(state: &AppState, ext: &str) -> PathBuf {
+pub(super) fn tmp_path(state: &AppState, ext: &str) -> PathBuf {
     let dir = state.paths.tmp();
     let _ = std::fs::create_dir_all(&dir);
     dir.join(format!("vibe-{}.{ext}", uuid::Uuid::new_v4().simple()))
 }
 
-struct TmpFiles(Vec<PathBuf>);
+pub(super) struct TmpFiles(pub(super) Vec<PathBuf>);
 impl Drop for TmpFiles {
     fn drop(&mut self) {
         for p in &self.0 {

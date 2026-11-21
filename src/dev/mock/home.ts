@@ -52,7 +52,7 @@ const servers: RecentServer[] = [
 ];
 
 // Pixel-Landschaft als „Screenshot“ (nur Mock)
-function landscape(seed: number) {
+export function landscape(seed: number) {
   const r = (n: number) => (Math.sin(seed * 97 + n * 13.7) + 1) / 2;
   let hills = "";
   for (let x = 0; x < 160; x += 4) hills += `<rect x="${x}" y="${44 + Math.round(r(x) * 10)}" width="4" height="60" fill="#3d7a3a"/>`;

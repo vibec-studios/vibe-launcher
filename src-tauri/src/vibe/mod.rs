@@ -9,6 +9,7 @@
 //! - **Modpacks teilen/importieren** (Export, Multipart-Upload, Overrides mit Zip-Slip-Prüfung).
 pub mod announcements;
 pub mod pack_fetch;
+pub mod media;
 pub mod packs;
 pub mod ws;
 

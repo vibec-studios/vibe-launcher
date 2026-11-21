@@ -8,6 +8,7 @@ import { openSettings } from "@/features/settings/store";
 import { t } from "@/i18n";
 import { startAccessPolling } from "@/features/access/poll";
 import { setWelcomeHook, useVibeAccess } from "@/features/access/store";
+import { FeedBridge } from "@/features/feed/FeedBridge";
 import { configure, markRead, openSocial, setPresenceSources, setSocialHooks, useSocial } from "./service";
 
 const HINT_KEY = "vibe.auto_hint_shown";
@@ -67,5 +68,5 @@ export function VibeBridge() {
     return () => window.removeEventListener("focus", onFocus);
   }, []);
 
-  return null;
+  return vibe.social ? <FeedBridge /> : null;
 }

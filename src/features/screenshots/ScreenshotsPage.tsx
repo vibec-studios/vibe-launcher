@@ -5,7 +5,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { getRouteApi } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Camera, CircleHelp, Copy, Eye, FolderOpen, Library, RefreshCw, Trash2 } from "lucide-react";
+import { Camera, CircleHelp, Cloud, CloudUpload, Copy, Eye, FolderOpen, Library, RefreshCw, Trash2 } from "lucide-react";
 import { openHelp } from "@/features/help/store";
 import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
@@ -16,6 +16,9 @@ import { t as tt, useLang, useT } from "@/i18n";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { ShotThumb, bucket, useScreenshots, useShotFocus } from "./shots";
 import { ClipsView } from "./ClipsView";
+import { ShareShotDialog } from "@/features/shotshare/ShareShotDialog";
+import { CloudShotsDialog } from "@/features/shotshare/CloudShotsDialog";
+import { useShotSharing } from "@/features/shotshare/useShotSharing";
 
 const route = getRouteApi("/screenshots");
 const GAP = 8;
@@ -32,12 +35,14 @@ const Tile = memo(function Tile({
   height,
   onOpen,
   onDelete,
+  onShare,
 }: {
   shot: Screenshot;
   instanceName: string;
   height: number;
   onOpen: (s: Screenshot) => void;
   onDelete: (s: Screenshot) => void;
+  onShare?: (s: Screenshot) => void;
 }) {
   const t = useT();
   return (
@@ -53,6 +58,11 @@ const Tile = memo(function Tile({
           <ContextItem icon={<FolderOpen size={14} />} onSelect={() => api.screenshotOpenFolder(shot.path).catch((e) => toast.error(e))}>
             {t("shots.show_in_folder")}
           </ContextItem>
+          {onShare && (
+            <ContextItem icon={<CloudUpload size={14} />} onSelect={() => onShare(shot)}>
+              {t("shotshare.menu")}
+            </ContextItem>
+          )}
           <ContextSeparator />
           <ContextItem icon={<Trash2 size={14} />} danger onSelect={() => onDelete(shot)}>
             {t("common.delete")}
@@ -117,6 +127,9 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
   const { data: instances = [] } = useInstances();
   const q = useScreenshots(null);
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const sharing = useShotSharing();
+  const [shareShot, setShareShot] = useState<Screenshot | null>(null);
+  const [cloudOpen, setCloudOpen] = useState(false);
 
   const names = useMemo(() => new Map(instances.map((i) => [i.id, i.name])), [instances]);
   // Neueste zuerst – sonst zerfallen die Datumsgruppen (z. B. zweimal „Diese Woche“), wenn die Liste nicht sortiert ankommt
@@ -239,6 +252,11 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
                   <FolderOpen size={16} />
                 </IconButton>
               )}
+              {sharing && (
+                <IconButton label={t("shotshare.cloud.title")} tip variant="ghost" onClick={() => setCloudOpen(true)}>
+                  <Cloud size={16} />
+                </IconButton>
+              )}
               <IconButton label={t("shots.reload")} tip variant="ghost" onClick={() => q.refetch()}>
                 <RefreshCw size={15} className={cn(q.isFetching && "animate-spin")} />
               </IconButton>
@@ -336,6 +354,7 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
                           height={tileH}
                           onOpen={onOpen}
                           onDelete={onDelete}
+                          onShare={sharing ? setShareShot : undefined}
                         />
                       ))}
                       {Array.from({ length: cols - row.items.length }, (_, n) => (
@@ -357,6 +376,12 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
         onClose={() => setLightbox(null)}
         labels={{ prev: t("shots.prev"), next: t("shots.next"), close: t("common.close") }}
       />
+      {sharing && (
+        <>
+          <ShareShotDialog shot={shareShot} onClose={() => setShareShot(null)} />
+          <CloudShotsDialog open={cloudOpen} onClose={() => setCloudOpen(false)} />
+        </>
+      )}
     </div>
   );
 }

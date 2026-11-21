@@ -4,6 +4,7 @@
 import * as cosmeticsMock from "./cosmetics";
 import { accessCode, accessExempt, accessRoute, accessStatus } from "./access";
 import { w4Route } from "./socialw4";
+import { vibemediaRoute } from "./vibemedia";
 import type { VibeHttpRequest, VibeHttpResponse, VibeStatus, VibeTokens } from "@/lib/types";
 import type {
   Chat,
@@ -280,6 +281,8 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
   if (accessStatus() !== "approved" && !accessExempt(method, rel)) return { status: 403, body: { error: { code: accessCode(), message: "Vibe ist in der Beta." } } };
   const w4 = w4Route(method, rel, query, body);
   if (w4) return w4;
+  const media = vibemediaRoute(method, rel, query, body);
+  if (media) return media;
   // Muster wie "chats/:id/messages" -> Parameter b (1.), d (2.)
   const PATTERNS = [
     "meta", "me", "presence", "presence/friends", "friends", "friends/requests", "friends/requests/:id/accept", "friends/requests/:id/decline",
