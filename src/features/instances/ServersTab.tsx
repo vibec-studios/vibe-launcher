@@ -289,7 +289,7 @@ export function ServersTab({ instance }: { instance: Instance }) {
       <PageTools>
         {locked && (
           <Tooltip content={t("servers.locked")}>
-            <span className="grid h-8 w-8 place-items-center text-warn" aria-label={t("servers.locked")}>
+            <span className="grid h-9 w-9 place-items-center text-warn" aria-label={t("servers.locked")}>
               <Lock size={14} />
             </span>
           </Tooltip>
@@ -300,7 +300,7 @@ export function ServersTab({ instance }: { instance: Instance }) {
         </IconButton>
         {/* Leer: „Server hinzufügen“ steht groß im Leerzustand */}
         {list.length > 0 && (
-          <Button size="sm" variant="accent" icon={<Plus size={15} />} disabled={locked} onClick={() => setEditing(-1)}>
+          <Button variant="accent" icon={<Plus size={16} />} disabled={locked} onClick={() => setEditing(-1)}>
             {t("servers.add")}
           </Button>
         )}

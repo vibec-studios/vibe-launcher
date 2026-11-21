@@ -5,7 +5,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Check, Mail, Megaphone, Pencil, Play, Radio, UserPlus, X } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
-import { Button, IconButton, SearchInput, Select, Skeleton, Spinner, Tooltip, cn, pageWrap, toast } from "@/components/ui";
+import { Button, IconButton, PageToolbar, SearchInput, Select, Skeleton, Spinner, Tooltip, cn, pageWrap, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { formatRelative } from "@/lib/format";
 import { useVibe } from "@/lib/vibe";
@@ -351,12 +351,12 @@ export function Overview() {
   const fresh = invites.length + incoming.length > 0;
   return (
     <div className="flex h-full flex-col">
-      <div className={cn(pageWrap, "flex h-14 shrink-0 items-center gap-2")}>
-        {friends.length > 0 && (
-          <SearchInput value={query} onChange={setQuery} placeholder={t("social.friends.filter")} aria-label={t("social.friends.filter")} className="w-[260px] min-w-[150px]" />
-        )}
-        <div className="flex-1" />
-        <SocialActions showAdd />
+      <div className={cn(pageWrap, "shrink-0 pb-4 pt-4")}>
+        <PageToolbar actions={<SocialActions showAdd />}>
+          {friends.length > 0 && (
+            <SearchInput value={query} onChange={setQuery} placeholder={t("social.friends.filter")} aria-label={t("social.friends.filter")} className="min-w-[160px] max-w-[320px] flex-1 basis-[240px]" />
+          )}
+        </PageToolbar>
       </div>
       <div className="scroll min-h-0 flex-1">
         <div className={cn(pageWrap, "grid grid-cols-1 gap-8 pb-12 pt-1 min-[1180px]:grid-cols-[minmax(0,1fr)_288px] min-[1800px]:grid-cols-[minmax(0,1fr)_320px]")}>

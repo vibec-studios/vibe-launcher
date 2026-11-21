@@ -301,7 +301,7 @@ export function BackupsTab({ instance }: { instance: Instance }) {
                 <IconButton label={t("backups.open_folder")} tip variant="ghost" size="sm" onClick={() => openFolder("snapshots")}>
                   <FolderOpen size={15} />
                 </IconButton>
-                <HelpLink guide="backups" />
+                <HelpLink guide="backups" className="h-8 w-8 rounded-ctl" />
                 <Button size="sm" variant="accent" data-tour="backups-create" icon={<Plus size={15} />} disabled={busy} onClick={() => setCreating(true)}>
                   {t("backups.snapshot.create")}
                 </Button>

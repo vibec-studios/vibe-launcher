@@ -2,11 +2,11 @@
 // alles Weitere im ⋯-Menü bzw. per Rechtsklick. Der Seitentitel steht in der Titelleiste.
 import { memo, useDeferredValue, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { MoreHorizontal, Plus, Server as ServerIconLucide, Users } from "lucide-react";
+import { MoreHorizontal, Plus, SearchX, Server as ServerIconLucide, Users } from "lucide-react";
 import { useServerStatus, useServers } from "@/lib/queries";
 import type { Server } from "@/lib/types";
 import { formatLoader } from "@/lib/format";
-import { Button, ContextMenu, DropdownMenu, EmptyState, ErrorState, IconButton, Progress, SearchInput, Skeleton, cn } from "@/components/ui";
+import { Button, ContextMenu, DropdownMenu, EmptyState, ErrorState, IconButton, Page, PageToolbar, Progress, SearchInput, Skeleton, cn } from "@/components/ui";
 import { accentVars } from "@/components/instance/accent";
 import { useT } from "@/i18n";
 import { openNewServer, serverAddress, useServerTask } from "./actions";
@@ -102,15 +102,18 @@ export function ServersPage() {
     .sort((a, b) => (b.last_started ?? b.created_at) - (a.last_started ?? a.created_at));
 
   return (
-    <div className="scroll h-full">
-      <div className="flex flex-col gap-3 px-6 pb-10 pt-4">
-        <div className="flex items-center gap-2">
-          {list.length > 0 && <SearchInput value={query} onChange={setQuery} placeholder={t("srv.search")} className="w-[220px] min-w-[150px]" />}
-          <div className="flex-1" />
-          <Button size="sm" variant="primary" data-tour="servers-new" icon={<Plus size={15} />} onClick={() => openNewServer()}>
-            {t("srv.new")}
-          </Button>
-        </div>
+    <Page>
+        {list.length > 0 && (
+          <PageToolbar
+            actions={
+              <Button variant="primary" data-tour="servers-new" icon={<Plus size={16} />} onClick={() => openNewServer()}>
+                {t("srv.new")}
+              </Button>
+            }
+          >
+            <SearchInput value={query} onChange={setQuery} placeholder={t("srv.search")} className="min-w-[160px] max-w-[320px] flex-1 basis-[240px]" />
+          </PageToolbar>
+        )}
 
         {isError && !data ? (
           <ErrorState error={error} onRetry={() => refetch()} />
@@ -122,7 +125,7 @@ export function ServersPage() {
           </div>
         ) : list.length === 0 ? (
           <EmptyState
-            className="mt-4 rounded-panel bg-surface py-14"
+            className="rounded-panel bg-surface py-14"
             icon={<ServerIconLucide size={40} strokeWidth={1.4} />}
             title={t("srv.empty.title")}
             text={t("srv.empty.text")}
@@ -133,7 +136,15 @@ export function ServersPage() {
             }
           />
         ) : sorted.length === 0 ? (
-          <EmptyState title={t("srv.no_match", { q: query })} />
+          <EmptyState
+            icon={<SearchX size={30} strokeWidth={1.6} />}
+            title={t("srv.no_match", { q: query })}
+            action={
+              <Button size="sm" onClick={() => setQuery("")}>
+                {t("layout.search.reset")}
+              </Button>
+            }
+          />
         ) : (
           <>
             <div data-tour="servers-list" className="-mx-3 flex flex-col">
@@ -150,7 +161,6 @@ export function ServersPage() {
             )}
           </>
         )}
-      </div>
-    </div>
+    </Page>
   );
 }

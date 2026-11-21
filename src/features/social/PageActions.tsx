@@ -50,13 +50,13 @@ export function SocialActions({ showAdd = true }: { showAdd?: boolean }) {
   const t = useT();
   const vibe = useVibe();
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2">
       {vibe.sharing && (
         <>
-          <IconButton label={t("social.action.share")} tip variant="ghost" size="sm" onClick={() => openPageDialog("share")}>
+          <IconButton label={t("social.action.share")} tip variant="ghost" onClick={() => openPageDialog("share")}>
             <Share2 size={15} />
           </IconButton>
-          <IconButton label={t("social.action.import")} tip variant="ghost" size="sm" onClick={() => openPageDialog("import")}>
+          <IconButton label={t("social.action.import")} tip variant="ghost" onClick={() => openPageDialog("import")}>
             <PackageOpen size={15} />
           </IconButton>
         </>
@@ -64,7 +64,7 @@ export function SocialActions({ showAdd = true }: { showAdd?: boolean }) {
       <DropdownMenu
         align="end"
         trigger={
-          <IconButton label={t("social.chat.more")} tip variant="ghost" size="sm">
+          <IconButton label={t("social.chat.more")} tip variant="ghost">
             <MoreHorizontal size={16} />
           </IconButton>
         }
@@ -77,7 +77,7 @@ export function SocialActions({ showAdd = true }: { showAdd?: boolean }) {
         </DropdownItem>
       </DropdownMenu>
       {showAdd && (
-        <Button size="sm" variant="primary" className="ml-1" icon={<UserPlus size={14} />} onClick={() => openPageDialog("add")}>
+        <Button variant="primary" icon={<UserPlus size={16} />} onClick={() => openPageDialog("add")}>
           {t("social.action.add")}
         </Button>
       )}

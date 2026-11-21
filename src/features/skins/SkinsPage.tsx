@@ -33,6 +33,7 @@ import {
   ErrorState,
   IconButton,
   Input,
+  PageToolbar,
   Segmented,
   Select,
   Skeleton,
@@ -226,39 +227,41 @@ export function SkinsPage() {
 
   return (
     <div ref={pageRef} className="flex h-full min-h-0 flex-col bg-panel">
-      {/* Werkzeugleiste: Account links, Bibliothek-Aktionen rechts (Titel steht in der Titelleiste) */}
-      <div className="flex h-12 shrink-0 items-center gap-2 px-6">
-        {accounts.length > 1 ? (
-          <div className="w-[220px]">
-            <Select
-              size="sm"
-              variant="ghost"
-              value={accountId}
-              onChange={(v) => setChosen(v)}
-              options={accounts.map((a) => ({
-                value: a.id,
-                label: (
-                  <span className="inline-flex items-center gap-2">
-                    <PlayerHead uuid={a.uuid} name={a.username} size={18} />
-                    {a.username}
-                  </span>
-                ),
-              }))}
-            />
-          </div>
-        ) : account ? (
-          <span className="flex items-center gap-2 px-1 text-[13px] font-semibold text-text">
-            <PlayerHead uuid={account.uuid} name={account.username} size={18} />
-            {account.username}
-          </span>
-        ) : null}
-        <div className="flex-1" />
-        {libraryTab && (
-          <>
-            <ImportByName />
-            <AddFileButton />
-          </>
-        )}
+      <div className="shrink-0 px-6 pb-4 pt-4">
+        <PageToolbar
+          actions={
+            libraryTab && (
+              <>
+                <ImportByName />
+                <AddFileButton />
+              </>
+            )
+          }
+        >
+          {accounts.length > 1 ? (
+            <div className="w-[220px] min-w-[160px] shrink">
+              <Select
+                variant="ghost"
+                value={accountId}
+                onChange={(v) => setChosen(v)}
+                options={accounts.map((a) => ({
+                  value: a.id,
+                  label: (
+                    <span className="inline-flex items-center gap-2">
+                      <PlayerHead uuid={a.uuid} name={a.username} size={18} />
+                      {a.username}
+                    </span>
+                  ),
+                }))}
+              />
+            </div>
+          ) : account ? (
+            <span className="flex items-center gap-2 px-1 text-[13.5px] font-semibold text-text">
+              <PlayerHead uuid={account.uuid} name={account.username} size={20} />
+              {account.username}
+            </span>
+          ) : null}
+        </PageToolbar>
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(340px,1fr)_minmax(360px,1.1fr)] gap-4 px-6 pb-6">
@@ -471,7 +474,7 @@ export function SkinsPage() {
               ) : libraryQ.isError ? (
                 <ErrorState error={libraryQ.error} onRetry={() => void libraryQ.refetch()} />
               ) : libraryQ.data.length === 0 ? (
-                <EmptyState className="h-full" icon={<Shirt size={24} />} title={t("skins.library_empty_title")} text={t("skins.library_empty_text")} />
+                <EmptyState className="h-full" icon={<Shirt size={28} />} title={t("skins.library_empty_title")} text={t("skins.library_empty_text")} action={<AddFileButton />} />
               ) : (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2">
                   {libraryQ.data.map((s) => (
@@ -510,9 +513,8 @@ function AddFileButton() {
   const t = useT();
   return (
     <Button
-      size="sm"
       variant="ghost"
-      icon={<ImagePlus size={14} />}
+      icon={<ImagePlus size={15} />}
       onClick={async () => {
         const sel = await openDialog({ multiple: true, filters: [{ name: "PNG", extensions: ["png"] }] });
         if (sel) await addFiles(Array.isArray(sel) ? sel : [sel]);
@@ -731,21 +733,21 @@ function ImportByName() {
   };
   return (
     <form
-      className="flex shrink-0 items-center gap-1"
+      className="flex shrink-0 items-center gap-1.5"
       onSubmit={(e) => {
         e.preventDefault();
         void run();
       }}
     >
       <Input
-        className="h-8 w-[230px] text-[13px]"
+        className="w-[230px]"
         value={name}
         maxLength={16}
         onChange={(e) => setName(e.target.value)}
         placeholder={t("skins.import_placeholder")}
         aria-label={t("skins.import_player")}
       />
-      <IconButton label={t("skins.import")} tip variant="ghost" size="sm" type="submit" disabled={!valid || busy}>
+      <IconButton label={t("skins.import")} tip variant="ghost" type="submit" disabled={!valid || busy}>
         {busy ? <Spinner size={13} /> : <Download size={15} />}
       </IconButton>
     </form>

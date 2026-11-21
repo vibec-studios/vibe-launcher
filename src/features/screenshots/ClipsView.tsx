@@ -3,12 +3,13 @@
 // Player-Dialog mit Bearbeiten. Der Launcher löscht nur auf Wunsch und lädt nichts hoch.
 import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clapperboard, Eye, FolderOpen, Play, RefreshCw, Star, Trash2 } from "lucide-react";
+import { CircleHelp, Clapperboard, Eye, FolderOpen, Play, RefreshCw, Star, Trash2 } from "lucide-react";
+import { openHelp } from "@/features/help/store";
 import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
 import type { Clip } from "@/lib/types";
 import { formatBytes } from "@/lib/format";
-import { Button, ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, Segmented, Select, Skeleton, Tooltip, cn, confirm, toast } from "@/components/ui";
+import { Button, ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, PageToolbar, Segmented, Select, Skeleton, ToolbarMeta, Tooltip, cn, confirm, toast } from "@/components/ui";
 import { useLang, useT } from "@/i18n";
 import { AUTO_REASONS, ClipThumb, ReasonIcon, clipName, clipWhere, clipsKey, formatClipLength, reasonColor, reasonKey, useClips } from "./clips";
 import { ClipPlayer } from "./ClipPlayer";
@@ -207,26 +208,32 @@ export function ClipsView({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex shrink-0 flex-wrap items-center gap-3 px-6 pb-1 pt-4">
-        {switcher}
-        <div className="w-[220px]">
-          <Select<string> size="sm" value={instance ?? ALL} onChange={(v) => setInstance(v === ALL ? undefined : v)} options={filterOptions} />
-        </div>
-        <Segmented<Kind> value={kind} onChange={setKind} items={kinds} />
-        {q.data && clips.length > 0 && (
-          <span className="text-meta tabular-nums text-dim">
-            {t(clips.length === 1 ? "clips.count_one" : "clips.count", { n: clips.length.toLocaleString() })} · {t("clips.total", { size: formatBytes(totalBytes) })}
-          </span>
-        )}
-        <div className="flex-1" />
-        {instance && (
-          <IconButton label={t("clips.open_folder")} tip variant="ghost" onClick={() => api.clipOpenFolder(instance).catch((e) => toast.error(e))}>
-            <FolderOpen size={16} />
-          </IconButton>
-        )}
-        <IconButton label={t("shots.reload")} tip variant="ghost" onClick={() => q.refetch()}>
-          <RefreshCw size={15} className={cn(q.isFetching && "animate-spin")} />
-        </IconButton>
+      <div className="shrink-0 px-6 pb-1 pt-4">
+        <PageToolbar
+          actions={
+            <>
+              {q.data && clips.length > 0 && (
+                <ToolbarMeta>
+                  {t(clips.length === 1 ? "clips.count_one" : "clips.count", { n: clips.length.toLocaleString() })} · {t("clips.total", { size: formatBytes(totalBytes) })}
+                </ToolbarMeta>
+              )}
+              {instance && (
+                <IconButton label={t("clips.open_folder")} tip variant="ghost" onClick={() => api.clipOpenFolder(instance).catch((e) => toast.error(e))}>
+                  <FolderOpen size={16} />
+                </IconButton>
+              )}
+              <IconButton label={t("shots.reload")} tip variant="ghost" onClick={() => q.refetch()}>
+                <RefreshCw size={15} className={cn(q.isFetching && "animate-spin")} />
+              </IconButton>
+            </>
+          }
+        >
+          {switcher}
+          <div className="w-[220px] min-w-[160px] shrink">
+            <Select<string> value={instance ?? ALL} onChange={(v) => setInstance(v === ALL ? undefined : v)} options={filterOptions} />
+          </div>
+          <Segmented<Kind> size="md" value={kind} onChange={setKind} items={kinds} />
+        </PageToolbar>
       </div>
 
       <div className="scroll min-h-0 flex-1 px-6 pb-8">
@@ -269,7 +276,17 @@ export function ClipsView({
               }
             />
           ) : (
-            <EmptyState className="mt-3 rounded-panel bg-surface" icon={<Clapperboard size={34} />} title={t("clips.empty.title")} text={t("clips.empty.text")} />
+            <EmptyState
+              className="mt-3 rounded-panel bg-surface"
+              icon={<Clapperboard size={34} />}
+              title={t("clips.empty.title")}
+              text={t("clips.empty.text")}
+              action={
+                <Button variant="subtle" icon={<CircleHelp size={15} />} onClick={() => openHelp("gallery")}>
+                  {t("layout.howto")}
+                </Button>
+              }
+            />
           )
         ) : (
           groups.map((g) => (

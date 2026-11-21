@@ -33,7 +33,7 @@ function Header({ count, loading }: { count: number; loading?: boolean }) {
       </header>
     );
   return (
-    <header className="flex min-w-0 items-end gap-3">
+    <header className="flex min-h-[44px] min-w-0 items-center gap-3">
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-title text-text">{g.title}</h1>
         {count > 0 && (
@@ -48,10 +48,10 @@ function Header({ count, loading }: { count: number; loading?: boolean }) {
       </div>
       {count > 0 && (
         <div className="flex shrink-0 items-center gap-2">
-          <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={() => openImport()}>
+          <Button variant="subtle" icon={<PackageOpen size={15} />} onClick={() => openImport()}>
             {t("home.action.import")}
           </Button>
-          <Button size="sm" icon={<Plus size={15} />} onClick={openNewInstance}>
+          <Button icon={<Plus size={16} />} onClick={openNewInstance}>
             {t("inst.new")}
           </Button>
         </div>
@@ -73,7 +73,7 @@ function ExpertHome() {
 
   return (
     <div className="scroll h-full">
-      <div ref={ref} className={cn(pageWrap, "flex flex-col gap-6 pb-10 pt-6")}>
+      <div ref={ref} className={cn(pageWrap, "flex flex-col gap-6 pb-10 pt-5")}>
         <Header count={list.length} loading={loading} />
         {!loading && <StarterCard />}
 

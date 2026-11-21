@@ -11,14 +11,14 @@ export interface DialogProps {
   description?: ReactNode;
   children?: ReactNode;
   footer?: ReactNode;
-  /** Breite: sm 420, md 560, lg 760, xl 980 */
-  size?: "sm" | "md" | "lg" | "xl";
+  /** Breite: sm 420, md 560, lg 760, xl 980, full = großer Assistent (bis 1240 × fast Fensterhöhe) */
+  size?: "sm" | "md" | "lg" | "xl" | "full";
   /** Schließen per Esc/Klick außerhalb verhindern (z. B. während eines Vorgangs) */
   locked?: boolean;
   className?: string;
 }
 
-const widths = { sm: "w-[420px]", md: "w-[560px]", lg: "w-[760px]", xl: "w-[980px]" };
+const widths = { sm: "w-[420px]", md: "w-[560px]", lg: "w-[760px]", xl: "w-[980px]", full: "w-[1240px] h-[calc(100%-64px)] max-h-[calc(100%-64px)]!" };
 
 /** Modaler Dialog: angehobene Fläche mit Schatten statt Rahmen. Inhalt scrollt innerhalb, nie das Fenster. */
 export function Dialog({ open, onOpenChange, title, description, children, footer, size = "md", locked, className }: DialogProps) {

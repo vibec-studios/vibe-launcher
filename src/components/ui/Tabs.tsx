@@ -56,23 +56,30 @@ export function Segmented<V extends string>({
   onChange,
   items,
   className,
+  size = "sm",
+  label,
 }: {
   value: V;
   onChange: (v: V) => void;
-  items: { value: V; label: ReactNode; disabled?: boolean }[];
+  items: { value: V; label: ReactNode; disabled?: boolean; title?: string }[];
   className?: string;
+  size?: "sm" | "md";
+  label?: string;
 }) {
   return (
-    <div className={cn("vl-seg inline-flex gap-0.5 rounded-ctl bg-field p-0.5", className)} role="radiogroup">
+    <div className={cn("vl-seg inline-flex shrink-0 gap-0.5 rounded-ctl bg-field p-0.5", size === "md" && "vl-seg-md", className)} role="radiogroup" aria-label={label}>
       {items.map((it) => (
         <button
           key={it.value}
           role="radio"
           aria-checked={it.value === value}
           disabled={it.disabled}
+          title={it.title}
+          aria-label={it.title}
           onClick={() => onChange(it.value)}
           className={cn(
-            "vl-seg-item h-7 rounded-[max(0px,calc(var(--r-ctl)-2px))] px-3 text-[13px] font-semibold transition-colors duration-150 disabled:opacity-40",
+            "vl-seg-item inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[max(0px,calc(var(--r-ctl)-2px))] px-3 text-[13px] font-semibold transition-colors duration-150 disabled:opacity-40",
+            size === "md" ? "h-8" : "h-7",
             it.value === value ? "bg-surface3 text-text" : "text-muted hover:text-text",
           )}
         >
