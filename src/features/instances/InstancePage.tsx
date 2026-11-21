@@ -29,7 +29,7 @@ import { InstanceNotices } from "./InstanceNotices";
 import { useRefreshShortcut } from "./RefreshButton";
 import { PlayLinkBar } from "@/features/play/SharePlayLink";
 import { PackSyncBar } from "@/features/packsync/PackSyncBar";
-import { VibeyClientBadge } from "@/features/cosmetics/VibeyClientSlot";
+import { VibeyEolNotice } from "./vibeyEol/VibeyEolNotice";
 import { ToolbarSlot } from "./toolbar";
 import { useSimple } from "@/lib/mode";
 import { simpleHides, type InstanceArea } from "@/lib/simple-mode";
@@ -263,7 +263,6 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
         accent={accent}
         settingsActive={settingsOpen}
         onSettings={() => openInstanceSettings(inst.id)}
-        badge={<VibeyClientBadge instance={inst} label={t("ipage.vibey_active")} onClick={() => openInstanceSettings(inst.id, "vibe")} />}
         tabs={
           <Tabs<Area | "">
             value={area}
@@ -283,6 +282,7 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
         notices={<InstanceNotices instance={inst} tab={active} />}
       />
       <CrashBanner instance={inst} />
+      <VibeyEolNotice instance={inst} />
       <div data-tour="play-link">
         <PlayLinkBar instanceId={inst.id} className="border-b border-line" />
       </div>

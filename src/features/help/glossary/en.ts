@@ -67,7 +67,7 @@ const en: Glossary = {
   },
   server: {
     title: "Server",
-    text: "A computer that keeps a world running so others can join. To play together, “Host world” is usually enough – your own servers are in expert mode.",
+    text: "A computer that keeps a world running so others can join. Create your own servers under “Servers” in expert mode.",
   },
   backup: {
     title: "Backup",
@@ -75,7 +75,7 @@ const en: Glossary = {
   },
   vibe: {
     title: "Vibe",
-    text: "The launcher's online services: friends, chat, playing worlds together and cosmetics. Optional and can be turned off any time.",
+    text: "The launcher's online services: friends, chat and playing together on servers. Optional and can be turned off any time.",
   },
   seed: {
     title: "Seed",

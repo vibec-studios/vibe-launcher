@@ -2,6 +2,9 @@
 
 Stand 2026-11-18. Gilt für Vibe-Backend, Vibe Launcher und Vibey Client. Änderungen nur gemeinsam, in dieser Datei.
 
+> **Hinweis (21.11.2026):** Der Vibey Client ist eingestellt. Beitreten über Play-Links bleibt im Launcher; das Hosten
+> aus dem Spiel und `client_pack: "vibey"` werden nicht mehr angeboten. Siehe [VIBEY-CLIENT-EINGESTELLT.md](VIBEY-CLIENT-EINGESTELLT.md).
+
 ## 1. Ablauf
 
 1. Spieler A hostet seine Welt mit dem Vibey Client übers Relay (`<slot>.axolite.cc`, früher `<slot>.vibey.henny.dev`).

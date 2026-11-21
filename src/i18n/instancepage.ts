@@ -61,7 +61,6 @@ export default {
 
     "ipage.menu.edit": "Icon, Farbe & Gruppe …",
     "ipage.tools": "Werkzeuge",
-    "ipage.vibey_active": "Vibey Client aktiv – Einstellungen öffnen",
     "instances.view": "Ansicht",
     "instances.view.grid": "Kacheln",
     "instances.view.list": "Liste",
@@ -135,7 +134,6 @@ export default {
 
     "ipage.menu.edit": "Icon, colour & group …",
     "ipage.tools": "Tools",
-    "ipage.vibey_active": "Vibey Client active – open settings",
     "instances.view": "View",
     "instances.view.grid": "Tiles",
     "instances.view.list": "List",

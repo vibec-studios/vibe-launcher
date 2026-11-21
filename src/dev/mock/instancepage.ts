@@ -158,7 +158,7 @@ const repairPlan: FixPlan = {
 const repairDeps: DepIssue[] = [
   { kind: "loader_files", severity: "error", file_name: "", mod_name: "Fabric", target: "fabric", message: "Fabric 0.17.2: Die Installation ist beschädigt (3 Datei(en))", fixes: [] },
 ];
-// Absturz (Screenshots: localStorage vl.mock.crash = "survival"): Vibey Client 0.3.0 + Centered Crosshair
+// Absturz (Screenshots: localStorage vl.mock.crash = "survival"): Better HUD 2.1.0 + Centered Crosshair
 // (Mixin-Konflikt beim Start), dazu eine zu alte Abhängigkeit und eine kaputte Config
 const CRASH_FILE = "crash-2026-11-18_19.44.02-client.txt";
 const crashDiags: Diagnosis[] = [
@@ -166,10 +166,10 @@ const crashDiags: Diagnosis[] = [
     id: "mixin_conflict",
     confidence: 93,
     culprit: { mod_id: "centered-crosshair", name: "Centered Crosshair", file: "centered-crosshair-1.3.1+1.21.4.jar" },
-    params: { other_id: "vibeyclient", other_name: "Vibey Client", other_file: "vibeyclient-fabric-1.21.4-0.3.0.jar" },
+    params: { other_id: "betterhud", other_name: "Better HUD", other_file: "betterhud-fabric-1.21.4-2.1.0.jar" },
     actions: [{ kind: "disable_mod", file: "centered-crosshair-1.3.1+1.21.4.jar" }, { kind: "upload" }],
     evidence:
-      "[19:44:01] [Render thread/WARN]: @Redirect conflict. Skipping centeredcrosshair.mixins.json:InGameHudMixin from mod centered-crosshair->@Redirect::redirectCrosshair(…) with priority 1000, already redirected by vibeyclient.mixins.json:hud.InGameHudMixin from mod vibeyclient",
+      "[19:44:01] [Render thread/WARN]: @Redirect conflict. Skipping centeredcrosshair.mixins.json:InGameHudMixin from mod centered-crosshair->@Redirect::redirectCrosshair(…) with priority 1000, already redirected by betterhud.mixins.json:hud.InGameHudMixin from mod betterhud",
     source: "logs/latest.log",
     line: 214,
     rule: "mixin_redirect_conflict",
@@ -201,7 +201,7 @@ const crashPlan: FixPlan = {
   crash: true,
   causes: crashDiags,
   steps: [
-    { id: "c1", reason: "mixin_conflict", name: "Centered Crosshair", required_by: [], action: { kind: "disable", file_name: "centered-crosshair-1.3.1+1.21.4.jar" }, alt: { kind: "disable", file_name: "vibeyclient-fabric-1.21.4-0.3.0.jar" }, alt_name: "Vibey Client", confirm: true, selected: false, from_crash: true, cause: 0, detail: null },
+    { id: "c1", reason: "mixin_conflict", name: "Centered Crosshair", required_by: [], action: { kind: "disable", file_name: "centered-crosshair-1.3.1+1.21.4.jar" }, alt: { kind: "disable", file_name: "betterhud-fabric-1.21.4-2.1.0.jar" }, alt_name: "Better HUD", confirm: true, selected: false, from_crash: true, cause: 0, detail: null },
     { id: "c2", reason: "version_mismatch", name: "Cloth Config v15", required_by: ["REI"], action: { kind: "replace", file_name: "cloth-config-15.0.127-fabric.jar", source: "modrinth", project_id: "9s6osm5g", version_id: "cc140", title: "Cloth Config API", from_version: "15.0.127", to_version: "15.0.140", manual: false }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: true, cause: 1, detail: null },
     { id: "c3", reason: "broken_config", name: "", required_by: [], action: { kind: "reset_config", path: "config/sodium-options.json" }, alt: null, alt_name: null, confirm: true, selected: false, from_crash: true, cause: 2, detail: null },
     { id: "c4", reason: "missing_dependency", name: "Porting Lib", required_by: ["Create", "Create Deco"], action: { kind: "install", source: "modrinth", project_id: "porting-lib", title: "Porting Lib" }, alt: null, alt_name: null, confirm: false, selected: true, from_crash: false, cause: null, detail: null },

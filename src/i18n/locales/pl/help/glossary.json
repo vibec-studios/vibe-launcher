@@ -65,7 +65,7 @@
   },
   "server": {
     "title": "Serwer",
-    "text": "Komputer, który utrzymuje świat, żeby inni mogli dołączyć. Do wspólnej gry zwykle wystarczy „Hostuj świat” – własne serwery są w trybie eksperta."
+    "text": "Komputer, który utrzymuje świat, żeby inni mogli dołączyć. Własne serwery tworzysz w „Serwery” w trybie eksperta."
   },
   "backup": {
     "title": "Kopia zapasowa",
@@ -73,7 +73,7 @@
   },
   "vibe": {
     "title": "Vibe",
-    "text": "Usługi online launchera: znajomi, czat, wspólna gra w światach i kosmetyki. Opcjonalne i można je w każdej chwili wyłączyć."
+    "text": "Usługi online launchera: znajomi, czat i wspólna gra na serwerach. Opcjonalne i można je w każdej chwili wyłączyć."
   },
   "account": {
     "title": "Konto Microsoft",

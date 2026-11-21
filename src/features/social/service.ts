@@ -441,7 +441,7 @@ export function errText(e: unknown): string {
 }
 
 // ------------------------------------------------------------------ Gateway-Events für andere Features
-// (z. B. Cosmetics: `catalog.updated`, `submission.updated`). Überlebt Neuverbindungen und neue Gateways.
+// (z. B. `pack.version.published`). Überlebt Neuverbindungen und neue Gateways.
 
 type ExtraListener = { ev: string; fn: (d: unknown) => void; off?: () => void };
 const extraListeners = new Set<ExtraListener>();

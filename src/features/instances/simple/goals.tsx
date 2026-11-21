@@ -1,7 +1,7 @@
 // Ziele des geführten „Neues Spiel“-Assistenten (Simple-Modus): Der Nutzer wählt, was er vorhat – der Launcher
 // wählt Version, Mod-Unterbau und Zusätze selbst. `usePlan` rechnet ein Ziel in eine konkrete Einrichtung um.
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Gauge, Puzzle, Sparkles, Sprout, Users } from "lucide-react";
+import { ChevronRight, Gauge, Puzzle, Sprout, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { api } from "@/lib/api";
 import { useGameVersions } from "@/lib/queries";
@@ -10,7 +10,6 @@ import { cn } from "@/components/ui";
 import { useLoaderGameVersions, useLoaderVersions, pickLoaderVersion } from "@/components/instance/VersionPicker";
 import type { NewGameGoal } from "@/components/instance/actions";
 import { cpk } from "@/features/instances/settings/ClientPacks";
-import { useVibe } from "@/lib/vibe";
 import { useT } from "@/i18n";
 
 export type { NewGameGoal };
@@ -23,13 +22,12 @@ export const GOAL_ICONS: Record<NewGameGoal, ReactNode> = {
   fps: <Gauge size={22} />,
   mods: <Puzzle size={22} />,
   friends: <Users size={22} />,
-  vibey: <Sparkles size={22} />,
 };
 
-/** Sichtbare Ziele (Vibey Client nur mit Vibe). */
+const GOALS: NewGameGoal[] = ["vanilla", "fps", "mods", "friends"];
+
 export function useGoals(): NewGameGoal[] {
-  const vibe = useVibe();
-  return ["vanilla", "fps", "mods", "friends", ...(vibe.enabled ? (["vibey"] as const) : [])];
+  return GOALS;
 }
 
 /** Große Kacheln „Neues Spiel“ (Startseite, Assistent, Onboarding). */
@@ -57,17 +55,9 @@ export function GoalTiles({
             key={g}
             data-tour={g === "vanilla" ? "new-game" : undefined}
             onClick={() => onPick(g)}
-            className={cn(
-              "group flex min-w-0 items-center gap-4 rounded-card bg-surface px-4 py-3.5 text-left transition-colors duration-100 hover:bg-surface2",
-              g === "vibey" && "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--ui-accent)_45%,transparent)]",
-            )}
+            className="group flex min-w-0 items-center gap-4 rounded-card bg-surface px-4 py-3.5 text-left transition-colors duration-100 hover:bg-surface2"
           >
-            <span
-              className={cn(
-                "grid h-11 w-11 shrink-0 place-items-center rounded-card bg-black/40 transition-colors duration-100",
-                g === "vibey" ? "text-brand" : "text-muted group-hover:text-text",
-              )}
-            >
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-card bg-black/40 text-muted transition-colors duration-100 group-hover:text-text">
               {GOAL_ICONS[g]}
             </span>
             <span className="min-w-0 flex-1">
@@ -92,15 +82,9 @@ export function GoalTiles({
           className={cn(
             "vl-card group flex min-w-0 flex-col items-start gap-3 rounded-panel bg-surface text-left transition-colors duration-100 hover:bg-surface2",
             compact ? "p-4" : "p-5",
-            g === "vibey" && "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--ui-accent)_45%,transparent)]",
           )}
         >
-          <span
-            className={cn(
-              "grid h-11 w-11 shrink-0 place-items-center rounded-card bg-black/40 transition-colors duration-100",
-              g === "vibey" ? "text-brand" : "text-muted group-hover:text-text",
-            )}
-          >
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-card bg-black/40 text-muted transition-colors duration-100 group-hover:text-text">
             {GOAL_ICONS[g]}
           </span>
           <span className="min-w-0">
@@ -118,12 +102,10 @@ export interface GamePlan {
   loader: LoaderKind;
   loaderVersion: string | null;
   /** Client-Pack, das nach dem Anlegen installiert wird */
-  pack: "vibey" | "essential" | null;
+  pack: "essential" | null;
   /** Bewährte Performance-Mods installieren */
   perf: boolean;
   loading: boolean;
-  /** Ziel gerade nicht umsetzbar (z. B. Vibey Client nicht erreichbar) */
-  unavailable: boolean;
 }
 
 /** Ziel -> Einrichtung: neueste passende Minecraft-Version, Unterbau automatisch. */
@@ -136,9 +118,7 @@ export function usePlan(goal: NewGameGoal | null): GamePlan {
   const candidates = modded ? releases.filter((v) => fabricSet.has(v)) : releases;
   const newest = candidates[0] ?? null;
 
-  // „Mit Freunden“: mit Vibe über den Vibey Client (Welt hosten übers Vibe-Relay), sonst Essential
-  const vibe = useVibe();
-  const packId = goal === "vibey" ? "vibey" : goal === "friends" ? (vibe.enabled ? "vibey" : "essential") : null;
+  const packId = goal === "friends" ? "essential" : null;
   const packs = useQuery({
     queryKey: cpk.plan(newest ?? "", "fabric"),
     queryFn: () => api.clientPacksList({ mcVersion: newest!, loader: "fabric" }),
@@ -156,15 +136,11 @@ export function usePlan(goal: NewGameGoal | null): GamePlan {
 
   let mc: string | null = newest;
   let pack: GamePlan["pack"] = null;
-  let unavailable = false;
   let loader: LoaderKind = modded ? "fabric" : "vanilla";
-  // Ohne passendes Pack: „Mit Freunden“ wird ein Spiel ohne Mods (läuft auf jedem Server), Vibey ist nicht möglich
+  // Ohne passendes Pack: „Mit Freunden“ wird ein Spiel ohne Mods (läuft auf jedem Server)
   const noPack = () => {
-    if (goal === "vibey") unavailable = true;
-    else {
-      loader = "vanilla";
-      mc = releases[0] ?? null;
-    }
+    loader = "vanilla";
+    mc = releases[0] ?? null;
   };
   if (packId && newest && packs.data) {
     const offer = packs.data.packs.find((p) => p.id === packId);
@@ -193,5 +169,5 @@ export function usePlan(goal: NewGameGoal | null): GamePlan {
     (goal === "fps" && sodium.isLoading) ||
     (loader !== "vanilla" && !!mc && lv.isLoading);
 
-  return { mc, loader, loaderVersion, pack, perf: goal === "fps", loading, unavailable };
+  return { mc, loader, loaderVersion, pack, perf: goal === "fps", loading };
 }

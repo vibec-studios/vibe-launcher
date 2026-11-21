@@ -18,7 +18,6 @@ import backups from "./backups";
 import files from "./files";
 import social from "./social";
 import instancepage from "./instancepage";
-import cosmetics from "./cosmetics";
 import minecraftcapes from "./minecraftcapes";
 import appearance from "./appearance";
 import home from "./home";
@@ -30,7 +29,6 @@ import notices from "./notices";
 import modsets from "./modsets";
 import bedrock from "./bedrock";
 import feedback from "./feedback";
-import clips from "./clips";
 import wave4 from "./wave4";
 import updates from "./updates";
 import datapacks from "./datapacks";
@@ -61,6 +59,7 @@ import modMap from "./mod-map";
 import socialw4 from "./socialw4";
 import vibemedia from "./vibemedia";
 import remote from "./remote";
+import vibeyeol from "./vibeyeol";
 
 import { isLang, normalizeLang, type Lang } from "./languages";
 
@@ -68,13 +67,14 @@ export { LANGUAGES, intlLocale, isLang, languageName, normalizeLang, type Lang }
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, clips, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize, sessions, usability, layout, uic, organize, privacy, portable, skineditor, packupdate, wave4, servertarget, afk];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize, sessions, usability, layout, uic, organize, privacy, portable, skineditor, packupdate, wave4, servertarget, afk];
 const dicts: Partial<Record<Lang, Dict>> & { de: Dict; en: Dict } = { de: {}, en: {} };
 bundles.push(worldMap);
 bundles.push(modMap);
 bundles.push(socialw4);
 bundles.push(vibemedia);
 bundles.push(remote);
+bundles.push(vibeyeol);
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);
   Object.assign(dicts.en, b.en);

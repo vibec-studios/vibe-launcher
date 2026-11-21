@@ -1,5 +1,5 @@
 // „Neues Spiel“ im Simple-Modus: geführter Assistent nach Ziel statt nach Technik.
-//   1. Ziel wählen (Normal spielen, Mehr FPS, Mit Mods/Modpack, Mit Freunden, Vibey Client)
+//   1. Ziel wählen (Normal spielen, Mehr FPS, Mit Mods/Modpack, Mit Freunden)
 //   2. Mit Mods: fertiges Modpack wählen oder eigene Auswahl – sonst direkt weiter
 //   3. Name + Farbe, kurze Zusammenfassung in Alltagssprache, „Spiel erstellen“
 // Version und Mod-Unterbau wählt der Launcher (`usePlan`). „Erweitert“ wechselt in den vollen Dialog.
@@ -243,8 +243,6 @@ function summary(goal: NewGameGoal, plan: GamePlan, t: ReturnType<typeof useT>):
   if (goal === "fps") lines.push(t("wiz.sum.fps"));
   if (plan.pack === "essential") lines.push(t("wiz.sum.essential"));
   if (goal === "friends" && !plan.pack) lines.push(t("wiz.sum.friends_plain"));
-  if (plan.pack === "vibey") lines.push(t("wiz.sum.vibey"));
-  if (goal === "friends" && plan.pack === "vibey") lines.push(t("wiz.sum.friends_vibey"));
   if (goal === "mods") lines.push(t("wiz.sum.mods"));
   lines.push(t("wiz.sum.auto"));
   return lines;
@@ -259,7 +257,7 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
   const [icon, setIcon] = useState(randomBlockIcon);
   const { setIds, setSetIds, setsLoading } = useNewInstanceSets();
   const [busy, setBusy] = useState(false);
-  const ready = !plan.loading && !plan.unavailable && !!plan.mc && (plan.loader === "vanilla" || !!plan.loaderVersion);
+  const ready = !plan.loading && !!plan.mc && (plan.loader === "vanilla" || !!plan.loaderVersion);
   const valid = ready && !setsLoading && name.trim().length > 0;
 
   const create = async () => {
@@ -356,8 +354,8 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
                 <Spinner size={13} className="text-brand" />
                 {t("wiz.sum.loading")}
               </div>
-            ) : plan.unavailable || !plan.mc ? (
-              <div className="text-[13px] text-warn">{t(goal === "vibey" ? "wiz.sum.vibey_unavailable" : "wiz.sum.unavailable")}</div>
+            ) : !plan.mc ? (
+              <div className="text-[13px] text-warn">{t("wiz.sum.unavailable")}</div>
             ) : (
               <ul className="flex flex-col gap-2.5">
                 {summary(goal, plan, t).map((l) => (

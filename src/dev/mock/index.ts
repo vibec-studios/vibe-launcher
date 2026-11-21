@@ -11,12 +11,10 @@ import social from "./social";
 import clientpacks from "./clientpacks";
 import play from "./play";
 import announcements from "./announcements";
-import cosmetics from "./cosmetics";
 import importsettings from "./importsettings";
 import modsets from "./modsets";
 import bedrock from "./bedrock";
 import feedback from "./feedback";
-import clips from "./clips";
 import userfixes from "./userfixes";
 import many from "./many";
 import appearance from "./appearance";
@@ -43,7 +41,7 @@ const mockFlag = (k: string) => {
     return null;
   }
 };
-const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks, ...play, ...announcements, ...cosmetics, ...importsettings, ...modsets, ...bedrock, ...feedback, ...clips, ...userfixes, ...many, ...appearance, ...organize, ...portable, ...packupdate };
+const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks, ...play, ...announcements, ...importsettings, ...modsets, ...bedrock, ...feedback, ...userfixes, ...many, ...appearance, ...organize, ...portable, ...packupdate };
 Object.assign(base, worldPreview);
 Object.assign(base, worldMap);
 Object.assign(base, socialw4);

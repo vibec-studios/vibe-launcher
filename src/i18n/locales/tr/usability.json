@@ -11,7 +11,7 @@
   "usab.expert.hooks": "Başlatma komutları ve wrapper'lar (oyundan önce ve sonra çalışan betikler için) uzman modunda.",
   "usab.expert.guide": "Bu rehber yalnızca uzman modunda bulunan bir özellik hakkında.",
   "usab.servers.title": "Kendi sunucuların uzman modunda",
-  "usab.servers.text": "Burada çok oyunculu kalıcı sunucular kurarsın. Arkadaşlarla oynamak için bir dünyada “Dünyayı barındır” genelde yeterlidir – bu basit modda da çalışır.",
+  "usab.servers.text": "Burada kalıcı sunucular kurarsın – Vibe Relay üzerinden port yönlendirme olmadan arkadaşların için de.",
   "onb.mode.simple.title": "Burada yeniyim",
   "onb.mode.expert.title": "Bu işlerden anlarım",
   "onb.mode.expert.badge": "Uzman modu",

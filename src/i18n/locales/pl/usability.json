@@ -11,7 +11,7 @@
   "usab.expert.hooks": "Polecenia uruchamiania i wrappery (dla skryptów przed grą i po niej) są w trybie eksperta.",
   "usab.expert.guide": "Ten poradnik dotyczy funkcji dostępnej tylko w trybie eksperta.",
   "usab.servers.title": "Własne serwery są w trybie eksperta",
-  "usab.servers.text": "Tu ustawiasz stałe serwery dla wielu graczy. Do gry ze znajomymi zwykle wystarczy „Hostuj świat” przy świecie – to działa też w trybie prostym.",
+  "usab.servers.text": "Tu ustawiasz stałe serwery – także dla znajomych przez Vibe Relay, bez przekierowania portów.",
   "onb.mode.simple.title": "Jestem tu nowy",
   "onb.mode.expert.title": "Znam się na tym",
   "onb.mode.expert.badge": "Tryb eksperta",

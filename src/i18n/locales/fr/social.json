@@ -293,7 +293,7 @@
   "vibe.delete.text": "Impossible d'annuler. Seront supprimés :",
   "vibe.delete.item.friends": "Amitiés, demandes et blocages",
   "vibe.delete.item.chats": "Participation aux chats et tes messages",
-  "vibe.delete.item.packs": "Modpacks partagés et cosmétiques proposés",
+  "vibe.delete.item.packs": "Modpacks partagés et anciennes soumissions de cosmétiques",
   "vibe.delete.item.devices": "Appareils connectés et réglages",
   "vibe.delete.type": "Saisis « {name} » pour confirmer",
   "vibe.delete.confirm": "Supprimer définitivement",

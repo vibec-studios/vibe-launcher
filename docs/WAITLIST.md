@@ -1,6 +1,6 @@
 # Vertrag: Vibe-Beta-Warteliste (v1)
 
-Vibe (Online-Dienste: Konto, Freunde, Chat, Hosting/Relay, Cosmetics, Vibey Client) ist in der Beta. Neue Spieler
+Vibe (Online-Dienste: Konto, Freunde, Chat, Hosting/Relay) ist in der Beta. Neue Spieler
 können Vibe nicht mehr einfach aktivieren. Sie treten einer Warteliste bei, und das Team nimmt sie im Admin an.
 
 ## Zustände (users.access_status)
@@ -69,6 +69,9 @@ dann höchstens alle 5 Minuten.
 - Bestehende Nutzer (approved) merken nichts.
 
 ## Vibey Client
+
+> **Eingestellt (21.11.2026):** Der Vibey Client wird nicht mehr weiterentwickelt; der Launcher nutzt diesen Teil nicht mehr. Siehe [VIBEY-CLIENT-EINGESTELLT.md](VIBEY-CLIENT-EINGESTELLT.md).
+
 Der Client funktioniert nur mit freigeschaltetem Vibe-Zugang.
 - Beim Start und nach dem Login prüft er `GET /api/v1/access`.
 - Nur bei `approved` werden die Vibey-Module aktiv.

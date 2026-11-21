@@ -100,19 +100,15 @@ const de: HelpContent = {
       keywords: "sicherung backup wiederherstellen welt zurück",
     },
     hosting: {
-      title: "Welt mit Freunden hosten",
-      summary: "Mit dem Vibe Relay spielen Freunde ohne Portfreigabe in deiner Welt. Ein Play-Link lädt sie direkt mit dem passenden Modpack ein.",
+      title: "Mit Freunden spielen",
+      summary: "Mit einem eigenen Server und dem Vibe Relay spielen Freunde ohne Portfreigabe mit dir. Bekommst du einen Play-Link, richtet der Launcher das passende Modpack ein.",
       steps: [
-        "Starte deine Instanz mit dem Vibey Client (Instanz-Einstellungen → Client).",
-        "Öffne im Spiel deine Welt und wähle „Für Freunde öffnen“. Der Client verbindet sich mit dem Vibe Relay.",
-        "Im Launcher erscheint eine Leiste „Du hostest …“ mit dem Play-Link. Kopiere ihn oder schicke ihn direkt an Freunde.",
-        "Deine Freunde öffnen den Link. Ihr Launcher richtet das passende Modpack ein und verbindet sie direkt mit deiner Welt.",
-        "Für einen Server, der auch ohne dich läuft, lege unter „Server“ einen eigenen Server an und wähle als Verbindung „Vibe Relay“.",
+        "Öffne „Server“ in der Seitenleiste und klicke auf „Neuer Server“. Eine Einzelspielerwelt kannst du dabei als Serverwelt übernehmen.",
+        "Wähle als Verbindung „Vibe Relay“. Dann klappt es ohne Portfreigabe.",
+        "Starte den Server und lade Freunde über „Freunde“ direkt ein.",
+        "Hat dir jemand einen Play-Link geschickt, öffne ihn einfach. Der Launcher richtet das passende Modpack ein und verbindet dich.",
       ],
-      tips: [
-        "Hosting braucht Vibe (Einstellungen → Vibe & Konto). Vibe ist gerade in der Beta, siehe „Vibe-Beta-Warteliste“.",
-        "Play-Links laufen ab, wenn du aufhörst zu hosten, spätestens nach 12 Stunden.",
-      ],
+      tips: ["Hosting braucht Vibe (Einstellungen → Vibe & Konto). Vibe ist gerade in der Beta, siehe „Vibe-Beta-Warteliste“."],
       keywords: "freunde multiplayer relay einladen link play-link teilen lan hosten",
     },
     servers: {
@@ -129,19 +125,15 @@ const de: HelpContent = {
       keywords: "server paper spigot konsole whitelist plugin verbindung",
     },
     skins: {
-      title: "Skins und Cosmetics",
-      summary: "Skins änderst du direkt im Launcher. Cosmetics wie Umhänge, Hüte und Emotes sehen andere Spieler mit dem Vibey Client.",
+      title: "Skins",
+      summary: "Skins änderst du direkt im Launcher, mit 3D-Vorschau und eigener Skin-Bibliothek.",
       steps: [
         "Öffne „Skins“ in der Seitenleiste oder über den Konto-Knopf oben rechts.",
         "Lade einen Skin hoch oder wähle einen aus deiner Bibliothek. Die 3D-Vorschau zeigt, wie er aussieht.",
         "Wähle zwischen klassischem und schmalem Modell und klicke auf „Übernehmen“.",
-        "Für Cosmetics öffne „Cosmetics“ in der Seitenleiste, wähle Teile aus und speichere dein Outfit.",
       ],
-      tips: [
-        "Zum Ändern des Skins musst du mit deinem Microsoft-Konto angemeldet sein.",
-        "Cosmetics brauchen Vibe und den Vibey Client in der Instanz.",
-      ],
-      keywords: "skin umhang cape cosmetics emote aussehen",
+      tips: ["Zum Ändern des Skins musst du mit deinem Microsoft-Konto angemeldet sein."],
+      keywords: "skin umhang cape aussehen",
     },
     modsets: {
       title: "Mod-Sets",
@@ -156,25 +148,24 @@ const de: HelpContent = {
       keywords: "set liste sammlung lieblings mods anwenden",
     },
     gallery: {
-      title: "Galerie und Clips",
-      summary: "In der Galerie findest du alle Screenshots und Clips aus deinen Instanzen an einem Ort.",
+      title: "Galerie",
+      summary: "In der Galerie findest du alle Screenshots aus deinen Instanzen an einem Ort.",
       steps: [
         "Öffne „Galerie“ in der Seitenleiste.",
-        "Schalte oben zwischen „Screenshots“ und „Clips“ um. Clips nimmt der Vibey Client im Spiel auf.",
         "Filtere nach Instanz, um nur Bilder aus einem Spiel zu sehen.",
-        "Klicke auf ein Bild oder einen Clip, um ihn groß anzusehen, zu kopieren oder den Ordner zu öffnen.",
+        "Klicke auf ein Bild, um es groß anzusehen, zu kopieren oder den Ordner zu öffnen.",
       ],
       tips: ["Screenshots machst du im Spiel mit F2."],
-      keywords: "screenshot bild video clip galerie aufnahme",
+      keywords: "screenshot bild galerie aufnahme",
     },
     waitlist: {
       title: "Vibe-Beta-Warteliste",
-      summary: "Vibe (Freunde, Chat, Hosting, Cosmetics, Vibey Client) ist in der Beta. Zum Mitmachen trittst du einer Warteliste bei, das Team schaltet dich frei.",
+      summary: "Vibe (Freunde, Chat, Hosting) ist in der Beta. Zum Mitmachen trittst du einer Warteliste bei, das Team schaltet dich frei.",
       steps: [
         "Öffne Einstellungen → Vibe & Konto.",
         "Melde dich mit deinem Minecraft-Konto bei Vibe an.",
         "Tritt der Warteliste bei. Dein Status steht danach in diesem Bereich.",
-        "Sobald das Team dich freischaltet, funktionieren Freunde, Hosting, Cosmetics und der Vibey Client.",
+        "Sobald das Team dich freischaltet, funktionieren Freunde, Chat und Hosting.",
       ],
       tips: [
         "Der Launcher selbst funktioniert auch ohne Vibe voll: Instanzen, Mods, Modpacks und Server.",
@@ -341,7 +332,7 @@ const de: HelpContent = {
     hosting: {
       title: "Mit Freunden spielen",
       steps: [
-        { title: "Deine Welten", text: "Starte die Welt mit dem Vibey Client und wähle im Spiel „Für Freunde öffnen“. Der Vibe Relay erledigt den Rest." },
+        { title: "Deine Welten", text: "Hier liegen deine Welten. Für Freunde machst du unter „Server“ einen eigenen Server daraus, mit dem Vibe Relay als Verbindung." },
         { title: "Play-Link", text: "Solange du hostest, steht hier dein Play-Link. Kopiere ihn oder schick ihn direkt an Freunde." },
         { title: "Freunde", text: "Hier siehst du, wer online ist, und lädst Freunde direkt in deine Welt ein." },
         { title: "Eigener Server", text: "Soll die Welt auch ohne dich laufen? Lege einen Server an und wähle als Verbindung „Vibe Relay“." },
@@ -360,7 +351,6 @@ const de: HelpContent = {
       steps: [
         { title: "Vorschau", text: "So sieht dein Skin gerade aus. Ziehe die Figur, um sie zu drehen." },
         { title: "Deine Skins", text: "Lade neue Skins hoch oder wähle einen gespeicherten aus und übernimm ihn." },
-        { title: "Cosmetics", text: "Umhänge, Hüte und Emotes für den Vibey Client findest du hier." },
       ],
     },
     modsets: {
@@ -374,7 +364,6 @@ const de: HelpContent = {
     gallery: {
       title: "Galerie",
       steps: [
-        { title: "Screenshots und Clips", text: "Schalte hier zwischen Bildern und den Clips des Vibey Clients um." },
         { title: "Nach Instanz filtern", text: "Zeige nur Bilder aus einer bestimmten Instanz." },
         { title: "Ansehen", text: "Klicke auf ein Bild, um es groß zu öffnen, zu kopieren oder im Ordner zu zeigen." },
       ],
@@ -383,7 +372,7 @@ const de: HelpContent = {
       title: "Vibe-Beta",
       steps: [
         { title: "Vibe & Konto", text: "Hier meldest du dich bei Vibe an. Vibe ist in der Beta, du trittst zuerst einer Warteliste bei." },
-        { title: "Dein Zugang", text: "Hier siehst du deinen Status. Nach der Freischaltung funktionieren Freunde, Hosting und Cosmetics." },
+        { title: "Dein Zugang", text: "Hier siehst du deinen Status. Nach der Freischaltung funktionieren Freunde, Chat und Hosting." },
       ],
     },
     feedback: {

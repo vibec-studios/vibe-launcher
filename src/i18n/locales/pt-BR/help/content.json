@@ -98,18 +98,16 @@
       "keywords": "backup restaurar mundo snapshot desfazer cópia"
     },
     "hosting": {
-      "title": "Hospede um mundo com amigos",
-      "summary": "Com o Vibe Relay seus amigos entram no seu mundo sem redirecionar portas. Um link de jogo convida na hora, com o modpack certo.",
+      "title": "Jogar com amigos",
+      "summary": "Com um servidor próprio e o Vibe Relay, seus amigos jogam com você sem redirecionar portas. Se você receber um link de jogo, o launcher prepara o modpack certo.",
       "steps": [
-        "Inicie sua instância com o Vibey Client (configurações da instância → Cliente).",
-        "Abra seu mundo no jogo e escolha “Abrir para amigos”. O cliente se conecta ao Vibe Relay.",
-        "O launcher mostra uma barra “Você está hospedando …” com o link de jogo. Copie ou mande direto para os amigos.",
-        "Seus amigos abrem o link. O launcher deles prepara o modpack certo e conecta eles direto ao seu mundo.",
-        "Para um servidor que continua rodando sem você, crie um em “Servidores” e escolha “Vibe Relay” como conexão."
+        "Abra “Servidores” na barra lateral e clique em “Novo servidor”. Dá para usar um mundo de um jogador como mundo do servidor.",
+        "Escolha “Vibe Relay” como conexão. Assim funciona sem redirecionar portas.",
+        "Inicie o servidor e convide amigos direto em “Amigos”.",
+        "Alguém te mandou um link de jogo? É só abrir. O launcher prepara o modpack certo e conecta você."
       ],
       "tips": [
-        "Hospedar precisa do Vibe (Configurações → Vibe e conta). O Vibe está em beta agora, veja “Lista de espera da beta do Vibe”.",
-        "Links de jogo expiram quando você para de hospedar, no máximo depois de 12 horas."
+        "Hospedar precisa do Vibe (Configurações → Vibe e conta). O Vibe está em beta agora, veja “Lista de espera da beta do Vibe”."
       ],
       "keywords": "amigos multijogador relay convidar link compartilhar lan hospedar"
     },
@@ -129,19 +127,17 @@
       "keywords": "servidor paper spigot console lista branca plugin conexão"
     },
     "skins": {
-      "title": "Skins e cosméticos",
-      "summary": "Troque sua skin direto no launcher. Cosméticos como capas, chapéus e emotes aparecem para outros jogadores com o Vibey Client.",
+      "title": "Skins",
+      "summary": "Troque sua skin direto no launcher, com prévia 3D e sua própria biblioteca de skins.",
       "steps": [
         "Abra “Skins” na barra lateral ou pelo botão da conta no canto superior direito.",
         "Envie uma skin ou escolha uma da sua biblioteca. A prévia 3D mostra como fica.",
-        "Escolha entre o modelo clássico e o fino e clique em “Aplicar”.",
-        "Para cosméticos, abra “Cosméticos” na barra lateral, escolha itens e salve seu visual."
+        "Escolha entre o modelo clássico e o fino e clique em “Aplicar”."
       ],
       "tips": [
-        "Para trocar a skin você precisa estar conectado com sua conta Microsoft.",
-        "Cosméticos precisam do Vibe e do Vibey Client na instância."
+        "Para trocar a skin você precisa estar conectado com sua conta Microsoft."
       ],
-      "keywords": "skin capa cosméticos emote visual"
+      "keywords": "skin capa visual"
     },
     "modsets": {
       "title": "Conjuntos de mods",
@@ -158,27 +154,26 @@
       "keywords": "conjunto lista coleção favoritos mods aplicar"
     },
     "gallery": {
-      "title": "Galeria e clipes",
-      "summary": "A galeria junta num só lugar todas as capturas de tela e clipes das suas instâncias.",
+      "title": "Galeria",
+      "summary": "A galeria junta num só lugar todas as capturas de tela das suas instâncias.",
       "steps": [
         "Abra “Galeria” na barra lateral.",
-        "Alterne entre “Capturas de tela” e “Clipes” em cima. Os clipes são gravados no jogo pelo Vibey Client.",
         "Filtre por instância para ver só as imagens de um jogo.",
-        "Clique numa imagem ou clipe para ver em tamanho grande, copiar ou abrir a pasta."
+        "Clique numa imagem para ver em tamanho grande, copiar ou abrir a pasta."
       ],
       "tips": [
         "Tire capturas de tela no jogo com F2."
       ],
-      "keywords": "captura de tela imagem vídeo clipe galeria gravação"
+      "keywords": "captura de tela imagem galeria gravação"
     },
     "waitlist": {
       "title": "Lista de espera da beta do Vibe",
-      "summary": "O Vibe (amigos, chat, hospedagem, cosméticos, Vibey Client) está em beta. Para participar, você entra numa lista de espera e a equipe libera você.",
+      "summary": "O Vibe (amigos, chat, hospedagem) está em beta. Para participar, você entra numa lista de espera e a equipe libera você.",
       "steps": [
         "Abra Configurações → Vibe e conta.",
         "Entre no Vibe com sua conta do Minecraft.",
         "Entre na lista de espera. Depois seu status aparece nesta seção.",
-        "Assim que a equipe aprovar você, amigos, hospedagem, cosméticos e o Vibey Client funcionam."
+        "Assim que a equipe aprovar você, amigos, chat e hospedagem funcionam."
       ],
       "tips": [
         "O launcher funciona totalmente sem o Vibe: instâncias, mods, modpacks e servidores.",
@@ -438,7 +433,7 @@
       "steps": [
         {
           "title": "Seus mundos",
-          "text": "Inicie o mundo com o Vibey Client e escolha “Abrir para amigos” no jogo. O Vibe Relay faz o resto."
+          "text": "Seus mundos ficam aqui. Para jogar com amigos, transforme um deles em servidor próprio em “Servidores”, com o Vibe Relay como conexão."
         },
         {
           "title": "Link de jogo",
@@ -481,10 +476,6 @@
         {
           "title": "Suas skins",
           "text": "Envie skins novas ou escolha uma salva e aplique."
-        },
-        {
-          "title": "Cosméticos",
-          "text": "Capas, chapéus e emotes para o Vibey Client ficam aqui."
         }
       ]
     },
@@ -509,10 +500,6 @@
       "title": "Galeria",
       "steps": [
         {
-          "title": "Capturas e clipes",
-          "text": "Alterne aqui entre as imagens e os clipes do Vibey Client."
-        },
-        {
           "title": "Filtrar por instância",
           "text": "Mostre só as imagens de uma instância específica."
         },
@@ -531,7 +518,7 @@
         },
         {
           "title": "Seu acesso",
-          "text": "Seu status aparece aqui. Depois de aprovado, amigos, hospedagem e cosméticos funcionam."
+          "text": "Seu status aparece aqui. Depois de aprovado, amigos, chat e hospedagem funcionam."
         }
       ]
     },

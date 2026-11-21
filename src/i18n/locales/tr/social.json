@@ -293,7 +293,7 @@
   "vibe.delete.text": "Bu geri alınamaz. Şunlar silinecek:",
   "vibe.delete.item.friends": "Arkadaşlıklar, istekler ve engellemeler",
   "vibe.delete.item.chats": "Sohbet üyelikleri ve mesajların",
-  "vibe.delete.item.packs": "Paylaşılan mod paketleri ve gönderilen kozmetikler",
+  "vibe.delete.item.packs": "Paylaşılan mod paketleri ve önceki kozmetik gönderimleri",
   "vibe.delete.item.devices": "Giriş yapılmış cihazlar ve ayarlar",
   "vibe.delete.type": "Onaylamak için “{name}” yaz",
   "vibe.delete.confirm": "Kalıcı olarak sil",

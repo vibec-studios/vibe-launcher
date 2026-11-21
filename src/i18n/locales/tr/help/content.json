@@ -98,18 +98,16 @@
       "keywords": "yedek geri yükle dünya anlık görüntü geri al"
     },
     "hosting": {
-      "title": "Arkadaşlarla dünya barındır",
-      "summary": "Vibe Relay ile arkadaşların port yönlendirme olmadan dünyana katılabilir. Bir oyun bağlantısı onları doğru mod paketiyle hemen davet eder.",
+      "title": "Arkadaşlarla oyna",
+      "summary": "Kendi sunucun ve Vibe Relay ile arkadaşların port yönlendirme olmadan seninle oynar. Bir oyun bağlantısı alırsan launcher uygun mod paketini kurar.",
       "steps": [
-        "Kurulumunu Vibey Client ile başlat (kurulum ayarları → İstemci).",
-        "Dünyanı oyunda aç ve “Arkadaşlara aç”ı seç. İstemci Vibe Relay'e bağlanır.",
-        "Launcher oyun bağlantısıyla bir “Barındırıyorsun …” çubuğu gösterir. Kopyala ya da doğrudan arkadaşlarına gönder.",
-        "Arkadaşların bağlantıyı açar. Launcher'ları uygun mod paketini kurar ve onları doğrudan dünyana bağlar.",
-        "Sen olmadan da çalışan bir sunucu için “Sunucular” altında bir tane oluştur ve bağlantı olarak “Vibe Relay”i seç."
+        "Kenar çubuğunda “Sunucular”ı aç ve “Yeni sunucu”ya tıkla. Tek oyunculu bir dünyayı sunucu dünyası olarak alabilirsin.",
+        "Bağlantı olarak “Vibe Relay”i seç. Böylece port yönlendirme olmadan çalışır.",
+        "Sunucuyu başlat ve arkadaşlarını doğrudan “Arkadaşlar” bölümünden davet et.",
+        "Biri sana oyun bağlantısı mı gönderdi? Açman yeterli. Launcher uygun mod paketini kurar ve seni bağlar."
       ],
       "tips": [
-        "Barındırma için Vibe gerekir (Ayarlar → Vibe ve hesap). Vibe şu an beta aşamasında, “Vibe beta bekleme listesi”ne bak.",
-        "Oyun bağlantıları barındırmayı bıraktığında, en geç 12 saat sonra geçersiz olur."
+        "Barındırma için Vibe gerekir (Ayarlar → Vibe ve hesap). Vibe şu an beta aşamasında, “Vibe beta bekleme listesi”ne bak."
       ],
       "keywords": "arkadaşlar çok oyunculu relay davet bağlantı paylaş lan barındır"
     },
@@ -129,19 +127,17 @@
       "keywords": "sunucu paper spigot konsol beyaz liste eklenti bağlantı"
     },
     "skins": {
-      "title": "Skinler ve kozmetikler",
-      "summary": "Skin'ini doğrudan launcher'da değiştir. Pelerin, şapka ve emote gibi kozmetikleri Vibey Client'lı diğer oyuncular görür.",
+      "title": "Skinler",
+      "summary": "Skin'ini doğrudan launcher'da değiştir; 3D önizleme ve kendi skin kütüphanenle.",
       "steps": [
         "Kenar çubuğunda veya sağ üstteki hesap düğmesinden “Skinler”i aç.",
         "Bir skin yükle veya kütüphanenden birini seç. 3D önizleme nasıl göründüğünü gösterir.",
-        "Klasik ve ince model arasında seçim yap ve “Uygula”ya tıkla.",
-        "Kozmetikler için kenar çubuğunda “Kozmetikler”i aç, öğeleri seç ve kıyafetini kaydet."
+        "Klasik ve ince model arasında seçim yap ve “Uygula”ya tıkla."
       ],
       "tips": [
-        "Skin'ini değiştirmek için Microsoft hesabınla giriş yapmış olman gerekir.",
-        "Kozmetikler için Vibe ve kurulumda Vibey Client gerekir."
+        "Skin'ini değiştirmek için Microsoft hesabınla giriş yapmış olman gerekir."
       ],
-      "keywords": "skin pelerin kozmetik emote görünüm"
+      "keywords": "skin pelerin görünüm"
     },
     "modsets": {
       "title": "Mod setleri",
@@ -158,27 +154,26 @@
       "keywords": "set liste koleksiyon favori modlar uygula"
     },
     "gallery": {
-      "title": "Galeri ve klipler",
-      "summary": "Galeri, kurulumlarındaki tüm ekran görüntülerini ve klipleri tek bir yerde toplar.",
+      "title": "Galeri",
+      "summary": "Galeri, kurulumlarındaki tüm ekran görüntülerini tek bir yerde toplar.",
       "steps": [
         "Kenar çubuğunda “Galeri”yi aç.",
-        "Üstten “Ekran görüntüleri” ile “Klipler” arasında geçiş yap. Klipleri oyunda Vibey Client kaydeder.",
         "Yalnızca bir oyunun görsellerini görmek için kuruluma göre filtrele.",
-        "Büyük görmek, kopyalamak veya klasörünü açmak için bir görsele ya da klibe tıkla."
+        "Büyük görmek, kopyalamak veya klasörünü açmak için bir görsele tıkla."
       ],
       "tips": [
         "Oyunda F2 ile ekran görüntüsü al."
       ],
-      "keywords": "ekran görüntüsü görsel video klip galeri kayıt"
+      "keywords": "ekran görüntüsü görsel galeri kayıt"
     },
     "waitlist": {
       "title": "Vibe beta bekleme listesi",
-      "summary": "Vibe (arkadaşlar, sohbet, barındırma, kozmetikler, Vibey Client) beta aşamasında. Katılmak için bekleme listesine girersin ve ekip seni içeri alır.",
+      "summary": "Vibe (arkadaşlar, sohbet, barındırma) beta aşamasında. Katılmak için bekleme listesine girersin ve ekip seni içeri alır.",
       "steps": [
         "Ayarlar → Vibe ve hesap'ı aç.",
         "Minecraft hesabınla Vibe'a giriş yap.",
         "Bekleme listesine katıl. Durumun sonra bu bölümde görünür.",
-        "Ekip seni onaylar onaylamaz arkadaşlar, barındırma, kozmetikler ve Vibey Client çalışır."
+        "Ekip seni onaylar onaylamaz arkadaşlar, sohbet ve barındırma çalışır."
       ],
       "tips": [
         "Launcher'ın kendisi Vibe olmadan da tamamen çalışır: kurulumlar, modlar, mod paketleri ve sunucular.",
@@ -438,7 +433,7 @@
       "steps": [
         {
           "title": "Dünyaların",
-          "text": "Dünyayı Vibey Client ile başlat ve oyunda “Arkadaşlara aç”ı seç. Gerisini Vibe Relay halleder."
+          "text": "Dünyaların burada. Arkadaşlarla oynamak için “Sunucular” altında ondan kendi sunucunu yap, bağlantı olarak Vibe Relay."
         },
         {
           "title": "Oyun bağlantısı",
@@ -481,10 +476,6 @@
         {
           "title": "Skinlerin",
           "text": "Yeni skinler yükle ya da kayıtlı birini seç ve uygula."
-        },
-        {
-          "title": "Kozmetikler",
-          "text": "Vibey Client için pelerinler, şapkalar ve emote'lar burada."
         }
       ]
     },
@@ -509,10 +500,6 @@
       "title": "Galeri",
       "steps": [
         {
-          "title": "Ekran görüntüleri ve klipler",
-          "text": "Görseller ile Vibey Client klipleri arasında buradan geçiş yap."
-        },
-        {
           "title": "Kuruluma göre filtrele",
           "text": "Yalnızca belirli bir kurulumun görsellerini göster."
         },
@@ -531,7 +518,7 @@
         },
         {
           "title": "Erişimin",
-          "text": "Durumun burada gösterilir. Onaylanınca arkadaşlar, barındırma ve kozmetikler çalışır."
+          "text": "Durumun burada gösterilir. Onaylanınca arkadaşlar, sohbet ve barındırma çalışır."
         }
       ]
     },

@@ -1,12 +1,12 @@
 // Inhalte der Tabs im Popup „Instanz-Einstellungen“. Alle Optionen der früheren Einstellungsseite sind hier
 // zugeordnet: Allgemein (Name, Icon, Farbe, Gruppe, Auto-Update, Notizen, Verknüpfung), Version & Loader,
 // Client (Client-Packs), Java & Speicher, Fenster & Start (Fenster, Start-Befehle, Wrapper, Spieloptionen),
-// Vibe (Vibey Client, Cosmetics, Relay), Erweitert (Umgebungsvariablen, Export, Duplizieren, Ordner,
+// Vibe (Relay), Erweitert (Umgebungsvariablen, Export, Duplizieren, Ordner,
 // Reparieren, Löschen).
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Copy, FolderOpen, Plus, RotateCcw, Shirt, Trash2, Upload, Wrench, X } from "lucide-react";
+import { AlertTriangle, Copy, FolderOpen, Plus, RotateCcw, Trash2, Upload, Wrench, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useInstances, useSettings, useSystemInfo } from "@/lib/queries";
 import type { Instance, InstancePatch, JavaOptions, LaunchHooks, WindowOptions } from "@/lib/types";
@@ -438,40 +438,12 @@ export function LaunchTab({ d, update }: TabProps) {
 
 // ------------------------------------------------------------------ Vibe
 
-export function VibeTab({ instance }: TabProps) {
+export function VibeTab(_: TabProps) {
   const t = useT();
-  const nav = useNavigate();
   const vibe = useVibe();
-  const packs = useClientPacks(instance);
-  const vibey = packs.data?.packs.find((p) => p.id === "vibey");
   return (
     <>
-      <SettingsCard title="Vibey Client">
-        <div className="p-3">
-          <ClientPacks instance={instance} only={["vibey"]} compact />
-        </div>
-      </SettingsCard>
       <SettingsCard title={t("isd.section.vibe_services")}>
-        <SettingRow
-          title={t("isd.vibe.cosmetics")}
-          description={
-            <>
-              {t("isd.vibe.cosmetics.desc")}
-              {!vibey?.installed && <span className="mt-1 block text-warn">{t("isd.vibe.cosmetics.needs_client")}</span>}
-            </>
-          }
-        >
-          <Button
-            size="sm"
-            icon={<Shirt size={13} />}
-            onClick={() => {
-              closeInstanceSettings();
-              nav({ to: "/cosmetics" });
-            }}
-          >
-            {t("isd.vibe.wardrobe")}
-          </Button>
-        </SettingRow>
         <SettingRow
           title={t("isd.vibe.relay")}
           description={

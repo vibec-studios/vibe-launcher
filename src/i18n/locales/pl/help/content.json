@@ -98,18 +98,16 @@
       "keywords": "kopia zapasowa backup przywróć świat migawka cofnij"
     },
     "hosting": {
-      "title": "Hostuj świat ze znajomymi",
-      "summary": "Dzięki Vibe Relay znajomi dołączą do twojego świata bez przekierowania portów. Link do gry od razu zaprasza ich z właściwym modpackiem.",
+      "title": "Graj ze znajomymi",
+      "summary": "Z własnym serwerem i Vibe Relay znajomi grają z tobą bez przekierowania portów. Gdy dostaniesz link do gry, launcher przygotuje właściwy modpack.",
       "steps": [
-        "Uruchom instancję z Vibey Client (ustawienia instancji → Klient).",
-        "Otwórz świat w grze i wybierz „Otwórz dla znajomych”. Klient połączy się z Vibe Relay.",
-        "Launcher pokaże pasek „Hostujesz …” z linkiem do gry. Skopiuj go albo wyślij prosto do znajomych.",
-        "Znajomi otwierają link. Ich launcher przygotuje właściwy modpack i połączy ich prosto z twoim światem.",
-        "Dla serwera, który działa bez ciebie, utwórz go w „Serwery” i wybierz „Vibe Relay” jako połączenie."
+        "Otwórz „Serwery” na pasku bocznym i kliknij „Nowy serwer”. Świat jednoosobowy możesz przejąć jako świat serwera.",
+        "Wybierz „Vibe Relay” jako połączenie. Wtedy działa bez przekierowania portów.",
+        "Uruchom serwer i zaproś znajomych prosto z „Znajomi”.",
+        "Ktoś wysłał ci link do gry? Po prostu go otwórz. Launcher przygotuje właściwy modpack i cię połączy."
       ],
       "tips": [
-        "Hostowanie wymaga Vibe (Ustawienia → Vibe i konto). Vibe jest teraz w becie, zobacz „Lista oczekujących bety Vibe”.",
-        "Linki do gry wygasają, gdy przestajesz hostować, najpóźniej po 12 godzinach."
+        "Hostowanie wymaga Vibe (Ustawienia → Vibe i konto). Vibe jest teraz w becie, zobacz „Lista oczekujących bety Vibe”."
       ],
       "keywords": "znajomi multiplayer relay zaproś link udostępnij lan hostuj"
     },
@@ -129,19 +127,17 @@
       "keywords": "serwer paper spigot konsola biała lista plugin połączenie"
     },
     "skins": {
-      "title": "Skiny i kosmetyki",
-      "summary": "Zmieniaj skin prosto w launcherze. Kosmetyki jak peleryny, czapki i emotki widzą inni gracze z Vibey Client.",
+      "title": "Skiny",
+      "summary": "Zmieniaj skin prosto w launcherze, z podglądem 3D i własną biblioteką skinów.",
       "steps": [
         "Otwórz „Skiny” na pasku bocznym albo przez przycisk konta w prawym górnym rogu.",
         "Wgraj skin albo wybierz go z biblioteki. Podgląd 3D pokaże, jak wygląda.",
-        "Wybierz model klasyczny albo smukły i kliknij „Zastosuj”.",
-        "Kosmetyki znajdziesz w „Kosmetyki” na pasku bocznym – wybierz przedmioty i zapisz strój."
+        "Wybierz model klasyczny albo smukły i kliknij „Zastosuj”."
       ],
       "tips": [
-        "Do zmiany skina musisz być zalogowany kontem Microsoft.",
-        "Kosmetyki wymagają Vibe i Vibey Client w instancji."
+        "Do zmiany skina musisz być zalogowany kontem Microsoft."
       ],
-      "keywords": "skin peleryna kosmetyki emotka wygląd"
+      "keywords": "skin peleryna wygląd"
     },
     "modsets": {
       "title": "Zestawy modów",
@@ -158,27 +154,26 @@
       "keywords": "zestaw lista kolekcja ulubione mody zastosuj"
     },
     "gallery": {
-      "title": "Galeria i klipy",
-      "summary": "Galeria zbiera w jednym miejscu wszystkie zrzuty ekranu i klipy z twoich instancji.",
+      "title": "Galeria",
+      "summary": "Galeria zbiera w jednym miejscu wszystkie zrzuty ekranu z twoich instancji.",
       "steps": [
         "Otwórz „Galeria” na pasku bocznym.",
-        "Przełączaj u góry między „Zrzuty ekranu” a „Klipy”. Klipy nagrywa w grze Vibey Client.",
         "Filtruj według instancji, żeby widzieć obrazy tylko z jednej gry.",
-        "Kliknij obraz albo klip, żeby go powiększyć, skopiować albo otworzyć jego folder."
+        "Kliknij obraz, żeby go powiększyć, skopiować albo otworzyć jego folder."
       ],
       "tips": [
         "Zrzuty ekranu w grze robisz klawiszem F2."
       ],
-      "keywords": "zrzut ekranu obraz wideo klip galeria nagrywanie"
+      "keywords": "zrzut ekranu obraz galeria nagrywanie"
     },
     "waitlist": {
       "title": "Lista oczekujących bety Vibe",
-      "summary": "Vibe (znajomi, czat, hosting, kosmetyki, Vibey Client) jest w becie. Aby wziąć udział, dołączasz do listy oczekujących, a zespół cię wpuszcza.",
+      "summary": "Vibe (znajomi, czat, hosting) jest w becie. Aby wziąć udział, dołączasz do listy oczekujących, a zespół cię wpuszcza.",
       "steps": [
         "Otwórz Ustawienia → Vibe i konto.",
         "Zaloguj się do Vibe kontem Minecraft.",
         "Dołącz do listy oczekujących. Potem twój status pojawi się w tej sekcji.",
-        "Gdy tylko zespół cię zaakceptuje, zadziałają znajomi, hosting, kosmetyki i Vibey Client."
+        "Gdy tylko zespół cię zaakceptuje, zadziałają znajomi, czat i hosting."
       ],
       "tips": [
         "Sam launcher działa w pełni bez Vibe: instancje, mody, modpacki i serwery.",
@@ -438,7 +433,7 @@
       "steps": [
         {
           "title": "Twoje światy",
-          "text": "Uruchom świat z Vibey Client i wybierz w grze „Otwórz dla znajomych”. Resztą zajmie się Vibe Relay."
+          "text": "Tu są twoje światy. Żeby grać ze znajomymi, zrób z niego własny serwer w „Serwery”, z Vibe Relay jako połączeniem."
         },
         {
           "title": "Link do gry",
@@ -481,10 +476,6 @@
         {
           "title": "Twoje skiny",
           "text": "Wgraj nowe skiny albo wybierz zapisany i go zastosuj."
-        },
-        {
-          "title": "Kosmetyki",
-          "text": "Tu są peleryny, czapki i emotki do Vibey Client."
         }
       ]
     },
@@ -509,10 +500,6 @@
       "title": "Galeria",
       "steps": [
         {
-          "title": "Zrzuty i klipy",
-          "text": "Tu przełączasz między obrazami a klipami z Vibey Client."
-        },
-        {
           "title": "Filtruj według instancji",
           "text": "Pokazuj tylko obrazy z konkretnej instancji."
         },
@@ -531,7 +518,7 @@
         },
         {
           "title": "Twój dostęp",
-          "text": "Tu widać twój status. Po akceptacji działają znajomi, hosting i kosmetyki."
+          "text": "Tu widać twój status. Po akceptacji działają znajomi, czat i hosting."
         }
       ]
     },

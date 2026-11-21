@@ -1,7 +1,7 @@
 // OWNER: Frontend-Agent A. Screenshots aller Instanzen: Werkzeugleiste (Instanz-Filter, Anzahl, Ordner, Neu laden) über einem
 // virtualisierten, rahmenlosen Raster nach Datum gruppiert (neueste zuerst), Lightbox, Kontextmenü (Kopieren, im Ordner
 // zeigen, Löschen). Lädt nur Vorschaubilder. Leer mit Filter: Weg zurück zu allen Instanzen bzw. in den Ordner.
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getRouteApi } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -11,11 +11,10 @@ import { api } from "@/lib/api";
 import { useInstances } from "@/lib/queries";
 import type { Screenshot } from "@/lib/types";
 import { formatBytes, formatDate, imageSrc } from "@/lib/format";
-import { Button, ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, PageToolbar, Segmented, Select, Skeleton, ToolbarMeta, cn, confirm, toast } from "@/components/ui";
+import { Button, ContextItem, ContextMenu, ContextSeparator, EmptyState, ErrorState, IconButton, PageToolbar, Select, Skeleton, ToolbarMeta, cn, confirm, toast } from "@/components/ui";
 import { t as tt, useLang, useT } from "@/i18n";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { ShotThumb, bucket, useScreenshots, useShotFocus } from "./shots";
-import { ClipsView } from "./ClipsView";
 import { ShareShotDialog } from "@/features/shotshare/ShareShotDialog";
 import { CloudShotsDialog } from "@/features/shotshare/CloudShotsDialog";
 import { useShotSharing } from "@/features/shotshare/useShotSharing";
@@ -96,29 +95,7 @@ async function copyShot(s: Screenshot) {
   }
 }
 
-/** Galerie: Umschalter „Screenshots | Clips“ (Clips = Videos des Vibey Clients). Instanz-Filter gilt für beide. */
 export function ScreenshotsPage() {
-  const t = useT();
-  const { instance, tab } = route.useSearch();
-  const nav = route.useNavigate();
-  const switcher = (
-    <div data-tour="gallery-switch" className="flex shrink-0">
-    <Segmented<"shots" | "clips">
-      size="md"
-      value={tab === "clips" ? "clips" : "shots"}
-      onChange={(v) => nav({ search: { instance, tab: v === "clips" ? "clips" : undefined }, replace: true })}
-      items={[
-        { value: "shots", label: t("gallery.tab.screenshots") },
-        { value: "clips", label: t("gallery.tab.clips") },
-      ]}
-    />
-    </div>
-  );
-  if (tab === "clips") return <ClipsView switcher={switcher} instance={instance} setInstance={(id) => nav({ search: { instance: id, tab: "clips" }, replace: true })} />;
-  return <ShotsView switcher={switcher} />;
-}
-
-function ShotsView({ switcher }: { switcher: ReactNode }) {
   const t = useT();
   const lang = useLang((s) => s.lang);
   const qc = useQueryClient();
@@ -263,7 +240,6 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
             </>
           }
         >
-          {switcher}
           <div data-tour="gallery-filter" className="w-[240px] min-w-[160px] shrink">
             <Select<string>
               value={instance ?? ALL}

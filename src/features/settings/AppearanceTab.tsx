@@ -69,7 +69,6 @@ const NAV_ICONS: Record<NavKey, ReactNode> = {
   social: <Users size={15} />,
   discover: <Compass size={15} />,
   skins: <Shirt size={15} />,
-  cosmetics: <Sparkles size={15} />,
   screenshots: <Images size={15} />,
 };
 

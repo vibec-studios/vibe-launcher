@@ -293,7 +293,7 @@
   "vibe.delete.text": "Tego nie da się cofnąć. Zostanie usunięte:",
   "vibe.delete.item.friends": "Znajomości, zaproszenia i blokady",
   "vibe.delete.item.chats": "Członkostwa w czatach i twoje wiadomości",
-  "vibe.delete.item.packs": "Udostępnione modpacki i zgłoszone kosmetyki",
+  "vibe.delete.item.packs": "Udostępnione modpacki i wcześniejsze zgłoszenia kosmetyków",
   "vibe.delete.item.devices": "Zalogowane urządzenia i ustawienia",
   "vibe.delete.type": "Wpisz „{name}”, aby potwierdzić",
   "vibe.delete.confirm": "Usuń trwale",

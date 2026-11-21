@@ -1,5 +1,5 @@
 // Instanz-Einstellungen als Popup: `openInstanceSettings(id, tab)` (Zahnrad auf der Instanzseite, Deep-Link
-// `?tab=settings`, Vibey-Symbol im Kopf …).
+// `?tab=settings` …).
 import { create } from "zustand";
 
 export const INSTANCE_SETTINGS_TABS = ["general", "version", "client", "java", "launch", "sync", "vibe", "advanced"] as const;

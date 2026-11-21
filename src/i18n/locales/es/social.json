@@ -293,7 +293,7 @@
   "vibe.delete.text": "Esto no se puede deshacer. Se eliminará lo siguiente:",
   "vibe.delete.item.friends": "Amistades, solicitudes y bloqueos",
   "vibe.delete.item.chats": "Pertenencia a chats y tus mensajes",
-  "vibe.delete.item.packs": "Modpacks compartidos y cosméticos enviados",
+  "vibe.delete.item.packs": "Modpacks compartidos y envíos de cosméticos anteriores",
   "vibe.delete.item.devices": "Dispositivos con sesión iniciada y ajustes",
   "vibe.delete.type": "Escribe “{name}” para confirmar",
   "vibe.delete.confirm": "Eliminar para siempre",
