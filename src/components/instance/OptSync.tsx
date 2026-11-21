@@ -17,12 +17,12 @@ import { closeSettings } from "@/features/settings/store";
 import { openInstanceSettings } from "@/features/instances/settings/store";
 
 export const OPTSYNC_KEY = ["optsync"] as const;
-const ALL: OptSyncCategory[] = ["controls", "sound", "video", "language", "accessibility"];
-const AREAS: SyncArea[] = ["resourcepacks", "shaderpacks", "servers", "screenshots"];
+const ALL: OptSyncCategory[] = ["controls", "keybinds", "sound", "video", "language", "accessibility"];
+const AREAS: SyncArea[] = ["resourcepacks", "shaderpacks", "servers", "screenshots", "hotbars", "command_history"];
 const FOLDER_AREAS: SyncArea[] = ["resourcepacks", "shaderpacks", "screenshots"];
 /** Vorauswahl beim ersten Einschalten: was fast jeder gleich haben will. Grafik (Leistung je Instanz verschieden),
  *  Shader (brauchen einen Shader-Mod) und Screenshots (optional) bleiben aus. */
-const DEFAULT_ON: SyncKey[] = ["controls", "sound", "language", "accessibility", "resourcepacks", "servers"];
+const DEFAULT_ON: SyncKey[] = ["controls", "keybinds", "sound", "language", "accessibility", "resourcepacks", "servers"];
 
 export function useOptSync() {
   const qc = useQueryClient();
@@ -226,7 +226,7 @@ export function InstanceSyncTab({ instance }: { instance: Instance }) {
           <AreaRow
             key={a}
             on={has(a)}
-            disabled={!on}
+            disabled={!on || busy === "set"}
             title={t(`sync.area.${a}`)}
             desc={t(`sync.area.${a}.desc`)}
             onChange={(v) => void toggle(a, v)}
@@ -254,7 +254,7 @@ export function InstanceSyncTab({ instance }: { instance: Instance }) {
           <AreaRow
             key={c}
             on={has(c)}
-            disabled={!on}
+            disabled={!on || busy === "set"}
             title={t(`optsync.cat.${c}`)}
             desc={t(`sync.cat.${c}.desc`)}
             onChange={(v) => void toggle(c, v)}
@@ -263,7 +263,7 @@ export function InstanceSyncTab({ instance }: { instance: Instance }) {
         ))}
         {on && (
           <SettingRow title={t("sync.master_hint")} description={t("sync.master_hint.desc")}>
-            <Button size="sm" icon={<Upload size={13} />} loading={busy === "capture"} disabled={!cur.categories.length} onClick={() => void capture()}>
+            <Button size="sm" icon={<Upload size={13} />} loading={busy === "capture"} disabled={running || !cur.categories.length} onClick={() => void capture()}>
               {t("optsync.capture_this")}
             </Button>
           </SettingRow>
@@ -346,7 +346,7 @@ export function SyncOverview() {
       </SettingRow>
       <SettingRow title={t("sync.overview.folders")} description={t("sync.overview.folders.desc")} stacked>
         <div className="grid grid-cols-2 gap-1.5 max-[700px]:grid-cols-1">
-          {AREAS.map((a) => {
+          {AREAS.filter((a) => FOLDER_AREAS.includes(a) || a === "servers").map((a) => {
             const s = sharedOf(info, a);
             const folder = FOLDER_AREAS.includes(a);
             return (
@@ -386,7 +386,7 @@ export function MasterOptSync() {
   const [cats, setCats] = useState<OptSyncCategory[]>(ALL);
   const [busy, setBusy] = useState(false);
   const info = q.data;
-  const total = info ? Object.keys(info.config.master).length : 0;
+  const total = info ? Object.keys(info.config.master).length + Object.keys(info.config.legacy_keybinds ?? {}).length : 0;
   const enabledCount = info ? Object.values(info.config.instances).filter((x) => x.enabled).length : 0;
   const src = info?.config.source ? instances.find((i) => i.id === info.config.source)?.name : null;
   const source = from ?? info?.config.source ?? instances[0]?.id ?? null;

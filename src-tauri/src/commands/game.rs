@@ -94,6 +94,8 @@ pub async fn instance_launch(
     if state.auth.list().is_empty() && !dev_offline {
         return Err(AppError::NotConfigured("Kein Account – bitte unter Accounts mit Microsoft anmelden".into()));
     }
+    let _launch_gate = state.content.launch_gate(&id).try_lock_owned()
+        .map_err(|_| AppError::Invalid("Diese Instanz wird gerade geändert. Versuche es gleich erneut.".into()))?;
     let lock = state.content.lock(&id);
     let guard = lock.lock().await;
     crate::content::migration::guard(&state, &id)?;

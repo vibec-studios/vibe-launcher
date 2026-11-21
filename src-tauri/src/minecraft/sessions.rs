@@ -14,6 +14,7 @@ pub struct Session {
     pub killed: bool,
     pub task_id: Option<String>,
     pub secret: Option<String>,
+    pub spark_report: Option<String>,
     order: u64,
 }
 
@@ -74,7 +75,7 @@ impl Registry {
         };
         self.map.insert(
             run_id,
-            Session { state: st.clone(), log: VecDeque::new(), seq: 0, pending: Vec::new(), killed: false, task_id: None, secret: None, order: self.next },
+            Session { state: st.clone(), log: VecDeque::new(), seq: 0, pending: Vec::new(), killed: false, task_id: None, secret: None, spark_report: None, order: self.next },
         );
         Ok(st)
     }
@@ -215,6 +216,9 @@ impl Registry {
                 Some(t) if p.text.contains(t.as_str()) => p.text.replace(t.as_str(), "••••••"),
                 _ => p.text,
             };
+            if let Some(url) = super::resources::spark_report(&text) {
+                s.spark_report = Some(url);
+            }
             let l = LogLine { seq: s.seq, time: p.time, level: p.level, thread: p.thread, logger: p.logger, text };
             if s.log.len() >= MAX_LINES {
                 s.log.pop_front();

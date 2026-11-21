@@ -17,6 +17,8 @@ import {
   FilePlus2,
   FolderOpen,
   Gauge,
+  Activity,
+  Video,
   PackagePlus,
   Plus,
   Power,
@@ -47,11 +49,12 @@ import {
 import { SIDE_FILTERS, sideMatches, type SideFilter } from "@/components/content/sides";
 import { ModSetsMenu } from "./ModSetsMenu";
 import { PerfDialog } from "./PerfDialog";
+import { QuickModDialog } from "./QuickModDialog";
 import { setContentFilter, setContentSort, setUpdateTask, useContentView, type ContentFilter, type ContentSort } from "./contentView";
 import { useT, t as tt } from "@/i18n";
 import { api, errorMessage, isCancelled } from "@/lib/api";
 import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
-import type { ContentItem, ContentKind, ContentUpdate, Instance } from "@/lib/types";
+import type { ContentItem, ContentKind, ContentUpdate, Instance, QuickMod } from "@/lib/types";
 import { registerDropTarget, useDragState } from "@/components/content/dragdrop";
 import { contentKey, fileExt, kindExtensions, kindFolder } from "@/components/content/util";
 import { ContentRow, GRID, ROW_H, RowSkeleton, SelectBox, type RowActions } from "./ContentRow";
@@ -136,6 +139,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
   const orgQ = useOrganize(id);
   const org = useMemo(() => indexOrganize(orgQ.data), [orgQ.data]);
   const orgFilter = useOrgFilter(id);
+  const [quickMod, setQuickMod] = useState<QuickMod | null>(null);
 
   const sorted = useMemo(() => {
     const byName = (a: ContentItem, b: ContentItem) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
@@ -649,9 +653,15 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                 <DropdownItem icon={<Gauge size={14} />} onSelect={() => setPerfOpen(true)}>
                   {t("perf.title")} …
                 </DropdownItem>
-                <DropdownSeparator />
               </>
             )}
+            <DropdownItem icon={<Video size={14} />} onSelect={() => setQuickMod("replaymod")}>
+              {t("quick_mod.replaymod.title")}
+            </DropdownItem>
+            <DropdownItem icon={<Activity size={14} />} onSelect={() => setQuickMod("spark")}>
+              {t("quick_mod.spark.title")}
+            </DropdownItem>
+            <DropdownSeparator />
             {addFilesMenu}
             <DropdownSeparator />
             {kinds.map((k) => (
@@ -666,6 +676,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
       {perfOpen && <PerfDialog instance={instance} onClose={() => setPerfOpen(false)} />}
       <OrgDialogsHost instanceId={id} items={all} />
       {!empty && <UnusedNotice data={orgQ.data} />}
+      {quickMod && <QuickModDialog instance={instance} tool={quickMod} onClose={() => setQuickMod(null)} />}
 
       {/* 3. Tabelle */}
       {/* Außen: Ablagefläche über die ganze Höhe; innen: Tabelle nur so hoch wie ihre Zeilen (keine leere Riesenbox
@@ -705,6 +716,12 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                     {t("perf.title")}
                   </Button>
                 )}
+                <Button variant="ghost" icon={<Video size={15} />} onClick={() => setQuickMod("replaymod")}>
+                  {t("quick_mod.replaymod.title")}
+                </Button>
+                <Button variant="ghost" icon={<Activity size={15} />} onClick={() => setQuickMod("spark")}>
+                  {t("quick_mod.spark.title")}
+                </Button>
                 <Button variant="subtle" icon={<FolderOpen size={15} />} onClick={() => openFolder(addKind)}>
                   {t("common.open_folder")}
                 </Button>

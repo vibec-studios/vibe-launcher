@@ -185,13 +185,13 @@ function StepRow({
 }
 
 /** Nächster Schritt, wenn eine Ursache nicht automatisch lösbar ist. */
-function NextStep({ d, instanceId, crashReport }: { d: Diagnosis; instanceId: string; crashReport?: string | null }) {
+function NextStep({ d, instanceId, crashReport, showHint = true }: { d: Diagnosis; instanceId: string; crashReport?: string | null; showHint?: boolean }) {
   const t = useT();
   const [busy, setBusy] = useState(false);
   const key = d.id === "graphics" || d.id === "heap_reserve" ? `fix.next.${d.id}` : "fix.next.default";
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-muted">
-      <span className="min-w-0 flex-1">{t(key)}</span>
+      {showHint && <span className="min-w-0 flex-1">{t(key)}</span>}
       <Button
         size="sm"
         variant="ghost"
@@ -252,7 +252,7 @@ function CauseCard({
       {steps.length === 0 && (
         <div className="flex flex-col gap-1 border-t border-line pt-2">
           <span className="text-[12px] font-semibold text-warn">{t("fix.cause.manual")}</span>
-          <NextStep d={d} instanceId={instanceId} crashReport={crashReport} />
+          <NextStep d={d} instanceId={instanceId} crashReport={crashReport} showHint={!unfixable.length || d.id === "graphics"} />
         </div>
       )}
     </div>

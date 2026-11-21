@@ -15,6 +15,7 @@ pub mod logs;
 pub mod meta;
 pub mod prelaunch;
 pub mod process;
+pub mod resources;
 pub mod sessions;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

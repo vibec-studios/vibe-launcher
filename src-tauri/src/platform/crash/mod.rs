@@ -362,7 +362,7 @@ fn table() -> &'static Table {
                 .map(|p| Pattern {
                     re: compile(&p.regex, &p.id),
                     also: p.also.as_deref().map(|s| compile(s, &p.id)),
-                    unless: p.unless.as_deref().map(|s| compile(&regex::escape(s), &p.id)),
+                    unless: p.unless.as_deref().map(|s| compile(s, &p.id)),
                     raw: p,
                 })
                 .collect(),
@@ -604,6 +604,7 @@ fn handle(p: &Pattern, c: &Captures, src: &LogText, start: usize, ctx: &Ctx, mod
     let conf = p.raw.confidence;
     let text = &src.text;
     match p.raw.kind.as_str() {
+        "manual" => Some(Diagnosis::new(&p.raw.id, conf)),
         "missing_dependency" => {
             let dep = g(c, "dep_id")?;
             if is_builtin(dep) || mods.by_id.contains_key(&dep.to_ascii_lowercase()) {

@@ -502,6 +502,9 @@ pub fn needs(issues: &[DepIssue], diags: &[Diagnosis], names: &HashMap<String, S
             }
             "graphics" => a.unfixable("graphics", "", p("dll"), cause),
             "heap_reserve" => a.unfixable("heap_reserve", "", p("current"), cause),
+            "native_memory" | "disk_full" | "invalid_jvm_flag" | "corrupt_archive" | "locked_world" => {
+                a.unfixable(&d.id, "", None, cause);
+            }
             _ => {}
         }
     }

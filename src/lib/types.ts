@@ -1059,9 +1059,24 @@ export interface PlaySession {
   server?: string | null;
 }
 
-export type OptSyncCategory = "controls" | "sound" | "video" | "language" | "accessibility";
+export type QuickMod = "spark" | "replaymod";
+
+export type QuickModStatus =
+  | { status: "unavailable" }
+  | { status: "installed" }
+  | { status: "disabled"; file: string }
+  | { status: "available"; version_id: string; version: string };
+
+export interface RunResources {
+  run_id: string;
+  cpu_percent: number | null;
+  memory_bytes: number | null;
+  spark_report: string | null;
+}
+
+export type OptSyncCategory = "controls" | "keybinds" | "sound" | "video" | "language" | "accessibility";
 /** Weitere Sync-Bereiche (gemeinsame Ordner, Server-Liste) */
-export type SyncArea = "resourcepacks" | "shaderpacks" | "servers" | "screenshots";
+export type SyncArea = "resourcepacks" | "shaderpacks" | "servers" | "screenshots" | "hotbars" | "command_history";
 export type SyncKey = OptSyncCategory | SyncArea;
 
 export interface SyncConflict {
@@ -1083,6 +1098,7 @@ export interface OptSyncInfo {
     resource_packs?: string[] | null;
     shader?: { pack: string; enabled: boolean } | null;
     optifine?: Record<string, string>;
+    legacy_keybinds?: Record<string, string>;
   };
   categories: OptSyncCategory[];
   areas: SyncArea[];
@@ -1702,7 +1718,8 @@ export interface FixStep {
 }
 
 export interface Unfixable {
-  reason: "loader_version" | "loader_offline" | "version_mismatch" | "no_version" | "dep_not_found" | "graphics" | "heap_reserve" | "ram_limit";
+  reason: "loader_version" | "loader_offline" | "version_mismatch" | "no_version" | "dep_not_found" | "graphics" | "heap_reserve" | "ram_limit"
+    | "native_memory" | "disk_full" | "invalid_jvm_flag" | "corrupt_archive" | "locked_world";
   name: string;
   detail: string | null;
   cause?: number | null;

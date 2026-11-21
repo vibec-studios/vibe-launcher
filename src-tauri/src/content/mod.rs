@@ -46,6 +46,7 @@ pub mod modsets;
 pub mod sets;
 pub mod sets_apply;
 pub mod perf;
+pub mod quick_mod;
 pub mod modpack;
 pub mod mroverrides;
 pub mod autoupdate;
@@ -568,6 +569,7 @@ pub struct ContentState {
     pub(crate) app: AppHandle,
     cache: Mutex<HashMap<String, (Instant, bytes::Bytes)>>,
     locks: Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
+    launch_gates: Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
     /// Instanzen, für die gerade eine Hash-Zuordnung im Hintergrund läuft
     pub(crate) identifying: Mutex<HashSet<String>>,
     /// Letzter fehlgeschlagener Zuordnungsversuch je Instanz (Netzwerk) – nicht sofort wiederholen
@@ -589,6 +591,7 @@ impl ContentState {
             app,
             cache: Mutex::new(HashMap::new()),
             locks: Mutex::new(HashMap::new()),
+            launch_gates: Mutex::new(HashMap::new()),
             identifying: Mutex::new(HashSet::new()),
             identify_backoff: Mutex::new(HashMap::new()),
             stores: Mutex::new(HashMap::new()),
@@ -631,6 +634,10 @@ impl ContentState {
 
     pub(crate) fn emit_changed(&self, instance_id: &str) {
         crate::events::emit(&self.app, crate::events::CONTENT_CHANGED, &serde_json::json!({ "instance_id": instance_id }));
+    }
+
+    pub(crate) fn launch_gate(&self, instance_id: &str) -> Arc<tokio::sync::Mutex<()>> {
+        self.launch_gates.lock().entry(instance_id.to_string()).or_default().clone()
     }
 }
 

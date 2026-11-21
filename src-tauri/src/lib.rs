@@ -189,6 +189,9 @@ pub fn run() {
             commands::core::update_blockers,
             commands::perf::gpu_settings_open,
             commands::perf::launch_skip_step,
+            commands::perf::quick_mod_status,
+            commands::perf::quick_mod_install,
+            commands::perf::game_resources,
             commands::datadir::datadir_preview,
             commands::datadir::datadir_move,
             // auth
