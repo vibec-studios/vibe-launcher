@@ -211,6 +211,8 @@ const used = () => invites.filter((i) => i.status === "pending" || i.status === 
 
 // ------------------------------------------------------------------ REST
 
+let inviteTaken = false;
+
 type Res = { status: number; body?: unknown };
 const ok = (body: unknown): Res => ({ status: 200, body });
 const err = (status: number, code: string, message: string): Res => ({ status, body: { error: { code, message } } });
@@ -331,6 +333,7 @@ export function w4Route(method: string, rel: string, query: URLSearchParams, bod
   }
   if ((x = m(/^access\/invites\/([^/]+)$/)) && method === "GET") {
     const code = decodeURIComponent(x[1]).toLowerCase();
+    inviteTaken = true;
     if (code === "zzzzzzzz") return err(404, "not_found", "Unbekannt");
     const expired = code === "exp23456";
     return ok({ code, inviter: { uuid: LUMI.id, name: LUMI.name }, name: null, valid: !expired, status: expired ? "expired" : "pending", expiresAt: new Date(NOW + 9 * 86400_000).toISOString() });
@@ -405,14 +408,12 @@ function vibePreview(l: PlayLink): JoinPreview {
   };
 }
 
-let inviteTaken = false;
 const isVibeInput = (i: unknown): i is { kind: "vibe"; code: string; version_id: string | null } => (i as { kind?: string })?.kind === "vibe";
 
 const handlers: Handlers = {
   app_actions_take: (args) => {
     const code = new URLSearchParams(location.search).get("invite");
     if (code && !inviteTaken) {
-      inviteTaken = true;
       return [{ kind: "access_invite", code }];
     }
     return play.app_actions_take(args);
