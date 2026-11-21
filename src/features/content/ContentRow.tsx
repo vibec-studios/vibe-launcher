@@ -9,6 +9,8 @@ import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { sourceName } from "@/components/content/util";
 import { SideTag } from "@/components/content/sides";
 import { ManualBadge } from "@/components/content/ManualBadge";
+import { OrgBadges } from "./organize/OrgBadges";
+import type { OrgGroup, OrgItem } from "./organize/api";
 
 export const ROW_H = 60;
 /** Spalten: Auswahl | Name | Version | Aktionen (gleich für Kopf und Zeilen) */
@@ -33,9 +35,10 @@ export interface RowActions {
   hasUpdate: (item: ContentItem) => boolean;
   /** Update nur manuell möglich (CurseForge ohne Freigabe für andere Launcher) */
   isManualUpdate: (item: ContentItem) => boolean;
+  organize?: (items: ContentItem[], menu: "context" | "dropdown") => React.ReactNode;
 }
 
-function RowMenu({ itemKey, actions, Item, Sep }: { itemKey: string; actions: RowActions; Item: (p: MenuItemProps) => React.ReactNode; Sep: () => React.ReactNode }) {
+function RowMenu({ itemKey, actions, Item, Sep, menu }: { itemKey: string; actions: RowActions; Item: (p: MenuItemProps) => React.ReactNode; Sep: () => React.ReactNode; menu: "context" | "dropdown" }) {
   const t = useT();
   const items = actions.menuTargets(itemKey);
   const n = items.length;
@@ -75,6 +78,7 @@ function RowMenu({ itemKey, actions, Item, Sep }: { itemKey: string; actions: Ro
           {t("content.pin")}
         </Item>
       )}
+      {actions.organize?.(items, menu)}
       <Sep />
       {one?.project_id && one.source && (
         <Item icon={<ExternalLink size={14} />} onSelect={() => actions.openProject(one)}>
@@ -118,6 +122,9 @@ export const ContentRow = memo(function ContentRow({
   manual,
   actions,
   showKind,
+  org,
+  group,
+  hasPack,
 }: {
   item: ContentItem;
   itemKey: string;
@@ -128,12 +135,15 @@ export const ContentRow = memo(function ContentRow({
   actions: RowActions;
   /** Art (Mod/Resourcepack/Shader) zeigen – in der gemischten Ansicht „Alle“ */
   showKind?: boolean;
+  org?: OrgItem;
+  group?: OrgGroup;
+  hasPack?: boolean;
 }) {
   const t = useT();
   const author = item.authors.length ? t("discover.by", { author: item.authors.join(", ") }) : null;
   const source = item.source ? sourceName(item.source) : t("content.local");
   return (
-    <ContextMenu content={<RowMenu itemKey={itemKey} actions={actions} Item={ContextItem} Sep={ContextSeparator} />}>
+    <ContextMenu content={<RowMenu itemKey={itemKey} actions={actions} Item={ContextItem} Sep={ContextSeparator} menu="context" />}>
       <div
         role="row"
         aria-selected={selected}
@@ -163,6 +173,7 @@ export const ContentRow = memo(function ContentRow({
               {manual && <ManualBadge iconOnly tip={t("manual.content_tip")} />}
               {item.kind === "mod" && item.side !== "unknown" && <SideTag side={item.side} />}
               {showKind && item.kind !== "mod" && <Tag className="shrink-0">{t(`content.kind1.${item.kind}`)}</Tag>}
+              <OrgBadges info={org} group={group} hasPack={hasPack} />
             </div>
             <div className="truncate text-[12.5px] leading-5 text-muted">
               {author && <span>{author} · </span>}
@@ -238,7 +249,7 @@ export const ContentRow = memo(function ContentRow({
               </button>
             }
           >
-            <RowMenu itemKey={itemKey} actions={actions} Item={DropdownItem} Sep={DropdownSeparator} />
+            <RowMenu itemKey={itemKey} actions={actions} Item={DropdownItem} Sep={DropdownSeparator} menu="dropdown" />
           </DropdownMenu>
         </div>
       </div>

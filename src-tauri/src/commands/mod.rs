@@ -3,6 +3,7 @@ pub mod auth;
 pub mod bedrock;
 pub mod content;
 pub mod sets;
+pub mod organize;
 pub mod core;
 pub mod game;
 pub mod server;

@@ -15,7 +15,8 @@ export type ExpertFeature =
   | "api-keys"
   | "custom-stores"
   | "update-channel"
-  | "tech-details";
+  | "tech-details"
+  | "mod-tags";
 
 export type InstanceArea = "content" | "worlds" | "logs" | "files" | "backups";
 
@@ -32,6 +33,7 @@ export const SIMPLE_HIDDEN: readonly ExpertFeature[] = [
   "custom-stores",
   "update-channel",
   "tech-details",
+  "mod-tags",
 ];
 
 const NAV: Partial<Record<NavKey, ExpertFeature>> = { servers: "servers" };

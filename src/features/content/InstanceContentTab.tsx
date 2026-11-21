@@ -41,7 +41,6 @@ import {
   IconButton,
   SearchInput,
   Spinner,
-  confirm,
   cn,
   toast,
 } from "@/components/ui";
@@ -60,6 +59,15 @@ import { useSimple } from "@/lib/mode";
 import { startManualDownload } from "@/components/content/install";
 import { RefreshButton } from "@/features/instances/RefreshButton";
 import { addContentFiles } from "./addContentFiles";
+import { indexOrganize, useOrganize } from "./organize/api";
+import { orgActive, orgMatches, resetOrgFilter, useOrgFilter } from "./organize/filter";
+import { OrgFilterBar } from "./organize/OrgFilterBar";
+import { GroupsMenu } from "./organize/GroupsMenu";
+import { OrgMenuItems } from "./organize/OrgMenuItems";
+import { SelectionOrgButton } from "./organize/SelectionOrgButton";
+import { UnusedNotice } from "./organize/UnusedNotice";
+import { OrgDialogsHost } from "./organize/OrgDialogsHost";
+import { confirmRemoval } from "./organize/removeFlow";
 
 export type TypeFilter = "all" | ContentKind;
 const STATUS: ContentFilter[] = ["updates", "enabled", "disabled"];
@@ -125,6 +133,9 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
     if (type !== "mod") setSideFilter("all");
   }, [type]);
   const [perfOpen, setPerfOpen] = useState(false);
+  const orgQ = useOrganize(id);
+  const org = useMemo(() => indexOrganize(orgQ.data), [orgQ.data]);
+  const orgFilter = useOrgFilter(id);
 
   const sorted = useMemo(() => {
     const byName = (a: ContentItem, b: ContentItem) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
@@ -161,10 +172,11 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
       if (status === "disabled" && c.enabled) return false;
       if (status === "updates" && !updates.has(keyOf(c))) return false;
       if (c.kind === "mod" && !sideMatches(sideFilter, c.side)) return false;
+      if (!orgMatches(orgFilter, org.items.get(keyOf(c)))) return false;
       if (!needle) return true;
       return c.name.toLowerCase().includes(needle) || c.file_name.toLowerCase().includes(needle) || c.authors.some((a) => a.toLowerCase().includes(needle));
     });
-  }, [typed, text, status, updates, sideFilter]);
+  }, [typed, text, status, updates, sideFilter, orgFilter, org]);
 
   /** Spaltenkopf: gleicher Schlüssel -> Richtung umkehren, sonst aufsteigend sortieren. */
   const sortBy = (s: ContentSort) => {
@@ -250,13 +262,16 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
   const remove = useCallback(
     async (items: ContentItem[]) => {
       if (!items.length) return;
-      const ok = await confirm({
-        title: items.length > 1 ? tt("content.remove_title_n", { n: items.length }) : tt("content.remove_title", { name: items[0].name }),
-        text: tt("content.remove_text"),
-        confirmLabel: tt("common.remove"),
-        danger: true,
-      });
-      if (!ok) return;
+      const extras = await confirmRemoval(
+        id,
+        items,
+        items.length > 1 ? tt("content.remove_title_n", { n: items.length }) : tt("content.remove_title", { name: items[0].name }),
+        tt("content.remove_text"),
+        tt("common.remove"),
+      );
+      if (!extras) return;
+      const extraKeys = new Set(extras.map((e) => itemKey(e.kind, e.file_name)));
+      items = [...items, ...state.current.all.filter((c) => extraKeys.has(keyOf(c)) && !items.some((i) => keyOf(i) === keyOf(c)))];
       const keys = new Set(items.map(keyOf));
       setSelection((s) => new Set([...s].filter((k) => !keys.has(k))));
       for (const k of new Set(items.map((i) => i.kind))) {
@@ -388,6 +403,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
       openFolder,
       hasUpdate: (item) => state.current.updates.has(keyOf(item)),
       isManualUpdate: (item) => !!state.current.updates.get(keyOf(item))?.manual,
+      organize: (items, menu) => <OrgMenuItems instanceId={id} items={items} menu={menu} />,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [setEnabled, setPinned, update, remove, openFolder, navigate, id],
@@ -454,7 +470,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
   const allVisibleSelected = visible.length > 0 && visible.every((c) => selection.has(keyOf(c)));
   const headState: "on" | "off" | "mixed" = selection.size === 0 ? "off" : allVisibleSelected ? "on" : "mixed";
   const total = type === "all" ? counts.all : (counts.kind[type] ?? 0);
-  const activeFilters = (status !== "all" ? 1 : 0) + (sideFilter !== "all" ? 1 : 0);
+  const activeFilters = (status !== "all" ? 1 : 0) + (sideFilter !== "all" ? 1 : 0) + orgActive(orgFilter);
 
   const addFilesMenu = (
     <>
@@ -583,6 +599,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
               ))}
             </DropdownMenu>
           )}
+          <OrgFilterBar instanceId={id} data={orgQ.data} total={all.length} />
           {activeFilters > 0 && (
             // Nur ein „×“ (mit Tooltip): sonst bricht die Zeile genau dann um, wenn ein Filter aktiv ist
             <IconButton
@@ -593,6 +610,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
               onClick={() => {
                 setStatus("all");
                 setSideFilter("all");
+                resetOrgFilter(id);
               }}
             >
               <X size={14} />
@@ -617,6 +635,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
           {/* Neu prüfen: Ordner neu einlesen, Updates ohne Cache, Probleme (auch Loader) – auch per F5. Behält seinen Text;
               Mod-Sets/Werkzeuge zeigen ihren erst ab 1240px, damit die Leiste bei 1280er-Fenstern einzeilig bleibt */}
           <RefreshButton instanceId={id} />
+          <GroupsMenu instanceId={id} items={all} selected={selItems} setEnabled={(l, v) => void setEnabled(l, v)} labelClassName="hidden @min-[1240px]:inline" />
           <ModSetsMenu instanceId={id} labelClassName="hidden @min-[1240px]:inline" />
           <DropdownMenu
             trigger={
@@ -645,6 +664,8 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
         </div>
       )}
       {perfOpen && <PerfDialog instance={instance} onClose={() => setPerfOpen(false)} />}
+      <OrgDialogsHost instanceId={id} items={all} />
+      {!empty && <UnusedNotice data={orgQ.data} />}
 
       {/* 3. Tabelle */}
       {/* Außen: Ablagefläche über die ganze Höhe; innen: Tabelle nur so hoch wie ihre Zeilen (keine leere Riesenbox
@@ -731,6 +752,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                       setStatus("all");
                       setSideFilter("all");
                       setType("all");
+                      resetOrgFilter(id);
                     }}
                   >
                     {t("ipage.filter.reset")}
@@ -753,6 +775,9 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                           manual={item.source === "curseforge" && !!item.project_id && (manualProjects.has(item.project_id) || !!updates.get(key)?.manual)}
                           actions={actions}
                           showKind={type === "all"}
+                          org={org.items.get(key)}
+                          group={org.groups.get(org.items.get(key)?.group ?? "")}
+                          hasPack={orgQ.data?.has_pack}
                         />
                       </div>
                     );
@@ -779,6 +804,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
                 {t("common.update")}
                 {selUpdates.length > 0 && ` (${selUpdates.length})`}
               </BarButton>
+              <SelectionOrgButton instanceId={id} items={selItems} />
               <BarButton icon={<Trash2 size={14} />} onClick={() => remove(selItems)} danger>
                 {t("common.remove")}
               </BarButton>

@@ -51,6 +51,7 @@ pub mod mroverrides;
 pub mod autoupdate;
 pub mod worlds;
 pub mod worldbackup;
+pub mod organize;
 
 /// Herkunft: Modrinth, CurseForge oder ein eigener Store (serialisiert als `"store:<id>"`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

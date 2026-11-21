@@ -81,6 +81,11 @@ const de: Glossary = {
     title: "Microsoft-Konto",
     text: "Minecraft: Java Edition ist an dein Microsoft-Konto gebunden. Die Anmeldung läuft direkt bei Microsoft – der Launcher sieht dein Passwort nie.",
   },
+  dependency: {
+    title: "Abhängigkeit",
+    text: "Eine Mod, die eine andere Mod zum Laufen braucht, zum Beispiel Fabric API. Vibe installiert Abhängigkeiten automatisch mit und sagt dir, wenn keine Mod sie mehr braucht.",
+    example: "Mod Menu braucht Fabric API – ohne Fabric API startet Mod Menu nicht.",
+  },
 };
 
 export default de;

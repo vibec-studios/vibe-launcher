@@ -81,6 +81,11 @@ const en: Glossary = {
     title: "Microsoft account",
     text: "Minecraft: Java Edition is tied to your Microsoft account. Sign-in happens directly at Microsoft – the launcher never sees your password.",
   },
+  dependency: {
+    title: "Dependency",
+    text: "A mod that another mod needs in order to work, for example Fabric API. Vibe installs dependencies automatically and tells you when no mod needs them anymore.",
+    example: "Mod Menu needs Fabric API – without Fabric API, Mod Menu won't start.",
+  },
 };
 
 export default en;

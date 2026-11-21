@@ -317,7 +317,9 @@ pub async fn run_install_with(
     task.stage(format!("Lade {n} Datei(en) …"), Some(0.1));
     let root_title = planned.first().map(|p| p.brief.title.clone()).unwrap_or_default();
     let root_file = planned.first().map(|p| crate::paths::sanitize_file_name(&p.file.filename));
+    let note = super::organize::InstallNote::new(&planned, 1, true);
     let missing = apply(&state, &inst, planned, &task.sub(0.1, 1.0)).await?;
+    note.commit(&state.paths, &instance_id);
     let root_locked = root_file.is_some_and(|f| missing.iter().any(|m| m.file_name == f));
     for w in &warnings {
         tracing::warn!("content_install {instance_id}: {w}");
@@ -530,7 +532,9 @@ pub async fn run_update(state: AppState, task: TaskHandle, instance_id: String, 
     let planned = plan(&state, &inst, &idx, roots, &mut warnings).await?;
     let n = planned.iter().filter(|p| p.file.url.is_some()).count();
     task.stage(format!("Lade {n} Datei(en) …"), Some(0.1));
+    let note = super::organize::InstallNote::new(&planned, selected.len(), false);
     let missing = apply(&state, &inst, planned, &task.sub(0.1, 1.0)).await?;
+    note.commit(&state.paths, &instance_id);
     finish_message(&task, &warnings, &missing, n);
     if let Some(m) = manual_skipped_text(skipped) {
         task.message(format!("{n} Datei(en) aktualisiert – {m}"));
