@@ -1,17 +1,20 @@
 import dict from "@/i18n/sessions";
+import { normalizeLang, type Lang } from "@/i18n/languages";
 
-type Lang = "de" | "en";
+const localeFiles = import.meta.glob<Record<string, string>>("@/i18n/locales/*/sessions.json", { eager: true, import: "default" });
 
 function lang(): Lang {
   try {
-    return localStorage.getItem("lang") === "en" ? "en" : "de";
+    return normalizeLang(localStorage.getItem("lang")) ?? "de";
   } catch {
     return "de";
   }
 }
 
 const current = lang();
-const table: Record<string, string> = { ...dict.de, ...dict[current] };
+const extra = Object.entries(localeFiles).find(([p]) => p.includes(`/locales/${current}/`))?.[1] ?? {};
+const table: Record<string, string> =
+  current === "de" || current === "en" ? { ...dict.de, ...dict[current] } : { ...dict.de, ...dict.en, ...extra };
 
 export const consoleLang = current;
 

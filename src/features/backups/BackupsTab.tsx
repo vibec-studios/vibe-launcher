@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { qk, useInstanceTasks } from "@/lib/queries";
 import type { Instance, SnapshotInfo, WorldBackup } from "@/lib/types";
 import { formatBytes, formatRelative } from "@/lib/format";
-import { useLang, useT } from "@/i18n";
+import { intlLocale, useLang, useT } from "@/i18n";
 import {
   Button,
   Dialog,
@@ -34,7 +34,7 @@ export const backupKeys = {
 };
 
 function dateTime(ms: number) {
-  const loc = useLang.getState().lang === "en" ? "en-US" : "de-DE";
+  const loc = intlLocale(useLang.getState().lang);
   return new Date(ms).toLocaleString(loc, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 

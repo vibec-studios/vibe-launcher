@@ -111,12 +111,12 @@ pub fn sanitize(body: &str, now: i64, version: &str) -> Vec<Announcement> {
     out
 }
 
-/// Sprache für `?lang=`: nur "de" | "en".
+/// Sprache für `?lang=`: nur "de" | "en"; alle anderen Sprachen bekommen Englisch.
 fn lang_param(lang: &str) -> &'static str {
-    if lang.eq_ignore_ascii_case("en") {
-        "en"
-    } else {
+    if lang.eq_ignore_ascii_case("de") {
         "de"
+    } else {
+        "en"
     }
 }
 
@@ -196,6 +196,7 @@ mod tests {
         assert!(!valid_id("a b"));
         assert!(!valid_id(&"a".repeat(65)));
         assert_eq!(lang_param("EN"), "en");
-        assert_eq!(lang_param("fr"), "de");
+        assert_eq!(lang_param("fr"), "en");
+        assert_eq!(lang_param("de"), "de");
     }
 }

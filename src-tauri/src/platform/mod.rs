@@ -177,7 +177,7 @@ pub fn update_presence(app: &AppHandle) {
         p.discord.set(None);
         return;
     }
-    let english = settings.language.starts_with("en");
+    let english = !settings.language.starts_with("de");
     let art = presence_art::Art::from_settings(&settings);
     let head = active_head(&state);
     let active = p.active.lock().iter().max_by_key(|(_, a)| a.start).map(|(id, a)| (id.clone(), a.clone()));

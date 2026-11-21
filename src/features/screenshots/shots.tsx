@@ -7,6 +7,7 @@ import { useGameStore } from "@/lib/queries";
 import { imageSrc } from "@/lib/format";
 import { cn } from "@/components/ui";
 import { create } from "zustand";
+import { intlLocale } from "@/i18n/languages";
 
 /** Beim Öffnen der Screenshots-Seite direkt dieses Bild in der Lightbox zeigen (z. B. von der Startseite). */
 export const useShotFocus = create<{ path: string | null }>(() => ({ path: null }));
@@ -72,6 +73,6 @@ export function bucket(ts: number, now: Date): { key: string; label: (t: (k: str
   const key = `${d.getFullYear()}-${d.getMonth()}`;
   return {
     key,
-    label: (_t, lang) => d.toLocaleDateString(lang === "en" ? "en-US" : "de-DE", { month: "long", year: "numeric" }),
+    label: (_t, lang) => d.toLocaleDateString(intlLocale(lang), { month: "long", year: "numeric" }),
   };
 }

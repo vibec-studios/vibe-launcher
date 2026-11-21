@@ -16,12 +16,13 @@ import { TextMenuHost } from "@/app/TextMenu";
 import { ConfirmHost, Toaster, TooltipProvider } from "@/components/ui";
 import { GlobalDropZone } from "@/features/import/GlobalDropZone";
 import { UpdateChecker } from "@/app/UpdateNotice";
-import { useLang } from "@/i18n";
+import { i18nReady, useLang } from "@/i18n";
 import { applyCachedAppearance } from "@/lib/appearance";
 
 // Simuliertes Backend nur für Frontend-Entwicklung im Browser (VITE_MOCK=1)
 if (import.meta.env.VITE_MOCK === "1") await import("@/dev/mock");
 
+await i18nReady;
 installGuards();
 applyCachedAppearance();
 document.documentElement.lang = useLang.getState().lang;

@@ -1,10 +1,29 @@
+pub const LANGUAGES: [&str; 7] = ["de", "en", "es", "fr", "pl", "pt-BR", "tr"];
+
 #[cfg(any(not(windows), test))]
 pub fn from_tag(tag: &str) -> &'static str {
-    if tag.trim().to_ascii_lowercase().starts_with("de") { "de" } else { "en" }
+    let t = tag.trim().to_ascii_lowercase();
+    match t.get(..2).unwrap_or("") {
+        "de" => "de",
+        "es" => "es",
+        "fr" => "fr",
+        "pl" => "pl",
+        "pt" => "pt-BR",
+        "tr" => "tr",
+        _ => "en",
+    }
 }
 
 pub fn from_langid(id: u16) -> &'static str {
-    if id & 0x3ff == 0x07 { "de" } else { "en" }
+    match id & 0x3ff {
+        0x07 => "de",
+        0x0a => "es",
+        0x0c => "fr",
+        0x15 => "pl",
+        0x16 => "pt-BR",
+        0x1f => "tr",
+        _ => "en",
+    }
 }
 
 #[cfg(windows)]
@@ -28,7 +47,10 @@ mod tests {
         assert_eq!(from_tag("de-DE"), "de");
         assert_eq!(from_tag("de_AT.UTF-8"), "de");
         assert_eq!(from_tag("en-US"), "en");
-        assert_eq!(from_tag("fr-FR"), "en");
+        assert_eq!(from_tag("fr-FR"), "fr");
+        assert_eq!(from_tag("pt_BR.UTF-8"), "pt-BR");
+        assert_eq!(from_tag("tr"), "tr");
+        assert_eq!(from_tag("ja-JP"), "en");
     }
 
     #[test]
@@ -37,6 +59,11 @@ mod tests {
         assert_eq!(from_langid(0x0807), "de");
         assert_eq!(from_langid(0x0c07), "de");
         assert_eq!(from_langid(0x0409), "en");
-        assert_eq!(from_langid(0x040c), "en");
+        assert_eq!(from_langid(0x040c), "fr");
+        assert_eq!(from_langid(0x0c0a), "es");
+        assert_eq!(from_langid(0x0415), "pl");
+        assert_eq!(from_langid(0x0416), "pt-BR");
+        assert_eq!(from_langid(0x041f), "tr");
+        assert_eq!(from_langid(0x0411), "en");
     }
 }

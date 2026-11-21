@@ -10,7 +10,7 @@ import { useInstances } from "@/lib/queries";
 import { formatDuration, instanceAccent } from "@/lib/format";
 import { Button, EmptyState, ErrorState, Segmented, Skeleton, Tooltip, cn, pageWrap } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
-import { useLang, useT } from "@/i18n";
+import { intlLocale, useLang, useT } from "@/i18n";
 import { sumIn } from "./playtime";
 
 type Range = "week" | "month" | "year";
@@ -54,7 +54,7 @@ export function StatsPage() {
   const t = useT();
   const nav = useNavigate();
   const lang = useLang((s) => s.lang);
-  const loc = lang === "en" ? "en-US" : "de-DE";
+  const loc = intlLocale(lang);
   const [range, setRange] = useState<Range>("week");
   const { start, edges } = useMemo(() => buckets(range), [range]);
   const q = useQuery({ queryKey: ["playtime", range, start], queryFn: () => api.playtimeSessions(start), staleTime: 30_000 });

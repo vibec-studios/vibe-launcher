@@ -1,5 +1,7 @@
 // Mini-i18n: flache Schlüssel, Deutsch + Englisch. Jeder Bereich hat eine eigene Datei
 // (src/i18n/<bereich>.ts) mit `{ de: {...}, en: {...} }` – so gibt es keine Merge-Konflikte.
+// Weitere Sprachen liegen als JSON unter src/i18n/locales/<sprache>/<bereich>.json (docs/TRANSLATING.md)
+// und fallen für fehlende Schlüssel auf Englisch zurück.
 // Platzhalter: "Hallo {name}" + t("key", { name: "Steve" }).
 import { create } from "zustand";
 import common from "./common";
@@ -47,15 +49,47 @@ import customize from "./customize";
 import sessions from "./sessions";
 import usability from "./usability";
 
-export type Lang = "de" | "en";
+import { isLang, normalizeLang, type Lang } from "./languages";
+
+export { LANGUAGES, intlLocale, isLang, languageName, normalizeLang, type Lang } from "./languages";
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
 const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, clips, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize, sessions, usability];
-const dicts: Record<Lang, Dict> = { de: {}, en: {} };
+const dicts: Partial<Record<Lang, Dict>> & { de: Dict; en: Dict } = { de: {}, en: {} };
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);
   Object.assign(dicts.en, b.en);
+}
+
+const locales = import.meta.glob<{ default: Dict; extras?: Record<string, unknown> }>("./locales/*/index.ts");
+const loading = new Map<Lang, Promise<void>>();
+const extras: Partial<Record<Lang, Record<string, unknown>>> = {};
+
+/** Strukturierte Zusatz-Übersetzungen (z. B. Hilfe-Center) aus src/i18n/locales/<sprache>/help/<name>.json. */
+export function localeExtra<T>(lang: Lang, name: string): T | undefined {
+  return extras[lang]?.[name] as T | undefined;
+}
+
+export function loadLang(lang: Lang): Promise<void> {
+  if (dicts[lang]) return Promise.resolve();
+  const loader = locales[`./locales/${lang}/index.ts`];
+  if (!loader) return Promise.resolve();
+  let p = loading.get(lang);
+  if (!p) {
+    p = loader()
+      .then((m) => {
+        dicts[lang] = m.default;
+        extras[lang] = m.extras ?? {};
+        useLang.setState((s) => ({ rev: s.rev + 1 }));
+      })
+      .catch((e) => {
+        loading.delete(lang);
+        console.warn(`[i18n] Sprache ${lang} nicht ladbar`, e);
+      });
+    loading.set(lang, p);
+  }
+  return p;
 }
 
 interface LangState {
@@ -63,18 +97,26 @@ interface LangState {
   /** Simple-Modus: Schlüssel mit `simple:`-Variante (src/i18n/simple.ts) nutzen einfache Wörter ohne Fachbegriffe.
    *  Gesetzt von `ModeHost` (src/lib/mode.tsx). */
   simple: boolean;
+  /** Zählt geladene Sprachpakete hoch, damit `useT` nach dem Nachladen neu rendert. */
+  rev: number;
   setLang: (l: Lang) => void;
 }
 
 export const useLang = create<LangState>((set) => ({
-  lang: (localStorageGet("lang") as Lang) || "de",
+  lang: normalizeLang(localStorageGet("lang")) ?? "de",
   simple: localStorageGet("vl.mode") === "simple",
-  setLang: (lang) => {
+  rev: 0,
+  setLang: (raw) => {
+    const lang = isLang(raw) ? raw : (normalizeLang(raw) ?? "en");
     localStorageSet("lang", lang);
     document.documentElement.lang = lang;
     set({ lang });
+    void loadLang(lang);
   },
 }));
+
+/** Lädt die gespeicherte Sprache vor dem ersten Rendern (main.tsx). */
+export const i18nReady: Promise<void> = loadLang(useLang.getState().lang);
 
 function localStorageGet(k: string): string | null {
   try {
@@ -91,8 +133,17 @@ function localStorageSet(k: string, v: string) {
   }
 }
 
+function lookup(lang: Lang, key: string, simple: boolean): string | undefined {
+  const sk = `simple:${key}`;
+  if (lang === "de" || lang === "en") {
+    return (simple ? (dicts[lang][sk] ?? dicts.de[sk]) : undefined) ?? dicts[lang][key] ?? dicts.de[key] ?? dicts.en[key];
+  }
+  const d = dicts[lang];
+  return (simple ? d?.[sk] : undefined) ?? d?.[key] ?? (simple ? dicts.en[sk] : undefined) ?? dicts.en[key] ?? dicts.de[key];
+}
+
 export function translate(lang: Lang, key: string, vars?: Record<string, string | number>, simple = false): string {
-  let s = (simple ? (dicts[lang][`simple:${key}`] ?? dicts.de[`simple:${key}`]) : undefined) ?? dicts[lang][key] ?? dicts.de[key] ?? dicts.en[key];
+  let s = lookup(lang, key, simple);
   if (s === undefined) {
     if (import.meta.env.DEV) console.warn(`[i18n] fehlender Schlüssel: ${key}`);
     s = key;
@@ -105,6 +156,7 @@ export function translate(lang: Lang, key: string, vars?: Record<string, string 
 export function useT() {
   const lang = useLang((s) => s.lang);
   const simple = useLang((s) => s.simple);
+  useLang((s) => s.rev);
   return (key: string, vars?: Record<string, string | number>) => translate(lang, key, vars, simple);
 }
 

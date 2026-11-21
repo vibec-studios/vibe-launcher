@@ -15,7 +15,7 @@ import {
   Settings2,
 } from "lucide-react";
 import type { FileEntry, FileScope } from "@/lib/types";
-import { useLang } from "@/i18n";
+import { intlLocale, useLang } from "@/i18n";
 
 export const baseName = (p: string) => p.slice(p.lastIndexOf("/") + 1);
 export const dirName = (p: string) => (p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "");
@@ -81,7 +81,7 @@ export function FileIcon({ entry, open, size = 14 }: { entry: Pick<FileEntry, "n
 /** Kurzes Datum für Spalten: heute „14:05“, dieses Jahr „3. Nov.“, sonst „03.11.24“. */
 export function useShortDate() {
   const lang = useLang((s) => s.lang);
-  const loc = lang === "de" ? "de-DE" : "en-GB";
+  const loc = lang === "en" ? "en-GB" : intlLocale(lang);
   return (ms: number) => {
     if (!ms) return "–";
     const d = new Date(ms);
@@ -93,7 +93,7 @@ export function useShortDate() {
 }
 
 export const fullDate = (ms: number, lang: string) =>
-  ms ? new Date(ms).toLocaleString(lang === "de" ? "de-DE" : "en-GB", { dateStyle: "medium", timeStyle: "short" }) : "–";
+  ms ? new Date(ms).toLocaleString(lang === "en" ? "en-GB" : intlLocale(lang), { dateStyle: "medium", timeStyle: "short" }) : "–";
 
 export async function copyText(text: string) {
   try {

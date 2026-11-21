@@ -29,7 +29,7 @@ const handlers: Handlers = {
     const f = flag();
     if (f === "error") throw { kind: "network", message: "Mock: Vibe-Server nicht erreichbar" };
     if (f === "none") return [];
-    const tx = texts[lang === "en" ? "en" : "de"];
+    const tx = texts[lang === "de" ? "de" : "en"];
     const items: Announcement[] = [{ id: "domain-move-2026-11", level: "info", ...tx.move, url: "https://vibe.axolite.app" }];
     if (f === "demo") items.push({ id: "maintenance-mock", level: "warn", ...tx.maint, url: "https://status.axolite.app" });
     return items;

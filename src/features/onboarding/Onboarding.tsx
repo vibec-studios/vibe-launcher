@@ -31,7 +31,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { useAccounts, useInstances, useSettings } from "@/lib/queries";
 import { patchSettings, setMode, useMode, type UiMode } from "@/lib/mode";
-import { useLang, useT, type Lang } from "@/i18n";
+import { LANGUAGES, useLang, useT, type Lang } from "@/i18n";
 import { Button, Spinner, Tag, cn, toast } from "@/components/ui";
 import { Logo3D } from "@/components/Logo3D";
 import { PlayerHead } from "@/components/PlayerHead";
@@ -271,25 +271,20 @@ function WelcomeStep() {
       <h1 className="mt-6 text-[34px] font-bold leading-tight tracking-[-0.02em] text-text">{t("onb.welcome.title")}</h1>
       <p className="mt-2 max-w-[520px] text-[15px] leading-relaxed text-muted">{t("onb.welcome.lead")}</p>
       <div className="mt-9 text-[12.5px] font-semibold text-dim">{t("onb.welcome.lang")}</div>
-      <div className="mt-3 grid w-full max-w-[440px] grid-cols-2 gap-3" role="radiogroup" aria-label={t("onb.welcome.lang")}>
-        {(
-          [
-            ["de", "Deutsch"],
-            ["en", "English"],
-          ] as const
-        ).map(([l, label]) => (
+      <div className="mt-3 flex w-full max-w-[600px] flex-wrap justify-center gap-2.5" role="radiogroup" aria-label={t("onb.welcome.lang")}>
+        {LANGUAGES.map(({ code: l, name }) => (
           <button
             key={l}
             role="radio"
             aria-checked={lang === l}
             onClick={() => setLang(l)}
             className={cn(
-              "flex h-14 items-center justify-center gap-2 rounded-card bg-surface text-[15px] font-semibold text-text transition-[background-color,box-shadow] duration-150",
+              "flex h-12 min-w-[132px] items-center justify-center gap-2 rounded-card bg-surface px-4 text-[14.5px] font-semibold text-text transition-[background-color,box-shadow] duration-150",
               lang === l ? "bg-surface2 shadow-[inset_0_0_0_2px_var(--ui-accent)]" : "hover:bg-surface2",
             )}
           >
             {lang === l && <Check size={16} strokeWidth={2.5} className="text-brand" />}
-            {label}
+            {name}
           </button>
         ))}
       </div>

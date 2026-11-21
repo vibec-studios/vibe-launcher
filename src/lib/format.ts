@@ -1,8 +1,8 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { useLang } from "@/i18n";
+import { intlLocale, useLang } from "@/i18n";
 import type { Loader, LoaderKind } from "./types";
 
-const locale = () => (useLang.getState().lang === "en" ? "en-US" : "de-DE");
+const locale = () => intlLocale(useLang.getState().lang);
 
 export function formatBytes(n: number | null | undefined): string {
   if (n === null || n === undefined) return "–";

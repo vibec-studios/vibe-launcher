@@ -86,8 +86,8 @@ pub async fn settings_set(state: State<'_, AppState>, settings: Settings) -> App
     if s.update_channel != "dev" {
         s.update_channel = "release".into();
     }
-    if !["de", "en"].contains(&s.language.as_str()) {
-        s.language = "de".into();
+    if !crate::settings::LANGUAGES.contains(&s.language.as_str()) {
+        s.language = "en".into();
     }
     s.appearance.sanitize();
     // Eigenes App-Icon nur aus dem eigenen Ordner (dorthin kopiert `app_icon_import`)
