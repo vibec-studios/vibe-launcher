@@ -133,7 +133,22 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
         }
       >
         <div className="flex flex-wrap items-start gap-5 p-4">
-          <MiniPreview a={shown} />
+          <div className="flex w-[320px] max-w-full flex-col gap-3">
+            <MiniPreview a={shown} />
+            <p className="text-[12.5px] leading-relaxed text-muted">{t(`ap.theme.${shown.theme}.desc`)}</p>
+            <div className="flex flex-wrap items-center gap-2 empty:hidden">
+              {isThemeModified(a) && !a.active_custom && (
+                <Button size="sm" variant="subtle" icon={<RotateCcw size={13} />} onClick={() => set(applyTheme(a, a.theme))}>
+                  {t("ap.theme.reset", { name: t(`ap.theme.${a.theme}`) })}
+                </Button>
+              )}
+              {seasonalActive && (
+                <Tag className="h-6 gap-1.5 px-2 text-[12px]">
+                  <Snowflake size={12} /> {t("ap.seasonal.active")}
+                </Tag>
+              )}
+            </div>
+          </div>
           <div className="flex min-w-[260px] flex-1 flex-col gap-3">
             <div className="grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-2.5">
               {THEME_IDS.map((id) => (
@@ -145,19 +160,6 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
                   onClick={() => set(applyTheme(a, id))}
                 />
               ))}
-            </div>
-            <p className="text-[12.5px] leading-relaxed text-muted">{t(`ap.theme.${shown.theme}.desc`)}</p>
-            <div className="flex flex-wrap items-center gap-2">
-              {isThemeModified(a) && !a.active_custom && (
-                <Button size="sm" variant="subtle" icon={<RotateCcw size={13} />} onClick={() => set(applyTheme(a, a.theme))}>
-                  {t("ap.theme.reset", { name: t(`ap.theme.${a.theme}`) })}
-                </Button>
-              )}
-              {seasonalActive && (
-                <Tag className="h-6 gap-1.5 px-2 text-[12px]">
-                  <Snowflake size={12} /> {t("ap.seasonal.active")}
-                </Tag>
-              )}
             </div>
           </div>
         </div>
@@ -783,7 +785,7 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (v: string
   const t = useT();
   const [hex, setHex] = useState(value);
   useEffect(() => setHex(value), [value]);
-  const presets = [...ACCENT_PRESETS, ...THEME_IDS.map((id) => THEMES[id].tokens.accent).filter((c) => !ACCENT_PRESETS.includes(c))];
+  const presets = [...new Set([...ACCENT_PRESETS, ...THEME_IDS.map((id) => THEMES[id].tokens.accent)])];
   const custom = !presets.includes(value.toLowerCase());
   return (
     <div className="flex flex-wrap items-center gap-2">

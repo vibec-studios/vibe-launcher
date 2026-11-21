@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { ChevronRight } from "lucide-react";
 import { Button, Dialog, cn } from "@/components/ui";
 import { PlayerHead } from "@/components/PlayerHead";
 import { useT } from "@/i18n";
@@ -50,47 +51,61 @@ export function AccountConflictHost() {
   const { ask, close } = useAccountConflict();
   const runs = useGameStore((s) => s.runs);
   const others = ask?.accounts.filter((a) => a.id !== ask.account.id) ?? [];
+  const usable = others.filter((a) => !a.needs_relogin);
   return (
     <Dialog
       open={!!ask}
       onOpenChange={(o) => !o && close(null)}
-      size="sm"
+      size="md"
       title={ask ? t("sess.conflict.title", { name: ask.account.username }) : ""}
-      description={ask ? t("sess.conflict.text", { name: ask.account.username, instance: ask.busyName, n: ask.busy.slot }) : undefined}
+      description={t("uic.conflict.desc")}
       footer={
         <>
           <Button variant="subtle" onClick={() => close(null)}>
             {t("common.cancel")}
           </Button>
-          <Button variant="primary" onClick={() => close({ accountId: ask?.account.id ?? null })}>
-            {ask ? t("sess.conflict.anyway", { name: ask.account.username }) : ""}
+          <Button variant={usable.length ? "ghost" : "primary"} onClick={() => close({ accountId: ask?.account.id ?? null })}>
+            {ask ? t("uic.conflict.anyway", { name: ask.account.username }) : ""}
           </Button>
         </>
       }
     >
-      <div className="flex flex-col gap-1.5">
-        <div className="text-[12px] font-semibold text-dim">{t("sess.conflict.pick")}</div>
-        {others.length === 0 && <div className="text-[13px] text-muted">{t("sess.conflict.none")}</div>}
-        {others.map((a) => {
-          const playing = !!accountBusy(runs, a.uuid);
-          return (
-            <button
-              key={a.id}
-              disabled={a.needs_relogin}
-              onClick={() => close({ accountId: a.id })}
-              className={cn(
-                "flex h-11 items-center gap-3 rounded-ctl bg-surface2 px-3 text-left text-[13px] font-medium text-text transition-colors hover:bg-surface3",
-                a.needs_relogin && "cursor-not-allowed opacity-50",
-              )}
-            >
-              <PlayerHead uuid={a.uuid} name={a.username} size={24} />
-              <span className="flex-1 truncate">{a.username}</span>
-              {playing && <span className="text-[11px] text-warn">{t("sess.conflict.busy")}</span>}
-              {a.needs_relogin && <span className="text-[11px] text-dim">{t("sess.conflict.relogin")}</span>}
-            </button>
-          );
-        })}
-      </div>
+      {ask && (
+        <div className="flex flex-col gap-5 pb-1">
+          <div className="flex items-center gap-3 rounded-card border border-warn/30 bg-warn/[.06] px-4 py-3">
+            <PlayerHead uuid={ask.account.uuid} name={ask.account.username} size={32} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[14px] font-semibold text-text">{ask.account.username}</div>
+              <div className="truncate text-[12.5px] text-warn">{t("uic.conflict.busy", { name: ask.busyName })}</div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="label">{t("uic.conflict.pick")}</div>
+            {others.length === 0 && <p className="text-[13px] leading-relaxed text-muted">{t("uic.conflict.none")}</p>}
+            {others.map((a) => {
+              const playing = !!accountBusy(runs, a.uuid);
+              return (
+                <button
+                  key={a.id}
+                  disabled={a.needs_relogin}
+                  onClick={() => close({ accountId: a.id })}
+                  className={cn(
+                    "flex h-12 items-center gap-3 rounded-card border border-line bg-surface px-3.5 text-left text-[13.5px] font-medium text-text transition-colors outline-none hover:border-brand hover:bg-brand/[.06] focus-visible:ring-2 focus-visible:ring-brand/60",
+                    a.needs_relogin && "cursor-not-allowed opacity-50 hover:border-line hover:bg-surface",
+                  )}
+                >
+                  <PlayerHead uuid={a.uuid} name={a.username} size={28} />
+                  <span className="flex-1 truncate">{a.username}</span>
+                  {playing && <span className="text-[12px] text-warn">{t("sess.conflict.busy")}</span>}
+                  {a.needs_relogin && <span className="text-[12px] text-dim">{t("sess.conflict.relogin")}</span>}
+                  {!a.needs_relogin && <ChevronRight size={16} className="shrink-0 text-dim" />}
+                </button>
+              );
+            })}
+            {others.length > 0 && <p className="text-[12px] leading-relaxed text-dim">{t("uic.conflict.anyway.text")}</p>}
+          </div>
+        </div>
+      )}
     </Dialog>
   );
 }

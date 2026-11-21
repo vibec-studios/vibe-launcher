@@ -1,27 +1,26 @@
-// „Neuer Server“: Modus „Neu“ (Version + Loader wählen) oder „Aus Instanz“ (Version/Loader übernehmen,
-// Mods mit Client/Server-Einordnung auswählen, Configs und optional eine Welt kopieren).
+// „Neuer Server“ als Assistent: 1. Art (aus Instanz, Vanilla, Mods, Plugins) · 2. Version bzw. Instanz · 3. Name & Leistung.
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, Info } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Box, Copy, Info, Plug, Puzzle } from "lucide-react";
 import { api } from "@/lib/api";
-import { qk, sqk, useServers, useSystemInfo, useJavaInstances } from "@/lib/queries";
-import type { Instance, ModSide, ServerCreate, ServerModCandidate } from "@/lib/types";
-import { formatLoader, instanceAccent, loaderNames } from "@/lib/format";
-import { Button, Checkbox, Dialog, ErrorState, Field, Input, NumberInput, Segmented, Select, Skeleton, Slider, Switch, Tag, Tooltip, cn, toast } from "@/components/ui";
+import { useServers, useSystemInfo, useJavaInstances } from "@/lib/queries";
+import type { LoaderKind, ServerCreate } from "@/lib/types";
+import { formatLoader, instanceAccent, loaderColors, loaderNames } from "@/lib/format";
+import { Button, Dialog, Field, Input, Select, toast } from "@/components/ui";
 import { VersionPicker, type VersionValue } from "@/components/instance/VersionPicker";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
-import { formatMb } from "@/components/instance/forms";
 import { useT } from "@/i18n";
 import { PlatformPicker, type PlatformValue } from "./PlatformPicker";
 import { platformNames } from "./addonsApi";
+import { ChoiceCard } from "./new/ChoiceCard";
+import { StepBar } from "./new/StepBar";
+import { FromInstance, NEW_WORLD } from "./new/FromInstance";
+import { AdvancedPort, RamField } from "./new/Resources";
 
-type Mode = "new" | "instance";
-/** Mod-Loader/Vanilla oder Plugin-Software */
-type Kind = "mods" | "plugins";
+type Kind = "instance" | "vanilla" | "mods" | "plugins";
 const DEFAULT_PORT = 25565;
 const DEFAULT_RAM = 2048;
-const NEW_WORLD = "__new__";
+const MOD_LOADERS: Exclude<LoaderKind, "vanilla">[] = ["fabric", "neoforge", "forge", "quilt"];
 
 function suggestPluginName(p: PlatformValue): string {
   return p.mc ? `${platformNames[p.kind]}-Server ${p.mc}` : "";
@@ -32,163 +31,6 @@ function suggestName(v: VersionValue): string {
   return v.loader === "vanilla" ? `Server ${v.mc}` : `${loaderNames[v.loader]}-Server ${v.mc}`;
 }
 
-const sideColor: Record<ModSide, string> = { both: "var(--color-muted)", server: "var(--color-ok)", client: "var(--color-warn)", unknown: "var(--color-dim)" };
-
-function RamPort({ ram, setRam, port, setPort, total }: { ram: number; setRam: (v: number) => void; port: number; setPort: (v: number) => void; total: number }) {
-  const t = useT();
-  const limit = Math.max(1024, Math.floor(total / 256) * 256);
-  return (
-    <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-5">
-      <div className="flex flex-col gap-1.5">
-        <span className="label">{t("srv.ram")}</span>
-        <div className="flex h-10 items-center gap-3">
-          <Slider value={ram} min={512} max={limit} step={256} onChange={setRam} />
-          <span className="w-[64px] shrink-0 text-right font-mono text-[12px] text-muted">{formatMb(ram)}</span>
-        </div>
-      </div>
-      <Field label={t("srv.port")}>
-        <NumberInput value={port} min={1024} max={65535} onChange={(v) => v !== null && setPort(v)} aria-label={t("srv.port")} />
-      </Field>
-    </div>
-  );
-}
-
-function ModList({
-  mods,
-  selected,
-  setSelected,
-}: {
-  mods: ServerModCandidate[];
-  selected: Set<string>;
-  setSelected: (s: Set<string>) => void;
-}) {
-  const t = useT();
-  const clientCount = mods.filter((m) => m.side === "client").length;
-  const toggle = (f: string, on: boolean) => {
-    const next = new Set(selected);
-    if (on) next.add(f);
-    else next.delete(f);
-    setSelected(next);
-  };
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-3">
-        <span className="label flex-1">
-          {t("srv.new.mods")} <span className="text-dim">{t("srv.new.mods_count", { n: selected.size, total: mods.length })}</span>
-        </span>
-        <button type="button" className="rounded-xs text-[12px] text-muted hover:text-text" onClick={() => setSelected(new Set(mods.filter((m) => m.server_ok).map((m) => m.file_name)))}>
-          {t("srv.new.mods_suggested")}
-        </button>
-        <button type="button" className="rounded-xs text-[12px] text-muted hover:text-text" onClick={() => setSelected(new Set(mods.map((m) => m.file_name)))}>
-          {t("common.all")}
-        </button>
-        <button type="button" className="rounded-xs text-[12px] text-muted hover:text-text" onClick={() => setSelected(new Set())}>
-          {t("common.none")}
-        </button>
-      </div>
-      {clientCount > 0 && (
-        <div className="flex items-start gap-2 rounded-card bg-warn/[.08] px-3 py-2 text-[12px] text-warn">
-          <Info size={13} className="mt-px shrink-0" />
-          {t("srv.new.client_hint", { n: clientCount })}
-        </div>
-      )}
-      <div className="scroll h-[236px] rounded-card bg-field">
-        {mods.map((m) => {
-          const on = selected.has(m.file_name);
-          return (
-            <label
-              key={m.file_name}
-              className={cn("flex h-9 cursor-pointer items-center gap-3 px-3 hover:bg-white/[.04]", !on && "opacity-70")}
-            >
-              <Checkbox checked={on} onChange={(v) => toggle(m.file_name, v)} label={m.name ?? m.file_name} />
-              <div className="min-w-0 flex-1">
-                <div className={cn("truncate text-[13px]", m.enabled ? "text-text" : "text-dim line-through")}>{m.name ?? m.file_name}</div>
-              </div>
-              <Tooltip content={t(`srv.side.${m.side}.hint`)}>
-                <span>
-                  <Tag color={sideColor[m.side]}>{t(`srv.side.${m.side}`)}</Tag>
-                </span>
-              </Tooltip>
-            </label>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function FromInstance({
-  instance,
-  mods,
-  setMods,
-  copyConfigs,
-  setCopyConfigs,
-  world,
-  setWorld,
-}: {
-  instance: Instance;
-  mods: Set<string>;
-  setMods: (s: Set<string>) => void;
-  copyConfigs: boolean;
-  setCopyConfigs: (v: boolean) => void;
-  world: string;
-  setWorld: (v: string) => void;
-}) {
-  const t = useT();
-  const vanilla = instance.loader.kind === "vanilla";
-  const cands = useQuery({
-    queryKey: sqk.modCandidates(instance.id),
-    queryFn: () => api.serverModCandidates(instance.id),
-    enabled: !vanilla,
-    staleTime: 30_000,
-    placeholderData: undefined,
-  });
-  const worlds = useQuery({ queryKey: qk.worlds(instance.id), queryFn: () => api.worldsList(instance.id), staleTime: 30_000, placeholderData: undefined });
-
-  // Vorschlag übernehmen, sobald die Liste da ist (Komponente wird je Instanz neu gemountet)
-  useEffect(() => {
-    setMods(new Set((cands.data ?? []).filter((m) => m.server_ok).map((m) => m.file_name)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cands.data]);
-  useEffect(() => setWorld(NEW_WORLD), []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return (
-    <div className="flex flex-col gap-5">
-      {!vanilla &&
-        (cands.isError ? (
-          <ErrorState error={cands.error} onRetry={() => cands.refetch()} className="py-6" />
-        ) : !cands.data ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-[236px]" />
-          </div>
-        ) : cands.data.length === 0 ? (
-          <p className="text-[13px] text-dim">{t("srv.new.no_mods")}</p>
-        ) : (
-          <ModList mods={cands.data} selected={mods} setSelected={setMods} />
-        ))}
-      <div className="grid grid-cols-2 gap-5">
-        <Field label={t("srv.new.world")} hint={t("srv.new.world.hint")}>
-          <Select
-            value={world}
-            onChange={setWorld}
-            options={[{ value: NEW_WORLD, label: t("srv.new.world.new") }, ...(worlds.data ?? []).map((w) => ({ value: w.folder, label: w.name, hint: w.game_mode ?? undefined }))]}
-          />
-        </Field>
-        {!vanilla && (
-          <div className="flex flex-col gap-1.5">
-            <span className="label">{t("srv.new.configs")}</span>
-            <label className="flex h-10 cursor-pointer items-center gap-3 text-[13px] text-text">
-              <Switch checked={copyConfigs} onChange={setCopyConfigs} label={t("srv.new.configs")} />
-              {t("srv.new.configs.text")}
-            </label>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: boolean; fromInstance: string | null; onOpenChange: (o: boolean) => void }) {
   const t = useT();
   const nav = useNavigate();
@@ -197,9 +39,10 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
   const { data: sys } = useSystemInfo();
   const total = sys?.total_memory_mb ?? 8192;
 
-  const [mode, setMode] = useState<Mode>("new");
-  const [ver, setVer] = useState<VersionValue>({ mc: null, loader: "fabric", loaderVersion: null });
-  const [kind, setKind] = useState<Kind>("mods");
+  const [step, setStep] = useState(0);
+  const [kind, setKind] = useState<Kind>("vanilla");
+  const [ver, setVer] = useState<VersionValue>({ mc: null, loader: "vanilla", loaderVersion: null });
+  const [modLoader, setModLoader] = useState<Exclude<LoaderKind, "vanilla">>("fabric");
   const [plat, setPlat] = useState<PlatformValue>({ kind: "paper", mc: null, build: null });
   const [instId, setInstId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -213,14 +56,14 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
 
   const inst = useMemo(() => instances.find((i) => i.id === instId) ?? null, [instances, instId]);
 
-  // Beim Öffnen zurücksetzen
   useEffect(() => {
     if (!open) return;
-    setMode(fromInstance ? "instance" : "new");
+    setKind(fromInstance ? "instance" : "vanilla");
+    setStep(fromInstance ? 1 : 0);
     setInstId(fromInstance ?? instances[0]?.id ?? null);
+    setVer({ mc: null, loader: "vanilla", loaderVersion: null });
     setNameTouched(false);
     setRam(DEFAULT_RAM);
-    // Ersten Port wählen, den noch kein anderer Server benutzt
     const used = new Set(servers.map((s) => s.port));
     let p = DEFAULT_PORT;
     while (used.has(p)) p++;
@@ -231,28 +74,46 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
     setBusy(false);
   }, [open, fromInstance]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const pickKind = (k: Kind) => {
+    setKind(k);
+    if (k === "vanilla") setVer((v) => ({ ...v, loader: "vanilla", loaderVersion: null }));
+    if (k === "mods") setVer((v) => ({ ...v, loader: modLoader, loaderVersion: null }));
+  };
+  const pickLoader = (l: Exclude<LoaderKind, "vanilla">) => {
+    setModLoader(l);
+    setVer((v) => (v.loader === l ? v : { ...v, loader: l, loaderVersion: null }));
+  };
+
   useEffect(() => {
     if (nameTouched) return;
-    if (mode === "instance") setName(inst ? t("srv.new.name_from", { name: inst.name }) : "");
+    if (kind === "instance") setName(inst ? t("srv.new.name_from", { name: inst.name }) : "");
     else if (kind === "plugins") setName(suggestPluginName(plat));
     else setName(suggestName(ver));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, kind, inst?.id, ver.mc, ver.loader, plat.kind, plat.mc, nameTouched]);
+  }, [kind, inst?.id, ver.mc, ver.loader, plat.kind, plat.mc, nameTouched]);
 
-  const needsLoaderVersion = ver.loader !== "vanilla";
-  const valid =
-    name.trim().length > 0 &&
-    (mode === "instance"
+  const versionOk =
+    kind === "instance"
       ? !!inst && !!inst.mc_version
       : kind === "plugins"
         ? !!plat.mc && !!plat.build
-        : !!ver.mc && (!needsLoaderVersion || !!ver.loaderVersion));
+        : !!ver.mc && (ver.loader === "vanilla" || !!ver.loaderVersion);
+  const valid = versionOk && name.trim().length > 0;
+  const stepOk = step === 0 ? kind !== "instance" || instances.length > 0 : step === 1 ? versionOk : valid;
+  const last = step === 2;
+
+  const summary =
+    kind === "instance" && inst
+      ? `${inst.name} · ${formatLoader(inst.loader)} · Minecraft ${inst.mc_version}`
+      : kind === "plugins"
+        ? `${platformNames[plat.kind]} · Minecraft ${plat.mc ?? "–"}`
+        : `${ver.loader === "vanilla" ? "Vanilla" : `${loaderNames[ver.loader]} ${ver.loaderVersion ?? ""}`.trim()} · Minecraft ${ver.mc ?? "–"}`;
 
   const submit = async () => {
     if (!valid || busy) return;
     setBusy(true);
     const req: ServerCreate =
-      mode === "instance" && inst
+      kind === "instance" && inst
         ? {
             name: name.trim(),
             mc_version: inst.mc_version,
@@ -276,7 +137,7 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
           : {
               name: name.trim(),
               mc_version: ver.mc!,
-              loader: { kind: ver.loader, version: needsLoaderVersion ? ver.loaderVersion : null },
+              loader: { kind: ver.loader, version: ver.loader !== "vanilla" ? ver.loaderVersion : null },
               port,
               memory_mb: ram,
             };
@@ -290,145 +151,147 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
     }
   };
 
-  const nameField = (
-    <Field label={t("srv.name")}>
-      <Input
-        value={name}
-        onChange={(e) => {
-          setName(e.target.value);
-          setNameTouched(true);
-        }}
-        placeholder={t("srv.new.name_placeholder")}
-        maxLength={64}
-        autoFocus
-      />
-    </Field>
-  );
+  const next = () => {
+    if (!stepOk || busy) return;
+    if (last) void submit();
+    else setStep((s) => s + 1);
+  };
+
+  const steps = [t("uic.srv.step.kind"), kind === "instance" ? t("uic.srv.step.instance") : t("uic.srv.step.version"), t("uic.srv.step.finish")];
 
   return (
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
       title={t("srv.new.title")}
-      description={t("srv.new.desc")}
+      description={t("uic.srv.desc")}
       size="lg"
       locked={busy}
       footer={
         <>
+          {step > 0 ? (
+            <Button variant="subtle" icon={<ArrowLeft size={15} />} className="mr-auto" onClick={() => setStep((s) => s - 1)} disabled={busy}>
+              {t("common.back")}
+            </Button>
+          ) : (
+            <span className="mr-auto" />
+          )}
           <Button variant="subtle" onClick={() => onOpenChange(false)} disabled={busy}>
             {t("common.cancel")}
           </Button>
-          <Button variant="primary" onClick={submit} disabled={!valid} loading={busy}>
-            {t("srv.new.create")}
+          <Button variant="primary" onClick={next} disabled={!stepOk} loading={busy}>
+            {last ? t("srv.new.create") : t("uic.next")}
+            {!last && <ArrowRight size={15} />}
           </Button>
         </>
       }
     >
       <div
-        className="flex flex-col gap-5"
+        className="flex min-h-[400px] flex-col gap-5 pb-1"
         onKeyDown={(e) => {
           if (e.key === "Enter" && e.target instanceof HTMLInputElement && e.target.type !== "checkbox") {
             e.preventDefault();
-            submit();
+            next();
           }
         }}
       >
-        <Segmented<Mode>
-          value={mode}
-          onChange={setMode}
-          items={[
-            { value: "new", label: t("srv.new.mode.new") },
-            { value: "instance", label: t("srv.new.mode.instance"), disabled: instances.length === 0 },
-          ]}
-          className="w-full [&>button]:flex-1"
-        />
+        <StepBar steps={steps} current={step} onJump={busy ? undefined : setStep} />
 
-        {mode === "new" && (
-          <Segmented<Kind>
-            value={kind}
-            onChange={setKind}
-            items={[
-              { value: "mods", label: t("srv.new.kind.mods") },
-              { value: "plugins", label: t("srv.new.kind.plugins") },
-            ]}
-            className="w-full [&>button]:flex-1"
-          />
+        {step === 0 && (
+          <div className="flex flex-col gap-3">
+            <h3 className="text-[15px] font-semibold text-text">{t("uic.srv.kind.q")}</h3>
+            <div role="radiogroup" aria-label={t("uic.srv.kind.q")} className="grid grid-cols-2 gap-3 max-[700px]:grid-cols-1">
+              <ChoiceCard
+                icon={<Copy size={20} />}
+                title={t("uic.srv.kind.instance")}
+                text={instances.length ? t("uic.srv.kind.instance.text") : t("uic.srv.kind.instance.none")}
+                selected={kind === "instance"}
+                disabled={!instances.length}
+                onSelect={() => pickKind("instance")}
+              />
+              <ChoiceCard icon={<Box size={20} />} title="Vanilla" text={t("uic.srv.kind.vanilla.text")} selected={kind === "vanilla"} onSelect={() => pickKind("vanilla")} />
+              <ChoiceCard icon={<Puzzle size={20} />} title={t("uic.srv.kind.mods")} text={t("uic.srv.kind.mods.text")} selected={kind === "mods"} onSelect={() => pickKind("mods")} />
+              <ChoiceCard icon={<Plug size={20} />} title={t("uic.srv.kind.plugins")} text={t("uic.srv.kind.plugins.text")} selected={kind === "plugins"} onSelect={() => pickKind("plugins")} />
+            </div>
+          </div>
         )}
 
-        {mode === "new" && kind === "plugins" ? (
+        {step === 1 && kind === "plugins" && (
           <PlatformPicker
             value={plat}
             onChange={setPlat}
-            listHeight={262}
+            listHeight={292}
             render={({ platform, list, build, hint }) => (
-              <>
-                {platform}
-                <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-7">
-                  {list}
-                  <div className="flex flex-col gap-5">
-                    {nameField}
-                    {build}
-                    <RamPort ram={ram} setRam={setRam} port={port} setPort={setPort} total={total} />
-                    <div className="flex items-start gap-2 text-dim">
-                      <Info size={13} className="mt-0.5 shrink-0" />
-                      {hint}
-                    </div>
+              <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-7 max-[700px]:grid-cols-1">
+                {list}
+                <div className="flex flex-col gap-5">
+                  {platform}
+                  {build}
+                  <div className="flex items-start gap-2 text-dim">
+                    <Info size={13} className="mt-0.5 shrink-0" />
+                    {hint}
                   </div>
                 </div>
-              </>
+              </div>
             )}
           />
-        ) : mode === "new" ? (
+        )}
+
+        {step === 1 && (kind === "vanilla" || kind === "mods") && (
           <VersionPicker
             value={ver}
             onChange={setVer}
-            listHeight={262}
-            render={({ loader, list, loaderVersion }) => (
-              <>
-                {loader}
-                <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-7">
-                  {list}
-                  <div className="flex flex-col gap-5">
-                    {nameField}
-                    {loaderVersion}
-                    <RamPort ram={ram} setRam={setRam} port={port} setPort={setPort} total={total} />
-                    <p className="flex items-start gap-2 text-[12px] text-dim">
-                      <Info size={13} className="mt-px shrink-0" />
-                      {t("srv.new.hint")}
-                    </p>
-                  </div>
+            listHeight={292}
+            render={({ list, loaderVersion }) => (
+              <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-7 max-[700px]:grid-cols-1">
+                {list}
+                <div className="flex flex-col gap-5">
+                  {kind === "mods" ? (
+                    <>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="label">{t("newinst.loader")}</span>
+                        <div role="radiogroup" aria-label={t("newinst.loader")} className="grid grid-cols-2 gap-2">
+                          {MOD_LOADERS.map((l) => (
+                            <ChoiceCard
+                              key={l}
+                              compact
+                              icon={<span className="h-2.5 w-2.5 rounded-dot" style={{ background: loaderColors[l] }} />}
+                              title={loaderNames[l]}
+                              selected={ver.loader === l}
+                              onSelect={() => pickLoader(l)}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-[12px] leading-relaxed text-dim">{t("uic.srv.loader.hint")}</p>
+                      </div>
+                      {loaderVersion}
+                    </>
+                  ) : (
+                    <div className="flex items-start gap-3 rounded-card border border-line bg-surface px-4 py-3.5">
+                      <Info size={15} className="mt-0.5 shrink-0 text-muted" />
+                      <p className="text-[12.5px] leading-relaxed text-muted">{t("uic.srv.vanilla.hint")}</p>
+                    </div>
+                  )}
                 </div>
-              </>
+              </div>
             )}
           />
-        ) : (
-          <>
-            <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-7">
-              <Field label={t("srv.new.instance")}>
-                <Select
-                  value={instId}
-                  onChange={setInstId}
-                  options={instances.map((i) => ({ value: i.id, label: i.name, hint: `${loaderNames[i.loader.kind]} ${i.mc_version}` }))}
-                />
-              </Field>
-              {nameField}
-            </div>
-            {inst && (
-              <div className="flex items-center gap-3 rounded-card bg-surface px-3 py-2.5">
-                <InstanceIcon icon={inst.icon} seed={inst.id} accent={instanceAccent(inst.id, inst.accent)} size={36} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-semibold text-text">{inst.name}</div>
-                  <div className="text-[12px] text-muted">
-                    {formatLoader(inst.loader)} · Minecraft {inst.mc_version}
-                  </div>
-                </div>
-                {!inst.mc_version && (
-                  <span className="flex items-center gap-1.5 text-[12px] text-warn">
-                    <AlertTriangle size={13} />
-                    {t("srv.new.no_version")}
-                  </span>
-                )}
-              </div>
+        )}
+
+        {step === 1 && kind === "instance" && (
+          <div className="flex flex-col gap-5">
+            <Field label={t("srv.new.instance")}>
+              <Select
+                value={instId}
+                onChange={setInstId}
+                options={instances.map((i) => ({ value: i.id, label: i.name, hint: `${loaderNames[i.loader.kind]} ${i.mc_version}` }))}
+              />
+            </Field>
+            {inst && !inst.mc_version && (
+              <p className="flex items-center gap-1.5 text-[12.5px] text-warn">
+                <AlertTriangle size={13} />
+                {t("srv.new.no_version")}
+              </p>
             )}
             {inst && (
               <FromInstance
@@ -442,8 +305,47 @@ export function NewServerDialog({ open, fromInstance, onOpenChange }: { open: bo
                 setWorld={setWorld}
               />
             )}
-            <RamPort ram={ram} setRam={setRam} port={port} setPort={setPort} total={total} />
-          </>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-7 max-[700px]:grid-cols-1">
+            <div className="flex flex-col gap-5">
+              <Field label={t("srv.name")} hint={t("uic.srv.name.hint")}>
+                <Input
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setNameTouched(true);
+                  }}
+                  placeholder={t("srv.new.name_placeholder")}
+                  maxLength={64}
+                  autoFocus
+                />
+              </Field>
+              <RamField ram={ram} setRam={setRam} total={total} />
+            </div>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3.5">
+                {kind === "instance" && inst ? (
+                  <InstanceIcon icon={inst.icon} seed={inst.id} accent={instanceAccent(inst.id, inst.accent)} size={40} />
+                ) : (
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-ctl bg-surface2 text-muted">
+                    {kind === "plugins" ? <Plug size={18} /> : kind === "mods" ? <Puzzle size={18} /> : <Box size={18} />}
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13.5px] font-semibold text-text">{name.trim() || t("srv.new.name_placeholder")}</div>
+                  <div className="truncate text-[12.5px] text-muted">{summary}</div>
+                </div>
+              </div>
+              <p className="flex items-start gap-2 text-[12.5px] leading-relaxed text-muted">
+                <Info size={14} className="mt-0.5 shrink-0" />
+                {t("uic.srv.after")}
+              </p>
+              <AdvancedPort port={port} setPort={setPort} />
+            </div>
+          </div>
         )}
       </div>
     </Dialog>

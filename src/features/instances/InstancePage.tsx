@@ -80,47 +80,50 @@ function CrashBanner({ instance }: { instance: Instance }) {
       : null;
   return (
     <div data-tour="crash-banner" className="shrink-0 bg-danger/[.08] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-danger)_25%,transparent)] animate-fade-in">
-      <div className={cn(wrap, "flex items-center gap-3 py-2.5")}>
-        <AlertTriangle size={18} className="shrink-0 text-danger" />
-        <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-semibold text-text">{t("crash.offer.title")}</div>
-          {/* Dateiname des Crash-Reports nur im Tooltip – er steht ohnehin unter „Logs öffnen“ */}
-          <div className="truncate text-[12px] text-muted" title={game?.crash_report?.split(/[\\/]/).pop()}>
-            {offer ?? (game?.exit_code != null ? t("inst.crash.code", { code: game.exit_code }) : t("inst.crash.text"))}
+      <div className={cn(wrap, "flex items-start gap-3 py-3")}>
+        <AlertTriangle size={18} className="mt-0.5 shrink-0 text-danger" />
+        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+          <div className="min-w-0">
+            <div className="text-[14px] font-semibold text-text">{t("crash.offer.title")}</div>
+            <div className="text-[12.5px] leading-relaxed text-muted" title={game?.crash_report?.split(/[\/]/).pop()}>
+              {offer ?? (game?.exit_code != null ? t("inst.crash.code", { code: game.exit_code }) : t("inst.crash.text"))}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null }} label={t("crash.offer.fix")} />
+            <Button size="sm" icon={<Stethoscope size={13} />} onClick={() => setDetails(true)}>
+              {t("diag.open")}
+              {diag.data && diag.data.length > 0 && <span className="text-[12px] text-muted">{diag.data.length}</span>}
+            </Button>
+            <Button
+              size="sm"
+              icon={<FileText size={13} />}
+              onClick={() => {
+                if (game?.crash_report) showLogFile(instance.id, game.crash_report);
+                nav({ search: { tab: "logs" } });
+              }}
+            >
+              {t("inst.crash.logs")}
+            </Button>
+            <span className="mx-1 h-5 w-px bg-line max-[900px]:hidden" aria-hidden />
+            <Button
+              size="sm"
+              variant="subtle"
+              loading={busy}
+              icon={<UploadCloud size={13} />}
+              onClick={async () => {
+                setBusy(true);
+                await uploadCrash(instance.id, game?.crash_report ?? null);
+                setBusy(false);
+              }}
+            >
+              {t("logs.upload")}
+            </Button>
+            <ReportProblemButton instanceId={instance.id} />
+            <HelpLink guide="autofix" />
           </div>
         </div>
-        <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null }} label={t("crash.offer.fix")} />
-        <HelpLink guide="autofix" />
-        <Button size="sm" icon={<Stethoscope size={13} />} onClick={() => setDetails(true)}>
-          {t("diag.open")}
-          {diag.data && diag.data.length > 0 && <span className="text-[12px] text-muted">{diag.data.length}</span>}
-        </Button>
-        <Button
-          size="sm"
-          icon={<FileText size={13} />}
-          onClick={() => {
-            if (game?.crash_report) showLogFile(instance.id, game.crash_report);
-            nav({ search: { tab: "logs" } });
-          }}
-        >
-          {t("inst.crash.logs")}
-        </Button>
-        {/* Hochladen ist nichts Gefährliches -> ruhiger Text-Knopf statt rotem Knopf */}
-        <Button
-          size="sm"
-          variant="subtle"
-          loading={busy}
-          icon={<UploadCloud size={13} />}
-          onClick={async () => {
-            setBusy(true);
-            await uploadCrash(instance.id, game?.crash_report ?? null);
-            setBusy(false);
-          }}
-        >
-          {t("logs.upload")}
-        </Button>
-        <ReportProblemButton instanceId={instance.id} />
-        <IconButton label={t("common.close")} size="sm" className="border-transparent" onClick={() => setDismissed(key)}>
+        <IconButton label={t("common.close")} size="sm" className="-mt-0.5 border-transparent" onClick={() => setDismissed(key)}>
           <X size={15} />
         </IconButton>
       </div>

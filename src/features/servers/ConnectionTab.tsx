@@ -56,12 +56,12 @@ function Option({
     >
       <span
         className={cn(
-          "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-pill border-2",
+          "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-dot border-2",
           active ? "border-accent" : "border-white/20",
           disabled && "opacity-40",
         )}
       >
-        {active && <span className="h-1.5 w-1.5 rounded-pill bg-accent" />}
+        {active && <span className="h-1.5 w-1.5 rounded-dot bg-accent" />}
       </span>
       <div className={cn("min-w-0 flex-1", disabled && "opacity-50")}>
         <div className={cn("flex items-center gap-2 text-[13.5px] font-semibold", active ? "text-text" : "text-text/90")}>

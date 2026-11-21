@@ -7,6 +7,7 @@ import { Button, Dialog, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { acceptEulaAndStart, useServerDialogs } from "./actions";
 import { NewServerDialog } from "./NewServerDialog";
+import { ChoiceCard } from "./new/ChoiceCard";
 
 const EULA_URL = "https://aka.ms/MinecraftEULA";
 
@@ -59,15 +60,16 @@ function EulaDialog() {
 function QuitDialog() {
   const t = useT();
   const running = useServerDialogs((s) => s.quit);
-  const [busy, setBusy] = useState<"stop" | "keep" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [stop, setStop] = useState(true);
   const close = () => useServerDialogs.setState({ quit: null });
-  const quit = async (stop: boolean) => {
-    setBusy(stop ? "stop" : "keep");
+  const quit = async () => {
+    setBusy(true);
     try {
       await api.serversQuit(stop);
     } catch (e) {
       toast.error(e);
-      setBusy(null);
+      setBusy(false);
     }
   };
   return (
@@ -75,23 +77,24 @@ function QuitDialog() {
       open={running !== null}
       onOpenChange={(o) => !o && close()}
       title={running === 1 ? t("srv.quit.title_one") : t("srv.quit.title", { n: running ?? 0 })}
-      description={t("srv.quit.text")}
-      size="lg"
-      locked={!!busy}
+      size="md"
+      locked={busy}
       footer={
         <>
-          <Button variant="subtle" className="mr-auto" onClick={close} disabled={!!busy}>
+          <Button variant="subtle" onClick={close} disabled={busy}>
             {t("common.cancel")}
           </Button>
-          <Button icon={<Power size={14} />} loading={busy === "keep"} disabled={!!busy} onClick={() => quit(false)}>
-            {t("srv.quit.keep")}
-          </Button>
-          <Button variant="accent" icon={<PowerOff size={14} />} loading={busy === "stop"} disabled={!!busy} autoFocus onClick={() => quit(true)}>
-            {t("srv.quit.stop")}
+          <Button variant="primary" icon={stop ? <PowerOff size={14} /> : <Power size={14} />} loading={busy} autoFocus onClick={() => void quit()}>
+            {t("uic.quit.close")}
           </Button>
         </>
       }
-    />
+    >
+      <div role="radiogroup" aria-label={t("uic.quit.close")} className="flex flex-col gap-2.5 pb-1">
+        <ChoiceCard icon={<PowerOff size={19} />} title={t("uic.quit.stop")} text={t("uic.quit.stop.text")} selected={stop} disabled={busy} onSelect={() => setStop(true)} />
+        <ChoiceCard icon={<Power size={19} />} title={t("uic.quit.keep")} text={t("uic.quit.keep.text")} selected={!stop} disabled={busy} onSelect={() => setStop(false)} />
+      </div>
+    </Dialog>
   );
 }
 

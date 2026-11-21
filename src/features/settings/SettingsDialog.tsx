@@ -526,12 +526,13 @@ function GameTab({ s, update }: TabProps) {
 
       <SettingsCard title={t("settings.section.launch")}>
         <SettingRow title={t("settings.launch_behavior")} description={t("settings.launch_behavior.desc")}>
-          <Select<LaunchBehavior>
-            value={s.launch_behavior}
-            onChange={(launch_behavior) => update({ launch_behavior })}
-            className="w-[230px]"
-            options={(["keep", "minimize", "hide"] as const).map((v) => ({ value: v, label: t(`settings.launch_behavior.${v}`) }))}
-          />
+          <div className="w-[230px]">
+            <Select<LaunchBehavior>
+              value={s.launch_behavior}
+              onChange={(launch_behavior) => update({ launch_behavior })}
+              options={(["keep", "minimize", "hide"] as const).map((v) => ({ value: v, label: t(`settings.launch_behavior.${v}`) }))}
+            />
+          </div>
         </SettingRow>
         {logs && (
           <SettingRow title={t("settings.open_log")} description={t("settings.open_log.desc")}>
@@ -704,7 +705,7 @@ function AboutTab() {
         <LinkRow href={WEBSITE} icon={<Globe size={15} />} title={t("settings.website")} text={WEBSITE_LABEL} />
         <LinkRow href={GITHUB} icon={<GitBranch size={15} />} title="GitHub" text={t("settings.about.opensource")} />
       </SettingsCard>
-      <SettingsCard title={t("help.settings.title")}>
+      <SettingsCard title={t("uic.about.support")}>
         <SettingRow title={t("help.settings.title")} description={t("help.settings.desc")}>
           <Button
             size="sm"
@@ -718,8 +719,6 @@ function AboutTab() {
             {t("help.settings.open")}
           </Button>
         </SettingRow>
-      </SettingsCard>
-      <SettingsCard title={t("fb.button")}>
         <SettingRow title={t("fb.title")} description={t("fb.desc")}>
           <Button
             size="sm"

@@ -28,7 +28,8 @@ import {
 } from "@/components/ui";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { useT } from "@/i18n";
-import { instanceAccent } from "@/lib/format";
+import { instanceAccent, loaderNames } from "@/lib/format";
+import type { LoaderKind } from "@/lib/types";
 import { useJavaInstances } from "@/lib/queries";
 import { useVibe } from "@/lib/vibe";
 import { parseInviteCode } from "@/lib/domains";
@@ -200,7 +201,7 @@ function InviteRow({ inv }: { inv: Invite }) {
           <div className="truncate text-caption text-dim">
             {t("social.accept.from", { name: inv.from.name })}
             {inv.target.mcVersion ? ` · ${inv.target.mcVersion}` : ""}
-            {inv.target.loader ? ` ${inv.target.loader}` : ""}
+            {inv.target.loader ? ` ${loaderNames[inv.target.loader as LoaderKind] ?? inv.target.loader}` : ""}
           </div>
           {inv.message && <div className="mt-1 truncate text-[12px] italic text-muted">„{inv.message}“</div>}
         </div>
@@ -288,7 +289,7 @@ function SharePackDialog() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13.5px] font-semibold leading-tight text-text">{i.name}</span>
                     <span className="block truncate text-caption text-dim">
-                      {i.mc_version} · {i.loader.kind}
+                      {i.mc_version} · {loaderNames[i.loader.kind]}
                     </span>
                   </span>
                   <ChevronRight size={15} className="text-dim transition-colors duration-100 group-hover:text-text" />

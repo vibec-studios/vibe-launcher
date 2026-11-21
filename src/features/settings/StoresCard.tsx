@@ -113,7 +113,7 @@ export function StoresCard({ id }: { id: string }) {
                     ) : !s.enabled ? (
                       <span>{t("stores.disabled")}</span>
                     ) : null}
-                    <span>·</span>
+                    {(s.error || s.project_count != null || !s.enabled) && <span>·</span>}
                     <span className="selectable truncate" title={s.url}>
                       {s.url}
                     </span>
