@@ -15,6 +15,7 @@ pub mod events;
 pub mod feedback;
 pub mod files;
 pub mod instance;
+pub mod lean;
 pub mod minecraft;
 pub mod minecraftcapes;
 pub mod net;
@@ -73,11 +74,7 @@ pub fn run() {
                 .collect();
             acts.extend(platform::mrlinks::from_args(argv.iter().skip(1)));
             platform::push_actions(app, acts);
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.unminimize();
-                let _ = w.show();
-                let _ = w.set_focus();
-            }
+            lean::show_main(app);
         }));
     }
     #[cfg(debug_assertions)]
@@ -107,6 +104,7 @@ pub fn run() {
             platform::app_icon::apply(app.handle(), &appearance);
             platform::init(app.handle());
             afk::init(app.handle());
+            lean::init(app.handle());
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 // Schema `vibelauncher://` beim Nutzer registrieren (Installer macht das ebenfalls);
@@ -154,7 +152,8 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+            lean::memory::on_window_event(window, event);
+            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) && !lean::is_active(window.app_handle()) {
                 console::close(window.app_handle());
                 if let Some(state) = window.try_state::<AppState>() {
                     portable::on_exit(&state);
@@ -168,12 +167,19 @@ pub fn run() {
                         if n > 0 && !state.server_mgr.quitting() {
                             api.prevent_close();
                             events::emit(window.app_handle(), server::EV_CLOSE_REQUESTED, &serde_json::json!({ "running": n }));
+                        } else if lean::close_to_tray(window.app_handle()) {
+                            api.prevent_close();
                         }
                     }
                 }
             }
         })
         .invoke_handler(commands::registry::invoke_handler!())
-        .run(tauri::generate_context!())
-        .expect("Fehler beim Starten des Launchers");
+        .build(tauri::generate_context!())
+        .expect("Fehler beim Starten des Launchers")
+        .run(|app, event| match event {
+            tauri::RunEvent::ExitRequested { code: None, api, .. } if lean::is_active(app) => api.prevent_exit(),
+            tauri::RunEvent::Exit => lean::on_exit(app),
+            _ => {}
+        });
 }

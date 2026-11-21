@@ -18,6 +18,7 @@ import { TextMenuHost } from "@/app/TextMenu";
 import { ConfirmHost, Toaster, TooltipProvider } from "@/components/ui";
 import { GlobalDropZone } from "@/features/import/GlobalDropZone";
 import { UpdateChecker } from "@/app/UpdateNotice";
+import { LeanBridge } from "@/features/lean/LeanBridge";
 import { i18nReady, useLang } from "@/i18n";
 import { applyCachedAppearance } from "@/lib/appearance";
 
@@ -42,6 +43,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         <TextMenuHost />
         <Toaster />
         <UpdateChecker />
+        <LeanBridge />
       </TooltipProvider>
     </QueryClientProvider>
   </React.StrictMode>,

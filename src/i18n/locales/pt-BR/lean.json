@@ -1,0 +1,6 @@
+{
+  "lean.enabled": "Leve enquanto você joga",
+  "lean.enabled.desc": "Enquanto o Minecraft está rodando e você está no jogo, o launcher fecha a janela e continua apenas como ícone na bandeja do sistema, economizando memória. Clique no ícone para abri-lo novamente.",
+  "lean.reopen": "Reabrir depois de jogar",
+  "lean.reopen.desc": "Abre o launcher automaticamente quando o último jogo termina. Depois de um travamento ele sempre abre."
+}
