@@ -24,7 +24,7 @@ export function VersionStep({ software, mc, onMc, loaderVersion, onLoaderVersion
     if (versions.length && !versions.some((v) => v.id === mc)) onMc(versions[0].id);
   }, [versions, mc, onMc]);
   useEffect(() => {
-    if (loaders.data && !loaders.data.includes(loaderVersion)) onLoaderVersion("");
+    if (loaders.data && loaderVersion && !loaders.data.some((v) => v.version === loaderVersion)) onLoaderVersion("");
   }, [loaders.data, loaderVersion, onLoaderVersion]);
 
   const loading = isPlatform ? platList.isLoading : mcList.isLoading;
@@ -48,8 +48,9 @@ export function VersionStep({ software, mc, onMc, loaderVersion, onLoaderVersion
           <Select value={loaderVersion} onChange={(e) => onLoaderVersion(e.target.value)} disabled={loaders.isLoading}>
             <option value="">{t("create.loader_auto")}</option>
             {(loaders.data ?? []).map((v) => (
-              <option key={v} value={v}>
-                {v}
+              <option key={v.version} value={v.version}>
+                {v.version}
+                {v.stable ? "" : ` – ${t("create.loader_unstable")}`}
               </option>
             ))}
           </Select>

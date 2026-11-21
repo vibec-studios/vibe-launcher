@@ -168,6 +168,7 @@ export const en: Record<Key, string> = {
   "create.loader_version": "Loader version",
   "create.loader_version_hint": "Usually just leave it on “automatic”.",
   "create.loader_auto": "Automatic (latest stable)",
+  "create.loader_unstable": "beta",
   "create.name": "Server name",
   "create.name_hint": "Just for you – players see the description (MOTD), which you can set later.",
   "create.name_ph": "My server",

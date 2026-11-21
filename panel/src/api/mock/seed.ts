@@ -38,16 +38,15 @@ export interface SeedServer {
   memory: number;
   players?: string[];
   motd: string;
-  slot?: string;
 }
 
 export const SEEDS: Record<string, SeedServer[]> = {
   home: [
-    { name: "Survival mit Freunden", mc: "1.21.4", loader: "vanilla", platform: "paper", connection: "relay", running: true, memory: 4096, players: ["Steve_42", "AlexBaut"], motd: "Willkommen bei uns!", slot: "henny-survival" },
+    { name: "Survival mit Freunden", mc: "1.21.4", loader: "vanilla", platform: "paper", connection: "relay", running: true, memory: 4096, players: ["Steve_42", "AlexBaut"], motd: "Willkommen bei uns!" },
     { name: "Create-Modpack", mc: "1.21.1", loader: "neoforge", loaderVersion: "21.1.77", connection: "local", running: false, memory: 6144, motd: "Zahnräder und Züge" },
     { name: "Kreativ-Bauwelt", mc: "1.21.4", loader: "fabric", loaderVersion: "0.16.10", connection: "playit", running: false, memory: 2048, motd: "Nur bauen, nicht sterben" },
   ],
-  vps: [{ name: "Community SMP", mc: "1.21.4", loader: "vanilla", platform: "purpur", connection: "relay", running: true, memory: 8192, players: ["Notch", "jeb_", "Dinnerbone", "Grumm"], motd: "Community SMP · seit 2024", slot: "community-smp" }],
+  vps: [{ name: "Community SMP", mc: "1.21.4", loader: "vanilla", platform: "purpur", connection: "relay", running: true, memory: 8192, players: ["Notch", "jeb_", "Dinnerbone", "Grumm"], motd: "Community SMP · seit 2024" }],
   laptop: [],
 };
 
@@ -73,7 +72,7 @@ export function makeServer(id: string, s: SeedServer, i: number): Server {
     created_at: now - (40 - i * 7) * 86_400_000,
     last_started: s.running ? now - 3 * 3_600_000 : now - 2 * 86_400_000,
     source_instance: null,
-    relay_slot: s.slot ?? null,
+    relay_slot: i + 1,
     voice: false,
     bedrock: false,
   };

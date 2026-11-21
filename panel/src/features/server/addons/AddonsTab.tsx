@@ -16,23 +16,24 @@ export function AddonsTab({ server: s }: { server: ServerView }) {
   const confirm = useConfirm();
   const [view, setView] = useState<"installed" | "discover">("installed");
   const [pack, setPack] = useState(false);
-  const list = useQuery({ queryKey: [key, s.id, "addons"], queryFn: () => api.addons(s.id) });
+  const vanilla = softwareOf(s) === "vanilla";
+  const list = useQuery({ queryKey: [key, s.id, "addons"], queryFn: () => api.addons(s.id), enabled: !vanilla });
   const manage = can("servers.manage");
   const toggle = useMutation({ mutationFn: (p: { file: string; enabled: boolean }) => api.setAddonEnabled(s.id, p.file, p.enabled), onSuccess: () => list.refetch(), onError: (e) => toast.error(e) });
   const remove = useMutation({ mutationFn: (file: string) => api.removeAddon(s.id, file), onSuccess: () => (list.refetch(), toast.ok(t("addons.removed"))), onError: (e) => toast.error(e) });
   const upload = useMutation({ mutationFn: (f: File) => api.uploadAddon(s.id, f), onSuccess: (n) => (list.refetch(), toast.ok(t("files.uploaded", { name: n }))), onError: (e) => toast.error(e) });
-  if (list.isLoading) return <div className="flex justify-center py-12"><Spinner /></div>;
-  if (list.error || !list.data) return <Notice tone="danger">{(list.error as Error | null)?.message}</Notice>;
-  const target = list.data.target;
-  const plugins = target.plugins;
-  const sw = SOFTWARE_NAMES[softwareOf(s)];
-  if (!target.loaders.length) {
+  if (vanilla) {
     return (
       <Notice tone="info" title={t("addons.vanilla_title")}>
         {t("addons.vanilla_desc")}
       </Notice>
     );
   }
+  if (list.isLoading) return <div className="flex justify-center py-12"><Spinner /></div>;
+  if (list.error || !list.data) return <Notice tone="danger">{(list.error as Error | null)?.message}</Notice>;
+  const target = list.data.target;
+  const plugins = target.plugins;
+  const sw = SOFTWARE_NAMES[softwareOf(s)];
   const items = list.data.items;
   return (
     <div className="flex flex-col gap-4">

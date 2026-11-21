@@ -126,8 +126,11 @@ function addon(file_name: string, title: string, version: string, project: strin
     authors: [],
     description,
     icon: null,
+    sha1: null,
     source,
     project_id: project,
+    slug: project || null,
+    version_id: null,
     title,
     page_url: source === "modrinth" ? `https://modrinth.com/project/${project}` : `https://hangar.papermc.io/${project}`,
   };

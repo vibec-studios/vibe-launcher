@@ -65,22 +65,22 @@ export function registerServerRoutes(r: MockRouter, a: MockAgent) {
       mc_version: req.mc_version,
       loader: req.loader,
       platform: req.platform ?? null,
-      memory_mb: req.memory_mb ?? 2048,
+      memory_mb: req.memory_mb ?? null,
       java_path: null,
       jvm_args: null,
       port,
       auto_start: false,
       auto_restart: true,
-      connection: "relay",
+      connection: "local",
       eula: false,
-      install_state: "installing",
+      install_state: "not_installed",
       created_at: Date.now(),
       last_started: null,
       source_instance: null,
-      relay_slot: null,
+      relay_slot: a.servers.size + 1,
     };
     const st = a.createServerFrom(server, `${server.name} · Vibe`);
-    const task_id = a.runTask(`${server.name} wird installiert`, "server_install", id, () => {
+    const task_id = a.runTask(`${server.name} wird installiert`, "server", id, () => {
       st.server.install_state = "installed";
       a.changed(st);
     });
@@ -113,7 +113,7 @@ export function registerServerRoutes(r: MockRouter, a: MockAgent) {
     const st = a.get(params.id);
     st.server.install_state = "installing";
     a.changed(st);
-    return { task_id: a.runTask(`${st.server.name} wird neu installiert`, "server_install", st.server.id, () => ((st.server.install_state = "installed"), a.changed(st))) };
+    return { task_id: a.runTask(`${st.server.name} wird neu installiert`, "server", st.server.id, () => ((st.server.install_state = "installed"), a.changed(st))) };
   });
   r.on("POST", "/servers/:id/eula", ({ params }) => {
     const st = a.get(params.id);

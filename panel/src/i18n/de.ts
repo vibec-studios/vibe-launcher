@@ -166,6 +166,7 @@ export const de = {
   "create.loader_version": "Loader-Version",
   "create.loader_version_hint": "Normalerweise einfach auf „automatisch“ lassen.",
   "create.loader_auto": "Automatisch (neueste stabile)",
+  "create.loader_unstable": "Beta",
   "create.name": "Name des Servers",
   "create.name_hint": "Nur für dich – Spieler sehen die Beschreibung (MOTD), die du später einstellen kannst.",
   "create.name_ph": "Mein Server",

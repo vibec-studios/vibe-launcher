@@ -20,7 +20,7 @@ export function registerAgentRoutes(r: MockRouter, a: MockAgent) {
     const owner = a.users[0];
     return { token: `va_mock_${norm}`, token_id: a.nextId("tok"), user: { id: owner.id, name: owner.name, role: owner.role }, agent: { id: a.info.id, name: a.info.name, version: a.info.version, fingerprint: a.info.fingerprint } };
   });
-  r.on("GET", "/me", () => ({ user: a.users[0], permissions: ALL_PERMISSIONS }));
+  r.on("GET", "/me", () => ({ user: a.users[0], permissions: ALL_PERMISSIONS, via: "direct" }));
   r.on("GET", "/agent/resources", () => a.resources());
   r.on("GET", "/agent/settings", () => a.settings);
   r.on("PATCH", "/agent/settings", ({ body }) => {
@@ -39,12 +39,12 @@ export function registerAgentRoutes(r: MockRouter, a: MockAgent) {
     return a.settings;
   });
   r.on("GET", "/agent/audit", ({ query }) => a.audit.slice(0, Number(query.limit ?? 100)));
-  r.on("GET", "/agent/update", () => ({ current: a.info.version, latest: "0.1.1", available: true, notes_url: "https://github.com/" }));
-  r.on("POST", "/agent/update", () => ({ task_id: a.runTask("Agent-Update auf 0.1.1", "agent_update", null, () => (a.info.version = "0.1.1")) }));
+  r.on("GET", "/agent/update", () => ({ current: a.info.version, latest: "0.1.1", available: true, self_update: true, notes_url: "https://github.com/" }));
+  r.on("POST", "/agent/update", () => ({ task_id: a.runTask("Agent-Update auf 0.1.1", "update", null, () => (a.info.version = "0.1.1")) }));
   r.on("GET", "/agent/gateway", () => a.gatewayState);
   r.on("POST", "/agent/gateway/link", () => {
     setTimeout(() => {
-      a.gatewayState = { enabled: true, connected: true, linked: true, vibe_user: { id: "vu_1", name: "Henny" }, last_error: null };
+      a.gatewayState = { enabled: true, connected: true, linked: true, agent_id: a.info.id, vibe_user: { id: "vu_1", name: "Henny" }, last_error: null };
       a.settings.relay = { configured: true, source: "gateway", name: "Henny" };
     }, 6000);
     return { ...a.gatewayState, code: "K7Q2-M9XD", expires_at: Date.now() + 15 * 60_000 };
@@ -57,11 +57,15 @@ export function registerAgentRoutes(r: MockRouter, a: MockAgent) {
 
   r.on("GET", "/users", () => a.users);
   r.on("POST", "/users/invite", ({ body }) => {
-    const role = (body as { role?: Role }).role ?? "admin";
-    a.addAudit("Henny", "user.invite", role);
-    return { code: code8(), expires_at: Date.now() + 15 * 60_000 };
+    const asked = (body as { role?: Role }).role ?? "viewer";
+    const role: Role = asked === "owner" ? "admin" : asked;
+    a.addAudit("Henny", "pair.code", role);
+    return { code: code8(), expires_at: Date.now() + 15 * 60_000, role };
   });
-  r.on("POST", "/pair/codes", () => ({ code: code8(), expires_at: Date.now() + 15 * 60_000 }));
+  r.on("POST", "/pair/codes", ({ body }) => {
+    const asked = (body as { role?: Role } | undefined)?.role ?? "admin";
+    return { code: code8(), expires_at: Date.now() + 15 * 60_000, role: asked === "owner" ? "admin" : asked };
+  });
   r.on("PATCH", "/users/:id", ({ params, body }) => {
     const u = a.users.find((x) => x.id === params.id);
     if (!u) fail(404, "not_found", "Benutzer nicht gefunden.");

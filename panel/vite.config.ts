@@ -18,5 +18,6 @@ export default defineConfig(({ mode }) => ({
     emptyOutDir: true,
     target: "es2022",
     chunkSizeWarningLimit: 900,
+    assetsInlineLimit: (file: string) => (/\.(woff2?|ttf|otf)$/i.test(file) ? false : undefined),
   },
 }));
