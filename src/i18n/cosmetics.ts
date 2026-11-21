@@ -85,6 +85,8 @@ export default {
     "cos.guest.login_text": "Ansehen und anprobieren geht auch so. Verbinde dich mit Vibe, um Cosmetics anzulegen und dein Emote-Rad zu belegen.",
     "cos.guest.login_action": "Verbinden",
     "cos.guest.equip_hint": "Mit Vibe verbinden, um Cosmetics anzulegen",
+    "cos.guest.equip_hint_beta": "Cosmetics anlegen kannst du mit Beta-Zugang",
+    "cos.guest.wheel_hint_beta": "Das Emote-Rad belegst du mit Beta-Zugang",
     "cos.guest.wheel_hint": "Mit Vibe verbinden, um dein Emote-Rad zu belegen",
     "cos.guest.look_empty": "Fahr über eine Karte zum Anprobieren, Klick wählt aus.",
 
@@ -317,6 +319,8 @@ export default {
     "cos.guest.login_text": "You can browse and try things on as it is. Connect to Vibe to equip cosmetics and set up your emote wheel.",
     "cos.guest.login_action": "Connect",
     "cos.guest.equip_hint": "Connect to Vibe to equip cosmetics",
+    "cos.guest.equip_hint_beta": "You can equip cosmetics once you have beta access",
+    "cos.guest.wheel_hint_beta": "You can set up your emote wheel once you have beta access",
     "cos.guest.wheel_hint": "Connect to Vibe to set up your emote wheel",
     "cos.guest.look_empty": "Hover a card to try it on, click to select.",
 

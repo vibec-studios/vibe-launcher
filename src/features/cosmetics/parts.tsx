@@ -5,6 +5,7 @@ import { CloudOff, ImageOff, LogIn, Settings as SettingsIcon, UserRound } from "
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button, Skeleton, Spinner, cn } from "@/components/ui";
 import { useT } from "@/i18n";
+import { useLiveAppearance } from "@/lib/appearance";
 import { login } from "@/features/social/service";
 import { AccessNotice } from "@/features/access/AccessNotice";
 import { AccessStrip } from "@/features/access/AccessStrip";
@@ -143,8 +144,10 @@ export function AccessBanner({ access }: { access: Access }) {
 
 export function RarityLabel({ rarity, className }: { rarity: string; className?: string }) {
   const t = useT();
+  const light = useLiveAppearance((s) => s.a.tone === "light");
+  const c = RARITY_COLOR[rarity] ?? RARITY_COLOR.common;
   return (
-    <span className={cn("font-semibold", className)} style={{ color: RARITY_COLOR[rarity] ?? RARITY_COLOR.common }}>
+    <span className={cn("font-semibold", className)} style={{ color: light ? `color-mix(in oklab, ${c} 55%, #000)` : c }}>
       {t(`cos.rarity.${rarity}`)}
     </span>
   );

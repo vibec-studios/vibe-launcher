@@ -162,6 +162,7 @@
   box-shadow: inset 3px 0 0 var(--ui-accent);
 }
 :root[data-cards="pixel"] :is(.vl-rail, .vl2-rail) button:not([aria-current="page"]):hover { box-shadow: inset 3px 0 0 var(--line-2); }
+:root[data-cards="pixel"] .vl2-rail .vl2-mark { display: none; }
 
 /* Scrollbalken eckig */
 :root[data-cards="pixel"] ::-webkit-scrollbar-thumb { border-width: 3px; }

@@ -223,7 +223,7 @@ function Wardrobe({ access, actions }: { access: Exclude<Access, "loading">; act
     );
 
   const wheelButton = guest ? (
-    <Tooltip content={t("cos.guest.wheel_hint")}>
+    <Tooltip content={t(access === "no_access" ? "cos.guest.wheel_hint_beta" : "cos.guest.wheel_hint")}>
       <span className="inline-flex">
         <IconButton label={t("cos.wheel")} variant="ghost" disabled>
           <CircleDot size={16} />
@@ -401,7 +401,7 @@ function ItemCard({
         </span>
       )}
       {!owned && (
-        <span className="absolute left-2 top-2 flex h-5 items-center gap-1 rounded-xs bg-black/80 px-1.5 text-caption font-semibold text-muted" title={t("cos.locked_hint")}>
+        <span className="absolute left-2 top-2 flex h-5 items-center gap-1 rounded-xs bg-black/80 px-1.5 text-caption font-semibold text-[#fff]/75" title={t("cos.locked_hint")}>
           <Lock size={11} /> {t("cos.locked")}
         </span>
       )}
@@ -444,6 +444,7 @@ function Details({
   onSelect: (id: string) => void;
 }) {
   const t = useT();
+  const equipHint = t(useAccess() === "no_access" ? "cos.guest.equip_hint_beta" : "cos.guest.equip_hint");
   if (!item) {
     // Aktueller Look
     const worn = COSMETIC_SLOTS.map((s) => loadout.slots[s]).filter((id): id is string => !!id);
@@ -468,7 +469,7 @@ function Details({
             })}
           </div>
         )}
-        <p className="mt-3 text-meta leading-relaxed text-dim">{guest ? t("cos.guest.equip_hint") : t("cos.look_hint")}</p>
+        <p className="mt-3 text-meta leading-relaxed text-dim">{guest ? equipHint : t("cos.look_hint")}</p>
       </div>
     );
   }
@@ -511,7 +512,7 @@ function Details({
             </span>
           </Tooltip>
         ) : guest ? (
-          <Tooltip content={t("cos.guest.equip_hint")}>
+          <Tooltip content={equipHint}>
             <span className="flex-1">
               <Button className="w-full" disabled icon={item.kind === "emote" ? <CircleDot size={15} /> : <Check size={15} />}>
                 {item.kind === "emote" ? t("cos.wheel_add") : t("cos.equip")}

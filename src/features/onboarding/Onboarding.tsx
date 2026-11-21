@@ -226,7 +226,7 @@ function Choice({
     >
       {children}
       <div className="flex items-start gap-3">
-        {icon && <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-card bg-black/40", selected ? "text-brand" : "text-muted")}>{icon}</span>}
+        {icon && <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-card bg-bg", selected ? "text-brand" : "text-muted")}>{icon}</span>}
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-[16px] font-semibold text-text">{title}</span>
@@ -303,9 +303,9 @@ function WelcomeStep() {
 function ModePreview({ mode }: { mode: UiMode }) {
   const bar = (w: string, c = "bg-white/10") => <span className={cn("block h-1.5", c)} style={{ width: w }} />;
   return (
-    <div className="flex h-[132px] overflow-hidden rounded-card bg-black/50" aria-hidden>
+    <div className="flex h-[132px] overflow-hidden rounded-card bg-bg" aria-hidden>
       {/* Seitenleiste */}
-      <div className={cn("flex shrink-0 flex-col gap-1.5 bg-black/40 p-2", mode === "simple" ? "w-[74px]" : "w-[22px] items-center")}>
+      <div className={cn("flex shrink-0 flex-col gap-1.5 bg-white/[.04] p-2", mode === "simple" ? "w-[74px]" : "w-[22px] items-center")}>
         {Array.from({ length: mode === "simple" ? 4 : 8 }, (_, i) =>
           mode === "simple" ? (
             <span key={i} className="flex items-center gap-1">
@@ -515,7 +515,7 @@ function ImportStep({ finds }: { finds: ReturnType<typeof useImportFinds> }) {
           {finds.found.length > 0 && (
             <div className="flex flex-col gap-4 rounded-panel bg-surface p-5">
               <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-black/40 text-brand">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-bg text-brand">
                   <HardDriveDownload size={19} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -531,7 +531,7 @@ function ImportStep({ finds }: { finds: ReturnType<typeof useImportFinds> }) {
           )}
           {finds.newSkins > 0 && (
             <div className="flex items-center gap-3 rounded-panel bg-surface p-5">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-black/40 text-brand">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-bg text-brand">
                 <Shirt size={19} />
               </span>
               <div className="min-w-0 flex-1">
@@ -588,7 +588,7 @@ function GameStep({ mode, onFinish }: { mode: UiMode; onFinish: (after?: () => v
         <GoalTiles compact onPick={(g) => void onFinish(() => openNewGame(g))} />
       ) : (
         <div className="flex items-center gap-4 rounded-panel bg-surface p-5">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-black/40 text-brand">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-bg text-brand">
             <LayoutGrid size={19} />
           </span>
           <div className="min-w-0 flex-1">
