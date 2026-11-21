@@ -4,7 +4,7 @@
 // Titelleiste: Zurück/Vor, Brotkrumen, laufende Spiele, Aufgaben, Feedback, Freunde, Konto-Menü, Fensterknöpfe.
 // Simple-Modus (src/lib/mode.tsx): feste, kurze Navigation mit Beschriftung; Onboarding/Einführung hängen hier.
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { BEDROCK_COLOR } from "@/features/bedrock/parts";
+import { BEDROCK_TEXT_COLOR } from "@/features/bedrock/parts";
 import { ChevronLeft, ChevronRight, Plus, Settings as SettingsIcon } from "lucide-react";
 import { lazy, memo, Suspense, useState, type ReactNode } from "react";
 import { ContextMenu, Tooltip, cn } from "@/components/ui";
@@ -117,7 +117,7 @@ const RailInstance = memo(function RailInstance({ instance: i, active, wide }: {
             </span>
             {wide && <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text">{i.name}</span>}
             {wide && i.bedrock && (
-              <span className="shrink-0 text-[10.5px] font-bold tracking-wide" style={{ color: BEDROCK_COLOR }} title="Minecraft Bedrock">
+              <span className="shrink-0 text-[10.5px] font-bold tracking-wide" style={{ color: BEDROCK_TEXT_COLOR }} title="Minecraft Bedrock">
                 BE
               </span>
             )}

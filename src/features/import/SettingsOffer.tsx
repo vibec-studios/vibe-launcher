@@ -308,8 +308,9 @@ function OfferCard({
   onAll: (on: boolean) => void;
 }) {
   const t = useT();
-  const total = o.changes.length + o.data.length;
-  const chosen = o.changes.filter((c) => keys.includes(c.key)).length + o.data.filter((d) => d.path in picks).length;
+  const defaultData = o.data.filter((d) => d.default_on);
+  const total = o.changes.length + defaultData.length;
+  const chosen = o.changes.filter((c) => keys.includes(c.key)).length + defaultData.filter((d) => d.path in picks).length;
   const all = total > 0 && chosen === total;
   const some = !all && chosen > 0;
   return (

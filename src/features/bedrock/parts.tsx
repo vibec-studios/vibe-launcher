@@ -11,6 +11,7 @@ import { bedrockApi, bqk, channelStatus, type BedrockPackKind, type BedrockStatu
 
 /** Bedrock-Farbe (Kennzeichnung in Bibliothek/Sidebar). */
 export const BEDROCK_COLOR = "#7fb0ff";
+export const BEDROCK_TEXT_COLOR = `oklch(from ${BEDROCK_COLOR} min(l, var(--tag-l, 1)) c h)`;
 
 export function BedrockTag({ instance, className }: { instance: Pick<Instance, "bedrock">; className?: string }) {
   const t = useT();

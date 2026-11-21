@@ -158,11 +158,11 @@ export function InstancesPage() {
                 </div>
                 <div
                   className={cn(
-                    "flex min-w-0 items-center gap-2",
+                    "flex min-w-0 items-center gap-2 @max-[500px]:flex-wrap",
                     simple ? "@max-[960px]:order-last @max-[960px]:w-full" : "@max-[1130px]:order-last @max-[1130px]:w-full",
                   )}
                 >
-                  <SearchInput value={query} onChange={setQuery} placeholder={t("instances.search")} className="w-[220px] min-w-[150px] @max-[1130px]:flex-1" />
+                  <SearchInput value={query} onChange={setQuery} placeholder={t("instances.search")} className="w-[220px] min-w-[150px] @max-[1130px]:flex-1 @max-[500px]:basis-full" />
                   <div className="w-[150px] shrink-0">
                     <Select<SortKey>
                       size="sm"

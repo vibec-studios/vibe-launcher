@@ -12,6 +12,32 @@ export interface LightboxImage {
   description?: string | null;
 }
 
+function ImagePreview({ image }: { image: LightboxImage }) {
+  const t = useT();
+  const [status, setStatus] = useState<"loading" | "loaded" | "failed">(image.url ? "loading" : "failed");
+  if (status === "failed")
+    return (
+      <div className="absolute flex flex-col items-center gap-2 text-center text-muted" role="status">
+        <ImageOff size={20} aria-hidden />
+        {t("common.image_load_failed")}
+      </div>
+    );
+  return (
+    <>
+      <img
+        src={image.url}
+        alt={image.title ?? ""}
+        decoding="async"
+        draggable={false}
+        onLoad={() => setStatus("loaded")}
+        onError={() => setStatus("failed")}
+        className={cn("h-full w-full object-contain transition-opacity duration-150", status === "loaded" ? "opacity-100" : "opacity-0")}
+      />
+      {status === "loading" && <Spinner size={20} className="absolute text-muted" />}
+    </>
+  );
+}
+
 export function Lightbox({
   images,
   index,
@@ -26,13 +52,9 @@ export function Lightbox({
   onClose: () => void;
   labels?: { prev: string; next: string; close: string };
 }) {
-  const t = useT();
   const open = index !== null && images.length > 0;
   const i = index ?? 0;
   const img = images[i];
-  const src = img?.url || undefined;
-  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
-  useEffect(() => setStatus("loading"), [src]);
   const go = (d: number) => onIndexChange((i + d + images.length) % images.length);
 
   // Nachbarbilder vorladen, damit das Blättern ohne Warten geht
@@ -70,25 +92,7 @@ export function Lightbox({
             </D.Close>
           </div>
           <div className="relative flex min-h-0 flex-1 items-center justify-center px-20" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            {src && (
-              <img
-                key={src}
-                src={src}
-                alt={img?.title ?? ""}
-                decoding="async"
-                draggable={false}
-                onLoad={() => setStatus("loaded")}
-                onError={() => setStatus("error")}
-                className={cn("h-full w-full object-contain transition-opacity duration-150", status === "loaded" ? "opacity-100" : "opacity-0")}
-              />
-            )}
-            {src && status === "loading" && <Spinner size={20} className="absolute text-muted" />}
-            {(!src || status === "error") && (
-              <div className="absolute flex flex-col items-center gap-2 text-center text-muted" role="status">
-                <ImageOff size={20} aria-hidden />
-                {t("common.image_load_failed")}
-              </div>
-            )}
+            {img && <ImagePreview key={img.url} image={img} />}
             {images.length > 1 && (
               <>
                 <button

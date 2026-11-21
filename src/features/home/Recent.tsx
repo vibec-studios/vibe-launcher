@@ -56,7 +56,11 @@ function RecentTile({ instance: i }: { instance: Instance }) {
         tabIndex={0}
         aria-label={i.name}
         onClick={open}
-        onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && open()}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
+          e.preventDefault();
+          if (!e.repeat) open();
+        }}
         style={accentVars(accent)}
         className="group flex min-w-0 items-center gap-3 rounded-panel bg-surface p-2 pr-3 transition-colors duration-100 hover:bg-surface2 data-[state=open]:bg-surface2"
       >

@@ -1,8 +1,9 @@
 // Mock: Einstellungen aus anderen Launchern (Import-Dialog „Übernimmt …“, Hinweis unten links, Liste „Ansehen“).
 // Screenshots: localStorage vl.mock.isx = 0 -> keine abweichenden Instanzen (Hinweis erscheint nicht).
-import type { DataEntry, ExtSettings, ExternalInstance, ExternalLauncher, SettingsOffer } from "@/lib/types";
+import type { DataEntry, ExtSettings, ExternalInstance, ExternalLauncher, Loader, SettingsOffer } from "@/lib/types";
+import { newInstance } from "./b";
 import { instances } from "./core";
-import type { Handlers } from "./util";
+import { fakeTask, type Handlers } from "./util";
 
 const flag = (k: string) => {
   try {
@@ -122,7 +123,7 @@ const entry = (path: string, kind: DataEntry["kind"], status: DataEntry["status"
 };
 
 /** NoRisk-Import aus v1.0.0-beta.4: Mod-Daten und neue Welt fehlen. */
-const NORISK = "C:\Users\steve\AppData\Roaming\norisk\NoRiskClientV3\data\profiles\noriskclient\new";
+const NORISK = "C:\\Users\\steve\\AppData\\Roaming\\norisk\\NoRiskClientV3\\data\\profiles\\noriskclient\\new";
 const noriskData: DataEntry[] = [
   entry("XaeroWaypoints", "dir", "missing", 1.2 * MB, { missing_files: 38 }),
   entry("journeymap", "dir", "missing", 46 * MB, { missing_files: 912 }),
@@ -188,9 +189,30 @@ const offers = (): SettingsOffer[] =>
       ];
 
 let applied = new Set<string>();
+const imported = new Map<string, string>();
+const scanned = new Map<string, ExternalInstance>();
 
 const handlers: Handlers = {
-  launchers_detect: () => launchers,
+  launchers_detect: () => launchers.map((launcher) => ({
+    ...launcher,
+    instances: launcher.instances.map((instance) => ({ ...instance, imported_as: imported.get(instance.source_path) ?? instance.imported_as })),
+  })),
+  launcher_scan_dir: ({ path }): ExternalLauncher => {
+    const dir = String(path);
+    const name = dir.split(/[\\/]/).filter(Boolean).at(-1) ?? dir;
+    const instance = ext(dir, name, "1.21.4", "vanilla", null, { imported_as: imported.get(dir) ?? null });
+    scanned.set(dir, instance);
+    return { id: "folder", name, path: dir, instances: [instance] };
+  },
+  import_external: ({ sourcePath, name, mcVersion, loader }) => {
+    const path = String(sourcePath);
+    const external = scanned.get(path) ?? launchers.flatMap((launcher) => launcher.instances).find((instance) => instance.source_path === path);
+    if (!external) throw { kind: "not_found", message: "Instanz nicht gefunden" };
+    const selectedLoader = (loader as Loader | null) ?? external.loader;
+    const instance = newInstance(String(name ?? external.name), String(mcVersion ?? external.mc_version), selectedLoader.kind, selectedLoader.version, null);
+    return fakeTask("import_external", instance.name, instance.id, 1500, () => { imported.set(path, instance.id); });
+  },
+  skin_import_scan: () => ({ sources: [], new_count: 0, auto_import: false }),
   import_settings_pending: () => offers().filter((o) => !applied.has(o.instance_id)),
   import_settings_offer: ({ instanceId }) => {
     const o = offers().find((x) => x.instance_id === instanceId);

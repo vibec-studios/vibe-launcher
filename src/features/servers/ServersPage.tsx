@@ -31,7 +31,11 @@ const ServerRow = memo(function ServerRow({ server: s }: { server: Server }) {
         role="button"
         tabIndex={0}
         onClick={open}
-        onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && open()}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
+          e.preventDefault();
+          if (!e.repeat) open();
+        }}
         style={accentVars(serverAccent(s))}
         className={cn(
           cols,

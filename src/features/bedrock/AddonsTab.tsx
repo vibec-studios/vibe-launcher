@@ -217,19 +217,20 @@ export function AddonsTab({ instance }: { instance: Instance }) {
 
   return (
     <div ref={ref} className="relative flex h-full flex-col">
-      <div className="flex h-14 shrink-0 items-center gap-2 px-6 pt-2">
+      <div className="flex min-h-14 shrink-0 flex-wrap items-center gap-2 px-6 pb-1 pt-2">
         <SearchInput value={query} onChange={setQuery} placeholder={t("bedrock.addons.search_installed")} className="w-[220px] min-w-[140px] shrink [&_input]:h-8" />
-        <Segmented value={filter} onChange={setFilter} items={kinds} />
-        <div className="flex-1" />
-        <IconButton label={t("bedrock.addons.open_folder")} tip variant="ghost" onClick={() => bedrockApi.openFolder(instance.id, "packs").catch((e) => toast.error(e))}>
-          <FolderOpen size={16} />
-        </IconButton>
-        <Button size="sm" variant="ghost" icon={<FileArchive size={14} />} onClick={() => void pickBedrockFiles(instance)}>
-          {t("bedrock.addons.import")}
-        </Button>
-        <Button size="sm" variant="primary" icon={<Search size={14} />} onClick={() => openAddonSearch(instance)}>
-          {t("bedrock.addons.find")}
-        </Button>
+        <Segmented value={filter} onChange={setFilter} items={kinds} className="max-w-full flex-wrap" />
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <IconButton label={t("bedrock.addons.open_folder")} tip variant="ghost" onClick={() => bedrockApi.openFolder(instance.id, "packs").catch((e) => toast.error(e))}>
+            <FolderOpen size={16} />
+          </IconButton>
+          <Button size="sm" variant="ghost" icon={<FileArchive size={14} />} onClick={() => void pickBedrockFiles(instance)}>
+            {t("bedrock.addons.import")}
+          </Button>
+          <Button size="sm" variant="primary" icon={<Search size={14} />} onClick={() => openAddonSearch(instance)}>
+            {t("bedrock.addons.find")}
+          </Button>
+        </div>
       </div>
       <div className="scroll min-h-0 flex-1 pb-6">
         {packs.isError && !packs.data ? (

@@ -9,7 +9,7 @@ import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { InstanceContextMenuContent } from "@/components/instance/InstanceMenu";
 import { openNewInstance } from "@/components/instance/actions";
 import { Logo3D } from "@/components/Logo3D";
-import { BEDROCK_COLOR } from "@/features/bedrock/parts";
+import { BEDROCK_TEXT_COLOR } from "@/features/bedrock/parts";
 import { openSettings } from "@/features/settings/store";
 import { useSimple } from "@/lib/mode";
 import { NAV, useInstanceActivity, useRailModel } from "../nav";
@@ -81,7 +81,7 @@ const RailInstance = memo(function RailInstance({ instance: i, active, wide }: {
             </span>
             {wide && <span className={cn("min-w-0 flex-1 truncate text-[13px] font-medium", active ? "text-text" : "text-muted")}>{i.name}</span>}
             {wide && i.bedrock && (
-              <span className="shrink-0 text-[10.5px] font-bold tracking-wide" style={{ color: BEDROCK_COLOR }} title="Minecraft Bedrock">
+              <span className="shrink-0 text-[10.5px] font-bold tracking-wide" style={{ color: BEDROCK_TEXT_COLOR }} title="Minecraft Bedrock">
                 BE
               </span>
             )}
