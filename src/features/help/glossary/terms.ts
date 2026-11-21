@@ -19,6 +19,8 @@ export const TERMS = [
   "vibe",
   "account",
   "dependency",
+  "portable",
+  "telemetry",
 ] as const;
 
 export type TermId = (typeof TERMS)[number];

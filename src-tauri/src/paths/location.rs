@@ -41,6 +41,10 @@ pub fn env_override() -> Option<PathBuf> {
     std::env::var_os("VIBE_LAUNCHER_HOME").map(PathBuf::from)
 }
 
+pub fn fixed_root() -> Option<PathBuf> {
+    env_override().or_else(super::portable::root)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

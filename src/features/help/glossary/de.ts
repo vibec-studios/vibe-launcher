@@ -86,6 +86,15 @@ const de: Glossary = {
     text: "Eine Mod, die eine andere Mod zum Laufen braucht, zum Beispiel Fabric API. Vibe installiert Abhängigkeiten automatisch mit und sagt dir, wenn keine Mod sie mehr braucht.",
     example: "Mod Menu braucht Fabric API – ohne Fabric API startet Mod Menu nicht.",
   },
+  portable: {
+    title: "Portabel",
+    text: "Ein portabler Launcher braucht keine Installation. Er speichert alles im Ordner „VibeData“ direkt neben sich, zum Beispiel auf einem USB-Stick, und lässt den PC unverändert.",
+    example: "Stick einstecken, vibe-launcher.exe starten, weiterspielen – auch an einem anderen PC.",
+  },
+  telemetry: {
+    title: "Telemetrie",
+    text: "Automatisch gesendete Nutzungsdaten, zum Beispiel welche Knöpfe du klickst oder wie oft du spielst. Der Vibe Launcher sammelt so etwas nicht.",
+  },
 };
 
 export default de;

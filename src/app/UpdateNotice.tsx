@@ -11,6 +11,8 @@ import type { Settings, UpdateInfo } from "@/lib/types";
 import { Button, Progress, toast } from "@/components/ui";
 import { t, useT } from "@/i18n";
 import { askUpdateGuard } from "./updateGuard";
+import { PortableUpdateAction } from "@/features/portable/PortableUpdateAction";
+import { usePortable } from "@/features/portable/api";
 
 interface UpdateState {
   info: UpdateInfo | null;
@@ -106,6 +108,7 @@ export function UpdateButton() {
   const info = useUpdate((s) => s.info);
   const taskId = useUpdate((s) => s.taskId);
   const task = useTask(taskId);
+  const portable = usePortable().data?.active;
   if (!info) return null;
   const running = task?.status === "running";
   const failed = task?.status === "failed";
@@ -140,9 +143,13 @@ export function UpdateButton() {
                 <div className={failed ? "text-meta text-danger" : "text-meta text-muted"}>{failed ? task.error : task.message}</div>
               </>
             )}
-            <Button variant="primary" loading={running} disabled={running} onClick={installUpdate}>
-              {tt("update.install")}
-            </Button>
+            {portable ? (
+              <PortableUpdateAction />
+            ) : (
+              <Button variant="primary" loading={running} disabled={running} onClick={installUpdate}>
+                {tt("update.install")}
+              </Button>
+            )}
           </div>
         </Popover.Content>
       </Popover.Portal>

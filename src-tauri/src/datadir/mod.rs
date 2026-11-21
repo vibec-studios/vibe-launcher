@@ -15,6 +15,7 @@ pub struct Preview {
     pub current: String,
     pub default: String,
     pub locked: bool,
+    pub portable: bool,
     pub target: Option<String>,
     pub size: u64,
     pub free: Option<u64>,
@@ -52,7 +53,7 @@ pub fn needed_bytes(size: u64) -> u64 {
 
 pub async fn preview(state: &AppState, target: Option<String>) -> AppResult<Preview> {
     let current = state.paths.root.clone();
-    let locked = location::env_override().is_some();
+    let locked = location::fixed_root().is_some();
     let size = {
         let c = current.clone();
         tokio::task::spawn_blocking(move || mover::tally(&c).1).await?
@@ -61,6 +62,7 @@ pub async fn preview(state: &AppState, target: Option<String>) -> AppResult<Prev
         current: current.to_string_lossy().to_string(),
         default: location::default_root().to_string_lossy().to_string(),
         locked,
+        portable: crate::paths::portable::active(),
         target: target.clone(),
         size,
         free: None,
@@ -83,6 +85,9 @@ pub async fn preview(state: &AppState, target: Option<String>) -> AppResult<Prev
 }
 
 pub fn start(state: &AppState, target: String) -> AppResult<String> {
+    if crate::paths::portable::active() {
+        return Err(AppError::Invalid("Im portablen Modus liegt der Datenordner immer neben dem Launcher (Ordner VibeData) und kann hier nicht geändert werden.".into()));
+    }
     if location::env_override().is_some() {
         return Err(AppError::Invalid("Der Datenordner ist über VIBE_LAUNCHER_HOME festgelegt und kann hier nicht geändert werden.".into()));
     }
@@ -152,7 +157,7 @@ async fn run(state: &AppState, task: &TaskHandle, target: PathBuf) -> AppResult<
 }
 
 pub fn on_startup(paths: &crate::paths::Paths) {
-    if location::env_override().is_some() {
+    if location::fixed_root().is_some() {
         return;
     }
     let default = location::default_root();

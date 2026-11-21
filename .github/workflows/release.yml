@@ -3,7 +3,7 @@ name: Release
 # Neues Release (Kanal "Release"):
 #   1. Version in package.json + src-tauri/Cargo.toml erhöhen (node scripts/set-version.mjs X.Y.Z), committen
 #   2. Tag vX.Y.Z pushen
-# Ergebnis: veröffentlichtes GitHub-Release mit Installern für Windows (NSIS), Linux (AppImage, .deb) und
+# Ergebnis: veröffentlichtes GitHub-Release mit Installern für Windows (NSIS + portables Zip), Linux (AppImage, .deb) und
 # macOS (dmg, universal), .sig-Dateien und einer gemeinsamen latest.json für den Updater.
 # Launcher im Kanal "Release" laden es über .../releases/latest/download/latest.json
 on:
@@ -106,6 +106,18 @@ jobs:
           VIBE_UPDATE_CHANNEL: release
         run: pnpm tauri build --bundles ${{ matrix.bundles }} ${{ matrix.args }}
 
+      - name: Portable-Zip (Windows, docs/PORTABLE.md)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $v = "${{ needs.check.outputs.version }}"
+          $stage = Join-Path $env:RUNNER_TEMP "vibe-portable"
+          $out = "src-tauri/target/release/bundle/portable"
+          New-Item -ItemType Directory -Force $stage, $out | Out-Null
+          Copy-Item src-tauri/target/release/vibe-launcher.exe $stage
+          Set-Content -Path (Join-Path $stage "portable.txt") -Encoding utf8 -Value "Diese Datei schaltet den portablen Modus ein: Alle Daten liegen im Ordner VibeData neben dem Launcher.`r`nThis file enables portable mode: all data is stored in the VibeData folder next to the launcher."
+          Compress-Archive -Path (Join-Path $stage "*") -DestinationPath "$out/Vibe-Launcher_${v}_x64-portable.zip" -Force
+
       - uses: actions/upload-artifact@v4
         with:
           name: bundle-${{ matrix.platform }}
@@ -113,6 +125,7 @@ jobs:
           retention-days: 7
           path: |
             src-tauri/target/**/release/bundle/nsis/*-setup.exe*
+            src-tauri/target/**/release/bundle/portable/*-portable.zip
             src-tauri/target/**/release/bundle/appimage/*.AppImage*
             src-tauri/target/**/release/bundle/deb/*.deb
             src-tauri/target/**/release/bundle/dmg/*.dmg

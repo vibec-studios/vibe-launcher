@@ -13,6 +13,7 @@
 //!   cache/                              Icons, API-Antworten, temporäre Downloads
 //! ```
 pub mod location;
+pub mod portable;
 
 use std::path::{Path, PathBuf};
 
@@ -29,7 +30,7 @@ impl Default for Paths {
 
 impl Paths {
     pub fn new() -> Self {
-        Paths { root: location::resolve(location::env_override(), &location::default_root()) }
+        Paths { root: location::resolve(location::fixed_root(), &location::default_root()) }
     }
 
     pub fn ensure(&self) -> std::io::Result<()> {

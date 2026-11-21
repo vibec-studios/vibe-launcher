@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.9.0.schema.json
+
+PackageIdentifier: VibeCraftStudios.VibeLauncher
+PackageVersion: 1.0.0-beta.5
+InstallerType: nullsoft
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+  - silentWithProgress
+UpgradeBehavior: install
+Protocols:
+  - vibelauncher
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/vibec-studios/vibe-launcher/releases/download/v1.0.0-beta.5/Vibe-Launcher_1.0.0-beta.5_x64-setup.exe
+    InstallerSha256: 411FC9C93D3B5A7CDD0433452C3D4304E6FD72CA9D3CCA652D24D6187ABBAE7D
+ManifestType: installer
+ManifestVersion: 1.9.0

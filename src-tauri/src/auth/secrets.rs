@@ -30,6 +30,8 @@ impl SecretStore {
         let service = if std::env::var_os("VIBE_LAUNCHER_HOME").is_some() {
             let h = hex::encode(Sha1::digest(paths.root.to_string_lossy().as_bytes()));
             format!("VibeLauncher-test-{}", &h[..10])
+        } else if crate::paths::portable::active() {
+            crate::portable::service_name(&paths.root)
         } else {
             "VibeLauncher".to_string()
         };

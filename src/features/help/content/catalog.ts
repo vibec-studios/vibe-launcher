@@ -18,6 +18,8 @@ export const GUIDES: GuideDef[] = [
   { id: "bedrock", icon: "cube" },
   { id: "feedback", icon: "message", tour: "feedback" },
   { id: "performance", icon: "gauge", tour: "performance" },
+  { id: "privacy", icon: "shield", tour: "privacy" },
+  { id: "portable", icon: "usb" },
 ];
 
 export const TOURS: TourDef[] = [
@@ -158,6 +160,14 @@ export const TOURS: TourDef[] = [
       { targets: ["instance-settings"], route: `${INSTANCE}?tab=content` },
       { targets: ["instance-perf"], open: "instance-settings:perf" },
       { targets: ["ram"], open: "settings:java", optional: true },
+    ],
+  },
+  {
+    id: "privacy",
+    guide: "privacy",
+    steps: [
+      { targets: ["settings-tab-privacy"], open: "settings:privacy" },
+      { targets: ["privacy-flows", "settings-content"], open: "settings:privacy" },
     ],
   },
 ];

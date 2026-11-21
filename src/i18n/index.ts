@@ -49,12 +49,14 @@ import usability from "./usability";
 import layout from "./layout";
 import uic from "./uic";
 import organize from "./organize";
+import privacy from "./privacy";
+import portable from "./portable";
 
 export type Lang = "de" | "en";
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, clips, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize, sessions, usability, layout, uic, organize];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, clips, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize, sessions, usability, layout, uic, organize, privacy, portable];
 const dicts: Record<Lang, Dict> = { de: {}, en: {} };
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);

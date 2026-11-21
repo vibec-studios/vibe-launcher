@@ -235,6 +235,11 @@ pub fn tokens_set(state: &AppState, tokens: Option<VibeTokens>) -> AppResult<()>
     Ok(())
 }
 
+pub fn forget_tokens(state: &AppState, scope: &str) {
+    token_cache().lock().insert(scope.to_string(), None);
+    store(state).delete(&secret_id(scope));
+}
+
 // ------------------------------------------------------------------ Mojang-Join
 
 #[derive(Debug, Clone, Serialize)]
