@@ -28,9 +28,10 @@ Hier ist der **Launcher der Host**, also baut er auch den UDP-Tunnel (Vertrag §
 
 ## Welten aus dem Spiel (Vibey Client)
 
-Der Vibey Client hostet integrierte Welten selbst über den Relay und setzt den Voice-Host per SVC-API. Der Launcher
-bietet im Instanz-Tab „Welten“ nur „Sprachchat installieren“ (SVC in die Instanz über die Content-Schicht). Bedrock auf
-integrierten Welten ist laut Vertrag nicht vorgesehen.
+> **Eingestellt (21.11.2026):** Der Vibey Client wird nicht mehr weiterentwickelt; der Launcher nutzt diesen Teil nicht mehr. Siehe [VIBEY-CLIENT-EINGESTELLT.md](VIBEY-CLIENT-EINGESTELLT.md).
+
+Der Hinweis „Sprachchat installieren“ im Instanz-Tab „Welten“ ist entfernt. Sprachchat und Bedrock gibt es nur noch für
+Server des Launchers.
 
 ## Offen (nicht Launcher bzw. später)
 

@@ -3,7 +3,7 @@
 // zurück. Öffnen: `openInstanceSettings(id, tab)`.
 import * as D from "@radix-ui/react-dialog";
 import { useEffect, useState, type ReactNode } from "react";
-import { Cloud, Coffee, Layers, MonitorPlay, Package, RefreshCcw, SlidersHorizontal, Sparkles, Wrench, X } from "lucide-react";
+import { Cloud, Coffee, Layers, MonitorPlay, Package, RefreshCcw, SlidersHorizontal, Wrench, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { instanceAccent } from "@/lib/format";
 import type { Instance, InstancePatch } from "@/lib/types";
@@ -15,7 +15,6 @@ import { useVibe } from "@/lib/vibe";
 import { useT } from "@/i18n";
 import { INSTANCE_SETTINGS_TABS, closeInstanceSettings, restoreInstanceSettingsFocus, setInstanceSettingsTab, useInstanceSettings, type InstanceSettingsTab } from "./store";
 import { AdvancedTab, ClientTab, GeneralTab, JavaTab, LaunchTab, VersionTab, VibeTab, type TabProps } from "./tabs";
-import { useClientPacks } from "./ClientPacks";
 import { InstanceSyncTab } from "@/components/instance/OptSync";
 import { useSimple } from "@/lib/mode";
 import { simpleHides } from "@/lib/simple-mode";
@@ -67,8 +66,6 @@ function Body({ instance }: { instance: Instance }) {
   const t = useT();
   const vibe = useVibe();
   const narrow = useNarrow();
-  const packs = useClientPacks(instance);
-  const vibeyOn = !!packs.data?.packs.find((p) => p.id === "vibey")?.installed;
   const stored = useInstanceSettings((s) => s.tab);
   const simple = useSimple();
   // Vibe-Tab nur bei eingeschalteten Vibe-Diensten
@@ -106,7 +103,6 @@ function Body({ instance }: { instance: Instance }) {
                 >
                   <span className={active ? "text-accent" : "text-dim"}>{ICONS[id]}</span>
                   <span className="min-w-0 flex-1 break-words max-[680px]:hidden">{t(`isd.tab.${id}`)}</span>
-                  {id === "vibe" && vibeyOn && <Sparkles size={12} className="shrink-0 text-brand max-[680px]:hidden" />}
                 </button>
               </Tooltip>
             );

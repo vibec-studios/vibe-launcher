@@ -236,7 +236,7 @@ export interface CustomTheme {
 }
 export type AppearanceMotion = "normal" | "more";
 /** Einträge der Seitenleiste (Reihenfolge/Sichtbarkeit einstellbar) */
-export type NavKey = "home" | "instances" | "servers" | "social" | "discover" | "skins" | "cosmetics" | "screenshots";
+export type NavKey = "home" | "instances" | "servers" | "social" | "discover" | "skins" | "screenshots";
 
 export interface Appearance {
   /** Design-Generation: v1 (Standard) oder v2 (Beta) */
@@ -926,82 +926,6 @@ export interface Screenshot {
   height: number | null;
   /** ms seit 1970 (aus dem Dateinamen, sonst Änderungszeit) */
   taken_at: number;
-}
-
-// ------------------------------------------------------------------ Clips (Vibey Client, docs/CLIPS.md §10)
-
-/** Bekannte Gründe; Unbekanntes zeigt das Frontend als „Clip“ */
-export type ClipReason = "hotkey" | "kill" | "multikill" | "clutch" | "death";
-
-export interface ClipEvent {
-  t_ms: number;
-  type: "kill" | "death" | string;
-  victim?: string;
-}
-
-export interface Clip {
-  instance_id: string;
-  id: string;
-  /** Absoluter Pfad der MP4 */
-  video_path: string;
-  /** Absoluter Pfad des Vorschaubilds; null = Platzhalter zeigen */
-  thumbnail_path: string | null;
-  /** ms seit 1970 */
-  created_at: number;
-  duration_ms: number | null;
-  size_bytes: number | null;
-  width: number | null;
-  height: number | null;
-  fps: number | null;
-  reason: ClipReason | string;
-  kills: number | null;
-  highlight_ms: number | null;
-  events: ClipEvent[];
-  player: { name: string | null; uuid: string | null } | null;
-  mode: "singleplayer" | "hosting" | "multiplayer" | string | null;
-  /** Nur Mehrspieler und nur, wenn das Spiel sie gespeichert hat – nie ergänzen */
-  server: string | null;
-  world: string | null;
-  minecraft: string | null;
-  loader: string | null;
-  client_version: string | null;
-  encoder: string | null;
-  video_codec: string | null;
-  audio_codec: string | null;
-  kept: boolean;
-  title: string | null;
-  tags: string[];
-  /** Keyframe-Startzeiten ab Clipbeginn (Schnitt ohne Neukodierung beginnt an einem davon); leer bei älteren Clips */
-  keyframes_ms: number[];
-  /** Sprungschnitte (Aufnahme pausiert) – nur Anzeige */
-  cuts_ms: number[];
-  /** Langer Rückblick (bis 10 min) */
-  rewind: boolean;
-  /** Schnittvorschlag des Spiels */
-  trim_hint: TrimRange | null;
-  /** Gespeicherter Schnitt des Nutzers (nicht-destruktiv) */
-  trim: TrimRange | null;
-  /** Bei reason "edit": Id des Originals */
-  source_id: string | null;
-}
-
-export interface TrimRange {
-  in_ms: number;
-  out_ms: number;
-}
-
-export interface ClipExport {
-  clip: Clip;
-  /** Tatsächlicher Start (letzter Keyframe vor dem Wunschstart) */
-  start_ms: number;
-  original_deleted: boolean;
-}
-
-/** Änderbare Felder (nur diese darf der Launcher schreiben). Leerer Titel / leere Tags entfernen das Feld. */
-export interface ClipPatch {
-  kept?: boolean;
-  title?: string;
-  tags?: string[];
 }
 
 export interface VibeServices {

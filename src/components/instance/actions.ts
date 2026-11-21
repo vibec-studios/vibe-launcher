@@ -15,7 +15,7 @@ export const FOLDERS = ["", "mods", "config", "saves", "resourcepacks", "shaderp
 // ------------------------------------------------------------------ Dialoge, die aus Menüs geöffnet werden
 
 /** Ziel im geführten „Neues Spiel“-Assistenten (Simple-Modus), siehe features/instances/simple/goals.tsx */
-export type NewGameGoal = "vanilla" | "fps" | "mods" | "friends" | "vibey";
+export type NewGameGoal = "vanilla" | "fps" | "mods" | "friends";
 
 interface DialogState {
   exportFor: Instance | null;

@@ -98,18 +98,16 @@
       "keywords": "sauvegarde backup restaurer monde instantané annuler"
     },
     "hosting": {
-      "title": "Héberger un monde avec des amis",
-      "summary": "Avec Vibe Relay, tes amis rejoignent ton monde sans redirection de port. Un lien de jeu les invite tout de suite avec le bon modpack.",
+      "title": "Jouer avec des amis",
+      "summary": "Avec ton propre serveur et Vibe Relay, tes amis jouent avec toi sans redirection de port. Si tu reçois un lien de jeu, le launcher installe le bon modpack.",
       "steps": [
-        "Lance ton instance avec le Vibey Client (réglages de l'instance → Client).",
-        "Ouvre ton monde en jeu et choisis « Ouvrir aux amis ». Le client se connecte à Vibe Relay.",
-        "Le launcher affiche une barre « Tu héberges … » avec le lien de jeu. Copie-le ou envoie-le directement à tes amis.",
-        "Tes amis ouvrent le lien. Leur launcher installe le bon modpack et les connecte directement à ton monde.",
-        "Pour un serveur qui tourne sans toi, crées-en un dans « Serveurs » et choisis « Vibe Relay » comme connexion."
+        "Ouvre « Serveurs » dans la barre latérale et clique sur « Nouveau serveur ». Tu peux reprendre un monde solo comme monde du serveur.",
+        "Choisis « Vibe Relay » comme connexion. Ça marche alors sans redirection de port.",
+        "Lance le serveur et invite tes amis directement depuis « Amis ».",
+        "Quelqu'un t'a envoyé un lien de jeu ? Ouvre-le, tout simplement. Le launcher installe le bon modpack et te connecte."
       ],
       "tips": [
-        "L'hébergement nécessite Vibe (Paramètres → Vibe et compte). Vibe est en bêta en ce moment, voir « Liste d'attente de la bêta Vibe ».",
-        "Les liens de jeu expirent quand tu arrêtes d'héberger, au plus tard après 12 heures."
+        "L'hébergement nécessite Vibe (Paramètres → Vibe et compte). Vibe est en bêta en ce moment, voir « Liste d'attente de la bêta Vibe »."
       ],
       "keywords": "amis multijoueur relais inviter lien partager lan héberger"
     },
@@ -129,19 +127,17 @@
       "keywords": "serveur paper spigot console liste blanche plugin connexion"
     },
     "skins": {
-      "title": "Skins et cosmétiques",
-      "summary": "Change ton skin directement dans le launcher. Les cosmétiques comme les capes, chapeaux et emotes sont visibles par les autres joueurs avec le Vibey Client.",
+      "title": "Skins",
+      "summary": "Change ton skin directement dans le launcher, avec un aperçu 3D et ta propre bibliothèque de skins.",
       "steps": [
         "Ouvre « Skins » dans la barre latérale ou via le bouton du compte en haut à droite.",
         "Envoie un skin ou choisis-en un dans ta bibliothèque. L'aperçu 3D montre le rendu.",
-        "Choisis entre le modèle classique et fin, puis clique sur « Appliquer ».",
-        "Pour les cosmétiques, ouvre « Cosmétiques » dans la barre latérale, choisis des objets et enregistre ta tenue."
+        "Choisis entre le modèle classique et fin, puis clique sur « Appliquer »."
       ],
       "tips": [
-        "Pour changer de skin, tu dois être connecté avec ton compte Microsoft.",
-        "Les cosmétiques nécessitent Vibe et le Vibey Client dans l'instance."
+        "Pour changer de skin, tu dois être connecté avec ton compte Microsoft."
       ],
-      "keywords": "skin cape cosmétiques emote look"
+      "keywords": "skin cape look"
     },
     "modsets": {
       "title": "Sets de mods",
@@ -158,27 +154,26 @@
       "keywords": "set liste collection préférés mods appliquer"
     },
     "gallery": {
-      "title": "Galerie et clips",
-      "summary": "La galerie rassemble au même endroit toutes les captures et clips de tes instances.",
+      "title": "Galerie",
+      "summary": "La galerie rassemble au même endroit toutes les captures de tes instances.",
       "steps": [
         "Ouvre « Galerie » dans la barre latérale.",
-        "Passe de « Captures d'écran » à « Clips » en haut. Les clips sont enregistrés en jeu par le Vibey Client.",
         "Filtre par instance pour ne voir que les images d'un jeu.",
-        "Clique sur une image ou un clip pour l'afficher en grand, le copier ou ouvrir son dossier."
+        "Clique sur une image pour l'afficher en grand, la copier ou ouvrir son dossier."
       ],
       "tips": [
         "Prends des captures en jeu avec F2."
       ],
-      "keywords": "capture image vidéo clip galerie enregistrement"
+      "keywords": "capture image galerie enregistrement"
     },
     "waitlist": {
       "title": "Liste d'attente de la bêta Vibe",
-      "summary": "Vibe (amis, chat, hébergement, cosmétiques, Vibey Client) est en bêta. Pour participer, tu rejoins une liste d'attente et l'équipe te fait entrer.",
+      "summary": "Vibe (amis, chat, hébergement) est en bêta. Pour participer, tu rejoins une liste d'attente et l'équipe te fait entrer.",
       "steps": [
         "Ouvre Paramètres → Vibe et compte.",
         "Connecte-toi à Vibe avec ton compte Minecraft.",
         "Rejoins la liste d'attente. Ton statut s'affiche ensuite dans cette section.",
-        "Dès que l'équipe t'accepte, les amis, l'hébergement, les cosmétiques et le Vibey Client fonctionnent."
+        "Dès que l'équipe t'accepte, les amis, le chat et l'hébergement fonctionnent."
       ],
       "tips": [
         "Le launcher marche entièrement sans Vibe : instances, mods, modpacks et serveurs.",
@@ -438,7 +433,7 @@
       "steps": [
         {
           "title": "Tes mondes",
-          "text": "Lance le monde avec le Vibey Client et choisis « Ouvrir aux amis » en jeu. Vibe Relay fait le reste."
+          "text": "Tes mondes sont ici. Pour jouer avec des amis, fais-en ton propre serveur dans « Serveurs », avec Vibe Relay comme connexion."
         },
         {
           "title": "Lien de jeu",
@@ -481,10 +476,6 @@
         {
           "title": "Tes skins",
           "text": "Envoie de nouveaux skins ou choisis-en un enregistré et applique-le."
-        },
-        {
-          "title": "Cosmétiques",
-          "text": "Les capes, chapeaux et emotes pour le Vibey Client sont ici."
         }
       ]
     },
@@ -509,10 +500,6 @@
       "title": "Galerie",
       "steps": [
         {
-          "title": "Captures et clips",
-          "text": "Passe ici des images aux clips du Vibey Client."
-        },
-        {
           "title": "Filtrer par instance",
           "text": "N'affiche que les images d'une instance précise."
         },
@@ -531,7 +518,7 @@
         },
         {
           "title": "Ton accès",
-          "text": "Ton statut s'affiche ici. Une fois accepté, les amis, l'hébergement et les cosmétiques fonctionnent."
+          "text": "Ton statut s'affiche ici. Une fois accepté, les amis, le chat et l'hébergement fonctionnent."
         }
       ]
     },

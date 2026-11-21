@@ -293,7 +293,7 @@
   "vibe.delete.text": "Isso não pode ser desfeito. Será excluído:",
   "vibe.delete.item.friends": "Amizades, pedidos e bloqueios",
   "vibe.delete.item.chats": "Participação em chats e suas mensagens",
-  "vibe.delete.item.packs": "Modpacks compartilhados e cosméticos enviados",
+  "vibe.delete.item.packs": "Modpacks compartilhados e envios antigos de cosméticos",
   "vibe.delete.item.devices": "Dispositivos conectados e configurações",
   "vibe.delete.type": "Digite “{name}” para confirmar",
   "vibe.delete.confirm": "Excluir para sempre",

@@ -100,19 +100,15 @@ const en: HelpContent = {
       keywords: "backup restore world snapshot undo",
     },
     hosting: {
-      title: "Host a world with friends",
-      summary: "With the Vibe Relay your friends can join your world without port forwarding. A play link invites them straight away with the right modpack.",
+      title: "Play with friends",
+      summary: "With your own server and the Vibe Relay, friends play with you without port forwarding. If you get a play link, the launcher sets up the right modpack.",
       steps: [
-        "Start your instance with the Vibey Client (instance settings → Client).",
-        "Open your world in game and choose “Open to friends”. The client connects to the Vibe Relay.",
-        "The launcher shows a bar “You're hosting …” with the play link. Copy it or send it straight to friends.",
-        "Your friends open the link. Their launcher sets up the matching modpack and connects them right into your world.",
-        "For a server that keeps running without you, create one under “Servers” and pick “Vibe Relay” as connection.",
+        "Open “Servers” in the sidebar and click “New server”. You can take over a singleplayer world as the server world.",
+        "Choose “Vibe Relay” as the connection. Then it works without port forwarding.",
+        "Start the server and invite friends directly from “Friends”.",
+        "Got a play link from someone? Just open it. The launcher sets up the right modpack and connects you.",
       ],
-      tips: [
-        "Hosting needs Vibe (Settings → Vibe & account). Vibe is in beta right now, see “Vibe beta waitlist”.",
-        "Play links expire when you stop hosting, after 12 hours at the latest.",
-      ],
+      tips: ["Hosting needs Vibe (Settings → Vibe & account). Vibe is in beta right now, see “Vibe beta waitlist”."],
       keywords: "friends multiplayer relay invite link play link share lan host",
     },
     servers: {
@@ -129,19 +125,15 @@ const en: HelpContent = {
       keywords: "server paper spigot console whitelist plugin connection",
     },
     skins: {
-      title: "Skins and cosmetics",
-      summary: "Change your skin right in the launcher. Cosmetics like capes, hats and emotes are visible to other players with the Vibey Client.",
+      title: "Skins",
+      summary: "Change your skin right in the launcher, with a 3D preview and your own skin library.",
       steps: [
         "Open “Skins” in the sidebar or via the account button at the top right.",
         "Upload a skin or pick one from your library. The 3D preview shows how it looks.",
         "Choose between the classic and slim model and click “Apply”.",
-        "For cosmetics, open “Cosmetics” in the sidebar, pick items and save your outfit.",
       ],
-      tips: [
-        "To change your skin you need to be signed in with your Microsoft account.",
-        "Cosmetics need Vibe and the Vibey Client in the instance.",
-      ],
-      keywords: "skin cape cosmetics emote look",
+      tips: ["To change your skin you need to be signed in with your Microsoft account."],
+      keywords: "skin cape look",
     },
     modsets: {
       title: "Mod sets",
@@ -156,25 +148,24 @@ const en: HelpContent = {
       keywords: "set list collection favourite mods apply",
     },
     gallery: {
-      title: "Gallery and clips",
-      summary: "The gallery collects all screenshots and clips from your instances in one place.",
+      title: "Gallery",
+      summary: "The gallery collects all screenshots from your instances in one place.",
       steps: [
         "Open “Gallery” in the sidebar.",
-        "Switch between “Screenshots” and “Clips” at the top. Clips are recorded in game by the Vibey Client.",
         "Filter by instance to only see pictures from one game.",
-        "Click a picture or clip to view it large, copy it or open its folder.",
+        "Click a picture to view it large, copy it or open its folder.",
       ],
       tips: ["Take screenshots in game with F2."],
-      keywords: "screenshot picture video clip gallery recording",
+      keywords: "screenshot picture gallery capture",
     },
     waitlist: {
       title: "Vibe beta waitlist",
-      summary: "Vibe (friends, chat, hosting, cosmetics, Vibey Client) is in beta. To take part you join a waitlist and the team lets you in.",
+      summary: "Vibe (friends, chat, hosting) is in beta. To take part you join a waitlist and the team lets you in.",
       steps: [
         "Open Settings → Vibe & account.",
         "Sign in to Vibe with your Minecraft account.",
         "Join the waitlist. Your status is shown in this section afterwards.",
-        "As soon as the team approves you, friends, hosting, cosmetics and the Vibey Client work.",
+        "As soon as the team approves you, friends, chat and hosting work.",
       ],
       tips: [
         "The launcher itself works fully without Vibe: instances, mods, modpacks and servers.",
@@ -341,7 +332,7 @@ const en: HelpContent = {
     hosting: {
       title: "Play with friends",
       steps: [
-        { title: "Your worlds", text: "Start the world with the Vibey Client and choose “Open to friends” in game. The Vibe Relay does the rest." },
+        { title: "Your worlds", text: "Your worlds live here. To play with friends, turn one into your own server under “Servers”, with the Vibe Relay as connection." },
         { title: "Play link", text: "While you're hosting, your play link shows here. Copy it or send it straight to friends." },
         { title: "Friends", text: "See who's online and invite friends right into your world." },
         { title: "Your own server", text: "Should the world keep running without you? Create a server and pick “Vibe Relay” as connection." },
@@ -360,7 +351,6 @@ const en: HelpContent = {
       steps: [
         { title: "Preview", text: "This is how your skin looks right now. Drag the character to rotate it." },
         { title: "Your skins", text: "Upload new skins or pick a saved one and apply it." },
-        { title: "Cosmetics", text: "Capes, hats and emotes for the Vibey Client are here." },
       ],
     },
     modsets: {
@@ -374,7 +364,6 @@ const en: HelpContent = {
     gallery: {
       title: "Gallery",
       steps: [
-        { title: "Screenshots and clips", text: "Switch between pictures and the Vibey Client's clips here." },
         { title: "Filter by instance", text: "Only show pictures from a specific instance." },
         { title: "View", text: "Click a picture to open it large, copy it or show it in its folder." },
       ],
@@ -383,7 +372,7 @@ const en: HelpContent = {
       title: "Vibe beta",
       steps: [
         { title: "Vibe & account", text: "Sign in to Vibe here. Vibe is in beta, you join a waitlist first." },
-        { title: "Your access", text: "Your status is shown here. Once approved, friends, hosting and cosmetics work." },
+        { title: "Your access", text: "Your status is shown here. Once approved, friends, chat and hosting work." },
       ],
     },
     feedback: {

@@ -11,7 +11,7 @@
   "usab.expert.hooks": "Comandos de inicialização e wrappers (para scripts antes e depois do jogo) ficam no modo avançado.",
   "usab.expert.guide": "Este guia é sobre um recurso disponível só no modo avançado.",
   "usab.servers.title": "Seus próprios servidores ficam no modo avançado",
-  "usab.servers.text": "Aqui você configura servidores permanentes para muitos jogadores. Para jogar com amigos, normalmente “Hospedar mundo” em um mundo já basta – e isso também funciona no modo simples.",
+  "usab.servers.text": "Aqui você configura servidores permanentes – também para amigos pelo Vibe Relay, sem redirecionar portas.",
   "onb.mode.simple.title": "Sou novo aqui",
   "onb.mode.expert.title": "Já manjo",
   "onb.mode.expert.badge": "Modo avançado",

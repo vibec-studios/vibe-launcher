@@ -396,7 +396,7 @@ function vibePreview(l: PlayLink): JoinPreview {
     pack_version: vp.version,
     mods: 0,
     pack_files: vp.file_count,
-    client_pack: target ? null : "vibey",
+    client_pack: null,
     download_bytes: null,
     game_download: !target || !same,
     manual: [],

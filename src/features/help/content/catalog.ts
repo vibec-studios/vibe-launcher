@@ -116,7 +116,6 @@ export const TOURS: TourDef[] = [
     steps: [
       { targets: ["skins-viewer"], route: "/skins" },
       { targets: ["skins-library"] },
-      { targets: ["cosmetics"], optional: true },
     ],
   },
   {
@@ -132,8 +131,7 @@ export const TOURS: TourDef[] = [
     id: "gallery",
     guide: "gallery",
     steps: [
-      { targets: ["gallery-switch"], route: "/screenshots" },
-      { targets: ["gallery-filter"], optional: true },
+      { targets: ["gallery-filter"], route: "/screenshots" },
       { targets: ["gallery-grid"], optional: true },
     ],
   },

@@ -158,5 +158,3 @@ nicht, gehen diese Werte auf Standard zurück, sonst bleiben eigene Werte erhalt
 - MOTD-Vorschau nutzt Minecraft-Farben (für dunklen Grund gedacht).
 - Standard/Winter/Graphit behalten in v1 ihren bisherigen, schwächeren Tertiärtext (v1 bleibt unverändert);
   v2 hebt ihn an.
-- Cosmetics: Kategorie-Leiste scrollt bei 1280 px in v2 seitlich (gewollter Scroll-Streifen, wie v1 bei
-  schmaleren Fenstern).

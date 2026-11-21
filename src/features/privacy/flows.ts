@@ -18,7 +18,6 @@ export const FLOWS: Flow[] = [
   { id: "serversw", group: "needed", hosts: ["fill.papermc.io", "api.purpurmc.org", "hangar.papermc.io"] },
   { id: "github", group: "auto", hosts: ["github.com"], switchKey: "privacy.sw.updates" },
   { id: "vibe", group: "auto", hosts: ["vibe.axolite.app"], switchKey: "privacy.sw.vibe" },
-  { id: "vibey", group: "auto", hosts: ["vibe.axolite.app"], switchKey: "privacy.sw.vibe" },
   { id: "discord", group: "auto", hosts: ["Discord-App"], switchKey: "privacy.sw.discord" },
   { id: "capes", group: "auto", hosts: ["api.minecraftcapes.net"], switchKey: "privacy.sw.capes" },
   { id: "hosting", group: "auto", hosts: ["relay.axolite.cc", "api.playit.gg"] },

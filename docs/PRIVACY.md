@@ -47,7 +47,7 @@ SHA-1-/Murmur2-Prüfsummen aller Inhaltsdateien, MC-Version, Loader), Status-Pin
 | MinecraftCapes | eigene UUID | `minecraftcapes` | **aus** (neu) |
 | Relay / playit.gg | Name, UUID, Server-Einstellungen, Spielverkehr | je Server `connection`/`auto_start` | nur wenn eingerichtet |
 
-**Nur auf Klick:** Feedback (`/api/v1/feedback`, auch bei Vibe aus), mclo.gs, Modpack teilen, Play-Links, Cosmetic-Upload, Blockbench-Plugin.
+**Nur auf Klick:** Feedback (`/api/v1/feedback`, auch bei Vibe aus), mclo.gs, Modpack teilen, Play-Links.
 
 **Bilder von Dritten:** `mc-heads.net/avatar/<uuid>` für fremde Köpfe (`components/PlayerHead.tsx`), beliebige `https:`-Bilder und
 YouTube-nocookie in Projektbeschreibungen (CSP `img-src https:`).

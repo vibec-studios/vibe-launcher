@@ -13,7 +13,7 @@ export default {
     "usab.expert.hooks": "Start-Befehle und Wrapper (für Skripte vor und nach dem Spiel) gibt es im Experten-Modus.",
     "usab.expert.guide": "Diese Anleitung betrifft eine Funktion, die es nur im Experten-Modus gibt.",
     "usab.servers.title": "Eigene Server gibt es im Experten-Modus",
-    "usab.servers.text": "Hier richtest du dauerhafte Server für viele Spieler ein. Um mit Freunden zu spielen, reicht meist „Welt hosten“ in einer Welt – das geht auch im einfachen Modus.",
+    "usab.servers.text": "Hier richtest du dauerhafte Server ein – auch für Freunde über den Vibe Relay, ganz ohne Portfreigabe.",
 
     "onb.mode.simple.title": "Ich bin neu hier",
     "onb.mode.expert.title": "Ich kenne mich aus",
@@ -70,7 +70,7 @@ export default {
     "usab.expert.hooks": "Launch commands and wrappers (for scripts before and after the game) are in Expert mode.",
     "usab.expert.guide": "This guide is about a feature that is only available in Expert mode.",
     "usab.servers.title": "Your own servers are in Expert mode",
-    "usab.servers.text": "This is where you set up permanent servers for many players. To play with friends, “Host world” on a world is usually enough – that works in Simple mode too.",
+    "usab.servers.text": "This is where you set up permanent servers – for friends too, through the Vibe Relay without port forwarding.",
 
     "onb.mode.simple.title": "I'm new here",
     "onb.mode.expert.title": "I know my way around",

@@ -18,9 +18,11 @@ import {
   HardDriveDownload,
   KeyRound,
   LayoutGrid,
+  Link2,
   ListTree,
   LogIn,
   Play,
+  Server as ServerIcon,
   Shirt,
   ShieldCheck,
   Sparkles,
@@ -466,8 +468,8 @@ function VibeStep() {
         {(
           [
             [<Users size={18} key="u" />, "friends"],
-            [<Shirt size={18} key="s" />, "cosmetics"],
-            [<Sparkles size={18} key="c" />, "client"],
+            [<ServerIcon size={18} key="s" />, "hosting"],
+            [<Link2 size={18} key="l" />, "links"],
           ] as const
         ).map(([icon, k]) => (
           <li key={k} className="flex flex-col gap-2 rounded-card bg-surface p-4">

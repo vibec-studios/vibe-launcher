@@ -67,7 +67,7 @@ const de: Glossary = {
   },
   server: {
     title: "Server",
-    text: "Ein Rechner, auf dem eine Welt dauerhaft läuft, damit andere beitreten können. Zum gemeinsamen Spielen reicht meist „Welt hosten“ – eigene Server gibt es im Experten-Modus.",
+    text: "Ein Rechner, auf dem eine Welt dauerhaft läuft, damit andere beitreten können. Eigene Server legst du im Experten-Modus unter „Server“ an.",
   },
   backup: {
     title: "Backup (Sicherung)",
@@ -75,7 +75,7 @@ const de: Glossary = {
   },
   vibe: {
     title: "Vibe",
-    text: "Die Online-Dienste des Launchers: Freunde, Chat, gemeinsam Welten spielen und Cosmetics. Freiwillig und jederzeit abschaltbar.",
+    text: "Die Online-Dienste des Launchers: Freunde, Chat und gemeinsam auf Servern spielen. Freiwillig und jederzeit abschaltbar.",
   },
   seed: {
     title: "Seed",

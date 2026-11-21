@@ -62,7 +62,7 @@ export const ShotThumb = memo(function ShotThumb({ path, className }: { path: st
   );
 });
 
-/** Datumsgruppe (Heute, Gestern, Diese Woche, dann Monat) – für Screenshots und Clips. */
+/** Datumsgruppe (Heute, Gestern, Diese Woche, dann Monat) für Screenshots. */
 export function bucket(ts: number, now: Date): { key: string; label: (t: (k: string) => string, lang: string) => string } {
   const d = new Date(ts);
   const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();

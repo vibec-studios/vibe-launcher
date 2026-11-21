@@ -1,5 +1,5 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ChevronRight, Compass, Home, Images, LibraryBig, Server as ServerIcon, Shirt, Sparkles, Users } from "lucide-react";
+import { ChevronRight, Compass, Home, Images, LibraryBig, Server as ServerIcon, Shirt, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useT } from "@/i18n";
 import { isRunning, useGameStore, useInstance, useInstances, useInstanceTasks, useServer, useServerStore } from "@/lib/queries";
@@ -25,7 +25,6 @@ export const NAV: Record<NavKey, NavDef> = {
   social: { icon: <Users size={20} />, label: "nav.social", go: (nav) => nav({ to: "/social", search: {} }), match: (_, at) => at("/social") },
   discover: { icon: <Compass size={20} />, label: "nav.discover", go: (nav) => nav({ to: "/discover" }), match: (_, at) => at("/discover") || at("/project") },
   skins: { icon: <Shirt size={20} />, label: "nav.skins", go: (nav) => nav({ to: "/skins" }), match: (p) => p === "/skins" },
-  cosmetics: { icon: <Sparkles size={20} />, label: "nav.cosmetics", go: (nav) => nav({ to: "/cosmetics" }), match: (_, at) => at("/cosmetics") },
   screenshots: { icon: <Images size={20} />, label: "nav.screenshots", go: (nav) => nav({ to: "/screenshots" }), match: (p) => p === "/screenshots" },
 };
 
@@ -44,7 +43,7 @@ export function useRailModel() {
   const socialBadge = useSocialBadge();
   const settingsOpen = useSettingsDialog((s) => s.open);
   const keys = sidebar.order.filter(
-    (k) => !sidebar.hidden.includes(k) && !simpleHides.nav(simple, k) && (k !== "social" || vibe.social) && (k !== "cosmetics" || vibe.enabled),
+    (k) => !sidebar.hidden.includes(k) && !simpleHides.nav(simple, k) && (k !== "social" || vibe.social),
   );
   return { nav, path, at, wide, simple, keys, recent, serversRunning, socialBadge, settingsOpen };
 }
@@ -83,8 +82,6 @@ export function usePageTitle(): ReactNode {
   if (path === "/skins") return t("nav.skins");
   if (path === "/screenshots") return t("nav.screenshots");
   if (path === "/social") return t("nav.social");
-  if (path === "/cosmetics") return t("nav.cosmetics");
-  if (path === "/cosmetics/creator") return crumb(t("nav.cosmetics"), t("cos.creator"));
   return null;
 }
 

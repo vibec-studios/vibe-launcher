@@ -19,6 +19,8 @@ Wer etwas ändert, passt diese Datei an und sagt es den anderen.
 
 ## 2. Vibey Client – Verteilung (öffentlich, CORS `*`, kein Login)
 
+> **Eingestellt (21.11.2026):** Der Vibey Client wird nicht mehr weiterentwickelt; der Launcher nutzt diesen Teil nicht mehr. Siehe [VIBEY-CLIENT-EINGESTELLT.md](VIBEY-CLIENT-EINGESTELLT.md).
+
 - `GET /api/v1/client/latest?channel=release|beta` (Standard `release`):
   ```json
   {
@@ -87,6 +89,8 @@ Wer etwas ändert, passt diese Datei an und sagt es den anderen.
 
 ## 3. Eigene Cosmetics einreichen
 
+> **Eingestellt (21.11.2026):** Der Vibey Client wird nicht mehr weiterentwickelt; der Launcher nutzt diesen Teil nicht mehr. Siehe [VIBEY-CLIENT-EINGESTELLT.md](VIBEY-CLIENT-EINGESTELLT.md).
+
 - `POST /api/v1/cosmetics/submissions` – multipart: `bundle` (`.vibey`, gleiche Prüfung und Größenlimits wie der
   Admin-Upload), optional `thumbnail` (PNG 256×256), Felder `name`, `description`. Max. 5 offene Einreichungen pro
   Nutzer, Rate-Limit. Antwort `{ submission }`.
@@ -108,6 +112,8 @@ Wer etwas ändert, passt diese Datei an und sagt es den anderen.
 
 ## 4. Over-the-air-Cosmetics
 
+> **Eingestellt (21.11.2026):** Der Vibey Client wird nicht mehr weiterentwickelt; der Launcher nutzt diesen Teil nicht mehr. Siehe [VIBEY-CLIENT-EINGESTELLT.md](VIBEY-CLIENT-EINGESTELLT.md).
+
 - Neue/geänderte Items brauchen nie ein Client- oder Launcher-Update: alles kommt aus Katalog + `.vibey`-Assets.
 - Gateway-Event `catalog.updated` `{ version }` an alle verbundenen Clients, sobald sich der Katalog ändert
   (Admin-Edit, Freigabe, Zurückziehen). Clients laden dann Katalog neu und fehlende Assets per sha256 nach.
@@ -117,6 +123,8 @@ Wer etwas ändert, passt diese Datei an und sagt es den anderen.
   (nach Reconnect vergleichen; Seed-Änderungen beim Server-Start kommen nur so an).
 
 ## 5. Nametag-Icons
+
+> **Eingestellt (21.11.2026):** Der Vibey Client wird nicht mehr weiterentwickelt; der Launcher nutzt diesen Teil nicht mehr. Siehe [VIBEY-CLIENT-EINGESTELLT.md](VIBEY-CLIENT-EINGESTELLT.md).
 
 - Die bestehende Loadout-Abfrage für Spieler in der Nähe liefert pro Spieler zusätzlich
   `client: "vibey" | null` (aktuell mit dem Vibey Client verbunden oder in den letzten 2 Minuten gesehen) und
@@ -128,6 +136,8 @@ Wer etwas ändert, passt diese Datei an und sagt es den anderen.
   `client == "vibey"`, plus Badge-Icon; per Einstellung abschaltbar.
 
 ## 6. Signierte Loadouts (Server-Kanal absichern)
+
+> **Eingestellt (21.11.2026):** Der Vibey Client wird nicht mehr weiterentwickelt; der Launcher nutzt diesen Teil nicht mehr. Siehe [VIBEY-CLIENT-EINGESTELLT.md](VIBEY-CLIENT-EINGESTELLT.md).
 
 Ziel: Ein veränderter Client kann anderen Spielern über den Server-Kanal (`vibeyclient:loadout`/`emote`, wenn die Mod
 auf dem Server ist) keine Items zeigen, die er nicht besitzt.

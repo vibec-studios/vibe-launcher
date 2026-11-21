@@ -65,7 +65,7 @@
   },
   "server": {
     "title": "Servidor",
-    "text": "Un ordenador que mantiene un mundo en marcha para que otros puedan unirse. Para jugar juntos, normalmente basta con “Alojar mundo”; los servidores propios están en el modo experto."
+    "text": "Un ordenador que mantiene un mundo en marcha para que otros puedan unirse. Los servidores propios los creas en “Servidores”, en el modo experto."
   },
   "backup": {
     "title": "Copia de seguridad",
@@ -73,7 +73,7 @@
   },
   "vibe": {
     "title": "Vibe",
-    "text": "Los servicios online del launcher: amigos, chat, jugar mundos juntos y cosméticos. Son opcionales y se pueden desactivar cuando quieras."
+    "text": "Los servicios online del launcher: amigos, chat y jugar juntos en servidores. Son opcionales y se pueden desactivar cuando quieras."
   },
   "account": {
     "title": "Cuenta de Microsoft",

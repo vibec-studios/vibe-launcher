@@ -382,6 +382,8 @@ function seed(id: string, kind: ContentKind): ContentItem[] {
       else if (variant) it.project_id = `${h.id}-x${i}`;
       items.push(it);
     }
+    if (id === "survival")
+      items.unshift({ file_name: "vibeyclient-fabric-1.21.4-0.3.0.jar", kind: "mod", enabled: true, name: "Vibey Client", version: "0.3.0", description: null, authors: ["Vibe"], icon: null, source: null, project_id: null, version_id: null, size: 2_400_000, modified: Date.now() - 86400_000 * 3, pinned: false, side: "client" });
   } else if (kind === "resourcepack") items = all.modrinth.resourcepack.slice(0, id === "vanilla" ? 0 : 9).map((h, i) => itemFromHit(h, "resourcepack", i, i % 4 !== 2));
   else if (kind === "shader") items = all.modrinth.shader.slice(0, id === "survival" ? 3 : 0).map((h, i) => itemFromHit(h, "shader", i));
   lists.set(k, items);

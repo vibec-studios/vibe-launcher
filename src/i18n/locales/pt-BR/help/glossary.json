@@ -65,7 +65,7 @@
   },
   "server": {
     "title": "Servidor",
-    "text": "Um computador que mantém um mundo rodando para outras pessoas entrarem. Para jogar junto, normalmente “Hospedar mundo” basta – servidores próprios ficam no modo avançado."
+    "text": "Um computador que mantém um mundo rodando para outras pessoas entrarem. Servidores próprios você cria em “Servidores”, no modo avançado."
   },
   "backup": {
     "title": "Backup",
@@ -73,7 +73,7 @@
   },
   "vibe": {
     "title": "Vibe",
-    "text": "Os serviços online do launcher: amigos, chat, jogar mundos juntos e cosméticos. Opcionais e dá para desativar quando quiser."
+    "text": "Os serviços online do launcher: amigos, chat e jogar juntos em servidores. Opcionais e dá para desativar quando quiser."
   },
   "account": {
     "title": "Conta Microsoft",

@@ -1,5 +1,5 @@
 // Instanzseite für Bedrock: gleicher Kopf wie bei Java (Icon, Name, Spielzeit, Spielen), aber nur Add-ons, Welten
-// und Sicherungen – Loader, Java, RAM, Mods, Vibey Client und Server-Hosting gibt es hier nicht.
+// und Sicherungen – Loader, Java, RAM, Mods und Server-Hosting gibt es hier nicht.
 import { useEffect, useState } from "react";
 import { getRouteApi } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";

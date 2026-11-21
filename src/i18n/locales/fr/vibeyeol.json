@@ -1,0 +1,8 @@
+{
+  "vibeyeol.text": "Le Vibey Client n'est plus développé. Tu peux le garder ou le retirer.",
+  "vibeyeol.confirm.title": "Retirer le Vibey Client ?",
+  "vibeyeol.confirm.text": "Le mod est supprimé de cette instance. Tes mondes et réglages sont conservés.",
+  "vibeyeol.removed": "Vibey Client retiré",
+  "vibeyeol.failed": "Impossible de retirer le Vibey Client",
+  "vibeyeol.running": "Ferme le jeu pour le retirer."
+}

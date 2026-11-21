@@ -118,9 +118,8 @@ const screenshotsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/screenshots",
   component: lazyRouteComponent(() => import("@/features/screenshots/ScreenshotsPage"), "ScreenshotsPage"),
-  validateSearch: (s: Record<string, unknown>): { instance?: string; tab?: "clips" } => ({
+  validateSearch: (s: Record<string, unknown>): { instance?: string } => ({
     instance: typeof s.instance === "string" ? s.instance : undefined,
-    tab: s.tab === "clips" ? "clips" : undefined,
   }),
 });
 
@@ -144,21 +143,16 @@ const socialRoute = createRoute({
   }),
 });
 
-// Cosmetics (three.js nur bei Bedarf laden; nur mit Vibe, sonst Umleitung zur Startseite)
-const cosmeticsRoute = createRoute({
+const retiredRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/cosmetics",
-  component: lazyRouteComponent(() => import("@/features/cosmetics/gated"), "CosmeticsRoute"),
-});
-const creatorRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/cosmetics/creator",
-  component: lazyRouteComponent(() => import("@/features/cosmetics/gated"), "CreatorRoute"),
+  path: "/cosmetics/$",
+  beforeLoad: () => {
+    throw redirect({ to: "/", replace: true });
+  },
 });
 
 const routeTree = rootRoute.addChildren([
-  cosmeticsRoute,
-  creatorRoute,
+  retiredRoute,
   socialRoute,
   homeRoute,
   instancesRoute,

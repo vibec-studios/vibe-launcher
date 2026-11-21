@@ -4,7 +4,7 @@
 // `ClientPackPicker` ist die kompakte Auswahl im Dialog „Neue Instanz“.
 import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowUpCircle, Check, Download, ExternalLink, Gem, Sparkles, Trash2, Users, Zap } from "lucide-react";
+import { AlertTriangle, ArrowUpCircle, Check, Download, ExternalLink, Gem, Trash2, Users, Zap } from "lucide-react";
 import { api, errorMessage } from "@/lib/api";
 import { useEvent } from "@/lib/events";
 import { isRunning, useGameState, waitForTask } from "@/lib/queries";
@@ -21,7 +21,6 @@ export const cpk = {
 
 /** Neutrale Icons (kein Branding fremder Clients). */
 const ICONS: Record<string, ReactNode> = {
-  vibey: <Sparkles size={18} />,
   norisk: <Zap size={18} />,
   "norisk-mini": <Zap size={15} />,
   essential: <Users size={18} />,
@@ -44,6 +43,10 @@ export function packName(t: ReturnType<typeof useT>, id: string) {
   return t(`cp.${id}.name`);
 }
 
+const DISCONTINUED = new Set(["vibey"]);
+
+export const offeredPack = (p: ClientPackOffer) => !DISCONTINUED.has(p.id);
+
 /** Packs, die beim Installieren von `offer` weichen müssen (gleiche Gruppe, installiert). */
 function rivals(offer: ClientPackOffer, all: ClientPackOffer[]) {
   return all.filter((o) => o.id !== offer.id && !!o.installed && !!offer.group && o.group === offer.group);
@@ -63,10 +66,9 @@ export async function confirmSwitch(t: ReturnType<typeof useT>, offer: ClientPac
   const others = rivals(offer, all);
   if (!others.length) return false;
   const name = packName(t, offer.id);
-  const vibey = others.some((o) => o.id === "vibey");
   const ok = await confirm({
     title: t("cp.switch.title"),
-    text: vibey ? t("cp.switch.vibey", { new: name }) : t("cp.switch.text", { old: others.map((o) => packName(t, o.id)).join(", "), new: name }),
+    text: t("cp.switch.text", { old: others.map((o) => packName(t, o.id)).join(", "), new: name }),
     confirmLabel: t("cp.switch.confirm"),
   });
   return ok ? true : null;
@@ -104,11 +106,10 @@ export function ClientPacks({ instance, only, compact }: { instance: Instance; o
   }
   if (!q.data) return <p className="px-1 text-[13px] text-danger">{errorMessage(q.error)}</p>;
   const data = q.data;
-  const visible = data.packs.filter((p) => (!only || only.includes(p.id)) && !(p.id === "vibey" && !data.vibe_enabled && !p.installed));
+  const visible = data.packs.filter((p) => (!only || only.includes(p.id)) && offeredPack(p));
 
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: cpk.instance(instance.id) });
-    void qc.invalidateQueries({ queryKey: ["vibey"] });
   };
   const run = async (id: string, f: () => Promise<unknown>) => {
     setBusy(id);
@@ -142,7 +143,7 @@ export function ClientPacks({ instance, only, compact }: { instance: Instance; o
       {groups.map((g) => (
         <section key={g.key} className="flex flex-col gap-2">
           {!compact && <h3 className="text-[16px] font-semibold text-text">{t(`cp.group.${g.key}`)}</h3>}
-          {/* Ein einzelnes Pack (z. B. Offiziell: nur Vibey) nimmt die ganze Breite statt einer halben Kachel */}
+          {/* Ein einzelnes Pack nimmt die ganze Breite statt einer halben Kachel */}
           <div className={cn("grid gap-3", compact || g.items.length === 1 ? "grid-cols-1" : "grid-cols-2 max-[980px]:grid-cols-1")}>
             {g.items.map((o) => (
               <PackCard
@@ -320,7 +321,7 @@ export function ClientPackPicker({ mc, loader, value, onChange }: { mc: string |
     enabled: !!mc && loader !== "vanilla",
     staleTime: 5 * 60_000,
   });
-  const packs = (q.data?.packs ?? []).filter((p) => !(p.id === "vibey" && !q.data?.vibe_enabled));
+  const packs = (q.data?.packs ?? []).filter(offeredPack);
   const selected = packs.find((p) => p.id === value);
   useEffect(() => {
     if (value && q.data && selected?.available !== true) onChange(null);

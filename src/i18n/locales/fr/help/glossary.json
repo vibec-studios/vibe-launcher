@@ -65,7 +65,7 @@
   },
   "server": {
     "title": "Serveur",
-    "text": "Un ordinateur qui fait tourner un monde pour que d'autres puissent le rejoindre. Pour jouer ensemble, « Héberger le monde » suffit généralement ; tes propres serveurs sont dans le mode expert."
+    "text": "Un ordinateur qui fait tourner un monde pour que d'autres puissent le rejoindre. Tu crées tes propres serveurs dans « Serveurs », en mode expert."
   },
   "backup": {
     "title": "Sauvegarde",
@@ -73,7 +73,7 @@
   },
   "vibe": {
     "title": "Vibe",
-    "text": "Les services en ligne du launcher : amis, chat, mondes à plusieurs et cosmétiques. Facultatifs et désactivables à tout moment."
+    "text": "Les services en ligne du launcher : amis, chat et jeu à plusieurs sur des serveurs. Facultatifs et désactivables à tout moment."
   },
   "account": {
     "title": "Compte Microsoft",

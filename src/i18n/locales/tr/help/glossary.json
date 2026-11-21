@@ -65,7 +65,7 @@
   },
   "server": {
     "title": "Sunucu",
-    "text": "Başkalarının katılabilmesi için bir dünyayı açık tutan bilgisayar. Birlikte oynamak için genelde “Dünyayı barındır” yeterlidir – kendi sunucuların uzman modunda."
+    "text": "Başkalarının katılabilmesi için bir dünyayı açık tutan bilgisayar. Kendi sunucularını uzman modunda “Sunucular” altında oluşturursun."
   },
   "backup": {
     "title": "Yedek",
@@ -73,7 +73,7 @@
   },
   "vibe": {
     "title": "Vibe",
-    "text": "Launcher'ın çevrimiçi hizmetleri: arkadaşlar, sohbet, dünyalarda birlikte oynama ve kozmetikler. İsteğe bağlıdır ve istediğin zaman kapatılabilir."
+    "text": "Launcher'ın çevrimiçi hizmetleri: arkadaşlar, sohbet ve sunucularda birlikte oynama. İsteğe bağlıdır ve istediğin zaman kapatılabilir."
   },
   "account": {
     "title": "Microsoft hesabı",

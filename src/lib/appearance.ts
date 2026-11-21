@@ -11,7 +11,7 @@ import type { Appearance, BackgroundGradient, NavKey, ThemeId } from "./types";
 import { onAccent } from "./color";
 import { pixelScene } from "./pixelScene";
 
-export const NAV_KEYS: NavKey[] = ["home", "instances", "servers", "social", "discover", "skins", "cosmetics", "screenshots"];
+export const NAV_KEYS: NavKey[] = ["home", "instances", "servers", "social", "discover", "skins", "screenshots"];
 
 export const STATUS_DEFAULT: Appearance["status"] = { ok: "#3fe0c5", warn: "#ffb547", danger: "#ff5470" };
 

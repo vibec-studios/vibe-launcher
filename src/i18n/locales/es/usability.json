@@ -11,7 +11,7 @@
   "usab.expert.hooks": "Los comandos de inicio y los wrappers (para scripts antes y después del juego) están en el modo experto.",
   "usab.expert.guide": "Esta guía trata de una función que solo está disponible en el modo experto.",
   "usab.servers.title": "Tus propios servidores están en el modo experto",
-  "usab.servers.text": "Aquí configuras servidores permanentes para muchos jugadores. Para jugar con amigos, normalmente basta con “Alojar mundo” en un mundo, y eso también funciona en el modo simple.",
+  "usab.servers.text": "Aquí configuras servidores permanentes, también para amigos a través de Vibe Relay y sin redirigir puertos.",
   "onb.mode.simple.title": "Soy nuevo aquí",
   "onb.mode.expert.title": "Ya sé cómo va esto",
   "onb.mode.expert.badge": "Modo experto",

@@ -32,7 +32,6 @@ import { DeferredShellHosts, FriendsPanelHost } from "./DeferredShellHosts";
 import { LibraryPreload } from "./LibraryPreload";
 import { AuthBridge } from "@/features/accounts/AuthBridge";
 import { VibeBridge } from "@/features/social/VibeBridge";
-import { CosmeticsBridge } from "@/features/cosmetics/CosmeticsBridge";
 import { FriendsPanelToggle } from "@/features/social/FriendsPanelToggle";
 import { openSettings, useSettingsDialog } from "@/features/settings/store";
 import { AppearanceHost } from "./AppearanceHost";
@@ -294,7 +293,6 @@ export function Shell() {
       <VibeExtrasHost />
       <DeferredShellHosts />
       <VibeBridge />
-      <CosmeticsBridge />
       <AuthBridge />
       <SettingsHost />
       <SimpleModeHint />

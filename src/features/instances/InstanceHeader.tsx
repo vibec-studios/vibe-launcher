@@ -88,7 +88,7 @@ export function InstanceHeader({
   accent: string;
   tabs: ReactNode;
   notices?: ReactNode;
-  /** Kleine Statussymbole neben dem Namen (z. B. Vibey Client aktiv) */
+  /** Kleine Statussymbole neben dem Namen */
   badge?: ReactNode;
   settingsActive?: boolean;
   onSettings: () => void;
