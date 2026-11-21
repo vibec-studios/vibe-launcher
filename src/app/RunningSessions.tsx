@@ -75,6 +75,7 @@ function Row({ run, inst, now, onDone }: { run: GameState; inst: Instance | unde
           <span className="block truncate text-[11.5px] text-muted">
             {run.account_name ?? t("sess.no_account")}
             <span className="text-dim"> · {run.state === "preparing" || !run.started_at ? t("sess.preparing") : formatUptime(now - run.started_at)}</span>
+            {run.resumed ? <span className="text-dim"> · {t(run.resumed === "external" ? "sess.resumed_external" : "sess.resumed")}</span> : null}
           </span>
         </span>
       </button>

@@ -6,6 +6,7 @@ pub mod logscan;
 pub mod notify;
 pub mod overlay;
 pub mod registry;
+pub mod resume;
 pub mod runtime;
 pub mod settings;
 pub mod window;

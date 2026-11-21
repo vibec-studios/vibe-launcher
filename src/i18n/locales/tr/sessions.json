@@ -42,5 +42,7 @@
   "console.lvl.warn": "Uyarı",
   "console.lvl.error": "Hata",
   "console.lvl.debug": "Debug",
-  "console.lvl.launcher": "Launcher"
+  "console.lvl.launcher": "Launcher",
+  "sess.resumed": "devam ettirildi",
+  "sess.resumed_external": "harici başlatıldı"
 }

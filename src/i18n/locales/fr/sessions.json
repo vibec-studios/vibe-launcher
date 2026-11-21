@@ -42,5 +42,7 @@
   "console.lvl.warn": "Avertissement",
   "console.lvl.error": "Erreur",
   "console.lvl.debug": "Debug",
-  "console.lvl.launcher": "Launcher"
+  "console.lvl.launcher": "Launcher",
+  "sess.resumed": "reprise",
+  "sess.resumed_external": "lancée en externe"
 }

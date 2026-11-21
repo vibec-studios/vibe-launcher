@@ -16,6 +16,8 @@ mod query;
 mod runs;
 mod lifecycle;
 mod attach;
+mod finish;
+mod adopted;
 
 
 /// Verwaltet laufende Spielsitzungen und ihre Log-Puffer. Schlüssel (`key`) ist eine Run-ID oder eine

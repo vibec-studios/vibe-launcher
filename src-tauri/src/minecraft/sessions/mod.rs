@@ -72,6 +72,7 @@ impl Registry {
             account_uuid: None,
             world: opts.world.map(str::to_string),
             server: opts.server.map(str::to_string),
+            resumed: None,
         };
         self.map.insert(
             run_id,
@@ -262,6 +263,8 @@ pub fn rewrite_log_config(xml: &str, slot: u32) -> Option<String> {
     let out = xml.replace("fileName=\"logs/", &format!("fileName=\"{dir}")).replace("filePattern=\"logs/", &format!("filePattern=\"{dir}"));
     (out != xml).then_some(out)
 }
+
+mod adopt;
 
 #[cfg(test)]
 mod tests;

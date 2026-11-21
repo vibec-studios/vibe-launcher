@@ -30,6 +30,7 @@ export function SessionMenuItems({ instance, runs }: { instance: Instance; runs:
             <DropdownItem key={r.run_id} danger icon={r.state === "preparing" ? <Spinner size={11} /> : <Square size={11} fill="currentColor" />} onSelect={() => killInstance(instance, r.run_id)}>
               {t("sess.stop_one", { n: r.slot })}
               {r.account_name ? <span className="text-dim"> · {r.account_name}</span> : null}
+              {r.resumed ? <span className="text-dim"> · {t(r.resumed === "external" ? "sess.resumed_external" : "sess.resumed")}</span> : null}
             </DropdownItem>
           ))}
         </>
