@@ -3,7 +3,7 @@
 import * as Popover from "@radix-ui/react-popover";
 import { CalendarHeart, Ellipsis, MessageSquare, Play, Send } from "lucide-react";
 import { Component, lazy, Suspense, useState, type ReactNode } from "react";
-import { Button, DropdownMenu, IconButton, cn } from "@/components/ui";
+import { Button, DropdownMenu, IconButton } from "@/components/ui";
 import { useT } from "@/i18n";
 import { formatDate } from "@/lib/format";
 import type { Friend, HostSession } from "@/lib/vibe-sdk";
@@ -26,6 +26,7 @@ class ViewerBoundary extends Component<{ fallback: ReactNode; children: ReactNod
 }
 
 export function ProfilePopover({ friend, host, children }: { friend: Friend; host?: HostSession; children: ReactNode }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
@@ -37,8 +38,12 @@ export function ProfilePopover({ friend, host, children }: { friend: Friend; hos
           sideOffset={4}
           alignOffset={56}
           collisionPadding={12}
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          className="z-[60] w-[300px] overflow-hidden rounded-card bg-overlay shadow-e3 outline-none data-[state=open]:animate-pop-in"
+          aria-label={t("social.profile.open", { name: friend.user.name })}
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            (e.currentTarget as HTMLElement | null)?.focus({ preventScroll: true });
+          }}
+          className="scroll z-[60] max-h-[var(--radix-popover-content-available-height)] w-[300px] max-w-[var(--radix-popover-content-available-width)] overflow-y-auto rounded-card bg-overlay shadow-e3 outline-none data-[state=open]:animate-pop-in"
         >
           {open && <ProfileCard friend={friend} host={host} close={() => setOpen(false)} />}
         </Popover.Content>
@@ -56,6 +61,10 @@ function ProfileCard({ friend, host, close }: { friend: Friend; host?: HostSessi
   const p = parts(friend.presence);
   const playing = isPlaying(friend.presence);
   const offline = friend.presence.status === "offline";
+  const message = () => {
+    close();
+    void startDm(u.id);
+  };
   const bigHead = (
     <div className="grid h-full place-items-center">
       <Avatar user={u} size={96} />
@@ -141,18 +150,15 @@ function ProfileCard({ friend, host, close }: { friend: Friend; host?: HostSessi
               {t("social.accept.join")}
             </Button>
           ) : null}
-          <Button
-            size="sm"
-            variant={host ? "ghost" : "primary"}
-            icon={<MessageSquare size={13} />}
-            className={cn(!host && "flex-1")}
-            onClick={() => {
-              close();
-              void startDm(u.id);
-            }}
-          >
-            {t("social.friend.message")}
-          </Button>
+          {host ? (
+            <IconButton label={t("social.friend.message")} tip size="sm" onClick={message}>
+              <MessageSquare size={14} />
+            </IconButton>
+          ) : (
+            <Button size="sm" variant="primary" icon={<MessageSquare size={13} />} className="flex-1" onClick={message}>
+              {t("social.friend.message")}
+            </Button>
+          )}
           {!host && (
             <IconButton
               label={t("social.friend.invite")}

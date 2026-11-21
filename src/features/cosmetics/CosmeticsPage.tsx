@@ -92,7 +92,7 @@ export function CosmeticsPage() {
 /** Kompakte Werkzeugleiste: links Kategorien/Suche/Filter, rechts Aktionen. */
 function Toolbar({ children, actions }: { children?: ReactNode; actions: ReactNode }) {
   return (
-    <div className="flex h-12 shrink-0 items-center gap-2 px-6">
+    <div className="flex h-12 shrink-0 items-center gap-2 px-6 [[data-design=v2]_&]:h-auto [[data-design=v2]_&]:min-h-12 [[data-design=v2]_&]:py-1">
       {children}
       <div className="flex-1" />
       {actions}
@@ -246,8 +246,7 @@ function Wardrobe({ access, actions }: { access: Exclude<Access, "loading">; act
           </>
         }
       >
-        {/* Kategorien als ruhige Segmente mit Anzahl (scrollt waagerecht, wenn es eng wird) */}
-        <div className="flex min-w-0 shrink gap-0.5 overflow-x-auto rounded-ctl bg-field p-0.5 [scrollbar-width:none]" role="tablist" aria-label={t("cos.categories")}>
+        <div className="flex min-w-0 shrink gap-0.5 overflow-x-auto rounded-ctl bg-field p-0.5 [scrollbar-width:none] [[data-design=v2]_&]:flex-wrap [[data-design=v2]_&]:overflow-visible" role="tablist" aria-label={t("cos.categories")}>
           {(["all", ...CATEGORIES] as Filter[]).map((c) => (
             <button
               key={c}
@@ -264,7 +263,7 @@ function Wardrobe({ access, actions }: { access: Exclude<Access, "loading">; act
             </button>
           ))}
         </div>
-        <SearchInput value={q} onChange={setQ} placeholder={t("cos.search")} className="w-[220px] min-w-[150px] shrink-0" />
+        <SearchInput value={q} onChange={setQ} placeholder={t("cos.search")} className="w-[220px] min-w-[150px] shrink-0 [[data-design=v2]_&]:w-[190px]" />
         {!guest && (
           <DropdownMenu
             align="start"
@@ -326,7 +325,7 @@ function Wardrobe({ access, actions }: { access: Exclude<Access, "loading">; act
 
         {/* Vorschau + Details */}
         <aside className="flex w-[380px] shrink-0 flex-col overflow-hidden rounded-card bg-surface xl:w-[420px]">
-          <Viewer3D className="min-h-[300px] flex-1" bundles={bundles} emote={emoteBundle} focus={focus} focusKey={selected ?? ""} skin={skin} />
+          <Viewer3D className="min-h-[min(300px,55%)] flex-1" bundles={bundles} emote={emoteBundle} focus={focus} focusKey={selected ?? ""} skin={skin} />
           <Details
             item={sel}
             lang={lang}
@@ -449,7 +448,7 @@ function Details({
     // Aktueller Look
     const worn = COSMETIC_SLOTS.map((s) => loadout.slots[s]).filter((id): id is string => !!id);
     return (
-      <div className="shrink-0 px-4 pb-4 pt-3">
+      <div className="scroll max-h-[45%] shrink-0 px-4 pb-4 pt-3">
         <div className="mb-2.5 flex items-baseline justify-between">
           <h3 className="text-section text-text">{t("cos.look")}</h3>
           <span className="text-meta text-dim">{t("cos.look_count", { n: worn.length })}</span>
@@ -476,7 +475,7 @@ function Details({
   const desc = itemDesc(item, lang);
   const slotLabel = t(`cos.slot.${item.kind === "emote" ? "emote" : item.slot}`);
   return (
-    <div className="shrink-0 px-4 pb-4 pt-3 animate-fade-in">
+    <div className="scroll max-h-[45%] shrink-0 px-4 pb-4 pt-3 animate-fade-in">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-title text-text" title={itemName(item, lang)}>

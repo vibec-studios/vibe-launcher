@@ -60,14 +60,14 @@ export function CreatorPage() {
         <Tabs<Tab>
           value={tab}
           onChange={setTab}
-          className="h-12! min-w-0 flex-1 border-b-0"
+          className="h-12! shrink-0 border-b-0 [&>button]:whitespace-nowrap"
           items={[
             { value: "tools", label: t("cre.tab.tools"), icon: <Wrench size={14} /> },
             { value: "upload", label: t("cre.tab.upload"), icon: <Upload size={14} /> },
             { value: "submissions", label: t("cre.tab.submissions"), icon: <Inbox size={14} />, badge: pending || undefined },
           ]}
         />
-        <span className="hidden truncate text-meta text-dim xl:block">{t("cre.lead")}</span>
+        <span className="ml-auto hidden min-w-0 truncate text-meta text-dim xl:block">{t("cre.lead")}</span>
       </header>
       <div className="scroll min-h-0 flex-1 bg-panel">
         {tab === "tools" ? (
