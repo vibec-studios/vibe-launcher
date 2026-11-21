@@ -47,6 +47,8 @@ pub mod sets;
 pub mod sets_apply;
 pub mod perf;
 pub mod modpack;
+pub mod modpack_from;
+pub mod packwiz;
 pub mod mroverrides;
 pub mod autoupdate;
 pub mod worlds;

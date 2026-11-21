@@ -2,6 +2,7 @@
 // Öffnen überall per `openSettings(tab)` (store.ts); die alte Route `/settings?tab=…` leitet hierher um.
 // Alles speichert automatisch; `settings://changed` hält den Cache aktuell.
 import { DataDirRow } from "./DataDirMove";
+import { ModrinthLinksCard } from "@/features/mrlinks/ModrinthLinksCard";
 import * as D from "@radix-ui/react-dialog";
 import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -364,6 +365,8 @@ function GeneralTab({ s, update }: TabProps) {
           <Switch checked={s.auto_update_content} onChange={(v) => update({ auto_update_content: v })} label={t("settings.auto_update")} />
         </SettingRow>
       </SettingsCard>
+
+      <ModrinthLinksCard />
 
       {apiKeys && (
       <SettingsCard title={t("settings.section.integrations")}>

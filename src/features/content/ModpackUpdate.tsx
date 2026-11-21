@@ -9,6 +9,7 @@ import { api, errorMessage } from "@/lib/api";
 import { formatLoader } from "@/lib/format";
 import { qk, queryClient, waitForTask } from "@/lib/queries";
 import type { Instance, ModpackPreviewFile } from "@/lib/types";
+import { packUpdateApi, type PackInput } from "@/features/packupdate/api";
 
 export function useModpackUpdate(instance: Instance) {
   const isPack = !!instance.source?.project_id;
@@ -23,11 +24,11 @@ export function useModpackUpdate(instance: Instance) {
 
 const changeIcon = { added: <Plus size={13} className="text-ok" />, updated: <RefreshCw size={13} className="text-accent" />, removed: <Minus size={13} className="text-danger" /> };
 
-export function ModpackUpdateDialog({ instance, versionId, onClose }: { instance: Instance; versionId: string | null; onClose: () => void }) {
+export function ModpackUpdateDialog({ instance, versionId, input, onClose }: { instance: Instance; versionId: string | null; input?: PackInput; onClose: () => void }) {
   const t = useT();
   const q = useQuery({
-    queryKey: ["modpack-preview", instance.id, versionId],
-    queryFn: () => api.modpackUpdatePreview(instance.id, versionId),
+    queryKey: ["modpack-preview", instance.id, versionId, input ?? null],
+    queryFn: () => (input ? packUpdateApi.preview(instance.id, input) : api.modpackUpdatePreview(instance.id, versionId)),
     retry: 0,
     staleTime: 60_000,
   });
@@ -42,7 +43,7 @@ export function ModpackUpdateDialog({ instance, versionId, onClose }: { instance
     if (!p) return;
     setBusy(true);
     try {
-      const id = await api.modpackUpdate(instance.id, p.target.id);
+      const id = input ? await packUpdateApi.update(instance.id, input) : await api.modpackUpdate(instance.id, p.target.id);
       onClose();
       waitForTask(id)
         .then(() => {

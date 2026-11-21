@@ -36,7 +36,7 @@ export interface LaunchHooks {
   wrapper: string | null;
 }
 
-export type PackSourceKind = "modrinth" | "curseforge" | "vlpack" | "prism" | "local" | "vibe";
+export type PackSourceKind = "modrinth" | "curseforge" | "vlpack" | "prism" | "local" | "vibe" | "packwiz";
 
 export interface PackSource {
   kind: PackSourceKind;
@@ -1118,7 +1118,8 @@ export type AppAction =
   | { kind: "launch"; instance_id: string }
   | { kind: "join"; address: string; instance_id: string | null }
   | { kind: "invite"; id: string }
-  | { kind: "play_link"; code: string };
+  | { kind: "play_link"; code: string }
+  | { kind: "install_version"; source: string; version_id: string };
 
 // ------------------------------------------------------------------ Spiel-Links (docs/PLAY-LINKS.md)
 

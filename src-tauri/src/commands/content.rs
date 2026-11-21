@@ -328,6 +328,24 @@ pub async fn modpack_update(state: State<'_, AppState>, instance_id: String, ver
     Ok(state.tasks.spawn("update", format!("{} aktualisieren", inst.name), Some(instance_id), move |task| modpack::run_update(st, task, iid, version_id)))
 }
 
+#[tauri::command]
+pub async fn modpack_from_preview(state: State<'_, AppState>, instance_id: String, input: crate::content::modpack_from::PackInput) -> AppResult<modpack::ModpackPreview> {
+    crate::content::modpack_from::preview(&state, &instance_id, input).await
+}
+
+#[tauri::command]
+pub async fn modpack_from_update(state: State<'_, AppState>, instance_id: String, input: crate::content::modpack_from::PackInput) -> AppResult<String> {
+    let inst = state.instances.get(&instance_id)?;
+    let st = state.inner().clone();
+    let iid = instance_id.clone();
+    Ok(state.tasks.spawn("update", format!("{} aktualisieren", inst.name), Some(instance_id), move |task| crate::content::modpack_from::run_update(st, task, iid, input)))
+}
+
+#[tauri::command]
+pub async fn modpack_remote_check(state: State<'_, AppState>, instance_id: String) -> AppResult<Option<crate::content::modpack_from::RemoteUpdate>> {
+    crate::content::modpack_from::check_remote(&state, &instance_id).await
+}
+
 // ---------------------------------------------------------------- Abhängigkeiten, Seiten
 
 /// Abhängigkeits-Check der Mods (fehlend, Versionen, Konflikte, Loader, Duplikate) mit Lösungsvorschlägen.

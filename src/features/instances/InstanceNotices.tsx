@@ -12,6 +12,7 @@ import { useSimple } from "@/lib/mode";
 import { MissingPanel, useMissingDownloads } from "@/features/content/MissingPanel";
 import { useKeepWatching } from "@/features/content/useKeepWatching";
 import { ModpackUpdateDialog, useModpackUpdate } from "@/features/content/ModpackUpdate";
+import { openRemotePreview, useRemotePackUpdate } from "@/features/packupdate/remote";
 import { markUpdatesChecked, setContentFilter, useContentView } from "@/features/content/contentView";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
@@ -130,6 +131,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
   const simple = useSimple();
 
   const pack = useModpackUpdate(instance).data;
+  const remote = useRemotePackUpdate(instance).data;
   const deps = useDepIssues(id, !vanilla).data ?? [];
   const missing = useMissingDownloads(id).data ?? [];
   useKeepWatching(id, missing.length > 0);
@@ -168,7 +170,7 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
     nav({ search: { tab: "content" }, replace: true });
   };
 
-  if (!pack && !updates && !deps.length && !missing.length && !manualUpdates.length && !setNews.length && !loosePacks.length && !ram.suggestion) return null;
+  if (!pack && !remote && !updates && !deps.length && !missing.length && !manualUpdates.length && !setNews.length && !loosePacks.length && !ram.suggestion) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-2 px-6 pt-4" role="group" aria-label={t("ipage.notices")}>
@@ -221,6 +223,11 @@ export function InstanceNotices({ instance, tab }: { instance: Instance; tab: st
           </Chip>
           {packOpen && <ModpackUpdateDialog instance={instance} versionId={pack.latest.id} onClose={() => setPackOpen(false)} />}
         </>
+      )}
+      {remote && !pack && (
+        <Chip tone="accent" icon={<ArrowUpCircle size={15} />} tip={t("packupd.notice_hint")} onClick={() => openRemotePreview(instance, remote)}>
+          {remote.latest_version ? t("ipage.notice.modpack", { version: remote.latest_version }) : t("packupd.notice")}
+        </Chip>
       )}
       {updates > 0 && (
         <Chip tone="accent" icon={<RefreshCw size={14} />} tip={t("ipage.notice.updates_hint")} onClick={showUpdates}>

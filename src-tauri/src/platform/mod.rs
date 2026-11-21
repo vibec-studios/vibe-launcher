@@ -8,6 +8,8 @@ pub mod crash;
 pub mod discord;
 pub mod gpupref;
 pub mod links;
+pub mod mrlinks;
+pub mod mrscheme;
 pub mod optsync;
 pub mod presence;
 pub mod presence_art;

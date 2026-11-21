@@ -6,6 +6,7 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowLeft, Check, ChevronDown, Flame, Info, LayoutGrid, List, Plus, Puzzle, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LinkHint } from "@/features/mrlinks/LinkHint";
 import { Button, EmptyState, ErrorState, IconButton, Segmented, Select, SearchInput, Skeleton, Spinner, Tooltip, cn } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
@@ -226,6 +227,7 @@ export function DiscoverPage() {
               }}
             />
           </div>
+          <LinkHint text={text} onOpened={() => setText("")} />
           {browsing ? (
             <div className="h-3 shrink-0" />
           ) : (

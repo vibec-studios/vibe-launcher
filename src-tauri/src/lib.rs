@@ -57,10 +57,11 @@ pub fn run() {
     if std::env::var_os("VIBE_LAUNCHER_HOME").is_none() {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             // `--launch <id>` aus Verknüpfungen; Deep-Links kommen über das Deep-Link-Plugin
-            let acts: Vec<_> = platform::links::parse_args(argv.into_iter().skip(1))
+            let mut acts: Vec<_> = platform::links::parse_args(argv.iter().skip(1).cloned())
                 .into_iter()
                 .filter(|a| matches!(a, platform::links::AppAction::Launch { .. }))
                 .collect();
+            acts.extend(platform::mrlinks::from_args(argv.iter().skip(1)));
             platform::push_actions(app, acts);
             if let Some(w) = app.get_webview_window("main") {
                 let _ = w.unminimize();
@@ -110,6 +111,7 @@ pub fn run() {
                 });
             }
             // Bedrock: offenen Profil-Tausch nach Absturz/Neustart abschließen bzw. laufende Sitzung aufnehmen
+            platform::mrscheme::on_startup(&startup_state.paths.root);
             let bedrock_state = startup_state.clone();
             tauri::async_runtime::spawn_blocking(move || bedrock::game::on_startup(&bedrock_state));
             // Lokale Server: Server aus früheren Sitzungen erkennen, Auto-Start
@@ -378,6 +380,10 @@ pub fn run() {
             commands::platform::optsync_clear_conflicts,
             commands::platform::shortcut_create,
             commands::platform::app_actions_take,
+            commands::links::modrinth_links_status,
+            commands::links::modrinth_links_set,
+            commands::links::app_link_parse,
+            commands::links::content_version_project,
             commands::platform::discord_available,
             commands::play::play_link_get,
             commands::play::play_join_preview,
@@ -386,6 +392,9 @@ pub fn run() {
             commands::content::modpack_check,
             commands::content::modpack_update_preview,
             commands::content::modpack_update,
+            commands::content::modpack_from_preview,
+            commands::content::modpack_from_update,
+            commands::content::modpack_remote_check,
             commands::content::content_check_deps,
             commands::content::autofix_plan,
             commands::content::autofix_apply,
