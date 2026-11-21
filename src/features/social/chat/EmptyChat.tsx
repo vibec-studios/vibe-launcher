@@ -3,7 +3,7 @@ import { useT } from "@/i18n";
 import type { Chat } from "@/lib/vibe-sdk";
 import { chatTitle } from "../hooks";
 import { errText, sendMessage } from "../service";
-import { SealArt } from "../Overview";
+import { SealArt } from "../overview/SealArt";
 
 /** Leerer Chat: Robbe, kurzer Text und Vorschläge zum Losschreiben. */
 export function EmptyChat({ chat, meId }: { chat: Chat; meId: string | undefined }) {
