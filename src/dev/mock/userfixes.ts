@@ -38,6 +38,8 @@ export function mockMigrationSnapshots(id: string) {
   return migrationSnapshots.get(id) ?? [];
 }
 
+export const priority = 2;
+
 export default {
   update_check: () => ({ version: "9.9.0", current_version: "1.0.0", channel: "release", notes: "- Neue Funktionen\n- Fehlerbehebungen", date: null }),
   update_blockers: () => {

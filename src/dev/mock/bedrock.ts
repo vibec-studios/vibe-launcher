@@ -225,4 +225,6 @@ const handlers: Handlers = {
   },
 };
 
+export const priority = 1;
+
 export default handlers;
