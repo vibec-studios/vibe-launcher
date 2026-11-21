@@ -1,5 +1,6 @@
 // Mock: Kern-Commands (Instanzen, Einstellungen, Aufgaben, System). OWNER: Integrator.
-import type { Instance, Settings } from "@/lib/types";
+import type { Instance, Settings, ThemeId } from "@/lib/types";
+import { THEMES } from "@/lib/appearance";
 import { STORE_URL } from "@/lib/domains";
 import { mockEmit, tasks, type Handlers } from "./util";
 
@@ -10,6 +11,10 @@ function mockFlag(k: string): string | null {
   } catch {
     return null;
   }
+}
+function mockTheme(id: string) {
+  const th = THEMES[id as ThemeId];
+  return th ? { theme: th.id, ...th.tokens } : {};
 }
 function inst(id: string, name: string, mc: string, kind: Instance["loader"]["kind"], ver: string | null, extra: Partial<Instance> = {}): Instance {
   return {
@@ -90,13 +95,15 @@ let settings: Settings = {
   // Screenshots: localStorage vl.mock.notices = 1 -> Umzugs-Hinweis schon weggeklickt
   dismissed_notices: mockFlag("vl.mock.notices") === "1" ? ["domain-move-2026-11"] : [],
   appearance: {
+    design: mockFlag("vl.mock.design") === "v2" ? "v2" : "v1",
     accent: "#8b6cff",
     tone: "dark",
     radius: "square",
     density: "normal",
     ui_scale: 100,
     background: { kind: "none", gradient: "accent", animated: "aurora", image: null, video: null, dim: 45, blur: 0 },
-    // Screenshots: Variante per window.__VL_MOCK_APPEARANCE (Playwright-Init-Skript)
+    // Screenshots: localStorage vl.mock.design = v2, vl.mock.theme = ocean|light|…; Variante per window.__VL_MOCK_APPEARANCE (Playwright-Init-Skript)
+    ...(mockFlag("vl.mock.theme") && mockTheme(mockFlag("vl.mock.theme")!)),
     ...((globalThis as { __VL_MOCK_APPEARANCE?: object }).__VL_MOCK_APPEARANCE ?? {}),
   } as Settings["appearance"],
   stores: [{ id: "vibe-craft-studios", name: "Vibe Craft Studios", url: STORE_URL, enabled: true, icon: null }],

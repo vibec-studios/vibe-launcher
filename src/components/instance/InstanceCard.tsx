@@ -68,7 +68,7 @@ function RunningBadge({ id }: { id: string }) {
   const { phase } = useRunPhase(id);
   if (phase !== "running") return null;
   return (
-    <span className="absolute left-2 top-2 inline-flex h-6 items-center gap-1.5 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-ok">
+    <span className="vl-badge absolute left-2 top-2 inline-flex h-6 items-center gap-1.5 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-ok">
       <span className="h-1.5 w-1.5 rounded-dot bg-ok" />
       {t("inst.status.running")}
     </span>
@@ -81,7 +81,7 @@ function NotInstalledBadge({ instance: i }: { instance: Instance }) {
   const { phase } = useRunPhase(i.id);
   if (phase !== "idle" || i.install_state !== "not_installed") return null;
   return (
-    <span className="absolute left-2 top-2 inline-flex h-6 items-center gap-1 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-muted">
+    <span className="vl-badge absolute left-2 top-2 inline-flex h-6 items-center gap-1 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-muted">
       <Download size={12} />
       {t("inst.status.not_installed")}
     </span>
@@ -95,7 +95,7 @@ function UpdatesBadge({ id }: { id: string }) {
   const n = data?.[id] ?? 0;
   if (!n) return null;
   return (
-    <span className="absolute right-2 top-2 inline-flex h-6 items-center gap-1 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-accent">
+    <span className="vl-badge absolute right-2 top-2 inline-flex h-6 items-center gap-1 rounded-pill bg-black/70 px-2 text-[12px] font-medium text-accent">
       <ArrowUpCircle size={12} />
       {n === 1 ? t("instances.updates_badge_1") : t("instances.updates_badge", { n })}
     </span>
@@ -119,7 +119,7 @@ function IconArea({ instance: i, accent }: { instance: Instance; accent: string 
       />
     );
   return (
-    <div className="absolute inset-0 grid place-items-center bg-surface2">
+    <div className="vl-inst-art absolute inset-0 grid place-items-center bg-surface2">
       <PixelBlock color={accent} size={60} />
     </div>
   );
@@ -140,7 +140,7 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
         onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(i)}
         style={accentVars(accent)}
         className={cn(
-          "vl-card group relative flex min-w-0 flex-col rounded-panel p-1.5 text-left transition-colors duration-100",
+          "vl-card vl-inst-card group relative flex min-w-0 flex-col rounded-panel p-1.5 text-left transition-colors duration-100",
           "hover:bg-white/[.04] data-[state=open]:bg-white/[.04]",
         )}
       >

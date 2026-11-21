@@ -757,7 +757,7 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
   return (
     <D.Root open={open} onOpenChange={(o) => (!busy || o) && onOpenChange(o)}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
+        <D.Overlay className="vl-overlay fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
         <D.Content
           onEscapeKeyDown={(e) => busy && e.preventDefault()}
           onPointerDownOutside={(e) => busy && e.preventDefault()}
@@ -766,7 +766,7 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden",
             "h-[min(620px,calc(100vh-64px))] w-[880px] max-w-[calc(100vw-48px)]",
-            "rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
+            "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
           // Auswahl und Hauptaktion in der globalen Akzentfarbe; die Instanzfarbe gehört nur dem Icon
           style={{ "--accent": "var(--ui-accent)", "--on-accent": "var(--ui-on-accent)" } as React.CSSProperties}

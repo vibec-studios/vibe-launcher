@@ -33,7 +33,7 @@ export function Checkbox({
       disabled={disabled}
       onClick={() => onChange(part ? true : !checked)}
       className={cn(
-        "grid h-[18px] w-[18px] shrink-0 place-items-center rounded-xs border transition-colors duration-100 disabled:opacity-45",
+        "vl-check grid h-[18px] w-[18px] shrink-0 place-items-center rounded-xs border transition-colors duration-100 disabled:opacity-45",
         checked || part ? "border-accent bg-accent text-[var(--on-accent)]" : "border-white/20 hover:border-white/40",
         className,
       )}
@@ -50,9 +50,9 @@ export function Switch({ checked, onChange, disabled, label }: { checked: boolea
       onCheckedChange={onChange}
       disabled={disabled}
       aria-label={label}
-      className="relative h-5 w-9 shrink-0 rounded-pill bg-white/[.12] transition-colors duration-150 hover:bg-white/[.17] data-[state=checked]:bg-accent disabled:opacity-45"
+      className="vl-switch relative h-5 w-9 shrink-0 rounded-pill bg-white/[.12] transition-colors duration-150 hover:bg-white/[.17] data-[state=checked]:bg-accent disabled:opacity-45"
     >
-      <Sw.Thumb className="block h-3.5 w-3.5 translate-x-[3px] rounded-pill bg-white/75 transition-transform duration-150 data-[state=checked]:translate-x-[18px] data-[state=checked]:bg-white" />
+      <Sw.Thumb className="block h-3.5 w-3.5 translate-x-[3px] rounded-pill bg-white/75 transition-transform duration-150 data-[state=checked]:translate-x-[18px] data-[state=checked]:bg-[#fff]" />
     </Sw.Root>
   );
 }
@@ -87,7 +87,7 @@ export function Slider({
       <Sl.Track className="relative h-1 grow overflow-hidden rounded-pill bg-white/[.12]">
         <Sl.Range className="absolute h-full bg-accent" />
       </Sl.Track>
-      <Sl.Thumb className="block h-3.5 w-3.5 rounded-pill bg-white outline-none focus-visible:outline-2 focus-visible:outline-accent" />
+      <Sl.Thumb className="vl-slider-thumb block h-3.5 w-3.5 rounded-pill bg-[#fff] shadow-[0_0_0_1px_rgb(0_0_0/0.18)] outline-none focus-visible:outline-2 focus-visible:outline-accent" />
     </Sl.Root>
   );
 }
@@ -112,7 +112,7 @@ export function Chip({ children, active, onClick, className }: { children: React
     <Tag
       onClick={onClick}
       className={cn(
-        "inline-flex h-7 items-center gap-1.5 rounded-pill px-2.5 text-[12px] font-medium transition-colors duration-150",
+        "vl-chip inline-flex h-7 items-center gap-1.5 rounded-pill px-2.5 text-[12px] font-medium transition-colors duration-150",
         active ? "bg-accent text-[var(--on-accent)]" : "bg-white/[.06] text-text",
         onClick && !active && "hover:bg-white/[.1]",
         className,
@@ -127,8 +127,8 @@ export function Chip({ children, active, onClick, className }: { children: React
 export function Tag({ children, className, color }: { children: ReactNode; className?: string; color?: string }) {
   return (
     <span
-      className={cn("inline-flex h-5 items-center gap-1 rounded-xs bg-white/[.06] px-1.5 text-[11px] font-medium text-muted", className)}
-      style={color ? { color, background: `color-mix(in srgb, ${color} 14%, transparent)` } : undefined}
+      className={cn("vl-tag inline-flex h-5 items-center gap-1 rounded-xs bg-white/[.06] px-1.5 text-[11px] font-medium text-muted", className)}
+      style={color ? { color: `oklch(from ${color} min(l, var(--tag-l, 1)) c h)`, background: `color-mix(in srgb, ${color} 14%, transparent)` } : undefined}
     >
       {children}
     </span>
@@ -141,10 +141,10 @@ export function Skeleton({ className, style }: { className?: string; style?: Rea
 
 export function EmptyState({ icon, title, text, action, className }: { icon?: ReactNode; title: ReactNode; text?: ReactNode; action?: ReactNode; className?: string }) {
   return (
-    <div className={cn("flex flex-col items-center justify-center gap-3 px-6 py-16 text-center", className)}>
+    <div className={cn("vl-empty flex flex-col items-center justify-center gap-3 px-6 py-16 text-center", className)}>
       {/* .vl-empty-icon: im Winter-Theme sitzt ein kleines Pixel-Schneehäubchen auf dem Icon (globals.css) */}
       {icon && <div className="vl-empty-icon mb-1 text-dim">{icon}</div>}
-      <div className="display text-[16px]">{title}</div>
+      <div className="vl-empty-title display text-[16px]">{title}</div>
       {text && <p className="max-w-[420px] text-[13px] text-muted">{text}</p>}
       {action && <div className="mt-2">{action}</div>}
     </div>
@@ -169,9 +169,9 @@ export function ErrorState({ error, onRetry, className }: { error: unknown; onRe
 /** Abschnitt mit ruhiger Überschrift (ohne Trennlinie). */
 export function Section({ title, right, children, className }: { title: ReactNode; right?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn("flex flex-col gap-2.5", className)}>
+    <section className={cn("vl-section flex flex-col gap-2.5", className)}>
       <div className="flex min-h-6 items-center gap-3">
-        <h3 className="flex-1 text-section text-text">{title}</h3>
+        <h3 className="vl-section-title flex-1 text-section text-text">{title}</h3>
         {right}
       </div>
       {children}

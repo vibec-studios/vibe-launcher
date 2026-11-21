@@ -148,7 +148,7 @@ function Header({ p, install, banner, onBanner }: { p: ViewProject; install: Rea
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-[var(--ease-snap)] group-hover:scale-[1.015]"
           />
           {p.gallery.length > 1 && (
-            <span className="absolute bottom-3 right-3 inline-flex h-7 items-center gap-1.5 rounded-ctl bg-black/70 px-2.5 text-[12px] font-semibold text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+            <span className="absolute bottom-3 right-3 inline-flex h-7 items-center gap-1.5 rounded-ctl bg-black/70 px-2.5 text-[12px] font-semibold text-[#fff] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
               <Images size={13} />
               {t("project.gallery_more", { n: p.gallery.length })}
             </span>

@@ -30,6 +30,8 @@
 @theme inline {
   /* Akzent: global (Einstellung) bzw. pro Container überschreibbar (Instanzfarbe) */
   --color-accent: var(--accent);
+  /* Weiß-Utilities (bg-white/[.06] …) folgen der Tinte: im hellen Ton dunkel, sonst weiß */
+  --color-white: var(--ink);
   --color-brand: var(--ui-accent);
 
   /* Flächen, von hinten nach vorn */
@@ -128,13 +130,32 @@
   --accent: var(--ui-accent);
   --on-accent: var(--ui-on-accent);
 
-  /* Ton „Schwarz“ (Standard): Rahmen schwarz, Flächen in minimalen neutralen Graustufen */
-  --tone-frame: #000;
-  --tone-canvas: #070708;
-  --tone-s1: #0f0f11;
-  --tone-s2: #161618;
-  --tone-s3: #1d1d20;
-  --tone-overlay: #0e0e10;
+  /* Tinte: Farbe für Hover-/Feld-/Linien-Tönungen (dunkle Töne weiß, heller Ton fast schwarz) */
+  --ink: #fff;
+
+  /* Ton-Basis „Schwarz“ (Standard): Rahmen schwarz, Flächen in minimalen neutralen Graustufen */
+  --b-frame: #000;
+  --b-canvas: #070708;
+  --b-s1: #0f0f11;
+  --b-s2: #161618;
+  --b-s3: #1d1d20;
+  --b-overlay: #0e0e10;
+  --b-t1: #f4f4f6;
+  --b-t2: #a3a3ad;
+  --b-t3: #6d6d78;
+
+  /* Theme-Tönung: Flächen und Text werden mit --tint gemischt (Standard: keine Tönung) */
+  --tint: #808080;
+  --tint-amt: 0%;
+  --tint-text: 0%;
+  --t3-lift: 0%;
+
+  --tone-frame: color-mix(in oklab, var(--b-frame), var(--tint) calc(var(--tint-amt) * 0.75));
+  --tone-canvas: color-mix(in oklab, var(--b-canvas), var(--tint) var(--tint-amt));
+  --tone-s1: color-mix(in oklab, var(--b-s1), var(--tint) var(--tint-amt));
+  --tone-s2: color-mix(in oklab, var(--b-s2), var(--tint) var(--tint-amt));
+  --tone-s3: color-mix(in oklab, var(--b-s3), var(--tint) var(--tint-amt));
+  --tone-overlay: color-mix(in oklab, var(--b-overlay), var(--tint) var(--tint-amt));
 
   /* Deckkraft der Flächen; mit Hintergrundbild kleiner (siehe [data-bg]) */
   --a-frame: 100%;
@@ -148,14 +169,14 @@
   --surface-2: color-mix(in srgb, var(--tone-s2) var(--a-surface), transparent);
   --surface-3: color-mix(in srgb, var(--tone-s3) var(--a-surface), transparent);
   --overlay: color-mix(in srgb, var(--tone-overlay) var(--a-overlay), transparent);
-  --field: rgb(255 255 255 / 0.05);
-  --line-1: rgb(255 255 255 / 0.07);
-  --line-2: rgb(255 255 255 / 0.12);
+  --field: color-mix(in srgb, var(--ink) 5%, transparent);
+  --line-1: color-mix(in srgb, var(--ink) 7%, transparent);
+  --line-2: color-mix(in srgb, var(--ink) 12%, transparent);
 
-  /* Text: Themes setzen --t1..--t3, „Kontrast: hoch“ hellt 2/3 auf */
-  --t1: #f4f4f6;
-  --t2: #a3a3ad;
-  --t3: #6d6d78;
+  /* Text: aus Ton-Basis + Tönung (Winter setzt --t1..--t3 direkt), „Kontrast: hoch“ hebt 2/3 an */
+  --t1: color-mix(in oklab, var(--b-t1), var(--tint) var(--tint-text));
+  --t2: color-mix(in oklab, var(--b-t2), var(--tint) var(--tint-text));
+  --t3: color-mix(in oklab, color-mix(in oklab, var(--b-t3), var(--b-t1) var(--t3-lift)), var(--tint) var(--tint-text));
   --text-1: var(--t1);
   --text-2: var(--t2);
   --text-3: var(--t3);
@@ -197,21 +218,40 @@
 }
 
 :root[data-tone="dim"] {
-  --tone-frame: #0b0b0d;
-  --tone-canvas: #111113;
-  --tone-s1: #18181b;
-  --tone-s2: #1f1f22;
-  --tone-s3: #27272b;
-  --tone-overlay: #17171a;
+  --b-frame: #0b0b0d;
+  --b-canvas: #111113;
+  --b-s1: #18181b;
+  --b-s2: #1f1f22;
+  --b-s3: #27272b;
+  --b-overlay: #17171a;
 }
 :root[data-tone="oled"] {
-  --tone-frame: #000;
-  --tone-canvas: #000;
-  --tone-s1: #09090a;
-  --tone-s2: #111112;
-  --tone-s3: #18181a;
-  --tone-overlay: #0a0a0b;
-  --line-1: rgb(255 255 255 / 0.08);
+  --b-frame: #000;
+  --b-canvas: #000;
+  --b-s1: #09090a;
+  --b-s2: #111112;
+  --b-s3: #18181a;
+  --b-overlay: #0a0a0b;
+  --line-1: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+/* Hell: echte helle Flächen, dunkle Tinte, weichere Schatten */
+:root[data-tone="light"] {
+  color-scheme: light;
+  --ink: #0b0d12;
+  --b-frame: #e7e8ed;
+  --b-canvas: #f5f5f8;
+  --b-s1: #ffffff;
+  --b-s2: #eeeff3;
+  --b-s3: #e3e5ea;
+  --b-overlay: #ffffff;
+  --b-t1: #14161b;
+  --b-t2: #4b5160;
+  --b-t3: #5f6573;
+  --field: color-mix(in srgb, var(--ink) 4.5%, transparent);
+  --line-1: color-mix(in srgb, var(--ink) 9%, transparent);
+  --line-2: color-mix(in srgb, var(--ink) 15%, transparent);
+  --sh-2: 0 0 0 1px rgb(15 20 30 / 0.08), 0 8px 24px rgb(15 20 30 / 0.12);
+  --sh-3: 0 0 0 1px rgb(15 20 30 / 0.08), 0 16px 44px rgb(15 20 30 / 0.18);
 }
 
 :root[data-radius="slight"] { --r: 4px; --r-dot: 999px; }
@@ -230,7 +270,12 @@
 :root[data-mode="simple"][data-density="compact"] { --rail-w: 196px; }
 
 /* ---------- Theme „Winter“: kühle, leicht blaue Grautöne (je Ton), eisiger Text */
-:root[data-theme="winter"] {
+:root[data-theme="winter"][data-tone="light"] {
+  --tint: #6fb6e6;
+  --tint-amt: 7%;
+  --tint-text: 6%;
+}
+:root[data-theme="winter"]:not([data-tone="light"]) {
   --tone-frame: #020407;
   --tone-canvas: #080b10;
   --tone-s1: #0e1218;
@@ -263,13 +308,13 @@
   --tone-overlay: #090c10;
 }
 
-/* ---------- Kontrast hoch: Sekundärtext und Linien deutlich heller, Flächen klarer getrennt */
+/* ---------- Kontrast hoch: Sekundärtext und Linien deutlich kräftiger, Flächen klarer getrennt */
 :root[data-contrast="high"] {
-  --text-2: color-mix(in srgb, var(--t2), #fff 38%);
-  --text-3: color-mix(in srgb, var(--t3), #fff 32%);
-  --line-1: rgb(255 255 255 / 0.13);
-  --line-2: rgb(255 255 255 / 0.2);
-  --field: rgb(255 255 255 / 0.08);
+  --text-2: color-mix(in srgb, var(--t2), var(--ink) 38%);
+  --text-3: color-mix(in srgb, var(--t3), var(--ink) 32%);
+  --line-1: color-mix(in srgb, var(--ink) 13%, transparent);
+  --line-2: color-mix(in srgb, var(--ink) 20%, transparent);
+  --field: color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 /* ---------- Schrift */
@@ -284,7 +329,7 @@
   --a-frame: 78%;
   --a-canvas: 55%;
   --a-surface: 90%;
-  --field: rgb(255 255 255 / 0.07);
+  --field: color-mix(in srgb, var(--ink) 7%, transparent);
 }
 
 /* ------------------------------------------------------------------ Grundregeln der App-Shell */
@@ -342,8 +387,8 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 .scroll-x { overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border: 3px solid transparent; background-clip: padding-box; border-radius: var(--r-pill); }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 10%, transparent); border: 3px solid transparent; background-clip: padding-box; border-radius: var(--r-pill); }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--ink) 20%, transparent); border: 3px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-corner { background: transparent; }
 
 /* ------------------------------------------------------------------ Typo-Bausteine */
@@ -396,7 +441,7 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 
 /* Skeleton-Platzhalter */
 .skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 37%, rgba(255,255,255,.04) 63%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 4%, transparent) 25%, color-mix(in srgb, var(--ink) 8%, transparent) 37%, color-mix(in srgb, var(--ink) 4%, transparent) 63%);
   background-size: 200% 100%;
   animation: var(--animate-shimmer);
   border-radius: var(--r-ctl);
@@ -407,6 +452,8 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 @layer base {
   /* Nur Flächen/Karten – Knöpfe und Reiter bleiben flach */
   :root[data-cards="outlined"] .bg-surface:not(button, a, [role="button"], [role="tab"], [role="radio"]) { box-shadow: inset 0 0 0 1px var(--line-2); }
+  /* Heller Ton: weiße Karten auf hellgrauer Fläche brauchen eine Haarlinie */
+  :root[data-tone="light"]:not([data-cards="outlined"]) .bg-surface:not(button, a, [role="button"], [role="tab"], [role="radio"]) { box-shadow: inset 0 0 0 1px var(--line-1); }
 }
 
 /* ------------------------------------------------------------------ Bewegung

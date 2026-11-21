@@ -61,7 +61,7 @@ const ClipTile = memo(function ClipTile({
         >
           <ClipThumb clip={clip} className="absolute inset-0" />
           <span className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-100 group-hover:bg-black/25" />
-          <span className="pointer-events-none absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill bg-black/55 text-white opacity-0 transition-opacity duration-100 group-hover:opacity-100">
+          <span className="pointer-events-none absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill bg-black/55 text-[#fff] opacity-0 transition-opacity duration-100 group-hover:opacity-100">
             <Play size={18} className="ml-0.5 fill-current" />
           </span>
           <span
@@ -71,7 +71,7 @@ const ClipTile = memo(function ClipTile({
             <ReasonIcon reason={clip.reason} size={11} />
             {t(reasonKey(clip.reason))}
           </span>
-          <span className="pointer-events-none absolute bottom-2 right-2 rounded-xs bg-black/70 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
+          <span className="pointer-events-none absolute bottom-2 right-2 rounded-xs bg-black/70 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-[#fff]">
             {formatClipLength(clip.duration_ms)}
           </span>
         </button>
@@ -84,7 +84,7 @@ const ClipTile = memo(function ClipTile({
             className={cn(
               "absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-ctl bg-black/60 transition-[opacity,background-color] duration-100 hover:bg-black/80",
               "outline-none focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent",
-              clip.kept ? "text-[#ffc94d]" : "text-white/85 opacity-0 hover:text-white group-hover:opacity-100 group-data-[state=open]:opacity-100",
+              clip.kept ? "text-[#ffc94d]" : "text-[#fff]/85 opacity-0 hover:text-[#fff] group-hover:opacity-100 group-data-[state=open]:opacity-100",
             )}
           >
             <Star size={14} className={cn(clip.kept && "fill-current")} />

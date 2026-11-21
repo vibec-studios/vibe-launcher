@@ -1,0 +1,114 @@
+/* Theme-Paletten: Tönung der Ton-Basis (siehe globals.css, --tint / --tint-amt / --tint-text / --t3-lift).
+   Jedes Theme funktioniert mit jedem Ton; Winter hat zusätzlich handabgestimmte dunkle Werte in globals.css. */
+
+:root[data-theme="light"] {
+  --tint: #6a4cf5;
+  --tint-amt: 2%;
+  --tint-text: 2%;
+}
+
+:root[data-theme="midnight"] {
+  --tint: #2f45ff;
+  --tint-amt: 6%;
+  --tint-text: 4%;
+  --t3-lift: 22%;
+}
+
+:root[data-theme="ocean"] {
+  --tint: #0a8fc2;
+  --tint-amt: 12%;
+  --tint-text: 6%;
+  --t3-lift: 24%;
+}
+
+:root[data-theme="forest"] {
+  --tint: #2e9149;
+  --tint-amt: 10%;
+  --tint-text: 5%;
+  --t3-lift: 24%;
+}
+
+:root[data-theme="sunset"] {
+  --tint: #c2416f;
+  --tint-amt: 11%;
+  --tint-text: 6%;
+  --t3-lift: 24%;
+}
+
+:root[data-theme="sakura"] {
+  --tint: #ff6f9f;
+  --tint-amt: 7%;
+  --tint-text: 8%;
+}
+
+:root[data-theme="nether"] {
+  --tint: #b3141c;
+  --tint-amt: 13%;
+  --tint-text: 6%;
+  --t3-lift: 24%;
+}
+
+:root[data-theme="end"] {
+  --tint: #6a34c9;
+  --tint-amt: 14%;
+  --tint-text: 7%;
+  --t3-lift: 24%;
+}
+
+:root[data-theme="retro"] {
+  --tint: #8a7440;
+  --tint-amt: 8%;
+  --tint-text: 6%;
+  --t3-lift: 32%;
+}
+
+:root[data-theme="contrast"] {
+  --tint: #808080;
+  --tint-amt: 0%;
+}
+:root[data-theme="contrast"]:not([data-tone="light"]) {
+  --b-t1: #ffffff;
+  --b-t2: #d6d6dc;
+  --b-t3: #b4b4bd;
+}
+:root[data-theme="contrast"][data-contrast="high"] {
+  --line-1: color-mix(in srgb, var(--ink) 24%, transparent);
+  --line-2: color-mix(in srgb, var(--ink) 36%, transparent);
+}
+:root[data-theme="contrast"] :focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Retro-Pixel: Klötzchen-Kanten wie in einem alten Spielmenü */
+:root[data-theme="retro"] .vl-btn:not(.vl-btn-subtle, .vl-btn-outline) {
+  box-shadow: inset -2px -3px 0 rgb(0 0 0 / 0.28), inset 2px 2px 0 rgb(255 255 255 / 0.22);
+}
+:root[data-theme="retro"] .vl-btn:not(.vl-btn-subtle, .vl-btn-outline):active {
+  box-shadow: inset 2px 3px 0 rgb(0 0 0 / 0.28);
+}
+:root[data-theme="retro"] .vl-dialog {
+  box-shadow: 0 0 0 2px var(--line-2), 6px 6px 0 rgb(0 0 0 / 0.45);
+}
+
+/* Heller Ton: Akzent als Schrift abdunkeln (helle Akzente wie Türkis wären auf Weiß unlesbar) */
+:root[data-tone="light"] :is(.text-accent, .text-brand),
+:root[data-tone="light"] :is(.hover\:text-accent, .hover\:text-brand):hover {
+  color: oklch(from var(--accent) min(l, 0.5) c h);
+}
+:root[data-tone="light"] .text-brand { --accent: var(--ui-accent); }
+:root[data-tone="light"] .vl-badge { background-color: rgb(255 255 255 / 0.92); box-shadow: 0 1px 3px rgb(15 20 30 / 0.18); }
+:root[data-tone="light"] .mc-tooltip { color: #fff; }
+:root[data-tone="light"] .text-\[\#d6d6dc\] { color: var(--text-1); }
+:root[data-tone="light"] { --tag-l: 0.5; }
+:root[data-tone="light"] {
+  --syn-prop: #2459c7;
+  --syn-str: #0a7259;
+  --syn-num: #9a5600;
+  --syn-kw: #8a3fb8;
+  --syn-comment: #6b7080;
+  --syn-type: #b8336a;
+  --syn-var: #1d2027;
+  --syn-punct: #4b5160;
+  --syn-bad: #bd2536;
+}

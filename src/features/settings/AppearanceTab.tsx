@@ -160,6 +160,17 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
         <SettingRow title={t("ap.seasonal")} description={t("ap.seasonal.desc")}>
           <Switch checked={a.seasonal} onChange={(seasonal) => set({ seasonal })} label={t("ap.seasonal")} />
         </SettingRow>
+        <SettingRow
+          title={
+            <span className="flex items-center gap-2">
+              {t("ap.design")}
+              <Tag className="h-5 px-1.5 text-[10.5px]">Beta</Tag>
+            </span>
+          }
+          description={t("ap.design.desc")}
+        >
+          <Switch checked={a.design === "v2"} onChange={(on) => set({ design: on ? "v2" : "v1" })} label={t("ap.design")} />
+        </SettingRow>
       </SettingsCard>
 
       {theme.extras.length > 0 && (
@@ -201,7 +212,7 @@ export function AppearanceTab({ s, update }: { s: Settings; update: Update }) {
           <Segmented
             value={a.tone}
             onChange={(tone) => set({ tone })}
-            items={(["dark", "dim", "oled"] as const).map((v) => ({ value: v, label: t(`ap.tone.${v}`) }))}
+            items={(["light", "dark", "dim", "oled"] as const).map((v) => ({ value: v, label: t(`ap.tone.${v}`) }))}
           />
         </SettingRow>
         <SettingRow title={t("ap.contrast")} description={t("ap.contrast.desc")}>
@@ -581,12 +592,17 @@ function MiniPreview({ a }: { a: Appearance }) {
             ))}
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="h-5 bg-bg" />
-          <div className="flex flex-1 flex-col gap-2 rounded-tl-card bg-panel p-2.5">
+          <div className={cn("bg-bg", a.design === "v2" ? "h-6" : "h-5")} />
+          <div
+            className={cn(
+              "flex flex-1 flex-col gap-2 bg-panel p-2.5",
+              a.design === "v2" ? "mb-1.5 mr-1.5 rounded-card shadow-[0_0_0_1px_var(--line-1),0_4px_14px_rgb(0_0_0/0.25)]" : "rounded-tl-card",
+            )}
+          >
             <div className="relative flex items-center gap-2 overflow-hidden rounded-card bg-surface p-2">
               <span className="h-7 w-7 rounded-ctl bg-surface3" />
               <span className="flex flex-1 flex-col gap-1">
-                <span className="h-2 w-20 rounded-xs bg-white/80" style={a.headings === "pixel" ? { borderRadius: 0, height: 7 } : undefined} />
+                <span className="h-2 w-20 rounded-xs bg-[var(--text-1)]" style={a.headings === "pixel" ? { borderRadius: 0, height: 7 } : undefined} />
                 <span className="h-1.5 w-14 rounded-xs bg-[var(--text-3)]" />
               </span>
               <span className="h-5 w-12 rounded-ctl bg-brand" />
@@ -633,29 +649,42 @@ function ThemeTile({ id, active, modified, onClick }: { id: ThemeId; active: boo
   const th = THEMES[id];
   const sw = th.swatch;
   const ac = th.tokens.accent;
+  const r = { square: 0, slight: 2, round: 4 }[th.tokens.radius];
+  const light = th.tokens.tone === "light";
+  const edge =
+    th.tokens.cards === "outlined" || light ? `inset 0 0 0 1px ${light ? "rgb(10 12 18 / .1)" : "rgb(255 255 255 / .16)"}` : undefined;
   return (
     <button onClick={onClick} aria-pressed={active} className="group flex min-w-0 flex-col gap-1.5 text-left">
       <span
         className={cn(
-          "relative block h-[66px] w-full overflow-hidden rounded-card",
+          "relative block h-[66px] w-full overflow-hidden rounded-card shadow-[0_0_0_1px_var(--line-1)]",
           active ? "outline outline-2 outline-offset-2 outline-brand" : "group-hover:outline group-hover:outline-1 group-hover:outline-offset-2 group-hover:outline-white/25",
         )}
         style={{ background: sw.frame }}
       >
         <span className="absolute inset-y-0 left-0 flex w-4 flex-col items-center gap-1 pt-1.5">
-          <span className="h-2 w-2" style={{ background: ac }} />
-          <span className="h-2 w-2" style={{ background: sw.surface2 }} />
-          <span className="h-2 w-2" style={{ background: sw.surface2 }} />
+          <span className="h-2 w-2" style={{ background: ac, borderRadius: r / 2 }} />
+          <span className="h-2 w-2" style={{ background: sw.surface2, borderRadius: r / 2 }} />
+          <span className="h-2 w-2" style={{ background: sw.surface2, borderRadius: r / 2 }} />
         </span>
-        <span className="absolute bottom-0 left-4 right-0 top-2.5 flex flex-col gap-1 p-1.5" style={{ background: sw.canvas }}>
-          <span className="flex items-center gap-1 p-1" style={{ background: sw.surface }}>
-            <span className="h-1.5 w-8" style={{ background: sw.text, opacity: 0.85 }} />
-            <span className="ml-auto h-2.5 w-5" style={{ background: ac }} />
+        <span className="absolute bottom-0 left-4 right-0 top-2.5 flex flex-col gap-1 p-1.5" style={{ background: sw.canvas, borderTopLeftRadius: r }}>
+          <span className="flex items-center gap-1 p-1" style={{ background: sw.surface, borderRadius: r, boxShadow: edge }}>
+            <span
+              className={th.tokens.headings === "pixel" ? "h-2 w-8" : "h-1.5 w-8"}
+              style={{ background: sw.text, opacity: 0.85, borderRadius: th.tokens.headings === "pixel" ? 0 : r / 3 }}
+            />
+            <span className="ml-auto h-2.5 w-5" style={{ background: ac, borderRadius: r / 2 }} />
           </span>
           <span className="grid grid-cols-3 gap-1">
             {[0, 1, 2].map((i) => (
-              <span key={i} className="h-3" style={{ background: sw.surface, boxShadow: th.tokens.cards === "outlined" ? "inset 0 0 0 1px rgb(255 255 255 / .14)" : undefined }} />
+              <span key={i} className="h-3" style={{ background: sw.surface, borderRadius: r, boxShadow: edge }} />
             ))}
+          </span>
+          <span className="flex items-center gap-[3px]">
+            <span className="h-1 w-6" style={{ background: sw.muted, opacity: 0.7, borderRadius: r / 3 }} />
+            <span className="ml-auto h-1.5 w-1.5 rounded-full" style={{ background: th.tokens.status.ok }} />
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: th.tokens.status.warn }} />
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: th.tokens.status.danger }} />
           </span>
         </span>
         {id === "winter" && (

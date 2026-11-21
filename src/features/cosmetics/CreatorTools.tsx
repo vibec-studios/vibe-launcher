@@ -258,13 +258,13 @@ function ArtDownload() {
   return (
     <Frame title="blockbench.net">
       <div className="flex h-full flex-col items-center justify-center gap-2">
-        <div className="grid h-9 w-9 place-items-center bg-[#3e8bff] text-white">
+        <div className="grid h-9 w-9 place-items-center bg-[#3e8bff] text-[#fff]">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
             <path d="M4 7l8-4 8 4v10l-8 4-8-4z" opacity=".5" />
             <path d="M12 3l8 4-8 4-8-4z" />
           </svg>
         </div>
-        <div className="flex items-center gap-1.5 bg-[#3e8bff] px-2.5 py-1 text-[10px] font-semibold text-white">
+        <div className="flex items-center gap-1.5 bg-[#3e8bff] px-2.5 py-1 text-[10px] font-semibold text-[#fff]">
           <Download size={11} /> Download
         </div>
       </div>
@@ -312,13 +312,13 @@ function ArtConfirm() {
       <div className="absolute left-2 top-2 flex gap-2 text-[9px] text-[#c8ccd6]">
         <span>File</span>
         <span>Edit</span>
-        <span className="bg-[#8b6cff] px-1 font-semibold text-white">Vibey</span>
+        <span className="bg-[#8b6cff] px-1 font-semibold text-[#fff]">Vibey</span>
         <span>Help</span>
       </div>
       <div className="absolute left-1/2 top-1/2 w-[170px] -translate-x-1/2 -translate-y-[40%] rounded-ctl bg-[#2a2e37] p-2.5">
         <div className="text-[9px] leading-snug text-[#c8ccd6]">Plugin „vibey“ laden und ihm Zugriff auf deine Dateien erlauben?</div>
         <div className="mt-2 flex justify-end gap-1">
-          <span className="bg-[#3e8bff] px-2 py-0.5 text-[9px] font-semibold text-white">OK</span>
+          <span className="bg-[#3e8bff] px-2 py-0.5 text-[9px] font-semibold text-[#fff]">OK</span>
           <span className="bg-[#3a3f4b] px-2 py-0.5 text-[9px] text-[#c8ccd6]">Abbrechen</span>
         </div>
       </div>
@@ -335,7 +335,7 @@ function ArtLive() {
           <div className="mt-1 flex items-center gap-1 text-[9px] text-ok">
             <span className="h-1.5 w-1.5 bg-ok" /> Vibey: connected
           </div>
-          <div className="mt-1.5 bg-[#8b6cff] px-1.5 py-0.5 text-center text-[9px] font-semibold text-white">Push</div>
+          <div className="mt-1.5 bg-[#8b6cff] px-1.5 py-0.5 text-center text-[9px] font-semibold text-[#fff]">Push</div>
         </div>
         <div className="flex flex-col items-center text-muted">
           <span className="font-mono text-[9px]">127.0.0.1</span>

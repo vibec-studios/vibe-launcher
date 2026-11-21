@@ -45,7 +45,7 @@ export function SimpleNewGameDialog({ open, goal: initialGoal, onOpenChange }: {
   return (
     <D.Root open={open} onOpenChange={(o) => (!busy || o) && onOpenChange(o)}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
+        <D.Overlay className="vl-overlay fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
         <D.Content
           onEscapeKeyDown={(e) => busy && e.preventDefault()}
           onPointerDownOutside={(e) => busy && e.preventDefault()}
@@ -54,7 +54,7 @@ export function SimpleNewGameDialog({ open, goal: initialGoal, onOpenChange }: {
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden",
             "h-[min(640px,calc(100vh-64px))] w-[820px] max-w-[calc(100vw-48px)]",
-            "rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
+            "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
           style={{ "--accent": "var(--ui-accent)", "--on-accent": "var(--ui-on-accent)" } as CSSProperties}
         >

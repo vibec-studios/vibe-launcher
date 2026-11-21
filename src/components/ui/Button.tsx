@@ -42,7 +42,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-ctl border font-sans font-semibold whitespace-nowrap",
+        "vl-btn inline-flex shrink-0 items-center justify-center rounded-ctl border font-sans font-semibold whitespace-nowrap",
+        `vl-btn-${variant} vl-btn-${size}`,
         "transition-[background-color,color,border-color,filter,transform] duration-150 active:translate-y-px",
         "disabled:opacity-45 disabled:pointer-events-none",
         variants[variant],
@@ -83,7 +84,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-label={label}
       aria-pressed={active}
       className={cn(
-        "inline-grid shrink-0 place-items-center rounded-ctl border border-transparent transition-colors duration-150",
+        "vl-ibtn inline-grid shrink-0 place-items-center rounded-ctl border border-transparent transition-colors duration-150",
+        active ? "vl-ibtn-active" : `vl-ibtn-${variant}`,
         active
           ? "bg-surface3 text-text"
           : variant === "ghost"
