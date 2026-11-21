@@ -210,13 +210,27 @@ impl Swapper {
     }
 }
 
+fn rename_retry(from: &Path, to: &Path) -> std::io::Result<()> {
+    let mut wait = 40;
+    for _ in 0..5 {
+        match std::fs::rename(from, to) {
+            Err(e) if matches!(e.raw_os_error(), Some(5) | Some(32)) => {
+                std::thread::sleep(std::time::Duration::from_millis(wait));
+                wait *= 2;
+            }
+            r => return r,
+        }
+    }
+    std::fs::rename(from, to)
+}
+
 /// Ordner verschieben (gleiches Laufwerk -> atomar). Legt den Elternordner an.
 fn mv(from: &Path, to: &Path) -> AppResult<()> {
     crash_point()?;
     if let Some(p) = to.parent() {
         std::fs::create_dir_all(p)?;
     }
-    std::fs::rename(from, to).map_err(|e| {
+    rename_retry(from, to).map_err(|e| {
         // 17 = ERROR_NOT_SAME_DEVICE (Windows), 18 = EXDEV (Unix)
         if matches!(e.raw_os_error(), Some(17) | Some(18)) {
             AppError::msg("Der Launcher-Datenordner liegt auf einem anderen Laufwerk als Minecraft Bedrock. Für eigene Profile müssen beide auf demselben Laufwerk liegen – oder nutze „Gemeinsames Profil“.")
