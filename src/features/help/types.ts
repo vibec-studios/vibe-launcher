@@ -13,11 +13,13 @@ export type GuideId =
   | "waitlist"
   | "bedrock"
   | "feedback"
-  | "performance";
+  | "performance"
+  | "privacy"
+  | "portable";
 
-export type TourId = "intro" | Exclude<GuideId, "bedrock">;
+export type TourId = "intro" | Exclude<GuideId, "bedrock" | "portable">;
 
-export type TourAction = "settings:java" | "settings:game" | "settings:vibe" | "settings:about" | "import:launcher" | "instance-settings:perf";
+export type TourAction = "settings:java" | "settings:game" | "settings:vibe" | "settings:about" | "settings:privacy" | "import:launcher" | "instance-settings:perf";
 
 export interface TourStepDef {
   targets: string[];

@@ -225,6 +225,37 @@ const de: HelpContent = {
       ],
       keywords: "ram speicher arbeitsspeicher leistung fps ruckeln langsam java memory",
     },
+    privacy: {
+      title: "Datenschutz & Transparenz",
+      summary: "Der Vibe Launcher zeigt keine Werbung und sammelt keine Telemetrie. Hier steht, was er wann wohin sendet und wie du es abschaltest.",
+      steps: [
+        "Öffne Einstellungen → Datenschutz. Ganz oben steht unser Versprechen: keine Werbung, keine Telemetrie, Vibe nur mit deiner Zustimmung.",
+        "Unter „Deine Schalter“ stellst du Update-Suche, Discord-Status, MinecraftCapes und deinen Online-Status ein.",
+        "„Was wird wohin gesendet“ listet jeden Dienst mit dem, was er bekommt, und wann das passiert.",
+        "Fehlerberichte gehen nur raus, wenn du sie dir angesehen und auf „Senden“ geklickt hast. Logs werden vorher bereinigt.",
+      ],
+      tips: [
+        "Vibe-Dienste sind bei einer neuen Installation aus. Du schaltest sie in der Einrichtung oder unter Einstellungen → Vibe & Konto ein.",
+        "Deine Anmeldedaten liegen im Windows-Tresor (Anmeldeinformationsverwaltung) und nicht in Dateien.",
+      ],
+      keywords: "datenschutz privatsphäre telemetrie tracking werbung daten senden dsgvo transparenz privacy",
+    },
+    portable: {
+      title: "Portabler Modus (USB-Stick)",
+      summary: "Der Launcher kann ohne Installation von einem USB-Stick laufen. Alle Daten liegen dann im Ordner „VibeData“ neben der Datei.",
+      steps: [
+        "Öffne Einstellungen → Allgemein und klicke unter „Portabler Modus“ auf „Portable Kopie erstellen …“.",
+        "Wähle einen Ordner auf deinem USB-Stick. Der Launcher kopiert sich dorthin und legt die Datei „portable.txt“ daneben.",
+        "Starte am anderen PC „vibe-launcher.exe“ vom Stick. Melde dich dort einmal mit Microsoft an.",
+        "Auf fremden PCs schaltest du „Beim Schließen von diesem PC abmelden“ ein. Dann bleiben dort keine Anmeldedaten zurück.",
+      ],
+      tips: [
+        "Anmeldedaten stehen nie auf dem Stick. Verlierst du ihn, kann niemand damit in dein Konto.",
+        "Der portable Launcher aktualisiert sich nicht selbst. Erstelle die portable Kopie mit dem neuen Launcher einfach noch einmal in denselben Ordner, deine Daten bleiben erhalten.",
+        "Ohne Knopf geht es auch: vibe-launcher.exe in einen Ordner kopieren und daneben eine leere Datei „portable.txt“ anlegen.",
+      ],
+      keywords: "portabel portable usb stick ohne installation mitnehmen schule anderer pc",
+    },
   },
   tours: {
     intro: {
@@ -368,6 +399,13 @@ const de: HelpContent = {
         { title: "Instanz-Einstellungen", text: "Über das Zahnrad öffnest du die Einstellungen dieser Instanz." },
         { title: "Leistung dieser Instanz", text: "Hier legst du fest, wie viel Arbeitsspeicher diese Instanz bekommt. Mit „Eigene Werte“ überschreibst du die Standardwerte." },
         { title: "Arbeitsspeicher für alle", text: "Diese Werte gelten für alle Instanzen ohne eigene Einstellung. Mit Mods sind 4–6 GB ein guter Start." },
+      ],
+    },
+    privacy: {
+      title: "Datenschutz",
+      steps: [
+        { title: "Datenschutz", text: "Hier findest du alles dazu, was der Launcher sendet, und schaltest es ab." },
+        { title: "Was wohin geht", text: "Jeder Dienst mit dem, was er bekommt, und wann. Ganz oben steht unser Versprechen." },
       ],
     },
   },

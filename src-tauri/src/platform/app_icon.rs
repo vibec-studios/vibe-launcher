@@ -247,7 +247,7 @@ pub fn apply(app: &AppHandle, a: &Appearance) {
     #[cfg(windows)]
     {
         // Nur in echten Builds und nicht in Testläufen mit eigenem Datenordner
-        if cfg!(debug_assertions) || std::env::var_os("VIBE_LAUNCHER_HOME").is_some() {
+        if cfg!(debug_assertions) || std::env::var_os("VIBE_LAUNCHER_HOME").is_some() || crate::paths::portable::active() {
             return;
         }
         if let Some(state) = app.try_state::<crate::state::AppState>() {

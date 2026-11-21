@@ -225,6 +225,37 @@ const en: HelpContent = {
       ],
       keywords: "ram memory performance fps lag slow java",
     },
+    privacy: {
+      title: "Privacy & transparency",
+      summary: "Vibe Launcher shows no ads and collects no telemetry. Here's what it sends where and when, and how to turn it off.",
+      steps: [
+        "Open Settings → Privacy. Our promise is at the top: no ads, no telemetry, Vibe only with your consent.",
+        "Under “Your switches” you set update checks, Discord status, MinecraftCapes and your online status.",
+        "“What is sent where” lists every service, what it receives and when that happens.",
+        "Error reports are only sent after you've reviewed them and clicked “Send”. Logs are cleaned first.",
+      ],
+      tips: [
+        "Vibe services are off on a new install. You turn them on during setup or under Settings → Vibe & account.",
+        "Your sign-in data is kept in the Windows vault (Credential Manager), not in files.",
+      ],
+      keywords: "privacy data telemetry tracking ads send gdpr transparency",
+    },
+    portable: {
+      title: "Portable mode (USB stick)",
+      summary: "The launcher can run from a USB stick without installing. All data is then kept in the “VibeData” folder next to the file.",
+      steps: [
+        "Open Settings → General and click “Create portable copy …” under “Portable mode”.",
+        "Pick a folder on your USB stick. The launcher copies itself there and puts a “portable.txt” file next to it.",
+        "On the other PC, start “vibe-launcher.exe” from the stick. Sign in with Microsoft once there.",
+        "On PCs that aren't yours, turn on “Sign out of this PC when closing”. Then no sign-in data stays behind.",
+      ],
+      tips: [
+        "Sign-in data is never stored on the stick. If you lose it, nobody can get into your account with it.",
+        "The portable launcher doesn't update itself. Just create the portable copy again from the new launcher into the same folder; your data is kept.",
+        "Without the button: copy vibe-launcher.exe into a folder and create an empty file called “portable.txt” next to it.",
+      ],
+      keywords: "portable usb stick no install take along school other pc",
+    },
   },
   tours: {
     intro: {
@@ -368,6 +399,13 @@ const en: HelpContent = {
         { title: "Instance settings", text: "The gear opens the settings of this instance." },
         { title: "Performance of this instance", text: "Set how much memory this instance gets. “Custom values” overrides the defaults." },
         { title: "Memory for all", text: "These values apply to all instances without their own setting. With mods, 4–6 GB is a good start." },
+      ],
+    },
+    privacy: {
+      title: "Privacy",
+      steps: [
+        { title: "Privacy", text: "Everything about what the launcher sends, and how to turn it off." },
+        { title: "What goes where", text: "Every service, what it receives and when. Our promise is at the top." },
       ],
     },
   },

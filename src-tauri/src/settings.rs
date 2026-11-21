@@ -46,6 +46,7 @@ pub struct Settings {
     /// Nach Launcher-Updates suchen
     pub check_updates: bool,
     /// Vibe-Online-Dienste (optional)
+    #[serde(default)]
     pub vibe: VibeServices,
     /// Discord Rich Presence
     pub discord_rpc: bool,
@@ -82,6 +83,7 @@ pub struct Settings {
     /// Sicherung vor „Probleme beheben“ und Performance-Mods (welche Bereiche)
     pub fix_backup: FixBackup,
     /// MinecraftCapes-Cape/Ohren des eigenen Accounts anzeigen (aus = keine Anfragen an api.minecraftcapes.net)
+    #[serde(default = "legacy_enabled")]
     pub minecraftcapes: bool,
     /// Darstellung: Akzentfarbe, Ton, Ecken, Dichte, Skalierung, Hintergrund
     pub appearance: Appearance,
@@ -128,6 +130,10 @@ fn legacy_ui_mode() -> String {
 }
 
 fn legacy_onboarding_done() -> bool {
+    true
+}
+
+fn legacy_enabled() -> bool {
     true
 }
 
@@ -480,7 +486,7 @@ impl Default for Settings {
             msa_client_id: None,
             check_updates: true,
             update_channel: crate::updater::default_channel(),
-            vibe: VibeServices::default(),
+            vibe: VibeServices { enabled: false, ..VibeServices::default() },
             discord_rpc: true,
             discord_details: true,
             discord_large: "logo".into(),
@@ -497,7 +503,7 @@ impl Default for Settings {
             world_backup_on_launch: false,
             world_backups_keep: 5,
             fix_backup: FixBackup::default(),
-            minecraftcapes: true,
+            minecraftcapes: false,
             appearance: Appearance::default(),
             // Neue Nutzer wählen den Modus im Onboarding
             ui_mode: "expert".into(),
@@ -559,6 +565,8 @@ impl Settings {
         let mut s = Settings::load(&file);
         if !file.exists() && !s.onboarding_done && has_existing_data(paths) {
             s.onboarding_done = true;
+            s.vibe.enabled = true;
+            s.minecraftcapes = true;
         }
         s.sanitize_mode();
         s.migrate_stores();
@@ -617,6 +625,28 @@ impl Settings {
             .or_else(|| option_env!("VIBE_MSA_CLIENT_ID").map(str::to_string))
             .map(|k| k.trim().to_string())
             .filter(|k| !k.is_empty())
+    }
+}
+
+#[cfg(test)]
+mod privacy_tests {
+    use super::*;
+
+    #[test]
+    fn new_installs_send_nothing_without_consent() {
+        let s = Settings::default();
+        assert!(!s.vibe.enabled);
+        assert!(!s.minecraftcapes);
+    }
+
+    #[test]
+    fn existing_files_keep_previous_behaviour() {
+        let s: Settings = serde_json::from_str(r#"{"language":"de"}"#).unwrap();
+        assert!(s.vibe.enabled);
+        assert!(s.minecraftcapes);
+        let s: Settings = serde_json::from_str(r#"{"vibe":{"enabled":false},"minecraftcapes":false}"#).unwrap();
+        assert!(!s.vibe.enabled);
+        assert!(!s.minecraftcapes);
     }
 }
 

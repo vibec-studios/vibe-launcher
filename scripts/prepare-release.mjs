@@ -4,7 +4,7 @@
 //                                    [--from <ordner>] [--out release-files] [--require windows,linux,macos]
 // `--from` wird rekursiv durchsucht (Standard: src-tauri/target – also der lokale Build). In der CI liegen dort
 // die heruntergeladenen Artefakte der Build-Jobs (Windows/Linux/macOS).
-// Erkannt werden: NSIS-Installer (*-setup.exe), AppImage, .deb, .dmg und das macOS-Update-Archiv (*.app.tar.gz),
+// Erkannt werden: NSIS-Installer (*-setup.exe), portables Windows-Zip (*-portable.zip), AppImage, .deb, .dmg und das macOS-Update-Archiv (*.app.tar.gz),
 // jeweils mit .sig für den Updater.
 import fs from "node:fs";
 import path from "node:path";
@@ -42,6 +42,7 @@ const hasVer = (n) => n.includes(version);
 // Plattform -> { quelle, Zielname, Updater-Schlüssel }
 const kinds = [
   { os: "windows", test: (n) => n.endsWith("-setup.exe") && hasVer(n), name: `Vibe-Launcher_${version}_x64-setup.exe`, updater: ["windows-x86_64"] },
+  { os: "windows", test: (n) => n.endsWith("-portable.zip") && hasVer(n), name: `Vibe-Launcher_${version}_x64-portable.zip`, updater: [], optional: true },
   { os: "linux", test: (n) => n.endsWith(".AppImage") && hasVer(n), name: `Vibe-Launcher_${version}_amd64.AppImage`, updater: ["linux-x86_64"] },
   { os: "linux", test: (n) => n.endsWith(".deb") && hasVer(n), name: `Vibe-Launcher_${version}_amd64.deb`, updater: [] },
   { os: "macos", test: (n) => n.endsWith(".dmg") && hasVer(n), name: `Vibe-Launcher_${version}_universal.dmg`, updater: [] },
@@ -57,7 +58,7 @@ const found = new Set();
 for (const k of kinds) {
   const src = find(files, k.test);
   if (!src) continue;
-  found.add(k.os);
+  if (!k.optional) found.add(k.os);
   fs.copyFileSync(src, path.join(out, k.name));
   if (!k.updater.length) continue;
   const sig = src + ".sig";
@@ -76,7 +77,7 @@ if (!Object.keys(platforms).length) throw new Error(`Keine Installer für ${vers
 
 // Feste Namen für Download-Links (Website/README): …/releases/latest/download/Vibe-Launcher-Setup.exe usw.
 if (tag !== "dev") {
-  const alias = { [`Vibe-Launcher_${version}_x64-setup.exe`]: "Vibe-Launcher-Setup.exe", [`Vibe-Launcher_${version}_amd64.AppImage`]: "Vibe-Launcher.AppImage", [`Vibe-Launcher_${version}_amd64.deb`]: "Vibe-Launcher.deb", [`Vibe-Launcher_${version}_universal.dmg`]: "Vibe-Launcher.dmg" };
+  const alias = { [`Vibe-Launcher_${version}_x64-setup.exe`]: "Vibe-Launcher-Setup.exe", [`Vibe-Launcher_${version}_amd64.AppImage`]: "Vibe-Launcher.AppImage", [`Vibe-Launcher_${version}_amd64.deb`]: "Vibe-Launcher.deb", [`Vibe-Launcher_${version}_universal.dmg`]: "Vibe-Launcher.dmg", [`Vibe-Launcher_${version}_x64-portable.zip`]: "Vibe-Launcher-Portable.zip" };
   for (const [src, dst] of Object.entries(alias)) if (fs.existsSync(path.join(out, src))) fs.copyFileSync(path.join(out, src), path.join(out, dst));
 }
 

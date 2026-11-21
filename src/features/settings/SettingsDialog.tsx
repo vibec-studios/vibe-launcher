@@ -2,6 +2,8 @@
 // Öffnen überall per `openSettings(tab)` (store.ts); die alte Route `/settings?tab=…` leitet hierher um.
 // Alles speichert automatisch; `settings://changed` hält den Cache aktuell.
 import { DataDirRow } from "./DataDirMove";
+import { PrivacyTab } from "@/features/privacy/PrivacyTab";
+import { PortableCard } from "@/features/portable/PortableCard";
 import * as D from "@radix-ui/react-dialog";
 import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,6 +23,7 @@ import {
   MessageSquareWarning,
   Palette,
   RefreshCw,
+  ShieldCheck,
   SlidersHorizontal,
   X,
 } from "lucide-react";
@@ -76,6 +79,7 @@ const ICONS: Record<SettingsTab, ReactNode> = {
   game: <Gamepad2 size={16} />,
   downloads: <Download size={16} />,
   vibe: <Cloud size={16} />,
+  privacy: <ShieldCheck size={16} />,
   updates: <RefreshCw size={16} />,
   about: <Info size={16} />,
 };
@@ -228,6 +232,8 @@ function TabContent({ tab, s, update }: TabProps & { tab: SettingsTab }) {
       return <DownloadsTab s={s} update={update} />;
     case "vibe":
       return <VibeTab settings={s} update={update} />;
+    case "privacy":
+      return <PrivacyTab s={s} update={update} />;
     case "updates":
       return <UpdatesTab s={s} update={update} />;
     case "about":
@@ -389,6 +395,8 @@ function GeneralTab({ s, update }: TabProps) {
       )}
 
       <SkinImportSettings />
+
+      <PortableCard />
     </>
   );
 }

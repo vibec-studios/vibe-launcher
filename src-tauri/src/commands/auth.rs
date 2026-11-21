@@ -12,7 +12,9 @@ pub async fn accounts_list(state: State<'_, AppState>) -> AppResult<Vec<Account>
 /// Account entfernen (inkl. gespeicherter Tokens im Schlüsselbund).
 #[tauri::command]
 pub async fn account_remove(state: State<'_, AppState>, id: String) -> AppResult<()> {
-    state.auth.remove(&id)
+    state.auth.remove(&id)?;
+    crate::vibe::forget_tokens(&state, &id);
+    Ok(())
 }
 
 #[tauri::command]

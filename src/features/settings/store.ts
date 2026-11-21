@@ -1,7 +1,7 @@
 // Einstellungen als Popup: überall per `openSettings("vibe")` öffnen. Die alte Route `/settings?tab=…` leitet hierher um.
 import { create } from "zustand";
 
-export const SETTINGS_TABS = ["general", "appearance", "java", "game", "downloads", "vibe", "updates", "about"] as const;
+export const SETTINGS_TABS = ["general", "appearance", "java", "game", "downloads", "vibe", "privacy", "updates", "about"] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 export function isSettingsTab(v: unknown): v is SettingsTab {

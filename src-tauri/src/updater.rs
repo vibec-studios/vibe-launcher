@@ -99,6 +99,9 @@ pub async fn check(state: &AppState) -> AppResult<Option<UpdateInfo>> {
 /// Lädt das zuvor gefundene Update (mit Fortschritt) und installiert es. Unter Windows startet
 /// der NSIS-Installer im passiven Modus und beendet den Launcher; er startet danach neu.
 pub async fn install(state: &AppState, task: &crate::tasks::TaskHandle) -> AppResult<()> {
+    if crate::paths::portable::active() {
+        return Err(AppError::Msg("Im portablen Modus aktualisiert sich der Launcher nicht selbst. Lade die neue portable Version herunter und ersetze die Datei, deine Daten im Ordner VibeData bleiben erhalten.".into()));
+    }
     let update = state
         .pending_update
         .0

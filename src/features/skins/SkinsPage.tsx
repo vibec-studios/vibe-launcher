@@ -53,6 +53,7 @@ import { registerDropTarget, useDragState } from "@/components/content/dragdrop"
 import { MsaDialog } from "@/features/accounts/MsaDialog";
 import { useCapeFront, useSkinFront } from "./render";
 import type { ViewerAnimation } from "./SkinViewer3D";
+import { McCapesOptIn } from "./McCapesOptIn";
 import { McCapesPanel, McCapeThumb } from "./McCapesPanel";
 import { SkinImportButton, sourceLabels, type ImportSource } from "./SkinImport";
 import { useCapeFrames, useMcCapesEnabled, useMcProfile, type McCapeFrames, type McProfile } from "./minecraftcapes";
@@ -133,10 +134,6 @@ export function SkinsPage() {
     setPreview(null);
     setMcShown(false);
   }, [accountId]);
-  useEffect(() => {
-    if (!mcEnabled) setTab("library");
-  }, [mcEnabled]);
-
   useEvent("skins://changed", (p) => {
     if (p.scope === "library") void queryClient.invalidateQueries({ queryKey: skq.library });
     else if (p.account_id !== accountId) void queryClient.invalidateQueries({ queryKey: skq.profile(p.account_id) });
@@ -222,7 +219,7 @@ export function SkinsPage() {
   };
 
   const canEdit = !!profile && !busy;
-  const libraryTab = !(tab === "mccapes" && mcEnabled && account);
+  const libraryTab = !(tab === "mccapes" && account);
 
   return (
     <div ref={pageRef} className="flex h-full min-h-0 flex-col bg-panel">
@@ -438,7 +435,7 @@ export function SkinsPage() {
 
         {/* ------------------------------------------------------------ Bibliothek */}
         <section data-tour="skins-library" className={cn("relative flex min-h-0 flex-col rounded-card", dragOver && "outline outline-2 outline-accent")}>
-          {mcEnabled && account ? (
+          {account ? (
             <Tabs
               className="h-9! shrink-0 border-b-0"
               value={tab}
@@ -459,7 +456,11 @@ export function SkinsPage() {
             </div>
           )}
           {!libraryTab ? (
-            <McCapesPanel profileQ={mcQ} frames={mcFrames} shown={mcShown} onShownChange={setMcShown} />
+            mcEnabled ? (
+              <McCapesPanel profileQ={mcQ} frames={mcFrames} shown={mcShown} onShownChange={setMcShown} />
+            ) : (
+              <McCapesOptIn />
+            )
           ) : (
             <div className="scroll relative min-h-0 flex-1 p-0.5 pt-2">
               {libraryQ.isPending ? (

@@ -81,6 +81,15 @@ const de: Glossary = {
     title: "Microsoft-Konto",
     text: "Minecraft: Java Edition ist an dein Microsoft-Konto gebunden. Die Anmeldung läuft direkt bei Microsoft – der Launcher sieht dein Passwort nie.",
   },
+  portable: {
+    title: "Portabel",
+    text: "Ein portabler Launcher braucht keine Installation. Er speichert alles im Ordner „VibeData“ direkt neben sich, zum Beispiel auf einem USB-Stick, und lässt den PC unverändert.",
+    example: "Stick einstecken, vibe-launcher.exe starten, weiterspielen – auch an einem anderen PC.",
+  },
+  telemetry: {
+    title: "Telemetrie",
+    text: "Automatisch gesendete Nutzungsdaten, zum Beispiel welche Knöpfe du klickst oder wie oft du spielst. Der Vibe Launcher sammelt so etwas nicht.",
+  },
 };
 
 export default de;

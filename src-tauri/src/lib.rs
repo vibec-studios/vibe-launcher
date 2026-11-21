@@ -20,6 +20,7 @@ pub mod net;
 pub mod paths;
 pub mod platform;
 pub mod play;
+pub mod portable;
 pub mod server;
 pub mod settings;
 pub mod state;
@@ -49,6 +50,7 @@ fn init_logging(paths: &paths::Paths) -> Option<tracing_appender::non_blocking::
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    portable::prepare_process();
     let guard = init_logging(&paths::Paths::new());
 
     let mut builder = tauri::Builder::default();
@@ -99,7 +101,7 @@ pub fn run() {
                 // Schema `vibelauncher://` beim Nutzer registrieren (Installer macht das ebenfalls);
                 // nicht in Testläufen, damit Test-Builds keine Registrierung überschreiben.
                 #[cfg(any(windows, target_os = "linux"))]
-                if !cfg!(debug_assertions) && std::env::var_os("VIBE_LAUNCHER_HOME").is_none() {
+                if !cfg!(debug_assertions) && std::env::var_os("VIBE_LAUNCHER_HOME").is_none() && !paths::portable::active() {
                     if let Err(e) = app.deep_link().register_all() {
                         tracing::warn!("Deep-Link-Registrierung fehlgeschlagen: {e}");
                     }
@@ -142,6 +144,9 @@ pub fn run() {
         .on_window_event(|window, event| {
             if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
                 console::close(window.app_handle());
+                if let Some(state) = window.try_state::<AppState>() {
+                    portable::on_exit(&state);
+                }
             }
             // Lokale Server laufen noch -> Frontend fragt, ob sie gestoppt werden sollen
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
@@ -455,6 +460,10 @@ pub fn run() {
             commands::files::files_abs_path,
             commands::files::files_reveal,
             // Vibe-Dienste
+            commands::portable::portable_status,
+            commands::portable::portable_set_forget,
+            commands::portable::portable_forget_here,
+            commands::portable::portable_create_copy,
             commands::vibe::vibe_status,
             commands::vibe::vibe_announcements,
             commands::vibe::vibe_tokens_get,

@@ -9,6 +9,7 @@ mod fake_server;
 pub mod msa;
 pub mod offline;
 pub mod pkce;
+pub mod portable;
 pub mod secrets;
 pub mod skin_import;
 pub mod skins;

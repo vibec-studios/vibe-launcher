@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+
+PackageIdentifier: VibeCraftStudios.VibeLauncher
+PackageVersion: 1.0.0-beta.5
+PackageLocale: en-US
+Publisher: Vibe Craft Studios
+PublisherUrl: https://github.com/vibec-studios
+PublisherSupportUrl: https://github.com/vibec-studios/vibe-launcher/issues
+PackageName: Vibe Launcher
+PackageUrl: https://vibe.axolite.app/launcher
+License: Apache-2.0
+LicenseUrl: https://github.com/vibec-studios/vibe-launcher/blob/main/LICENSE
+Copyright: © Vibe Craft Studios
+ShortDescription: Minecraft launcher with instances, Modrinth and CurseForge, modpacks and skins.
+Description: Free Minecraft launcher without ads or telemetry. Instances, Modrinth and CurseForge, modpacks, skins, local servers and optional online features (Vibe).
+Moniker: vibe-launcher
+Tags:
+  - minecraft
+  - launcher
+  - modrinth
+  - curseforge
+  - modpacks
+ReleaseNotesUrl: https://github.com/vibec-studios/vibe-launcher/releases/tag/v1.0.0-beta.5
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0

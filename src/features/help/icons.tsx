@@ -12,8 +12,10 @@ import {
   PackageOpen,
   Plus,
   Server,
+  ShieldCheck,
   Shirt,
   Sparkles,
+  Usb,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -35,6 +37,8 @@ const ICONS: Record<string, LucideIcon> = {
   message: MessageSquareWarning,
   gauge: Gauge,
   sparkles: Sparkles,
+  shield: ShieldCheck,
+  usb: Usb,
 };
 
 export function GuideIcon({ name, size = 16 }: { name: string; size?: number }) {
