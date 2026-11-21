@@ -49,11 +49,11 @@ import {
   openExport,
   openFolder,
   openGroupPrompt,
+  openIconPicker,
   repairInstance,
   resetIcon,
   setAccent,
   setGroup,
-  setIcon,
   useInstanceActions,
 } from "./actions";
 import { useRunPhase } from "./status";
@@ -159,7 +159,7 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
       ) : (
         <>
           <Sub icon={<ImageIcon size={14} />} label={t("inst.icon")}>
-            <Item icon={<ImageIcon size={14} />} onSelect={() => setIcon(i)}>
+            <Item icon={<ImageIcon size={14} />} onSelect={() => openIconPicker(i)}>
               {t("inst.icon.choose")}
             </Item>
             <Item icon={<RotateCcw size={14} />} disabled={!i.icon} onSelect={() => resetIcon(i)}>

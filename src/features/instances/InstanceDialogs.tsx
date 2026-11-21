@@ -2,6 +2,7 @@
 // Frontend A einmal eingebunden.
 import { useEffect, useState } from "react";
 import { useInstanceDialogs, setGroup } from "@/components/instance/actions";
+import { IconDialog } from "./IconDialog";
 import { useInstances } from "@/lib/queries";
 import { Button, Dialog } from "@/components/ui";
 import { ExportDialog } from "@/features/export/ExportDialog";
@@ -67,6 +68,7 @@ export function InstanceDialogs() {
       <NewInstanceDialog open={newOpen && !guided} onOpenChange={onOpenChange} />
       <SimpleNewGameDialog open={newOpen && guided} goal={newGoal} onOpenChange={onOpenChange} />
       <GroupDialog />
+      <IconDialog />
       <ActionHost />
       <AutofixHost />
       {exportFor && <ExportDialog instance={exportFor} open onOpenChange={(o) => !o && useInstanceDialogs.setState({ exportFor: null })} />}
