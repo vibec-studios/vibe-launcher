@@ -28,6 +28,7 @@ import { HeaderSkeleton, InstanceHeader } from "./InstanceHeader";
 import { InstanceNotices } from "./InstanceNotices";
 import { useRefreshShortcut } from "./RefreshButton";
 import { PlayLinkBar } from "@/features/play/SharePlayLink";
+import { PackSyncBar } from "@/features/packsync/PackSyncBar";
 import { VibeyClientBadge } from "@/features/cosmetics/VibeyClientSlot";
 import { ToolbarSlot } from "./toolbar";
 import { useSimple } from "@/lib/mode";
@@ -285,6 +286,7 @@ function InstanceView({ inst, tab }: { inst: Instance; tab: InstanceTab }) {
       <div data-tour="play-link">
         <PlayLinkBar instanceId={inst.id} className="border-b border-line" />
       </div>
+      <PackSyncBar instance={inst} className="border-b border-line" />
       <div className="relative min-h-0 flex-1">
         {area === "content" ? (
           <InstanceContentTab instance={inst} initialType={initialType} />

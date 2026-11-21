@@ -3,6 +3,8 @@
 // Freundesliste (spielt gerade / online / offline). Rechts das eigene Profil (Skin, Status, Statustext) und das
 // Hosting-Kontingent.
 import { useQuery } from "@tanstack/react-query";
+import { MyHostsSection } from "@/features/hostpanel/MyHosts";
+import { InviteFriendsCard } from "@/features/accessinvite/InviteFriends";
 import { Check, Mail, Megaphone, Pencil, Play, Radio, UserPlus, X } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { Button, IconButton, PageToolbar, SearchInput, Select, Skeleton, Spinner, Tooltip, cn, pageWrap, toast } from "@/components/ui";
@@ -368,6 +370,7 @@ export function Overview() {
                 <p className="min-w-0 flex-1">{motd}</p>
               </div>
             )}
+            {!q && <MyHostsSection />}
             {hostList.length > 0 && !q && (
               <section>
                 <h2 className="mb-2.5 text-[15px] font-bold tracking-[-0.01em] text-text">{t("social.hosts.title")}</h2>
@@ -395,6 +398,7 @@ export function Overview() {
           </div>
           <aside className="flex flex-col gap-3">
             <ProfileCard />
+            <InviteFriendsCard />
             {vibe.hosting && <HostingCard />}
           </aside>
         </div>

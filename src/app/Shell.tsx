@@ -17,6 +17,7 @@ import { Logo3D } from "@/components/Logo3D";
 import { InstanceContextMenuContent } from "@/components/instance/InstanceMenu";
 import { ActionHost } from "@/components/instance/ActionHost";
 import { PackUpdateHost } from "@/features/packupdate/PackUpdateHost";
+import { VibeExtrasHost } from "@/features/vibe-extras/VibeExtrasHost";
 import { openNewInstance } from "@/components/instance/actions";
 import { TaskDock } from "./TaskDock";
 import { UpdateButton } from "./UpdateNotice";
@@ -290,6 +291,7 @@ export function Shell() {
       </div>
       <ActionHost />
       <PackUpdateHost />
+      <VibeExtrasHost />
       <DeferredShellHosts />
       <VibeBridge />
       <CosmeticsBridge />

@@ -14,6 +14,13 @@ use std::path::{Path, PathBuf};
 pub enum PackInput {
     File { path: String },
     Url { url: String },
+    Vibe {
+        code: String,
+        #[serde(default)]
+        version_id: Option<String>,
+        #[serde(default)]
+        link: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -121,8 +128,48 @@ async fn from_archive(state: &AppState, rec: &PackRecord, path: PathBuf, cleanup
     }
 }
 
+async fn from_vibe(state: &AppState, rec: &PackRecord, code: &str, version_id: Option<String>, link: Option<String>) -> AppResult<Prepared> {
+    use crate::vibe::pack_fetch::{fetch, PackOrigin};
+    let origin = match link {
+        Some(link) => PackOrigin::PlayLink { link },
+        None => PackOrigin::Code { code: code.to_string(), version_id },
+    };
+    let f = fetch(state, None, &origin, None).await?;
+    if !f.code.eq_ignore_ascii_case(code) {
+        return Err(AppError::Invalid("Der Spiel-Link gehört zu einem anderen Modpack".into()));
+    }
+    let keep = state.paths.tmp().join("packs").join(format!("vibe-{}.vlpack", uuid::Uuid::new_v4().simple()));
+    if let Some(dir) = keep.parent() {
+        tokio::fs::create_dir_all(dir).await?;
+    }
+    tokio::fs::copy(&f.vlpack, &keep).await?;
+    let p = keep.clone();
+    let plan = match tokio::task::spawn_blocking(move || import::analyze(&p)).await? {
+        Ok(p) => p,
+        Err(e) => {
+            let _ = tokio::fs::remove_file(&keep).await;
+            return Err(e);
+        }
+    };
+    let vid = f.source.version_id.clone();
+    let number = f.source.version_name.clone().filter(|v| !v.trim().is_empty()).unwrap_or_else(|| vid.clone().unwrap_or_default());
+    let version = synthetic_version(rec, vid.clone().unwrap_or_else(|| "vibe".into()), number, &plan);
+    match modpack::finish_target(state, version, plan, keep.clone()).await {
+        Ok(target) => Ok(Prepared {
+            target,
+            origin: NewOrigin { source: rec.source, project_id: Some(f.code.clone()), version_id: vid, remote: None, remote_hash: None },
+            cleanup: Some(keep),
+        }),
+        Err(e) => {
+            let _ = tokio::fs::remove_file(&keep).await;
+            Err(e)
+        }
+    }
+}
+
 async fn prepare(state: &AppState, rec: &PackRecord, input: &PackInput) -> AppResult<Prepared> {
     match input {
+        PackInput::Vibe { code, version_id, link } => from_vibe(state, rec, code, version_id.clone(), link.clone()).await,
         PackInput::Url { url } if !is_http(url) => Err(AppError::Invalid("Bitte einen Link angeben, der mit https:// beginnt".into())),
         PackInput::Url { url } if packwiz::looks_like_packwiz(url) => from_packwiz(state, rec, url).await,
         PackInput::Url { url } => {
@@ -233,6 +280,8 @@ mod tests {
         assert!(matches!(a, PackInput::Url { .. }));
         let b: PackInput = serde_json::from_str(r#"{"kind":"file","path":"C:/a.mrpack"}"#).unwrap();
         assert!(matches!(b, PackInput::File { .. }));
+        let c: PackInput = serde_json::from_str(r#"{"kind":"vibe","code":"AB12CD34","version_id":null,"link":"k3x9q2"}"#).unwrap();
+        assert!(matches!(c, PackInput::Vibe { link: Some(_), .. }));
         assert!(!is_http("file:///etc/passwd"));
     }
 }

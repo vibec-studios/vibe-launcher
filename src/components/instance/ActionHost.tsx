@@ -18,6 +18,7 @@ import { useInstanceActions } from "./actions";
 import { ServerStatusLine } from "./motd";
 import { openInviteAccept, openPackImport } from "@/features/social/dialogStore";
 import { PlayJoinDialog } from "@/features/play/PlayJoinDialog";
+import { AccessInviteDialog } from "@/features/accessinvite/Redeem";
 import { onAppAction } from "@/lib/appActions";
 import { LinkTargetNote, VersionLinkResolver } from "@/features/mrlinks/LinkTargetNote";
 
@@ -141,6 +142,7 @@ function ActionDialog({ a, onDone }: { a: AppAction; onDone: () => void }) {
   if (a.kind === "install_version")
     return <VersionLinkResolver versionId={a.version_id} onCancel={onDone} render={(projectId) => <InstallBody a={{ kind: "install", source: a.source, project_id: projectId, version: a.version_id }} onDone={onDone} />} />;
   if (a.kind === "play_link") return <PlayJoinDialog code={a.code} onDone={onDone} />;
+  if (a.kind === "access_invite") return <AccessInviteDialog code={a.code} onClose={onDone} />;
 
   if (a.kind === "launch") {
     const i = instances.find((x) => x.id === a.instance_id);

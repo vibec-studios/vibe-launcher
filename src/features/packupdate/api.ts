@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useQuery } from "@tanstack/react-query";
 import type { Instance, ModpackPreview } from "@/lib/types";
 
-export type PackInput = { kind: "file"; path: string } | { kind: "url"; url: string };
+export type PackInput = { kind: "file"; path: string } | { kind: "url"; url: string } | { kind: "vibe"; code: string; version_id: string | null; link: string | null };
 
 export interface RemotePackUpdate {
   location: string;

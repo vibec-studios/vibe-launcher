@@ -48,6 +48,43 @@ pub struct LinkMod {
     pub file: Option<String>,
 }
 
+/// Geteiltes Vibe-Pack (Share-Code und installierte Version) in `instance.json`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct LinkVibePackRef {
+    pub code: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version_id: Option<String>,
+}
+
+/// Vibe-Pack am Spiel-Link (`vibe_pack`, feste Version).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct LinkVibePack {
+    pub code: String,
+    pub version_id: String,
+    #[serde(default)]
+    pub version: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub icon_url: Option<String>,
+    #[serde(default)]
+    pub mc_version: String,
+    #[serde(default)]
+    pub loader: String,
+    #[serde(default)]
+    pub loader_version: Option<String>,
+    #[serde(default)]
+    pub file_count: u32,
+    #[serde(default)]
+    pub latest_version_id: Option<String>,
+    #[serde(default = "yes")]
+    pub available: bool,
+}
+
+fn yes() -> bool {
+    true
+}
+
 /// `<spielordner>/.vibe/instance.json` (schema 1).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct InstanceFile {
@@ -58,6 +95,9 @@ pub struct InstanceFile {
     pub pack: Option<LinkPack>,
     pub mods: Vec<LinkMod>,
     pub client_pack: Option<String>,
+    /// Geteiltes Vibe-Pack der Instanz (eigenes oder gefolgtes); der Client reicht es an `POST /play-links` weiter
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vibe_pack: Option<LinkVibePackRef>,
     /// Nur lokal: weitere Dateien mit bekannter Quelle (Pfade relativ zum Spielordner). Bei Modpacks leer, weil
     /// Override-Dateien nicht im Index stehen – der Client zeigt dann keinen Hinweis auf manuelle Mods.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -106,6 +146,8 @@ pub struct PlayLink {
     #[serde(default)]
     pub active: bool,
     pub expires_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vibe_pack: Option<LinkVibePack>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -140,6 +182,16 @@ fn kind_of_key(key: &str) -> Option<&'static str> {
         "datapacks" => Some("datapack"),
         _ => None,
     }
+}
+
+/// Vibe-Pack einer Instanz: gefolgtes/installiertes Pack (Quelle `vibe`) oder selbst geteilter Code.
+pub fn vibe_pack_of(inst: &Instance, shared_code: Option<String>) -> Option<LinkVibePackRef> {
+    if let Some(s) = inst.source.as_ref().filter(|s| s.kind == PackSourceKind::Vibe) {
+        if let Some(code) = s.project_id.clone().filter(|c| crate::vibe::packs::valid_code(c)) {
+            return Some(LinkVibePackRef { code, version_id: s.version_id.clone() });
+        }
+    }
+    shared_code.filter(|c| crate::vibe::packs::valid_code(c)).map(|code| LinkVibePackRef { code, version_id: None })
 }
 
 /// Inhalt von `instance.json` aus Instanz, Content-Index und Client-Packs.
@@ -179,6 +231,7 @@ pub fn build_instance_file(inst: &Instance, idx: &ContentIndex, client_pack: Opt
         pack,
         mods,
         client_pack,
+        vibe_pack: vibe_pack_of(inst, None),
         known_files,
     }
 }
@@ -195,7 +248,10 @@ fn main_client_pack(ids: &[String]) -> Option<String> {
 pub fn write_instance_file(state: &AppState, id: &str) -> AppResult<()> {
     let inst = state.instances.get(id)?;
     let idx = ContentIndex::load(&state.paths, id);
-    let file = build_instance_file(&inst, &idx, main_client_pack(&crate::client_packs::installed_ids(state, id)));
+    let mut file = build_instance_file(&inst, &idx, main_client_pack(&crate::client_packs::installed_ids(state, id)));
+    if file.vibe_pack.is_none() {
+        file.vibe_pack = vibe_pack_of(&inst, crate::vibe::packs::share_link(state, id).map(|l| l.code));
+    }
     crate::util::write_json_atomic(&vibe_dir(state, id).join("instance.json"), &file)
 }
 
@@ -245,6 +301,9 @@ pub fn is_play_link_url(api_base: &str, url: &str) -> bool {
 /// Passt eine vorhandene Instanz zum Link? Gleiches Modpack in gleicher Version bzw. gleiche Version + Loader mit allen
 /// Inhalten. Liefert die Anzahl fehlender Inhalte (bei Modpacks: zusätzliche Inhalte des Hosts).
 pub fn match_score(link: &PlayLink, inst: &Instance, idx: &ContentIndex) -> Option<usize> {
+    if let Some(vp) = link.vibe_pack.as_ref().filter(|v| v.available) {
+        return (vibe_pack_match(vp, inst)? == VibeMatch::Same).then_some(missing_mods(link, idx).len());
+    }
     if inst.mc_version != link.mc_version || loader_kind_str(inst) != link.loader.kind {
         return None;
     }
@@ -265,6 +324,32 @@ pub fn match_score(link: &PlayLink, inst: &Instance, idx: &ContentIndex) -> Opti
             (missing == 0).then_some(0)
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VibeMatch {
+    Same,
+    OtherVersion,
+}
+
+/// Stammt die Instanz aus demselben Vibe-Pack? `Same` = gleiche Version.
+pub fn vibe_pack_match(vp: &LinkVibePack, inst: &Instance) -> Option<VibeMatch> {
+    let s = inst.source.as_ref().filter(|s| s.kind == PackSourceKind::Vibe)?;
+    if !s.project_id.as_deref().is_some_and(|c| c.eq_ignore_ascii_case(&vp.code)) {
+        return None;
+    }
+    Some(if s.version_id.as_deref() == Some(vp.version_id.as_str()) { VibeMatch::Same } else { VibeMatch::OtherVersion })
+}
+
+/// Instanz aus demselben Vibe-Pack in anderer Version (zum Aktualisieren), zuletzt gespielt zuerst.
+pub fn find_vibe_update(state: &AppState, link: &PlayLink) -> Option<Instance> {
+    let vp = link.vibe_pack.as_ref().filter(|v| v.available)?;
+    state
+        .instances
+        .list()
+        .into_iter()
+        .filter(|i| !i.is_bedrock() && vibe_pack_match(vp, i) == Some(VibeMatch::OtherVersion))
+        .max_by_key(|i| i.last_played.unwrap_or(0))
 }
 
 /// Inhalte aus dem Link, die in der Instanz fehlen.
@@ -324,6 +409,21 @@ mod tests {
             "client_pack": "vibey", "world_name": "Neue Welt", "max_players": 8, "active": true, "expires_at": "2026-11-19T12:00:00Z"
         }))
         .unwrap()
+    }
+
+    #[test]
+    fn vibe_pack_matching() {
+        let mut l = link(false);
+        l.vibe_pack = Some(serde_json::from_value(serde_json::json!({ "code": "AB12CD34", "version_id": "v2", "version": "1.4.0", "name": "Insel" })).unwrap());
+        let vibe = |vid: &str| inst("1.21.1", LoaderKind::Fabric, None, Some(PackSource { kind: PackSourceKind::Vibe, project_id: Some("ab12cd34".into()), version_id: Some(vid.into()), name: None, version_name: None }));
+        let idx = ContentIndex::default();
+        assert_eq!(match_score(&l, &vibe("v2"), &idx), Some(1));
+        assert_eq!(match_score(&l, &vibe("v1"), &idx), None);
+        assert_eq!(vibe_pack_match(l.vibe_pack.as_ref().unwrap(), &vibe("v1")), Some(VibeMatch::OtherVersion));
+        assert_eq!(match_score(&l, &inst("1.21.1", LoaderKind::Fabric, Some("0.16.9"), None), &idx), None);
+        let f = build_instance_file(&vibe("v2"), &idx, None);
+        assert_eq!(f.vibe_pack, Some(LinkVibePackRef { code: "ab12cd34".into(), version_id: Some("v2".into()) }));
+        assert_eq!(vibe_pack_of(&inst("1.21.1", LoaderKind::Fabric, None, None), Some("XY12".into())).unwrap().code, "XY12");
     }
 
     #[test]

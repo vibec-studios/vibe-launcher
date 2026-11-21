@@ -164,3 +164,11 @@ export function leaveWaitlist() {
 export function hasAccessClient() {
   return !!bound;
 }
+
+export function redeemAccessInvite(code: string) {
+  return run(async (c) => {
+    const info = parseInfo(await c.request<unknown>("POST", "/api/v1/access/redeem", { body: { code: code.trim().toLowerCase() } }));
+    if (!info) throw new VibeError(0, "bad_response", "Ungültige Antwort");
+    return info;
+  });
+}

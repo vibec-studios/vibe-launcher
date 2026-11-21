@@ -1135,6 +1135,7 @@ export type AppAction =
   | { kind: "join"; address: string; instance_id: string | null }
   | { kind: "invite"; id: string }
   | { kind: "play_link"; code: string }
+  | { kind: "access_invite"; code: string }
   | { kind: "install_version"; source: string; version_id: string };
 
 // ------------------------------------------------------------------ Spiel-Links (docs/PLAY-LINKS.md)
@@ -1161,6 +1162,22 @@ export interface PlayLink {
   /** Relay-Slot noch belegt (Host online) */
   active: boolean;
   expires_at: string;
+  /** Geteiltes Vibe-Modpack am Link (feste Version) */
+  vibe_pack?: PlayLinkVibePack | null;
+}
+
+export interface PlayLinkVibePack {
+  code: string;
+  version_id: string;
+  version: string;
+  name: string;
+  icon_url: string | null;
+  mc_version: string;
+  loader: string;
+  loader_version: string | null;
+  file_count: number;
+  latest_version_id: string | null;
+  available: boolean;
 }
 
 export type JoinProblem = "version_unavailable" | "pack_unavailable" | "curseforge_unavailable" | "loader_unsupported";
@@ -1180,6 +1197,10 @@ export interface JoinPreview {
   manual: string[];
   problem: JoinProblem | null;
   problem_detail: string | null;
+  /** Vibe-Pack: vorhandene Instanz wird auf die Link-Version aktualisiert */
+  pack_update?: boolean;
+  pack_from_version?: string | null;
+  vibe_pack?: boolean;
 }
 
 /** `<spielordner>/.vibe/session.json` (vom Vibey Client) */

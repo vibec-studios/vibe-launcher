@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/format";
 import { errText } from "@/features/social/service";
 import { BetaWhy } from "./BetaNote";
 import { JoinWaitlistButton } from "./JoinDialog";
+import { RedeemInviteRow } from "@/features/accessinvite/Redeem";
 import { leaveWaitlist, useVibeAccess, type AccessView } from "./store";
 import type { AccessInfo } from "./types";
 
@@ -111,6 +112,7 @@ export function AccessCard() {
   return (
     <SettingsCard title={t("access.card.title")} right={<StateTag status={status} />}>
       {body}
+      {status !== "unknown" && <RedeemInviteRow />}
       <BetaWhy className="border-t border-line px-4 py-3" />
     </SettingsCard>
   );

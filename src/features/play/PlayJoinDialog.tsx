@@ -10,7 +10,8 @@ import type { AppError, JoinPreview, PlayLink } from "@/lib/types";
 import { formatBytes } from "@/lib/format";
 import { useVibe } from "@/lib/vibe";
 import { useExpert } from "@/lib/simple-mode";
-import { Button, Dialog, Progress, Skeleton, Spinner, cn, toast } from "@/components/ui";
+import { Button, Dialog, Progress, Skeleton, Spinner, Steps, Tag, cn, toast } from "@/components/ui";
+import { reportInstalled } from "@/features/packsync/api";
 import { PlayerHead } from "@/components/PlayerHead";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { useInstanceActions } from "@/components/instance/actions";
@@ -80,16 +81,19 @@ function JoinBody({ link, onDone }: { link: PlayLink; onDone: () => void }) {
   const [msa, setMsa] = useState(false);
   const [taskId, setTaskId] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  const [phase, setPhase] = useState(0);
   const task = useTask(taskId);
   const preview = useQuery({ queryKey: ["play-preview", link.code], queryFn: () => api.playJoinPreview(link), retry: 0, staleTime: 60_000 });
   const p = preview.data;
   const noAccount = accounts.data !== undefined && accounts.data.length === 0;
-  const title = link.world_name || link.pack?.title || `Minecraft ${link.mc_version}`;
-  const needsSetup = !!p && (p.create || p.mods > 0 || !!p.client_pack);
+  const vp = link.vibe_pack?.available ? link.vibe_pack : null;
+  const title = link.world_name || vp?.name || link.pack?.title || `Minecraft ${link.mc_version}`;
+  const needsSetup = !!p && (p.create || p.mods > 0 || !!p.client_pack || !!p.pack_update);
 
   const start = async () => {
     if (!p) return;
     setFailed(null);
+    setPhase(1);
     try {
       const id = await api.playJoinSetup(link, p.instance_id);
       setTaskId(id);
@@ -97,7 +101,14 @@ function JoinBody({ link, onDone }: { link: PlayLink; onDone: () => void }) {
       const instanceId = done.instance_id ?? p.instance_id;
       if (!instanceId) throw new Error(tt("play.no_instance"));
       await queryClient.invalidateQueries({ queryKey: qk.instances });
+      if (p.pack_update) {
+        const installId = await api.instanceInstall(instanceId);
+        setTaskId(installId);
+        await waitForTask(installId);
+      }
       const inst = await api.instanceGet(instanceId);
+      if (vp) void reportInstalled(vp.code, inst.source?.version_id ?? vp.version_id);
+      setPhase(2);
       onDone();
       if (p.manual.length) {
         nav({ to: "/instances/$id", params: { id: inst.id }, search: { tab: "content" } });
@@ -113,6 +124,7 @@ function JoinBody({ link, onDone }: { link: PlayLink; onDone: () => void }) {
       }
       void launch(inst, null, link.relay_host);
     } catch (e) {
+      setPhase(0);
       if (errKind(e) === "cancelled") {
         setTaskId(null);
         return;
@@ -162,7 +174,16 @@ function JoinBody({ link, onDone }: { link: PlayLink; onDone: () => void }) {
                 </span>
               )}
             </Row>
-            {(link.pack || p?.pack_title) && (
+            {vp ? (
+              <Row label={t("play.row.pack")}>
+                <span className="flex min-w-0 items-center gap-2">
+                  {vp.icon_url && <ProjectIcon src={vp.icon_url} size={20} />}
+                  <span className="truncate">{vp.name}</span>
+                  {vp.version && <span className="shrink-0 text-dim">{vp.version}</span>}
+                  <Tag className="shrink-0">{t("pjoin.vibe_pack")}</Tag>
+                </span>
+              </Row>
+            ) : (link.pack || p?.pack_title) && (
               <Row label={t("play.row.pack")}>
                 <span className="flex min-w-0 items-center gap-2">
                   {p?.pack_icon && <ProjectIcon src={p.pack_icon} size={20} />}
@@ -213,6 +234,9 @@ function JoinBody({ link, onDone }: { link: PlayLink; onDone: () => void }) {
             </Notice>
           )}
 
+          {running && (
+            <Steps steps={[t("pjoin.step.check"), vp ? t("pjoin.step.pack") : t("pjoin.step.setup"), t("pjoin.step.join")]} current={phase} />
+          )}
           {running && task && (
             <div className="flex flex-col gap-2 rounded-card bg-surface p-3">
               <div className="flex items-center gap-2 text-[13px] text-text">
@@ -241,12 +265,14 @@ function InstallPlan({ p }: { p: JoinPreview }) {
     if (p.create) out.push(t("play.plan.create"));
     else if (p.instance_name) out.push(t("play.plan.use", { name: p.instance_name }));
     if (p.create && p.pack_title) out.push(t("play.plan.pack", { name: p.pack_title, n: p.pack_files }));
+    if (p.pack_update && p.pack_title) out.push(t("pjoin.plan.update", { name: p.pack_title, from: p.pack_from_version ?? "?", to: p.pack_version ?? "?" }));
+    if (p.pack_update) out.push(t("pjoin.plan.keep"));
     if (p.mods > 0) out.push(t("play.plan.mods", { n: p.mods }));
     if (p.client_pack) out.push(t("play.plan.client", { name: CLIENTS[p.client_pack] ?? p.client_pack }));
     if (p.game_download) out.push(t("play.plan.game"));
     return out;
   }, [p, t]);
-  const nothing = !p.create && p.mods === 0 && !p.client_pack;
+  const nothing = !p.create && p.mods === 0 && !p.client_pack && !p.pack_update;
   return (
     <div className="flex flex-col gap-2">
       <span className="label">{nothing ? t("play.plan.ready_title") : t("play.plan.title")}</span>
@@ -263,7 +289,9 @@ function InstallPlan({ p }: { p: JoinPreview }) {
           <Download size={12} className="text-dim" />
           {p.download_bytes != null && p.download_bytes > 0
             ? t(p.game_download ? "play.size_plus_game" : "play.size", { size: formatBytes(p.download_bytes) })
-            : t("play.size_unknown")}
+            : p.vibe_pack
+              ? t("pjoin.size_pack")
+              : t("play.size_unknown")}
         </div>
       )}
     </div>
