@@ -22,6 +22,7 @@ pub use log::*;
 mod control;
 pub use control::*;
 mod process;
+mod detached;
 mod start;
 pub use start::*;
 

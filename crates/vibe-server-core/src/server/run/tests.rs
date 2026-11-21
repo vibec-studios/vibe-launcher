@@ -45,3 +45,15 @@ fn paper_format() {
     let c = list.captures("There are 1 out of maximum 20 players online.").unwrap();
     assert_eq!((&c[1], &c[2]), ("1", "20"));
 }
+
+#[test]
+fn detached_server_rejects_reused_pid() {
+    use crate::minecraft::adopt::ProcInfo;
+    let dir = std::path::Path::new("/srv/a");
+    let p = |name: &str, start: u64, cwd: Option<&str>| ProcInfo { pid: 5, start_secs: start, name: name.into(), cmd: vec![], cwd: cwd.map(Into::into) };
+    assert!(super::detached::plausible(&p("java", 100, Some("/srv/a")), 100, dir));
+    assert!(super::detached::plausible(&p("java.exe", 90, None), 100, dir));
+    assert!(!super::detached::plausible(&p("java", 500, Some("/srv/a")), 100, dir));
+    assert!(!super::detached::plausible(&p("java", 100, Some("/srv/b")), 100, dir));
+    assert!(!super::detached::plausible(&p("chrome", 100, None), 100, dir));
+}

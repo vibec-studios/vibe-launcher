@@ -116,41 +116,15 @@ impl ServerManager {
 impl ServerManager {
     /// Beim Launcher-Start: Server aus früheren Sitzungen erkennen, Auto-Start.
     pub fn on_startup(&self, state: &Core) {
-        let mut sys = sysinfo::System::new();
-        sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
         for s in state.servers.list() {
-            let pidf = server_dir(&self.paths, &s.id).join(PID_FILE);
+            let dir = server_dir(&self.paths, &s.id);
+            let pidf = dir.join(PID_FILE);
             let Some(pid) = std::fs::read_to_string(&pidf).ok().and_then(|t| t.trim().parse::<u32>().ok()) else { continue };
-            let alive = sys
-                .process(sysinfo::Pid::from_u32(pid))
-                .is_some_and(|p| p.name().to_string_lossy().to_ascii_lowercase().starts_with("java"));
-            if alive {
-                self.update(&s.id, |x| {
-                    x.status.state = RunState::Running;
-                    x.status.pid = Some(pid);
-                    x.status.detached = true;
-                });
-                self.launcher_line(&s.id, LogLevel::Launcher, "Server läuft noch aus einer früheren Sitzung (keine Konsole verfügbar).");
-                // Prozessende überwachen
-                let me = self.me.clone();
-                let id = s.id.clone();
-                crate::rt::spawn(async move {
-                    loop {
-                        tokio::time::sleep(Duration::from_secs(3)).await;
-                        let mut sys = sysinfo::System::new();
-                        sys.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[sysinfo::Pid::from_u32(pid)]), true);
-                        if sys.process(sysinfo::Pid::from_u32(pid)).is_none() {
-                            if let Some(m) = me.upgrade() {
-                                if m.status(&id).is_some_and(|st| st.detached) {
-                                    m.finish_detached(&id);
-                                }
-                            }
-                            break;
-                        }
-                    }
-                });
-            } else {
-                let _ = std::fs::remove_file(&pidf);
+            match super::detached::probe(&pidf, pid, &dir) {
+                Some(start_secs) => self.resume_detached(state, &s.id, pid, start_secs),
+                None => {
+                    let _ = std::fs::remove_file(&pidf);
+                }
             }
         }
         for s in state.servers.list().into_iter().filter(|s| s.auto_start) {
