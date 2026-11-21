@@ -95,6 +95,15 @@ const en: Glossary = {
     title: "Telemetry",
     text: "Usage data sent automatically, for example which buttons you click or how often you play. Vibe Launcher doesn't collect anything like that.",
   },
+  skinlayer: {
+    title: "Outer layer (skin)",
+    text: "A skin has two layers: the base layer sits right on the figure, the outer layer floats slightly above it. Use it for hair, hats, jackets or glasses – it may be transparent.",
+    example: "Paint a hood on the head's outer layer – in the game it sticks out a little.",
+  },
+  skinmodel: {
+    title: "Classic and Slim",
+    text: "Minecraft's two body models. Classic has 4 pixel wide arms, Slim only 3 pixels. You can switch the model at any time.",
+  },
 };
 
 export default en;

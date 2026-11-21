@@ -95,6 +95,15 @@ const de: Glossary = {
     title: "Telemetrie",
     text: "Automatisch gesendete Nutzungsdaten, zum Beispiel welche Knöpfe du klickst oder wie oft du spielst. Der Vibe Launcher sammelt so etwas nicht.",
   },
+  skinlayer: {
+    title: "Außenschicht (Skin)",
+    text: "Ein Skin hat zwei Ebenen: die Grundschicht liegt direkt auf der Figur, die Außenschicht schwebt etwas darüber. Sie ist für Haare, Hüte, Jacken oder Brillen gedacht und darf durchsichtig sein.",
+    example: "Male eine Kapuze auf die Außenschicht des Kopfes – im Spiel steht sie leicht ab.",
+  },
+  skinmodel: {
+    title: "Classic und Slim",
+    text: "Die zwei Figuren-Modelle von Minecraft. Classic hat 4 Pixel breite Arme, Slim nur 3 Pixel. Du kannst das Modell jederzeit wechseln.",
+  },
 };
 
 export default de;

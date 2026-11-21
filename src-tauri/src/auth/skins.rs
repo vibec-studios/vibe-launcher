@@ -141,6 +141,20 @@ pub fn data_url(png: &[u8]) -> String {
     format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(png))
 }
 
+pub fn decode_png_payload(payload: &str) -> AppResult<Vec<u8>> {
+    let s = payload.trim();
+    let b64 = match s.strip_prefix("data:") {
+        Some(rest) => rest.split_once(',').filter(|(head, _)| head.ends_with(";base64")).map(|(_, b)| b).ok_or_else(|| AppError::Invalid("Ungültige Bilddaten.".into()))?,
+        None => s,
+    };
+    if b64.len() > MAX_PNG * 4 / 3 + 8 {
+        return Err(AppError::Invalid("Die Skin-Datei ist zu groß (max. 512 KB).".into()));
+    }
+    let png = base64::engine::general_purpose::STANDARD.decode(b64).map_err(|_| AppError::Invalid("Ungültige Bilddaten.".into()))?;
+    validate_skin_png(&png)?;
+    Ok(png)
+}
+
 /// Minecraft-Spielername (inkl. alter, kurzer Namen).
 pub fn valid_player_name(n: &str) -> bool {
     (1..=16).contains(&n.len()) && n.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
@@ -482,6 +496,18 @@ mod tests {
         assert!(matches!(validate_skin_png(&fake_png(128, 128)), Err(AppError::Invalid(m)) if m.contains("128×128")));
         assert!(matches!(validate_skin_png(b"GIF89a....................."), Err(AppError::Invalid(m)) if m.contains("PNG")));
         assert!(validate_skin_png(&vec![0u8; MAX_PNG + 1]).is_err());
+    }
+
+    #[test]
+    fn png_payload_decoding() {
+        let png = fake_png(64, 64);
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&png);
+        assert_eq!(decode_png_payload(&format!("data:image/png;base64,{b64}")).unwrap(), png);
+        assert_eq!(decode_png_payload(&b64).unwrap(), png);
+        assert!(decode_png_payload("data:image/png,abc").is_err());
+        assert!(decode_png_payload("!!!").is_err());
+        let big = base64::engine::general_purpose::STANDARD.encode(fake_png(32, 32));
+        assert!(matches!(decode_png_payload(&big), Err(AppError::Invalid(m)) if m.contains("32×32")));
     }
 
     #[test]

@@ -211,6 +211,7 @@ pub fn run() {
             commands::skins::skin_library_list,
             commands::skins::skin_library_add_file,
             commands::skins::skin_library_add_current,
+            commands::skins::skin_library_add_data,
             commands::skins::skin_library_import_player,
             commands::skins::skin_library_rename,
             commands::skins::skin_library_set_variant,

@@ -21,6 +21,8 @@ export const TERMS = [
   "dependency",
   "portable",
   "telemetry",
+  "skinlayer",
+  "skinmodel",
 ] as const;
 
 export type TermId = (typeof TERMS)[number];
