@@ -1,20 +1,19 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { save } from "@tauri-apps/plugin-dialog";
-import { Copy, Download, MapPin } from "lucide-react";
+import { Copy, Download } from "lucide-react";
 import { Button, Dialog, Skeleton, Spinner, toast } from "@/components/ui";
 import { Term } from "@/features/help/glossary/Term";
 import { useT } from "@/i18n";
 import { formatBytes, formatDuration } from "@/lib/format";
 import type { World } from "@/lib/types";
 import { worldPreviewApi, type MapCenter, type WorldMapPreview } from "./worldPreviewApi";
+import { VANILLA_DIMENSIONS, sourcesForWorld, worldMapApi } from "./map/api";
+import { DimensionPicker, SourcePicker, WORLD_SOURCE, XaeroInstallHint, dimensionLabel } from "./map/MapControls";
+import { MapViewport } from "./map/MapViewport";
+import { ModMap } from "./map/ModMap";
 
 const MODES = ["survival", "creative", "adventure", "spectator", "hardcore"];
-const DIMENSIONS: Record<string, string> = {
-  "minecraft:overworld": "world_map.overworld",
-  "minecraft:the_nether": "world_map.nether",
-  "minecraft:the_end": "world_map.end",
-};
 
 export function worldModeLabel(mode: string | null | undefined, t: (key: string) => string) {
   const normalized = mode?.toLowerCase();
@@ -25,7 +24,7 @@ type MapState =
   | { status: "loading" | "stopped" | "empty" | "error" }
   | { status: "ready"; map: WorldMapPreview };
 
-function WorldMap({ instanceId, folder, center }: { instanceId: string; folder: string; center: MapCenter }) {
+function WorldMap({ instanceId, folder, center, dimension }: { instanceId: string; folder: string; center: MapCenter; dimension: string }) {
   const t = useT();
   const [state, setState] = useState<MapState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -36,17 +35,22 @@ function WorldMap({ instanceId, folder, center }: { instanceId: string; folder: 
   useEffect(() => {
     const controller = new AbortController();
     active.current = controller;
-    worldPreviewApi.render(instanceId, folder, center, controller.signal).then((map) => {
+    worldPreviewApi.render(instanceId, folder, center, dimension, controller.signal).then((map) => {
       if (!controller.signal.aborted) setState(map ? { status: "ready", map } : { status: "empty" });
     }).catch(() => {
       if (!controller.signal.aborted) setState({ status: "error" });
     });
     return () => controller.abort();
-  }, [instanceId, folder, center, attempt]);
+  }, [instanceId, folder, center, dimension, attempt]);
+  const waypoints = useQuery({
+    queryKey: ["world-map-waypoints", instanceId, folder, dimension],
+    queryFn: () => worldMapApi.waypoints(instanceId, folder, dimension),
+    retry: false,
+  }).data;
 
   if (state.status !== "ready") {
     return (
-      <div role="status" className="grid min-h-48 place-content-center justify-items-center gap-3 rounded-card bg-surface2 p-5 text-center text-sm text-muted">
+      <div role="status" className="grid aspect-square w-full max-w-[460px] place-content-center justify-items-center gap-3 rounded-card bg-surface2 p-5 text-center text-sm text-muted">
         {state.status === "loading" && <Spinner size={22} />}
         <p>{t(`world_map.state.${state.status}`)}</p>
         {state.status === "loading" ? (
@@ -68,9 +72,9 @@ function WorldMap({ instanceId, folder, center }: { instanceId: string; folder: 
     );
   }
 
-  const { png, position: { x, z, dimension }, radius } = state.map;
-  const dimKey = DIMENSIONS[dimension];
-  const location = t("world_map.location", { x, z, dimension: dimKey ? t(dimKey) : dimension });
+  const { png, position, radius } = state.map;
+  const { x, z } = position;
+  const location = t("world_map.location", { x, z, dimension: dimensionLabel(position.dimension, t) });
   const exportImage = async () => {
     setSaving(true);
     try {
@@ -105,24 +109,19 @@ function WorldMap({ instanceId, folder, center }: { instanceId: string; folder: 
   return (
     <div>
       <figure>
-        <div className="relative mx-auto aspect-square w-full max-w-[420px] overflow-hidden rounded-card border border-line2 bg-surface2">
-          <img
-            src={`data:image/png;base64,${png}`}
-            alt={t("world_map.alt", { location })}
-            className="h-full w-full [image-rendering:pixelated]"
-            draggable={false}
-          />
-          <MapPin
-            size={21}
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full fill-accent text-overlay drop-shadow-md"
-          />
-          <span aria-hidden="true" className="absolute right-2 top-2 rounded-ctl border border-line2 bg-overlay/90 px-2 py-1 text-xs font-semibold text-text shadow-sm">
-            {t("world_map.north")}
-          </span>
-        </div>
+        <MapViewport
+          className="aspect-square w-full max-w-[460px]"
+          layers={[{ key: png.slice(-24), src: `data:image/png;base64,${png}`, x: x - radius, z: z - radius, size: radius * 2 + 1 }]}
+          waypoints={waypoints}
+          pin={{ x, z }}
+          home={{ x: x + 0.5, z: z + 0.5 }}
+          initialZoom={1.75}
+          minZoom={0.5}
+          maxZoom={8}
+          label={t("world_map.alt", { location })}
+        />
         <figcaption className="pt-2 text-xs leading-relaxed text-muted">
-          {t("world_map.caption", { location, radius })}
+          {t("world_map.caption", { location, radius })} {t("mod_map.hint.world")} {t("mod_map.hint.controls")}
         </figcaption>
       </figure>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -149,46 +148,67 @@ function WorldDetail({ label, children }: { label: ReactNode; children: ReactNod
 export function WorldPreviewDialog({ instanceId, world, onClose }: { instanceId: string; world: World; onClose: () => void }) {
   const t = useT();
   const [selection, setSelection] = useState<MapCenter | null>(null);
+  const [sourceChoice, setSourceChoice] = useState(WORLD_SOURCE);
+  const [dimensionChoice, setDimensionChoice] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["world-preview-info", instanceId, world.folder],
     queryFn: () => worldPreviewApi.info(instanceId, world.folder),
     retry: false,
   });
+  const sourcesQuery = useQuery({
+    queryKey: ["world-map-sources", instanceId],
+    queryFn: () => worldMapApi.sources(instanceId),
+    retry: false,
+    staleTime: 30_000,
+  });
+  const modSources = sourcesForWorld(sourcesQuery.data, world.folder);
+  const modSource = modSources.find((source) => source.id === sourceChoice);
   const info = query.data;
   const center = selection && info?.[selection] ? selection : info?.player ? "player" : info?.spawn ? "spawn" : null;
+  const dimensions = modSource ? modSource.dimensions : [...VANILLA_DIMENSIONS];
+  const preferred = dimensionChoice ?? (center ? info?.[center]?.dimension : null) ?? "minecraft:overworld";
+  const dimension = dimensions.includes(preferred) ? preferred : (dimensions[0] ?? "minecraft:overworld");
+  const pin = info?.player && info.player.dimension === dimension ? { x: info.player.x, z: info.player.z } : null;
   const unknown = t("world_map.unknown");
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()} size="lg" title={world.name} description={t("world_map.title")}>
-      <div className="grid items-start gap-5 pb-3 sm:grid-cols-[minmax(0,1fr)_minmax(165px,0.46fr)]">
-        <dl className="grid grid-cols-2 gap-4 rounded-card bg-surface2 p-4 sm:order-2 sm:grid-cols-1">
-          <WorldDetail label={<Term id="seed" />}>
-            {query.isPending ? <Skeleton className="h-4 w-28" /> : <span className="font-mono">{info?.seed ?? unknown}</span>}
-          </WorldDetail>
-          <WorldDetail label={t("world_map.mode")}>{worldModeLabel(world.game_mode, t) ?? unknown}</WorldDetail>
-          <WorldDetail label={t("world_map.play_time")}>
-            {query.isPending ? <Skeleton className="h-4 w-16" /> : info?.play_seconds != null ? formatDuration(info.play_seconds) : unknown}
-          </WorldDetail>
-          <WorldDetail label={t("world_map.version")}>
-            {query.isPending ? <Skeleton className="h-4 w-16" /> : info?.version ?? (info?.data_version != null ? t("world_map.data_version", { version: info.data_version }) : unknown)}
-          </WorldDetail>
-          <WorldDetail label={t("world_map.size")}>{world.size != null ? formatBytes(world.size) : unknown}</WorldDetail>
-        </dl>
-        <section className="min-w-0" aria-label={t("world_map.title")}>
-          {info ? (
-            <>
-              {center ? (
-                <>
-                  <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label={t("world_map.center")}>
-                    {(["spawn", "player"] as const).filter((key) => info[key]).map((key) => (
-                      <Button key={key} size="sm" variant={center === key ? "accent" : "ghost"} aria-pressed={center === key} onClick={() => setSelection(key)}>
-                        {t(`world_map.center.${key}`)}
-                      </Button>
-                    ))}
-                  </div>
-                  <WorldMap key={center} instanceId={instanceId} folder={world.folder} center={center} />
-                </>
-              ) : <p className="text-sm text-muted">{t("world_map.no_position")}</p>}
-            </>
+    <Dialog open onOpenChange={(open) => !open && onClose()} size={modSources.length ? "xl" : "lg"} title={world.name} description={t("world_map.title")}>
+      <div className="grid items-start gap-5 pb-3 sm:grid-cols-[minmax(0,1fr)_minmax(165px,0.4fr)]">
+        <div className="grid min-w-0 gap-3 sm:order-2">
+          <dl className="grid grid-cols-2 gap-4 rounded-card bg-surface2 p-4 sm:grid-cols-1">
+            <WorldDetail label={<Term id="seed" />}>
+              {query.isPending ? <Skeleton className="h-4 w-28" /> : <span className="font-mono">{info?.seed ?? unknown}</span>}
+            </WorldDetail>
+            <WorldDetail label={t("world_map.mode")}>{worldModeLabel(world.game_mode, t) ?? unknown}</WorldDetail>
+            <WorldDetail label={t("world_map.play_time")}>
+              {query.isPending ? <Skeleton className="h-4 w-16" /> : info?.play_seconds != null ? formatDuration(info.play_seconds) : unknown}
+            </WorldDetail>
+            <WorldDetail label={t("world_map.version")}>
+              {query.isPending ? <Skeleton className="h-4 w-16" /> : info?.version ?? (info?.data_version != null ? t("world_map.data_version", { version: info.data_version }) : unknown)}
+            </WorldDetail>
+            <WorldDetail label={t("world_map.size")}>{world.size != null ? formatBytes(world.size) : unknown}</WorldDetail>
+          </dl>
+          {sourcesQuery.isSuccess && !modSources.some((source) => source.kind === "xaero") && <XaeroInstallHint instanceId={instanceId} />}
+        </div>
+        <section className="grid min-w-0 gap-3" aria-label={t("world_map.title")}>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <SourcePicker sources={modSources} value={modSource ? modSource.id : WORLD_SOURCE} withWorld onChange={setSourceChoice} />
+            <DimensionPicker dimensions={dimensions} value={dimension} onChange={setDimensionChoice} />
+          </div>
+          {modSource ? (
+            <ModMap instanceId={instanceId} source={modSource} dimension={dimension} pin={pin} />
+          ) : info ? (
+            center ? (
+              <div>
+                <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label={t("world_map.center")}>
+                  {(["spawn", "player"] as const).filter((key) => info[key]).map((key) => (
+                    <Button key={key} size="sm" variant={center === key ? "accent" : "ghost"} aria-pressed={center === key} onClick={() => setSelection(key)}>
+                      {t(`world_map.center.${key}`)}
+                    </Button>
+                  ))}
+                </div>
+                <WorldMap key={`${center}|${dimension}`} instanceId={instanceId} folder={world.folder} center={center} dimension={dimension} />
+              </div>
+            ) : <p className="text-sm text-muted">{t("world_map.no_position")}</p>
           ) : query.isError ? (
             <div className="grid justify-items-start gap-3 text-sm text-muted" role="status">
               <p>{t("world_map.info_failed")}</p>

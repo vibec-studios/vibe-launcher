@@ -26,7 +26,7 @@ export interface WorldMapPreview {
 export const worldPreviewApi = {
   info: (instanceId: string, folder: string) =>
     invoke<WorldPreviewInfo>("world_preview_info", { instanceId, folder }),
-  render: (instanceId: string, folder: string, center: MapCenter, signal: AbortSignal) => {
+  render: (instanceId: string, folder: string, center: MapCenter, dimension: string | null, signal: AbortSignal) => {
     let id: string | undefined;
     const cancel = () => {
       if (id) void invoke("world_preview_cancel", { id }).catch(() => {});
@@ -36,7 +36,7 @@ export const worldPreviewApi = {
       if (signal.aborted) cancel();
     });
     signal.addEventListener("abort", cancel, { once: true });
-    return invoke<WorldMapPreview | null>("world_preview_render", { instanceId, folder, center, ready })
+    return invoke<WorldMapPreview | null>("world_preview_render", { instanceId, folder, center, dimension, ready })
       .finally(() => signal.removeEventListener("abort", cancel));
   },
   copy: (png: string) => invoke<void>("world_preview_copy", { png }),

@@ -269,7 +269,7 @@ fn world_preview_reads_current_layout_and_caches_read_only() {
     assert_eq!(info["player"]["z"], -1);
 
     let token = CancellationToken::new();
-    let map = render(&world, &fixture.cache, Center::Player, &token)
+    let map = render(&world, &fixture.cache, Center::Player, None, &token)
         .unwrap()
         .unwrap();
     let picture = image(&map.png);
@@ -280,7 +280,7 @@ fn world_preview_reads_current_layout_and_caches_read_only() {
     let cached = snapshot(&fixture.cache);
     assert_eq!(cached.len(), 1);
     assert_eq!(
-        render(&world, &fixture.cache, Center::Player, &token)
+        render(&world, &fixture.cache, Center::Player, None, &token)
             .unwrap()
             .unwrap()
             .png,
@@ -297,7 +297,7 @@ fn world_preview_reads_current_layout_and_caches_read_only() {
         true,
         true,
     );
-    let updated = render(&world, &fixture.cache, Center::Player, &token)
+    let updated = render(&world, &fixture.cache, Center::Player, None, &token)
         .unwrap()
         .unwrap();
     assert_eq!(
@@ -307,7 +307,7 @@ fn world_preview_reads_current_layout_and_caches_read_only() {
     assert_eq!(snapshot(&fixture.cache).len(), 1);
     token.cancel();
     assert!(matches!(
-        render(&world, &fixture.cache, Center::Player, &token),
+        render(&world, &fixture.cache, Center::Player, None, &token),
         Err(AppError::Cancelled)
     ));
 }
@@ -337,6 +337,7 @@ fn world_preview_renders_dense_anvil_palette_at_spawn() {
         &world,
         &fixture.cache,
         Center::Spawn,
+        None,
         &CancellationToken::new(),
     )
     .unwrap()
@@ -370,9 +371,15 @@ fn world_preview_reads_string_palette_of_newer_versions() {
         false,
     );
     let world = fixture.copy_world();
-    let map = render(&world, &fixture.cache, Center::Spawn, &CancellationToken::new())
-        .unwrap()
-        .unwrap();
+    let map = render(
+        &world,
+        &fixture.cache,
+        Center::Spawn,
+        None,
+        &CancellationToken::new(),
+    )
+    .unwrap()
+    .unwrap();
     let picture = image(&map.png);
     assert_eq!(picture.get_pixel(125, 125).0, [107, 152, 66, 255]);
     assert_eq!(picture.get_pixel(137, 125).0, [54, 112, 182, 255]);
@@ -397,15 +404,28 @@ fn world_preview_renders_world_copies() {
         println!("{folder}: {info}");
         for center in [Center::Spawn, Center::Player] {
             let started = std::time::Instant::now();
-            let Some(map) = render(&world, &fixture.cache, center, &CancellationToken::new()).unwrap() else {
+            let Some(map) = render(
+                &world,
+                &fixture.cache,
+                center,
+                None,
+                &CancellationToken::new(),
+            )
+            .unwrap() else {
                 println!("{folder}/{}: keine Karte", center.name());
                 continue;
             };
             let first = started.elapsed();
             let again = std::time::Instant::now();
-            let cached = render(&world, &fixture.cache, center, &CancellationToken::new())
-                .unwrap()
-                .unwrap();
+            let cached = render(
+                &world,
+                &fixture.cache,
+                center,
+                None,
+                &CancellationToken::new(),
+            )
+            .unwrap()
+            .unwrap();
             assert_eq!(cached.png, map.png);
             let picture = image(&map.png);
             let filled = picture.pixels().filter(|pixel| pixel.0[3] == 255).count();

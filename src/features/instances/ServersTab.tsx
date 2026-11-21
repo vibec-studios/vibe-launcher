@@ -1,8 +1,8 @@
 // Server-Liste einer Instanz (servers.dat): Ping mit MOTD/Spielern/Latenz, Beitreten per Quick Play,
 // Hinzufügen/Bearbeiten/Entfernen/Sortieren.
-import { memo, useState } from "react";
+import { memo, useCallback, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Copy, Info, Lock, MoreHorizontal, Pencil, Play, Plus, RefreshCw, Server, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Info, Lock, Map as MapIcon, MoreHorizontal, Pencil, Play, Plus, RefreshCw, Server, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Instance, ServerEntry } from "@/lib/types";
 import {
@@ -32,6 +32,9 @@ import { Motd, PingBars, usePing } from "@/components/instance/motd";
 import { useT } from "@/i18n";
 import { isLegacyRelayAddress } from "@/lib/domains";
 import { PageTools } from "./toolbar";
+import { sourcesForServer, worldMapApi, type MapSource } from "./map/api";
+import { XaeroInstallHint } from "./map/MapControls";
+import { ServerMapDialog } from "./map/ServerMapDialog";
 
 const key = (id: string) => ["servers", id] as const;
 
@@ -50,6 +53,7 @@ interface RowMenuProps {
   count: number;
   locked: boolean;
   join: () => void;
+  onMap: (() => void) | null;
   onEdit: (i: number) => void;
   onMove: (i: number, d: -1 | 1) => void;
   onRemove: (i: number) => void;
@@ -58,13 +62,18 @@ interface RowMenuProps {
 }
 
 /** Dieselben Einträge im ⋯-Menü und im Rechtsklick-Menü. */
-function RowMenu({ entry, index, count, locked, join, onEdit, onMove, onRemove, Item, Sep }: RowMenuProps) {
+function RowMenu({ entry, index, count, locked, join, onMap, onEdit, onMove, onRemove, Item, Sep }: RowMenuProps) {
   const t = useT();
   return (
     <>
       <Item icon={<Play size={14} />} disabled={locked} onSelect={join}>
         {t("servers.join")}
       </Item>
+      {onMap && (
+        <Item icon={<MapIcon size={14} />} onSelect={onMap}>
+          {t("mod_map.server_open")}
+        </Item>
+      )}
       <Item icon={<Pencil size={14} />} disabled={locked} onSelect={() => onEdit(index)}>
         {t("servers.edit")}
       </Item>
@@ -92,6 +101,8 @@ const ServerRow = memo(function ServerRow({
   index,
   count,
   locked,
+  hasMap,
+  onShowMap,
   onEdit,
   onMove,
   onRemove,
@@ -101,6 +112,8 @@ const ServerRow = memo(function ServerRow({
   index: number;
   count: number;
   locked: boolean;
+  hasMap: boolean;
+  onShowMap: (entry: ServerEntry) => void;
   onEdit: (i: number) => void;
   onMove: (i: number, d: -1 | 1) => void;
   onRemove: (i: number) => void;
@@ -110,7 +123,8 @@ const ServerRow = memo(function ServerRow({
   const ping = usePing(entry.ip);
   const s = ping.data;
   const join = () => launch(instance, null, entry.ip);
-  const menu = { entry, index, count, locked, join, onEdit, onMove, onRemove };
+  const onMap = hasMap ? () => onShowMap(entry) : null;
+  const menu = { entry, index, count, locked, join, onMap, onEdit, onMove, onRemove };
   return (
     <ContextMenu content={<RowMenu {...menu} Item={ContextItem} Sep={ContextSeparator} />}>
       <div
@@ -145,6 +159,11 @@ const ServerRow = memo(function ServerRow({
             </span>
           </Tooltip>
         </div>
+        {onMap && (
+          <IconButton label={t("mod_map.server_open_named", { name: entry.name })} tip size="sm" variant="ghost" onClick={onMap}>
+            <MapIcon size={15} />
+          </IconButton>
+        )}
         <IconButton label={t("servers.join_with", { name: instance.name })} tip size="sm" variant="ghost" disabled={locked} className="text-accent" onClick={join}>
           <Play size={14} fill="currentColor" />
         </IconButton>
@@ -260,7 +279,14 @@ export function ServersTab({ instance }: { instance: Instance }) {
   const { phase } = useRunPhase(instance.id);
   const locked = phase !== "idle";
   const [editing, setEditing] = useState<number | null>(null);
+  const [mapEntry, setMapEntry] = useState<{ entry: ServerEntry; sources: MapSource[] } | null>(null);
+  const mapSources = useQuery({ queryKey: ["world-map-sources", instance.id], queryFn: () => worldMapApi.sources(instance.id), retry: false, staleTime: 30_000 });
   const list = q.data ?? [];
+  const showMap = useCallback(
+    (entry: ServerEntry) => setMapEntry({ entry, sources: sourcesForServer(mapSources.data, entry.ip) }),
+    [mapSources.data],
+  );
+  const anyServerMap = (mapSources.data ?? []).some((source) => source.multiplayer && source.kind === "xaero");
 
   const save = async (next: ServerEntry[]) => {
     const prev = q.data;
@@ -336,14 +362,22 @@ export function ServersTab({ instance }: { instance: Instance }) {
                 index={i}
                 count={list.length}
                 locked={locked}
+                hasMap={sourcesForServer(mapSources.data, s.ip).length > 0}
+                onShowMap={showMap}
                 onEdit={setEditing}
                 onMove={onMove}
                 onRemove={onRemove}
               />
             ))}
+            {mapSources.isSuccess && !anyServerMap && (
+              <div className="mx-6 mt-3">
+                <XaeroInstallHint instanceId={instance.id} server />
+              </div>
+            )}
           </div>
         )}
       </div>
+      {mapEntry && <ServerMapDialog instanceId={instance.id} name={mapEntry.entry.name} sources={mapEntry.sources} onClose={() => setMapEntry(null)} />}
       {editing !== null && (
         <EditDialog
           entry={editing >= 0 ? list[editing] : blank}
