@@ -1120,8 +1120,9 @@ pub async fn analyze_instance(
 ) -> crate::error::AppResult<Vec<Diagnosis>> {
     let inst = state.instances.get(instance_id)?;
     let game = state.paths.game_dir(instance_id);
-    let session: String = state.game.session_log(instance_id).iter().map(|l| format!("{}\n", l.text)).collect();
-    let started = state.game.states().into_iter().find(|s| s.instance_id == instance_id).and_then(|s| s.started_at);
+    let key = state.game.latest_crash(instance_id).map(|s| s.run_id).unwrap_or_else(|| instance_id.to_string());
+    let session: String = state.game.session_log(&key).iter().map(|l| format!("{}\n", l.text)).collect();
+    let started = state.game.state_of(&key).and_then(|s| s.started_at);
     let loader = match inst.loader.kind {
         crate::instance::LoaderKind::Vanilla => None,
         k => serde_json::to_value(k).ok().and_then(|v| v.as_str().map(String::from)),

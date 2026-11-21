@@ -4,7 +4,8 @@
 // `?running=<instanz>` startet die Instanz beim Laden (hostende Welt mit Spiel-Link → Teilen-Leiste).
 import type { JoinPreview, PlayLink } from "@/lib/types";
 import { instances } from "./core";
-import a, { states } from "./a";
+import a from "./a";
+import { states } from "./sessions";
 import { fakeTask, mockEmit, type Handlers } from "./util";
 
 const HOST = { uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5", name: "Henny" };
@@ -85,10 +86,9 @@ const handlers: Handlers = {
     });
   },
   play_sessions: () =>
-    [...states.values()]
-      .filter((s) => s.state === "running")
-      .map((s) => ({
-        instance_id: s.instance_id,
+    [...new Set([...states.values()].filter((s) => s.state === "running").map((s) => s.instance_id))]
+      .map((instance_id) => ({
+        instance_id,
         session: {
           schema: 1,
           state: "hosting",

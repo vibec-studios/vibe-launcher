@@ -78,9 +78,15 @@ pub fn push_actions(app: &AppHandle, actions: Vec<links::AppAction>) {
 }
 
 /// Vor dem Start (aus `instance_launch`): Kontext merken, Optionen-Sync anwenden.
-pub fn on_launch(state: &AppState, id: &str, world: Option<String>, server: Option<String>) {
+pub fn on_launch(state: &AppState, id: &str, run: &str, world: Option<String>, server: Option<String>) {
+    let extra = state.game.others_active(id, run) > 0;
     if let Some(p) = state.app.try_state::<PlatformState>() {
-        p.launch_ctx.lock().insert(id.to_string(), LaunchCtx { world, server });
+        if !extra || !p.active.lock().contains_key(id) {
+            p.launch_ctx.lock().insert(id.to_string(), LaunchCtx { world, server });
+        }
+    }
+    if extra {
+        return;
     }
     // Vertrag mit dem Vibey Client: `.vibe/instance.json` vor jedem Start (docs/PLAY-LINKS.md §2)
     if let Err(e) = crate::play::write_instance_file(state, id) {
@@ -140,6 +146,7 @@ fn on_game_state(app: &AppHandle, v: &serde_json::Value) {
             let ctx = p.launch_ctx.lock().remove(id).unwrap_or_default();
             p.active.lock().entry(id.to_string()).or_insert(Active { start, ctx });
         }
+        Some("stopped") if state.game.is_process_running(id) => {}
         Some("stopped") => {
             p.launch_ctx.lock().remove(id);
             let mut since = None;

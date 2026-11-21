@@ -32,7 +32,7 @@ export function useRunPhase(instanceId: string): { phase: RunPhase; task: TaskIn
 export function useRunningCount(): number {
   return useGameStore((s) => {
     let n = 0;
-    for (const k in s.states) if (s.states[k].state !== "stopped") n++;
+    for (const k in s.runs) if (s.runs[k].state !== "stopped") n++;
     return n;
   });
 }

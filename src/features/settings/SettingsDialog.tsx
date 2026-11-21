@@ -524,6 +524,9 @@ function GameTab({ s, update }: TabProps) {
         <SettingRow title={t("settings.open_log")} description={t("settings.open_log.desc")}>
           <Switch checked={s.open_log_on_launch} onChange={(open_log_on_launch) => update({ open_log_on_launch })} label={t("settings.open_log")} />
         </SettingRow>
+        <SettingRow title={t("settings.console")} description={t("settings.console.desc")}>
+          <Switch checked={s.console_on_launch} onChange={(console_on_launch) => update({ console_on_launch })} label={t("settings.console")} />
+        </SettingRow>
         <SettingRow title={t("settings.snapshots")} description={t("settings.snapshots.desc")}>
           <Switch checked={s.show_snapshots} onChange={(show_snapshots) => update({ show_snapshots })} label={t("settings.snapshots")} />
         </SettingRow>

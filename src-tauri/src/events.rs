@@ -10,7 +10,7 @@ pub const INSTANCE_CHANGED: &str = "instance://changed";
 pub const INSTANCE_REMOVED: &str = "instance://removed";
 /// Payload: `GameState`
 pub const GAME_STATE: &str = "game://state";
-/// Payload: `{ instance_id: string, lines: LogLine[] }` (gebündelt, max. ~10/s)
+/// Payload: `{ run_id: string, instance_id: string, lines: LogLine[] }` (gebündelt, max. ~10/s)
 pub const GAME_LOG: &str = "game://log";
 /// Payload: `{ instance_id: string }` – Mods/Packs/Welten einer Instanz haben sich geändert
 pub const CONTENT_CHANGED: &str = "content://changed";

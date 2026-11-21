@@ -1,6 +1,7 @@
 //! OWNER: Game-Agent.
 use crate::error::{AppError, AppResult};
 use crate::instance::LoaderKind;
+use crate::minecraft::sessions::BeginOpts;
 use crate::minecraft::{self, java, loaders, logs, GameState, JavaInstall, LoaderVersion, LogFile, LogLine, McVersion, MclogsResult};
 use crate::state::AppState;
 use tauri::State;
@@ -75,18 +76,20 @@ pub async fn instance_launch(
     if state.auth.list().is_empty() && !dev_offline {
         return Err(AppError::NotConfigured("Kein Account – bitte unter Accounts mit Microsoft anmelden".into()));
     }
-    state.game.begin(&id)?;
+    let run = state.game.begin_with(&id, BeginOpts { exclusive: false, world: world.as_deref(), server: server.as_deref() })?;
     if offline == Some(true) {
         state.auth.grant_offline(account_id.as_deref());
     }
-    crate::platform::on_launch(&state, &id, world.clone(), server.clone());
+    crate::platform::on_launch(&state, &id, &run, world.clone(), server.clone());
+    crate::console::on_launch(&state, &run);
     let st = state.inner().clone();
     let iid = id.clone();
+    let rid = run.clone();
     let offer_account = account_id.clone();
     let task_id = state.tasks.spawn("launch", format!("{} wird gestartet", inst.name), Some(id.clone()), move |task| async move {
-        let r = minecraft::launch::launch(&st, &iid, account_id, world, server, &task).await;
+        let r = minecraft::launch::launch(&st, &iid, &rid, account_id, world, server, &task).await;
         if let Err(e) = &r {
-            st.game.fail(&iid, e);
+            st.game.fail(&rid, e);
             if let AppError::OfflineAvailable(message) = e {
                 let payload = serde_json::json!({ "instance_id": iid, "account_id": offer_account, "message": message });
                 crate::events::emit(&st.app, crate::events::AUTH_OFFLINE_AVAILABLE, &payload);
@@ -94,16 +97,24 @@ pub async fn instance_launch(
         }
         r
     });
-    state.game.set_task(&id, &task_id);
+    state.game.set_task(&run, &task_id);
     Ok(task_id)
 }
 
+/// Spiel beenden: mit `run_id` nur diese Sitzung, sonst alle Sitzungen der Instanz.
 #[tauri::command]
-pub async fn instance_kill(state: State<'_, AppState>, id: String) -> AppResult<()> {
+pub async fn instance_kill(state: State<'_, AppState>, id: String, run_id: Option<String>) -> AppResult<()> {
     if state.instances.get(&id).is_ok_and(|i| i.is_bedrock()) {
         return crate::bedrock::game::kill(&state, &id);
     }
-    state.game.kill(&state, &id)
+    let key = run_id.filter(|r| state.game.state_of(r).is_some_and(|s| s.instance_id == id)).unwrap_or(id);
+    state.game.kill(&state, &key)
+}
+
+/// Konsolenfenster öffnen (optional direkt mit dieser Sitzung).
+#[tauri::command]
+pub async fn console_open(state: State<'_, AppState>, run_id: Option<String>) -> AppResult<()> {
+    crate::console::open(&state.app, run_id.as_deref())
 }
 
 #[tauri::command]
@@ -111,10 +122,10 @@ pub async fn game_states(state: State<'_, AppState>) -> AppResult<Vec<GameState>
     Ok(state.game.states())
 }
 
-/// Log-Zeilen der aktuellen/letzten Sitzung (Puffer im Speicher).
+/// Log-Zeilen einer Sitzung (`run_id`) bzw. der aktuellen/letzten Sitzung der Instanz (Puffer im Speicher).
 #[tauri::command]
-pub async fn instance_log_session(state: State<'_, AppState>, id: String) -> AppResult<Vec<LogLine>> {
-    Ok(state.game.session_log(&id))
+pub async fn instance_log_session(state: State<'_, AppState>, id: String, run_id: Option<String>) -> AppResult<Vec<LogLine>> {
+    Ok(state.game.session_log(run_id.as_deref().unwrap_or(&id)))
 }
 
 /// Log-Dateien und Crash-Reports im Spielordner.

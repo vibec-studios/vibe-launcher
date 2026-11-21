@@ -22,7 +22,8 @@ import many from "./many";
 import { withLiveModrinth } from "./modrinth-live";
 import type { Handlers } from "./util";
 
-mockWindows("main");
+if (location.pathname.endsWith("console.html")) mockWindows("console", "main");
+else mockWindows("main");
 
 const mockFlag = (k: string) => {
   try {

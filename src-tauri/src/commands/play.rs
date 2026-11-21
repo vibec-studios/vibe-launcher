@@ -43,11 +43,14 @@ pub async fn play_sessions(state: State<'_, AppState>) -> AppResult<Vec<RunningS
         .states()
         .into_iter()
         .filter(|g| g.state == crate::minecraft::RunState::Running)
-        .filter_map(|g| {
-            let mut session = play::read_session(&state, &g.instance_id)?;
+        .map(|g| g.instance_id)
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .filter_map(|instance_id| {
+            let mut session = play::read_session(&state, &instance_id)?;
             // nur Links unseres Backends weitergeben
             session.play_link = session.play_link.filter(|u| play::is_play_link_url(&base, u));
-            Some(RunningSession { instance_id: g.instance_id, session })
+            Some(RunningSession { instance_id, session })
         })
         .collect())
 }

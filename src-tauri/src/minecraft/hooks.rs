@@ -45,7 +45,7 @@ fn shell(cmd: &str) -> tokio::process::Command {
 }
 
 /// Hook ausführen und abwarten. Fehler (Exit-Code ≠ 0, Zeitlimit) werden zurückgegeben.
-pub async fn run(state: &AppState, inst: &Instance, what: &str, cmd: &str, java: Option<&str>) -> AppResult<()> {
+pub async fn run(state: &AppState, inst: &Instance, log_key: &str, what: &str, cmd: &str, java: Option<&str>) -> AppResult<()> {
     let cmd = cmd.trim();
     if cmd.is_empty() {
         return Ok(());
@@ -53,7 +53,7 @@ pub async fn run(state: &AppState, inst: &Instance, what: &str, cmd: &str, java:
     let gm = state.game.clone();
     let dir = state.paths.game_dir(&inst.id);
     tokio::fs::create_dir_all(&dir).await?;
-    gm.launcher_line(&inst.id, LogLevel::Launcher, format!("{what}: {cmd}"));
+    gm.launcher_line(log_key, LogLevel::Launcher, format!("{what}: {cmd}"));
     let mut c = shell(cmd);
     c.current_dir(&dir)
         .envs(env_vars(state, inst, java))
@@ -65,7 +65,7 @@ pub async fn run(state: &AppState, inst: &Instance, what: &str, cmd: &str, java:
     let mut child = c.spawn().map_err(|e| AppError::msg(format!("{what} konnte nicht gestartet werden: {e}")))?;
     let pipe = |r: Option<Box<dyn tokio::io::AsyncRead + Unpin + Send>>, level: LogLevel| {
         let gm = gm.clone();
-        let id = inst.id.clone();
+        let id = log_key.to_string();
         tokio::spawn(async move {
             let Some(r) = r else { return };
             let mut lines = BufReader::new(r).lines();

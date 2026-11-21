@@ -8,6 +8,9 @@ import { Button, Spinner, Tooltip, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { killInstance, useInstanceActions } from "./actions";
 import { useRunPhase } from "./status";
+import { useInstanceRuns } from "@/lib/gameStore";
+import { isActive } from "@/lib/sessions";
+import { SessionMenuTrigger } from "./SessionMenu";
 import { PrelaunchSkip, prelaunchLabel } from "./PrelaunchStep";
 
 export const PlayButton = memo(function PlayButton({
@@ -25,6 +28,33 @@ export const PlayButton = memo(function PlayButton({
   const t = useT();
   const { launch } = useInstanceActions();
   const { phase, task } = useRunPhase(instance.id);
+  const runs = useInstanceRuns(instance.id);
+  const activeCount = runs.filter(isActive).length;
+
+  if (size === "icon" && phase === "running") {
+    const label = activeCount > 1 ? t("sess.stop_all") : t("common.stop");
+    return (
+      <div className={cn("relative flex shrink-0 items-stretch rounded-ctl bg-black/80", className)}>
+        <Tooltip content={label}>
+          <button
+            aria-label={label}
+            onClick={(e) => {
+              e.stopPropagation();
+              killInstance(instance);
+            }}
+            onKeyDown={(e) => e.stopPropagation()}
+            className="grid h-9 w-9 place-items-center rounded-l-ctl text-danger transition-colors duration-100 hover:bg-danger hover:text-black active:translate-y-px"
+          >
+            <Square size={13} fill="currentColor" />
+          </button>
+        </Tooltip>
+        <SessionMenuTrigger instance={instance} runs={runs} compact className="h-9 rounded-r-ctl border-l border-white/10 text-muted hover:bg-white/10 hover:text-text" />
+        {activeCount > 1 && (
+          <span className="pointer-events-none absolute -left-1.5 -top-1.5 min-w-4 rounded-dot bg-danger px-1 text-center text-[10px] font-bold leading-4 text-black">{activeCount}</span>
+        )}
+      </div>
+    );
+  }
 
   if (size === "icon") {
     const label = phase === "running" ? t("common.stop") : phase === "idle" ? t("common.play") : (task?.message ?? t("inst.preparing"));
@@ -96,15 +126,22 @@ export const PlayButton = memo(function PlayButton({
 
   if (phase === "running") {
     return (
-      <Button
-        variant="danger"
-        size={size === "lg" ? "lg" : "md"}
-        className={cn(h, className)}
-        icon={<Square size={12} fill="currentColor" />}
-        onClick={() => killInstance(instance)}
-      >
-        {t("common.stop")}
-      </Button>
+      <div className="flex items-stretch">
+        <Button
+          variant="danger"
+          size={size === "lg" ? "lg" : "md"}
+          className={cn(h, "rounded-r-none", className)}
+          icon={<Square size={12} fill="currentColor" />}
+          onClick={() => killInstance(instance)}
+        >
+          {activeCount > 1 ? `${t("common.stop")} (${activeCount})` : t("common.stop")}
+        </Button>
+        <SessionMenuTrigger
+          instance={instance}
+          runs={runs}
+          className="rounded-r-ctl border-l border-danger/25 bg-danger/12 text-danger hover:bg-danger hover:text-black"
+        />
+      </div>
     );
   }
 

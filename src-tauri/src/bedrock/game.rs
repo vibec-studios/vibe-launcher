@@ -136,7 +136,7 @@ pub fn start(state: &AppState, id: &str) -> AppResult<String> {
     if adopting(o.channel) {
         return Err(AppError::Invalid("Bestehende Bedrock-Daten werden gerade übernommen – bitte kurz warten.".into()));
     }
-    state.game.begin(id)?;
+    state.game.begin_exclusive(id)?;
     let st = state.clone();
     let iid = id.to_string();
     let task_id = state.tasks.spawn("launch", format!("{} wird gestartet", inst.name), Some(id.to_string()), move |task| async move {
@@ -371,7 +371,7 @@ pub fn on_startup(state: &AppState) {
         let Some(j) = sw.load_journal() else { continue };
         if game_running(ch) {
             // Spiel läuft noch mit eingetauschtem Profil -> Sitzung wieder aufnehmen
-            if state.instances.get(&j.instance_id).is_ok() && state.game.begin(&j.instance_id).is_ok() {
+            if state.instances.get(&j.instance_id).is_ok() && state.game.begin_exclusive(&j.instance_id).is_ok() {
                 let pid = if super::simulated() { None } else { detect::running_pid(ch) };
                 state.game.mark_running(&j.instance_id, pid, j.started_at);
                 state.game.launcher_line(&j.instance_id, LogLevel::Launcher, "Laufende Bedrock-Sitzung wieder aufgenommen.".into());

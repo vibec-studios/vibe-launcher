@@ -8,7 +8,7 @@
 import { create } from "zustand";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Appearance, BackgroundGradient, NavKey, ThemeId } from "./types";
-import { onAccent } from "./format";
+import { onAccent } from "./color";
 
 export const NAV_KEYS: NavKey[] = ["home", "instances", "servers", "social", "discover", "skins", "cosmetics", "screenshots"];
 

@@ -29,13 +29,13 @@ export function TopbarV2() {
       </div>
       <div data-tauri-drag-region className="h-full min-w-4 flex-1" />
       <UpdateButton />
-      <RunningGames />
       <div className="vl2-tools flex h-9 shrink-0 items-center gap-0.5 rounded-ctl bg-surface px-0.5 shadow-[inset_0_0_0_1px_var(--line-1)]">
         <TaskDock />
         <HelpButton />
         <FeedbackButton />
         <FriendsPanelToggle />
       </div>
+      <RunningGames />
       <AccountMenu />
       <WindowControls />
     </header>

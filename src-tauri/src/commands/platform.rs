@@ -139,16 +139,15 @@ pub async fn playtime_sessions(
         .await
         .map_err(join_err)?;
     let now = chrono::Utc::now().timestamp_millis();
+    let mut live: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::new();
     for g in state.game.states() {
         if let (crate::minecraft::RunState::Running, Some(start)) = (&g.state, g.started_at) {
-            list.push(stats::Session {
-                instance_id: g.instance_id.clone(),
-                start,
-                end: now,
-                world: None,
-                server: None,
-            });
+            let e = live.entry(g.instance_id.clone()).or_insert(start);
+            *e = (*e).min(start);
         }
+    }
+    for (instance_id, start) in live {
+        list.push(stats::Session { instance_id, start, end: now, world: None, server: None });
     }
     Ok(list)
 }

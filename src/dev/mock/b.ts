@@ -476,6 +476,7 @@ let accounts: Account[] = emptyAccounts
       { id: "a1", kind: "microsoft", username: "Henny", uuid: "069a79f444e94726a5befca90e38aaf5", skin_url: null, active: true, expires_at: Date.now() + 18 * 3600_000, needs_relogin: false },
       { id: "a2", kind: "microsoft", username: "Steve_Builder", uuid: "853c80ef3c3749fdaa49938b674adae6", skin_url: null, active: false, expires_at: Date.now() - 86400_000 * 3, needs_relogin: true },
     ];
+export const mockAccountList = () => accounts;
 const emitAccounts = () => mockEmit("accounts://changed", accounts.map((a) => ({ ...a })));
 let msa: { cancelled: boolean } | null = null;
 

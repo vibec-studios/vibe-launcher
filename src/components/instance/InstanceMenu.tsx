@@ -4,6 +4,7 @@ import {
   Box,
   Check,
   Copy,
+  CopyPlus,
   FolderOpen,
   FolderTree,
   ImageIcon,
@@ -98,9 +99,16 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
   return (
     <>
       {onPage ? null : running ? (
-        <Item icon={<Square size={13} />} onSelect={() => killInstance(i)}>
-          {t("common.stop")}
-        </Item>
+        <>
+          <Item icon={<Square size={13} />} onSelect={() => killInstance(i)}>
+            {t("common.stop")}
+          </Item>
+          {!bedrock && phase === "running" && (
+            <Item icon={<CopyPlus size={14} />} onSelect={() => actions.launchAgain(i)}>
+              {t("sess.again")}
+            </Item>
+          )}
+        </>
       ) : (
         <Item icon={<Play size={14} />} disabled={phase === "busy"} onSelect={() => actions.launch(i)}>
           {t("common.play")}

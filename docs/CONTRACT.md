@@ -64,7 +64,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Kern | instances_list, instance_get, instance_create, instance_update, instance_delete, instance_duplicate, instance_set_icon, instance_open_folder, settings_get, settings_set, tasks_list, task_cancel, tasks_clear, system_info, open_path, open_data_dir |
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel, auth_msa_window_login |
 | Skins | skins_profile, skin_upload_file, skin_apply_library, skin_set_variant, skin_reset, cape_set, skin_library_list, skin_library_add_file, skin_library_add_current, skin_library_import_player, skin_library_rename, skin_library_set_variant, skin_library_remove, skin_library_export, skin_library_reveal |
-| Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
+| Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, console_open, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
 | Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, sets_list, sets_create, sets_update, sets_delete, sets_duplicate, sets_add_entries, sets_remove_entries, sets_parse_list, sets_import_text, sets_import_file, sets_export_file, sets_export_code, sets_export_links, sets_instance_candidates, sets_from_profile, sets_preview, sets_apply, sets_install_new, sets_check, sets_compat, sets_news, sets_dismiss_news, perf_preview, perf_install, files_list, files_stat, files_find, files_search, files_read, files_write, files_restore, files_validate, files_image, files_create, files_rename, files_duplicate, files_delete, files_import, files_abs_path, files_reveal |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
 | Clips | clips_list, clip_update, clip_delete, clip_open_folder, clips_watch (`commands/clips.rs`, Videoclips des Vibey Clients) |
@@ -305,8 +305,9 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | `task://update` | TaskInfo | Start, Fortschritt (≤10/s), Ende |
 | `instance://changed` | Instance | jede Änderung |
 | `instance://removed` | {id} | gelöscht |
-| `game://state` | GameState | preparing/running/stopped |
-| `game://log` | {instance_id, lines: LogLine[]} | gebündelt ≤10/s |
+| `game://state` | GameState | je Sitzung (`run_id`), preparing/running/stopped – siehe docs/MULTI-LAUNCH.md |
+| `game://log` | {run_id, instance_id, lines: LogLine[]} | gebündelt ≤10/s |
+| `console://select` | string (run_id) | nur an das Konsolenfenster |
 | `content://changed` | {instance_id} | Mods/Packs/Shader/Welten geändert |
 | `accounts://changed` | Account[] | Accounts geändert |
 | `auth://vault-warning` | `{ account_id, username, message }` | Zugangsdaten nicht im Windows-Tresor gespeichert (einmal je Account und Sitzung) |
@@ -324,7 +325,8 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
   gleichen `time/level/thread/logger` zerlegt. Klartext ohne Zeitstempel bekommt die Empfangszeit.
   Eigene Launcher-Zeilen haben `level: "launcher"` (Fehler beim Start: `"error"`), `logger: "Vibe Launcher"`.
   Das Zugangstoken wird in Sitzungslogs und im angezeigten Startbefehl maskiert.
-- `game_states` liefert alle Sitzungen seit Launcher-Start (auch beendete, mit `exit_code`/`crashed`).
+- `game_states` liefert alle Sitzungen (eine Instanz kann mehrfach laufen; beendete werden begrenzt aufbewahrt, mit `exit_code`/`crashed`).
+  `instance_kill(id, run_id?)` beendet eine Sitzung bzw. ohne `run_id` alle Sitzungen der Instanz; `instance_log_session(id, run_id?)`.
   `instance_kill` bricht auch eine laufende Vorbereitung ab. Vom Nutzer beendete Spiele gelten nicht als Absturz.
 - `loader_versions`: stabile/empfohlene zuerst. Forge: `stable = true` nur für die empfohlene (sonst neueste)
   Version. Forge/NeoForge-`version` ohne MC-Präfix (z. B. `"47.3.0"`, `"21.1.77"`, NeoForge 1.20.1: `"47.1.106"`).
