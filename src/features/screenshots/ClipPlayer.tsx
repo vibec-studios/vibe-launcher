@@ -1,13 +1,14 @@
 // Clip abspielen (HTML5-Video über das Asset-Protokoll), Kill-Marken, Infos und Bearbeiten (Behalten, Titel, Tags).
 // Der Launcher ändert nur `kept`, `title`, `tags` (docs/CLIPS.md §10.3 im Vibey Client).
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { FolderOpen, Skull, Star, Swords, Trash2, VideoOff, X } from "lucide-react";
+import { FolderOpen, History, Scissors, Skull, Star, Swords, Trash2, VideoOff, X } from "lucide-react";
 import { api } from "@/lib/api";
-import type { Clip } from "@/lib/types";
+import type { Clip, ClipExport } from "@/lib/types";
 import { formatBytes, formatDate, imageSrc } from "@/lib/format";
 import { Button, Dialog, Field, Input, Tag, Tooltip, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { ReasonIcon, clipName, clipWhere, formatClipLength, reasonColor, reasonKey } from "./clips";
+import { ClipEditor } from "./ClipEditor";
 
 const TITLE_MAX = 100;
 const TAGS_MAX = 16;
@@ -25,18 +26,29 @@ export function ClipPlayer({
   onClose,
   onChanged,
   onDelete,
+  onExported,
 }: {
   clip: Clip | null;
   instanceName: (id: string) => string;
   onClose: () => void;
   onChanged: (c: Clip) => void;
   onDelete: (c: Clip) => void;
+  onExported?: (r: ClipExport) => void;
 }) {
   const t = useT();
   const open = clip !== null;
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()} size="xl" title={clip ? clipName(clip, t) : ""} description={clip ? <Subtitle clip={clip} /> : undefined}>
-      {clip && <PlayerBody key={`${clip.instance_id}/${clip.id}`} clip={clip} instanceName={instanceName(clip.instance_id)} onChanged={onChanged} onDelete={onDelete} />}
+      {clip && (
+        <PlayerBody
+          key={`${clip.instance_id}/${clip.id}`}
+          clip={clip}
+          instanceName={instanceName(clip.instance_id)}
+          onChanged={onChanged}
+          onDelete={onDelete}
+          onExported={onExported}
+        />
+      )}
     </Dialog>
   );
 }
@@ -47,9 +59,20 @@ function Subtitle({ clip }: { clip: Clip }) {
   return (
     <span className="flex flex-wrap items-center gap-2">
       <ReasonTag reason={clip.reason} />
+      {clip.rewind && <RewindTag />}
       <span>{when}</span>
       {clip.title && <span className="text-dim">· {clipWhere(clip, t)}</span>}
     </span>
+  );
+}
+
+export function RewindTag({ className }: { className?: string }) {
+  const t = useT();
+  return (
+    <Tag color="#7cc4ff" className={className}>
+      <History size={11} />
+      {t("clipedit.rewind")}
+    </Tag>
   );
 }
 
@@ -63,9 +86,22 @@ export function ReasonTag({ reason, className }: { reason: string; className?: s
   );
 }
 
-function PlayerBody({ clip, instanceName, onChanged, onDelete }: { clip: Clip; instanceName: string; onChanged: (c: Clip) => void; onDelete: (c: Clip) => void }) {
+function PlayerBody({
+  clip,
+  instanceName,
+  onChanged,
+  onDelete,
+  onExported,
+}: {
+  clip: Clip;
+  instanceName: string;
+  onChanged: (c: Clip) => void;
+  onDelete: (c: Clip) => void;
+  onExported?: (r: ClipExport) => void;
+}) {
   const t = useT();
   const video = useRef<HTMLVideoElement>(null);
+  const [editing, setEditing] = useState(clip.rewind || !!clip.trim);
   const [failed, setFailed] = useState(false);
   const [pos, setPos] = useState(0);
   const [dur, setDur] = useState((clip.duration_ms ?? 0) / 1000);
@@ -164,6 +200,8 @@ function PlayerBody({ clip, instanceName, onChanged, onDelete }: { clip: Clip; i
         </div>
       )}
 
+      {editing && !failed && total > 0 && <ClipEditor clip={clip} video={video} pos={pos} total={total} onChanged={onChanged} onExported={(r) => onExported?.(r)} />}
+
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,300px)] gap-6">
         <EditPanel clip={clip} onChanged={onChanged} />
         <InfoPanel clip={clip} instanceName={instanceName} />
@@ -173,6 +211,11 @@ function PlayerBody({ clip, instanceName, onChanged, onDelete }: { clip: Clip; i
         <Button size="sm" variant="ghost" icon={<FolderOpen size={14} />} onClick={() => api.clipOpenFolder(clip.instance_id, clip.id).catch((e) => toast.error(e))}>
           {t("clips.show_in_folder")}
         </Button>
+        {!failed && (
+          <Button size="sm" variant={editing ? "subtle" : "ghost"} icon={<Scissors size={14} />} aria-pressed={editing} onClick={() => setEditing(!editing)}>
+            {t("clipedit.button")}
+          </Button>
+        )}
         <div className="flex-1" />
         <Button size="sm" variant="danger" icon={<Trash2 size={14} />} onClick={() => onDelete(clip)}>
           {t("common.delete")}

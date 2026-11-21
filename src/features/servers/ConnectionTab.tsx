@@ -13,6 +13,7 @@ import { useT } from "@/i18n";
 import { HostingInvite } from "@/features/social/HostingInvite";
 import { useAccessBlocked } from "@/features/access/hooks";
 import { AddressChip } from "./parts";
+import { ExtrasCard } from "./ExtrasCard";
 import { ConnBadge, LanHint } from "./LanHint";
 import { HelpLink } from "@/features/help/HelpButton";
 
@@ -189,6 +190,7 @@ export function ConnectionTab({ server }: { server: Server }) {
               <Info size={13} className="mt-px shrink-0" />
               {t("srv.conn.only_running")}
             </p>
+            <ExtrasCard server={server} />
           </div>
 
           <div className="flex flex-col gap-5">

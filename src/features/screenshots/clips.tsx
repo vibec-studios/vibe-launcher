@@ -1,7 +1,7 @@
 // Gemeinsame Clip-Bausteine: Liste (mit Ordner-Polling, solange die Ansicht offen ist), Anzeige-Helfer, Vorschaubild.
 import { memo, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Film, Keyboard, Skull, Swords, Zap, Flame } from "lucide-react";
+import { Film, Keyboard, Scissors, Skull, Swords, Zap, Flame } from "lucide-react";
 import { api } from "@/lib/api";
 import { useEvent } from "@/lib/events";
 import { imageSrc } from "@/lib/format";
@@ -27,7 +27,7 @@ export function useClips() {
 }
 
 export const AUTO_REASONS = new Set(["kill", "multikill", "clutch", "death"]);
-const KNOWN = new Set(["hotkey", ...AUTO_REASONS]);
+const KNOWN = new Set(["hotkey", "edit", ...AUTO_REASONS]);
 
 export function reasonKey(reason: string) {
   return KNOWN.has(reason) ? `clips.reason.${reason}` : "clips.reason.unknown";
@@ -52,6 +52,8 @@ export function ReasonIcon({ reason, size = 12 }: { reason: string; size?: numbe
       return <Zap size={size} />;
     case "death":
       return <Skull size={size} />;
+    case "edit":
+      return <Scissors size={size} />;
     default:
       return <Film size={size} />;
   }

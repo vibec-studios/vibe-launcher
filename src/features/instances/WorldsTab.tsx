@@ -1,5 +1,6 @@
 // Welten einer Instanz (saves/) als ruhige Liste. Beim Hover: direkt in die Welt starten; ⋯ bzw. Rechtsklick: Ordner
 // öffnen, Backup erstellen, in andere Instanz kopieren, Löschen. Werkzeuge in der gemeinsamen Zeile (PageTools).
+import { VoiceWorldHint } from "./VoiceWorldHint";
 import { memo, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Archive, Copy, FileArchive, FolderOpen, Globe2, Map, MoreHorizontal, Package, Play, SearchX, Trash2 } from "lucide-react";
@@ -198,6 +199,7 @@ export function WorldsTab({ instance }: { instance: Instance }) {
           {t("worlds.import_short")}
         </Button>
       </PageTools>
+      <VoiceWorldHint instance={instance} />
       <div className="pb-6">
         {q.isError && !q.data ? (
           <ErrorState error={q.error} onRetry={() => q.refetch()} />

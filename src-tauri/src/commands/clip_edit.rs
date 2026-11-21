@@ -396,6 +396,38 @@ mod tests {
     }
 
     #[test]
+    fn export_with_real_ffmpeg() {
+        let d = tmp("ffmpeg");
+        let Some(ff) = find_ffmpeg(&d, &[]) else { return };
+        let id = "2026-11-21_20-15-02_hotkey";
+        let gen: Vec<String> = ["-f", "lavfi", "-i", "testsrc2=size=320x180:rate=30", "-t", "6", "-c:v", "libx264", "-g", "60", "-pix_fmt", "yuv420p"]
+            .iter()
+            .map(|s| s.to_string())
+            .chain([d.join(format!("{id}.mp4")).to_string_lossy().to_string()])
+            .collect();
+        if run_ffmpeg(&ff, &gen).is_err() {
+            return;
+        }
+        std::fs::write(
+            d.join(format!("{id}.json")),
+            json!({"schema":1,"id":id,"reason":"hotkey","rewind":true,"duration_ms":6000,"keyframes_ms":[0,2000,4000],"events":[{"t_ms":4500,"type":"kill"}],"kept":true}).to_string(),
+        )
+        .unwrap();
+        let r = export(&d, "i", id, TrimRange { in_ms: 2500, out_ms: 5000 }, &ff, false).unwrap();
+        assert_eq!(r.start_ms, 2000);
+        assert_eq!(r.clip.reason, "edit");
+        assert_eq!(r.clip.source_id.as_deref(), Some(id));
+        assert_eq!(r.clip.duration_ms, Some(3000));
+        assert_eq!(r.clip.keyframes_ms, vec![0, 2000]);
+        assert_eq!(r.clip.events[0].t_ms, 2500);
+        assert!(!r.clip.kept && !r.clip.rewind);
+        assert!(r.clip.thumbnail_path.is_some());
+        assert!(std::fs::metadata(&r.clip.video_path).unwrap().len() > 1000);
+        assert!(d.join(format!("{id}.json")).is_file());
+        let _ = std::fs::remove_dir_all(d);
+    }
+
+    #[test]
     fn buffer_dir_is_not_scanned() {
         let d = tmp("buffer");
         std::fs::create_dir_all(d.join(".buffer").join("s1")).unwrap();
