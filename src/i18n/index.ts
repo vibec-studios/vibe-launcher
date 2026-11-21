@@ -53,12 +53,13 @@ import privacy from "./privacy";
 import portable from "./portable";
 import skineditor from "./skineditor";
 import worldMap from "./world-map";
+import packupdate from "./packupdate";
 
 export type Lang = "de" | "en";
 type Dict = Record<string, string>;
 type Bundle = { de: Dict; en: Dict };
 
-const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, clips, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize, sessions, usability, layout, uic, organize, privacy, portable, skineditor];
+const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs, external, skins, stores, platform, servers, contenttools, backups, files, social, instancepage, cosmetics, minecraftcapes, appearance, home, manual, clientpacks, simple, play, notices, modsets, bedrock, feedback, clips, updates, datapacks, serverhints, perf, storage, prelaunch, bedrockfix, playwarn, designv2, help, access, iconart, customize, sessions, usability, layout, uic, organize, privacy, portable, skineditor, packupdate];
 const dicts: Record<Lang, Dict> = { de: {}, en: {} };
 bundles.push(worldMap);
 for (const b of bundles) {

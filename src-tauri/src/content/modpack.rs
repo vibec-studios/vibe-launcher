@@ -40,13 +40,15 @@ pub struct PackRecord {
     /// Overrides (relativer Pfad -> SHA-1 wie installiert)
     pub overrides: BTreeMap<String, String>,
     pub installed_at: i64,
+    pub remote: Option<String>,
+    pub remote_hash: Option<String>,
 }
 
 fn record_path(state: &AppState, id: &str) -> PathBuf {
     state.paths.instance_dir(id).join("pack.json")
 }
 
-fn load_record(state: &AppState, id: &str) -> Option<PackRecord> {
+pub(super) fn load_record(state: &AppState, id: &str) -> Option<PackRecord> {
     std::fs::read(record_path(state, id)).ok().and_then(|b| serde_json::from_slice(&b).ok())
 }
 
@@ -73,6 +75,8 @@ pub async fn record_after_import(state: &AppState, instance_id: &str, zip: &Path
         files: files.iter().map(|f| (norm_rel(&f.path), RecFile { sha1: f.sha1.clone(), project: proj_key(&f.origin) })).collect(),
         overrides: overrides.into_iter().map(|(k, (h, _))| (k, h)).collect(),
         installed_at: crate::util::now_ms(),
+        remote: None,
+        remote_hash: None,
     };
     crate::util::write_json_atomic(&record_path(state, instance_id), &rec)
 }
@@ -100,7 +104,7 @@ pub fn sync_instance_with_record(state: &AppState, instance_id: &str) -> AppResu
 }
 
 /// Stand aus pack.json oder (ältere Instanzen) aus `instance.source`. `bool` = nur Fallback (ohne Datei-Liste).
-fn record_or_fallback(state: &AppState, inst: &Instance) -> Option<(PackRecord, bool)> {
+pub(super) fn record_or_fallback(state: &AppState, inst: &Instance) -> Option<(PackRecord, bool)> {
     if let Some(r) = load_record(state, &inst.id).filter(|r| r.source.is_some() && r.project_id.is_some()) {
         return Some((r, false));
     }
@@ -169,13 +173,13 @@ pub async fn check(state: &AppState, instance_id: &str) -> AppResult<Option<Modp
 
 // ------------------------------------------------------------------ Ziel laden + Vergleich
 
-struct Target {
-    version: ProjectVersion,
-    plan: PackPlan,
-    zip: PathBuf,
-    files: Vec<PackFile>,
-    missing: Vec<MissingEntry>,
-    overrides: BTreeMap<String, (String, u64)>,
+pub(super) struct Target {
+    pub(super) version: ProjectVersion,
+    pub(super) plan: PackPlan,
+    pub(super) zip: PathBuf,
+    pub(super) files: Vec<PackFile>,
+    pub(super) missing: Vec<MissingEntry>,
+    pub(super) overrides: BTreeMap<String, (String, u64)>,
 }
 
 async fn load_target(state: &AppState, source: Source, project_id: &str, version_id: Option<&str>) -> AppResult<Target> {
@@ -199,9 +203,13 @@ async fn load_target(state: &AppState, source: Source, project_id: &str, version
     state.net.download_all(vec![DownloadItem::new(url, zip.clone()).sha1(file.sha1.clone()).size(Some(file.size).filter(|s| *s > 0))], None).await?;
     let zp = zip.clone();
     let plan = tokio::task::spawn_blocking(move || import::analyze(&zp)).await??;
+    finish_target(state, version, plan, zip).await
+}
+
+pub(super) async fn finish_target(state: &AppState, version: ProjectVersion, plan: PackPlan, zip: PathBuf) -> AppResult<Target> {
     let mut files = plan.files.clone();
     let mut missing_list = Vec::new();
-    if plan.format == PackFormat::Curseforge && !plan.cf_files.is_empty() {
+    if !plan.cf_files.is_empty() {
         cf::key(state)?;
         let r = import::resolve_cf(state, &plan.cf_files).await?;
         files.extend(r.files);
@@ -361,6 +369,10 @@ pub async fn preview(state: &AppState, instance_id: &str, version_id: Option<Str
     let (rec, legacy) = record_or_fallback(state, &inst).ok_or_else(|| AppError::Invalid("Diese Instanz stammt nicht aus einem aktualisierbaren Modpack".into()))?;
     let (Some(source), Some(pid)) = (rec.source, rec.project_id.clone()) else { return Err(AppError::Invalid("Modpack-Quelle unbekannt".into())) };
     let t = load_target(state, source, &pid, version_id.as_deref()).await?;
+    preview_target(state, inst, rec, legacy, t).await
+}
+
+pub(super) async fn preview_target(state: &AppState, inst: Instance, rec: PackRecord, legacy: bool, t: Target) -> AppResult<ModpackPreview> {
     let st = state.clone();
     let inst2 = inst.clone();
     let rec2 = rec.clone();
@@ -448,6 +460,20 @@ pub async fn run_update(state: AppState, task: TaskHandle, instance_id: String, 
     let (Some(source), Some(pid)) = (rec.source, rec.project_id.clone()) else { return Err(AppError::Invalid("Modpack-Quelle unbekannt".into())) };
     task.stage("Lade neue Pack-Version …", None);
     let t = load_target(&state, source, &pid, version_id.as_deref()).await?;
+    let origin = NewOrigin { source: Some(source), project_id: Some(pid), version_id: Some(t.version.id.clone()), remote: None, remote_hash: None };
+    apply_target(state, task, inst, rec, legacy, t, origin).await
+}
+
+pub(super) struct NewOrigin {
+    pub(super) source: Option<Source>,
+    pub(super) project_id: Option<String>,
+    pub(super) version_id: Option<String>,
+    pub(super) remote: Option<String>,
+    pub(super) remote_hash: Option<String>,
+}
+
+pub(super) async fn apply_target(state: AppState, task: TaskHandle, inst: Instance, rec: PackRecord, legacy: bool, t: Target, origin: NewOrigin) -> AppResult<()> {
+    let instance_id = inst.id.clone();
     task.set_title(format!("{} auf {} aktualisieren", inst.name, t.version.version_number));
     task.check()?;
     task.stage("Sicherung wird erstellt …", None);
@@ -536,27 +562,28 @@ pub async fn run_update(state: AppState, task: TaskHandle, instance_id: String, 
     let new_mc = t.plan.mc_version.clone();
     let new_loader = t.plan.loader.clone();
     let vnum = t.version.version_number.clone();
-    let vid = t.version.id.clone();
+    let vid = origin.version_id.clone();
+    let pack_name = t.plan.name.clone();
+    let remote = origin.remote.clone();
     state.instances.modify(&instance_id, |i| {
         i.mc_version = new_mc.clone();
         i.loader = new_loader.clone();
-        if let Some(s) = i.source.as_mut() {
-            s.version_id = Some(vid.clone());
-            s.version_name = Some(vnum.clone());
-        }
+        super::modpack_from::apply_source(&mut i.source, remote.as_deref(), vid.clone(), &vnum, &pack_name);
     })?;
 
     // Neuer Stand
     let rec_new = PackRecord {
-        source: Some(source),
-        project_id: Some(pid),
-        version_id: Some(t.version.id.clone()),
+        source: origin.source,
+        project_id: origin.project_id.clone(),
+        version_id: origin.version_id.clone(),
         version_number: Some(t.version.version_number.clone()),
         mc_version: t.plan.mc_version.clone(),
         loader: Some(t.plan.loader.clone()),
         files: t.files.iter().map(|f| (norm_rel(&f.path), RecFile { sha1: f.sha1.clone(), project: proj_key(&f.origin) })).collect(),
         overrides: t.overrides.iter().map(|(k, (h, _))| (k.clone(), h.clone())).collect(),
         installed_at: crate::util::now_ms(),
+        remote: origin.remote.clone(),
+        remote_hash: origin.remote_hash.clone(),
     };
     crate::util::write_json_atomic(&record_path(&state, &instance_id), &rec_new)?;
     state.content.update_counts.lock().remove(&instance_id);

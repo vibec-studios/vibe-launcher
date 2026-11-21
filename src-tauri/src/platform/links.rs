@@ -27,6 +27,7 @@ pub enum AppAction {
     Invite { id: String },
     /// „Spiel mit mir“-Link (`vibelauncher://join/<code>`, docs/PLAY-LINKS.md)
     PlayLink { code: String },
+    InstallVersion { source: String, version_id: String },
 }
 
 fn ok_id(s: &str, max: usize) -> bool {
@@ -45,6 +46,9 @@ fn decode(s: &str) -> Option<String> {
 pub fn parse_url(raw: &str) -> Option<AppAction> {
     if let Some(code) = crate::domains::official_invite_code(raw) {
         return Some(AppAction::PlayLink { code });
+    }
+    if let Some(a) = super::mrlinks::parse(raw) {
+        return Some(a);
     }
     let url = url::Url::parse(raw.trim()).ok()?;
     if url.scheme() != SCHEME {
@@ -126,7 +130,7 @@ pub fn parse_args<I: IntoIterator<Item = String>>(args: I) -> Vec<AppAction> {
                     instance_id: id.to_string(),
                 });
             }
-        } else if a.starts_with(&format!("{SCHEME}:")) || a.starts_with("https://") {
+        } else if a.starts_with(&format!("{SCHEME}:")) || a.starts_with(&format!("{}:", super::mrlinks::SCHEME)) || a.starts_with("https://") {
             if let Some(act) = parse_url(a) {
                 out.push(act);
             }

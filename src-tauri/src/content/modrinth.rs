@@ -555,6 +555,10 @@ pub async fn raw_version(state: &AppState, version_id: &str) -> AppResult<MrVers
     get(state, &format!("/version/{}", urlencoding::encode(version_id))).await
 }
 
+pub async fn version_project_id(state: &AppState, version_id: &str) -> AppResult<String> {
+    Ok(raw_version(state, version_id).await?.project_id)
+}
+
 pub async fn raw_versions_batch(state: &AppState, ids: &[String]) -> AppResult<Vec<MrVersion>> {
     let mut out = Vec::new();
     for chunk in ids.chunks(100) {

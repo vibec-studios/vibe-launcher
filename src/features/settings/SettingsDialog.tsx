@@ -4,6 +4,7 @@
 import { DataDirRow } from "./DataDirMove";
 import { PrivacyTab } from "@/features/privacy/PrivacyTab";
 import { PortableCard } from "@/features/portable/PortableCard";
+import { ModrinthLinksCard } from "@/features/mrlinks/ModrinthLinksCard";
 import * as D from "@radix-ui/react-dialog";
 import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -370,6 +371,8 @@ function GeneralTab({ s, update }: TabProps) {
           <Switch checked={s.auto_update_content} onChange={(v) => update({ auto_update_content: v })} label={t("settings.auto_update")} />
         </SettingRow>
       </SettingsCard>
+
+      <ModrinthLinksCard />
 
       {apiKeys && (
       <SettingsCard title={t("settings.section.integrations")}>

@@ -25,7 +25,9 @@ import {
   Server as ServerIcon,
   Share2,
   SlidersHorizontal,
+  PackageOpen,
 } from "lucide-react";
+import { openPackUpdate } from "@/features/packupdate/store";
 import { openNewServer } from "@/features/servers/actions";
 import { openShare } from "@/features/social/dialogStore";
 import { useVibe } from "@/lib/vibe";
@@ -141,6 +143,11 @@ function MenuBody({ instance: i, kit, onPage, onDeleted, onEdit }: { instance: I
       {!bedrock && (
         <Item icon={<Upload size={14} />} onSelect={() => openExport(i)}>
           {t("inst.export")}
+        </Item>
+      )}
+      {!bedrock && (
+        <Item icon={<PackageOpen size={14} />} onSelect={() => openPackUpdate(i)}>
+          {t("packupd.menu")}
         </Item>
       )}
       {vibe.sharing && !bedrock && (

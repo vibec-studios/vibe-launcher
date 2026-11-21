@@ -11,6 +11,7 @@ pub mod server;
 pub mod skins;
 pub mod minecraftcapes;
 pub mod platform;
+pub mod links;
 pub mod screenshots;
 pub mod clips;
 pub mod backups;

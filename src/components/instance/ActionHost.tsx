@@ -19,10 +19,13 @@ import { ServerStatusLine } from "./motd";
 import { openInviteAccept, openPackImport } from "@/features/social/dialogStore";
 import { PlayJoinDialog } from "@/features/play/PlayJoinDialog";
 import { onAppAction } from "@/lib/appActions";
+import { LinkTargetNote, VersionLinkResolver } from "@/features/mrlinks/LinkTargetNote";
 
 function InstallBody({ a, onDone }: { a: Extract<AppAction, { kind: "install" }>; onDone: () => void }) {
   const t = useT();
   const q = useQuery({ queryKey: ["project", a.source, a.project_id], queryFn: () => api.contentProject(a.source as "modrinth", a.project_id), retry: 0 });
+  const versionQ = useQuery({ queryKey: ["link-version", a.source, a.project_id, a.version], queryFn: () => api.contentVersions(a.source as "modrinth", a.project_id), enabled: !!a.version, retry: 0, staleTime: 60_000 });
+  const versionLabel = a.version ? (versionQ.data?.find((v) => v.id === a.version)?.version_number ?? null) : null;
   return (
     <ConfirmShell
       title={t("action.install.title")}
@@ -66,6 +69,7 @@ function InstallBody({ a, onDone }: { a: Extract<AppAction, { kind: "install" }>
           </div>
         </div>
       )}
+      {q.data && <LinkTargetNote type={q.data.project_type} version={a.version ? (versionLabel ?? a.version) : null} />}
     </ConfirmShell>
   );
 }
@@ -134,6 +138,8 @@ function ActionDialog({ a, onDone }: { a: AppAction; onDone: () => void }) {
   const joinTarget = instances.find((i) => i.id === pick) ?? recent[0];
 
   if (a.kind === "install") return <InstallBody a={a} onDone={onDone} />;
+  if (a.kind === "install_version")
+    return <VersionLinkResolver versionId={a.version_id} onCancel={onDone} render={(projectId) => <InstallBody a={{ kind: "install", source: a.source, project_id: projectId, version: a.version_id }} onDone={onDone} />} />;
   if (a.kind === "play_link") return <PlayJoinDialog code={a.code} onDone={onDone} />;
 
   if (a.kind === "launch") {
