@@ -1,0 +1,25 @@
+export const SEAL_COLORS = {
+  body: "#8f9aa6",
+  back: "#7d8894",
+  belly: "#cdd4db",
+  spot: "#68737f",
+  snout: "#e8ecf0",
+  flipper: "#707b87",
+  eye: "#141418",
+  shine: "#ffffff",
+  lid: "#7d8894",
+  nose: "#2a2a30",
+  whisker: "#a3acb5",
+  cheek: "#ff9db8",
+  ice: "#e3f0f9",
+  iceLight: "#f6fbff",
+  iceSide: "#bcd9ee",
+  iceDark: "#9cc4e2",
+  // Winter: Strickschal (gedämpftes Rot mit Wollweiß), Schnee
+  scarf: "#c2443e",
+  scarfDark: "#9e3532",
+  scarfStripe: "#efe4d2",
+  snow: "#f4f9ff",
+  snowShade: "#dbe8f4",
+};
+export type SealPalette = typeof SEAL_COLORS;
