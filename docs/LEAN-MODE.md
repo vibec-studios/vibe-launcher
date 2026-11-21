@@ -48,3 +48,16 @@ Gewählt ist A, weil es keinen Speicher kostet und keine zweite Protokoll-Implem
 ## Test-Hook
 
 Nur Debug-Builds: `lean_dev_session { instanceId, running, stopAfterMs?, crash? }` legt eine Sitzung ohne echten Prozess an (wie Bedrock: `begin` + `mark_running`) und beendet sie optional nach `stopAfterMs` (mit `crash: true` als Absturz). Damit lässt sich der Schlank-Modus ohne Minecraft-Konto prüfen.
+
+## Messung (21.11.2026, Debug-Build, Temp-Datenordner)
+
+Simulierte Sitzung über `lean_dev_session` (kein echtes Minecraft, also ohne Java-Prozess), Prozessbaum des Launchers (`vibe-launcher` + `msedgewebview2` + `conhost`), Werte aus `Get-Process`.
+
+| Zustand | Prozesse | WebView2-Prozesse | Privat | Working Set |
+| --- | --- | --- | --- | --- |
+| Fenster offen, Sitzung läuft | 8 | 6 | 177,1 MB | 398,3 MB |
+| Schlank, Sitzung läuft (Lauf 1) | 2 | 0 | 12,9 MB | 104,1 MB |
+| Schlank, Sitzung läuft (Lauf 2) | 2 | 0 | 11,6 MB | 54,7 MB |
+| Nach Spielende wieder geöffnet | 8 | 6 | 218,5 MB | 492,3 MB |
+
+Hinweis: In dieser Testumgebung lud die WebView das Frontend vom lokalen Dev-Server nur teilweise (Modul-Anfragen mit `ERR_CONNECTION_TIMED_OUT`). Rust-Seite (Zerstören, alle WebView2-Prozesse beendet, Neuaufbau nach Spielende und nach Absturz, Umschalten der Einstellung zur Laufzeit) ist damit geprüft, die Frontend-Übergabe (Route, Absturz-Seite) im echten Lauf noch nicht.
