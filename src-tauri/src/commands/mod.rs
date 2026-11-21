@@ -2,6 +2,7 @@ pub mod appearance;
 pub mod auth;
 pub mod bedrock;
 pub mod content;
+pub mod world_preview;
 pub mod sets;
 pub mod core;
 pub mod game;

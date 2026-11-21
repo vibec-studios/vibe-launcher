@@ -50,6 +50,7 @@ pub mod modpack;
 pub mod mroverrides;
 pub mod autoupdate;
 pub mod worlds;
+pub mod world_preview;
 pub mod worldbackup;
 
 /// Herkunft: Modrinth, CurseForge oder ein eigener Store (serialisiert als `"store:<id>"`).

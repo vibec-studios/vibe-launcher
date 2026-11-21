@@ -20,6 +20,7 @@ import clips from "./clips";
 import userfixes from "./userfixes";
 import many from "./many";
 import appearance from "./appearance";
+import worldPreview from "./world-preview";
 import { withLiveModrinth } from "./modrinth-live";
 import type { Handlers } from "./util";
 
@@ -34,6 +35,7 @@ const mockFlag = (k: string) => {
   }
 };
 const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks, ...play, ...announcements, ...cosmetics, ...importsettings, ...modsets, ...bedrock, ...feedback, ...clips, ...userfixes, ...many, ...appearance };
+Object.assign(base, worldPreview);
 // „Neu prüfen“: Updates, Probleme und Modpack-Prüfung der übrigen Mocks bündeln (etwas länger, damit der
 // Spinner am Knopf sichtbar ist; Screenshots: localStorage vl.mock.refresh = Millisekunden)
 base.instance_refresh = async (args) => {
