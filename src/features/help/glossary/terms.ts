@@ -18,6 +18,8 @@ export const TERMS = [
   "backup",
   "vibe",
   "account",
+  "skinlayer",
+  "skinmodel",
 ] as const;
 
 export type TermId = (typeof TERMS)[number];

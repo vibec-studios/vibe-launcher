@@ -22,6 +22,7 @@ export interface SkinViewer3DProps {
   ears?: string | null;
   /** Spieler kopfüber („Dinnerbone“) */
   upsideDown?: boolean;
+  showOuter?: boolean;
 }
 
 // three.js-Konstanten (gleiche Werte in allen Versionen; skinview3d bringt seine eigene three-Version mit,
@@ -162,6 +163,7 @@ export default function SkinViewer3D({
   glint = false,
   ears = null,
   upsideDown = false,
+  showOuter = true,
 }: SkinViewer3DProps) {
   const host = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -277,6 +279,10 @@ export default function SkinViewer3D({
     a.speed = animation === "walk" ? 0.7 : 1;
     v.animation = a;
   }, [animation]);
+
+  useEffect(() => {
+    viewer.current?.playerObject.skin.setOuterLayerVisible(showOuter);
+  }, [showOuter]);
 
   useEffect(() => {
     const v = viewer.current;

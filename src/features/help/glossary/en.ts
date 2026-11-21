@@ -81,6 +81,15 @@ const en: Glossary = {
     title: "Microsoft account",
     text: "Minecraft: Java Edition is tied to your Microsoft account. Sign-in happens directly at Microsoft – the launcher never sees your password.",
   },
+  skinlayer: {
+    title: "Outer layer (skin)",
+    text: "A skin has two layers: the base layer sits right on the figure, the outer layer floats slightly above it. Use it for hair, hats, jackets or glasses – it may be transparent.",
+    example: "Paint a hood on the head's outer layer – in the game it sticks out a little.",
+  },
+  skinmodel: {
+    title: "Classic and Slim",
+    text: "Minecraft's two body models. Classic has 4 pixel wide arms, Slim only 3 pixels. You can switch the model at any time.",
+  },
 };
 
 export default en;

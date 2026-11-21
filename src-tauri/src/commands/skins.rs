@@ -164,6 +164,14 @@ pub async fn skin_library_add_file(state: State<'_, AppState>, path: String, nam
     Ok(skin)
 }
 
+#[tauri::command]
+pub async fn skin_library_add_data(state: State<'_, AppState>, png: String, name: String, variant: SkinVariant) -> AppResult<LibrarySkin> {
+    let bytes = skins::decode_png_payload(&png)?;
+    let skin = state.auth.skins.add(&bytes, &name, variant, Some("editor".into()))?;
+    library_changed(&state);
+    Ok(skin)
+}
+
 /// Aktuellen Skin eines Accounts in die Bibliothek speichern.
 #[tauri::command]
 pub async fn skin_library_add_current(state: State<'_, AppState>, account_id: Option<String>) -> AppResult<LibrarySkin> {

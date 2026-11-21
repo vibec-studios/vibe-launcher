@@ -87,6 +87,7 @@ export const api = {
   skinLibraryList: () => call<T.LibrarySkin[]>("skin_library_list"),
   skinLibraryAddFile: (path: string, name?: string | null, variant?: T.SkinVariant | null) =>
     call<T.LibrarySkin>("skin_library_add_file", { path, name: name ?? null, variant: variant ?? null }),
+  skinLibraryAddData: (png: string, name: string, variant: T.SkinVariant) => call<T.LibrarySkin>("skin_library_add_data", { png, name, variant }),
   skinLibraryAddCurrent: (accountId: string | null) => call<T.LibrarySkin>("skin_library_add_current", { accountId }),
   skinLibraryImportPlayer: (name: string) => call<T.LibrarySkin>("skin_library_import_player", { name }),
   skinLibraryRename: (id: string, name: string) => call<T.LibrarySkin>("skin_library_rename", { id, name }),

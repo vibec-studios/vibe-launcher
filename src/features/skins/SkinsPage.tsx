@@ -9,6 +9,7 @@ import {
   ImagePlus,
   LogIn,
   MoreHorizontal,
+  Paintbrush,
   Pencil,
   RotateCcw,
   RotateCw,
@@ -56,6 +57,7 @@ import type { ViewerAnimation } from "./SkinViewer3D";
 import { McCapesPanel, McCapeThumb } from "./McCapesPanel";
 import { SkinImportButton, sourceLabels, type ImportSource } from "./SkinImport";
 import { useCapeFrames, useMcCapesEnabled, useMcProfile, type McCapeFrames, type McProfile } from "./minecraftcapes";
+import { SkinEditorDialog, type EditorAccount, type EditorSource } from "./editor/SkinEditorDialog";
 
 const SkinViewer3D = lazy(() => import("./SkinViewer3D"));
 
@@ -119,6 +121,12 @@ export function SkinsPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<LibrarySkin | null>(null);
   const [tab, setTab] = useState<"library" | "mccapes">("library");
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorSource, setEditorSource] = useState<EditorSource | null>(null);
+  const openEditor = (s: EditorSource | null) => {
+    setEditorSource(s);
+    setEditorOpen(true);
+  };
 
   // MinecraftCapes (nur wenn in den Einstellungen an – sonst keine Anfrage)
   const mcEnabled = useMcCapesEnabled();
@@ -222,6 +230,12 @@ export function SkinsPage() {
   };
 
   const canEdit = !!profile && !busy;
+  const editorAccount: EditorAccount | null =
+    account && profile ? { id: account.id, name: account.username, skin: profile.skin?.data_url ? { dataUrl: profile.skin.data_url, variant: profile.skin.variant } : null } : null;
+  const editShown = () =>
+    openEditor(
+      viewerSkin ? { dataUrl: viewerSkin, name: preview?.skin?.name ?? account?.username ?? null, variant: viewerVariant } : null,
+    );
   const libraryTab = !(tab === "mccapes" && mcEnabled && account);
 
   return (
@@ -259,6 +273,11 @@ export function SkinsPage() {
             <AddFileButton />
           </>
         )}
+        <Tooltip content={t("skined.open_tip")}>
+          <Button size="sm" variant="ghost" icon={<Paintbrush size={14} />} onClick={editShown}>
+            {t("skined.open")}
+          </Button>
+        </Tooltip>
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(340px,1fr)_minmax(360px,1.1fr)] gap-4 px-6 pb-6">
@@ -296,6 +315,13 @@ export function SkinsPage() {
                   </DropdownItem>
                   <DropdownItem icon={<Save size={14} />} disabled={!profile?.skin || !!busy} onSelect={() => void saveCurrent()}>
                     {t("skins.save_current")}
+                  </DropdownItem>
+                  <DropdownItem
+                    icon={<Paintbrush size={14} />}
+                    disabled={!profile?.skin?.data_url}
+                    onSelect={() => openEditor({ dataUrl: profile!.skin!.data_url!, name: account.username, variant: profile!.skin!.variant })}
+                  >
+                    {t("skined.edit_current")}
                   </DropdownItem>
                   <DropdownSeparator />
                   <DropdownItem icon={<RotateCcw size={14} />} danger disabled={!canEdit} onSelect={() => void resetSkin()}>
@@ -488,6 +514,7 @@ export function SkinsPage() {
                         );
                       }}
                       onRename={() => setRenaming(s)}
+                      onEdit={() => openEditor({ dataUrl: s.data_url, name: s.name, variant: s.variant })}
                     />
                   ))}
                 </div>
@@ -501,6 +528,7 @@ export function SkinsPage() {
       </div>
 
       <RenameDialog skin={renaming} onClose={() => setRenaming(null)} />
+      <SkinEditorDialog open={editorOpen} onOpenChange={setEditorOpen} source={editorSource} account={editorAccount} />
       <MsaDialog open={msa} onOpenChange={setMsa} />
     </div>
   );
@@ -608,6 +636,7 @@ function CapeTile({ cape, label, selected, active, onClick }: { cape?: Cape; lab
 function sourceLabel(src: string | null): string | null {
   if (!src) return null;
   if (src === "file") return tt("skins.source_file");
+  if (src === "editor") return tt("skined.source_editor");
   const [kind, name] = [src.slice(0, src.indexOf(":")), src.slice(src.indexOf(":") + 1)];
   if (kind === "account") return tt("skins.source_account", { name });
   if (kind === "player") return tt("skins.source_player", { name });
@@ -622,6 +651,7 @@ const LibraryTile = memo(function LibraryTile({
   onPreview,
   onApply,
   onRename,
+  onEdit,
 }: {
   skin: LibrarySkin;
   selected: boolean;
@@ -629,6 +659,7 @@ const LibraryTile = memo(function LibraryTile({
   onPreview: () => void;
   onApply: () => void;
   onRename: () => void;
+  onEdit: () => void;
 }) {
   const t = useT();
   const img = useSkinFront(s.data_url, s.variant, 6);
@@ -654,6 +685,9 @@ const LibraryTile = memo(function LibraryTile({
     <>
       <ContextItem icon={<Check size={14} />} disabled={!canApply} onSelect={onApply}>
         {t("skins.apply")}
+      </ContextItem>
+      <ContextItem icon={<Paintbrush size={14} />} onSelect={onEdit}>
+        {t("skined.edit")}
       </ContextItem>
       <ContextItem icon={<Pencil size={14} />} onSelect={onRename}>
         {t("skins.rename")}

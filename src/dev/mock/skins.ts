@@ -127,6 +127,7 @@ const handlers: Handlers = {
     }),
   skin_library_list: () => library().map((s) => ({ ...s })),
   skin_library_add_file: (a) => add(String(a.path).split(/[\\/]/).pop()!.replace(/\.png$/i, ""), variantOf(a.variant), "file", makeSkin("#999", "#555", "#222")),
+  skin_library_add_data: (a) => add(String(a.name ?? "").trim() || "Skin", variantOf(a.variant), "editor", String(a.png)),
   skin_library_add_current: (a) => {
     const p = profile(acc(a));
     return add(p.username, p.skin?.variant ?? "classic", "account:" + p.username, p.skin!.data_url!);
