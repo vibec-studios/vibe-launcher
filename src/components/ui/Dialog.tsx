@@ -1,6 +1,7 @@
 import * as D from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
+import { useT } from "@/i18n";
 import { cn } from "./cn";
 
 export interface DialogProps {
@@ -21,6 +22,7 @@ const widths = { sm: "w-[420px]", md: "w-[560px]", lg: "w-[760px]", xl: "w-[980p
 
 /** Modaler Dialog: angehobene Fläche mit Schatten statt Rahmen. Inhalt scrollt innerhalb, nie das Fenster. */
 export function Dialog({ open, onOpenChange, title, description, children, footer, size = "md", locked, className }: DialogProps) {
+  const t = useT();
   return (
     <D.Root open={open} onOpenChange={(o) => (!locked || o) && onOpenChange(o)}>
       <D.Portal>
@@ -47,7 +49,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
               )}
             </div>
             {!locked && (
-              <D.Close aria-label="Schließen" className="-mr-2 -mt-1 grid h-8 w-8 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text">
+              <D.Close aria-label={t("common.close")} className="-mr-2 -mt-1 grid h-8 w-8 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text">
                 <X size={18} />
               </D.Close>
             )}

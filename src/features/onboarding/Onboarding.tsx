@@ -3,6 +3,7 @@
 //   4. Vibe an/aus   5. Import aus anderen Launchern (nur, wenn etwas gefunden wurde)   6. Erstes Spiel
 // Bestehende Nutzer sehen es nie (Backend setzt `onboarding_done`), es lässt sich aber in den Einstellungen erneut
 // starten. Alle Entscheidungen werden sofort gespeichert; „Fertig“ setzt nur noch das Flag.
+import * as D from "@radix-ui/react-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -100,7 +101,7 @@ function OnboardingFlow() {
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-bg" role="dialog" aria-modal="true" aria-label={t("onb.aria")}>
+    <OnboardingFrame label={t("onb.aria")}>
       {/* Eigene schmale Titelleiste: verschiebbar, Fensterknöpfe bleiben erreichbar */}
       <header data-tauri-drag-region className="flex h-[var(--titlebar-h)] shrink-0 items-center pl-4">
         <div data-tauri-drag-region className="flex items-center gap-2 text-[13px] font-semibold text-muted">
@@ -163,7 +164,27 @@ function OnboardingFlow() {
           )}
         </footer>
       </main>
-    </div>
+    </OnboardingFrame>
+  );
+}
+
+function OnboardingFrame({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <D.Root open>
+      <D.Content
+        className="fixed inset-0 z-40 flex flex-col bg-bg focus:outline-none"
+        aria-describedby={undefined}
+        aria-modal="true"
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          if (event.currentTarget instanceof HTMLElement) event.currentTarget.focus();
+        }}
+      >
+        <D.Title className="sr-only">{label}</D.Title>
+        {children}
+      </D.Content>
+    </D.Root>
   );
 }
 

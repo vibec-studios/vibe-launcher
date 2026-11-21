@@ -195,10 +195,10 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
     body = (
       <div className="flex min-h-0 flex-col gap-3">
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2.5 rounded-ctl text-[13px] text-muted hover:text-text" onClick={() => toggleMany(visible, !allVisibleSelected)}>
-            <SelectBox state={allVisibleSelected ? "on" : someVisibleSelected ? "mixed" : "off"} onClick={() => {}} label={tr("ext.select_all")} />
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-ctl text-[13px] text-muted hover:text-text">
+            <SelectBox state={allVisibleSelected ? "on" : someVisibleSelected ? "mixed" : "off"} onClick={() => toggleMany(visible, !allVisibleSelected)} label={tr("ext.select_all")} />
             {tr("ext.select_all")}
-          </button>
+          </label>
           <span className="text-meta text-dim">{tr("ext.selected", { n: chosen.length, total: allInstances.length })}</span>
           <div className="flex-1" />
           {allInstances.length > 6 && <SearchInput value={query} onChange={setQuery} placeholder={tr("ext.search")} className="w-[220px]" />}

@@ -137,7 +137,11 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
         tabIndex={0}
         aria-label={i.name}
         onClick={() => onOpen(i)}
-        onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(i)}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
+          e.preventDefault();
+          if (!e.repeat) onOpen(i);
+        }}
         style={accentVars(accent)}
         className={cn(
           "vl-card vl-inst-card group relative flex min-w-0 flex-col rounded-panel p-1.5 text-left transition-colors duration-100",
@@ -239,7 +243,11 @@ export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOp
         tabIndex={0}
         aria-label={i.name}
         onClick={() => onOpen(i)}
-        onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(i)}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
+          e.preventDefault();
+          if (!e.repeat) onOpen(i);
+        }}
         style={accentVars(accent)}
         className={cn("group relative h-12 overflow-hidden rounded-ctl transition-colors duration-100 hover:bg-white/[.04] data-[state=open]:bg-white/[.04]", listCols)}
       >

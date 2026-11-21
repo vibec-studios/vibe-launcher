@@ -2,6 +2,7 @@
 import * as D from "@radix-ui/react-dialog";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useT } from "@/i18n";
 import { cn } from "./cn";
 import { Spinner } from "./Spinner";
 
@@ -9,6 +10,26 @@ export interface LightboxImage {
   url: string;
   title?: string | null;
   description?: string | null;
+}
+
+function ImagePreview({ image }: { image: LightboxImage }) {
+  const t = useT();
+  const [status, setStatus] = useState<"loading" | "loaded" | "failed">(image.url ? "loading" : "failed");
+  if (status === "failed") return <div role="status" className="text-meta text-muted">{t("files.image.failed")}</div>;
+  return (
+    <>
+      <img
+        src={image.url}
+        alt={image.title ?? ""}
+        decoding="async"
+        draggable={false}
+        onLoad={() => setStatus("loaded")}
+        onError={() => setStatus("failed")}
+        className={cn("h-full w-full object-contain transition-opacity duration-150", status === "loaded" ? "opacity-100" : "opacity-0")}
+      />
+      {status === "loading" && <Spinner size={20} className="absolute text-muted" />}
+    </>
+  );
 }
 
 export function Lightbox({
@@ -28,8 +49,6 @@ export function Lightbox({
   const open = index !== null && images.length > 0;
   const i = index ?? 0;
   const img = images[i];
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => setLoaded(false), [img?.url]);
   const go = (d: number) => onIndexChange((i + d + images.length) % images.length);
 
   // Nachbarbilder vorladen, damit das Blättern ohne Warten geht
@@ -65,18 +84,7 @@ export function Lightbox({
             </D.Close>
           </div>
           <div className="relative flex min-h-0 flex-1 items-center justify-center px-20" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            {img && (
-              <img
-                key={img.url}
-                src={img.url}
-                alt={img.title ?? ""}
-                decoding="async"
-                draggable={false}
-                onLoad={() => setLoaded(true)}
-                className={cn("h-full w-full object-contain transition-opacity duration-150", loaded ? "opacity-100" : "opacity-0")}
-              />
-            )}
-            {!loaded && <Spinner size={20} className="absolute text-muted" />}
+            {img && <ImagePreview key={img.url} image={img} />}
             {images.length > 1 && (
               <>
                 <button

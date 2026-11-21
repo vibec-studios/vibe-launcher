@@ -7,6 +7,7 @@ import type {
   ContentUpdate,
   ExportEntry,
   GalleryImage,
+  ImportPreview,
   Instance,
   MissingDownload,
   ProjectDetails,
@@ -431,7 +432,7 @@ function missingOf(id: string): MissingDownload[] {
   ];
 }
 
-function newInstance(name: string, mc: string, kind: Instance["loader"]["kind"], ver: string | null, source: Instance["source"]): Instance {
+export function newInstance(name: string, mc: string, kind: Instance["loader"]["kind"], ver: string | null, source: Instance["source"]): Instance {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "instanz";
   let id = base;
   for (let i = 2; instances.has(id); i++) id = `${base}-${i}`;
@@ -594,19 +595,26 @@ const handlers: Handlers = {
     });
     return fakeTask("modpack_install", `${h.title} installieren`, inst.id, 3500);
   },
-  import_preview: async ({ path }) => {
+  import_preview: async ({ path }): Promise<ImportPreview> => {
     await delay(400);
     const p = String(path);
     if (/kaputt|broken/i.test(p)) throw { kind: "zip", message: "Die Datei ist kein gültiges Modpack (modrinth.index.json fehlt)." };
     const name = p.split(/[\\/]/).pop()!.replace(/\.(mrpack|zip|vlpack)$/i, "");
     const ext = p.split(".").pop()!.toLowerCase();
+    const files: ImportPreview["files"] = [
+      { path: "mods/fabric-api.jar", side: "both" },
+      { path: "mods/sodium.jar", side: "client" },
+      { path: "mods/luckperms.jar", side: "server" },
+      { path: "mods/pack-mod.jar", side: "unknown" },
+    ];
     return {
       format: ext === "mrpack" ? "mrpack" : ext === "vlpack" ? "vlpack" : "curseforge",
       name: name.replace(/[-_]/g, " "),
       version_name: "2.4.1",
       mc_version: "1.21.1",
       loader: { kind: "fabric", version: "0.16.9" },
-      file_count: 187,
+      file_count: files.length,
+      files,
       icon: "https://cdn.modrinth.com/data/1KVo5zza/icon.png",
       author: "Vibe Craft Studios",
     };
