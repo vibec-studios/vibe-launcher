@@ -25,6 +25,7 @@ import portable from "./portable";
 import worldPreview from "./world-preview";
 import packupdate from "./packupdate";
 import worldMap from "./world-map";
+import socialw4 from "./socialw4";
 import { withLiveModrinth } from "./modrinth-live";
 import type { Handlers } from "./util";
 
@@ -41,6 +42,7 @@ const mockFlag = (k: string) => {
 const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks, ...play, ...announcements, ...cosmetics, ...importsettings, ...modsets, ...bedrock, ...feedback, ...clips, ...userfixes, ...many, ...appearance, ...organize, ...portable, ...packupdate };
 Object.assign(base, worldPreview);
 Object.assign(base, worldMap);
+Object.assign(base, socialw4);
 // „Neu prüfen“: Updates, Probleme und Modpack-Prüfung der übrigen Mocks bündeln (etwas länger, damit der
 // Spinner am Knopf sichtbar ist; Screenshots: localStorage vl.mock.refresh = Millisekunden)
 base.instance_refresh = async (args) => {

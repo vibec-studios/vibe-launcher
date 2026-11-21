@@ -55,6 +55,7 @@ import skineditor from "./skineditor";
 import worldMap from "./world-map";
 import packupdate from "./packupdate";
 import modMap from "./mod-map";
+import socialw4 from "./socialw4";
 
 export type Lang = "de" | "en";
 type Dict = Record<string, string>;
@@ -64,6 +65,7 @@ const bundles: Bundle[] = [common, instances, discover, accounts, settings, logs
 const dicts: Record<Lang, Dict> = { de: {}, en: {} };
 bundles.push(worldMap);
 bundles.push(modMap);
+bundles.push(socialw4);
 for (const b of bundles) {
   Object.assign(dicts.de, b.de);
   Object.assign(dicts.en, b.en);

@@ -30,6 +30,11 @@ let waitingSince = info.status === "waitlist" ? Date.now() : 0;
 
 export const accessStatus = () => info.status;
 
+export function approveByInvite(): AccessInfo {
+  if (info.status !== "approved") info = { ...info, status: "approved", position: null, total: null, reason: null, decidedAt: new Date().toISOString() };
+  return info;
+}
+
 export function accessCode() {
   return info.status === "waitlist" ? "ACCESS_PENDING" : info.status === "rejected" ? "ACCESS_REJECTED" : "ACCESS_NONE";
 }

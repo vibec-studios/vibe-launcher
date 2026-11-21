@@ -14,6 +14,7 @@ import { useFriends } from "@/features/social/hooks";
 import { Avatar } from "@/features/social/FriendsList";
 import { errText, openDm, sendMessage, useSocial } from "@/features/social/service";
 import { ManualModsWarning, needsManualWarning, useManualMods } from "./ManualModsWarning";
+import { PlayLinkExtras, useLinkOverride } from "./PlayLinkExtras";
 
 /** `session.json` der laufenden Instanzen (alle 5 s, solange etwas läuft). */
 export function usePlaySessions(): RunningSession[] {
@@ -40,8 +41,9 @@ export function PlayLinkBar({ instanceId, compact, className }: { instanceId?: s
   const [send, setSend] = useState(false);
   const [warn, setWarn] = useState<null | (() => void)>(null);
   const manual = useManualMods(hosting?.instance_id);
-  if (!hosting || !vibe.enabled) return null;
-  const url = hosting.session.play_link!;
+  const linkUrl = useLinkOverride(hosting?.instance_id, hosting?.session.play_link);
+  if (!hosting || !vibe.enabled || !linkUrl) return null;
+  const url = linkUrl;
   const s = hosting.session;
   const guarded = (fn: () => void) => () => (needsManualWarning(hosting.instance_id, manual) ? setWarn(() => fn) : fn());
   const copy = async () => {
@@ -74,6 +76,7 @@ export function PlayLinkBar({ instanceId, compact, className }: { instanceId?: s
               {compact ? t("play.share.send_short") : t("play.share.send")}
             </Button>
           )}
+          <PlayLinkExtras hosting={hosting} url={url} compact={compact} />
         </div>
       </div>
       {send && <SendLinkDialog url={url} world={s.world} onClose={() => setSend(false)} />}

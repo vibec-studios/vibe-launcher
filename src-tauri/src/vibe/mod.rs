@@ -8,6 +8,7 @@
 //!   und damit die harte Sperre: Ist `settings.vibe.enabled` aus, gibt es keine Verbindung.
 //! - **Modpacks teilen/importieren** (Export, Multipart-Upload, Overrides mit Zip-Slip-Prüfung).
 pub mod announcements;
+pub mod pack_fetch;
 pub mod packs;
 pub mod ws;
 

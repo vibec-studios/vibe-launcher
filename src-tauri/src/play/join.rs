@@ -1,6 +1,6 @@
 //! Beitreten über einen Spiel-Link: Details laden, Vorschau (was wird installiert, wie groß), Instanz einrichten.
 //! Den Start (Quick Play in `relay_host`) übernimmt danach das Frontend über den normalen Start-Weg.
-use super::{find_match, missing_mods, valid_code, LinkMod, LinkPack, PlayLink};
+use super::{find_match, find_vibe_update, missing_mods, valid_code, LinkMod, LinkPack, PlayLink};
 use crate::content::index::ContentIndex;
 use crate::content::{curseforge as cf, import, install, local, modrinth as mr, Source};
 use crate::error::{AppError, AppResult};
@@ -64,6 +64,12 @@ pub struct JoinPreview {
     /// Problem, das das Beitreten verhindert: version_unavailable | pack_unavailable | curseforge_unavailable | loader_unsupported
     pub problem: Option<String>,
     pub problem_detail: Option<String>,
+    /// Vibe-Pack am Link: vorhandene Instanz wird auf die Version des Links aktualisiert (mit Sicherung)
+    pub pack_update: bool,
+    /// Bisherige Version dieser Instanz (bei `pack_update`)
+    pub pack_from_version: Option<String>,
+    /// Das Modpack kommt als geteiltes Vibe-Pack
+    pub vibe_pack: bool,
 }
 
 fn problem(p: &mut JoinPreview, kind: &str, detail: impl Into<String>) {
@@ -81,6 +87,13 @@ pub async fn preview(state: &AppState, link: &PlayLink) -> AppResult<JoinPreview
             return Ok(p);
         }
     };
+    if let Some(vp) = link.vibe_pack.as_ref() {
+        if !vp.available {
+            problem(&mut p, "pack_unavailable", format!("Das Modpack {} ist nicht mehr verfügbar.", vp.name));
+            return Ok(p);
+        }
+        return vibe_preview(state, link, p).await;
+    }
     let matched = find_match(state, link);
     let idx = matched.as_ref().map(|i| ContentIndex::load(&state.paths, &i.id)).unwrap_or_default();
     p.instance_id = matched.as_ref().map(|i| i.id.clone());
@@ -148,6 +161,40 @@ pub async fn preview(state: &AppState, link: &PlayLink) -> AppResult<JoinPreview
         }
     }
     p.download_bytes = known.then_some(bytes);
+    Ok(p)
+}
+
+async fn vibe_preview(state: &AppState, link: &PlayLink, mut p: JoinPreview) -> AppResult<JoinPreview> {
+    let Some(vp) = link.vibe_pack.clone() else { return Ok(p) };
+    p.vibe_pack = true;
+    p.pack_title = Some(vp.name.clone()).filter(|n| !n.is_empty());
+    p.pack_version = Some(vp.version.clone()).filter(|v| !v.is_empty());
+    p.pack_files = vp.file_count as usize;
+    let matched = find_match(state, link);
+    let update = if matched.is_none() { find_vibe_update(state, link) } else { None };
+    let target = matched.as_ref().or(update.as_ref());
+    p.instance_id = target.map(|i| i.id.clone());
+    p.instance_name = target.map(|i| i.name.clone());
+    p.create = target.is_none();
+    p.pack_update = update.is_some();
+    p.pack_from_version = update.as_ref().and_then(|i| i.source.as_ref()?.version_name.clone());
+    p.game_download = target.map_or(true, |i| i.install_state != crate::instance::InstallState::Installed) || p.pack_update;
+    let idx = matched.as_ref().map(|i| ContentIndex::load(&state.paths, &i.id)).unwrap_or_default();
+    if matched.is_some() {
+        let wanted = missing_mods(link, &idx);
+        p.mods = wanted.len();
+        let (b, k, manual) = mods_size(state, &wanted).await;
+        p.download_bytes = k.then_some(b);
+        p.manual = manual;
+    }
+    if let Ok(kind) = loader_kind(&link.loader.kind) {
+        if let Some(cp) = link.client_pack.as_deref().filter(|c| crate::client_packs::def(c).is_some_and(|d| d.loaders.contains(&kind))) {
+            let has = target.is_some_and(|i| crate::client_packs::installed_ids(state, &i.id).iter().any(|x| x == cp));
+            if !has {
+                p.client_pack = Some(cp.to_string());
+            }
+        }
+    }
     Ok(p)
 }
 
@@ -263,9 +310,32 @@ pub fn new_instance_name(link: &PlayLink) -> String {
 /// Setzt die Instanz der Aufgabe (`task.instance_id`), damit das Frontend danach starten kann.
 pub async fn run_setup(state: AppState, task: TaskHandle, link: PlayLink, instance_id: Option<String>) -> AppResult<()> {
     let kind = loader_kind(&link.loader.kind)?;
-    let inst = match instance_id {
-        Some(id) => state.instances.get(&id)?,
-        None => match &link.pack {
+    let vibe = link.vibe_pack.as_ref().filter(|v| v.available).cloned();
+    let inst = match (instance_id, &vibe) {
+        (Some(id), Some(vp)) => {
+            let inst = state.instances.get(&id)?;
+            if super::vibe_pack_match(vp, &inst) == Some(super::VibeMatch::OtherVersion) {
+                task.stage(format!("Aktualisiere {} auf {} …", inst.name, vp.version), Some(0.02));
+                let input = crate::content::modpack_from::PackInput::Vibe { code: vp.code.clone(), version_id: Some(vp.version_id.clone()), link: Some(link.code.clone()) };
+                crate::content::modpack_from::run_update(state.clone(), task.clone(), inst.id.clone(), input).await?;
+                state.instances.get(&id)?
+            } else {
+                inst
+            }
+        }
+        (Some(id), None) => state.instances.get(&id)?,
+        (None, Some(_)) => {
+            let before: std::collections::HashSet<String> = state.instances.list().into_iter().map(|i| i.id).collect();
+            crate::vibe::packs::install_from(state.clone(), task.clone(), crate::vibe::pack_fetch::PackOrigin::PlayLink { link: link.code.clone() }, None).await?;
+            state
+                .instances
+                .list()
+                .into_iter()
+                .filter(|i| !before.contains(&i.id))
+                .max_by_key(|i| i.created_at)
+                .ok_or_else(|| AppError::msg("Die neue Instanz wurde nicht gefunden"))?
+        }
+        (None, None) => match &link.pack {
             Some(pack) => {
                 let src = source_of(&pack.source).ok_or_else(|| AppError::Invalid("Unbekannte Modpack-Quelle".into()))?;
                 let before: std::collections::HashSet<String> = state.instances.list().into_iter().map(|i| i.id).collect();

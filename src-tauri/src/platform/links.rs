@@ -27,6 +27,8 @@ pub enum AppAction {
     Invite { id: String },
     /// „Spiel mit mir“-Link (`vibelauncher://join/<code>`, docs/PLAY-LINKS.md)
     PlayLink { code: String },
+    /// Beta-Einladung (`vibelauncher://invite/<code>`, 8 Zeichen, überspringt die Warteliste)
+    AccessInvite { code: String },
     InstallVersion { source: String, version_id: String },
 }
 
@@ -103,11 +105,19 @@ pub fn parse_url(raw: &str) -> Option<AppAction> {
                     instance_id,
                 })
         }
+        ("invite", 2) if is_access_invite_code(&parts[1]) => Some(AppAction::AccessInvite {
+            code: parts[1].to_ascii_lowercase(),
+        }),
         ("invite", 2) => ok_id(&parts[1], 64).then(|| AppAction::Invite {
             id: parts[1].clone(),
         }),
         _ => None,
     }
+}
+
+/// Code einer Beta-Einladung: 8 Zeichen aus `23456789abcdefghjkmnpqrstuvwxyz`.
+pub fn is_access_invite_code(s: &str) -> bool {
+    s.len() == 8 && s.bytes().all(|c| matches!(c.to_ascii_lowercase(), b'2'..=b'9' | b'a'..=b'h' | b'j' | b'k' | b'm' | b'n' | b'p'..=b'z'))
 }
 
 /// Kommandozeile: `--launch <id>` / `--launch=<id>` sowie Deep-Link-URLs als Argument.
@@ -189,6 +199,11 @@ mod tests {
         assert_eq!(
             parse_url("vibelauncher://invite/abc"),
             Some(AppAction::Invite { id: "abc".into() })
+        );
+        assert_eq!(parse_url("vibelauncher://invite/K3X9Q2AB"), Some(AppAction::AccessInvite { code: "k3x9q2ab".into() }));
+        assert_eq!(
+            parse_url("vibelauncher://invite/01JABCDEFGHJKMNPQRSTVWXYZ0"),
+            Some(AppAction::Invite { id: "01JABCDEFGHJKMNPQRSTVWXYZ0".into() })
         );
         // Einladungslinks (neu und alt) als https-Adresse
         assert_eq!(parse_url("https://axolite.cc/j/k3x9q2"), Some(AppAction::PlayLink { code: "k3x9q2".into() }));

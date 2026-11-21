@@ -8,7 +8,6 @@ use super::{api_error, ensure, Feature};
 use crate::content::import::{self, ImportOptions};
 use crate::content::{export, ExportOptions, PackFormat};
 use crate::error::{AppError, AppResult};
-use crate::instance::{PackSource, PackSourceKind};
 use crate::state::AppState;
 use crate::tasks::TaskHandle;
 use serde::{Deserialize, Serialize};
@@ -214,7 +213,7 @@ fn split_vlpack(vlpack: &Path, overrides_out: &Path) -> AppResult<Parts> {
     Ok(Parts { manifest, icon, has_overrides: n > 0 })
 }
 
-fn image_mime(b: &[u8]) -> Option<&'static str> {
+pub(super) fn image_mime(b: &[u8]) -> Option<&'static str> {
     if b.starts_with(&[0x89, b'P', b'N', b'G']) {
         Some("image/png")
     } else if b.starts_with(&[0xFF, 0xD8, 0xFF]) {
@@ -232,94 +231,16 @@ fn image_mime(b: &[u8]) -> Option<&'static str> {
 
 /// Geteiltes Pack per Code als neue Instanz importieren (Task). `token` optional (öffentliche Packs).
 pub async fn install(state: AppState, task: TaskHandle, code: String, version_id: Option<String>, token: Option<String>) -> AppResult<()> {
-    let base = ensure(&state, Feature::Sharing)?;
-    if !valid_code(&code) {
-        return Err(AppError::Invalid("Ungültiger Pack-Code".into()));
-    }
-    task.stage("Lade Pack-Informationen …", None);
-    let mut url = format!("{base}/api/v1/packs/{code}/download");
-    if let Some(v) = version_id.as_deref().filter(|v| v.len() <= 64 && v.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')) {
-        url.push_str(&format!("?version={v}"));
-    }
-    let mut rb = state.net.client.get(url).timeout(Duration::from_secs(30));
-    if let Some(t) = token.as_deref().filter(|t| !t.is_empty()) {
-        rb = rb.bearer_auth(t);
-    }
-    let r = rb.send().await?;
-    let status = r.status().as_u16();
-    let body = r.text().await?;
-    if !(200..300).contains(&status) {
-        return Err(api_error(status, &body));
-    }
-    let dl: Value = serde_json::from_str(&body)?;
-    let pack = &dl["pack"];
-    let version = &dl["version"];
-    let mut manifest = dl["manifest"].clone();
-    if !manifest.is_object() {
-        return Err(AppError::msg("Der Vibe-Server hat kein gültiges Manifest geliefert"));
-    }
-    let pack_name = pack["name"].as_str().unwrap_or("Geteiltes Pack").to_string();
-    task.set_title(format!("{pack_name} importieren"));
+    install_from(state, task, super::pack_fetch::PackOrigin::Code { code, version_id }, token).await
+}
+
+/// Pack (per Code oder Spiel-Link) als neue Instanz importieren.
+pub async fn install_from(state: AppState, task: TaskHandle, origin: super::pack_fetch::PackOrigin, token: Option<String>) -> AppResult<()> {
+    let f = super::pack_fetch::fetch(&state, Some(&task), &origin, token).await?;
+    task.set_title(format!("{} importieren", f.name));
     task.check()?;
-
-    let tmp_overrides = tmp_path(&state, "zip");
-    let tmp_vlpack = tmp_path(&state, "vlpack");
-    let _cleanup = TmpFiles(vec![tmp_overrides.clone(), tmp_vlpack.clone()]);
-
-    // Overrides laden (nur vom eingestellten Backend; Token nur an dieses)
-    let mut has_overrides = false;
-    if let Some(ourl) = version["overrides"]["url"].as_str() {
-        task.stage("Lade Overrides …", Some(0.05));
-        let u = super::check_api_url(&base, ourl)?;
-        let mut rb = state.net.client.get(u).timeout(Duration::from_secs(600));
-        if let Some(t) = token.as_deref().filter(|t| !t.is_empty()) {
-            rb = rb.bearer_auth(t);
-        }
-        let r = rb.send().await?;
-        if !r.status().is_success() {
-            return Err(AppError::msg(format!("Overrides konnten nicht geladen werden (HTTP {})", r.status().as_u16())));
-        }
-        let bytes = r.bytes().await?;
-        tokio::fs::write(&tmp_overrides, &bytes).await?;
-        let p = tmp_overrides.clone();
-        tokio::task::spawn_blocking(move || check_overrides(&p)).await??;
-        has_overrides = true;
-    }
-    task.check()?;
-
-    // Icon (optional)
-    let mut icon: Option<Vec<u8>> = None;
-    if let Some(iurl) = pack["iconUrl"].as_str() {
-        if let Ok(u) = super::check_api_url(&base, iurl) {
-            if let Ok(r) = state.net.client.get(u).timeout(Duration::from_secs(20)).send().await {
-                if r.status().is_success() {
-                    if let Ok(b) = r.bytes().await {
-                        if b.len() <= 1024 * 1024 && image_mime(&b).is_some() {
-                            icon = Some(b.to_vec());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Temporäres .vlpack bauen und mit dem normalen Import einlesen
-    manifest["name"] = Value::String(pack_name.clone());
-    manifest["icon"] = if icon.is_some() { Value::String("icon.png".into()) } else { Value::Null };
-    let (vp, op) = (tmp_vlpack.clone(), tmp_overrides.clone());
-    let mtext = serde_json::to_string_pretty(&manifest)?;
-    tokio::task::spawn_blocking(move || build_vlpack(&vp, &mtext, has_overrides.then_some(op.as_path()), icon.as_deref())).await??;
-    task.check()?;
-
-    let source = PackSource {
-        kind: PackSourceKind::Vibe,
-        project_id: Some(code.clone()),
-        version_id: version["id"].as_str().map(str::to_string),
-        name: Some(pack_name.clone()),
-        version_name: version["version"].as_str().map(str::to_string),
-    };
     let sub = task.sub(0.1, 1.0);
-    import::run_import(&state, &task, &tmp_vlpack, ImportOptions { name: Some(pack_name), source: Some(source), ..Default::default() }, sub).await?;
+    import::run_import(&state, &task, &f.vlpack, ImportOptions { name: Some(f.name.clone()), source: Some(f.source.clone()), ..Default::default() }, sub).await?;
     Ok(())
 }
 
@@ -376,7 +297,7 @@ pub fn check_overrides(path: &Path) -> AppResult<()> {
 }
 
 /// `.vlpack` aus Manifest, geprüfter Overrides-ZIP und Icon zusammensetzen.
-fn build_vlpack(dest: &Path, manifest: &str, overrides: Option<&Path>, icon: Option<&[u8]>) -> AppResult<()> {
+pub(super) fn build_vlpack(dest: &Path, manifest: &str, overrides: Option<&Path>, icon: Option<&[u8]>) -> AppResult<()> {
     let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
     let mut out = zip::ZipWriter::new(std::io::BufWriter::new(std::fs::File::create(dest)?));
     out.start_file("vlpack.json", opts)?;

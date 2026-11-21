@@ -340,6 +340,8 @@ export interface Pack {
   status: "active" | "hidden" | "removed";
   createdAt: string;
   updatedAt: string;
+  followers?: number;
+  following?: boolean;
 }
 
 export interface PackDownload {
@@ -377,6 +379,10 @@ export interface HostSession {
   onlineAt: string | null;
   endedAt: string | null;
   endReason: string | null;
+  worldName?: string | null;
+  privacy?: HostPrivacy;
+  myRole?: HostRole | null;
+  pack?: HostSessionPack | null;
 }
 
 export interface HostingLimits {
@@ -423,6 +429,12 @@ export interface GatewayEvents {
   "notification.created": Notification;
   "settings.updated": { features: Record<string, boolean>; motd: string | null };
   "session.revoked": { reason: string };
+  "pack.version.published": PackVersionPublishedEvent;
+  "pack.follow.updated": PackFollow;
+  "pack.removed": PackRemovedEvent;
+  "hosting.panel.updated": HostPanelUpdatedEvent;
+  "hosting.kick": HostKickEvent;
+  "hosting.event": HostSessionEvent;
 }
 export type GatewayEventName = keyof GatewayEvents;
 
@@ -434,3 +446,16 @@ export type ServerMessage =
   | { op: "pong"; d: { at: number } }
   | { op: "error"; d: { code: string; message: string } }
   | { [K in GatewayEventName]: { op: "event"; t: K; s: number; d: GatewayEvents[K] } }[GatewayEventName];
+
+export * from "./types-social";
+import type {
+  HostKickEvent,
+  HostPanelUpdatedEvent,
+  HostPrivacy,
+  HostRole,
+  HostSessionEvent,
+  HostSessionPack,
+  PackFollow,
+  PackRemovedEvent,
+  PackVersionPublishedEvent,
+} from "./types-social";

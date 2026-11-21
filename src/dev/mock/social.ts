@@ -3,6 +3,7 @@
 // Nur für VITE_MOCK=1 (Browser), nie im Produktions-Build. Skins: echte Texturen über mc-heads.net.
 import * as cosmeticsMock from "./cosmetics";
 import { accessCode, accessExempt, accessRoute, accessStatus } from "./access";
+import { w4Route } from "./socialw4";
 import type { VibeHttpRequest, VibeHttpResponse, VibeStatus, VibeTokens } from "@/lib/types";
 import type {
   Chat,
@@ -228,7 +229,7 @@ let evSeq = 0;
 function wsSend(data: unknown) {
   if (wsId) void emit("vibe://ws", { type: "message", id: wsId, data: JSON.stringify(data) });
 }
-function gwEvent(t: string, d: unknown) {
+export function gwEvent(t: string, d: unknown) {
   wsSend({ op: "event", t, d, s: ++evSeq });
 }
 
@@ -277,6 +278,8 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
     return ok({ accessToken: "mock-access", refreshToken: "mock-refresh", expiresIn: 3600, refreshExpiresAt: new Date(Date.now() + 30 * 86400_000).toISOString(), sessionId: "mock-session", user: ME, created: false });
   if (rel === "auth/logout") return none;
   if (accessStatus() !== "approved" && !accessExempt(method, rel)) return { status: 403, body: { error: { code: accessCode(), message: "Vibe ist in der Beta." } } };
+  const w4 = w4Route(method, rel, query, body);
+  if (w4) return w4;
   // Muster wie "chats/:id/messages" -> Parameter b (1.), d (2.)
   const PATTERNS = [
     "meta", "me", "presence", "presence/friends", "friends", "friends/requests", "friends/requests/:id/accept", "friends/requests/:id/decline",

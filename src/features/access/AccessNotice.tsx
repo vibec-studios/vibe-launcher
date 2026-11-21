@@ -5,6 +5,7 @@ import { useT } from "@/i18n";
 import { openSettings } from "@/features/settings/store";
 import { BetaWhy } from "./BetaNote";
 import { JoinWaitlistButton } from "./JoinDialog";
+import { RedeemInviteButton } from "@/features/accessinvite/Redeem";
 import { useVibeAccess } from "./store";
 
 export function AccessNotice({ compact, className }: { compact?: boolean; className?: string }) {
@@ -29,6 +30,7 @@ export function AccessNotice({ compact, className }: { compact?: boolean; classN
         <Button size="sm" onClick={() => openSettings("vibe")}>
           {t("access.show_status")}
         </Button>
+        <RedeemInviteButton />
         {why}
       </div>
     );
@@ -52,6 +54,7 @@ export function AccessNotice({ compact, className }: { compact?: boolean; classN
         <h3 className={title}>{t("access.none.title")}</h3>
         <p className={text}>{t("access.none.text")}</p>
         <JoinWaitlistButton />
+        <RedeemInviteButton />
         {why}
       </div>
     );

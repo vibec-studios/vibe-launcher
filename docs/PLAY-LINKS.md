@@ -38,6 +38,11 @@ Stand 2026-11-18. Gilt für Vibe-Backend, Vibe Launcher und Vibey Client. Änder
   ohne Groß-/Kleinschreibung; `vibeyclient*.jar` zählt nie). Fehlen beide Felder, vergleicht der Client nur die Anzahl
   (`.jar` in `mods/` minus `mods`-Einträge mit `kind` `mod` oder ohne `kind`) und zeigt bei Modpacks keinen Hinweis.
   `file` und `known_files` gehen nicht an das Backend.
+- **Vibe-Pack (Launcher, Welle 4):** Stammt die Instanz aus einem geteilten Vibe-Pack (oder wurde sie selbst geteilt),
+  steht zusätzlich `"vibe_pack": { "code": "AB12CD34", "version_id": "01J…" }` drin (`version_id` fehlt bei selbst geteilten
+  Instanzen). Der Client soll das Feld an `POST /api/v1/play-links` als `vibe_pack` durchreichen (dann ohne `pack`). Beim
+  Beitreten über einen Link mit `vibe_pack` legt der Launcher die Instanz aus dem Pack an bzw. aktualisiert sie (mit
+  Sicherung) und joint danach per Quick Play. Details: docs/SOCIAL-W4.md.
   *(Launcher, umgesetzt:)* `file` und `known_files` (alle Dateien im Content-Index) schreibt er nur bei Instanzen
   **ohne** Modpack. Bei Modpacks fehlen beide, weil Override-Jars nicht im Index stehen; der Client zeigt dann keinen Hinweis.
 
