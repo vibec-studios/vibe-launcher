@@ -1,0 +1,26 @@
+:root[data-css-zoom] [data-radix-popper-content-wrapper] {
+  zoom: calc(1 / var(--ui-zoom, 1));
+}
+
+:root[data-css-zoom] [data-radix-popper-content-wrapper] > * {
+  zoom: var(--ui-zoom, 1);
+  --radix-popover-content-available-width: calc(var(--radix-popper-available-width) / var(--ui-zoom, 1)) !important;
+  --radix-popover-content-available-height: calc(var(--radix-popper-available-height) / var(--ui-zoom, 1)) !important;
+  --radix-popover-trigger-width: calc(var(--radix-popper-anchor-width) / var(--ui-zoom, 1)) !important;
+  --radix-popover-trigger-height: calc(var(--radix-popper-anchor-height) / var(--ui-zoom, 1)) !important;
+  --radix-select-content-available-width: calc(var(--radix-popper-available-width) / var(--ui-zoom, 1)) !important;
+  --radix-select-content-available-height: calc(var(--radix-popper-available-height) / var(--ui-zoom, 1)) !important;
+  --radix-select-trigger-width: calc(var(--radix-popper-anchor-width) / var(--ui-zoom, 1)) !important;
+  --radix-select-trigger-height: calc(var(--radix-popper-anchor-height) / var(--ui-zoom, 1)) !important;
+  --radix-dropdown-menu-content-available-width: calc(var(--radix-popper-available-width) / var(--ui-zoom, 1)) !important;
+  --radix-dropdown-menu-content-available-height: calc(var(--radix-popper-available-height) / var(--ui-zoom, 1)) !important;
+  --radix-dropdown-menu-trigger-width: calc(var(--radix-popper-anchor-width) / var(--ui-zoom, 1)) !important;
+  --radix-context-menu-content-available-width: calc(var(--radix-popper-available-width) / var(--ui-zoom, 1)) !important;
+  --radix-context-menu-content-available-height: calc(var(--radix-popper-available-height) / var(--ui-zoom, 1)) !important;
+  --radix-tooltip-content-available-width: calc(var(--radix-popper-available-width) / var(--ui-zoom, 1)) !important;
+  --radix-tooltip-content-available-height: calc(var(--radix-popper-available-height) / var(--ui-zoom, 1)) !important;
+}
+
+[data-radix-popper-content-wrapper] > * {
+  --vl-popper-max-h: calc(var(--radix-popper-available-height, 100vh) / var(--ui-zoom, 1));
+}

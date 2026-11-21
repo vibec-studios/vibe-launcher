@@ -81,7 +81,7 @@ function PopoverChip({ chip, children, width = 460 }: { chip: ReactNode; childre
           tabIndex={-1}
           collisionPadding={12}
           style={{ width }}
-          className="z-[60] overflow-hidden rounded-card bg-overlay shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="z-[60] max-h-[var(--vl-popper-max-h)] overflow-y-auto rounded-card bg-overlay shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           {children(() => setOpen(false))}
         </Popover.Content>

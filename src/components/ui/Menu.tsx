@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { cn } from "./cn";
 
 const panel =
-  "vl-menu z-[60] min-w-[200px] rounded-card bg-overlay p-1 shadow-e2 " +
+  "vl-menu z-[60] min-w-[200px] max-h-[var(--vl-popper-max-h)] overflow-y-auto rounded-card bg-overlay p-1 shadow-e2 " +
   "data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)] outline-none";
 const item =
   "vl-menu-item relative flex h-8 cursor-pointer select-none items-center gap-2.5 rounded-ctl px-2.5 text-[13px] text-text outline-none " +
