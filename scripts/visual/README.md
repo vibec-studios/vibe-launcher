@@ -37,7 +37,7 @@ Ein voller Lauf (3 Varianten × 44 Szenen = 132 Bilder) dauert je nach Last 4–
 - Seiten: Start, Bibliothek, Entdecken, Mod-Sets, Konten, Skins, Statistik, Galerie, Server, Freunde, Cosmetics, Cosmetics-Creator
 - Instanz `survival`: alle 9 Tabs
 - Server `survival-smp`: alle 7 Tabs
-- Einstellungen: alle 9 Tabs
+- Einstellungen: alle 10 Tabs
 - Dialoge: Neue Instanz, Import, Installieren (Entdecken → Installieren → „Version und Instanz wählen …“), Skin-Editor, Remote hinzufügen, AFK-Start
 - Konsolenfenster (`console.html`) mit laufender Sitzung
 

@@ -8,7 +8,7 @@ const INSTANCE = "survival";
 const SERVER = "survival-smp";
 const INSTANCE_TABS = ["content", "resourcepacks", "shaders", "worlds", "servers", "backups", "logs", "files", "settings"];
 const SERVER_TABS = ["console", "settings", "players", "addons", "worlds", "files", "connection"];
-const SETTINGS_TABS = ["general", "appearance", "java", "game", "downloads", "vibe", "privacy", "updates", "about"];
+const SETTINGS_TABS = ["general", "appearance", "java", "game", "downloads", "storage", "vibe", "privacy", "updates", "about"];
 
 const PAGES = {
   home: "#/",
