@@ -65,7 +65,7 @@ function RecentTile({ instance: i }: { instance: Instance }) {
         className="group flex min-w-0 items-center gap-3 rounded-panel bg-surface p-2 pr-3 transition-colors duration-100 hover:bg-surface2 data-[state=open]:bg-surface2"
       >
         <span className="relative shrink-0">
-          <InstanceIcon icon={i.icon} accent={accent} size={44} />
+          <InstanceIcon icon={i.icon} seed={i.id} accent={accent} size={44} />
           <Tooltip content={phase === "running" ? t("inst.status.running") : t("common.play")}>
             <button
               aria-label={t("common.play")}

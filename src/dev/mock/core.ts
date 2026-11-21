@@ -42,14 +42,17 @@ function inst(id: string, name: string, mc: string, kind: Instance["loader"]["ki
 
 export const instances = new Map<string, Instance>(
   [
-    inst("survival", "Survival 1.21", "1.21.4", "fabric", "0.16.9", { last_played: now - 3600_000, play_time_secs: 36000, accent: "#3fe0c5" }),
-    inst("hh-armors", "H&H Armors Test", "1.21.11", "fabric", "0.17.2", { last_played: now - 86400_000 * 2, play_time_secs: 5400, accent: "#ff6b9a" }),
+    inst("survival", "Survival 1.21", "1.21.4", "fabric", "0.16.9", { last_played: now - 3600_000, play_time_secs: 36000, accent: "#3fe0c5", icon: "block:grass@sky" }),
+    inst("hh-armors", "H&H Armors Test", "1.21.11", "fabric", "0.17.2", { last_played: now - 86400_000 * 2, play_time_secs: 5400, accent: "#ff6b9a", icon: "block:amethyst@night" }),
     inst("all-the-mods", "All the Mods 10", "1.21.1", "neoforge", "21.1.77", {
       source: { kind: "curseforge", project_id: "925200", version_id: "1", name: "All the Mods 10", version_name: "2.3" },
       install_state: "not_installed",
     }),
     inst("vanilla", "Vanilla", "1.21.4", "vanilla", null),
-    inst("old-forge", "Forge 1.12.2", "1.12.2", "forge", "14.23.5.2860", { group: "Alt" }),
+    inst("old-forge", "Forge 1.12.2", "1.12.2", "forge", "14.23.5.2860", { group: "Alt", icon: "block:bricks" }),
+    inst("creative", "Kreativ-Welt", "1.21.4", "vanilla", null, { icon: "block:stars", accent: "#5aa9ff" }),
+    inst("pvp", "PvP Training", "1.8.9", "forge", "11.15.1.2318", { icon: "block:sword@sunset", group: "Alt" }),
+    inst("skyblock", "Skyblock", "1.20.1", "fabric", "0.16.9"),
   ].map((i) => [i.id, i]),
 );
 
@@ -119,7 +122,7 @@ const handlers: Handlers = {
   instance_create: ({ req }) => {
     const r = req as { name: string; mc_version: string; loader: Instance["loader"]; icon?: string; accent?: string; group?: string };
     const id = r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "instance";
-    const i = inst(id, r.name, r.mc_version, r.loader.kind, r.loader.version, { install_state: "not_installed", accent: r.accent ?? null, group: r.group ?? null, created_at: Date.now() });
+    const i = inst(id, r.name, r.mc_version, r.loader.kind, r.loader.version, { install_state: "not_installed", icon: r.icon ?? null, accent: r.accent ?? null, group: r.group ?? null, created_at: Date.now() });
     instances.set(id, i);
     mockEmit("instance://changed", i);
     return i;

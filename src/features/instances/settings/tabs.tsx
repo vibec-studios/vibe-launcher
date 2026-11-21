@@ -6,16 +6,15 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Copy, FolderOpen, ImageIcon, Plus, RotateCcw, Shirt, Trash2, Upload, Wrench, X } from "lucide-react";
+import { AlertTriangle, Copy, FolderOpen, Plus, RotateCcw, Shirt, Trash2, Upload, Wrench, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useInstances, useSettings, useSystemInfo } from "@/lib/queries";
 import type { Instance, InstancePatch, JavaOptions, LaunchHooks, WindowOptions } from "@/lib/types";
 import { instanceAccent, loaderNames } from "@/lib/format";
-import { Button, IconButton, Input, NumberInput, Select, SettingRow, SettingsCard, Switch, Textarea, Tooltip, confirm, toast } from "@/components/ui";
-import { InstanceIcon } from "@/components/instance/InstanceIcon";
+import { Button, IconButton, Input, NumberInput, Select, SettingRow, SettingsCard, Switch, Textarea, confirm, toast } from "@/components/ui";
 import { VersionPicker, type VersionValue } from "@/components/instance/VersionPicker";
 import { JavaPathField, MemoryField } from "@/components/instance/forms";
-import { createShortcut, installInstance, openExport, openFolder, repairInstance, resetIcon, setIcon, useInstanceActions } from "@/components/instance/actions";
+import { createShortcut, installInstance, openExport, openFolder, repairInstance, useInstanceActions } from "@/components/instance/actions";
 import { useRunPhase } from "@/components/instance/status";
 import { openSettings } from "@/features/settings/store";
 import { useVibe } from "@/lib/vibe";
@@ -23,6 +22,7 @@ import { useT } from "@/i18n";
 import { useSimple } from "@/lib/mode";
 import { AccentPicker, GroupInput } from "../NewInstanceDialog";
 import { ClientPacks, useClientPacks } from "./ClientPacks";
+import { IconSetting } from "./IconSetting";
 import { closeInstanceSettings } from "./store";
 import { ImportSettingsRow } from "@/features/import/SettingsOffer";
 import { GpuRow, SimplePerfCard } from "@/features/perf/PerfControls";
@@ -73,20 +73,8 @@ function SimpleGeneralTab({ instance, d, update, local, reset }: TabProps) {
             onBlur={() => !d.name.trim() && reset()}
           />
         </SettingRow>
-        <SettingRow title={t("inst.icon")} description={t("isettings.icon.desc")}>
-          <div className="flex items-center gap-3">
-            <InstanceIcon icon={d.icon} accent={accent} size={44} />
-            <Button size="sm" icon={<ImageIcon size={13} />} onClick={() => setIcon(instance)}>
-              {t("inst.icon.choose")}
-            </Button>
-            {d.icon && (
-              <Tooltip content={t("inst.icon.reset")}>
-                <IconButton label={t("inst.icon.reset")} size="sm" onClick={() => resetIcon(instance)}>
-                  <RotateCcw size={13} />
-                </IconButton>
-              </Tooltip>
-            )}
-          </div>
+        <SettingRow title={t("inst.icon")} description={t("iconart.desc")}>
+          <IconSetting instance={instance} d={d} update={update} />
         </SettingRow>
         <SettingRow title={t("inst.accent")} stacked>
           <AccentPicker value={accent} onChange={(c) => update({ accent: c })} />
@@ -140,20 +128,8 @@ function ExpertGeneralTab({ instance, d, update, local, reset }: TabProps) {
             onBlur={() => !d.name.trim() && reset()}
           />
         </SettingRow>
-        <SettingRow title={t("inst.icon")} description={t("isettings.icon.desc")}>
-          <div className="flex items-center gap-3">
-            <InstanceIcon icon={d.icon} accent={accent} size={44} />
-            <Button size="sm" icon={<ImageIcon size={13} />} onClick={() => setIcon(instance)}>
-              {t("inst.icon.choose")}
-            </Button>
-            {d.icon && (
-              <Tooltip content={t("inst.icon.reset")}>
-                <IconButton label={t("inst.icon.reset")} size="sm" onClick={() => resetIcon(instance)}>
-                  <RotateCcw size={13} />
-                </IconButton>
-              </Tooltip>
-            )}
-          </div>
+        <SettingRow title={t("inst.icon")} description={t("iconart.desc")}>
+          <IconSetting instance={instance} d={d} update={update} />
         </SettingRow>
         <SettingRow
           title={t("inst.accent")}

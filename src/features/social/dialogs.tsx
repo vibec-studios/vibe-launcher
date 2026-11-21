@@ -466,7 +466,7 @@ function InstancePreview({ i }: { i: Instance | undefined }) {
   if (!i) return null;
   return (
     <div className="flex items-center gap-2.5 text-[12px] text-muted">
-      <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={24} />
+      <InstanceIcon icon={i.icon} seed={i.id} accent={instanceAccent(i.id, i.accent)} size={24} />
       <span className="truncate">{i.name}</span>
     </div>
   );

@@ -105,7 +105,7 @@ export function ContinueCard({ instance: i, spot }: { instance: Instance; spot: 
         <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
           <div className="flex min-w-0 items-center gap-4">
             <button onClick={open} aria-label={i.name} className="shrink-0 transition-opacity duration-100 hover:opacity-85">
-              <InstanceIcon icon={i.icon} accent={accent} size={72} />
+              <InstanceIcon icon={i.icon} seed={i.id} accent={accent} size={72} />
             </button>
             <div className="min-w-0 flex-1">
               <button onClick={open} className="block max-w-full truncate text-left text-hero text-text hover:underline" title={i.name}>

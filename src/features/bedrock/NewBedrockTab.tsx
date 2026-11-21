@@ -11,6 +11,7 @@ import { accentPalette, formatBytes } from "@/lib/format";
 import { Button, Checkbox, Input, Skeleton, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { GroupField, IconPicker } from "@/features/instances/NewInstanceDialog";
+import { isBlockIcon, randomBlockIcon } from "@/components/instance/blocks/catalog";
 import { bedrockApi, bqk, channelStatus, isBedrock, useBedrockStatus } from "./api";
 import { NotInstalledNotice } from "./parts";
 
@@ -56,7 +57,7 @@ export function NewBedrockTab({ onDone, onBusy }: { onDone: () => void; onBusy: 
   const [nameTouched, setNameTouched] = useState(false);
   const [accent, setAccent] = useState(() => accentPalette[Math.floor(Math.random() * accentPalette.length)]);
   const [group, setGroup] = useState("");
-  const [icon, setIcon] = useState<string | null>(null);
+  const [icon, setIcon] = useState<string | null>(randomBlockIcon);
   const [busy, setBusy] = useState(false);
 
   const cs = channelStatus(status.data, channel);
@@ -88,8 +89,8 @@ export function NewBedrockTab({ onDone, onBusy }: { onDone: () => void; onBusy: 
     setBusy(true);
     onBusy(true);
     try {
-      const inst = await bedrockApi.create({ name: name.trim(), channel, profile, adopt: adopt && canAdopt, accent, group: group.trim() || null });
-      if (icon) await api.instanceSetIcon(inst.id, icon).catch((e) => toast.error(e, t("inst.icon.failed")));
+      const inst = await bedrockApi.create({ name: name.trim(), channel, profile, adopt: adopt && canAdopt, accent, icon: isBlockIcon(icon) ? icon : null, group: group.trim() || null });
+      if (icon && !isBlockIcon(icon)) await api.instanceSetIcon(inst.id, icon).catch((e) => toast.error(e, t("inst.icon.failed")));
       qc.invalidateQueries({ queryKey: qk.instances });
       qc.invalidateQueries({ queryKey: bqk.status });
       onDone();

@@ -74,7 +74,7 @@ export function formatLoader(l: Loader): string {
 
 /** Lokalen Pfad oder URL als <img src> nutzbar machen. */
 export function imageSrc(pathOrUrl: string | null | undefined): string | undefined {
-  if (!pathOrUrl) return undefined;
+  if (!pathOrUrl || /^(block|builtin):/.test(pathOrUrl)) return undefined;
   if (/^(https?:|data:|blob:|asset:)/.test(pathOrUrl) || pathOrUrl.startsWith("/")) return pathOrUrl;
   // Lokaler Windows-/Unix-Pfad -> asset-Protokoll
   try {

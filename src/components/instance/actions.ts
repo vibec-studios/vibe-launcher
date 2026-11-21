@@ -58,6 +58,7 @@ export async function setIcon(i: Instance) {
   if (!path) return;
   api.instanceSetIcon(i.id, path).catch((e) => toast.error(e, t("inst.icon.failed")));
 }
+export const setInstanceIcon = (i: Instance, icon: string | null) => api.instanceUpdate(i.id, { icon }).catch((e) => toast.error(e, t("inst.icon.failed")));
 export const resetIcon = (i: Instance) => api.instanceSetIcon(i.id, null).catch((e) => toast.error(e));
 export const setAccent = (i: Instance, accent: string | null) => api.instanceUpdate(i.id, { accent }).catch((e) => toast.error(e));
 export const setGroup = (i: Instance, group: string | null) => api.instanceUpdate(i.id, { group: group?.trim() || null }).catch((e) => toast.error(e));

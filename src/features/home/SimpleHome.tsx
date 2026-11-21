@@ -26,7 +26,7 @@ function Hero({ instance: i }: { instance: Instance }) {
   return (
     <section className="flex items-center gap-6 rounded-panel bg-surface p-6" style={accentVars(accent)}>
       <button onClick={() => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "content" } })} className="shrink-0" aria-label={i.name}>
-        <InstanceIcon icon={i.icon} accent={accent} size={96} />
+        <InstanceIcon icon={i.icon} seed={i.id} accent={accent} size={96} />
       </button>
       <div className="min-w-0 flex-1">
         <div className="text-[12.5px] font-semibold text-muted">{i.last_played ? t("shome.continue") : t("shome.ready")}</div>
@@ -55,7 +55,7 @@ function GameRow({ instance: i }: { instance: Instance }) {
         className="flex min-w-0 flex-1 items-center gap-3 text-left"
         onClick={() => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "content" } })}
       >
-        <InstanceIcon icon={i.icon} accent={accent} size={44} />
+        <InstanceIcon icon={i.icon} seed={i.id} accent={accent} size={44} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[14px] font-semibold text-text">{i.name}</span>
           <span className="block truncate text-[12px] text-muted">

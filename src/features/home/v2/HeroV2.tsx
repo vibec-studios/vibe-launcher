@@ -62,7 +62,7 @@ export function HeroV2({ instance: i, spot }: { instance: Instance; spot: Spot |
         <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
           <div className="flex min-w-0 items-center gap-5">
             <button onClick={open} aria-label={i.name} className="shrink-0 rounded-card shadow-[0_8px_24px_-8px_rgb(0_0_0/0.6)] transition-transform duration-200 hover:-translate-y-0.5">
-              <InstanceIcon icon={i.icon} accent={accent} size={80} />
+              <InstanceIcon icon={i.icon} seed={i.id} accent={accent} size={80} />
             </button>
             <div className="min-w-0 flex-1">
               <button onClick={open} className="block max-w-full truncate text-left text-[32px] font-bold leading-[1.1] tracking-[-0.03em] text-text hover:underline" title={i.name}>

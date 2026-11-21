@@ -1,16 +1,18 @@
 // Instanz-Kacheln: Raster-Kachel (Bibliothek, rahmenlos – das Bild trägt) und Listenzeile.
 // Klick öffnet, Rechtsklick = Aktionsmenü, Spielen-Knopf erscheint beim Hover über dem Bild.
-import { memo, useState } from "react";
+import { memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpCircle, Download } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Instance } from "@/lib/types";
 import { AnimatedNumber, ContextMenu, Progress, cn } from "@/components/ui";
 import { useSimple } from "@/lib/mode";
-import { formatDuration, formatRelative, imageSrc, instanceAccent, loaderNames } from "@/lib/format";
+import { formatDuration, formatRelative, instanceAccent, loaderNames } from "@/lib/format";
 import { BedrockTag } from "@/features/bedrock/parts";
 import { useT } from "@/i18n";
-import { InstanceIcon, PixelBlock } from "./InstanceIcon";
+import { InstanceIcon, PixelBlock, useInstanceArt } from "./InstanceIcon";
+import { BlockArt } from "./blocks/BlockArt";
+import { backgroundCss } from "./blocks/catalog";
 import { InstanceContextMenuContent } from "./InstanceMenu";
 import { PlayButton } from "./PlayButton";
 import { useRunPhase } from "./status";
@@ -102,25 +104,23 @@ function UpdatesBadge({ id }: { id: string }) {
   );
 }
 
-/** Icon füllt die Fläche (eigenes Bild) bzw. Pixel-Block in der Akzentfarbe auf leicht getönter Fläche. */
 function IconArea({ instance: i, accent }: { instance: Instance; accent: string }) {
-  const [failed, setFailed] = useState<string | null>(null);
-  const src = imageSrc(i.icon);
-  if (src && failed !== src)
+  const { img, art, onError } = useInstanceArt(i.icon, i.id);
+  if (img)
     return (
       <img
-        src={src}
+        src={img}
         alt=""
         draggable={false}
         loading="lazy"
         decoding="async"
-        onError={() => setFailed(src)}
+        onError={onError}
         className="absolute inset-0 h-full w-full object-cover [image-rendering:pixelated]"
       />
     );
   return (
-    <div className="vl-inst-art absolute inset-0 grid place-items-center bg-surface2">
-      <PixelBlock color={accent} size={60} />
+    <div className="vl-inst-art absolute inset-0 grid place-items-center bg-surface2" style={{ background: art ? backgroundCss(art.bg, accent) : undefined }}>
+      {art ? <BlockArt design={art.design} accent={accent} size={88} cover /> : <PixelBlock color={accent} size={60} />}
     </div>
   );
 }
@@ -251,7 +251,7 @@ export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOp
         style={accentVars(accent)}
         className={cn("group relative h-12 overflow-hidden rounded-ctl transition-colors duration-100 hover:bg-white/[.04] data-[state=open]:bg-white/[.04]", listCols)}
       >
-        <InstanceIcon icon={i.icon} accent={accent} size={32} />
+        <InstanceIcon icon={i.icon} seed={i.id} accent={accent} size={32} />
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-[13.5px] font-semibold text-text">{i.name}</span>

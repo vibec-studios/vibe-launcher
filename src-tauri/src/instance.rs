@@ -9,6 +9,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::AppHandle;
 
+pub mod icon;
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum LoaderKind {
@@ -156,7 +158,7 @@ pub struct BedrockOptions {
 pub struct Instance {
     pub id: String,
     pub name: String,
-    /// Pfad zu einer Bilddatei (absolut) oder eingebautes Icon "builtin:<name>"
+    /// Pfad zu einer Bilddatei (absolut), eingebautes Icon "builtin:<name>" oder Pixel-Block "block:<design>[@<hintergrund>]"
     pub icon: Option<String>,
     /// Akzentfarbe als Hex (#rrggbb), optional
     pub accent: Option<String>,
@@ -342,6 +344,7 @@ impl InstanceStore {
         if req.mc_version.trim().is_empty() {
             return Err(AppError::Invalid("Minecraft-Version fehlt".into()));
         }
+        icon::check(req.icon.as_deref())?;
         let id = self.unique_id(name);
         let inst = Instance {
             id: id.clone(),
@@ -377,6 +380,7 @@ impl InstanceStore {
         if name.is_empty() {
             return Err(AppError::Invalid("Name darf nicht leer sein".into()));
         }
+        icon::check(icon.as_deref())?;
         let inst = Instance {
             id: String::new(),
             name: name.to_string(),
@@ -421,6 +425,7 @@ impl InstanceStore {
     }
 
     pub fn patch(&self, id: &str, p: InstancePatch) -> AppResult<Instance> {
+        icon::check(p.icon.as_ref().and_then(|v| v.as_deref()))?;
         if let Some(n) = &p.name {
             if n.trim().is_empty() {
                 return Err(AppError::Invalid("Name darf nicht leer sein".into()));
@@ -527,6 +532,9 @@ mod tests {
         assert_eq!(p.accent, Some(None));
         assert_eq!(p.auto_update_content, Some(Some(true)));
         assert_eq!(p.group, None);
+        let b: super::InstancePatch = serde_json::from_str(r#"{"icon":"block:grass@sky"}"#).unwrap();
+        assert_eq!(b.icon, Some(Some("block:grass@sky".into())));
+        assert!(super::icon::check(b.icon.as_ref().and_then(|v| v.as_deref())).is_ok());
     }
 
     /// Instanzdateien älterer Versionen (ohne `bedrock`) bleiben Java-Instanzen; neue Felder überstehen die Rundreise.

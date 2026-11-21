@@ -84,7 +84,7 @@ export function CopyWorldDialog({ instance, world, onClose }: { instance: Instan
               value: i.id,
               label: (
                 <span className="flex items-center gap-2">
-                  <InstanceIcon icon={i.icon} accent={instanceAccent(i.id, i.accent)} size={18} />
+                  <InstanceIcon icon={i.icon} seed={i.id} accent={instanceAccent(i.id, i.accent)} size={18} />
                   <span className="truncate">{i.name}</span>
                   <span className="font-mono text-[11px] text-dim">{i.mc_version}</span>
                 </span>

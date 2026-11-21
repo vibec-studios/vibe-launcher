@@ -241,7 +241,7 @@ pub async fn run_export(state: AppState, task: TaskHandle, instance_id: String, 
     sub_files.sort_by_key(|v| v.to_string());
     vl_files.sort_by(|a, b| a.path.cmp(&b.path));
 
-    let icon_bytes: Option<Vec<u8>> = inst.icon.as_ref().filter(|i| !i.starts_with("builtin:")).and_then(|p| std::fs::read(p).ok()).filter(|b| super::meta::image_mime(b).is_some());
+    let icon_bytes: Option<Vec<u8>> = crate::instance::icon::file_path(inst.icon.as_deref()).and_then(|p| std::fs::read(p).ok()).filter(|b| super::meta::image_mime(b).is_some());
 
     let (meta_name, meta_json): (&str, Vec<u8>) = match opts.format {
         PackFormat::Mrpack => {
