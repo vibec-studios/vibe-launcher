@@ -257,5 +257,21 @@
   "action.invite.title": "Invitación",
   "action.vibe_soon": "Esto llegará con el backend de Vibe: cuando esté online, la vista previa se abrirá aquí.",
   "action.vibe_off": "Los servicios de Vibe están desactivados. Puedes activarlos en los ajustes.",
-  "action.open_settings": "Abrir ajustes"
+  "action.open_settings": "Abrir ajustes",
+  "diag.native_memory.title": "Java llegó a un límite de memoria",
+  "diag.native_memory.text": "Java se quedó sin espacio para otro búfer, código compilado o un hilo en segundo plano. Cierra programas que usen mucha memoria y reinicia el juego.",
+  "diag.disk_full.title": "No hay suficiente espacio en disco",
+  "diag.disk_full.text": "Minecraft no pudo escribir un archivo. Libera espacio en la unidad donde está la instancia y vuelve a intentarlo.",
+  "diag.invalid_jvm_flag.title": "Java rechazó una opción de inicio",
+  "diag.invalid_jvm_flag.text": "Hay una opción mal escrita o que esta versión de Java no admite. Revisa tus argumentos de Java personalizados en los ajustes.",
+  "diag.corrupt_archive.title": "No se pudo abrir un archivo comprimido dañado",
+  "diag.corrupt_archive.text": "Minecraft no pudo leer un archivo ZIP o JAR. Busca el nombre del archivo en el registro y vuelve a descargar el mod o pack afectado.",
+  "diag.locked_world.title": "Este mundo ya está abierto",
+  "diag.locked_world.text": "Minecraft bloquea un mundo mientras está abierto en otra sesión. Sal del mundo en esa sesión y vuelve a abrirlo aquí.",
+  "optsync.cat.keybinds": "Controles",
+  "sync.cat.keybinds.desc": "Teclas y botones del ratón del juego, incluidos los controles de mods que usan el mismo formato.",
+  "sync.area.hotbars": "Barras rápidas guardadas",
+  "sync.area.hotbars.desc": "Comparte las barras rápidas guardadas del modo Creativo entre instancias con la misma versión de Minecraft.",
+  "sync.area.command_history": "Historial de comandos",
+  "sync.area.command_history.desc": "Comparte los últimos 50 comandos que escribiste con / en el juego. El historial se queda en este dispositivo y lo comparten las instancias participantes."
 }

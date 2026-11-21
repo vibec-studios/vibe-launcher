@@ -78,5 +78,32 @@
   "account": {
     "title": "Conta Microsoft",
     "text": "O Minecraft: Java Edition é ligado à sua conta Microsoft. O login acontece direto na Microsoft – o launcher nunca vê sua senha."
+  },
+  "seed": {
+    "title": "Seed",
+    "text": "O valor inicial que o Minecraft usa para gerar o terreno de um mundo. A mesma seed, versão do jogo e configurações recriam o terreno original."
+  },
+  "dependency": {
+    "title": "Dependência",
+    "text": "Um mod que outro mod precisa para funcionar, por exemplo o Fabric API. O Vibe instala dependências automaticamente e avisa quando nenhum mod precisa mais delas.",
+    "example": "O Mod Menu precisa do Fabric API – sem o Fabric API, o Mod Menu não inicia."
+  },
+  "portable": {
+    "title": "Portátil",
+    "text": "Um launcher portátil não precisa de instalação. Ele guarda tudo na pasta “VibeData” bem ao lado, por exemplo num pendrive, e deixa o PC sem mudanças.",
+    "example": "Conecte o pendrive, inicie o vibe-launcher.exe e continue jogando – em outro PC também."
+  },
+  "telemetry": {
+    "title": "Telemetria",
+    "text": "Dados de uso enviados automaticamente, por exemplo em quais botões você clica ou quanto você joga. O Vibe Launcher não coleta nada disso."
+  },
+  "skinlayer": {
+    "title": "Camada externa (skin)",
+    "text": "Uma skin tem duas camadas: a camada base fica colada na figura, a camada externa flutua um pouco acima. Use para cabelo, chapéus, jaquetas ou óculos – ela pode ser transparente.",
+    "example": "Pinte um capuz na camada externa da cabeça – no jogo ele fica um pouco para fora."
+  },
+  "skinmodel": {
+    "title": "Clássico e Slim",
+    "text": "Os dois modelos de corpo do Minecraft. O Clássico tem braços de 4 pixels de largura, o Slim só 3. Você pode trocar o modelo quando quiser."
   }
 }

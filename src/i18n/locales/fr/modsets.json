@@ -186,5 +186,7 @@
   "imenu.profiles": "Profils : quel contenu est activé",
   "imenu.profile_to_set": "Transformer « {name} » en set de mods",
   "imenu.profile_to_set_done": "Set de mods « {name} » créé",
-  "imenu.profile_to_set_skipped": "{n} fichiers sans origine connue ont été laissés de côté"
+  "imenu.profile_to_set_skipped": "{n} fichiers sans origine connue ont été laissés de côté",
+  "sets.template": "Appliquer aux nouvelles instances",
+  "import.paste_label": "Colle un code de partage ou une liste de mods"
 }

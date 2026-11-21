@@ -257,5 +257,21 @@
   "action.invite.title": "Convite",
   "action.vibe_soon": "Isso chega com o backend do Vibe – assim que ele estiver online, a prévia abre aqui.",
   "action.vibe_off": "Os serviços do Vibe estão desativados. Você pode ativar nas configurações.",
-  "action.open_settings": "Abrir configurações"
+  "action.open_settings": "Abrir configurações",
+  "diag.native_memory.title": "O Java atingiu um limite de memória",
+  "diag.native_memory.text": "O Java ficou sem espaço para outro buffer, código compilado ou uma thread em segundo plano. Feche programas que usam muita memória e reinicie o jogo.",
+  "diag.disk_full.title": "Espaço em disco insuficiente",
+  "diag.disk_full.text": "O Minecraft não conseguiu gravar um arquivo. Libere espaço no disco onde está a instância e tente de novo.",
+  "diag.invalid_jvm_flag.title": "O Java rejeitou uma opção de inicialização",
+  "diag.invalid_jvm_flag.text": "Uma opção está escrita errado ou não é suportada por esta versão do Java. Confira seus argumentos Java personalizados nas configurações.",
+  "diag.corrupt_archive.title": "Não foi possível abrir um arquivo compactado danificado",
+  "diag.corrupt_archive.text": "O Minecraft não conseguiu ler um arquivo ZIP ou JAR. Procure o nome do arquivo no log e baixe de novo o mod ou pack afetado.",
+  "diag.locked_world.title": "Este mundo já está aberto",
+  "diag.locked_world.text": "O Minecraft bloqueia um mundo enquanto ele está aberto em outra sessão. Saia do mundo nessa sessão e abra aqui de novo.",
+  "optsync.cat.keybinds": "Controles",
+  "sync.cat.keybinds.desc": "Teclas e botões do mouse do jogo, incluindo controles de mods que usam o mesmo formato.",
+  "sync.area.hotbars": "Barras de atalhos salvas",
+  "sync.area.hotbars.desc": "Compartilhe as barras de atalhos salvas do modo Criativo entre instâncias da mesma versão do Minecraft.",
+  "sync.area.command_history": "Histórico de comandos",
+  "sync.area.command_history.desc": "Compartilhe os últimos 50 comandos digitados com / no jogo. O histórico fica neste dispositivo e é compartilhado pelas instâncias participantes."
 }

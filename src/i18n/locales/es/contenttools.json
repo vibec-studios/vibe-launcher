@@ -230,5 +230,10 @@
   "fix.pre.text_1": "{name}: se encontró 1 problema con los mods; probablemente el juego no arranque así.",
   "fix.pre.hint": "“Arreglar e iniciar” muestra primero qué va a cambiar. Todo se puede deshacer.",
   "fix.pre.launch": "Iniciar de todos modos",
-  "fix.pre.fix": "Arreglar e iniciar"
+  "fix.pre.fix": "Arreglar e iniciar",
+  "fix.unfixable.native_memory": "Si vuelve a pasar, restablece las opciones de memoria de Java personalizadas a sus valores por defecto.",
+  "fix.unfixable.disk_full": "Revisa también la unidad del sistema, porque Java la usa para archivos temporales.",
+  "fix.unfixable.invalid_jvm_flag": "Si encuentras en el registro la opción rechazada, quítala de tus argumentos de Java personalizados.",
+  "fix.unfixable.corrupt_archive": "Para los archivos propios de Minecraft, reinstalar la versión del juego afectada suele ayudar.",
+  "fix.unfixable.locked_world": "Cierra la otra sesión de juego si hace falta. El archivo de bloqueo protege tu partida."
 }

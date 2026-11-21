@@ -123,7 +123,9 @@
         "Dans « Connexion », tu choisis comment tes amis rejoignent : local/LAN, Vibe Relay ou playit.gg.",
         "Gère la liste blanche, les opérateurs et les bans dans « Joueurs », les plugins et mods dans « Extensions »."
       ],
-      "tips": ["Le serveur tourne sur ton PC. Il n'est joignable que tant que ton PC est allumé."],
+      "tips": [
+        "Le serveur tourne sur ton PC. Il n'est joignable que tant que ton PC est allumé."
+      ],
       "keywords": "serveur paper spigot console liste blanche plugin connexion"
     },
     "skins": {
@@ -150,7 +152,9 @@
         "Ajoute des mods via la recherche ou en collant une liste.",
         "Applique le set à une instance avec « Appliquer ». Le launcher trouve les bonnes versions pour cette version de Minecraft."
       ],
-      "tips": ["Les sets s'exportent et s'importent, parfait pour les partager avec des amis."],
+      "tips": [
+        "Les sets s'exportent et s'importent, parfait pour les partager avec des amis."
+      ],
       "keywords": "set liste collection préférés mods appliquer"
     },
     "gallery": {
@@ -162,7 +166,9 @@
         "Filtre par instance pour ne voir que les images d'un jeu.",
         "Clique sur une image ou un clip pour l'afficher en grand, le copier ou ouvrir son dossier."
       ],
-      "tips": ["Prends des captures en jeu avec F2."],
+      "tips": [
+        "Prends des captures en jeu avec F2."
+      ],
       "keywords": "capture image vidéo clip galerie enregistrement"
     },
     "waitlist": {
@@ -204,7 +210,9 @@
         "Pour les bugs, tu peux joindre les logs et une capture. Ça aide à trouver la cause.",
         "Clique sur « Envoyer ». Tu reçois un numéro de ticket. Mentionne-le si tu nous écris à ce sujet sur Discord."
       ],
-      "tips": ["Après un crash, un bouton « Signaler le problème » inclut déjà les bons logs."],
+      "tips": [
+        "Après un crash, un bouton « Signaler le problème » inclut déjà les bons logs."
+      ],
       "keywords": "feedback bug signalement idée suggestion support ticket"
     },
     "performance": {
@@ -222,6 +230,37 @@
         "Trop de RAM peut même ralentir le jeu."
       ],
       "keywords": "ram mémoire performance fps lag lent java"
+    },
+    "privacy": {
+      "title": "Confidentialité et transparence",
+      "summary": "Vibe Launcher n'affiche pas de pubs et ne collecte aucune télémétrie. Voici ce qu'il envoie, où et quand, et comment le désactiver.",
+      "steps": [
+        "Ouvre Paramètres → Confidentialité. Notre promesse est en haut : pas de pubs, pas de télémétrie, Vibe seulement avec ton accord.",
+        "Dans « Tes interrupteurs », tu règles la recherche de mises à jour, le statut Discord, MinecraftCapes et ton statut en ligne.",
+        "« Ce qui est envoyé où » liste chaque service, ce qu'il reçoit et quand.",
+        "Les rapports d'erreur ne sont envoyés qu'après que tu les as vérifiés et cliqué sur « Envoyer ». Les journaux sont nettoyés avant."
+      ],
+      "tips": [
+        "Les services Vibe sont désactivés sur une nouvelle installation. Tu les actives pendant la configuration ou dans Paramètres → Vibe et compte.",
+        "Tes données de connexion sont gardées dans le coffre Windows (Gestionnaire d'identification), pas dans des fichiers."
+      ],
+      "keywords": "confidentialité données télémétrie suivi pub envoyer rgpd transparence privacy"
+    },
+    "portable": {
+      "title": "Mode portable (clé USB)",
+      "summary": "Le launcher peut tourner depuis une clé USB sans installation. Toutes les données sont alors gardées dans le dossier « VibeData » à côté du fichier.",
+      "steps": [
+        "Ouvre Paramètres → Général et clique sur « Créer une copie portable … » sous « Mode portable ».",
+        "Choisis un dossier sur ta clé USB. Le launcher s'y copie et place un fichier « portable.txt » à côté.",
+        "Sur l'autre PC, lance « vibe-launcher.exe » depuis la clé. Connecte-toi une fois avec Microsoft là-bas.",
+        "Sur les PC qui ne sont pas à toi, active « Se déconnecter de ce PC à la fermeture ». Ainsi aucune donnée de connexion ne reste."
+      ],
+      "tips": [
+        "Les données de connexion ne sont jamais stockées sur la clé. Si tu la perds, personne ne peut entrer dans ton compte avec.",
+        "Le launcher portable ne se met pas à jour tout seul. Recrée simplement la copie portable depuis le nouveau launcher dans le même dossier ; tes données sont conservées.",
+        "Sans le bouton : copie vibe-launcher.exe dans un dossier et crée à côté un fichier vide nommé « portable.txt »."
+      ],
+      "keywords": "portable usb clé sans installation emporter lycée autre pc"
     }
   },
   "tours": {
@@ -232,54 +271,122 @@
           "title": "Lance ton jeu ici",
           "text": "Un clic sur « Jouer » lance ton dernier jeu. Le launcher télécharge tout ce qu'il faut.",
           "variants": {
-            "new-game": { "title": "Crée un nouveau jeu", "text": "Choisis juste ce que tu veux faire. Le launcher s'occupe de la version et de l'installation." },
-            "new-instance": { "title": "Crée un nouveau jeu", "text": "Choisis juste ce que tu veux faire. Le launcher s'occupe de la version et de l'installation." }
+            "new-game": {
+              "title": "Crée un nouveau jeu",
+              "text": "Choisis juste ce que tu veux faire. Le launcher s'occupe de la version et de l'installation."
+            },
+            "new-instance": {
+              "title": "Crée un nouveau jeu",
+              "text": "Choisis juste ce que tu veux faire. Le launcher s'occupe de la version et de l'installation."
+            }
           }
         },
-        { "title": "Mes jeux", "text": "Tous tes jeux d'un coup d'œil. C'est là que tu ajoutes des mods, vois tes mondes ou règles des problèmes." },
-        { "title": "Découvrir", "text": "Trouve des mods, packs de ressources, shaders et modpacks. Ils vont directement dans le jeu choisi." },
-        { "title": "Ton compte", "text": "Change de compte et de skin ici, et passe en mode expert quand tu veux." },
-        { "title": "Aide et guides", "text": "Les guides pas à pas et d'autres visites sont toujours ici." }
+        {
+          "title": "Mes jeux",
+          "text": "Tous tes jeux d'un coup d'œil. C'est là que tu ajoutes des mods, vois tes mondes ou règles des problèmes."
+        },
+        {
+          "title": "Découvrir",
+          "text": "Trouve des mods, packs de ressources, shaders et modpacks. Ils vont directement dans le jeu choisi."
+        },
+        {
+          "title": "Ton compte",
+          "text": "Change de compte et de skin ici, et passe en mode expert quand tu veux."
+        },
+        {
+          "title": "Aide et guides",
+          "text": "Les guides pas à pas et d'autres visites sont toujours ici."
+        }
       ]
     },
     "first-instance": {
       "title": "Première instance",
       "steps": [
-        { "title": "Nouvelle instance", "text": "Ce plus crée une nouvelle instance à tout moment, quelle que soit la page." },
-        { "title": "Ou directement dans la bibliothèque", "text": "Ça marche aussi. Choisis ensuite la version et le loader, le launcher télécharge le reste." },
-        { "title": "Tu utilises déjà un autre launcher ?", "text": "« Importer » récupère tes instances existantes avec mondes et réglages." },
-        { "title": "Ta bibliothèque", "text": "Toutes les instances sont ici. Clique sur l'une d'elles pour voir ses mods, mondes et réglages." }
+        {
+          "title": "Nouvelle instance",
+          "text": "Ce plus crée une nouvelle instance à tout moment, quelle que soit la page."
+        },
+        {
+          "title": "Ou directement dans la bibliothèque",
+          "text": "Ça marche aussi. Choisis ensuite la version et le loader, le launcher télécharge le reste."
+        },
+        {
+          "title": "Tu utilises déjà un autre launcher ?",
+          "text": "« Importer » récupère tes instances existantes avec mondes et réglages."
+        },
+        {
+          "title": "Ta bibliothèque",
+          "text": "Toutes les instances sont ici. Clique sur l'une d'elles pour voir ses mods, mondes et réglages."
+        }
       ]
     },
     "modpack": {
       "title": "Installer un modpack",
       "steps": [
-        { "title": "Découvrir", "text": "Trouve ici des mods et modpacks de Modrinth et CurseForge." },
-        { "title": "Choisis un type", "text": "« Modpacks » est déjà sélectionné. Passe ici aux mods, shaders ou packs de ressources." },
-        { "title": "Rechercher", "text": "Tape le nom du modpack. Filtre par version, loader et catégorie à gauche." },
-        { "title": "Installer", "text": "Ouvre un modpack et clique sur « Installer ». Une nouvelle instance avec tout le nécessaire est créée." }
+        {
+          "title": "Découvrir",
+          "text": "Trouve ici des mods et modpacks de Modrinth et CurseForge."
+        },
+        {
+          "title": "Choisis un type",
+          "text": "« Modpacks » est déjà sélectionné. Passe ici aux mods, shaders ou packs de ressources."
+        },
+        {
+          "title": "Rechercher",
+          "text": "Tape le nom du modpack. Filtre par version, loader et catégorie à gauche."
+        },
+        {
+          "title": "Installer",
+          "text": "Ouvre un modpack et clique sur « Installer ». Une nouvelle instance avec tout le nécessaire est créée."
+        }
       ]
     },
     "mods": {
       "title": "Gérer les mods",
       "steps": [
-        { "title": "Ajouter du contenu", "text": "Ouvre « Découvrir », déjà filtré sur la version et le loader de cette instance." },
-        { "title": "Tes propres fichiers", "text": "Tu as un fichier .jar ? Ajoute-le ici ou glisse-le simplement dans la fenêtre." },
+        {
+          "title": "Ajouter du contenu",
+          "text": "Ouvre « Découvrir », déjà filtré sur la version et le loader de cette instance."
+        },
+        {
+          "title": "Tes propres fichiers",
+          "text": "Tu as un fichier .jar ? Ajoute-le ici ou glisse-le simplement dans la fenêtre."
+        },
         {
           "title": "Mises à jour",
           "text": "Il y a des mises à jour. Un clic met tous les mods à jour d'un coup.",
-          "variants": { "content-refresh": { "title": "Rechercher des mises à jour", "text": "« Revérifier » (ou F5) cherche des mises à jour et des problèmes. S'il y en a, « Tout mettre à jour » apparaît à côté." } }
+          "variants": {
+            "content-refresh": {
+              "title": "Rechercher des mises à jour",
+              "text": "« Revérifier » (ou F5) cherche des mises à jour et des problèmes. S'il y en a, « Tout mettre à jour » apparaît à côté."
+            }
+          }
         },
-        { "title": "Ton contenu", "text": "L'interrupteur de chaque ligne désactive un mod sans le supprimer." }
+        {
+          "title": "Ton contenu",
+          "text": "L'interrupteur de chaque ligne désactive un mod sans le supprimer."
+        }
       ]
     },
     "import": {
       "title": "Importer",
       "steps": [
-        { "title": "Importer", "text": "Récupère ici des fichiers de modpack ou des instances entières d'autres launchers." },
-        { "title": "Fichier ou launcher", "text": "« Depuis un autre launcher » cherche automatiquement Modrinth App, CurseForge, Prism, MultiMC et plus." },
-        { "title": "Sélectionner", "text": "Coche les instances et clique sur « Importer ». S'il manque ton launcher, choisis toi-même son dossier." },
-        { "title": "Importer d'autres plus tard", "text": "De nouvelles instances dans ton ancien launcher ? Rouvre simplement l'import. Les instances déjà importées sont marquées." }
+        {
+          "title": "Importer",
+          "text": "Récupère ici des fichiers de modpack ou des instances entières d'autres launchers."
+        },
+        {
+          "title": "Fichier ou launcher",
+          "text": "« Depuis un autre launcher » cherche automatiquement Modrinth App, CurseForge, Prism, MultiMC et plus."
+        },
+        {
+          "title": "Sélectionner",
+          "text": "Coche les instances et clique sur « Importer ». S'il manque ton launcher, choisis toi-même son dossier."
+        },
+        {
+          "title": "Importer d'autres plus tard",
+          "text": "De nouvelles instances dans ton ancien launcher ? Rouvre simplement l'import. Les instances déjà importées sont marquées."
+        }
       ]
     },
     "autofix": {
@@ -289,83 +396,186 @@
           "title": "Résoudre les problèmes",
           "text": "Un clic et le launcher cherche la cause, montre ses propositions et crée d'abord une sauvegarde.",
           "variants": {
-            "crash-banner": { "title": "Crash détecté", "text": "Après un crash, cette remarque apparaît ici avec la cause la plus probable. « Corriger » répare le jeu automatiquement." },
-            "logs-diagnose": { "title": "Diagnostic", "text": "Après un crash, une remarque rouge avec « Corriger » apparaît en haut. Ici, dans le diagnostic, tu vois les détails et peux aussi lancer « Résoudre les problèmes »." }
+            "crash-banner": {
+              "title": "Crash détecté",
+              "text": "Après un crash, cette remarque apparaît ici avec la cause la plus probable. « Corriger » répare le jeu automatiquement."
+            },
+            "logs-diagnose": {
+              "title": "Diagnostic",
+              "text": "Après un crash, une remarque rouge avec « Corriger » apparaît en haut. Ici, dans le diagnostic, tu vois les détails et peux aussi lancer « Résoudre les problèmes »."
+            }
           }
         },
-        { "title": "Relancer", "text": "Ensuite, clique simplement à nouveau sur « Jouer ». Le launcher revérifie avant le lancement." },
-        { "title": "Rien n'y fait ?", "text": "Alors envoie-nous un signalement de bug via le feedback. Les logs peuvent être joints." }
+        {
+          "title": "Relancer",
+          "text": "Ensuite, clique simplement à nouveau sur « Jouer ». Le launcher revérifie avant le lancement."
+        },
+        {
+          "title": "Rien n'y fait ?",
+          "text": "Alors envoie-nous un signalement de bug via le feedback. Les logs peuvent être joints."
+        }
       ]
     },
     "backups": {
       "title": "Sauvegardes",
       "steps": [
-        { "title": "Créer un instantané", "text": "Enregistre les mods, configs et packs de cette instance, p. ex. avant une grosse mise à jour. Les mondes se sauvegardent dans la zone « Mondes »." },
-        { "title": "Tes sauvegardes", "text": "Les instantanés et les sauvegardes de mondes sont listés ici. « Restaurer » te ramène en arrière." },
-        { "title": "Sauvegardes automatiques", "text": "Choisis dans les paramètres quand le launcher sauvegarde tout seul et combien de sauvegardes il garde." }
+        {
+          "title": "Créer un instantané",
+          "text": "Enregistre les mods, configs et packs de cette instance, p. ex. avant une grosse mise à jour. Les mondes se sauvegardent dans la zone « Mondes »."
+        },
+        {
+          "title": "Tes sauvegardes",
+          "text": "Les instantanés et les sauvegardes de mondes sont listés ici. « Restaurer » te ramène en arrière."
+        },
+        {
+          "title": "Sauvegardes automatiques",
+          "text": "Choisis dans les paramètres quand le launcher sauvegarde tout seul et combien de sauvegardes il garde."
+        }
       ]
     },
     "hosting": {
       "title": "Jouer avec des amis",
       "steps": [
-        { "title": "Tes mondes", "text": "Lance le monde avec le Vibey Client et choisis « Ouvrir aux amis » en jeu. Vibe Relay fait le reste." },
-        { "title": "Lien de jeu", "text": "Pendant que tu héberges, ton lien de jeu s'affiche ici. Copie-le ou envoie-le directement à tes amis." },
-        { "title": "Amis", "text": "Vois qui est en ligne et invite tes amis directement dans ton monde." },
-        { "title": "Ton propre serveur", "text": "Le monde doit tourner sans toi ? Crée un serveur et choisis « Vibe Relay » comme connexion." }
+        {
+          "title": "Tes mondes",
+          "text": "Lance le monde avec le Vibey Client et choisis « Ouvrir aux amis » en jeu. Vibe Relay fait le reste."
+        },
+        {
+          "title": "Lien de jeu",
+          "text": "Pendant que tu héberges, ton lien de jeu s'affiche ici. Copie-le ou envoie-le directement à tes amis."
+        },
+        {
+          "title": "Amis",
+          "text": "Vois qui est en ligne et invite tes amis directement dans ton monde."
+        },
+        {
+          "title": "Ton propre serveur",
+          "text": "Le monde doit tourner sans toi ? Crée un serveur et choisis « Vibe Relay » comme connexion."
+        }
       ]
     },
     "servers": {
       "title": "Serveurs",
       "steps": [
-        { "title": "Nouveau serveur", "text": "Choisis une plateforme et une version. Le launcher télécharge et installe le serveur." },
-        { "title": "Tes serveurs", "text": "Ouvre un serveur pour la console, les joueurs, les mondes, les extensions et la connexion pour tes amis." },
-        { "title": "Toujours ici", "text": "Retrouve tes serveurs ici à tout moment. Un point vert indique qu'un serveur tourne." }
+        {
+          "title": "Nouveau serveur",
+          "text": "Choisis une plateforme et une version. Le launcher télécharge et installe le serveur."
+        },
+        {
+          "title": "Tes serveurs",
+          "text": "Ouvre un serveur pour la console, les joueurs, les mondes, les extensions et la connexion pour tes amis."
+        },
+        {
+          "title": "Toujours ici",
+          "text": "Retrouve tes serveurs ici à tout moment. Un point vert indique qu'un serveur tourne."
+        }
       ]
     },
     "skins": {
       "title": "Skins",
       "steps": [
-        { "title": "Aperçu", "text": "Voici ton skin actuel. Fais glisser le personnage pour le tourner." },
-        { "title": "Tes skins", "text": "Envoie de nouveaux skins ou choisis-en un enregistré et applique-le." },
-        { "title": "Cosmétiques", "text": "Les capes, chapeaux et emotes pour le Vibey Client sont ici." }
+        {
+          "title": "Aperçu",
+          "text": "Voici ton skin actuel. Fais glisser le personnage pour le tourner."
+        },
+        {
+          "title": "Tes skins",
+          "text": "Envoie de nouveaux skins ou choisis-en un enregistré et applique-le."
+        },
+        {
+          "title": "Cosmétiques",
+          "text": "Les capes, chapeaux et emotes pour le Vibey Client sont ici."
+        }
       ]
     },
     "modsets": {
       "title": "Sets de mods",
       "steps": [
-        { "title": "Nouveau set", "text": "Crée une liste de tes mods préférés. Elle marche pour toutes les versions." },
-        { "title": "Importer", "text": "Récupère ici des sets d'amis ou depuis un fichier." },
-        { "title": "Tes sets", "text": "Ouvre un set pour ajouter des mods ou l'appliquer à une instance." }
+        {
+          "title": "Nouveau set",
+          "text": "Crée une liste de tes mods préférés. Elle marche pour toutes les versions."
+        },
+        {
+          "title": "Importer",
+          "text": "Récupère ici des sets d'amis ou depuis un fichier."
+        },
+        {
+          "title": "Tes sets",
+          "text": "Ouvre un set pour ajouter des mods ou l'appliquer à une instance."
+        }
       ]
     },
     "gallery": {
       "title": "Galerie",
       "steps": [
-        { "title": "Captures et clips", "text": "Passe ici des images aux clips du Vibey Client." },
-        { "title": "Filtrer par instance", "text": "N'affiche que les images d'une instance précise." },
-        { "title": "Voir", "text": "Clique sur une image pour l'ouvrir en grand, la copier ou l'afficher dans son dossier." }
+        {
+          "title": "Captures et clips",
+          "text": "Passe ici des images aux clips du Vibey Client."
+        },
+        {
+          "title": "Filtrer par instance",
+          "text": "N'affiche que les images d'une instance précise."
+        },
+        {
+          "title": "Voir",
+          "text": "Clique sur une image pour l'ouvrir en grand, la copier ou l'afficher dans son dossier."
+        }
       ]
     },
     "waitlist": {
       "title": "Bêta Vibe",
       "steps": [
-        { "title": "Vibe et compte", "text": "Connecte-toi à Vibe ici. Vibe est en bêta, tu rejoins d'abord une liste d'attente." },
-        { "title": "Ton accès", "text": "Ton statut s'affiche ici. Une fois accepté, les amis, l'hébergement et les cosmétiques fonctionnent." }
+        {
+          "title": "Vibe et compte",
+          "text": "Connecte-toi à Vibe ici. Vibe est en bêta, tu rejoins d'abord une liste d'attente."
+        },
+        {
+          "title": "Ton accès",
+          "text": "Ton statut s'affiche ici. Une fois accepté, les amis, l'hébergement et les cosmétiques fonctionnent."
+        }
       ]
     },
     "feedback": {
       "title": "Feedback",
       "steps": [
-        { "title": "Envoyer un feedback", "text": "Un bug ou une idée ? Écris-nous ici. Tu peux joindre les logs et une capture." },
-        { "title": "Aide", "text": "Et ici, tu trouves tous les guides et visites dès que tu bloques." }
+        {
+          "title": "Envoyer un feedback",
+          "text": "Un bug ou une idée ? Écris-nous ici. Tu peux joindre les logs et une capture."
+        },
+        {
+          "title": "Aide",
+          "text": "Et ici, tu trouves tous les guides et visites dès que tu bloques."
+        }
       ]
     },
     "performance": {
       "title": "Performance et RAM",
       "steps": [
-        { "title": "Réglages de l'instance", "text": "L'engrenage ouvre les réglages de cette instance." },
-        { "title": "Performance de cette instance", "text": "Règle la mémoire que reçoit cette instance. « Valeurs perso » remplace les valeurs par défaut." },
-        { "title": "Mémoire pour toutes", "text": "Ces valeurs s'appliquent à toutes les instances sans réglage propre. Avec des mods, 4–6 Go est un bon départ." }
+        {
+          "title": "Réglages de l'instance",
+          "text": "L'engrenage ouvre les réglages de cette instance."
+        },
+        {
+          "title": "Performance de cette instance",
+          "text": "Règle la mémoire que reçoit cette instance. « Valeurs perso » remplace les valeurs par défaut."
+        },
+        {
+          "title": "Mémoire pour toutes",
+          "text": "Ces valeurs s'appliquent à toutes les instances sans réglage propre. Avec des mods, 4–6 Go est un bon départ."
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Confidentialité",
+      "steps": [
+        {
+          "title": "Confidentialité",
+          "text": "Tout sur ce que le launcher envoie, et comment le désactiver."
+        },
+        {
+          "title": "Ce qui va où",
+          "text": "Chaque service, ce qu'il reçoit et quand. Notre promesse est en haut."
+        }
       ]
     }
   }
