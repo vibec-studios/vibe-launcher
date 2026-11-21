@@ -1,0 +1,6 @@
+{
+  "bedrock.locked.title": "Tes mondes sont mis à l'abri",
+  "bedrock.locked.text": "Un fichier était encore ouvert pendant le retour. Ferme Minecraft et toutes les fenêtres de l'Explorateur qui affichent des dossiers Bedrock, puis clique sur « Rebasculer » : rien n'est perdu.",
+  "bedrock.locked.action": "Rebasculer",
+  "bedrock.profile.isolated_other_drive": "Ne marche que si le dossier du launcher est sur le même disque que Windows. Ton dossier du launcher est ailleurs : utilise « Profil partagé »."
+}

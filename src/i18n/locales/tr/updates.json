@@ -1,0 +1,13 @@
+{
+  "update.guard.title": "Yine de şimdi güncellensin mi?",
+  "update.guard.text": "Launcher güncelleme sırasında kısa süreliğine kapanır ve yeniden başlar.",
+  "update.guard.servers_one": "Yerel bir sunucu çalışıyor – çalışmaya devam eder ama yeniden başlatana kadar canlı konsol olmaz.",
+  "update.guard.servers": "{n} yerel sunucu çalışıyor – çalışmaya devam ederler ama yeniden başlatana kadar canlı konsol olmaz.",
+  "update.guard.games_one": "Minecraft çalışıyor – oyun açık kalır ama sonra canlı log eksik olur.",
+  "update.guard.games": "{n} Minecraft kurulumu çalışıyor – açık kalırlar ama sonra canlı log eksik olur.",
+  "update.guard.tasks": "Şu görevler iptal edilecek:",
+  "update.guard.confirm": "Yine de güncelle",
+  "update.guard.later": "Sonra",
+  "update.guard.bedrock_title": "Şu an güncelleme yapılamıyor",
+  "update.guard.bedrock": "Minecraft Bedrock şu an değiştirilmiş bir profil kullanıyor. Bedrock'u kapat ve dünyaların geri değiştirilene kadar bekle – sonra güncelleyebilirsin."
+}

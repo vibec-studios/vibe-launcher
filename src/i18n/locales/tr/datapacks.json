@@ -1,0 +1,17 @@
+{
+  "dp.notice_1": "Bir veri paketi henüz hiçbir dünyada değil",
+  "dp.notice": "{n} veri paketi henüz hiçbir dünyada değil",
+  "dp.notice_hint": "Veri paketleri yalnızca bir dünyanın içinde çalışır. Tek tıkla dünyalarına kopyalamak için tıkla.",
+  "dp.title": "Veri paketlerini dünyalara kopyala",
+  "dp.text": "Minecraft yalnızca bir dünyanın içindeki veri paketlerini yükler. Hangi veri paketinin hangi dünyaya gideceğini seç.",
+  "dp.packs": "Veri paketleri",
+  "dp.worlds": "Dünyalar",
+  "dp.in_worlds": "{n} dünyada",
+  "dp.in_no_world": "hiçbir dünyada değil",
+  "dp.no_worlds": "Henüz bir dünyan yok. Oyunu başlat, bir dünya oluştur ve buraya dön – ya da dünyayı oluştururken “Veri Paketleri” altından seç.",
+  "dp.reload_hint": "Dünya şu an açıksa oyunda /reload yaz veya dünyayı yeniden aç.",
+  "dp.copy": "Dünya(lar)a kopyala",
+  "dp.copied": "{n} veri paketi kopyası oluşturuldu",
+  "dp.copied_none": "Veri paketleri zaten seçilen dünyalardaydı",
+  "dp.copy_failed": "Veri paketleri kopyalanamadı"
+}

@@ -1,0 +1,6 @@
+{
+  "prelaunch.skip": "Passer",
+  "prelaunch.skip_hint": "Ignore les mises à jour de mods cette fois et lance tout de suite",
+  "prelaunch.step.auto_update": "Mises à jour des mods",
+  "prelaunch.step.world_backup": "Sauvegarde du monde"
+}

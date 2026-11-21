@@ -1,0 +1,9 @@
+{
+  "playwarn.title_1": "Bir mod bağlantıyla gelmeyecek",
+  "playwarn.title": "{n} mod bağlantıyla gelmeyecek",
+  "playwarn.text": "Bu modları kendin dosya olarak ekledin. Oyun bağlantısı yalnızca Modrinth ve CurseForge modlarını bilir – arkadaşlarında eksik olur ve katılamayabilirler.",
+  "playwarn.more": "ve {n} tane daha",
+  "playwarn.hint": "Vibe paketi olarak paylaşmak tüm dosyaları içerir – arkadaşların tek tıkla yükler.",
+  "playwarn.anyway": "Yine de bağlantıyı paylaş",
+  "playwarn.as_pack": "Vibe paketi olarak paylaş"
+}

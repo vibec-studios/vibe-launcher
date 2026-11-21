@@ -1,0 +1,11 @@
+{
+  "notice.region": "Remarques",
+  "notice.dismiss": "Ignorer",
+  "notice.more": "En savoir plus",
+  "notice.servers.title": "Ancienne adresse dans la liste des serveurs",
+  "notice.servers.text_one": "Un serveur utilise encore l'ancienne adresse .vibey.henny.dev. Ça marche encore pour l'instant : passe-le en .axolite.cc (même nom, nouveau domaine).",
+  "notice.servers.text_many": "{n} serveurs utilisent encore l'ancienne adresse .vibey.henny.dev. Ça marche encore pour l'instant : passe-les en .axolite.cc (même nom, nouveau domaine).",
+  "notice.servers.action": "Passer en .axolite.cc",
+  "notice.servers.done": "Adresses des serveurs changées",
+  "notice.servers.failed": "Impossible de changer les adresses des serveurs"
+}

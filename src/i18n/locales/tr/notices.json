@@ -1,0 +1,11 @@
+{
+  "notice.region": "Bildirimler",
+  "notice.dismiss": "Kapat",
+  "notice.more": "Daha fazla bilgi",
+  "notice.servers.title": "Sunucu listesinde eski adres",
+  "notice.servers.text_one": "Bir sunucu hâlâ eski .vibey.henny.dev adresini kullanıyor. Şimdilik çalışmaya devam ediyor – .axolite.cc olarak değiştir (aynı ad, yeni alan adı).",
+  "notice.servers.text_many": "{n} sunucu hâlâ eski .vibey.henny.dev adresini kullanıyor. Şimdilik çalışmaya devam ediyorlar – .axolite.cc olarak değiştir (aynı ad, yeni alan adı).",
+  "notice.servers.action": ".axolite.cc'ye geç",
+  "notice.servers.done": "Sunucu adresleri değiştirildi",
+  "notice.servers.failed": "Sunucu adresleri değiştirilemedi"
+}

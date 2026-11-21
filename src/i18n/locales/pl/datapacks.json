@@ -1,0 +1,17 @@
+{
+  "dp.notice_1": "Jeden datapack nie jest jeszcze w żadnym świecie",
+  "dp.notice": "Datapacki, które nie są jeszcze w żadnym świecie: {n}",
+  "dp.notice_hint": "Datapacki działają tylko wewnątrz świata. Kliknij, aby skopiować je do swoich światów jednym kliknięciem.",
+  "dp.title": "Kopiuj datapacki do światów",
+  "dp.text": "Minecraft wczytuje tylko datapacki, które są w świecie. Wybierz, które datapacki trafią do których światów.",
+  "dp.packs": "Datapacki",
+  "dp.worlds": "Światy",
+  "dp.in_worlds": "w światach: {n}",
+  "dp.in_no_world": "w żadnym świecie",
+  "dp.no_worlds": "Nie masz jeszcze świata. Uruchom grę, stwórz świat i wróć tutaj – albo wybierz datapacki od razu przy tworzeniu świata w „Paczki danych”.",
+  "dp.reload_hint": "Jeśli świat jest teraz otwarty, wpisz w grze /reload albo otwórz świat ponownie.",
+  "dp.copy": "Kopiuj do świata/światów",
+  "dp.copied": "Utworzone kopie datapacków: {n}",
+  "dp.copied_none": "Datapacki były już w wybranych światach",
+  "dp.copy_failed": "Nie udało się skopiować datapacków"
+}

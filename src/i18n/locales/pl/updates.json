@@ -1,0 +1,13 @@
+{
+  "update.guard.title": "Zaktualizować mimo to teraz?",
+  "update.guard.text": "Podczas aktualizacji launcher na chwilę się zamknie i uruchomi ponownie.",
+  "update.guard.servers_one": "Działa serwer lokalny – będzie działał dalej, ale bez konsoli na żywo, dopóki go nie uruchomisz ponownie.",
+  "update.guard.servers": "Działające serwery lokalne: {n} – będą działać dalej, ale bez konsoli na żywo, dopóki ich nie uruchomisz ponownie.",
+  "update.guard.games_one": "Minecraft działa – gra zostanie otwarta, ale potem zabraknie logu na żywo.",
+  "update.guard.games": "Działające instancje Minecrafta: {n} – zostaną otwarte, ale potem zabraknie logu na żywo.",
+  "update.guard.tasks": "Te zadania zostaną anulowane:",
+  "update.guard.confirm": "Aktualizuj mimo to",
+  "update.guard.later": "Później",
+  "update.guard.bedrock_title": "Aktualizacja nie jest teraz możliwa",
+  "update.guard.bedrock": "Minecraft Bedrock używa teraz przełączonego profilu. Zamknij Bedrock i poczekaj, aż twoje światy zostaną przełączone z powrotem – potem możesz zaktualizować."
+}

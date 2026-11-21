@@ -1,0 +1,9 @@
+{
+  "playwarn.title_1": "Un mod ne suivra pas via le lien",
+  "playwarn.title": "{n} mods ne suivront pas via le lien",
+  "playwarn.text": "Tu as ajouté ces mods toi-même sous forme de fichiers. Le lien de jeu ne connaît que les mods de Modrinth et CurseForge : il manquerait à tes amis, qui risquent de ne pas pouvoir rejoindre.",
+  "playwarn.more": "et {n} de plus",
+  "playwarn.hint": "Partager comme pack Vibe inclut tous les fichiers : tes amis l'installent en un clic.",
+  "playwarn.anyway": "Partager le lien quand même",
+  "playwarn.as_pack": "Partager comme pack Vibe"
+}

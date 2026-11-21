@@ -1,0 +1,6 @@
+{
+  "prelaunch.skip": "Saltar",
+  "prelaunch.skip_hint": "Salta las actualizaciones de mods esta vez e inicia ya",
+  "prelaunch.step.auto_update": "Actualizaciones de mods",
+  "prelaunch.step.world_backup": "Copia de seguridad del mundo"
+}

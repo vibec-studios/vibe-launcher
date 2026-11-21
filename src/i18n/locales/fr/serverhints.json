@@ -1,0 +1,9 @@
+{
+  "srvh.badge.lan": "Même réseau uniquement",
+  "srvh.badge.internet": "Pour les amis via internet",
+  "srvh.firewall.title": "Tes amis n'arrivent pas à rejoindre ?",
+  "srvh.firewall.text": "Cette adresse ne marche que pour les appareils sur le même Wi-Fi/LAN. Si Windows pose une question sur le pare-feu au premier démarrage, autorise « Java » sur les réseaux privés, sinon Windows bloque la connexion.",
+  "srvh.firewall.internet": "Des amis ailleurs ? Utilise Vibe Relay ou playit.gg : pas besoin de redirection de port.",
+  "srvh.use_relay": "Utiliser Vibe Relay",
+  "srvh.use_playit": "Utiliser playit.gg"
+}
