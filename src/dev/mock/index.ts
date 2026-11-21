@@ -1,37 +1,17 @@
 // Simuliertes Backend für Frontend-Entwicklung im Browser (VITE_MOCK=1). Nie im Produktions-Build.
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
-import core from "./core";
-import a from "./a";
-import b from "./b";
-import skins from "./skins";
-import servers from "./servers";
-import instancepage from "./instancepage";
-import home from "./home";
-import social from "./social";
-import clientpacks from "./clientpacks";
-import play from "./play";
-import announcements from "./announcements";
-import cosmetics from "./cosmetics";
-import importsettings from "./importsettings";
-import modsets from "./modsets";
-import bedrock from "./bedrock";
-import feedback from "./feedback";
-import clips from "./clips";
-import userfixes from "./userfixes";
-import many from "./many";
-import appearance from "./appearance";
-import organize from "./organize";
-import portable from "./portable";
-import worldPreview from "./world-preview";
-import packupdate from "./packupdate";
-import worldMap from "./world-map";
-import socialw4 from "./socialw4";
-import vibemedia from "./vibemedia";
 import { serverTargetMock } from "./servertarget";
 import { afkMock } from "./afk";
 import { withLiveModrinth } from "./modrinth-live";
 import { withRemote } from "./remote";
 import type { Handlers } from "./util";
+
+type HandlerModule = { default?: Handlers; priority?: number };
+const modules = import.meta.glob<HandlerModule>(["./*.ts", "!./index.ts"], { eager: true });
+const handlerModules = Object.entries(modules)
+  .filter((e): e is [string, Required<HandlerModule>] => !!e[1].default)
+  .sort(([a, ma], [b, mb]) => (ma.priority ?? 0) - (mb.priority ?? 0) || (a < b ? -1 : a > b ? 1 : 0))
+  .map(([, m]) => m.default);
 
 if (location.pathname.endsWith("console.html")) mockWindows("console", "main");
 else mockWindows("main");
@@ -43,11 +23,7 @@ const mockFlag = (k: string) => {
     return null;
   }
 };
-const base: Handlers = { ...core, ...a, ...b, ...skins, ...servers, ...instancepage, ...home, ...social, ...clientpacks, ...play, ...announcements, ...cosmetics, ...importsettings, ...modsets, ...bedrock, ...feedback, ...clips, ...userfixes, ...many, ...appearance, ...organize, ...portable, ...packupdate };
-Object.assign(base, worldPreview);
-Object.assign(base, worldMap);
-Object.assign(base, socialw4);
-Object.assign(base, vibemedia);
+const base: Handlers = Object.assign({}, ...handlerModules);
 Object.assign(base, serverTargetMock({ ...base }));
 Object.assign(base, afkMock(base));
 // „Neu prüfen“: Updates, Probleme und Modpack-Prüfung der übrigen Mocks bündeln (etwas länger, damit der

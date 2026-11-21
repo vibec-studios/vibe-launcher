@@ -56,4 +56,6 @@ const handlers: Handlers = on
     }
   : {};
 
+export const priority = 1;
+
 export default handlers;

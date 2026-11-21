@@ -224,4 +224,6 @@ const timer = setInterval(() => {
   if (++seeded > 20) clearInterval(timer);
 }, 250);
 
+export const priority = 1;
+
 export default handlers;

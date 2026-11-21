@@ -35,6 +35,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # Richtwert 300 Zeilen je Code-Datei: neue oder gewachsene große Dateien als Warnung (blockiert nicht)
+      - name: Dateigrößen
+        continue-on-error: true
+        run: node scripts/check-size.mjs --check --warn-only
+
       # Muss vor cargo laufen: tauri::generate_context! erwartet ../dist
       - name: Frontend-Build
         run: pnpm build
