@@ -48,11 +48,13 @@ pub struct TunnelStatus {
     pub address: Option<String>,
     pub claim_url: Option<String>,
     pub message: Option<String>,
+    /// Sprachchat/Bedrock über den Relay (nur Relay, nur wenn eingeschaltet)
+    pub udp: Option<super::relay::UdpStatus>,
 }
 
 impl TunnelStatus {
     pub fn new(kind: ServerConnection, state: TunnelState) -> Self {
-        TunnelStatus { kind, state, address: None, claim_url: None, message: None }
+        TunnelStatus { kind, state, address: None, claim_url: None, message: None, udp: None }
     }
 }
 
@@ -671,6 +673,9 @@ async fn spawn_process(state: &AppState, id: &str) -> AppResult<()> {
     // eula.txt + Port synchronisieren
     std::fs::write(dir.join("eula.txt"), "# Akzeptiert im Vibe Launcher (https://aka.ms/MinecraftEULA)\neula=true\n")?;
     super::props::set(&dir.join("server.properties"), &[("server-port".into(), s.port.to_string())])?;
+    for line in super::extras::before_start(state, &s) {
+        mgr.launcher_line(id, LogLevel::Launcher, line);
+    }
     let java = server_java(state, &s, &spec, None).await?;
     let java = crate::minecraft::java::console_java(&java);
     let mem = s.memory();

@@ -23,6 +23,8 @@ pub mod props;
 pub mod relay;
 pub mod run;
 pub mod sides;
+pub mod extras;
+pub mod udp;
 
 pub use run::ServerManager;
 
@@ -87,6 +89,12 @@ pub struct Server {
     /// Start-Befehl nach der Installation (intern)
     #[serde(default)]
     pub launch: Option<install::LaunchSpec>,
+    /// Sprachchat (Simple Voice Chat) über den Relay anbieten (Vertrag 04)
+    #[serde(default)]
+    pub voice: bool,
+    /// Bedrock-Spieler (Geyser + Floodgate) über den Relay erlauben (Vertrag 28)
+    #[serde(default)]
+    pub bedrock: bool,
 }
 
 impl Server {
@@ -288,6 +296,8 @@ impl ServerStore {
             source_instance: req.from_instance.clone(),
             relay_slot: self.free_slot(),
             launch: None,
+            voice: false,
+            bedrock: false,
         };
         std::fs::create_dir_all(server_dir(&self.paths, &id))?;
         self.persist(&s)?;

@@ -14,7 +14,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
 
 /// Höchste Schema-Version, die wir verstehen (höhere werden übersprungen).
-const SCHEMA: i64 = 1;
+pub(crate) const SCHEMA: i64 = 1;
 const TITLE_MAX: usize = 100;
 const TAGS_MAX: usize = 16;
 const TAG_MAX: usize = 32;
@@ -69,6 +69,35 @@ pub struct Clip {
     pub kept: bool,
     pub title: Option<String>,
     pub tags: Vec<String>,
+    pub keyframes_ms: Vec<i64>,
+    pub cuts_ms: Vec<i64>,
+    pub rewind: bool,
+    pub trim_hint: Option<TrimRange>,
+    pub trim: Option<TrimRange>,
+    pub source_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, serde::Deserialize, PartialEq, Eq)]
+pub struct TrimRange {
+    pub in_ms: i64,
+    pub out_ms: i64,
+}
+
+fn ms_list(o: &Map<String, Value>, k: &str, max: usize) -> Vec<i64> {
+    let mut v: Vec<i64> = o
+        .get(k)
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(|x| x.as_i64().or_else(|| x.as_f64().map(|f| f as i64))).filter(|n| *n >= 0).take(max).collect())
+        .unwrap_or_default();
+    v.sort_unstable();
+    v.dedup();
+    v
+}
+
+pub(crate) fn trim_field(o: &Map<String, Value>, k: &str) -> Option<TrimRange> {
+    let t = o.get(k)?.as_object()?;
+    let r = TrimRange { in_ms: int_field(t, "in_ms")?, out_ms: int_field(t, "out_ms")? };
+    (r.in_ms >= 0 && r.in_ms < r.out_ms).then_some(r)
 }
 
 // ---------------------------------------------------------------- Namen und Pfade
@@ -83,7 +112,7 @@ pub fn valid_id(id: &str) -> bool {
 }
 
 /// Reiner Dateiname im selben Ordner: keine Pfadteile, keine Dotfiles, kein `..`, kein Laufwerk.
-fn plain_name(name: &str) -> bool {
+pub(crate) fn plain_name(name: &str) -> bool {
     !name.is_empty()
         && !name.starts_with('.')
         && !name.contains(['/', '\\', ':', '\0'])
@@ -104,7 +133,7 @@ pub fn clips_dir_in(instances_root: &Path, instance_id: &str) -> AppResult<PathB
 }
 
 /// Datei im Clip-Ordner, nachdem Namen geprüft und Symlinks/Junctions aufgelöst sind: muss im Instanzordner bleiben.
-fn checked_file(instances_root: &Path, dir: &Path, name: &str) -> AppResult<PathBuf> {
+pub(crate) fn checked_file(instances_root: &Path, dir: &Path, name: &str) -> AppResult<PathBuf> {
     if !plain_name(name) {
         return Err(AppError::Invalid("Kein Clip-Dateiname".into()));
     }
@@ -119,10 +148,10 @@ fn checked_file(instances_root: &Path, dir: &Path, name: &str) -> AppResult<Path
 
 // ---------------------------------------------------------------- Lesen
 
-fn str_field(o: &Map<String, Value>, k: &str) -> Option<String> {
+pub(crate) fn str_field(o: &Map<String, Value>, k: &str) -> Option<String> {
     o.get(k).and_then(Value::as_str).map(str::to_string)
 }
-fn int_field(o: &Map<String, Value>, k: &str) -> Option<i64> {
+pub(crate) fn int_field(o: &Map<String, Value>, k: &str) -> Option<i64> {
     o.get(k).and_then(|v| v.as_i64().or_else(|| v.as_f64().map(|f| f as i64)))
 }
 
@@ -133,7 +162,7 @@ fn time_from_id(id: &str) -> Option<i64> {
 }
 
 #[derive(Debug)]
-enum Parsed {
+pub(crate) enum Parsed {
     Ok(Box<Clip>),
     /// Kein Clip (höheres Schema, fehlendes Video, falsche id …) – nicht erneut versuchen
     Skip,
@@ -142,7 +171,7 @@ enum Parsed {
 }
 
 /// `<id>.json` lesen. `dir` ist der Clip-Ordner, `id` bereits gegen das Regex geprüft.
-fn parse_clip(instance_id: &str, dir: &Path, id: &str) -> Parsed {
+pub(crate) fn parse_clip(instance_id: &str, dir: &Path, id: &str) -> Parsed {
     let json = dir.join(format!("{id}.json"));
     let Ok(bytes) = std::fs::read(&json) else { return Parsed::Broken };
     let Ok(Value::Object(o)) = serde_json::from_slice::<Value>(&bytes) else { return Parsed::Broken };
@@ -222,6 +251,12 @@ fn parse_clip(instance_id: &str, dir: &Path, id: &str) -> Parsed {
         kept: o.get("kept").and_then(Value::as_bool).unwrap_or(false),
         title: str_field(&o, "title").filter(|s| !s.trim().is_empty()),
         tags,
+        keyframes_ms: ms_list(&o, "keyframes_ms", 2000),
+        cuts_ms: ms_list(&o, "cuts_ms", 500),
+        rewind: o.get("rewind").and_then(Value::as_bool).unwrap_or(false),
+        trim_hint: trim_field(&o, "trim_hint"),
+        trim: trim_field(&o, "trim"),
+        source_id: str_field(&o, "source_id").filter(|s| valid_id(s)),
     }))
 }
 
@@ -371,7 +406,7 @@ fn remove_retry(p: &Path, tries: u32) -> std::io::Result<()> {
 /// Löschen in Vertragsreihenfolge: `<id>.json` zuerst (der Clip verschwindet für alle Leser auf einmal), dann Video
 /// und Vorschaubild. Bleibt eine gesperrte MP4/JPG übrig, räumt das Spiel sie beim nächsten Start als Waise auf.
 /// Rückgabe: Dateien, die (noch) nicht gelöscht werden konnten.
-fn delete_clip(dir: &Path, id: &str) -> AppResult<Vec<PathBuf>> {
+pub(crate) fn delete_clip(dir: &Path, id: &str) -> AppResult<Vec<PathBuf>> {
     if !valid_id(id) {
         return Err(AppError::Invalid("Clip-ID".into()));
     }
@@ -418,13 +453,13 @@ fn dirs_for(state: &AppState, instance_id: Option<String>) -> AppResult<Vec<(Str
 }
 
 /// Clip-Ordner einer vorhandenen Instanz (geprüft).
-fn instance_clips_dir(state: &AppState, instance_id: &str) -> AppResult<PathBuf> {
+pub(crate) fn instance_clips_dir(state: &AppState, instance_id: &str) -> AppResult<PathBuf> {
     state.instances.get(instance_id)?;
     clips_dir_in(&state.paths.instances(), instance_id)
 }
 
 /// Prüft, dass `<id>.json` existiert und (nach Auflösen von Links) im Instanzordner liegt.
-fn checked_clip(state: &AppState, instance_id: &str, id: &str) -> AppResult<PathBuf> {
+pub(crate) fn checked_clip(state: &AppState, instance_id: &str, id: &str) -> AppResult<PathBuf> {
     if !valid_id(id) {
         return Err(AppError::Invalid("Clip-ID".into()));
     }
@@ -862,4 +897,9 @@ mod tests {
         assert_eq!(changed_instances(&a, &b), vec!["i".to_string()]);
         assert!(changed_instances(&b, &b).is_empty());
     }
+}
+
+#[cfg(test)]
+pub(crate) fn clips_list_for_test(dir: &Path) -> Vec<Clip> {
+    scan(&[("i".into(), dir.to_path_buf())], Duration::ZERO)
 }

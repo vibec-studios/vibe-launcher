@@ -97,6 +97,7 @@ pub fn run() {
             app.manage(state);
             platform::app_icon::apply(app.handle(), &appearance);
             platform::init(app.handle());
+            play::skin_bridge::init(app.handle());
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 // Schema `vibelauncher://` beim Nutzer registrieren (Installer macht das ebenfalls);
@@ -263,6 +264,9 @@ pub fn run() {
             commands::clips::clip_delete,
             commands::clips::clip_open_folder,
             commands::clips::clips_watch,
+            commands::clip_edit::clip_set_trim,
+            commands::clip_edit::clip_export_available,
+            commands::clip_edit::clip_export_trim,
             commands::game::java_list,
             // Bedrock
             commands::bedrock::bedrock_status,
@@ -333,6 +337,8 @@ pub fn run() {
             commands::server::server_addon_set_enabled,
             commands::server::server_addon_remove,
             commands::server::servers_quit,
+            commands::server::server_extras_get,
+            commands::server::server_extras_set,
             // content
             commands::content::curseforge_available,
             commands::content::content_search,
