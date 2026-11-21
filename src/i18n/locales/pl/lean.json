@@ -1,0 +1,6 @@
+{
+  "lean.enabled": "Lekki podczas gry",
+  "lean.enabled.desc": "Gdy Minecraft działa, a ty jesteś w grze, launcher zamyka swoje okno i działa dalej tylko jako ikona w zasobniku systemowym – to oszczędza pamięć. Kliknij ikonę, aby otworzyć go ponownie.",
+  "lean.reopen": "Otwórz ponownie po grze",
+  "lean.reopen.desc": "Automatycznie otwiera launcher po zakończeniu ostatniej gry. Po awarii otwiera się zawsze."
+}

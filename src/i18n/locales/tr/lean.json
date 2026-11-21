@@ -1,0 +1,6 @@
+{
+  "lean.enabled": "Oynarken hafif",
+  "lean.enabled.desc": "Minecraft çalışırken ve sen oyundayken başlatıcı penceresini kapatır ve yalnızca sistem tepsisinde bir simge olarak çalışmaya devam eder – bu bellek tasarrufu sağlar. Yeniden açmak için simgeye tıkla.",
+  "lean.reopen": "Oynadıktan sonra yeniden aç",
+  "lean.reopen.desc": "Son oyun bittiğinde başlatıcıyı otomatik olarak açar. Bir çökmeden sonra her zaman açılır."
+}

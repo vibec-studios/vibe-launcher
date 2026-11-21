@@ -70,6 +70,7 @@ export interface Settings {
   dismissed_notices: string[];
   /** AFK-Modus (Experimentell, docs/AFK.md) */
   afk?: import("@/features/afk/types").AfkSettings;
+  lean?: { enabled: boolean; reopen: boolean };
   prefer_dgpu?: boolean;
 }
 

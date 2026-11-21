@@ -3,6 +3,7 @@ import { Input, NumberInput, Select, SettingRow, SettingsCard, Switch } from "@/
 import { MasterOptSync, SyncOverview } from "@/components/instance/OptSync";
 import { FixBackupPicker } from "@/features/backups/FixBackupPicker";
 import { AfkSettingsCard } from "@/features/afk/AfkSettingsCard";
+import { LeanSettingsRows } from "@/features/lean/LeanSettingsRows";
 import { useExpert } from "@/lib/simple-mode";
 import { Term } from "@/features/help/glossary/Term";
 import { useT } from "@/i18n";
@@ -53,6 +54,7 @@ export function GameTab({ s, update }: TabProps) {
             />
           </div>
         </SettingRow>
+        <LeanSettingsRows s={s} update={update} />
         {logs && (
           <SettingRow title={t("settings.open_log")} description={t("settings.open_log.desc")}>
             <Switch checked={s.open_log_on_launch} onChange={(open_log_on_launch) => update({ open_log_on_launch })} label={t("settings.open_log")} />

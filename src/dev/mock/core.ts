@@ -105,6 +105,7 @@ let settings: Settings = {
   // Screenshots: vl.mock.design / vl.mock.theme / vl.mock.custom, Variante per window.__VL_MOCK_APPEARANCE (siehe ./appearance.ts)
   appearance: mockAppearance(),
   // Screenshots: localStorage vl.mock.afk = "<instanz>" -> AFK-Flag an und diese Instanz läuft im Hintergrund (./afk.ts)
+  lean: { enabled: true, reopen: true },
   afk: { enabled: mockFlag("vl.mock.afk") !== null, always_ready: true, notify: true, auto_reconnect: false, options_fallback: true },
   stores: [{ id: "vibe-craft-studios", name: "Vibe Craft Studios", url: STORE_URL, enabled: true, icon: null }],
 };

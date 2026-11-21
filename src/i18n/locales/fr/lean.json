@@ -1,0 +1,6 @@
+{
+  "lean.enabled": "Léger pendant le jeu",
+  "lean.enabled.desc": "Pendant que Minecraft tourne et que tu es en jeu, le launcher ferme sa fenêtre et continue uniquement sous forme d'icône dans la zone de notification, ce qui économise de la mémoire. Clique sur l'icône pour le rouvrir.",
+  "lean.reopen": "Rouvrir après avoir joué",
+  "lean.reopen.desc": "Rouvre automatiquement le launcher quand la dernière partie est terminée. Il s'ouvre toujours après un plantage."
+}
