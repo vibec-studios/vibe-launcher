@@ -35,7 +35,8 @@ export function Select<V extends string = string>({
       <S.Trigger
         className={cn(
           variant === "ghost" ? "vl-select-ghost" : "vl-field",
-          "inline-flex w-full items-center justify-between gap-2 rounded-ctl border border-transparent px-3 text-left text-text outline-none transition-colors duration-150",
+          /(^|s)!?w-/.test(className ?? "") ? "" : "w-full",
+          "inline-flex items-center justify-between gap-2 rounded-ctl border border-transparent px-3 text-left text-text outline-none transition-colors duration-150",
           variant === "ghost" ? "bg-transparent hover:bg-white/[.06] data-[state=open]:bg-white/[.06]" : "bg-field hover:bg-white/[.07]",
           "focus-visible:border-accent/70 data-[placeholder]:text-dim disabled:opacity-50",
           size === "sm" ? "h-8 text-[13px]" : "h-9 text-[13.5px]",
