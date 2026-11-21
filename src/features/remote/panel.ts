@@ -6,7 +6,7 @@ import type { RemoteAgent } from "./types";
 
 export function panelUrl(a: RemoteAgent): string {
   if (a.via === "direct" && a.address) return `https://${a.address}/`;
-  return `${WEBSITE}panel/#/agents/${encodeURIComponent(a.id)}`;
+  return `${WEBSITE}panel/#/a/${encodeURIComponent(a.id)}`;
 }
 
 export async function openAgentPanel(a: RemoteAgent) {

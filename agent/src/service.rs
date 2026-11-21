@@ -82,6 +82,7 @@ pub fn install(args: &Args) -> AppResult<()> {
     let bin = format!("\"{exe}\" run --service");
     run_cmd("sc.exe", &["create", SERVICE_NAME, "binPath=", &bin, "start=", "auto", "obj=", "NT SERVICE\\VibeAgent", "DisplayName=", "Vibe Server Agent"])?;
     let _ = run_cmd("sc.exe", &["failure", SERVICE_NAME, "reset=", "86400", "actions=", "restart/5000/restart/5000/restart/30000"]);
+    let _ = run_cmd("sc.exe", &["failureflag", SERVICE_NAME, "1"]);
     let data = dirs.data.to_string_lossy().to_string();
     let _ = run_cmd("icacls", &[&data, "/grant", "NT SERVICE\\VibeAgent:(OI)(CI)M"]);
     run_cmd("sc.exe", &["start", SERVICE_NAME])?;

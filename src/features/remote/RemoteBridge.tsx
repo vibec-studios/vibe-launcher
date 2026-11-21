@@ -8,6 +8,7 @@ import { remoteApi } from "./api";
 import { remoteId } from "./ids";
 import { agentByKey, freshVibeToken, loadAgents, setConn, upsertAgent, useRemote, type ConnInfo } from "./store";
 import { toServer, toStatus, toTask } from "./translate";
+import "./target";
 import type { AgentConn, RemoteAgent } from "./types";
 
 type Raw = Record<string, unknown>;

@@ -126,7 +126,7 @@ pub async fn audit(State(ctx): State<Ctx>, a: Authed, Query(q): Query<AuditQuery
 pub async fn update_check(State(ctx): State<Ctx>, a: Authed) -> ApiResult<Json<Value>> {
     a.require(Perm::AgentAdmin)?;
     let r = crate::update::check(&ctx.core.net.client).await?;
-    Ok(Json(json!({ "current": env!("CARGO_PKG_VERSION"), "latest": r.as_ref().map(|r| r.version.to_string()), "available": r.is_some(), "notes_url": r.map(|r| r.html_url) })))
+    Ok(Json(json!({ "current": env!("CARGO_PKG_VERSION"), "latest": r.as_ref().map(|r| r.version.to_string()), "available": r.is_some(), "self_update": crate::update::can_self_update(), "notes_url": r.map(|r| r.html_url) })))
 }
 
 pub async fn update_apply(State(ctx): State<Ctx>, a: Authed) -> ApiResult<Json<Value>> {

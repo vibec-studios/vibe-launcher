@@ -83,6 +83,7 @@ jobs:
       - name: Bauen
         env:
           TARGET_DIR: ${{ steps.prep.outputs.target-dir }}
+          VERSION: ${{ needs.check.outputs.version }}
         run: |
           set -euo pipefail
           mkdir -p out docker-bin/linux/amd64 docker-bin/linux/arm64
@@ -90,10 +91,12 @@ jobs:
             cargo zigbuild --release --locked --manifest-path agent/Cargo.toml --bin vibe-agent --target "$t"
             cp "$TARGET_DIR/$t/release/vibe-agent" "out/vibe-agent-$t"
           done
+          [ -f agent/panel-dist/index.html ] || { echo "::error::agent/panel-dist fehlt – build:panel ist nicht gelaufen"; exit 1; }
+          python3 -c 'import shutil, sys; shutil.make_archive(sys.argv[1], "zip", "agent/panel-dist")' "out/vibe-panel-$VERSION"
           cp out/vibe-agent-x86_64-unknown-linux-musl docker-bin/linux/amd64/vibe-agent
           cp out/vibe-agent-aarch64-unknown-linux-musl docker-bin/linux/arm64/vibe-agent
           file out/* || true
-          chmod +x out/*
+          chmod +x out/vibe-agent-*
           ./out/vibe-agent-x86_64-unknown-linux-musl --version
 
       - uses: actions/upload-artifact@v4
@@ -161,15 +164,17 @@ jobs:
           merge-multiple: true
 
       - name: Dateien + SHA256SUMS
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
         run: |
           set -euo pipefail
           mkdir -p release-files
-          cp artifacts/vibe-agent-* release-files/
+          cp artifacts/vibe-agent-* artifacts/vibe-panel-*.zip release-files/
           cp agent/dist/install.sh agent/dist/install.ps1 agent/dist/docker-compose.yml release-files/
-          for f in vibe-agent-x86_64-unknown-linux-musl vibe-agent-aarch64-unknown-linux-musl vibe-agent-x86_64-pc-windows-msvc.exe; do
+          for f in vibe-agent-x86_64-unknown-linux-musl vibe-agent-aarch64-unknown-linux-musl vibe-agent-x86_64-pc-windows-msvc.exe "vibe-panel-$VERSION.zip"; do
             [ -s "release-files/$f" ] || { echo "::error::$f fehlt"; exit 1; }
           done
-          (cd release-files && sha256sum vibe-agent-* install.sh install.ps1 docker-compose.yml > SHA256SUMS)
+          (cd release-files && sha256sum vibe-agent-* vibe-panel-*.zip install.sh install.ps1 docker-compose.yml > SHA256SUMS)
           cat release-files/SHA256SUMS
 
       - name: Release-Text
@@ -189,6 +194,8 @@ jobs:
           irm https://vibe.axolite.app/agent/install.ps1 | iex
           \`\`\`
           **Docker:** \`ghcr.io/vibec-studios/vibe-agent:$VERSION\`
+
+          \`vibe-panel-$VERSION.zip\` enthält das Vibe Panel (Inhalt von agent/panel-dist) für das Backend-Image (\`PANEL_DIST\`).
 
           Anleitung: https://github.com/$REPO/blob/main/docs/REMOTE-AGENT-INSTALL.md
           EOF

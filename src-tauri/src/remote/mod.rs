@@ -3,6 +3,7 @@ pub mod http;
 pub mod pair;
 pub mod store;
 pub mod tls;
+pub mod upload;
 pub mod vibe;
 pub mod ws;
 
@@ -41,6 +42,10 @@ pub struct RemoteAgent {
     pub online: Option<bool>,
     #[serde(default)]
     pub last_seen: Option<i64>,
+    #[serde(default)]
+    pub gateway_id: Option<String>,
+    #[serde(default)]
+    pub disabled: Option<bool>,
     pub added_at: i64,
 }
 

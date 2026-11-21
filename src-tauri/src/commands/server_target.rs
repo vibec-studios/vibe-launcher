@@ -2,7 +2,9 @@ use crate::content::{http, modrinth as mr};
 use crate::error::AppResult;
 use crate::server::plugins::{self, AddonSource, AddonTarget};
 use crate::state::AppState;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use vibe_server_core::model::LoaderKind;
+use vibe_server_core::server::platform::PlatformKind;
 use tauri::State;
 
 const HANGAR: &str = "https://hangar.papermc.io/api/v1";
@@ -76,17 +78,35 @@ async fn check_hangar(state: &AppState, t: &AddonTarget, project: &str) -> AppRe
     })
 }
 
+async fn check_with(state: &AppState, t: &AddonTarget, source: AddonSource, project: &str) -> AppResult<AddonCheck> {
+    match source {
+        AddonSource::Modrinth => check_modrinth(state, t, project).await,
+        AddonSource::Hangar => check_hangar(state, t, project).await,
+    }
+}
+
 #[tauri::command]
 pub async fn server_addon_check(state: State<'_, AppState>, id: String, source: AddonSource, project: String) -> AppResult<AddonCheck> {
     let s = state.servers.get(&id)?;
     let Some(t) = plugins::target(&s) else { return Ok(AddonCheck::no("vanilla")) };
     let installed = plugins::list(&state, &s).await.map(|l| l.items.iter().any(|a| a.project_id.as_deref() == Some(project.as_str()) || a.slug.as_deref() == Some(project.as_str()))).unwrap_or(false);
-    let mut c = match source {
-        AddonSource::Modrinth => check_modrinth(&state, &t, &project).await?,
-        AddonSource::Hangar => check_hangar(&state, &t, &project).await?,
-    };
+    let mut c = check_with(&state, &t, source, &project).await?;
     c.installed = installed;
     Ok(c)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CheckSpec {
+    pub mc_version: String,
+    pub loader: LoaderKind,
+    #[serde(default)]
+    pub platform: Option<PlatformKind>,
+}
+
+#[tauri::command]
+pub async fn server_addon_check_spec(state: State<'_, AppState>, spec: CheckSpec, source: AddonSource, project: String) -> AppResult<AddonCheck> {
+    let Some(t) = plugins::target_for(&spec.mc_version, spec.loader, spec.platform) else { return Ok(AddonCheck::no("vanilla")) };
+    check_with(&state, &t, source, &project).await
 }
 
 #[cfg(test)]

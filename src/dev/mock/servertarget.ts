@@ -162,6 +162,16 @@ export function serverTargetMock(base: Handlers): Handlers {
       if (!s.platform && h && isPlugin) return { ok: false, reason: "loader", version: null, installed, deps: 0, message: null };
       return { ok: true, reason: null, version: "1.0.0", installed, deps: h?.slug === "lithium" ? 1 : 0, message: null };
     },
+    server_addon_check_spec: ({ spec, source, project }) => {
+      const sp = spec as { loader: string; platform: string | null };
+      const h = all.find((x) => x.id === project);
+      const isPlugin = !!h && (h.source === "hangar" || plugins.includes(h));
+      if (!sp.platform && sp.loader === "vanilla") return { ok: false, reason: "vanilla", version: null, installed: false, deps: 0, message: null };
+      if (source === "hangar" && !sp.platform) return { ok: false, reason: "hangar", version: null, installed: false, deps: 0, message: null };
+      if (sp.platform && h && !isPlugin) return { ok: false, reason: "not_plugin", version: null, installed: false, deps: 0, message: null };
+      if (!sp.platform && h && isPlugin) return { ok: false, reason: "loader", version: null, installed: false, deps: 0, message: null };
+      return { ok: true, reason: null, version: "1.0.0", installed: false, deps: 0, message: null };
+    },
     server_addon_project: ({ project }) => {
       const h = hangar.find((x) => x.id === project);
       if (!h) throw { kind: "not_found", message: "Hangar-Projekt nicht gefunden" };

@@ -27,7 +27,7 @@ export const localServerProvider: ServerTargetProvider = {
   origin: "local",
   async list() {
     const [servers, statuses] = await Promise.all([api.serversList(), api.serverStatuses().catch(() => [] as ServerStatus[])]);
-    return servers.map((s) => localTargetInfo(s, statuses.find((x) => x.server_id === s.id)));
+    return servers.filter((s) => !s.remote).map((s) => localTargetInfo(s, statuses.find((x) => x.server_id === s.id)));
   },
   addons: (t) => addonApi.list(t.id),
   search: (t, source, query, sort, offset) => addonApi.search(t.id, source, query, sort, offset),

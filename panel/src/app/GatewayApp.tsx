@@ -87,7 +87,7 @@ export function GatewayApp() {
     );
   }
   const seg = segments(path);
-  if (seg[0] === "a" && seg[1]) return <RemoteAgent account={account} agentId={seg[1]} rest={seg.slice(2)} onLogout={logout} accountName={me.data.name} />;
+  if ((seg[0] === "a" || seg[0] === "agents") && seg[1]) return <RemoteAgent account={account} agentId={seg[1]} rest={seg.slice(2)} onLogout={logout} accountName={me.data.name} />;
   return (
     <Shell nav={[]} active="" header={null} onLogout={logout} account={me.data.name}>
       <AgentsPage account={account} accountName={me.data.name} />

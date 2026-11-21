@@ -7,12 +7,14 @@ import { useT, t as tt } from "@/i18n";
 import { errorMessage } from "@/lib/api";
 import { queryClient, sqk, useJavaInstances, useTask } from "@/lib/queries";
 import { StepBar } from "@/features/servers/new/StepBar";
-import { useServerTargets, useTargetRunning } from "@/features/installtarget/hooks";
+import { refreshTargetLists, useServerTargets, useTargetRunning } from "@/features/installtarget/hooks";
 import { parseServerTargetKey, serverTargetKey, useTargetRegistry } from "@/features/installtarget/registry";
 import { packApi, pqk, type PackInput, type PackOptions } from "./api";
 import { NO_WORLD, ReviewStep } from "./Review";
 import { SourceStep, TargetStep, type SourceKind, type TargetKind } from "./steps";
 import { closePackToServer, usePackDialog, type PackDialogRequest } from "./store";
+import { useRemote } from "@/features/remote/store";
+import { activeAgents } from "@/features/remote/active";
 
 export function PackToServerHost() {
   const req = usePackDialog((s) => s.req);
@@ -91,6 +93,7 @@ function PackToServerDialog({ req, open, onOpenChange }: { req: PackDialogReques
       setPhase({ k: "done", serverId: phase.serverId, remote: phase.remote });
       void queryClient.invalidateQueries({ queryKey: sqk.servers });
       void queryClient.invalidateQueries({ queryKey: pqk.status(phase.serverId) });
+      refreshTargetLists();
     }
     if (task.status === "failed" || task.status === "cancelled") {
       toast.error(task.error ?? tt("sp.failed"), tt("sp.failed"));
@@ -101,11 +104,13 @@ function PackToServerDialog({ req, open, onOpenChange }: { req: PackDialogReques
   const steps = [t("sp.step.source"), t("sp.step.target"), t("sp.step.review")];
   const canNext = step === 0 ? !!input : step === 1 ? (tgtKind === "new" ? !!name.trim() : !!target) : !!preview.data && !(tgtKind === "existing" && running);
   const options: PackOptions = { selected: [...selected], configs, world: world === NO_WORLD ? null : world };
+  const remoteAgents = useRemote((s) => s.agents);
   const agents = useMemo(() => {
     const m = new Map<string, string>();
+    for (const a of activeAgents(remoteAgents)) if (a.role !== "viewer") m.set(a.key, a.name);
     for (const s of servers) if (s.origin === "remote" && s.agentId) m.set(s.agentId, s.agentName ?? s.agentId);
     return [...m.entries()].map(([id, label]) => ({ id, label }));
-  }, [servers]);
+  }, [servers, remoteAgents]);
   const remoteProvider = useTargetRegistry((s) => s.providers.remote);
   const newRemote = tgtKind === "new" && where !== "local";
   const remoteNoUpload = (target?.origin === "remote" || newRemote) && !remoteProvider?.uploadPack;
@@ -120,7 +125,7 @@ function PackToServerDialog({ req, open, onOpenChange }: { req: PackDialogReques
         const b = await packApi.bundle(input, options);
         setPhase({ k: "busy", label: tt("sp.uploading", { size: Math.max(1, Math.round(b.size / 1048576)) }) });
         const r = await remoteProvider.uploadPack(agentId, b.path, { name: newRemote ? name.trim() : target!.name, serverId: newRemote ? null : target!.id, format: "mrpack" });
-        setPhase({ k: "done", serverId: r.server_id, remote: true });
+        setPhase({ k: "task", taskId: r.task_id, serverId: r.server_id, remote: true });
         return;
       }
       setPhase({ k: "busy", label: tt("sp.starting") });
@@ -139,7 +144,7 @@ function PackToServerDialog({ req, open, onOpenChange }: { req: PackDialogReques
         <Button variant="subtle" onClick={() => onOpenChange(false)}>
           {t("common.close")}
         </Button>
-        {phase.serverId && !phase.remote && (
+        {phase.serverId && (
           <Button
             variant="primary"
             onClick={() => {

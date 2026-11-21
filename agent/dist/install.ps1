@@ -193,6 +193,7 @@ function Register-AgentService([int]$AgentPort, $Existing) {
     Invoke-Native 'sc.exe' @('config', $script:ServiceName, 'obj=', $script:ServiceAccount, 'start=', 'delayed-auto')
     Invoke-Native 'sc.exe' @('sidtype', $script:ServiceName, 'unrestricted')
     Invoke-Native 'sc.exe' @('failure', $script:ServiceName, 'reset=', '86400', 'actions=', 'restart/5000/restart/10000/restart/30000')
+    Invoke-Native 'sc.exe' @('failureflag', $script:ServiceName, '1')
 }
 
 function Invoke-Agent([int]$AgentPort, [string[]]$Arguments) {

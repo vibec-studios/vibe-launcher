@@ -51,10 +51,9 @@ runs:
       with:
         node-version: 24
         cache: pnpm
+        cache-dependency-path: panel/pnpm-lock.yaml
 
     - if: steps.panel.outputs.needed == 'true'
       name: Panel bauen
       shell: bash
-      run: |
-        pnpm install --frozen-lockfile
-        pnpm run build:panel
+      run: pnpm run build:panel

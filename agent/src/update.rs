@@ -67,6 +67,32 @@ fn expected_sha(sums: &str, name: &str) -> Option<String> {
     })
 }
 
+pub fn can_self_update() -> bool {
+    std::env::current_exe().map(|e| writable_dir(&e)).unwrap_or(false)
+}
+
+fn writable_dir(exe: &std::path::Path) -> bool {
+    let Some(dir) = exe.parent() else { return false };
+    let probe = dir.join(format!(".vibe-agent-update-{}", std::process::id()));
+    let ok = std::fs::write(&probe, b"").is_ok();
+    let _ = std::fs::remove_file(&probe);
+    ok
+}
+
+fn ensure_writable(exe: &std::path::Path) -> AppResult<()> {
+    if writable_dir(exe) {
+        return Ok(());
+    }
+    let how = if std::path::Path::new("/.dockerenv").exists() {
+        "Im Docker-Container: neues Image laden (docker compose pull && docker compose up -d)."
+    } else if cfg!(windows) {
+        "Unter Windows: den Installationsbefehl erneut ausführen (irm https://vibe.axolite.app/agent/install.ps1 | iex)."
+    } else {
+        "Unter Linux: den Installationsbefehl erneut ausführen (curl -fsSL https://vibe.axolite.app/agent/install.sh | sh)."
+    };
+    Err(AppError::NotConfigured(format!("Der Agent darf sein Programm hier nicht selbst ersetzen. {how}")))
+}
+
 async fn apply(ctx: &AgentState, sp: &vibe_server_core::tasks::SubProgress) -> AppResult<()> {
     let client = &ctx.core.net.client;
     let avail = check(client).await?.ok_or_else(|| AppError::Invalid("Der Agent ist schon aktuell.".into()))?;
@@ -76,6 +102,7 @@ async fn apply(ctx: &AgentState, sp: &vibe_server_core::tasks::SubProgress) -> A
     let sums_text = client.get(&sums.browser_download_url).send().await?.error_for_status()?.text().await?;
     let want = expected_sha(&sums_text, name).ok_or_else(|| AppError::msg(format!("{name} fehlt in SHA256SUMS")))?;
     let exe = std::env::current_exe()?;
+    ensure_writable(&exe)?;
     let tmp = exe.with_extension("download");
     sp.message(format!("Agent {} wird geladen …", avail.version));
     ctx.core.net.download_all(vec![vibe_server_core::net::DownloadItem::new(&bin.browser_download_url, &tmp)], Some(sp)).await?;
