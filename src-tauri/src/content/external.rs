@@ -219,7 +219,7 @@ pub(crate) fn open_db_copy_named(root: &Path, tmp: &Path, prefix: &str) -> Optio
         return None;
     }
     let stamp_of = |p: &Path| std::fs::metadata(p).ok().map(|m| format!("{}:{:?}", m.len(), m.modified().ok())).unwrap_or_default();
-    let stamp = format!("{}|{}", stamp_of(&db), stamp_of(&root.join("app.db-wal")));
+    let stamp = format!("scrubbed-v1|{}|{}", stamp_of(&db), stamp_of(&root.join("app.db-wal")));
     let key = hex::encode(<sha1::Sha1 as sha1::Digest>::digest(norm(&s(root)).as_bytes()));
     let dir = tmp.join(format!("{prefix}-{}", &key[..12]));
     let stamp_file = dir.join("stamp");
@@ -1259,6 +1259,25 @@ mod tests {
         }
         let orig = rusqlite::Connection::open(root.join("app.db")).unwrap();
         assert_eq!(orig.query_row("SELECT count(*) FROM minecraft_users", [], |r| r.get::<_, i64>(0)).unwrap(), 1, "Original unverändert");
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn old_unscrubbed_copy_is_replaced() {
+        let root = tmp();
+        {
+            let c = rusqlite::Connection::open(root.join("app.db")).unwrap();
+            c.execute_batch("CREATE TABLE minecraft_users (uuid TEXT, access_token TEXT); INSERT INTO minecraft_users VALUES ('u','GEHEIM');").unwrap();
+        }
+        let key = hex::encode(<sha1::Sha1 as sha1::Digest>::digest(norm(&s(&root)).as_bytes()));
+        let old = root.join("tmp").join(format!("modrinth-db-{}", &key[..12]));
+        std::fs::create_dir_all(&old).unwrap();
+        std::fs::copy(root.join("app.db"), old.join("app.db")).unwrap();
+        let m = std::fs::metadata(root.join("app.db")).unwrap();
+        std::fs::write(old.join("stamp"), format!("{}:{:?}|", m.len(), m.modified().ok())).unwrap();
+        let c = open_db_copy_named(&root, &root.join("tmp"), "modrinth-db").unwrap();
+        assert_eq!(c.query_row("SELECT count(*) FROM minecraft_users", [], |r| r.get::<_, i64>(0)).unwrap(), 0);
+        drop(c);
         std::fs::remove_dir_all(&root).ok();
     }
 
