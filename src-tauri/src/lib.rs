@@ -347,6 +347,7 @@ pub fn run() {
             commands::content::import_settings_pending,
             commands::content::import_settings_offer,
             commands::content::import_settings_apply,
+            commands::content::import_report,
             commands::content::content_set_pinned,
             commands::content::content_update_counts,
             commands::content::stores_list,

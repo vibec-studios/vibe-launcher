@@ -38,6 +38,7 @@ pub struct Pack {
     pub targets: Vec<Target>,
     pub mods: Vec<PackMod>,
     pub resolved: HashMap<(String, String, String), String>,
+    pub files: HashMap<(String, String, String), String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -124,10 +125,14 @@ pub fn read(c: &rusqlite::Connection) -> SyncDb {
             p.mods.push(m);
         }
     }
-    for r in select_rows(c, "sync_pack_mod_resolutions", &["pack_id", "project_key", "mc_version", "loader", "version_id"]) {
+    for r in select_rows(c, "sync_pack_mod_resolutions", &["pack_id", "project_key", "mc_version", "loader", "version_id", "filename"]) {
         let Some(p) = s(&r, "pack_id").and_then(|id| db.packs.get_mut(&id)) else { continue };
         if let (Some(k), Some(mc), Some(l), Some(v)) = (s(&r, "project_key"), s(&r, "mc_version"), s(&r, "loader"), s(&r, "version_id")) {
-            p.resolved.insert((k, mc, l.to_lowercase()), v);
+            let key = (k, mc, l.to_lowercase());
+            if let Some(f) = s(&r, "filename") {
+                p.files.insert(key.clone(), f);
+            }
+            p.resolved.insert(key, v);
         }
     }
     let mut subs: Vec<(String, i64, String)> = select_rows(c, "profile_sync_packs", &["profile_id", "pack_id", "ordinal"])

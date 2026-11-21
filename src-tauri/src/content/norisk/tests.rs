@@ -1,5 +1,7 @@
 use super::*;
 
+mod shared;
+
 fn fixtures() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src").join("content").join("testdata").join("norisk")
 }
@@ -123,8 +125,6 @@ fn packs_inherit_exclude_disable() {
         ..Default::default()
     };
     let mods = pack_mods(&packs, &p);
-    assert!(nrc_dir("nrc-26.3-fabric", "26.3", LoaderKind::Fabric) && nrc_dir("NRC-26.3-fabric-Ab12", "26.3", LoaderKind::Fabric));
-    assert!(!nrc_dir("nrc-26.3-fabric-xyz9", "26.3", LoaderKind::Fabric) && !nrc_dir("nrc-1.21-fabric", "26.3", LoaderKind::Fabric));
     let ids: Vec<String> = mods
         .iter()
         .map(|m| match m {
@@ -185,7 +185,8 @@ fn scan_fixture_root() {
     assert!(ids.contains(&"modrinth:PINNED=PINV".to_string()), "version_overrides: pin");
     assert!(!ids.iter().any(|i| i.contains("XAERO") || i.contains("EXCL") || i.contains("OFF") || i.contains("NOPE") || i.contains("PACKMM")), "{ids:?}");
     let jars: Vec<&str> = plan.jars.iter().map(|j| j.name.as_str()).collect();
-    assert_eq!(jars, vec!["ok-mod.jar", "sub-mod.jar", "shared-mod.jar", "pack-mod.jar"]);
+    assert_eq!(jars, vec!["ok-mod.jar", "sub-mod.jar", "pack-mod.jar"], "Standard-Profil: nur mods/nrc-26.3-fabric, nicht der Ordner eines anderen Profils");
+    assert!(plan.unfit.contains(&"old-mod.jar".to_string()), "{:?}", plan.unfit);
     assert!(plan.skipped.iter().any(|s| s == "NRC Thing"));
     assert!(plan.skipped.iter().any(|s| s == "NRC Maven"));
     assert!(!plan.skipped.iter().any(|s| s == "Lokal"));
@@ -250,8 +251,9 @@ fn import_copies_sync_data() {
 fn missing_mods_for_reimport() {
     let plan = Plan {
         mods: vec![
-            PlanMod { source: Source::Modrinth, project_id: "HAVE".into(), version_id: None, enabled: true, name: "Have".into() },
-            PlanMod { source: Source::Curseforge, project_id: "238222".into(), version_id: Some("1".into()), enabled: true, name: "JEI".into() },
+            PlanMod { source: Source::Modrinth, project_id: "HAVE".into(), version_id: None, enabled: true, name: "Have".into(), cache: None },
+            PlanMod { source: Source::Curseforge, project_id: "238222".into(), version_id: Some("1".into()), enabled: true, name: "JEI".into(), cache: None },
+            PlanMod { source: Source::Modrinth, project_id: "GONE".into(), version_id: None, enabled: true, name: "Aus dem Cache".into(), cache: Some(PathBuf::from("mod_cache/gone-1.0.jar")) },
         ],
         jars: vec![
             PlanJar { path: PathBuf::from("a.jar"), name: "a.jar".into(), mod_id: Some("a".into()) },
@@ -265,7 +267,7 @@ fn missing_mods_for_reimport() {
         "mods/have.jar".into(),
         serde_json::from_value(serde_json::json!({"source": "modrinth", "project_id": "HAVE", "version_id": "v"})).unwrap(),
     );
-    let names: HashSet<String> = ["c.jar.disabled".trim_end_matches(".disabled").to_string()].into();
+    let names: HashSet<String> = ["c.jar.disabled".trim_end_matches(".disabled").to_string(), "gone-1.0.jar".to_string()].into();
     let ids: HashSet<String> = ["dup".to_string()].into();
     let m = mods::missing_of(&plan, &idx, &names, &ids);
     assert_eq!(m.names(), vec!["JEI".to_string(), "a.jar".to_string()]);

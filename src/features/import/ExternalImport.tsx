@@ -14,6 +14,7 @@ import { formatLoader, formatRelative, loaderNames } from "@/lib/format";
 import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
 import { useSimple } from "@/lib/mode";
 import type { ExtSettingKey, ExternalInstance, ExternalLauncher, LauncherKind } from "@/lib/types";
+import { ImportReportView } from "./ImportReportView";
 import { DEFAULT_KEYS, SETTING_KEYS, hasKey, hookLines, summary } from "./settingsFormat";
 
 // ------------------------------------------------------------------ Laufende Importe (überleben Schließen des Dialogs)
@@ -452,6 +453,7 @@ function JobRow({ job }: { job: Job | undefined }) {
       </div>
       {status === "running" && <Progress value={task?.progress ?? null} />}
       {status === "running" && task?.message && <div className="truncate text-[12px] text-dim">{task.message}</div>}
+      {status === "done" && job.instanceId && <ImportReportView instanceId={job.instanceId} fallback={task?.message ?? null} />}
       {status === "failed" && <div className="selectable break-words text-[12px] text-danger">{job.error}</div>}
     </div>
   );

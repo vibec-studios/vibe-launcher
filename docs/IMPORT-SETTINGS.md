@@ -37,7 +37,7 @@ Resource-/Shader-/Datapacks, Optionen, `servers.dat`, Screenshots und die Daten 
 | Ausnahme | Einträge | Warum |
 |---|---|---|
 | Laufzeitreste (`RUNTIME`) | `logs/`, `crash-reports/`, `debug/`, `cache/`, `.cache/`, `downloads/`, `natives/`, `webcache*/`, `usercache.json`, `usernamecache.json`, `realms_persistence.json`, `command_history.txt`, `.fabric/`, `.quilt/`, `.mixin.out/`, `hs_err_pid*.log`, `*.dat_old`, `*.tmp`, `Thumbs.db`, `desktop.ini`, `.DS_Store` | entstehen beim Spielen neu |
-| Vanilla-Launcher (`VANILLA_LAUNCHER`), falls ein ganzer `.minecraft` gewählt wird | `versions/`, `libraries/`, `assets/`, `runtime/`, `bin/`, `launcher_*.json`, `launcher_*log.txt`, `treatment_tags.json` | lädt Vibe selbst |
+| Vanilla-Launcher (`VANILLA_LAUNCHER`), falls ein ganzer `.minecraft` gewählt wird | `versions/`, `libraries/`, `assets/`, `runtime/`, `bin/`, `staging/`, `quickPlay/`, alle `launcher_*.json|txt|bin|log` (auch `*_microsoft_store`), `clientId*.txt`, `treatment_tags.json` | lädt Vibe selbst |
 | **Konten/Tokens** (`is_secret`, auf **jeder** Ebene, nur Namensprüfung – nie geöffnet) | `accounts.json`, `microsoft_accounts.json`, `launcher_accounts*`, `launcher_msa_credentials*`, `launcher_profiles*.json` | nie übernehmen |
 | Mods beim Nachimport | `mods/`, `custom_mods/` | laufen über die Content-Logik |
 
@@ -50,6 +50,9 @@ Je Launcher (`gamedata::launcher_skip`):
 | CurseForge | `Instances/<instanz>` | ganzer Instanzordner inkl. `mods/` und aller Zusatzordner | `minecraftinstance.json`, `.curseclient` |
 | ATLauncher | `instances/<instanz>` | ganzer Instanzordner inkl. `mods/`; `disabledmods/*.jar` → `mods/<name>.disabled` | `instance.json`, `instance.png`, `disabledmods/` (als Ordner), `jarmods/` |
 | NoRisk Client | Profilordner bzw. geteilter Gruppenordner, dazu Sync-Pack-Ordner | ganzer Spielordner samt verlinkter Sync-Pack-Ordner; Mods über Modrinth/CurseForge + passende lose JARs | `NoRiskClient/`, `optionsNRC.json`, `mods/`, `custom_mods/`, `backups/` |
+| GDLauncher (Carbon) | `<runtime>/instances/<x>/instance` (`<runtime>` = `gdlauncher_carbon/data` bzw. `runtime_path_override`) | ganzer Spielordner inkl. `mods/` | – (`instance.json`, `packinfo.json`, Logs liegen daneben) |
+| GDLauncher (Legacy) | `gdlauncher_next/instances/<x>` (bzw. `override.data`) | ganzer Instanzordner inkl. `mods/` | `config*.json`, `manifest.json`, `installing.lock`, `natives/`, `background.*` |
+| Offizieller Launcher | `.minecraft` (wird automatisch erkannt, wenn dort Mods, Welten, Packs oder `options.txt` liegen) | ganzer Spielordner; Version/Loader aus `versions/<id>/<id>.json` (zuletzt gestartete, passend zu den Mods) | siehe Vanilla-Launcher |
 | Ordner | `<ordner>/.minecraft`, sonst der Ordner | ganzer Spielordner inkl. `mods/` | – |
 
 Spieldaten außerhalb des Spielordners legen diese Launcher nicht ab (Prism-Icons sowie Modrinth-/NoRisk-Datenbanken
@@ -148,10 +151,22 @@ Spalte `settings` (JSON); ältere Versionen `profiles.json`. Aus `launcher_confi
 
 Mods: `profile_mods` mit `source_type` `modrinth` bzw. `curse_forge` (über Modrinth bzw. CurseForge; gesperrte
 CurseForge-Dateien landen in `missing.json` und werden im Download-Ordner erwartet), Mods des gewählten NoRisk-Packs
-(Modrinth), Maven-/eingebettete Mods werden ausgelassen. Lose JARs aus `mods/`, `custom_mods/`,
-`mods/nrc-<mc>-<loader>` und `mods/nrc-<mc>-<loader>-<xxxx>` (Mod-Ordner geteilter Profile) kommen mit, wenn sie zu
-Version/Loader passen und keine NoRisk-Mods sind; Dateien, die schon als Modrinth-/CurseForge-Mod der Profilliste
-bekannt sind, und JARs mit einer bereits installierten Mod-ID werden übersprungen.
+(Modrinth), Maven-/eingebettete Mods werden ausgelassen. `url`-Mods der Profilliste kommen als Datei aus
+`mod_cache`. Scheitert ein Download (Version gelöscht, kein CurseForge-Schlüssel, gesperrte CurseForge-Datei), wird die
+Datei aus `mod_cache` kopiert (Profil: `file_name`, Pack: `compatibility[mc][loader].filename` bzw.
+`<projectSlug>-<identifier>.jar`, Sync Pack: `sync_pack_mod_resolutions.filename`).
+Lose JARs aus `mods/`, `custom_mods/` und **genau dem eigenen** Mod-Ordner des Profils kommen mit, wenn sie zu
+Version/Loader passen und keine NoRisk-Mods sind: `mods/nrc-<mc>-<loader>`, bei eigenen Profilen mit gemeinsamem Ordner
+`mods/nrc-<mc>-<loader>-<xxxx>` (`xxxx` = erste und letzte zwei Zeichen der Profil-ID ohne Bindestriche; Ordner
+anderer Profile derselben Gruppe bleiben draußen). Quilt/Vanilla: nur `mods/`. Dateien, die schon als Mod der
+Profilliste bekannt sind, und JARs mit einer bereits installierten Mod-ID werden übersprungen; unpassende JARs stehen im
+Import-Bericht.
+
+Gemeinsamer Ordner (`use_shared_minecraft_folder`, nicht in den Gruppen SERVER/MODPACKS): Gruppe „NORISK CLIENT“ →
+`noriskclient/new|legacy`, andere Gruppen → `groups/<name>` mit `sanitize_filename` wie im NoRisk-Launcher (Kleinbuchstaben,
+verbotene Zeichen **entfernt**, Punkte/Leerzeichen am Ende weg). Mit `custom_game_directory` liegen Profile unter
+`<eigener Ordner>/profiles`, `mod_cache/` und `sync_packs/` direkt im eigenen Ordner, `app.db` bleibt in `meta/`.
+Standard-Profile, die nie geändert wurden, stehen nur in `norisk_versions.json` und werden von dort ergänzt.
 
 Sync Packs (Tabellen `sync_packs`, `sync_pack_targets`, `sync_pack_mods`, `sync_pack_mod_resolutions`,
 `profile_sync_packs`, `profile_sync_mod_exclusions`; Daten unter `meta/sync_packs/<pack>/master|mods` bzw.
@@ -199,7 +214,19 @@ Ebene, **Welten einzeln** (`saves/<welt>`, nur Ordner mit `level.dat`):
 Welten werden nie dateiweise gemischt. Kopiert wird als Aufgabe im Hintergrund, nur bei geschlossenem Spiel. Vorher:
 Snapshot („Vor Übernahme aus …“), sobald etwas überschrieben wird oder Snapshot-Bereiche (Configs, Packs, Optionen)
 betroffen sind; Welt-Backup vor dem Ersetzen einer Welt; andere ersetzte Dateien (z. B. in `xaero/`) werden nach
-`backups/reimport/<instanz>/<zeit>/` gesichert. Mods werden als Dateien nicht nachimportiert (NoRisk: siehe oben).
+`backups/reimport/<instanz>/<zeit>/` gesichert. Mods: NoRisk siehe oben; bei den anderen Launchern werden JARs aus
+`mods/` angeboten, die nach dem Import in der Quelle dazugekommen sind und in Vibe fehlen (Bereich `mods`).
+
+### Import-Bericht
+
+Jeder Import schreibt `instances/<id>/import-report.json` (`import_report`): installierte Mods, kopierte Mod-Dateien,
+Dateien aus dem Cache des alten Launchers, nicht verfügbare Mods (mit Grund), gesperrte CurseForge-Dateien,
+NoRisk-Mods, unpassende JARs und Sync Packs. Der Import-Dialog zeigt ihn nach dem Import je Instanz an.
+
+Die Kopie einer Launcher-Datenbank in `cache/tmp/` enthält keine Konten: `minecraft_users`, `minecraft_device_tokens`,
+`modrinth_users` (und `accounts`/`credentials`) werden in der Kopie sofort geleert (`secure_delete`). Modrinth App:
+Instanz-Einstellungen der neuen Datenbank stehen als JSONB in `instance_launch_overrides.overrides` und werden über
+`json()` gelesen.
 
 ### Hinweis
 
