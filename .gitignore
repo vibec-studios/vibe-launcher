@@ -15,3 +15,5 @@ src-tauri/gen/schemas
 .DS_Store
 *.log
 .claude/worktrees
+
+/agent/panel-dist/
