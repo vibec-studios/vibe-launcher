@@ -49,7 +49,7 @@ export function AgentCard() {
           </code>
         </Row>
       )}
-      <Row title={t("agent.version")} desc={update.data?.available ? t("agent.update_available", { v: update.data.latest }) : t("agent.up_to_date")}>
+      <Row title={t("agent.version")} desc={update.data?.available ? t("agent.update_available", { v: update.data.latest ?? "" }) : t("agent.up_to_date")}>
         <span className="font-mono text-[13px]">{info.version}</span>
         {update.data?.available && (
           <Button variant="primary" icon={<ArrowUpCircle size={15} />} loading={runUpdate.isPending} disabled={!!taskId} onClick={() => runUpdate.mutate()}>

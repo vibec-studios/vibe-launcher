@@ -28,9 +28,9 @@ export class MockAgent {
 
   constructor(readonly key: string, name: string, os: string) {
     const now = Date.now();
-    this.info = { id: `agt_${key}`, name, version: "0.1.0", api_version: 1, min_api_version: 1, os, arch: "x86_64", tls: true, fingerprint: "3f9a6c0e1b7d2a45c8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4c1", paired: true, gateway: { enabled: true, connected: true }, started_at: now - 5 * 86_400_000 };
-    this.settings = { name, port: 25580, tls: true, gateway_enabled: true, relay: { configured: true, source: "gateway", name: "Henny" } };
-    this.gatewayState = { enabled: true, connected: true, linked: true, vibe_user: { id: "vu_1", name: "Henny" }, last_error: null };
+    this.info = { id: `agt_${key}`, name, version: "0.1.0", api_version: 1, min_api_version: 1, os, hostname: `${key}-host`, arch: "x86_64", tls: true, fingerprint: "3f9a6c0e1b7d2a45c8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4c1", paired: true, gateway: { enabled: true, connected: true, linked: true }, started_at: now - 5 * 86_400_000 };
+    this.settings = { name, port: 25580, bind: "0.0.0.0", tls: true, data_dir: "/var/lib/vibe-agent", gateway_enabled: true, hosting: false, auto_java: true, curseforge_configured: false, relay: { configured: true, source: "gateway", name: "Henny" } };
+    this.gatewayState = { enabled: true, connected: true, linked: true, agent_id: `agt_${key}`, vibe_user: { id: "vu_1", name: "Henny" }, last_error: null };
     this.users = [
       { id: "usr_owner", name: "Henny", role: "owner", servers: ["*"], created_at: now - 30 * 86_400_000, vibe_user_id: "vu_1" },
       { id: "usr_mia", name: "Mia", role: "admin", servers: ["*"], created_at: now - 12 * 86_400_000, vibe_user_id: "vu_2" },

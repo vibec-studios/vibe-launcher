@@ -24,7 +24,7 @@ export class AgentApi {
   settings = () => this.r<T.AgentSettings>("GET", "/agent/settings");
   updateSettings = (patch: { name?: string; gateway_enabled?: boolean }) => this.r<T.AgentSettings>("PATCH", "/agent/settings", { body: patch });
   audit = (limit = 100) => this.r<T.AuditEntry[]>("GET", "/agent/audit", { query: { limit } });
-  update = () => this.r<{ current: string; latest: string; available: boolean; notes_url?: string }>("GET", "/agent/update");
+  update = () => this.r<T.AgentUpdate>("GET", "/agent/update");
   runUpdate = () => this.r<{ task_id: string }>("POST", "/agent/update");
   gateway = () => this.r<T.GatewayStatus>("GET", "/agent/gateway");
   gatewayLink = () => this.r<T.GatewayStatus & { code?: string; expires_at?: number }>("POST", "/agent/gateway/link");
@@ -90,10 +90,7 @@ export class AgentApi {
     this.r<T.ServerCreated>("POST", "/servers/import", { query: { format, name: opts.name, server: opts.server }, raw: file, onProgress });
 
   mcVersions = () => this.r<T.McVersion[]>("GET", "/catalog/minecraft");
-  loaderVersions = async (kind: T.LoaderKind, mc: string) => {
-    const list = await this.r<(string | { version: string; stable?: boolean })[]>("GET", `/catalog/loaders/${kind}`, { query: { mc } });
-    return list.map((v) => (typeof v === "string" ? v : v.version));
-  };
+  loaderVersions = (kind: T.LoaderKind, mc: string) => this.r<T.LoaderVersion[]>("GET", `/catalog/loaders/${kind}`, { query: { mc } });
   platformVersions = (kind: T.PlatformKind) => this.r<T.PlatformVersion[]>("GET", `/catalog/platforms/${kind}`);
 
   tunnel = (id: string) => this.r<T.TunnelStatus | null>("GET", `/servers/${enc(id)}/tunnel`);

@@ -38,7 +38,7 @@ export interface Server {
   created_at: number;
   last_started: number | null;
   source_instance: string | null;
-  relay_slot?: string | null;
+  relay_slot?: number;
   voice?: boolean;
   bedrock?: boolean;
 }
@@ -186,8 +186,11 @@ export interface Addon {
   authors: string[];
   description: string | null;
   icon: string | null;
+  sha1: string | null;
   source: AddonSource | null;
   project_id: string | null;
+  slug: string | null;
+  version_id: string | null;
   title: string | null;
   page_url: string | null;
 }
@@ -214,7 +217,7 @@ export interface AddonHit {
   downloads: number;
   updated: string | null;
   page_url: string;
-  compat?: AddonCompat | null;
+  compat: AddonCompat;
 }
 
 export interface AddonSearch {
@@ -226,7 +229,20 @@ export interface AddonSearch {
 export interface McVersion {
   id: string;
   type: string;
-  release_time: string | null;
+  release_time: string;
+}
+
+export interface LoaderVersion {
+  version: string;
+  stable: boolean;
+}
+
+export interface AgentUpdate {
+  current: string;
+  latest: string | null;
+  available: boolean;
+  self_update: boolean;
+  notes_url: string | null;
 }
 
 export interface PlatformVersion {
@@ -247,7 +263,8 @@ export interface AgentInfo {
   tls: boolean;
   fingerprint: string | null;
   paired: boolean;
-  gateway: { enabled: boolean; connected: boolean };
+  hostname: string | null;
+  gateway: { enabled: boolean; connected: boolean; linked: boolean };
   started_at: number;
 }
 
@@ -263,6 +280,7 @@ export interface User {
 export interface Me {
   user: User;
   permissions: Permission[];
+  via: "direct" | "gateway";
 }
 
 export interface PairResult {
@@ -305,8 +323,13 @@ export interface RelayIdentityInfo {
 export interface AgentSettings {
   name: string;
   port: number;
+  bind: string;
   tls: boolean;
+  data_dir: string;
   gateway_enabled: boolean;
+  hosting: boolean;
+  auto_java: boolean;
+  curseforge_configured: boolean;
   relay: RelayIdentityInfo;
 }
 
@@ -314,13 +337,15 @@ export interface GatewayStatus {
   enabled: boolean;
   connected: boolean;
   linked: boolean;
-  vibe_user: { id: string; name: string } | null;
+  agent_id: string | null;
+  vibe_user: { id: string; name: string | null } | null;
   last_error: string | null;
 }
 
 export interface Invite {
   code: string;
   expires_at: number;
+  role: Role;
 }
 
 export interface AuditEntry {

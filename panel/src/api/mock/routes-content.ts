@@ -1,4 +1,4 @@
-import type { AddonCompat, AddonSource, AddonTarget, FileEntry, LoaderKind, PlatformKind, Server } from "../types";
+import type { AddonCompat, AddonSource, AddonTarget, FileEntry, LoaderKind, LoaderVersion, PlatformKind, Server } from "../types";
 import type { MockAgent } from "./agent";
 import { fail, type MockRouter } from "./router";
 import { CATALOG, MC_VERSIONS, type CatalogEntry } from "./seed";
@@ -62,7 +62,7 @@ export function registerContentRoutes(r: MockRouter, a: MockAgent) {
     const pad = (n: number) => String(n).padStart(2, "0");
     const name = `world-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}.zip`;
     a.addAudit("Henny", "backup.create", st.server.name);
-    return { task_id: a.runTask(`Backup von ${st.server.name}`, "server_backup", st.server.id, () => st.backups.unshift({ name, world: "world", size: 188_000_000, created: Date.now() }), 2400) };
+    return { task_id: a.runTask(`Backup von ${st.server.name}`, "server", st.server.id, () => st.backups.unshift({ name, world: "world", size: 188_000_000, created: Date.now() }), 2400) };
   });
   r.on("DELETE", "/servers/:id/backups/:name", ({ params }) => {
     const st = a.get(params.id);
@@ -71,7 +71,7 @@ export function registerContentRoutes(r: MockRouter, a: MockAgent) {
   r.on("POST", "/servers/:id/backups/:name/restore", ({ params }) => {
     const st = a.get(params.id);
     if (st.status.state !== "stopped" && st.status.state !== "crashed") fail(409, "server_running", "Bitte den Server zuerst stoppen.");
-    return { task_id: a.runTask(`Backup ${params.name} wird wiederhergestellt`, "server_restore", st.server.id) };
+    return { task_id: a.runTask(`Backup ${params.name} wird wiederhergestellt`, "server", st.server.id) };
   });
   r.on("GET", "/servers/:id/backups/:name/download", ({ params }) => new Blob([`Mock-Backup ${params.name}`], { type: "application/zip" }));
 
@@ -125,6 +125,7 @@ export function registerContentRoutes(r: MockRouter, a: MockAgent) {
 
   r.on("GET", "/servers/:id/addons", ({ params }) => {
     const st = a.get(params.id);
+    if (!st.server.platform && st.server.loader.kind === "vanilla") fail(400, "invalid", "Ungültige Eingabe: Vanilla-Server haben keine Plugins oder Mods.");
     return { target: targetOf(st.server), items: st.addons };
   });
   r.on("GET", "/servers/:id/addons/search", async ({ params, query }) => {
@@ -201,25 +202,28 @@ export function registerContentRoutes(r: MockRouter, a: MockAgent) {
     if (query.server) {
       const st = a.get(query.server);
       if (st.status.state !== "stopped" && st.status.state !== "crashed") fail(409, "server_running", "Bitte den Server zuerst stoppen.");
-      return { server: st.server, task_id: a.runTask(`Modpack wird auf ${st.server.name} übertragen`, "server_import", st.server.id, undefined, 4000) };
+      return { server: st.server, task_id: a.runTask(`Modpack wird auf ${st.server.name} übertragen`, "server", st.server.id, undefined, 4000) };
     }
     const id = a.nextId("srv");
     const name = query.name?.trim() || (raw instanceof File ? raw.name.replace(/\.(mrpack|zip)$/i, "") : "Modpack-Server");
-    const server: Server = { id, name, icon: null, accent: null, mc_version: "1.21.1", loader: { kind: "neoforge", version: "21.1.77" }, platform: null, memory_mb: 6144, java_path: null, jvm_args: null, port: 25565 + a.servers.size, auto_start: false, auto_restart: true, connection: "relay", eula: false, install_state: "installing", created_at: Date.now(), last_started: null, source_instance: null, relay_slot: null };
+    const server: Server = { id, name, icon: null, accent: null, mc_version: "1.21.1", loader: { kind: "neoforge", version: "21.1.77" }, platform: null, memory_mb: 6144, java_path: null, jvm_args: null, port: 25565 + a.servers.size, auto_start: false, auto_restart: true, connection: "local", eula: false, install_state: "not_installed", created_at: Date.now(), last_started: null, source_instance: null, relay_slot: a.servers.size + 1 };
     const st = a.createServerFrom(server, `${name} · Modpack`);
     st.addons = ["create-6.0.4.jar", "jei-19.21.jar", "ferritecore-7.1.1.jar"].map((f) => makeAddon(f, f.split("-")[0], "1.21.1", f.split("-")[0], "modrinth", "Aus dem Modpack"));
-    const task_id = a.runTask(`Modpack „${name}“ wird eingerichtet`, "server_import", id, () => ((st.server.install_state = "installed"), a.changed(st)), 4500);
+    const task_id = a.runTask(`Modpack „${name}“ wird eingerichtet`, "server", id, () => ((st.server.install_state = "installed"), a.changed(st)), 4500);
     a.changed(st);
     return { server, task_id };
   });
 
-  r.on("GET", "/catalog/minecraft", () => MC_VERSIONS.map((id) => ({ id, type: "release", release_time: null })));
-  r.on("GET", "/catalog/loaders/:kind", ({ params }) => {
+  r.on("GET", "/catalog/minecraft", () => MC_VERSIONS.map((id, i) => ({ id, type: "release", release_time: new Date(Date.now() - (i + 1) * 60 * 86_400_000).toISOString() })));
+  r.on("GET", "/catalog/loaders/:kind", ({ params, query }) => {
     const k = params.kind as LoaderKind;
-    if (k === "fabric") return ["0.16.10", "0.16.9", "0.15.11"];
-    if (k === "quilt") return ["0.27.1", "0.26.4"];
-    if (k === "neoforge") return ["21.1.77", "21.1.65"];
-    if (k === "forge") return ["52.0.40", "51.0.33"];
+    if (!["vanilla", "fabric", "quilt", "forge", "neoforge"].includes(k)) fail(400, "invalid", `Unbekannter Loader: ${k}`);
+    if (!query.mc?.trim()) fail(400, "invalid", "Parameter mc fehlt.");
+    const v = (version: string, stable = true): LoaderVersion => ({ version, stable });
+    if (k === "fabric") return [v("0.16.10"), v("0.16.9"), v("0.15.11")];
+    if (k === "quilt") return [v("0.27.2-beta.1", false), v("0.27.1"), v("0.26.4")];
+    if (k === "neoforge") return [v("21.1.80-beta", false), v("21.1.77"), v("21.1.65")];
+    if (k === "forge") return [v("52.0.40"), v("51.0.33")];
     return [];
   });
   r.on("GET", "/catalog/platforms/:kind", ({ params }) => {
