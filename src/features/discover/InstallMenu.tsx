@@ -199,7 +199,7 @@ function InstancePicker({ project, size, wide }: { project: P; size: "sm" | "md"
           sideOffset={6}
           collisionPadding={8}
           onClick={stop}
-          className="z-[60] w-[300px] rounded-card bg-overlay p-1 shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
+          className="z-[60] flex max-h-[var(--radix-popover-content-available-height)] w-[300px] flex-col rounded-card bg-overlay p-1 shadow-e2 outline-none data-[state=open]:animate-[pop-in_.12s_var(--ease-snap)]"
         >
           {open && <PickerList project={project} close={() => setOpen(false)} />}
         </Popover.Content>
@@ -231,7 +231,7 @@ function PickerList({ project, close }: { project: P; close: () => void }) {
   const installedIn = (idx: number) => !!lists[idx]?.data?.some((c) => c.project_id === project.id);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-0 flex-col">
       {project.manual_download && (
         <div className="mx-1 mb-1 mt-1 flex gap-2 rounded-ctl bg-warn/[.08] px-2.5 py-2 text-[12px] leading-snug text-muted">
           <ManualBadge iconOnly className="mt-px" />
@@ -259,7 +259,7 @@ function PickerList({ project, close }: { project: P; close: () => void }) {
           </Button>
         </div>
       ) : (
-        <div className="scroll max-h-[300px]">
+        <div className="scroll max-h-[min(300px,35vh)] min-h-[48px] shrink">
           {list.map(({ i, c }, idx) => (
             <PickerRow key={i.id} inst={i} project={project} ok={c.ok} reason={c.ok ? null : c.reason} installed={installedIn(idx)} checking={!!kind && lists[idx]?.isPending} close={close} />
           ))}
@@ -271,7 +271,7 @@ function PickerList({ project, close }: { project: P; close: () => void }) {
           close();
           openInstall({ project });
         }}
-        className="flex h-8 items-center gap-2.5 rounded-ctl px-2.5 text-left text-[13px] text-muted outline-none transition-colors hover:bg-white/[.07] hover:text-text"
+        className="flex h-8 shrink-0 items-center gap-2.5 rounded-ctl px-2.5 text-left text-[13px] text-muted outline-none transition-colors hover:bg-white/[.07] hover:text-text"
       >
         <ListFilter size={14} />
         {t("discover.install_choose")}

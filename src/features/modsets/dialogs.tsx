@@ -183,7 +183,7 @@ function CreateSetDialog({ onClose }: { onClose: () => void }) {
       open
       onOpenChange={(o) => !o && onClose()}
       title={t("sets.create_title")}
-      size="sm"
+      size="md"
       footer={
         <>
           <Button variant="subtle" onClick={onClose}>
@@ -266,7 +266,8 @@ function ImportSetDialog({ onClose }: { onClose: () => void }) {
       onOpenChange={(o) => !o && onClose()}
       title={t("import.title")}
       description={result ? undefined : t("import.text")}
-      size="md"
+      size="lg"
+      className="[&_.vl-dialog-foot]:flex-wrap"
       footer={
         result ? (
           <>
@@ -282,9 +283,6 @@ function ImportSetDialog({ onClose }: { onClose: () => void }) {
           </>
         ) : (
           <>
-            <Button variant="subtle" icon={<FileUp size={14} />} className="mr-auto" onClick={() => void pickFile()}>
-              {t("import.file")}
-            </Button>
             <Button variant="subtle" onClick={onClose}>
               {t("common.cancel")}
             </Button>
@@ -305,15 +303,26 @@ function ImportSetDialog({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       ) : (
-        <Textarea
-          autoFocus
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={`${t("import.placeholder")}\n\n${t("paste.placeholder")}`}
-          rows={8}
-          spellCheck={false}
-          className="font-mono text-[12.5px]"
-        />
+        <div className="flex flex-col gap-4">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void pickFile()}
+            className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-left text-[15px] font-semibold text-text hover:bg-surface2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+          >
+            <FileUp size={20} className="shrink-0 text-accent" /> {t("import.file")}
+          </button>
+          <Field label={t("import.paste_label")}>
+            <Textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={`${t("import.placeholder")}\n\n${t("paste.placeholder")}`}
+              rows={6}
+              spellCheck={false}
+              className="text-[14px]"
+            />
+          </Field>
+        </div>
       )}
     </Dialog>
   );
@@ -449,7 +458,7 @@ function FromInstanceDialog({ instanceId: initial, targetSetId, onClose }: { ins
   };
 
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()} title={initial ? t("frominst.title") : t("frominst.title_pick")} description={t("frominst.text")} size="md">
+    <Dialog open onOpenChange={(o) => !o && onClose()} title={initial ? t("frominst.title") : t("frominst.title_pick")} description={t("frominst.text")} size="lg">
       <div className="flex flex-col gap-3">
         {!initial && (
           <Field label={t("frominst.instance")}>

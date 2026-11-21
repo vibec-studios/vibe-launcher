@@ -68,14 +68,15 @@ function InstallDialog({ target, open, onOpenChange }: { target: InstallTarget; 
       open={open}
       onOpenChange={onOpenChange}
       title={title}
-      size="md"
+      size="lg"
+      className="[&_.vl-dialog-foot]:flex-wrap"
       footer={<Footer phase={phase} setPhase={setPhase} isPack={isPack} onClose={() => onOpenChange(false)} />}
     >
-      <div className="flex items-center gap-3">
-        <ProjectIcon src={project.icon_url} size={40} eager />
+      <div className="flex flex-wrap items-center gap-4 rounded-card border border-line bg-surface p-4">
+        <ProjectIcon src={project.icon_url} size={52} eager />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14.5px] font-semibold text-text">{project.title}</div>
-          <div className="truncate text-meta text-dim">{t("discover.by", { author: project.author })}</div>
+          <div className="break-words text-[18px] font-semibold text-text">{project.title}</div>
+          <div className="break-words text-[14px] text-muted">{t("discover.by", { author: project.author })}</div>
         </div>
         <Tag>{t(`discover.type.${project.project_type}`)}</Tag>
       </div>
@@ -88,11 +89,11 @@ function InstallDialog({ target, open, onOpenChange }: { target: InstallTarget; 
       {phase.k === "running" && <Running taskId={phase.taskId} isPack={isPack} onDone={(iid) => (isPack ? onOpenChange(false) : setPhase({ k: "done", instanceId: iid }))} onFail={(m) => setPhase({ k: "error", message: m })} />}
       {phase.k === "done" && <DoneNote name={project.title} manual={!!project.manual_download && !isPack} />}
       {phase.k === "error" && (
-        <div className="mt-5 flex items-start gap-3 rounded-card bg-danger/[.08] px-4 py-3 animate-fade-in">
+        <div role="alert" className="mt-5 flex items-start gap-3 rounded-card bg-danger/[.08] px-4 py-3 animate-fade-in">
           <AlertTriangle size={18} className="mt-0.5 shrink-0 text-danger" />
           <div className="min-w-0">
-            <div className="text-[13px] font-semibold text-text">{t("install.error_title")}</div>
-            <div className="selectable mt-1 break-words text-[12.5px] text-muted">{phase.message}</div>
+            <div className="text-[16px] font-semibold text-text">{t("install.error_title")}</div>
+            <div className="selectable mt-1 break-words text-[14px] text-muted">{phase.message}</div>
           </div>
         </div>
       )}
@@ -333,8 +334,8 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
         </div>
       )}
       <div className="flex flex-col gap-2">
-        <span className="label">{t("install.instance")}</span>
-        <div className="scroll -mx-2 flex max-h-[232px] flex-col gap-px px-2" role="radiogroup" aria-label={t("install.instance")}>
+        <h2 className="text-[16px] font-semibold text-text">{t("install.instance")}</h2>
+        <div className="scroll flex max-h-[264px] flex-col gap-2" role="radiogroup" aria-label={t("install.instance")}>
           {sorted.map(({ inst, compat }) => {
             const on = inst.id === instanceId;
             return (
@@ -353,20 +354,20 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
                 }}
                 tabIndex={on ? 0 : -1}
                 className={cn(
-                  "flex h-[46px] shrink-0 items-center gap-3 rounded-ctl px-2.5 text-left outline-none transition-colors duration-100 focus-visible:bg-white/[.06]",
-                  on ? "bg-white/[.07]" : "hover:bg-white/[.04]",
+                  "flex min-h-[58px] shrink-0 flex-wrap items-center gap-3 rounded-card border px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
+                  on ? "border-accent/60 bg-accent/[.08]" : "border-line bg-surface hover:bg-surface2",
                 )}
               >
-                <InstanceBadge instance={inst} size={28} />
+                <InstanceBadge instance={inst} size={34} />
                 <div className="min-w-0 flex-1">
-                  <div className={cn("truncate text-[13.5px] font-medium", compat.ok ? "text-text" : "text-muted")}>{inst.name}</div>
-                  <div className="truncate font-mono text-[11px] text-dim">
+                  <div className="break-words text-[15px] font-semibold text-text">{inst.name}</div>
+                  <div className="break-words text-[13px] text-muted">
                     {inst.mc_version} · {formatLoader(inst.loader)}
                   </div>
                 </div>
                 {!compat.ok && (
-                  <span className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-warn">
-                    <AlertTriangle size={12} />
+                  <span className="flex min-w-0 items-center gap-1.5 text-[13px] font-medium text-warn">
+                    <AlertTriangle size={14} className="shrink-0" />
                     {reasonText(t, compat, inst)}
                   </span>
                 )}
@@ -377,10 +378,10 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-3">
-          <span className="label">{t("install.version")}</span>
-          <label className="flex items-center gap-2 text-[12px] text-muted">
+      <div className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[16px] font-semibold text-text">{t("install.version")}</h2>
+          <label className="flex items-center gap-2 text-[14px] text-muted">
             {t("install.all_versions")}
             <Switch checked={allVersions} onChange={setAllVersions} label={t("install.all_versions")} />
           </label>
@@ -388,15 +389,15 @@ function ContentSelect({ target, onStart, onError }: { target: InstallTarget; on
         {versionsQ.isPending ? (
           <Skeleton className="h-9 rounded-ctl" />
         ) : versionsQ.isError ? (
-          <div className="flex h-10 items-center gap-2 text-[12.5px] text-danger">
-            <AlertTriangle size={14} />
-            <span className="truncate">{errorMessage(versionsQ.error)}</span>
+          <div role="alert" className="flex items-center gap-2 text-[14px] text-danger">
+            <AlertTriangle size={14} className="shrink-0" />
+            <span className="min-w-0 break-words">{errorMessage(versionsQ.error)}</span>
             <button className="ml-auto text-[13px] font-medium text-muted hover:text-text" onClick={() => versionsQ.refetch()}>
               {t("common.retry")}
             </button>
           </div>
         ) : versions.length === 0 ? (
-          <div className="flex min-h-10 items-center rounded-ctl bg-warn/[.08] px-3 py-2 text-[12.5px] text-warn">{t("install.no_versions")}</div>
+          <div className="flex min-h-10 items-center rounded-ctl bg-warn/[.08] px-3 py-2 text-[14px] text-warn">{t("install.no_versions")}</div>
         ) : (
           <Select value={versionId} onChange={setVersionId} options={versionOptions(t, versions)} />
         )}
@@ -439,8 +440,8 @@ function PackSelect({ target, onStart, onError, isOpen }: { target: InstallTarge
 
   return (
     <div className="mt-5 flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <span className="label">{t("install.version")}</span>
+      <div className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4">
+        <h2 className="text-[16px] font-semibold text-text">{t("install.version")}</h2>
         {versionsQ.isPending ? (
           <Skeleton className="h-9 rounded-ctl" />
         ) : versionsQ.isError ? (
@@ -451,6 +452,8 @@ function PackSelect({ target, onStart, onError, isOpen }: { target: InstallTarge
               {t("common.retry")}
             </button>
           </div>
+        ) : versions.length === 0 ? (
+          <p className="text-[14px] text-warn">{t("install.no_versions")}</p>
         ) : (
           <Select value={versionId} onChange={setVersionId} options={versionOptions(t, versions)} />
         )}
@@ -458,11 +461,11 @@ function PackSelect({ target, onStart, onError, isOpen }: { target: InstallTarge
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-card bg-white/[.04] px-3.5 py-2.5">
           <div className="label">{t("discover.filter.version")}</div>
-          <div className="mt-0.5 truncate font-mono text-[13px] text-text">{v ? v.game_versions.join(", ") || "–" : "–"}</div>
+          <div className="mt-0.5 break-words text-[14px] text-text">{v ? v.game_versions.join(", ") || "–" : "–"}</div>
         </div>
         <div className="rounded-card bg-white/[.04] px-3.5 py-2.5">
           <div className="label">{t("discover.filter.loader")}</div>
-          <div className="mt-0.5 truncate font-mono text-[13px] capitalize text-text">{v ? v.loaders.join(", ") || "–" : "–"}</div>
+          <div className="mt-0.5 break-words text-[14px] capitalize text-text">{v ? v.loaders.join(", ") || "–" : "–"}</div>
         </div>
       </div>
       <p className="text-[12.5px] text-muted">{t("install.pack_hint")}</p>

@@ -55,12 +55,12 @@ export function SimpleNewGameDialog({ open, goal: initialGoal, onOpenChange }: {
           aria-describedby={undefined}
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden",
-            "h-[min(640px,calc(100%-64px))] w-[820px] max-w-[calc(100%-48px)]",
+            "h-[min(660px,calc(100%-48px))] w-[900px] max-w-[calc(100%-48px)]",
             "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
           style={{ "--accent": "var(--ui-accent)", "--on-accent": "var(--ui-on-accent)" } as CSSProperties}
         >
-          <header className="flex h-[64px] shrink-0 items-center gap-3 pl-6 pr-4">
+          <header className="flex min-h-[72px] shrink-0 items-center gap-3 px-6 py-3">
             {step !== "goal" && !busy && (
               <button
                 aria-label={t("common.back")}
@@ -72,11 +72,11 @@ export function SimpleNewGameDialog({ open, goal: initialGoal, onOpenChange }: {
             )}
             <div className="min-w-0 flex-1">
               <D.Title className="truncate text-title text-text">{step === "goal" ? t("wiz.title") : t(`goal.${goal}`)}</D.Title>
-              <p className="truncate text-[12.5px] text-muted">{step === "goal" ? t("wiz.lead") : step === "packs" ? t("wiz.packs.lead") : t("wiz.details.lead")}</p>
+              <p className="break-words text-[14px] text-muted">{step === "goal" ? t("wiz.lead") : step === "packs" ? t("wiz.packs.lead") : t("wiz.details.lead")}</p>
             </div>
             <Dots step={step} withPacks={goal === "mods"} />
             {!busy && (
-              <D.Close aria-label={t("common.close")} className="grid h-8 w-8 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text">
+              <D.Close aria-label={t("common.close")} className="grid h-8 w-8 shrink-0 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text">
                 <X size={18} />
               </D.Close>
             )}
@@ -121,7 +121,7 @@ function Dots({ step, withPacks }: { step: Step; withPacks: boolean }) {
 }
 
 function Footer({ children }: { children: React.ReactNode }) {
-  return <footer className="flex shrink-0 items-center gap-3 border-t border-line px-6 py-4">{children}</footer>;
+  return <footer className="flex shrink-0 flex-wrap items-center gap-3 border-t border-line px-6 py-3">{children}</footer>;
 }
 
 /** „Erweitert“: in den vollen Dialog mit allen Versionen und Mod-Unterbauten. */
@@ -294,7 +294,7 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
   return (
     <>
       <div
-        className="scroll flex min-h-0 flex-1 gap-8 px-6 pb-4 pt-2"
+        className="scroll grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] items-start gap-6 px-6 pb-4 pt-2 max-[650px]:grid-cols-1"
         onKeyDown={(e) => {
           if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
             e.preventDefault();
@@ -302,7 +302,7 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
           }
         }}
       >
-        <div className="flex w-[300px] shrink-0 flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           {/* Vorschau, wie das Spiel in der Liste aussieht (statt eines losen Ziel-Symbols ohne Bedeutung) */}
           <div className="flex items-center gap-4 rounded-card bg-surface p-3">
             <button

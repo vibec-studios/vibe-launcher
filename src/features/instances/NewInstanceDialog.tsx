@@ -1,19 +1,15 @@
-// „Neue Instanz“: drei Wege oben als Tabs – Eigene (Loader + Version wählen), Modpack (fertige Pakete), Importieren.
-// Eigene: links Identität (Icon mit Farbe, Name, Gruppe) und Loader als Karten, rechts die durchsuchbare
-// Minecraft-Versionsliste mit Filter und markierter neuester Version. Unten fasst eine Zeile zusammen, was angelegt
-// wird, daneben die eine Hauptaktion. Passt ohne Scrollen in 1024×700.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import * as Popover from "@radix-ui/react-popover";
 import { Term } from "@/features/help/glossary/Term";
-import { Check, ChevronDown, ChevronRight, Download, FolderInput, HardDriveDownload, ImageIcon, PackageOpen } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, Download, ImageIcon } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGameVersions, useInstances, useSystemInfo } from "@/lib/queries";
 import type { LoaderKind, McVersion, ProjectHit } from "@/lib/types";
 import { accentPalette, formatCount, loaderNames } from "@/lib/format";
-import { Button, DropdownItem, DropdownMenu, ErrorState, Input, SearchInput, Segmented, Select, Skeleton, cn, toast } from "@/components/ui";
+import { Button, DropdownItem, DropdownMenu, ErrorState, Field, Input, SearchInput, Segmented, Select, Skeleton, cn, toast } from "@/components/ui";
 import * as D from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
@@ -23,6 +19,7 @@ import { LoaderIcon } from "@/components/instance/LoaderIcon";
 import { LOADERS, pickLoaderVersion, useLoaderGameVersions, useLoaderVersions, type VersionValue } from "@/components/instance/VersionPicker";
 import { installInstance, pickImage, restoreNewInstanceFocus } from "@/components/instance/actions";
 import { startModpackInstall } from "@/components/content/install";
+import { ImportSources } from "@/features/import/ImportSources";
 import { openImport } from "@/features/import/importStore";
 import { PackIcon } from "@/features/home/Discover";
 import { usePopularModpacks } from "@/features/home/data";
@@ -202,16 +199,16 @@ function LoaderCards({ value, onChange }: { value: LoaderKind; onChange: (l: Loa
             aria-checked={on}
             onClick={() => onChange(l)}
             className={cn(
-              "flex h-[50px] items-center gap-3 rounded-card px-3 text-left transition-colors duration-100",
+              "flex min-h-[53px] items-center gap-3 rounded-card px-3 py-2 text-left transition-colors duration-100",
               on ? "bg-surface3 shadow-[inset_0_0_0_1px_var(--accent)]" : "bg-surface2 hover:bg-surface3",
             )}
           >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-ctl bg-black/30">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-ctl bg-surface">
               <LoaderIcon loader={l} size={22} />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[13.5px] font-semibold leading-tight text-text">{loaderNames[l]}</span>
-              <span className="block truncate text-[12px] leading-tight text-muted">{t(`newinst.loader.${l}`)}</span>
+              <span className="block text-[13px] leading-snug text-muted">{t(`newinst.loader.${l}`)}</span>
             </span>
             {on && <Check size={16} strokeWidth={2.5} className="shrink-0 text-accent" />}
           </button>
@@ -281,7 +278,7 @@ function VersionList({ loader, value, onChange }: { loader: LoaderKind; value: s
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <SearchInput value={query} onChange={setQuery} placeholder={t("newinst.version_search")} className="min-w-0 flex-1" />
         <div className="inline-flex shrink-0 gap-0.5 rounded-ctl bg-field p-0.5" role="radiogroup" aria-label={t("newinst.version")}>
           {filters.map((f) => (
@@ -360,6 +357,7 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
   const { data: instances = [] } = useInstances();
   const groups = useMemo(() => [...new Set(instances.map((i) => i.group).filter((g): g is string => !!g))].sort(), [instances]);
 
+  const [step, setStep] = useState<"game" | "details">("game");
   const [ver, setVer] = useState<VersionValue>({ mc: null, loader: "fabric", loaderVersion: null });
   const [name, setName] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
@@ -390,7 +388,8 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
   }, [lv.data, ver.loader, ver.mc, ver.loaderVersion]);
 
   const needsLv = ver.loader !== "vanilla";
-  const valid = !!ver.mc && name.trim().length > 0 && (!needsLv || !!ver.loaderVersion);
+  const gameReady = !!ver.mc && (!needsLv || !!ver.loaderVersion);
+  const valid = gameReady && name.trim().length > 0;
 
   const submit = async () => {
     if (!valid || busy) return;
@@ -423,21 +422,47 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
 
   return (
     <>
-      {/* Kein <form>: Knöpfe ohne type wären sonst Submit-Knöpfe. Enter in Textfeldern erstellt. */}
-      <div
-        className="flex min-h-0 flex-1 gap-6 px-6 pb-4 pt-5"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && e.target instanceof HTMLInputElement && e.target.type !== "search") {
-            e.preventDefault();
-            submit();
-          }
-        }}
-      >
-        {/* Links: Identität + Loader */}
-        <div className="scroll -m-1 flex w-[308px] shrink-0 flex-col gap-4 p-1">
-          <div className="flex shrink-0 items-start gap-3">
+      {step === "game" ? (
+        <div className="scroll min-h-0 flex-1 px-6 py-4">
+          <h2 className="text-[17px] font-semibold text-text">{t("newinst.step.game")}</h2>
+          <p className="mt-1 text-[14px] text-muted">{t("newinst.step.game_desc")}</p>
+          <div className="mt-4 grid grid-cols-[minmax(250px,0.8fr)_minmax(0,1.2fr)] gap-5 max-[680px]:grid-cols-1">
+            <section className="min-w-0">
+              <h3 className="mb-2 text-[14px] font-semibold text-text"><Term id="loader">{t("newinst.loader")}</Term></h3>
+              <LoaderCards value={ver.loader} onChange={(loader) => loader !== ver.loader && setVer({ ...ver, loader, loaderVersion: null })} />
+            </section>
+            <section className="flex min-w-0 flex-col gap-2">
+              <h3 className="text-[14px] font-semibold text-text">{t("newinst.version")}</h3>
+              <div className="flex h-[230px] flex-col">
+                <VersionList loader={ver.loader} value={ver.mc} onChange={(mc) => mc !== ver.mc && setVer({ ...ver, mc, loaderVersion: null })} />
+              </div>
+              {needsLv && (
+                <details className="rounded-card border border-line bg-surface">
+                  <summary className="cursor-pointer px-3 py-2 text-[14px] text-muted">{t("newinst.loader_version", { loader: loaderNames[ver.loader] })}</summary>
+                  <div className="px-3 pb-3">
+                    {ver.mc && lv.isLoading ? <Skeleton className="h-8" /> : (
+                      <Select
+                        value={ver.loaderVersion}
+                        onChange={(x) => setVer({ ...ver, loaderVersion: x })}
+                        options={lvOptions}
+                        placeholder={!ver.mc ? t("newinst.pick_version_first") : lvOptions.length ? t("newinst.loader_version_pick") : t("newinst.loader_version_none")}
+                        disabled={!lvOptions.length}
+                      />
+                    )}
+                  </div>
+                </details>
+              )}
+              {needsLv && ver.mc && lv.isSuccess && !lvOptions.length && <p role="status" className="text-[14px] text-warn">{t("newinst.loader_version_none")}</p>}
+              {needsLv && lv.isError && <ErrorState error={lv.error} onRetry={() => lv.refetch()} />}
+            </section>
+          </div>
+        </div>
+      ) : (
+        <div className="scroll flex min-h-0 flex-1 flex-col gap-4 px-6 py-4">
+          <h2 className="text-[17px] font-semibold text-text">{t("newinst.step.details")}</h2>
+          <div className="flex min-w-0 items-center gap-4 rounded-card border border-line bg-surface p-4">
             <IconPicker icon={icon} accent={accent} onIcon={setIcon} onAccent={setAccent} />
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <Field label={t("newinst.name")} className="min-w-0 flex-1">
               <Input
                 value={name}
                 onChange={(e) => {
@@ -446,111 +471,81 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
                 }}
                 placeholder={t("newinst.name_placeholder")}
                 maxLength={64}
-                aria-label={t("newinst.name")}
                 autoFocus
-                className="font-semibold"
+                disabled={busy}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void submit();
+                }}
               />
-              <GroupField value={group} onChange={setGroup} groups={groups} />
-            </div>
+            </Field>
           </div>
-          <div className="flex shrink-0 flex-col gap-1.5">
-            <span className="label">
-              <Term id="loader">{t("newinst.loader")}</Term>
-            </span>
-            <LoaderCards value={ver.loader} onChange={(loader) => loader !== ver.loader && setVer({ ...ver, loader, loaderVersion: null })} />
-          </div>
-          {ver.loader !== "vanilla" && (
-            <div className="flex shrink-0 flex-col gap-1.5">
-              <span className="label">{t("cp.new.label")}</span>
-              <ClientPackPicker mc={ver.mc} loader={ver.loader} value={pack} onChange={setPack} />
-            </div>
-          )}
-
-        </div>
-
-        {/* Rechts: Minecraft-Version (+ Loader-Version) */}
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <span className="label">{t("newinst.version")}</span>
-          <VersionList loader={ver.loader} value={ver.mc} onChange={(mc) => mc !== ver.mc && setVer({ ...ver, mc, loaderVersion: null })} />
+          <Field label={t("newinst.group")}>
+            <GroupField value={group} onChange={setGroup} groups={groups} />
+          </Field>
           {needsLv && (
-            <div className="mt-2 flex items-center gap-3">
-              <span className="label shrink-0">{t("newinst.loader_version", { loader: loaderNames[ver.loader] })}</span>
-              <div className="min-w-0 flex-1">
-                {ver.mc && lv.isLoading ? (
-                  <Skeleton className="h-8" />
-                ) : (
-                  <Select
-                    size="sm"
-                    value={ver.loaderVersion}
-                    onChange={(x) => setVer({ ...ver, loaderVersion: x })}
-                    options={lvOptions}
-                    placeholder={
-                      !ver.mc ? t("newinst.pick_version_first") : lvOptions.length ? t("newinst.loader_version_pick") : t("newinst.loader_version_none")
-                    }
-                    disabled={!lvOptions.length}
-                  />
-                )}
-              </div>
+            <Field label={t("cp.new.label")}>
+              <ClientPackPicker mc={ver.mc} loader={ver.loader} value={pack} onChange={setPack} />
+            </Field>
+          )}
+          <Field label={t("newinst.sets")}>
+            <SetPicker mc={ver.mc} loader={ver.loader} value={setIds} onChange={setSetIds} />
+          </Field>
+        </div>
+      )}
+      <footer className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-t border-line px-6 py-3">
+        <div className="min-w-0 flex-1">
+          {ver.mc && (
+            <div className="text-[14px] font-semibold text-text">
+              {needsLv ? t("newinst.summary_loader", { mc: ver.mc, loader: loaderNames[ver.loader], v: ver.loaderVersion ?? "?" }) : t("newinst.summary", { mc: ver.mc })}
             </div>
           )}
-          {/* Mit Mod-Sets starten: nach dem Anlegen alles Passende aus den gewählten Sets installieren */}
-          <div className="mt-2 flex items-start gap-3">
-            <span className="label shrink-0 pt-2">{t("newinst.sets")}</span>
-            <div className="min-w-0 flex-1">
-              <SetPicker mc={ver.mc} loader={ver.loader} value={setIds} onChange={setSetIds} />
+          {step === "details" && (
+            <div className="text-[13px] text-muted">
+              <p>{t("newinst.after")}</p>
+              {pack && needsLv && <p>{t("cp.new.after", { name: t(`cp.${pack}.name`) })}</p>}
+              {setIds.length > 0 && <p>{t("newinst.sets_after", { n: setCheck.data?.available ?? setTotal })}</p>}
             </div>
-          </div>
+          )}
         </div>
-      </div>
-
-      <footer className="flex items-center gap-3 border-t border-line px-6 py-4">
-        <div className="min-w-0 flex-1 leading-tight">
-          <div className="truncate text-[13px] font-semibold text-text">
-            {ver.mc
-              ? needsLv
-                ? t("newinst.summary_loader", { mc: ver.mc, loader: loaderNames[ver.loader], v: ver.loaderVersion ?? "…" })
-                : t("newinst.summary", { mc: ver.mc })
-              : "…"}
-          </div>
-          <div className="truncate text-[12px] text-muted">
-            {pack && needsLv
-              ? t("cp.new.after", { name: t(`cp.${pack}.name`) })
-              : setIds.length
-                ? t("newinst.sets_after", { n: setCheck.data?.available ?? setTotal })
-                : t("newinst.after")}
-          </div>
-        </div>
-        <Button variant="subtle" onClick={onDone} disabled={busy}>
-          {t("common.cancel")}
-        </Button>
-        <Button variant="primary" onClick={submit} disabled={!valid} loading={busy} className="min-w-[140px]">
-          {t("newinst.create")}
-        </Button>
+        {step === "game" ? (
+          <>
+            <Button variant="subtle" onClick={onDone}>{t("common.cancel")}</Button>
+            <Button variant="primary" disabled={!gameReady} onClick={() => setStep("details")} icon={<ArrowRight size={16} />}>
+              {t("newinst.next")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="subtle" onClick={() => setStep("game")} disabled={busy} icon={<ArrowLeft size={16} />}>{t("common.back")}</Button>
+            <Button variant="primary" onClick={submit} disabled={!valid} loading={busy}>
+              {t("newinst.create")}
+            </Button>
+          </>
+        )}
       </footer>
     </>
   );
 }
-
 // ------------------------------------------------------------------ Tab: Modpack
 
 function PackRow({ hit, onInstall }: { hit: ProjectHit; onInstall: (h: ProjectHit) => void }) {
   const t = useT();
   return (
-    <div className="flex min-w-0 items-center gap-3 px-3 py-2.5">
+    <div className="flex min-w-0 flex-wrap items-center gap-4 px-4 py-3">
       <PackIcon hit={hit} size={44} />
       <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-baseline gap-2">
-          <span className="truncate text-[13.5px] font-semibold text-text">{hit.title}</span>
-          <span className="shrink-0 truncate text-[12px] text-dim">{hit.author}</span>
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+          <span className="break-words text-[15px] font-semibold text-text">{hit.title}</span>
+          <span className="break-words text-[13px] text-muted">{hit.author}</span>
         </div>
-        <div className="truncate text-[12px] text-muted">{hit.description}</div>
+        <div className="line-clamp-2 text-[14px] text-muted">{hit.description}</div>
         <div className="mt-0.5 flex items-center gap-1 text-[11.5px] tabular-nums text-dim">
           <Download size={11} />
           {formatCount(hit.downloads)}
           {hit.game_versions.length > 0 && <span> · {hit.game_versions[hit.game_versions.length - 1]}</span>}
         </div>
       </div>
-      <Button size="sm" icon={<Download size={13} />} onClick={() => onInstall(hit)}>
+      <Button icon={<Download size={15} />} onClick={() => onInstall(hit)}>
         {t("newinst.pack.install")}
       </Button>
     </div>
@@ -596,8 +591,8 @@ function ModpackTab({ onDone }: { onDone: () => void }) {
     <>
       <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 pb-4 pt-5">
         <div>
-          <div className="text-[14px] font-semibold text-text">{t("newinst.pack.title")}</div>
-          <div className="text-[12.5px] text-muted">{t("newinst.pack.text")}</div>
+          <div className="text-[17px] font-semibold text-text">{t("newinst.pack.title")}</div>
+          <div className="text-[14px] text-muted">{t("newinst.pack.text")}</div>
         </div>
         <div className="flex items-center gap-2">
           <SearchInput value={query} onChange={setQuery} placeholder={t("newinst.pack.search")} autoFocus className="min-w-0 flex-1" />
@@ -623,7 +618,10 @@ function ModpackTab({ onDone }: { onDone: () => void }) {
               ))}
             </div>
           ) : hits.length === 0 ? (
-            <div className="px-4 py-10 text-center text-[13px] text-dim">{t("newinst.no_versions")}</div>
+            <div className="flex flex-col items-center gap-3 px-4 py-10 text-center text-[14px] text-muted">
+              {t("newinst.pack.empty")}
+              {query && <Button variant="subtle" onClick={() => setQuery("")}>{t("common.clear")}</Button>}
+            </div>
           ) : (
             <div className="divide-y divide-line">
               {hits.map((h) => (
@@ -656,74 +654,16 @@ function ModpackTab({ onDone }: { onDone: () => void }) {
 
 function ImportTab({ onDone }: { onDone: () => void }) {
   const t = useT();
-  // Gleicher Schlüssel wie der Launcher-Import – dort ist die Suche dann schon fertig
-  const detect = useQuery({ queryKey: ["launchers"], queryFn: api.launchersDetect, staleTime: 60_000, retry: 0 });
-  const found = (detect.data ?? []).filter((l) => l.instances.length > 0);
-  const toLauncher = () => {
-    onDone();
-    openImport(null, "launcher");
-  };
-  const card = (icon: React.ReactNode, title: string, text: string, onClick: () => void) => (
-    <button
-      onClick={onClick}
-      className="flex min-w-0 items-start gap-4 rounded-card bg-surface2 p-4 text-left transition-colors duration-100 hover:bg-surface3"
-    >
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-surface3 text-text">{icon}</span>
-      <span className="min-w-0">
-        <span className="block text-[14px] font-semibold text-text">{title}</span>
-        <span className="mt-0.5 block text-[12.5px] leading-snug text-muted">{text}</span>
-      </span>
-    </button>
-  );
   return (
     <>
-      <div className="scroll flex min-h-0 flex-1 flex-col gap-2 px-6 pb-4 pt-5">
-        {card(<PackageOpen size={18} />, t("newinst.import.file"), t("newinst.import.file_text"), () => {
+      <div className="scroll min-h-0 flex-1 px-6 py-4">
+        <ImportSources onSelect={(mode) => {
           onDone();
-          openImport();
-        })}
-        {card(<HardDriveDownload size={18} />, t("newinst.import.launcher"), t("newinst.import.launcher_text"), toLauncher)}
-        {(detect.isLoading || found.length > 0) && (
-          <div className="mt-3">
-            <div className="label mb-1.5">{t("newinst.import.found")}</div>
-            <div className="overflow-hidden rounded-card bg-surface">
-              {detect.isLoading ? (
-                <div className="flex flex-col gap-px p-1.5">
-                  <Skeleton className="h-11" />
-                  <Skeleton className="h-11" />
-                </div>
-              ) : (
-                <div className="divide-y divide-line">
-                  {found.map((l) => (
-                    <button
-                      key={l.path}
-                      onClick={toLauncher}
-                      className="group flex w-full min-w-0 items-center gap-3 px-3 py-2.5 text-left transition-colors duration-100 hover:bg-white/[.03]"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13.5px] font-semibold text-text">{l.name}</span>
-                        <span className="block truncate font-mono text-[11.5px] text-dim">{l.path}</span>
-                      </span>
-                      <span className="shrink-0 text-[12.5px] text-muted">
-                        {l.instances.length === 1 ? t("newinst.import.instances_1") : t("newinst.import.instances_n", { n: l.instances.length })}
-                      </span>
-                      <ChevronRight size={15} className="shrink-0 text-dim group-hover:text-text" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        <p className="mt-2 flex items-center gap-2 text-[12.5px] text-dim">
-          <FolderInput size={14} className="shrink-0" />
-          {t("newinst.import.drop")}
-        </p>
+          openImport(null, mode);
+        }} />
       </div>
-      <footer className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
-        <Button variant="subtle" onClick={onDone}>
-          {t("common.cancel")}
-        </Button>
+      <footer className="flex justify-end border-t border-line px-6 py-3">
+        <Button variant="subtle" onClick={onDone}>{t("common.cancel")}</Button>
       </footer>
     </>
   );
@@ -762,15 +702,25 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
           aria-describedby={undefined}
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden",
-            "h-[min(620px,calc(100%-64px))] w-[880px] max-w-[calc(100%-48px)]",
+            "h-[min(660px,calc(100%-48px))] w-[960px] max-w-[calc(100%-48px)]",
             "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
           // Auswahl und Hauptaktion in der globalen Akzentfarbe; die Instanzfarbe gehört nur dem Icon
           style={{ "--accent": "var(--ui-accent)", "--on-accent": "var(--ui-on-accent)" } as React.CSSProperties}
         >
-          <header className="flex items-center gap-4 border-b border-line pl-6 pr-4">
-            <D.Title className="py-4 text-title text-text">{t("newinst.title")}</D.Title>
-            <div className="flex h-full items-stretch gap-1 self-stretch" role="tablist">
+          <header className="shrink-0 border-b border-line">
+            <div className="flex items-center justify-between gap-4 px-6 py-3">
+              <D.Title className="text-title text-text">{t("newinst.title")}</D.Title>
+              {!busy && (
+                <D.Close
+                  aria-label={t("common.close")}
+                  className="grid h-8 w-8 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text"
+                >
+                  <X size={18} />
+                </D.Close>
+              )}
+            </div>
+            <div className="flex flex-wrap items-stretch gap-x-2 px-6" role="tablist">
               {tabs.map((it) => (
                 <button
                   key={it.value}
@@ -779,7 +729,7 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
                   disabled={busy}
                   onClick={() => setTab(it.value)}
                   className={cn(
-                    "flex items-center px-3 text-[13.5px] font-semibold transition-colors duration-150",
+                    "flex min-h-10 items-center px-3 text-[13.5px] font-semibold transition-colors duration-150",
                     tab === it.value ? "text-text shadow-[inset_0_-2px_0_var(--ui-accent)]" : "text-muted hover:text-text",
                   )}
                 >
@@ -787,15 +737,6 @@ export function NewInstanceDialog({ open, onOpenChange }: { open: boolean; onOpe
                 </button>
               ))}
             </div>
-            <div className="flex-1" />
-            {!busy && (
-              <D.Close
-                aria-label={t("common.close")}
-                className="grid h-8 w-8 place-items-center rounded-ctl text-dim transition-colors hover:bg-white/[.07] hover:text-text"
-              >
-                <X size={18} />
-              </D.Close>
-            )}
           </header>
           {tab === "custom" ? (
             <CustomTab onDone={close} onBusy={setBusy} />

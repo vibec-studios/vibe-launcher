@@ -2,7 +2,7 @@
 // Installieren/Aktualisieren/Entfernen. Clients schließen sich aus: Beim Wechsel wird nach Bestätigung das alte
 // Pack entfernt (Backend `client_pack_install` mit `replace`). Keine fremden Logos/Brandings – neutrale Icons.
 // `ClientPackPicker` ist die kompakte Auswahl im Dialog „Neue Instanz“.
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowUpCircle, Check, Download, ExternalLink, Gem, Sparkles, Trash2, Users, Zap } from "lucide-react";
 import { api, errorMessage } from "@/lib/api";
@@ -10,7 +10,7 @@ import { useEvent } from "@/lib/events";
 import { isRunning, useGameState, waitForTask } from "@/lib/queries";
 import { loaderNames } from "@/lib/format";
 import type { ClientPackOffer, ClientPacksOverview, Instance, LoaderKind } from "@/lib/types";
-import { Button, Select, Skeleton, Tag, Tooltip, cn, confirm, toast } from "@/components/ui";
+import { Button, ErrorState, Select, Skeleton, Tooltip, cn, confirm, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { useExpert } from "@/lib/simple-mode";
 
@@ -141,7 +141,7 @@ export function ClientPacks({ instance, only, compact }: { instance: Instance; o
     <div className="flex flex-col gap-5">
       {groups.map((g) => (
         <section key={g.key} className="flex flex-col gap-2">
-          {!compact && <h3 className="px-1 text-[12.5px] font-semibold text-muted">{t(`cp.group.${g.key}`)}</h3>}
+          {!compact && <h3 className="text-[16px] font-semibold text-text">{t(`cp.group.${g.key}`)}</h3>}
           {/* Ein einzelnes Pack (z. B. Offiziell: nur Vibey) nimmt die ganze Breite statt einer halben Kachel */}
           <div className={cn("grid gap-3", compact || g.items.length === 1 ? "grid-cols-1" : "grid-cols-2 max-[980px]:grid-cols-1")}>
             {g.items.map((o) => (
@@ -232,22 +232,19 @@ function PackCard({
   const reason = running ? t("cp.running") : null;
 
   return (
-    <article className={cn("flex min-w-0 flex-col gap-3 rounded-card bg-surface p-4", inst && "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--accent)_45%,transparent)]")}>
+    <article className={cn("flex min-w-0 flex-col gap-4 rounded-card border bg-surface p-4", inst ? "border-accent/45" : "border-line")}>
       <div className="flex items-start gap-3">
-        <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-ctl bg-black/40", official ? "text-brand" : "text-muted")}>
+        <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-ctl bg-surface3", official ? "text-brand" : "text-muted")}>
           {ICONS[o.id] ?? <Gem size={18} />}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-[14px] font-semibold text-text">{packName(t, o.id)}</span>
-            {official ? <Tag className="bg-brand/15 text-brand">{t("cp.badge.official")}</Tag> : <Tag>{t("cp.badge.community")}</Tag>}
-          </div>
-          <p className="mt-0.5 text-[12.5px] leading-snug text-muted">{t(`cp.${o.id}.desc`)}</p>
+          <h4 className="break-words text-[16px] font-semibold text-text">{packName(t, o.id)}</h4>
+          <p className="mt-1 text-[14px] leading-snug text-muted">{t(`cp.${o.id}.desc`)}</p>
         </div>
       </div>
 
       {/* Herkunft (Anbieter, Website, woher die Datei kommt) gesammelt über den Aktionen – die Knöpfe stehen unten */}
-      <div className="flex flex-col gap-0.5 pl-[52px] text-[12px] leading-snug text-dim empty:hidden">
+      <div className="flex flex-col gap-1 text-[13px] leading-snug text-muted empty:hidden">
         {!official && o.vendor && (
           <div className="flex flex-wrap items-center gap-x-2">
             <span>{t("cp.attribution", { vendor: o.vendor })}</span>
@@ -263,17 +260,17 @@ function PackCard({
         {tech && <p>{t(`cp.source.${o.source}`)}</p>}
       </div>
 
-      <div className="mt-auto flex min-h-8 items-center gap-2">
+      <div className="mt-auto flex min-h-10 flex-wrap items-center gap-2 border-t border-line pt-3">
         <div
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-1.5 text-[12px]",
-            tone === "warn" ? "text-warn" : tone === "ok" ? "text-ok" : tone === "brand" ? "text-brand" : "text-dim",
+            "flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px]",
+            tone === "warn" ? "text-warn" : tone === "ok" ? "text-ok" : tone === "brand" ? "text-brand" : "text-muted",
           )}
         >
           {tone === "warn" && <AlertTriangle size={12} className="shrink-0" />}
           {tone === "ok" && <Check size={12} className="shrink-0" />}
           {tone === "brand" && <ArrowUpCircle size={12} className="shrink-0" />}
-          <span className="min-w-0 truncate" title={typeof status === "string" ? status : undefined}>
+          <span className="min-w-0 break-words">
             {status}
           </span>
           {o.available === null && o.source === "norisk" && o.homepage && (
@@ -296,7 +293,7 @@ function PackCard({
             <span>
               <Button
                 size="sm"
-                variant={canUpdate ? "accent" : "ghost"}
+                variant="accent"
                 icon={canUpdate ? <ArrowUpCircle size={13} /> : <Download size={13} />}
                 loading={busy}
                 disabled={locked}
@@ -324,24 +321,32 @@ export function ClientPackPicker({ mc, loader, value, onChange }: { mc: string |
     staleTime: 5 * 60_000,
   });
   const packs = (q.data?.packs ?? []).filter((p) => !(p.id === "vibey" && !q.data?.vibe_enabled));
-  const ok = (id: string | null) => !id || packs.some((p) => p.id === id && p.available === true);
-  if (value && q.data && !ok(value)) queueMicrotask(() => onChange(null));
+  const selected = packs.find((p) => p.id === value);
+  useEffect(() => {
+    if (value && q.data && selected?.available !== true) onChange(null);
+  }, [value, q.data, selected, onChange]);
   return (
-    <Select<string>
-      size="sm"
-      value={value ?? "none"}
-      disabled={loader === "vanilla" || !mc}
-      onChange={(v) => onChange(v === "none" ? null : v)}
-      options={[
-        { value: "none", label: t("cp.new.none") },
-        ...packs.map((p) => ({
-          value: p.id,
-          label: packName(t, p.id),
-          hint: p.available === true ? t(`cp.badge.${p.category}`) : p.available === null ? t("cp.reason.unreachable") : t("cp.new.unavailable"),
-          disabled: p.available !== true,
-        })),
-      ]}
-    />
+    <div className="flex flex-col gap-2">
+      <Select<string>
+        value={value ?? "none"}
+        disabled={loader === "vanilla" || !mc || q.isPending}
+        onChange={(v) => onChange(v === "none" ? null : v)}
+        options={[
+          { value: "none", label: t("cp.new.none") },
+          ...packs.map((p) => ({
+            value: p.id,
+            label: packName(t, p.id),
+            hint: p.available === true ? t(`cp.badge.${p.category}`) : p.available === null ? t("cp.reason.unreachable") : t("cp.new.unavailable"),
+            disabled: p.available !== true,
+          })),
+        ]}
+      />
+      {q.isError ? (
+        <ErrorState error={q.error} onRetry={() => q.refetch()} />
+      ) : selected ? (
+        <p className="text-[14px] text-muted">{t(`cp.${selected.id}.desc`)}</p>
+      ) : null}
+    </div>
   );
 }
 

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Button, Checkbox, Dialog, toast } from "@/components/ui";
+import { Button, Checkbox, Dialog, ErrorState, Skeleton, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { qk, queryClient } from "@/lib/queries";
@@ -18,14 +18,14 @@ export function unusedPacks(o: DatapackOverview | undefined) {
 
 function Pick({ label, checked, onChange, hint }: { label: string; checked: boolean; onChange: (v: boolean) => void; hint?: string }) {
   return (
-    <div className="flex min-h-9 items-center gap-3 rounded-ctl px-2 text-[13px] text-text hover:bg-surface2" onClick={() => onChange(!checked)}>
+    <div className={cn("flex min-h-11 cursor-pointer flex-wrap items-center gap-3 rounded-ctl border px-3 py-2 text-[14px] text-text hover:bg-surface2", checked ? "border-accent/40 bg-accent/[.08]" : "border-line")} onClick={() => onChange(!checked)}>
       <span onClick={(e) => e.stopPropagation()} className="flex">
         <Checkbox checked={checked} onChange={onChange} label={label} />
       </span>
-      <span className="min-w-0 flex-1 cursor-pointer truncate" title={label}>
+      <span className="min-w-0 flex-1 break-words">
         {label}
       </span>
-      {hint && <span className="shrink-0 text-meta text-dim">{hint}</span>}
+      {hint && <span className="text-[13px] text-muted">{hint}</span>}
     </div>
   );
 }
@@ -66,7 +66,7 @@ export function DatapacksDialog({ instanceId, open, onClose }: { instanceId: str
       onOpenChange={(o) => !o && onClose()}
       title={t("dp.title")}
       description={t("dp.text")}
-      size="md"
+      size="xl"
       locked={busy}
       footer={
         <>
@@ -79,10 +79,11 @@ export function DatapacksDialog({ instanceId, open, onClose }: { instanceId: str
         </>
       }
     >
-      {data && (
-        <div className="flex flex-col gap-4 px-6 pb-2">
-          <section>
-            <div className="mb-1 text-meta font-semibold uppercase tracking-[.06em] text-dim">{t("dp.packs")}</div>
+      {q.isPending ? <Skeleton className="h-32" /> : q.isError ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : data && (
+        <div className="grid grid-cols-2 gap-4 pb-2 max-[650px]:grid-cols-1">
+          <section className="flex min-w-0 flex-col gap-2 rounded-card bg-surface p-4">
+            <h2 className="text-[16px] font-semibold text-text">{t("dp.packs")}</h2>
+            {data.packs.length === 0 && <p className="text-[14px] text-muted">{t("dp.no_packs")}</p>}
             {data.packs.map((p) => (
               <Pick
                 key={p.file_name}
@@ -93,15 +94,15 @@ export function DatapacksDialog({ instanceId, open, onClose }: { instanceId: str
               />
             ))}
           </section>
-          <section>
-            <div className="mb-1 text-meta font-semibold uppercase tracking-[.06em] text-dim">{t("dp.worlds")}</div>
+          <section className="flex min-w-0 flex-col gap-2 rounded-card bg-surface p-4">
+            <h2 className="text-[16px] font-semibold text-text">{t("dp.worlds")}</h2>
             {data.worlds.length === 0 ? (
-              <p className="px-2 text-[13px] text-muted">{t("dp.no_worlds")}</p>
+              <p className="text-[14px] text-muted">{t("dp.no_worlds")}</p>
             ) : (
               data.worlds.map((w) => <Pick key={w.folder} label={w.name} checked={worlds.includes(w.folder)} onChange={(v) => setWorlds((l) => toggle(l, w.folder, v))} />)
             )}
           </section>
-          <p className="text-meta text-dim">{t("dp.reload_hint")}</p>
+          <p className="text-[14px] text-muted min-[651px]:col-span-2">{t("dp.reload_hint")}</p>
         </div>
       )}
     </Dialog>

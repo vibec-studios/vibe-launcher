@@ -65,10 +65,10 @@ export function ModpackUpdateDialog({ instance, versionId, onClose }: { instance
       onOpenChange={(o) => !o && onClose()}
       title={t("modpack.title")}
       description={p ? t("modpack.description", { name: instance.name, from: p.current_version ?? t("modpack.unknown_version"), to: p.target.version_number }) : instance.name}
-      size="lg"
+      size="xl"
+      className="[&_.vl-dialog-foot]:flex-wrap"
       footer={
         <>
-          <span className="mr-auto text-meta text-dim">{t("modpack.snapshot_hint")}</span>
           <Button variant="subtle" onClick={onClose}>
             {t("common.cancel")}
           </Button>
@@ -89,8 +89,20 @@ export function ModpackUpdateDialog({ instance, versionId, onClose }: { instance
         <ErrorState error={q.error} onRetry={() => q.refetch()} className="py-8" />
       ) : p ? (
         <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-3 gap-2 max-[560px]:grid-cols-1">
+            {groups.map((group) => (
+              <div key={group} className="flex min-w-0 items-center gap-3 rounded-card border border-line bg-surface px-4 py-3">
+                {changeIcon[group]}
+                <div className="min-w-0">
+                  <div className="text-[20px] font-semibold tabular-nums text-text">{p.files.filter((file) => file.change === group).length}</div>
+                  <div className="break-words text-[14px] text-muted">{t(`modpack.${group}`)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="rounded-card bg-ok/[.08] px-4 py-3 text-[14px] text-text">{t("modpack.snapshot_hint")}</p>
           {versionChange && (
-            <div className="flex items-start gap-2.5 rounded-card bg-warn/[.08] px-3.5 py-2.5 text-[13px]">
+            <div className="flex items-start gap-3 rounded-card bg-warn/[.08] px-4 py-3 text-[14px]">
               <AlertTriangle size={15} className="mt-0.5 shrink-0 text-warn" />
               <div>
                 {p.mc_from !== p.mc_to && <div className="font-semibold text-text">{t("modpack.mc_change", { from: p.mc_from, to: p.mc_to })}</div>}
@@ -102,36 +114,38 @@ export function ModpackUpdateDialog({ instance, versionId, onClose }: { instance
             </div>
           )}
           {p.legacy && <div className="text-meta text-muted">{t("modpack.legacy")}</div>}
-          <div>
-            <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-              <span className="text-section text-text">{t("modpack.files")}</span>
-              <span className="text-meta text-dim">{t("modpack.unchanged", { n: p.unchanged })}</span>
-              {p.user_files > 0 && <span className="text-meta text-dim">{t("modpack.user_files", { n: p.user_files })}</span>}
-              <div className="flex-1" />
-              {p.files.length > 0 && <SideFilterBar value={side} onChange={setSide} counts={counts} />}
-            </div>
-            {p.files.length === 0 ? (
-              <div className="rounded-card bg-surface px-3 py-4 text-center text-[13px] text-muted">{t("modpack.no_changes")}</div>
-            ) : (
-              <div className="scroll max-h-[300px] rounded-card bg-surface py-1">
-                {groups.map((g) =>
-                  files
-                    .filter((f) => f.change === g)
-                    .map((f) => (
-                      <div key={`${g}-${f.path}`} className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/[.03]">
-                        {changeIcon[g]}
-                        <span className={cn("w-[84px] shrink-0 text-[12px]", g === "removed" ? "text-danger" : g === "added" ? "text-ok" : "text-accent")}>{t(`modpack.${g}`)}</span>
-                        <span className="min-w-0 flex-1 truncate text-[13px] text-text" title={f.old_path ? `${f.old_path} → ${f.path}` : f.path}>
-                          {f.name}
-                          <span className="ml-2 text-caption text-dim">{f.path.split("/").pop()}</span>
-                        </span>
-                        <SideTag side={f.side} />
-                      </div>
-                    )),
-                )}
+          <details className="rounded-card border border-line bg-surface">
+            <summary className="cursor-pointer px-4 py-3 text-[15px] font-semibold text-text">{t("modpack.files")}</summary>
+            <div className="px-4 pb-3">
+              <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="text-meta text-dim">{t("modpack.unchanged", { n: p.unchanged })}</span>
+                {p.user_files > 0 && <span className="text-meta text-dim">{t("modpack.user_files", { n: p.user_files })}</span>}
+                <div className="flex-1" />
+                {p.files.length > 0 && <SideFilterBar value={side} onChange={setSide} counts={counts} />}
               </div>
-            )}
-          </div>
+              {p.files.length === 0 ? (
+                <div className="rounded-card bg-surface px-3 py-4 text-center text-[13px] text-muted">{t("modpack.no_changes")}</div>
+              ) : (
+                <div className="scroll max-h-[300px] rounded-card bg-surface py-1">
+                  {groups.map((g) =>
+                    files
+                      .filter((f) => f.change === g)
+                      .map((f) => (
+                        <div key={`${g}-${f.path}`} className="flex items-center gap-2.5 border-b border-line px-2 py-2.5 last:border-b-0">
+                          {changeIcon[g]}
+                          <span className={cn("w-[90px] shrink-0 text-[13px]", g === "removed" ? "text-danger" : g === "added" ? "text-ok" : "text-accent")}>{t(`modpack.${g}`)}</span>
+                          <span className="min-w-0 flex-1 truncate text-[14px] text-text" title={f.old_path ? `${f.old_path} → ${f.path}` : f.path}>
+                            {f.name}
+                            <span className="ml-2 text-caption text-dim">{f.path.split("/").pop()}</span>
+                          </span>
+                          <SideTag side={f.side} />
+                        </div>
+                      )),
+                  )}
+                </div>
+              )}
+            </div>
+          </details>
           {p.overrides.length > 0 && (
             <div>
               <div className="mb-2 text-section text-text">{t("modpack.overrides")}</div>
