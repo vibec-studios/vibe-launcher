@@ -1,6 +1,6 @@
 export default {
   de: {
-    "settings.tab.storage": "Speicher",
+    "settings.tab.storage": "Speicherplatz",
     "settings.tab.storage.desc": "Was wie viel Platz belegt – und aufräumen",
     "disk.title": "Belegter Platz",
     "disk.refresh": "Neu messen",

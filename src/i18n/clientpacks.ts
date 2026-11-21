@@ -11,7 +11,7 @@ export default {
     "isd.tab.version.desc": "Minecraft-Version, Mod-Loader und Loader-Version",
     "isd.tab.client": "Client",
     "isd.tab.client.desc": "Client-Mods mit einem Klick installieren",
-    "isd.tab.java": "Java & Speicher",
+    "isd.tab.java": "Java & RAM",
     "isd.tab.java.desc": "Java-Installation, Arbeitsspeicher und JVM-Argumente",
     "isd.tab.launch": "Fenster & Start",
     "isd.tab.launch.desc": "Auflösung, Vollbild, Start-Befehle und Wrapper",
