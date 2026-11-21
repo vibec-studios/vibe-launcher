@@ -2,6 +2,7 @@
 // gewählte Version/den Loader. Nach dem Anlegen installiert `installSetsAfterCreate` alles Passende.
 import * as Popover from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { AlertTriangle, Check, ChevronDown, Layers } from "lucide-react";
 import { Checkbox, Spinner, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -9,6 +10,16 @@ import { queryClient, waitForTask } from "@/lib/queries";
 import type { LoaderKind } from "@/lib/types";
 import { setsApi, useSets } from "./api";
 import { SetCover, countLabel } from "./shared";
+
+export function useNewInstanceSets() {
+  const sets = useSets();
+  const [selection, setSelection] = useState<string[] | null>(null);
+  const usable = (sets.data ?? []).filter((s) => s.entries.length > 0);
+  const setIds = selection === null
+    ? usable.filter((s) => s.apply_on_create).map((s) => s.id)
+    : selection.filter((id) => usable.some((s) => s.id === id));
+  return { setIds, setSetIds: setSelection, setsLoading: sets.isPending && !sets.isError };
+}
 
 export function useSetCheck(setIds: string[], mc: string | null, loader: LoaderKind) {
   return useQuery({
@@ -45,13 +56,15 @@ export function SetPicker({ mc, loader, value, onChange }: { mc: string | null; 
         <Popover.Portal>
           <Popover.Content align="start" sideOffset={6} collisionPadding={12} className="scroll z-[70] max-h-[var(--radix-popover-content-available-height)] w-[min(360px,var(--radix-popover-content-available-width))] rounded-card border border-line bg-overlay p-2 shadow-e2 outline-none">
             {sets.map((s) => (
-              <div key={s.id} onClick={() => toggle(s.id)} className="flex cursor-pointer items-center gap-3 rounded-ctl px-2 py-2.5 hover:bg-surface2">
-                <Checkbox checked={value.includes(s.id)} onChange={() => {}} label={s.name} />
-                <SetCover set={s} size={28} />
-                <div className="min-w-0 flex-1">
-                  <div className="break-words text-[15px] font-semibold text-text">{s.name}</div>
-                  <div className="text-[13px] text-muted">{countLabel(t, s.entries.length)}</div>
-                </div>
+              <div key={s.id} className="flex items-center gap-3 rounded-ctl px-2 py-2.5 hover:bg-surface2">
+                <Checkbox checked={value.includes(s.id)} onChange={() => toggle(s.id)} label={s.name} />
+                <button type="button" tabIndex={-1} onClick={() => toggle(s.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                  <SetCover set={s} size={28} />
+                  <span className="min-w-0">
+                    <span className="block break-words text-[15px] font-semibold text-text">{s.name}</span>
+                    <span className="block text-[13px] text-muted">{countLabel(t, s.entries.length)}</span>
+                  </span>
+                </button>
               </div>
             ))}
           </Popover.Content>

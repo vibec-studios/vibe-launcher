@@ -49,6 +49,7 @@ pub mod perf;
 pub mod modpack;
 pub mod mroverrides;
 pub mod autoupdate;
+pub mod migration;
 pub mod worlds;
 pub mod worldbackup;
 pub mod organize;

@@ -22,6 +22,7 @@ import { installPackAfterCreate } from "@/features/instances/settings/ClientPack
 import { queryClient, waitForTask } from "@/lib/queries";
 import { useT, t as tt } from "@/i18n";
 import { GoalTiles, usePlan, type GamePlan, type NewGameGoal } from "./goals";
+import { SetPicker, installSetsAfterCreate, useNewInstanceSets } from "@/features/modsets/SetPicker";
 
 type Step = "goal" | "packs" | "details";
 
@@ -256,9 +257,10 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
   const [name, setName] = useState(() => defaultName(goal));
   const [accent, setAccent] = useState(() => accentPalette[Math.floor(Math.random() * accentPalette.length)]);
   const [icon, setIcon] = useState(randomBlockIcon);
+  const { setIds, setSetIds, setsLoading } = useNewInstanceSets();
   const [busy, setBusy] = useState(false);
   const ready = !plan.loading && !plan.unavailable && !!plan.mc && (plan.loader === "vanilla" || !!plan.loaderVersion);
-  const valid = ready && name.trim().length > 0;
+  const valid = ready && !setsLoading && name.trim().length > 0;
 
   const create = async () => {
     if (!valid || busy) return;
@@ -275,8 +277,11 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
       });
       onDone();
       installInstance(inst.id);
-      if (plan.pack) void installPackAfterCreate(t, inst.id, plan.pack);
-      if (plan.perf) void installPerf(inst.id);
+      void (async () => {
+        if (plan.pack) await installPackAfterCreate(t, inst.id, plan.pack);
+        if (plan.perf) await installPerf(inst.id);
+        if (setIds.length) await installSetsAfterCreate(t, inst.id, setIds);
+      })();
       if (goal === "mods") {
         nav({ to: "/discover", search: { instance: inst.id } });
         toast.success(tt("wiz.created", { name: inst.name }), tt("wiz.created_mods"));
@@ -363,6 +368,10 @@ function DetailsStep({ goal, onDone, onBusy }: { goal: NewGameGoal; onDone: () =
                 ))}
               </ul>
             )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="label">{t("newinst.sets")}</span>
+            <SetPicker mc={plan.mc} loader={plan.loader} value={setIds} onChange={setSetIds} />
           </div>
           <p className="text-[12.5px] leading-relaxed text-dim">{t("wiz.sum.note")}</p>
         </div>

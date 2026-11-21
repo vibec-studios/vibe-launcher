@@ -73,6 +73,20 @@ fn save(paths: &Paths, instance_id: &str, list: &[MissingEntry]) -> AppResult<()
     crate::util::write_json_atomic(&p, &list)
 }
 
+pub(super) fn replace_pending_mods(paths: &Paths, instance_id: &str, mods: Vec<MissingEntry>) -> AppResult<()> {
+    let mut list = load(paths, instance_id);
+    if mods.is_empty() && !list.iter().any(|e| e.info.kind == ContentKind::Mod) {
+        return Ok(());
+    }
+    list.retain(|e| e.info.kind != ContentKind::Mod);
+    list.extend(mods);
+    save(paths, instance_id, &list)
+}
+
+pub(super) fn pending_mods(paths: &Paths, instance_id: &str) -> Vec<MissingEntry> {
+    load(paths, instance_id).into_iter().filter(|e| e.info.kind == ContentKind::Mod).collect()
+}
+
 /// Einträge hinzufügen (gleiche Datei im gleichen Ordner bzw. gleiches Projekt wird ersetzt).
 pub fn add(paths: &Paths, instance_id: &str, entries: Vec<MissingEntry>) -> AppResult<()> {
     if entries.is_empty() {

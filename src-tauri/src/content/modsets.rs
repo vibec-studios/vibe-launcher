@@ -150,6 +150,7 @@ pub async fn delete(state: &AppState, id: &str, set_id: &str) -> AppResult<ModSe
 
 /// Set anwenden: Dateien aktivieren/deaktivieren.
 pub async fn apply(state: &AppState, id: &str, set_id: &str) -> AppResult<ModSets> {
+    super::migration::guard(state, id)?;
     state.instances.get(id)?;
     let mut f = load(state, id);
     let set = f.sets.iter().find(|s| s.id == set_id).cloned().ok_or_else(|| AppError::NotFound("Mod-Set".into()))?;

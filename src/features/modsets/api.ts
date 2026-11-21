@@ -23,6 +23,7 @@ export interface ModSet {
   created: number;
   updated: number;
   entries: SetEntry[];
+  apply_on_create: boolean;
 }
 
 export interface ModSetInfo extends ModSet {
@@ -152,6 +153,7 @@ export const setsApi = {
   update: (id: string, patch: { name?: string; description?: string }) =>
     invoke<ModSet>("sets_update", { id, name: patch.name ?? null, description: patch.description ?? null }),
   remove: (id: string) => invoke<void>("sets_delete", { id }),
+  setApplyOnCreate: (id: string, enabled: boolean) => invoke<ModSet>("sets_set_apply_on_create", { id, enabled }),
   duplicate: (id: string) => invoke<ModSet>("sets_duplicate", { id }),
   addEntries: (id: string, entries: SetEntry[]) => invoke<ModSet>("sets_add_entries", { id, entries }),
   removeEntries: (id: string, keys: string[]) => invoke<ModSet>("sets_remove_entries", { id, keys }),

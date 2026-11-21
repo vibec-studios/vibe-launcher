@@ -16,6 +16,7 @@
 //! angefasst – ein Snapshot ohne Resourcepacks lässt den Resourcepacks-Ordner also in Ruhe. `content.json` wird
 //! dabei nur für die enthaltenen Ordner zurückgesetzt (Einträge anderer Ordner bleiben, wie sie sind).
 use crate::error::{AppError, AppResult};
+use super::{migration::{self, GameVersion}, missing};
 use crate::paths::Paths;
 use crate::state::AppState;
 use crate::tasks::SubProgress;
@@ -146,6 +147,14 @@ pub(crate) struct Manifest {
     /// Enthaltene Bereiche (Teil-Snapshot); fehlt = vollständig
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scopes: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    migration: Option<MigrationState>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct MigrationState {
+    version: GameVersion,
+    pending_mods: Vec<missing::MissingEntry>,
 }
 
 fn one() -> u32 {
@@ -496,8 +505,14 @@ fn merge_index(current: Option<&[u8]>, snap: Option<&[u8]>, prefixes: &[&str]) -
 
 // ------------------------------------------------------------------ Kernabläufe (blockierend)
 
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn create_sync(root: &Path, instance_id: &str, game: &Path, inst: &Path, name: &str, auto: bool, sel: &Sel, prog: &impl Prog) -> AppResult<Manifest> {
+fn create_sync(root: &Path, instance_id: &str, game: &Path, inst: &Path, name: &str, auto: bool, sel: &Sel, prog: &impl Prog) -> AppResult<Manifest> {
+    create_with_version(root, instance_id, game, inst, name, auto, sel, prog, None)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn create_with_version(root: &Path, instance_id: &str, game: &Path, inst: &Path, name: &str, auto: bool, sel: &Sel, prog: &impl Prog, migration: Option<MigrationState>) -> AppResult<Manifest> {
     prog.message("Dateien werden erfasst …");
     let found = scan(game, inst, sel)?;
     let total: u64 = found.files.iter().map(|f| f.2).sum::<u64>() + found.meta.iter().map(|f| f.2).sum::<u64>();
@@ -527,7 +542,7 @@ pub(crate) fn create_sync(root: &Path, instance_id: &str, game: &Path, inst: &Pa
     let id = format!("{created}-{}", &uuid::Uuid::new_v4().simple().to_string()[..6]);
     let name = name.trim();
     let name = if name.is_empty() { format!("Snapshot vom {}", chrono::Local::now().format("%d.%m.%Y %H:%M")) } else { name.chars().take(80).collect() };
-    let m = Manifest { version: 1, id: id.clone(), name, created, auto, files, dirs: found.dirs, meta, scopes: sel.scopes() };
+    let m = Manifest { version: 1, id: id.clone(), name, created, auto, files, dirs: found.dirs, meta, scopes: sel.scopes(), migration };
     crate::util::write_json_atomic(&snapshot_dir(root, instance_id).join(format!("{id}.json")), &m)?;
     save_cache(root, instance_id, &cache);
     prog.set(1.0);
@@ -681,13 +696,14 @@ pub(crate) fn gc(root: &Path) -> AppResult<usize> {
 static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 #[allow(clippy::too_many_arguments)]
-async fn create_locked(state: &AppState, instance_id: &str, name: &str, auto: bool, sel: Sel, prog: Progress, protect: Vec<String>) -> AppResult<SnapshotInfo> {
+async fn create_locked(state: &AppState, instance_id: &str, name: &str, auto: bool, sel: Sel, prog: Progress, protect: Vec<String>, version: Option<GameVersion>) -> AppResult<SnapshotInfo> {
     let paths = state.paths.clone();
     let keep = state.settings().snapshot_keep;
     let (id, name) = (instance_id.to_string(), name.to_string());
     tokio::task::spawn_blocking(move || {
         let root = backups_root(&paths);
-        let res = create_sync(&root, &id, &paths.game_dir(&id), &paths.instance_dir(&id), &name, auto, &sel, &prog);
+        let migration = version.map(|version| MigrationState { version, pending_mods: missing::pending_mods(&paths, &id) });
+        let res = create_with_version(&root, &id, &paths.game_dir(&id), &paths.instance_dir(&id), &name, auto, &sel, &prog, migration);
         let m = match res {
             Ok(m) => m,
             Err(e) => {
@@ -712,7 +728,7 @@ async fn create_locked(state: &AppState, instance_id: &str, name: &str, auto: bo
 pub async fn create(state: &AppState, instance_id: &str, name: &str, auto: bool, progress: Option<&crate::tasks::SubProgress>) -> AppResult<SnapshotInfo> {
     state.instances.get(instance_id)?;
     let _g = LOCK.lock().await;
-    create_locked(state, instance_id, name, auto, Sel::all(), Progress::from(progress), vec![]).await
+    create_locked(state, instance_id, name, auto, Sel::all(), Progress::from(progress), vec![], None).await
 }
 
 /// Teil-Snapshot mit den gewählten Bereichen ([`SCOPES`]; alle = vollständig).
@@ -723,7 +739,16 @@ pub async fn create_scoped(state: &AppState, instance_id: &str, name: &str, auto
         return Err(AppError::Invalid("Kein Bereich für die Sicherung gewählt".into()));
     }
     let _g = LOCK.lock().await;
-    create_locked(state, instance_id, name, auto, sel, Progress::from(progress), vec![]).await
+    create_locked(state, instance_id, name, auto, sel, Progress::from(progress), vec![], None).await
+}
+
+pub(super) async fn before_migration(state: &AppState, instance_id: &str, version: GameVersion, progress: &SubProgress) -> AppResult<()> {
+    let _guard = LOCK.lock().await;
+    let scope = Sel::of(&["mods".into()]);
+    let label = migration::text(state, "Vor Versionswechsel", "Before version change");
+    let name = format!("{label} ({} {})", version.mc_version, version.loader.kind.as_str());
+    create_locked(state, instance_id, &name, true, scope, Progress::from(Some(progress)), vec![], Some(version)).await?;
+    Ok(())
 }
 
 /// Sicherung vor automatischen Mod-Änderungen („Probleme beheben“, Performance-Mods) nach der Einstellung
@@ -754,6 +779,8 @@ pub async fn restore(state: &AppState, instance_id: &str, snapshot_id: &str, pro
     // Reihenfolge: erst content.json-Sperre, dann Snapshot-Sperre
     let content_lock = state.content.lock(instance_id);
     let _c = content_lock.lock().await;
+    migration::guard(state, instance_id)?;
+    let inst = state.instances.get(instance_id)?;
     let _g = LOCK.lock().await;
     let root = backups_root(&state.paths);
     let (r2, iid, sid) = (root.clone(), instance_id.to_string(), snapshot_id.to_string());
@@ -766,18 +793,23 @@ pub async fn restore(state: &AppState, instance_id: &str, snapshot_id: &str, pro
     let prog = Progress::from(progress);
     prog.message("Aktueller Stand wird gesichert …");
     // Gleiche Bereiche wie der wiederhergestellte Snapshot: genau das, was gleich überschrieben wird
-    create_locked(state, instance_id, RESTORE_NAME, true, manifest.sel(), prog.sub(0.0, 0.5), vec![snapshot_id.to_string()]).await?;
+    let current_version = manifest.migration.as_ref().map(|_| GameVersion::from(&inst));
+    create_locked(state, instance_id, RESTORE_NAME, true, manifest.sel(), prog.sub(0.0, 0.5), vec![snapshot_id.to_string()], current_version).await?;
     prog.check()?;
     // Ab hier nicht mehr abbrechen – sonst bliebe ein halber Stand zurück
     let paths = state.paths.clone();
     let iid = instance_id.to_string();
     let p2 = prog.sub(0.5, 1.0);
+    let migration = manifest.migration.clone();
     let res = tokio::task::spawn_blocking(move || restore_sync(&root, &iid, &paths.game_dir(&iid), &paths.instance_dir(&iid), &manifest, &p2)).await?;
     if res.is_ok() {
         // Ordner-Sync: der alte Stand darf nicht als „in der Instanz gelöscht“ in den gemeinsamen Ordner wandern
         crate::platform::optsync::forget_state(&state.paths.root, instance_id);
         // Modpack-Instanzen: Minecraft/Loader wieder auf den wiederhergestellten Pack-Stand setzen
-        if let Err(e) = super::modpack::sync_instance_with_record(state, instance_id) {
+        if let Some(MigrationState { version, pending_mods }) = migration {
+            missing::replace_pending_mods(&state.paths, instance_id, pending_mods)?;
+            state.instances.set_game_version(instance_id, version.mc_version, version.loader)?;
+        } else if let Err(e) = super::modpack::sync_instance_with_record(state, instance_id) {
             tracing::warn!("Instanz {instance_id} nicht an pack.json angeglichen: {e}");
         }
     }
@@ -1041,6 +1073,29 @@ mod tests {
         let m: Manifest = serde_json::from_str(r#"{"id":"x","name":"n","created":1,"files":[],"dirs":[],"meta":[]}"#).unwrap();
         assert!(m.sel().is_all());
         assert_eq!(m.info().scopes, None);
+    }
+
+    #[test]
+    fn wave3_migration_snapshot_preserves_mods_and_version() {
+        use crate::instance::{Loader, LoaderKind};
+        let f = fx();
+        let version = GameVersion {
+            mc_version: "1.21.4".into(),
+            loader: Loader { kind: LoaderKind::Fabric, version: Some("0.16.10".into()) },
+        };
+        let sel = Sel::of(&["mods".into()]);
+        let state = MigrationState { version: version.clone(), pending_mods: vec![] };
+        let snapshot = create_with_version(&f.root, "i1", &f.game, &f.inst, "Versionswechsel", true, &sel, &(), Some(state)).unwrap();
+        std::fs::rename(f.game.join("mods/a.jar"), f.game.join("mods/a.jar.disabled")).unwrap();
+        std::fs::write(f.game.join("mods/new.jar"), b"new").unwrap();
+        let saved = load(&f.root, "i1", &snapshot.id).unwrap();
+        assert_eq!(saved.migration.as_ref().unwrap().version, version);
+        restore_sync(&f.root, "i1", &f.game, &f.inst, &saved, &()).unwrap();
+        assert!(f.game.join("mods/a.jar").is_file());
+        assert!(!f.game.join("mods/a.jar.disabled").exists());
+        assert!(!f.game.join("mods/new.jar").exists());
+        assert!(f.game.join("saves/Welt/level.dat").is_file());
+        std::fs::remove_dir_all(&f.base).unwrap();
     }
 
     #[test]

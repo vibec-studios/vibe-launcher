@@ -64,6 +64,7 @@ let sets: ModSet[] = [
     description: "Mehr FPS, weniger RAM – für jede Instanz",
     created: now - 86400_000 * 30,
     updated: now - 86400_000,
+    apply_on_create: false,
     entries: entries("sodium", "lithium", "ferrite-core", "modernfix", "entityculling", "dynamic-fps", "immediatelyfast", "moreculling"),
   },
   {
@@ -72,6 +73,7 @@ let sets: ModSet[] = [
     description: null,
     created: now - 86400_000 * 22,
     updated: now - 86400_000 * 3,
+    apply_on_create: false,
     entries: entries("modmenu", "xaeros-minimap", "jei", "appleskin", "jade", "mouse-tweaks", "inventory-profiles-next", "controlling", "embeddium"),
   },
   {
@@ -80,6 +82,7 @@ let sets: ModSet[] = [
     description: "Iris + meine Lieblings-Shader",
     created: now - 86400_000 * 12,
     updated: now - 86400_000 * 12,
+    apply_on_create: false,
     entries: entries("iris", "sodium", "complementary-reimagined", "bsl-shaders", "fresh-animations"),
   },
 ];
@@ -241,19 +244,20 @@ function finishTask(title: string, instanceId: string, message: string, onDone: 
 const handlers: Handlers = {
   sets_list: () => sets.map(info),
   sets_create: ({ name, description, entries: es }) => {
-    const s: ModSet = { id: Math.random().toString(36).slice(2, 10), name: String(name).trim(), description: (description as string) || null, created: Date.now(), updated: Date.now(), entries: addUnique([], (es as SetEntry[]) ?? []) };
+    const s: ModSet = { id: Math.random().toString(36).slice(2, 10), name: String(name).trim(), description: (description as string) || null, created: Date.now(), updated: Date.now(), entries: addUnique([], (es as SetEntry[]) ?? []), apply_on_create: false };
     sets = [...sets, s];
     return s;
   },
   sets_update: ({ id, name, description }) =>
     touch(id as string, (s) => ({ ...s, name: (name as string | null)?.trim() || s.name, description: description == null ? s.description : (description as string).trim() || null })),
+  sets_set_apply_on_create: ({ id, enabled }) => touch(id as string, (s) => ({ ...s, apply_on_create: Boolean(enabled) })),
   sets_delete: ({ id }) => {
     sets = sets.filter((s) => s.id !== id);
     return null;
   },
   sets_duplicate: ({ id }) => {
     const src = sets.find((s) => s.id === id)!;
-    const s = { ...src, id: Math.random().toString(36).slice(2, 10), name: `${src.name} (Kopie)`, created: Date.now(), updated: Date.now() };
+    const s = { ...src, id: Math.random().toString(36).slice(2, 10), name: `${src.name} (Kopie)`, created: Date.now(), updated: Date.now(), apply_on_create: false };
     sets = [...sets, s];
     return s;
   },
@@ -286,7 +290,7 @@ const handlers: Handlers = {
     unknown: instanceId === "survival" ? ["eigene-config-mod.jar", "OptiFabric-1.14.3.jar"] : [],
   }),
   sets_from_profile: ({ instanceId }) => {
-    const s: ModSet = { id: Math.random().toString(36).slice(2, 10), name: "PvP-Abend", description: null, created: Date.now(), updated: Date.now(), entries: (installed[instanceId as string] ?? []).slice(0, 5).map((p) => toEntry(byId.get(p)!)) };
+    const s: ModSet = { id: Math.random().toString(36).slice(2, 10), name: "PvP-Abend", description: null, created: Date.now(), updated: Date.now(), entries: (installed[instanceId as string] ?? []).slice(0, 5).map((p) => toEntry(byId.get(p)!)), apply_on_create: false };
     sets = [...sets, s];
     return [s, 2];
   },

@@ -25,9 +25,26 @@ pub async fn loader_versions(state: State<'_, AppState>, loader: LoaderKind, mc_
     loaders::loader_versions(&state, loader, &mc_version).await
 }
 
+#[tauri::command]
+pub async fn instance_version_preview(
+    state: State<'_, AppState>, id: String, target: crate::content::migration::GameVersion,
+) -> AppResult<crate::content::migration::Preview> {
+    crate::content::migration::preview(&state, &id, target).await
+}
+
+#[tauri::command]
+pub async fn instance_version_apply(
+    state: State<'_, AppState>, id: String, target: crate::content::migration::GameVersion, token: String,
+) -> AppResult<String> {
+    crate::content::migration::start(&state, id, target, token).await
+}
+
 /// Installation/Reparatur einer Instanz als Hintergrundaufgabe. Gibt Task-ID zurück.
 #[tauri::command]
 pub async fn instance_install(state: State<'_, AppState>, id: String, force: Option<bool>) -> AppResult<String> {
+    let lock = state.content.lock(&id);
+    let _guard = lock.lock().await;
+    crate::content::migration::guard(&state, &id)?;
     let inst = state.instances.get(&id)?;
     if inst.is_bedrock() {
         return Err(AppError::Invalid("Bedrock wird über den Microsoft Store installiert und aktualisiert.".into()));
@@ -54,6 +71,7 @@ pub async fn instance_launch(
     server: Option<String>,
     offline: Option<bool>,
 ) -> AppResult<String> {
+    crate::content::migration::guard(&state, &id)?;
     let inst = state.instances.get(&id)?;
     // Bedrock: eigener Ablauf (kein Java, kein Account – das Spiel meldet sich selbst bei Xbox an)
     if inst.is_bedrock() {
@@ -76,7 +94,11 @@ pub async fn instance_launch(
     if state.auth.list().is_empty() && !dev_offline {
         return Err(AppError::NotConfigured("Kein Account – bitte unter Accounts mit Microsoft anmelden".into()));
     }
+    let lock = state.content.lock(&id);
+    let guard = lock.lock().await;
+    crate::content::migration::guard(&state, &id)?;
     let run = state.game.begin_with(&id, BeginOpts { exclusive: false, world: world.as_deref(), server: server.as_deref() })?;
+    drop(guard);
     if offline == Some(true) {
         state.auth.grant_offline(account_id.as_deref());
     }

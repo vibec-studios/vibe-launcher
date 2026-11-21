@@ -11,10 +11,10 @@ import { api } from "@/lib/api";
 import { qk, useInstances, useSettings, useSystemInfo } from "@/lib/queries";
 import type { Instance, InstancePatch, JavaOptions, LaunchHooks, WindowOptions } from "@/lib/types";
 import { instanceAccent, loaderNames } from "@/lib/format";
-import { Button, IconButton, Input, NumberInput, Select, SettingRow, SettingsCard, Switch, Textarea, confirm, toast } from "@/components/ui";
+import { Button, IconButton, Input, NumberInput, Select, SettingRow, SettingsCard, Switch, Textarea } from "@/components/ui";
 import { VersionPicker, type VersionValue } from "@/components/instance/VersionPicker";
 import { JavaPathField, MemoryField } from "@/components/instance/forms";
-import { createShortcut, installInstance, openExport, openFolder, repairInstance, useInstanceActions } from "@/components/instance/actions";
+import { createShortcut, openExport, openFolder, repairInstance, useInstanceActions } from "@/components/instance/actions";
 import { useRunPhase } from "@/components/instance/status";
 import { openSettings } from "@/features/settings/store";
 import { useVibe } from "@/lib/vibe";
@@ -26,6 +26,7 @@ import { AccentPicker, GroupInput } from "../NewInstanceDialog";
 import { ClientPacks, useClientPacks } from "./ClientPacks";
 import { IconSetting } from "./IconSetting";
 import { closeInstanceSettings } from "./store";
+import { VersionMigration } from "./VersionMigration";
 import { ImportSettingsRow } from "@/features/import/SettingsOffer";
 import { GpuRow, SimplePerfCard } from "@/features/perf/PerfControls";
 import { HelpLink } from "@/features/help/HelpButton";
@@ -218,30 +219,12 @@ export function VersionTab({ instance: i }: TabProps) {
   const { phase } = useRunPhase(i.id);
   const [editing, setEditing] = useState(false);
   const [ver, setVer] = useState<VersionValue>({ mc: i.mc_version, loader: i.loader.kind, loaderVersion: i.loader.version });
-  const [busy, setBusy] = useState(false);
   const packs = useClientPacks(i);
   const installedPacks = (packs.data?.packs ?? []).filter((p) => p.installed);
   const changed = ver.mc !== i.mc_version || ver.loader !== i.loader.kind || (ver.loader !== "vanilla" && ver.loaderVersion !== i.loader.version);
   const valid = !!ver.mc && (ver.loader === "vanilla" || !!ver.loaderVersion);
 
-  const applyChange = async () => {
-    const ok = await confirm({
-      title: t("isettings.version.confirm"),
-      text: t("isettings.version.confirm_text"),
-      confirmLabel: t("isettings.version.apply"),
-    });
-    if (!ok) return;
-    setBusy(true);
-    try {
-      await api.instanceUpdate(i.id, { mc_version: ver.mc!, loader: { kind: ver.loader, version: ver.loader === "vanilla" ? null : ver.loaderVersion } });
-      installInstance(i.id);
-      setEditing(false);
-    } catch (e) {
-      toast.error(e);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const target = ver.mc && valid ? { mc_version: ver.mc, loader: { kind: ver.loader, version: ver.loader === "vanilla" ? null : ver.loaderVersion } } : null;
 
   return (
     <SettingsCard title={t(editing ? "isd.version.configure" : "isd.section.installed")}>
@@ -267,25 +250,9 @@ export function VersionTab({ instance: i }: TabProps) {
               {installedPacks.length > 0 && ` ${t("isd.version.packs", { list: installedPacks.map((p) => t(`cp.${p.id}.name`)).join(", ") })}`}
             </span>
           </div>
-          <VersionPicker value={ver} onChange={setVer} listHeight={200} />
-          <div className="grid grid-cols-2 gap-3 rounded-card border border-line bg-surface p-4 max-[560px]:grid-cols-1" aria-live="polite">
-            <div>
-              <div className="text-[13px] text-muted">{t("isd.version.current")}</div>
-              <div className="break-words text-[15px] font-semibold text-text">Minecraft {i.mc_version} · {loaderNames[i.loader.kind]}</div>
-            </div>
-            <div>
-              <div className="text-[13px] text-muted">{t("isd.version.target")}</div>
-              <div className="break-words text-[15px] font-semibold text-text">{ver.mc ? `Minecraft ${ver.mc} · ${loaderNames[ver.loader]}` : t("newinst.pick_version_first")}</div>
-            </div>
-          </div>
-          <div className="flex flex-wrap justify-end gap-3">
-            <Button variant="subtle" onClick={() => setEditing(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button variant="accent" disabled={!changed || !valid} loading={busy} onClick={applyChange}>
-              {t("isettings.version.apply")}
-            </Button>
-          </div>
+          <VersionMigration id={i.id} target={target} disabled={!changed || phase !== "idle"} onCancel={() => setEditing(false)} onDone={() => setEditing(false)}>
+            <VersionPicker value={ver} onChange={setVer} listHeight={300} />
+          </VersionMigration>
         </div>
       )}
     </SettingsCard>
