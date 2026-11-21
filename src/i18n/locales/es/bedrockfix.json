@@ -1,0 +1,6 @@
+{
+  "bedrock.locked.title": "Tus mundos están aparcados de forma segura",
+  "bedrock.locked.text": "Al volver a cambiar, un archivo seguía abierto. Cierra Minecraft y todas las ventanas del Explorador que muestren carpetas de Bedrock y pulsa “Volver a cambiar”: no se pierde nada.",
+  "bedrock.locked.action": "Volver a cambiar",
+  "bedrock.profile.isolated_other_drive": "Solo funciona si la carpeta del launcher está en la misma unidad que Windows. Tu carpeta del launcher está en otro sitio: usa “Perfil compartido”."
+}

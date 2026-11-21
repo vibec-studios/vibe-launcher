@@ -1,0 +1,9 @@
+{
+  "playwarn.title_1": "Jeden mod nie przejdzie przez link",
+  "playwarn.title": "Mody, które nie przejdą przez link: {n}",
+  "playwarn.text": "Te mody dodano samodzielnie jako pliki. Link do gry zna tylko mody z Modrinth i CurseForge – znajomym by ich brakowało i mogliby nie dać rady dołączyć.",
+  "playwarn.more": "i jeszcze {n}",
+  "playwarn.hint": "Udostępnienie jako paczka Vibe zawiera wszystkie pliki – znajomi zainstalują ją jednym kliknięciem.",
+  "playwarn.anyway": "Udostępnij link mimo to",
+  "playwarn.as_pack": "Udostępnij jako paczkę Vibe"
+}

@@ -1,0 +1,6 @@
+{
+  "prelaunch.skip": "Pomiń",
+  "prelaunch.skip_hint": "Pomiń tym razem aktualizacje modów i uruchom od razu",
+  "prelaunch.step.auto_update": "Aktualizacje modów",
+  "prelaunch.step.world_backup": "Kopia zapasowa świata"
+}

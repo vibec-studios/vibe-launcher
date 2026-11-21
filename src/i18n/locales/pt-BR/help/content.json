@@ -1,0 +1,372 @@
+{
+  "guides": {
+    "first-instance": {
+      "title": "Crie sua primeira instância",
+      "summary": "Uma instância é um Minecraft próprio, com versão, mods e mundos próprios. Você pode ter quantas quiser.",
+      "steps": [
+        "Clique em “+ Nova instância” na barra lateral ou em “Nova instância” no início.",
+        "Escolha o que você quer fazer: vanilla, com mods, um modpack ou uma importação. No modo simples, um clique num objetivo já basta.",
+        "Dê um nome à instância e escolha a versão do Minecraft. Para mods, escolha também um loader (Fabric, NeoForge, Forge ou Quilt).",
+        "Clique em “Criar”. O launcher baixa sozinho o Minecraft, o Java e o loader. O progresso aparece nas tarefas no canto superior direito.",
+        "Quando a instância estiver pronta, inicie com “Jogar”."
+      ],
+      "tips": [
+        "Entre antes com sua conta Microsoft (botão da conta no canto superior direito), senão você não consegue jogar online.",
+        "Não sabe qual loader usar? Escolha Fabric. A maioria dos mods atuais funciona nele."
+      ],
+      "keywords": "nova criar versão loader fabric forge vanilla jogo instância"
+    },
+    "modpack": {
+      "title": "Instalar um modpack",
+      "summary": "Um modpack é uma coleção pronta de mods. O launcher cria uma nova instância para ele e instala tudo automaticamente.",
+      "steps": [
+        "Abra “Descobrir” na barra lateral.",
+        "Escolha o tipo “Modpacks” em cima.",
+        "Pesquise o nome do modpack ou navegue com os filtros à esquerda.",
+        "Abra o modpack e clique em “Instalar”. Uma nova instância com o nome do modpack é criada.",
+        "Espere a instalação terminar (tarefas no canto superior direito) e clique em “Jogar”."
+      ],
+      "tips": [
+        "Você também pode arrastar arquivos de modpack (.mrpack, .zip do CurseForge) direto para a janela do launcher.",
+        "Se houver uma atualização, a instância mostra um aviso. Seus mundos são mantidos ao atualizar."
+      ],
+      "keywords": "modrinth curseforge mrpack pack coleção modpack"
+    },
+    "mods": {
+      "title": "Adicionar e atualizar mods",
+      "summary": "Adicione mods, pacotes de recursos e shaders direto numa instância. O launcher procura as atualizações para você.",
+      "steps": [
+        "Abra a instância na sua biblioteca e fique na área “Conteúdo”.",
+        "Clique em “Adicionar conteúdo”. O “Descobrir” abre já filtrado para a versão e o loader certos.",
+        "Clique em “Instalar” num mod. As dependências necessárias também são baixadas.",
+        "Adicione seus próprios arquivos .jar com “Adicionar arquivos” ou arraste para a janela.",
+        "“Verificar de novo” (ou F5) procura atualizações. Se houver, atualize com “Atualizar tudo”."
+      ],
+      "tips": [
+        "Com o botão na lista você desativa mods sem apagar.",
+        "Antes de atualizações grandes vale a pena fazer um backup da instância."
+      ],
+      "keywords": "mod jar atualizar shader pacote de recursos textura adicionar"
+    },
+    "import": {
+      "title": "Importar de outro launcher",
+      "summary": "Traga instâncias de outros launchers, ex.: Modrinth App, CurseForge, Prism, MultiMC, ATLauncher, GDLauncher ou o launcher oficial.",
+      "steps": [
+        "Clique em “Importar” na biblioteca ou no início.",
+        "Escolha “De outro launcher” em cima. O launcher procura sozinho os launchers instalados.",
+        "Se seu launcher não for encontrado, clique em “Escolher pasta …” e escolha a pasta dele ou a de uma única instância.",
+        "Marque as instâncias que quer trazer e clique em “Importar”. Mundos, configs e configurações vêm junto.",
+        "Importar mais depois: é só abrir a importação de novo. Instâncias já trazidas aparecem como “Já importada”, as novas podem ser adicionadas."
+      ],
+      "tips": [
+        "Seu launcher antigo continua intacto, tudo é copiado.",
+        "Arquivos de modpack avulsos são importados no modo “Arquivo”.",
+        "Depois da importação, o launcher oferece trazer configurações como RAM ou Java."
+      ],
+      "keywords": "importar trazer prism multimc curseforge modrinth atlauncher gdlauncher de novo mais"
+    },
+    "autofix": {
+      "title": "Correção automática após um crash",
+      "summary": "Se o Minecraft crashar, o launcher procura a causa e sugere uma solução, ex.: dependências faltando, o Java errado ou pouca RAM.",
+      "steps": [
+        "Depois de um crash, aparece um aviso vermelho “Crash detectado” no topo da instância.",
+        "Clique em “Corrigir” ou “Corrigir problemas”. O launcher mostra o que encontrou e o que mudaria.",
+        "Confirme as sugestões. O launcher cria um backup automaticamente antes.",
+        "Inicie o jogo de novo. Se não resolver, abra “Diagnóstico” em “Logs” no modo avançado para ver detalhes.",
+        "Ainda travado? Mande um relato de bug com logs por “Relatar problema”."
+      ],
+      "tips": [
+        "Causa mais comum: um mod não combina com a versão do Minecraft ou falta uma dependência.",
+        "Você sempre pode desfazer a correção automática: o backup fica em “Backups”."
+      ],
+      "keywords": "crash erro reparar corrigir diagnóstico logs não inicia"
+    },
+    "backups": {
+      "title": "Backups",
+      "summary": "Backups guardam mundos ou a configuração de uma instância, para você voltar depois de uma atualização que deu errado ou um erro.",
+      "steps": [
+        "Abra a instância e vá para a área “Backups”.",
+        "“Criar snapshot” salva mods, configs, packs e opções, mas não os mundos. Ideal antes de uma atualização.",
+        "Faça backup de mundos na área “Mundos”: clique com o botão direito no mundo → “Criar backup”. Eles aparecem em “Backups de mundos”.",
+        "Para voltar, clique em “Restaurar” no snapshot ou backup.",
+        "Configure backups automáticos em Configurações → Jogo → Backups, ex.: antes de cada início."
+      ],
+      "tips": [
+        "Backups automáticos contam no limite de retenção, os antigos são apagados.",
+        "A correção automática cria sozinha um snapshot antes de cada mudança."
+      ],
+      "keywords": "backup restaurar mundo snapshot desfazer cópia"
+    },
+    "hosting": {
+      "title": "Hospede um mundo com amigos",
+      "summary": "Com o Vibe Relay seus amigos entram no seu mundo sem redirecionar portas. Um link de jogo convida na hora, com o modpack certo.",
+      "steps": [
+        "Inicie sua instância com o Vibey Client (configurações da instância → Cliente).",
+        "Abra seu mundo no jogo e escolha “Abrir para amigos”. O cliente se conecta ao Vibe Relay.",
+        "O launcher mostra uma barra “Você está hospedando …” com o link de jogo. Copie ou mande direto para os amigos.",
+        "Seus amigos abrem o link. O launcher deles prepara o modpack certo e conecta eles direto ao seu mundo.",
+        "Para um servidor que continua rodando sem você, crie um em “Servidores” e escolha “Vibe Relay” como conexão."
+      ],
+      "tips": [
+        "Hospedar precisa do Vibe (Configurações → Vibe e conta). O Vibe está em beta agora, veja “Lista de espera da beta do Vibe”.",
+        "Links de jogo expiram quando você para de hospedar, no máximo depois de 12 horas."
+      ],
+      "keywords": "amigos multijogador relay convidar link compartilhar lan hospedar"
+    },
+    "servers": {
+      "title": "Gerenciar servidores",
+      "summary": "Crie, inicie e gerencie seus próprios servidores de Minecraft no seu PC, com console, jogadores, mundos e complementos.",
+      "steps": [
+        "Abra “Servidores” na barra lateral (modo avançado).",
+        "Clique em “Novo servidor” e escolha uma plataforma (ex.: Paper, Fabric, NeoForge) e uma versão.",
+        "Inicie o servidor. O console mostra o que está acontecendo e deixa você digitar comandos.",
+        "Em “Conexão” você escolhe como os amigos entram: local/LAN, Vibe Relay ou playit.gg.",
+        "Gerencie lista branca, operadores e bans em “Jogadores”, e plugins e mods em “Complementos”."
+      ],
+      "tips": ["O servidor roda no seu PC. Ele só fica acessível enquanto seu PC estiver ligado."],
+      "keywords": "servidor paper spigot console lista branca plugin conexão"
+    },
+    "skins": {
+      "title": "Skins e cosméticos",
+      "summary": "Troque sua skin direto no launcher. Cosméticos como capas, chapéus e emotes aparecem para outros jogadores com o Vibey Client.",
+      "steps": [
+        "Abra “Skins” na barra lateral ou pelo botão da conta no canto superior direito.",
+        "Envie uma skin ou escolha uma da sua biblioteca. A prévia 3D mostra como fica.",
+        "Escolha entre o modelo clássico e o fino e clique em “Aplicar”.",
+        "Para cosméticos, abra “Cosméticos” na barra lateral, escolha itens e salve seu visual."
+      ],
+      "tips": [
+        "Para trocar a skin você precisa estar conectado com sua conta Microsoft.",
+        "Cosméticos precisam do Vibe e do Vibey Client na instância."
+      ],
+      "keywords": "skin capa cosméticos emote visual"
+    },
+    "modsets": {
+      "title": "Conjuntos de mods",
+      "summary": "Um conjunto de mods é uma lista dos seus mods favoritos. Aplique em qualquer instância, até em outras versões.",
+      "steps": [
+        "Abra “Biblioteca” e depois “Conjuntos de mods” em cima.",
+        "Clique em “Novo conjunto” ou pegue os mods de uma instância existente.",
+        "Adicione mods pela pesquisa ou colando uma lista.",
+        "Aplique o conjunto numa instância com “Aplicar”. O launcher encontra versões compatíveis para aquela versão do Minecraft."
+      ],
+      "tips": ["Conjuntos podem ser exportados e importados – ótimo para compartilhar com amigos."],
+      "keywords": "conjunto lista coleção favoritos mods aplicar"
+    },
+    "gallery": {
+      "title": "Galeria e clipes",
+      "summary": "A galeria junta num só lugar todas as capturas de tela e clipes das suas instâncias.",
+      "steps": [
+        "Abra “Galeria” na barra lateral.",
+        "Alterne entre “Capturas de tela” e “Clipes” em cima. Os clipes são gravados no jogo pelo Vibey Client.",
+        "Filtre por instância para ver só as imagens de um jogo.",
+        "Clique numa imagem ou clipe para ver em tamanho grande, copiar ou abrir a pasta."
+      ],
+      "tips": ["Tire capturas de tela no jogo com F2."],
+      "keywords": "captura de tela imagem vídeo clipe galeria gravação"
+    },
+    "waitlist": {
+      "title": "Lista de espera da beta do Vibe",
+      "summary": "O Vibe (amigos, chat, hospedagem, cosméticos, Vibey Client) está em beta. Para participar, você entra numa lista de espera e a equipe libera você.",
+      "steps": [
+        "Abra Configurações → Vibe e conta.",
+        "Entre no Vibe com sua conta do Minecraft.",
+        "Entre na lista de espera. Depois seu status aparece nesta seção.",
+        "Assim que a equipe aprovar você, amigos, hospedagem, cosméticos e o Vibey Client funcionam."
+      ],
+      "tips": [
+        "O launcher funciona totalmente sem o Vibe: instâncias, mods, modpacks e servidores.",
+        "Se você já estava aqui antes da beta, é aprovado automaticamente."
+      ],
+      "keywords": "beta lista de espera aprovar acesso vibe conta entrar"
+    },
+    "bedrock": {
+      "title": "Bedrock (experimental)",
+      "summary": "Além do Java, o launcher pode iniciar o Minecraft Bedrock e gerenciar add-ons, mundos e backups. Este recurso ainda é experimental.",
+      "steps": [
+        "Instale primeiro o Minecraft Bedrock pela Microsoft Store ou pelo app do Xbox.",
+        "Clique em “Nova instância” e escolha a aba “Bedrock”.",
+        "Escolha Release ou Preview e se a instância terá dados de jogo próprios.",
+        "Na instância do Bedrock você gerencia add-ons, mundos e backups. “Jogar” inicia o jogo instalado."
+      ],
+      "tips": [
+        "Instâncias do Bedrock são marcadas com “BE”.",
+        "Escolha de versão, mods de Java e links de jogo não estão disponíveis para o Bedrock."
+      ],
+      "keywords": "bedrock windows edition xbox addon store experimental"
+    },
+    "feedback": {
+      "title": "Mandar feedback",
+      "summary": "Algo não funciona ou você tem uma ideia? Mande para a equipe direto do launcher.",
+      "steps": [
+        "Clique no ícone de feedback no canto superior direito (balão com exclamação).",
+        "Escolha se é um bug, uma ideia ou outra coisa, e descreva rapidinho.",
+        "Para bugs você pode anexar logs e uma captura de tela. Isso ajuda a achar a causa.",
+        "Clique em “Enviar”. Você recebe um número de ticket. Cite ele se escrever pra gente sobre isso no Discord."
+      ],
+      "tips": ["Depois de um crash há um botão “Relatar problema” que já inclui os logs certos."],
+      "keywords": "feedback bug relato ideia sugestão suporte ticket"
+    },
+    "performance": {
+      "title": "Desempenho e RAM",
+      "summary": "Defina quanta memória (RAM) o Minecraft recebe, para todas as instâncias ou para uma só.",
+      "steps": [
+        "Para todas as instâncias: Configurações → Java e memória (no modo simples: Memória).",
+        "Para uma instância: abra a instância → engrenagem (configurações da instância) → Java → “Valores próprios”.",
+        "Regra geral: vanilla 2–4 GB, com mods 4–6 GB, modpacks grandes 6–8 GB.",
+        "Nunca dê mais que cerca de três quartos da sua RAM. O Windows e outros programas também precisam de memória.",
+        "Ainda travando? Mods de desempenho como o Sodium ajudam. O launcher sugere eles na área “Conteúdo”."
+      ],
+      "tips": [
+        "No modo simples você escolhe um nível de desempenho nas configurações da instância em vez de números exatos.",
+        "RAM demais pode até deixar o jogo mais lento."
+      ],
+      "keywords": "ram memória desempenho fps lag lento java"
+    }
+  },
+  "tours": {
+    "intro": {
+      "title": "Tour rápido",
+      "steps": [
+        {
+          "title": "Comece a jogar aqui",
+          "text": "Um clique em “Jogar” inicia seu último jogo. O launcher baixa tudo o que precisa.",
+          "variants": {
+            "new-game": { "title": "Crie um jogo novo", "text": "É só escolher o que você quer fazer. O launcher cuida da versão e da configuração." },
+            "new-instance": { "title": "Crie um jogo novo", "text": "É só escolher o que você quer fazer. O launcher cuida da versão e da configuração." }
+          }
+        },
+        { "title": "Meus jogos", "text": "Todos os seus jogos num relance. Lá você adiciona mods, vê seus mundos ou resolve problemas." },
+        { "title": "Descobrir", "text": "Encontre mods, pacotes de recursos, shaders e modpacks. Eles vão direto para o jogo escolhido." },
+        { "title": "Sua conta", "text": "Troque de conta e de skin aqui, e mude para o modo avançado quando quiser." },
+        { "title": "Ajuda e guias", "text": "Guias passo a passo e mais tours estão sempre aqui." }
+      ]
+    },
+    "first-instance": {
+      "title": "Primeira instância",
+      "steps": [
+        { "title": "Nova instância", "text": "Este mais cria uma nova instância a qualquer momento, em qualquer página." },
+        { "title": "Ou direto na biblioteca", "text": "Isto também funciona. Depois escolha versão e loader, o launcher baixa o resto." },
+        { "title": "Já usa outro launcher?", "text": "“Importar” traz suas instâncias existentes com mundos e configurações." },
+        { "title": "Sua biblioteca", "text": "Todas as instâncias ficam aqui. Clique numa para ver mods, mundos e configurações." }
+      ]
+    },
+    "modpack": {
+      "title": "Instalar um modpack",
+      "steps": [
+        { "title": "Descobrir", "text": "Aqui você encontra mods e modpacks do Modrinth e do CurseForge." },
+        { "title": "Escolha um tipo", "text": "“Modpacks” já está escolhido. Troque aqui para mods, shaders ou pacotes de recursos." },
+        { "title": "Pesquisar", "text": "Digite o nome do modpack. Filtre por versão, loader e categoria à esquerda." },
+        { "title": "Instalar", "text": "Abra um modpack e clique em “Instalar”. Uma nova instância com tudo incluído é criada." }
+      ]
+    },
+    "mods": {
+      "title": "Gerenciar mods",
+      "steps": [
+        { "title": "Adicionar conteúdo", "text": "Abre o “Descobrir”, já filtrado para a versão e o loader desta instância." },
+        { "title": "Seus próprios arquivos", "text": "Tem um arquivo .jar? Adicione aqui ou só arraste para a janela." },
+        {
+          "title": "Atualizações",
+          "text": "Há atualizações. Um clique atualiza todos os mods de uma vez.",
+          "variants": { "content-refresh": { "title": "Procurar atualizações", "text": "“Verificar de novo” (ou F5) procura atualizações e problemas. Se houver, “Atualizar tudo” aparece ao lado." } }
+        },
+        { "title": "Seu conteúdo", "text": "O botão em cada linha desativa um mod sem apagar." }
+      ]
+    },
+    "import": {
+      "title": "Importar",
+      "steps": [
+        { "title": "Importar", "text": "Traga aqui arquivos de modpack ou instâncias inteiras de outros launchers." },
+        { "title": "Arquivo ou launcher", "text": "“De outro launcher” procura automaticamente Modrinth App, CurseForge, Prism, MultiMC e outros." },
+        { "title": "Selecionar", "text": "Marque as instâncias e clique em “Importar”. Se seu launcher não aparecer, escolha a pasta dele você mesmo." },
+        { "title": "Importar mais depois", "text": "Instâncias novas no seu launcher antigo? É só abrir a importação de novo. As já importadas ficam marcadas." }
+      ]
+    },
+    "autofix": {
+      "title": "Correção automática",
+      "steps": [
+        {
+          "title": "Corrigir problemas",
+          "text": "Um clique e o launcher procura a causa, mostra as sugestões e faz um backup antes.",
+          "variants": {
+            "crash-banner": { "title": "Crash detectado", "text": "Depois de um crash, este aviso aparece aqui com a causa mais provável. “Corrigir” conserta o jogo automaticamente." },
+            "logs-diagnose": { "title": "Diagnóstico", "text": "Depois de um crash aparece um aviso vermelho com “Corrigir” no topo. Aqui no diagnóstico você vê detalhes e também pode iniciar “Corrigir problemas”." }
+          }
+        },
+        { "title": "Iniciar de novo", "text": "Depois é só clicar em “Jogar” de novo. O launcher verifica mais uma vez antes de iniciar." },
+        { "title": "Nada resolve?", "text": "Então mande pra gente um relato de bug pelo feedback. Dá para anexar logs." }
+      ]
+    },
+    "backups": {
+      "title": "Backups",
+      "steps": [
+        { "title": "Criar snapshot", "text": "Salva mods, configs e packs desta instância, ex.: antes de uma atualização grande. Faça backup de mundos na área “Mundos”." },
+        { "title": "Seus backups", "text": "Snapshots e backups de mundos aparecem aqui. “Restaurar” leva você de volta." },
+        { "title": "Backups automáticos", "text": "Escolha nas configurações quando o launcher faz backup sozinho e quantos ele mantém." }
+      ]
+    },
+    "hosting": {
+      "title": "Jogar com amigos",
+      "steps": [
+        { "title": "Seus mundos", "text": "Inicie o mundo com o Vibey Client e escolha “Abrir para amigos” no jogo. O Vibe Relay faz o resto." },
+        { "title": "Link de jogo", "text": "Enquanto você hospeda, seu link de jogo aparece aqui. Copie ou mande direto para os amigos." },
+        { "title": "Amigos", "text": "Veja quem está online e convide amigos direto para o seu mundo." },
+        { "title": "Seu próprio servidor", "text": "O mundo deve continuar rodando sem você? Crie um servidor e escolha “Vibe Relay” como conexão." }
+      ]
+    },
+    "servers": {
+      "title": "Servidores",
+      "steps": [
+        { "title": "Novo servidor", "text": "Escolha uma plataforma e uma versão. O launcher baixa e configura o servidor." },
+        { "title": "Seus servidores", "text": "Abra um servidor para ver console, jogadores, mundos, complementos e a conexão para amigos." },
+        { "title": "Sempre aqui", "text": "Encontre seus servidores aqui a qualquer hora. Um ponto verde mostra que um está rodando." }
+      ]
+    },
+    "skins": {
+      "title": "Skins",
+      "steps": [
+        { "title": "Prévia", "text": "É assim que sua skin está agora. Arraste o personagem para girar." },
+        { "title": "Suas skins", "text": "Envie skins novas ou escolha uma salva e aplique." },
+        { "title": "Cosméticos", "text": "Capas, chapéus e emotes para o Vibey Client ficam aqui." }
+      ]
+    },
+    "modsets": {
+      "title": "Conjuntos de mods",
+      "steps": [
+        { "title": "Novo conjunto", "text": "Crie uma lista dos seus mods favoritos. Funciona para qualquer versão." },
+        { "title": "Importar", "text": "Traga aqui conjuntos de amigos ou de um arquivo." },
+        { "title": "Seus conjuntos", "text": "Abra um conjunto para adicionar mods ou aplicar numa instância." }
+      ]
+    },
+    "gallery": {
+      "title": "Galeria",
+      "steps": [
+        { "title": "Capturas e clipes", "text": "Alterne aqui entre as imagens e os clipes do Vibey Client." },
+        { "title": "Filtrar por instância", "text": "Mostre só as imagens de uma instância específica." },
+        { "title": "Ver", "text": "Clique numa imagem para abrir em tamanho grande, copiar ou mostrar na pasta." }
+      ]
+    },
+    "waitlist": {
+      "title": "Beta do Vibe",
+      "steps": [
+        { "title": "Vibe e conta", "text": "Entre no Vibe aqui. O Vibe está em beta, primeiro você entra numa lista de espera." },
+        { "title": "Seu acesso", "text": "Seu status aparece aqui. Depois de aprovado, amigos, hospedagem e cosméticos funcionam." }
+      ]
+    },
+    "feedback": {
+      "title": "Feedback",
+      "steps": [
+        { "title": "Mandar feedback", "text": "Bug ou ideia? Escreva pra gente aqui. Dá para anexar logs e uma captura de tela." },
+        { "title": "Ajuda", "text": "E aqui você encontra todos os guias e tours sempre que travar." }
+      ]
+    },
+    "performance": {
+      "title": "Desempenho e RAM",
+      "steps": [
+        { "title": "Configurações da instância", "text": "A engrenagem abre as configurações desta instância." },
+        { "title": "Desempenho desta instância", "text": "Defina quanta memória esta instância recebe. “Valores próprios” substitui os padrões." },
+        { "title": "Memória para todas", "text": "Estes valores valem para todas as instâncias sem configuração própria. Com mods, 4–6 GB é um bom começo." }
+      ]
+    }
+  }
+}

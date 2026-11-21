@@ -1,0 +1,82 @@
+{
+  "instance": {
+    "title": "Instance (jeu)",
+    "text": "Une installation de Minecraft à part, avec sa version, ses mods et ses mondes. Tu peux en avoir autant que tu veux : elles ne s'influencent pas.",
+    "example": "Par exemple une instance « Vanilla 1.21 » et une autre « Modpack entre amis »."
+  },
+  "modpack": {
+    "title": "Modpack",
+    "text": "Un ensemble tout prêt de nombreux mods qui marchent ensemble. Le launcher le crée comme nouvelle instance et télécharge tout automatiquement.",
+    "example": "Pour bien débuter : Fabulously Optimized (plus rapide, plus joli, sans changer le gameplay)."
+  },
+  "mod": {
+    "title": "Mod",
+    "text": "Une extension qui modifie Minecraft : nouveaux blocs, créatures, meilleures performances ou plus de confort. Les mods ont besoin d'une instance avec un mod loader."
+  },
+  "loader": {
+    "title": "Mod loader",
+    "text": "La base qui charge les mods. Chaque mod est fait pour un loader : les mods Fabric ne tournent pas sur Forge et inversement. À l'installation, le launcher ne te montre que les mods compatibles.",
+    "example": "Pas sûr ? Prends Fabric : c'est là qu'il y a le plus de nouveaux mods."
+  },
+  "vanilla": {
+    "title": "Vanilla",
+    "text": "Minecraft exactement comme Mojang le publie, sans mods. Les packs de ressources et les shaders marchent quand même."
+  },
+  "fabric": {
+    "title": "Fabric",
+    "text": "Un mod loader léger et rapide. La plupart des mods pour les nouvelles versions de Minecraft sont ici, y compris des mods de performance comme Sodium."
+  },
+  "quilt": {
+    "title": "Quilt",
+    "text": "Une branche de Fabric. La plupart des mods Fabric tournent aussi ici. Utile seulement si un mod demande explicitement Quilt."
+  },
+  "forge": {
+    "title": "Forge",
+    "text": "Le plus ancien mod loader. Beaucoup de gros modpacks et de mods pour les anciennes versions (jusqu'à la 1.20) en dépendent."
+  },
+  "neoforge": {
+    "title": "NeoForge",
+    "text": "Le successeur de Forge depuis Minecraft 1.20.2. Les gros modpacks récents utilisent souvent NeoForge."
+  },
+  "resourcepack": {
+    "title": "Pack de ressources",
+    "text": "Change l'apparence ou le son des blocs, objets et menus. Ne demande aucun mod et marche dans toutes les instances."
+  },
+  "shader": {
+    "title": "Shader",
+    "text": "Fait passer la lumière, les ombres et l'eau à un autre niveau. Nécessite une instance avec Iris ou OptiFine et une bonne carte graphique."
+  },
+  "datapack": {
+    "title": "Datapack",
+    "text": "Modifie les règles du jeu, les recettes ou la génération du monde sans mods. Un datapack appartient toujours à un monde précis."
+  },
+  "ram": {
+    "title": "Mémoire (RAM)",
+    "text": "La quantité de mémoire que Minecraft peut utiliser. Trop peu provoque des saccades ou des plantages, trop ralentit le reste de ton PC. Le launcher choisit automatiquement une bonne valeur.",
+    "example": "En gros : 2–4 Go sans mods, 4–8 Go pour les gros modpacks."
+  },
+  "java": {
+    "title": "Java",
+    "text": "Le logiciel sur lequel tourne Minecraft: Java Edition. Le launcher télécharge automatiquement la bonne version de Java : tu n'as rien à installer."
+  },
+  "snapshot": {
+    "title": "Snapshot",
+    "text": "Une version de test de Minecraft avec des fonctions pas encore finies. Peut contenir des bugs et abîmer des mondes : fais d'abord une sauvegarde."
+  },
+  "server": {
+    "title": "Serveur",
+    "text": "Un ordinateur qui fait tourner un monde pour que d'autres puissent le rejoindre. Pour jouer ensemble, « Héberger le monde » suffit généralement ; tes propres serveurs sont dans le mode expert."
+  },
+  "backup": {
+    "title": "Sauvegarde",
+    "text": "Une copie de ton monde ou de ton instance. Si quelque chose tourne mal, elle restaure l'état d'avant."
+  },
+  "vibe": {
+    "title": "Vibe",
+    "text": "Les services en ligne du launcher : amis, chat, mondes à plusieurs et cosmétiques. Facultatifs et désactivables à tout moment."
+  },
+  "account": {
+    "title": "Compte Microsoft",
+    "text": "Minecraft: Java Edition est lié à ton compte Microsoft. La connexion se fait directement chez Microsoft : le launcher ne voit jamais ton mot de passe."
+  }
+}

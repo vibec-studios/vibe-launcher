@@ -1,0 +1,13 @@
+{
+  "update.guard.title": "Atualizar agora mesmo assim?",
+  "update.guard.text": "O launcher fecha rapidinho durante a atualização e reinicia.",
+  "update.guard.servers_one": "Um servidor local está rodando – ele continua rodando, mas sem o console ao vivo até você reiniciar.",
+  "update.guard.servers": "{n} servidores locais estão rodando – eles continuam rodando, mas sem o console ao vivo até você reiniciar.",
+  "update.guard.games_one": "O Minecraft está rodando – o jogo continua aberto, mas o log ao vivo vai faltar depois.",
+  "update.guard.games": "{n} instâncias do Minecraft estão rodando – continuam abertas, mas o log ao vivo vai faltar depois.",
+  "update.guard.tasks": "Estas tarefas serão canceladas:",
+  "update.guard.confirm": "Atualizar mesmo assim",
+  "update.guard.later": "Depois",
+  "update.guard.bedrock_title": "Não dá para atualizar agora",
+  "update.guard.bedrock": "O Minecraft Bedrock está usando um perfil trocado agora. Feche o Bedrock e espere seus mundos serem trocados de volta – aí você pode atualizar."
+}

@@ -1,0 +1,9 @@
+{
+  "srvh.badge.lan": "Yalnızca aynı ağ",
+  "srvh.badge.internet": "İnternetteki arkadaşlar için",
+  "srvh.firewall.title": "Arkadaşların katılamıyor mu?",
+  "srvh.firewall.text": "Bu adres yalnızca aynı Wi-Fi/LAN'deki cihazlarda çalışır. Windows ilk başlatmada güvenlik duvarını sorarsa özel ağlarda “Java”ya izin ver – yoksa Windows bağlantıyı engeller.",
+  "srvh.firewall.internet": "Arkadaşların başka bir yerde mi? Vibe Relay veya playit.gg kullan – port yönlendirme gerekmez.",
+  "srvh.use_relay": "Vibe Relay kullan",
+  "srvh.use_playit": "playit.gg kullan"
+}

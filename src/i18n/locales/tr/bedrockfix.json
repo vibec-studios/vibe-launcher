@@ -1,0 +1,6 @@
+{
+  "bedrock.locked.title": "Dünyaların güvenle kenara alındı",
+  "bedrock.locked.text": "Geri değiştirirken bir dosya hâlâ açıktı. Minecraft'ı ve Bedrock klasörlerini gösteren tüm Gezgin pencerelerini kapat, sonra “Geri değiştir”e tıkla – hiçbir şey kaybolmaz.",
+  "bedrock.locked.action": "Geri değiştir",
+  "bedrock.profile.isolated_other_drive": "Yalnızca launcher klasörü Windows ile aynı sürücüdeyse çalışır. Launcher klasörün başka bir yerde – “Ortak profil” kullan."
+}

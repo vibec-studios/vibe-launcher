@@ -1,6 +1,7 @@
 //! Globale Launcher-Einstellungen (`settings.json`).
 mod discord;
 mod syslang;
+pub use syslang::LANGUAGES;
 pub mod theme;
 use crate::error::AppResult;
 use serde::{Deserialize, Serialize};

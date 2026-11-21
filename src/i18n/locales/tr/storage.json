@@ -1,0 +1,18 @@
+{
+  "datadir.change": "Konumu değiştir …",
+  "datadir.title": "Depolama konumunu değiştir",
+  "datadir.text": "Tüm kurulumlar, dünyalar, ayarlar ve indirmeler yeni yere taşınır. Ardından launcher yeniden başlar.",
+  "datadir.from": "Mevcut",
+  "datadir.to": "Yeni",
+  "datadir.space": "Taşınacak: {size} · Yeni yerde boş: {free}",
+  "datadir.size": "Taşınacak: {size}",
+  "datadir.not_enough": "Yeni yerde yeterli boş alan yok.",
+  "datadir.busy": "Lütfen önce bunu durdur veya bitmesini bekle:",
+  "datadir.locked": "Veri klasörü sabit (VIBE_LAUNCHER_HOME) ve burada değiştirilemez.",
+  "datadir.bedrock": "Kendi profili olan Bedrock kurulumları yalnızca launcher klasörü Windows ile aynı sürücüdeyse (AppData) çalışır. Sonra onları “Ortak profil”e geçir ya da bu sürücüde kal.",
+  "datadir.safe": "Her şey önce kopyalanır ve doğrulanır. Bir şey ters giderse eski yerde hiçbir şey değişmez. Launcher yeniden başladıktan sonra eski klasörü temizler.",
+  "datadir.move": "Taşı ve yeniden başlat",
+  "datadir.failed": "Depolama konumu değiştirilemedi",
+  "datadir.default": "Varsayılan konum",
+  "datadir.back": "Varsayılan konuma dön"
+}

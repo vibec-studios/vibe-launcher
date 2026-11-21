@@ -58,7 +58,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { useLang } from "@/i18n";
+import { intlLocale, useLang } from "@/i18n";
 import { prettyCategory } from "@/components/content/Pill";
 import type { Category } from "@/lib/types";
 
@@ -230,5 +230,5 @@ export function categoryLabel(id: string): string {
 
 /** Ganze Zahl mit Tausendertrennzeichen in der UI-Sprache. */
 export function fmtNum(n: number): string {
-  return n.toLocaleString(useLang.getState().lang === "en" ? "en-US" : "de-DE");
+  return n.toLocaleString(intlLocale(useLang.getState().lang));
 }

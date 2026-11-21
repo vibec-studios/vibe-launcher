@@ -1,0 +1,18 @@
+{
+  "datadir.change": "Mudar local …",
+  "datadir.title": "Mudar o local de armazenamento",
+  "datadir.text": "Todas as instâncias, mundos, configurações e downloads são movidos para o novo lugar. Depois, o launcher reinicia.",
+  "datadir.from": "Atual",
+  "datadir.to": "Novo",
+  "datadir.space": "Para mover: {size} · Livre no novo lugar: {free}",
+  "datadir.size": "Para mover: {size}",
+  "datadir.not_enough": "Não há espaço livre suficiente no novo lugar.",
+  "datadir.busy": "Primeiro pare isto ou espere terminar:",
+  "datadir.locked": "A pasta de dados está fixada (VIBE_LAUNCHER_HOME) e não pode ser mudada aqui.",
+  "datadir.bedrock": "Instâncias do Bedrock com perfil próprio só funcionam se a pasta do launcher estiver no mesmo disco que o Windows (AppData). Troque elas depois para “Perfil compartilhado” ou fique neste disco.",
+  "datadir.safe": "Tudo é copiado e verificado antes. Se algo der errado, nada muda no lugar antigo. O launcher limpa a pasta antiga depois de reiniciar.",
+  "datadir.move": "Mover e reiniciar",
+  "datadir.failed": "Não foi possível mudar o local de armazenamento",
+  "datadir.default": "Local padrão",
+  "datadir.back": "Voltar ao local padrão"
+}

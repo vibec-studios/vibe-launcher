@@ -1,0 +1,13 @@
+{
+  "update.guard.title": "Mettre à jour quand même maintenant ?",
+  "update.guard.text": "Le launcher se ferme brièvement pendant la mise à jour puis redémarre.",
+  "update.guard.servers_one": "Un serveur local tourne : il continue, mais sans console en direct jusqu'à ce que tu le redémarres.",
+  "update.guard.servers": "{n} serveurs locaux tournent : ils continuent, mais sans console en direct jusqu'à ce que tu les redémarres.",
+  "update.guard.games_one": "Minecraft tourne : le jeu reste ouvert, mais le log en direct manquera ensuite.",
+  "update.guard.games": "{n} instances Minecraft tournent : elles restent ouvertes, mais le log en direct manquera ensuite.",
+  "update.guard.tasks": "Ces tâches seront annulées :",
+  "update.guard.confirm": "Mettre à jour quand même",
+  "update.guard.later": "Plus tard",
+  "update.guard.bedrock_title": "Mise à jour impossible pour l'instant",
+  "update.guard.bedrock": "Minecraft Bedrock utilise en ce moment un profil basculé. Ferme Bedrock et attends que tes mondes soient rebasculés, puis tu pourras mettre à jour."
+}

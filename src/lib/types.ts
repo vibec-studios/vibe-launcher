@@ -1,5 +1,7 @@
 // Typen des Backend-Vertrags. Spiegeln die Rust-Structs (snake_case-Felder!). Siehe docs/CONTRACT.md.
 
+import type { Lang } from "@/i18n/languages";
+
 export interface AppError {
   kind: "error" | "not_found" | "invalid" | "cancelled" | "not_configured" | "auth" | "network" | "io" | "json" | "zip";
   message: string;
@@ -112,7 +114,7 @@ export interface InstancePatch {
 export type LaunchBehavior = "keep" | "minimize" | "hide";
 
 export interface Settings {
-  language: "de" | "en";
+  language: Lang;
   min_memory_mb: number;
   max_memory_mb: number;
   jvm_args: string;

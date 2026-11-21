@@ -1,0 +1,6 @@
+{
+  "prelaunch.skip": "Pular",
+  "prelaunch.skip_hint": "Pula as atualizações de mods desta vez e inicia na hora",
+  "prelaunch.step.auto_update": "Atualizações de mods",
+  "prelaunch.step.world_backup": "Backup do mundo"
+}

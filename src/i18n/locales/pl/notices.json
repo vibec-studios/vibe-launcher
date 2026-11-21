@@ -1,0 +1,11 @@
+{
+  "notice.region": "Powiadomienia",
+  "notice.dismiss": "Odrzuć",
+  "notice.more": "Dowiedz się więcej",
+  "notice.servers.title": "Stary adres na liście serwerów",
+  "notice.servers.text_one": "Jeden serwer nadal używa starego adresu .vibey.henny.dev. Na razie działa – przełącz go na .axolite.cc (ta sama nazwa, nowa domena).",
+  "notice.servers.text_many": "Serwery ze starym adresem .vibey.henny.dev: {n}. Na razie działają – przełącz je na .axolite.cc (ta sama nazwa, nowa domena).",
+  "notice.servers.action": "Przełącz na .axolite.cc",
+  "notice.servers.done": "Przełączono adresy serwerów",
+  "notice.servers.failed": "Nie udało się przełączyć adresów serwerów"
+}

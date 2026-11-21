@@ -1,0 +1,9 @@
+{
+  "srvh.badge.lan": "Solo misma red",
+  "srvh.badge.internet": "Para amigos por internet",
+  "srvh.firewall.title": "¿Tus amigos no pueden entrar?",
+  "srvh.firewall.text": "Esta dirección solo funciona para dispositivos en la misma Wi-Fi/LAN. Si Windows pregunta por el firewall en el primer inicio, permite “Java” en redes privadas; si no, Windows bloquea la conexión.",
+  "srvh.firewall.internet": "¿Amigos en otro lugar? Usa Vibe Relay o playit.gg: no hace falta redirigir puertos.",
+  "srvh.use_relay": "Usar Vibe Relay",
+  "srvh.use_playit": "Usar playit.gg"
+}

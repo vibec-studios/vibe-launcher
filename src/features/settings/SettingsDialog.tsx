@@ -55,7 +55,7 @@ import { Logo3D } from "@/components/Logo3D";
 import { checkForUpdate } from "@/app/UpdateNotice";
 import { MasterOptSync, SyncOverview } from "@/components/instance/OptSync";
 import { FixBackupPicker } from "@/features/backups/FixBackupPicker";
-import { useLang, useT } from "@/i18n";
+import { LANGUAGES, useLang, useT, type Lang } from "@/i18n";
 import { StoresCard } from "./StoresCard";
 import { SkinImportSettings } from "@/features/skins/SkinImport";
 import { VibeTab } from "./VibeCard";
@@ -349,16 +349,14 @@ function GeneralTab({ s, update }: TabProps) {
       <ModeCard
         language={
           <SettingRow title={t("settings.language")} description={t("settings.language.desc")}>
-            <Segmented
+            <Select<Lang>
               value={s.language}
               onChange={(language) => {
                 useLang.getState().setLang(language);
                 update({ language });
               }}
-              items={[
-                { value: "de", label: "Deutsch" },
-                { value: "en", label: "English" },
-              ]}
+              className="w-[230px]"
+              options={LANGUAGES.map((l) => ({ value: l.code, label: l.name }))}
             />
           </SettingRow>
         }

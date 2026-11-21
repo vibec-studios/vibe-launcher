@@ -1,6 +1,7 @@
 // Mock: Kern-Commands (Instanzen, Einstellungen, Aufgaben, System). OWNER: Integrator.
 import type { Instance, Settings } from "@/lib/types";
 import { mockAppearance } from "./appearance";
+import { normalizeLang } from "@/i18n/languages";
 import { STORE_URL } from "@/lib/domains";
 import { mockEmit, tasks, type Handlers } from "./util";
 
@@ -61,7 +62,7 @@ function updateInstance(id: string, patch: Partial<Instance>) {
 
 let settings: Settings = {
   // Screenshots: localStorage vl.mock.lang = en
-  language: mockFlag("vl.mock.lang") === "en" ? "en" : "de",
+  language: normalizeLang(mockFlag("vl.mock.lang") ?? mockFlag("lang")) ?? "de",
   min_memory_mb: 512,
   max_memory_mb: 4096,
   jvm_args: "",

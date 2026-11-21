@@ -26,7 +26,7 @@ pub fn open(app: &AppHandle, run_id: Option<&str>) -> AppResult<()> {
         let _ = w.set_focus();
         return Ok(());
     }
-    let english = app.try_state::<AppState>().is_some_and(|s| s.settings().language.starts_with("en"));
+    let english = app.try_state::<AppState>().is_some_and(|s| !s.settings().language.starts_with("de"));
     let title = if english { "Vibe Launcher – Console" } else { "Vibe Launcher – Konsole" };
     WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App(url_for(run_id).into()))
         .title(title)

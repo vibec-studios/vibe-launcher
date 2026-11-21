@@ -1,0 +1,9 @@
+{
+  "srvh.badge.lan": "Tylko ta sama sieć",
+  "srvh.badge.internet": "Dla znajomych przez internet",
+  "srvh.firewall.title": "Znajomi nie mogą dołączyć?",
+  "srvh.firewall.text": "Ten adres działa tylko dla urządzeń w tej samej sieci Wi-Fi/LAN. Jeśli przy pierwszym uruchomieniu Windows zapyta o zaporę, zezwól na „Java” w sieciach prywatnych – inaczej Windows zablokuje połączenie.",
+  "srvh.firewall.internet": "Znajomi gdzie indziej? Użyj Vibe Relay albo playit.gg – bez przekierowania portów.",
+  "srvh.use_relay": "Użyj Vibe Relay",
+  "srvh.use_playit": "Użyj playit.gg"
+}

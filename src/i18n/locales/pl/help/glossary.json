@@ -1,0 +1,82 @@
+{
+  "instance": {
+    "title": "Instancja (gra)",
+    "text": "Osobna instalacja Minecrafta z własną wersją, modami i światami. Możesz mieć ich dowolnie dużo – nie wpływają na siebie nawzajem.",
+    "example": "Na przykład jedna instancja „Vanilla 1.21” i druga „Modpack ze znajomymi”."
+  },
+  "modpack": {
+    "title": "Modpack",
+    "text": "Gotowy zestaw wielu modów, które działają razem. Launcher tworzy go jako nową instancję i wszystko pobiera automatycznie.",
+    "example": "Dobry start: Fabulously Optimized (szybciej, ładniej, bez zmian w rozgrywce)."
+  },
+  "mod": {
+    "title": "Mod",
+    "text": "Dodatek, który zmienia Minecrafta: nowe bloki, stworzenia, lepsza wydajność albo wygoda. Mody potrzebują instancji z mod loaderem."
+  },
+  "loader": {
+    "title": "Mod loader",
+    "text": "Podstawa, która w ogóle wczytuje mody. Każdy mod jest zrobiony dla jednego loadera – mody do Fabric nie działają na Forge i odwrotnie. Przy instalacji launcher pokazuje tylko pasujące mody.",
+    "example": "Nie wiesz? Wybierz Fabric – ma najwięcej nowych modów."
+  },
+  "vanilla": {
+    "title": "Vanilla",
+    "text": "Minecraft dokładnie taki, jaki wydaje Mojang – bez modów. Paczki zasobów i shadery i tak działają."
+  },
+  "fabric": {
+    "title": "Fabric",
+    "text": "Lekki, szybki mod loader. Tu jest większość modów do nowych wersji Minecrafta, w tym mody wydajnościowe jak Sodium."
+  },
+  "quilt": {
+    "title": "Quilt",
+    "text": "Odgałęzienie Fabric. Większość modów do Fabric działa też tutaj. Potrzebny tylko, gdy mod wyraźnie wymaga Quilt."
+  },
+  "forge": {
+    "title": "Forge",
+    "text": "Najstarszy mod loader. Opiera się na nim wiele dużych modpacków i modów do starszych wersji (do 1.20)."
+  },
+  "neoforge": {
+    "title": "NeoForge",
+    "text": "Następca Forge od Minecrafta 1.20.2. Duże nowe modpacki często używają NeoForge."
+  },
+  "resourcepack": {
+    "title": "Paczka zasobów",
+    "text": "Zmienia wygląd albo dźwięk bloków, przedmiotów i menu. Nie wymaga modów i działa w każdej instancji."
+  },
+  "shader": {
+    "title": "Shader",
+    "text": "Przenosi światło, cienie i wodę na nowy poziom. Wymaga instancji z Iris albo OptiFine i dobrej karty graficznej."
+  },
+  "datapack": {
+    "title": "Datapack",
+    "text": "Zmienia zasady gry, receptury albo generowanie świata bez modów. Datapacki zawsze należą do konkretnego świata."
+  },
+  "ram": {
+    "title": "Pamięć (RAM)",
+    "text": "Ile pamięci może używać Minecraft. Za mało powoduje przycięcia albo crashe, za dużo spowalnia resztę komputera. Launcher sam wybiera dobrą wartość.",
+    "example": "Zasada: 2–4 GB bez modów, 4–8 GB dla dużych modpacków."
+  },
+  "java": {
+    "title": "Java",
+    "text": "Oprogramowanie, na którym działa Minecraft: Java Edition. Launcher sam pobiera właściwą wersję Javy – nie musisz nic instalować."
+  },
+  "snapshot": {
+    "title": "Snapshot",
+    "text": "Testowa wersja Minecrafta z niedokończonymi funkcjami. Może mieć błędy i uszkodzić światy – najpierw zrób kopię zapasową."
+  },
+  "server": {
+    "title": "Serwer",
+    "text": "Komputer, który utrzymuje świat, żeby inni mogli dołączyć. Do wspólnej gry zwykle wystarczy „Hostuj świat” – własne serwery są w trybie eksperta."
+  },
+  "backup": {
+    "title": "Kopia zapasowa",
+    "text": "Kopia twojego świata albo instancji. Jeśli coś pójdzie nie tak, przywraca poprzedni stan."
+  },
+  "vibe": {
+    "title": "Vibe",
+    "text": "Usługi online launchera: znajomi, czat, wspólna gra w światach i kosmetyki. Opcjonalne i można je w każdej chwili wyłączyć."
+  },
+  "account": {
+    "title": "Konto Microsoft",
+    "text": "Minecraft: Java Edition jest powiązany z twoim kontem Microsoft. Logowanie odbywa się bezpośrednio u Microsoftu – launcher nigdy nie widzi twojego hasła."
+  }
+}

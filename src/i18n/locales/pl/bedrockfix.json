@@ -1,0 +1,6 @@
+{
+  "bedrock.locked.title": "Twoje światy są bezpiecznie odłożone",
+  "bedrock.locked.text": "Przy przełączaniu z powrotem jakiś plik był jeszcze otwarty. Zamknij Minecrafta i wszystkie okna Eksploratora z folderami Bedrock, potem kliknij „Przełącz z powrotem” – nic nie przepadnie.",
+  "bedrock.locked.action": "Przełącz z powrotem",
+  "bedrock.profile.isolated_other_drive": "Działa tylko, gdy folder launchera jest na tym samym dysku co Windows. Twój folder launchera jest gdzie indziej – użyj „Wspólnego profilu”."
+}

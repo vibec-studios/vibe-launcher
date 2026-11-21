@@ -1,12 +1,15 @@
-import { useLang, type Lang } from "@/i18n";
+import { localeExtra, useLang } from "@/i18n";
 import type { Glossary, TermText } from "./terms";
 import de from "./de";
 import en from "./en";
 
-const GLOSSARY: Record<Lang, Glossary> = { de, en };
-
 export function useGlossary(): Glossary {
-  return GLOSSARY[useLang((s) => s.lang)] ?? de;
+  const lang = useLang((s) => s.lang);
+  useLang((s) => s.rev);
+  if (lang === "de") return de;
+  if (lang === "en") return en;
+  const loc = localeExtra<Partial<Glossary>>(lang, "glossary");
+  return loc ? { ...en, ...loc } : en;
 }
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");

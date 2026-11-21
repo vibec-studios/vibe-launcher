@@ -1,0 +1,6 @@
+{
+  "bedrock.locked.title": "Seus mundos estão guardados com segurança",
+  "bedrock.locked.text": "Um arquivo ainda estava aberto ao trocar de volta. Feche o Minecraft e todas as janelas do Explorador com pastas do Bedrock e clique em “Trocar de volta” – nada se perde.",
+  "bedrock.locked.action": "Trocar de volta",
+  "bedrock.profile.isolated_other_drive": "Só funciona se a pasta do launcher estiver no mesmo disco que o Windows. Sua pasta do launcher está em outro lugar – use “Perfil compartilhado”."
+}
