@@ -13,6 +13,7 @@ import { useT } from "@/i18n";
 import { HostingInvite } from "@/features/social/HostingInvite";
 import { AddressChip } from "./parts";
 import { ConnBadge, LanHint } from "./LanHint";
+import { HelpLink } from "@/features/help/HelpButton";
 
 const applyServer = (base: Server, p: ServerPatch): Server => ({ ...base, ...p }) as Server;
 
@@ -143,7 +144,7 @@ export function ConnectionTab({ server }: { server: Server }) {
       <div className="scroll h-full">
         <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-5 px-6 py-5">
           <div className="flex flex-col gap-5">
-            <SettingsCard title={t("srv.conn.mode")}>
+            <SettingsCard title={t("srv.conn.mode")} right={<HelpLink guide="hosting" />}>
               <div className="flex flex-col" role="radiogroup">
                 <Option
                   value="local"

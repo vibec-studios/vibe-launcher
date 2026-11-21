@@ -127,6 +127,7 @@ export function RefreshButton({ instanceId, variant = "toolbar", className }: { 
           size={bar ? "sm" : "md"}
           aria-busy={running}
           aria-keyshortcuts="F5 Control+R"
+          data-tour="content-refresh"
           disabled={running}
           icon={icon}
           // Während des Laufs nicht ausgegraut (wirkt sonst wie „geht nicht“), nur nicht klickbar

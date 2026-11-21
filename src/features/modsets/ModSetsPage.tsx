@@ -280,7 +280,7 @@ function SetsOverview() {
         <div className="flex items-center gap-2">
           {list.length > 0 && <SearchInput value={query} onChange={setQuery} placeholder={t("sets.search")} className="w-[240px] min-w-[150px]" />}
           <div className="flex-1" />
-          <Button size="sm" variant="subtle" icon={<PackageOpen size={14} />} onClick={openImportSet}>
+          <Button size="sm" variant="subtle" data-tour="modsets-import" icon={<PackageOpen size={14} />} onClick={openImportSet}>
             {t("sets.import")}
           </Button>
           {list.length > 0 && (
@@ -288,7 +288,7 @@ function SetsOverview() {
               {t("sets.way.instance")}
             </Button>
           )}
-          <Button size="sm" variant="primary" icon={<Plus size={15} />} onClick={openCreateSet}>
+          <Button size="sm" variant="primary" data-tour="modsets-new" icon={<Plus size={15} />} onClick={openCreateSet}>
             {t("sets.new")}
           </Button>
         </div>
@@ -316,7 +316,7 @@ function SetsOverview() {
             {shown.length === 0 ? (
               <EmptyState title={t("sets.no_match", { q: query })} />
             ) : (
-              <div className="-mx-3 flex flex-col">
+              <div data-tour="modsets-list" className="-mx-3 flex flex-col">
                 {shown.map((s) => (
                   <SetRow key={s.id} set={s} />
                 ))}

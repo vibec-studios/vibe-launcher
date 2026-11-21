@@ -111,10 +111,12 @@ export function InstanceHeader({
           <MetaLine instance={instance} />
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <PlayButton instance={instance} size="lg" />
+          <span data-tour="instance-play" className="inline-flex">
+            <PlayButton instance={instance} size="lg" />
+          </span>
           {/* Simple: „Probleme beheben“ direkt im Kopf statt Logs/Dateien */}
           {simple && <AutofixButton req={{ instanceId: instance.id }} variant="ghost" size="md" className="h-11" />}
-          <IconButton label={t("ipage.settings")} tip active={settingsActive} className={cn("h-11 w-11", settingsActive && "text-accent")} onClick={onSettings}>
+          <IconButton label={t("ipage.settings")} tip data-tour="instance-settings" active={settingsActive} className={cn("h-11 w-11", settingsActive && "text-accent")} onClick={onSettings}>
             <Settings size={19} />
           </IconButton>
           {!simple && (

@@ -19,6 +19,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 import type { ImportFile } from "@/lib/types";
 import { SideFilterBar, SideTag, countSides, sideMatches, type SideFilter } from "@/components/content/sides";
+import { HelpLink } from "@/features/help/HelpButton";
 
 export type ImportMode = "file" | "launcher";
 interface ImportState {
@@ -122,15 +123,17 @@ export function ImportDialog() {
   const p = preview.data;
   const external = useExternalImport(open && mode === "launcher", close);
   const modeSwitch = !running && !(path && mode === "file") && !(mode === "launcher" && external.progressView) && (
-    <Segmented<ImportMode>
-      className="mb-4"
-      value={mode}
-      onChange={(m) => useImportDialog.setState({ mode: m })}
-      items={[
-        { value: "file", label: t("import.mode.file") },
-        { value: "launcher", label: t("import.mode.launcher") },
-      ]}
-    />
+    <div data-tour="import-mode" className="mb-4 flex items-center gap-2">
+      <Segmented<ImportMode>
+        value={mode}
+        onChange={(m) => useImportDialog.setState({ mode: m })}
+        items={[
+          { value: "file", label: t("import.mode.file") },
+          { value: "launcher", label: t("import.mode.launcher") },
+        ]}
+      />
+      <HelpLink guide="import" />
+    </div>
   );
 
   if (mode === "launcher") {
@@ -144,7 +147,7 @@ export function ImportDialog() {
         footer={external.footer}
       >
         {modeSwitch}
-        {external.body}
+        <div data-tour="import-body">{external.body}</div>
       </Dialog>
     );
   }

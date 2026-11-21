@@ -91,6 +91,7 @@ export function ScreenshotsPage() {
   const { instance, tab } = route.useSearch();
   const nav = route.useNavigate();
   const switcher = (
+    <div data-tour="gallery-switch" className="flex shrink-0">
     <Segmented<"shots" | "clips">
       value={tab === "clips" ? "clips" : "shots"}
       onChange={(v) => nav({ search: { instance, tab: v === "clips" ? "clips" : undefined }, replace: true })}
@@ -99,6 +100,7 @@ export function ScreenshotsPage() {
         { value: "clips", label: t("gallery.tab.clips") },
       ]}
     />
+    </div>
   );
   if (tab === "clips") return <ClipsView switcher={switcher} instance={instance} setInstance={(id) => nav({ search: { instance: id, tab: "clips" }, replace: true })} />;
   return <ShotsView switcher={switcher} />;
@@ -222,7 +224,7 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
       {/* Werkzeugleiste wie in der Bibliothek: Filter links, Anzahl als Einordnung, Aktionen rechts */}
       <div className="flex shrink-0 items-center gap-3 px-6 pb-1 pt-4">
         {switcher}
-        <div className="w-[240px]">
+        <div data-tour="gallery-filter" className="w-[240px]">
           <Select<string>
             size="sm"
             value={instance ?? ALL}
@@ -249,7 +251,7 @@ function ShotsView({ switcher }: { switcher: ReactNode }) {
         </IconButton>
       </div>
 
-      <div ref={scrollRef} className="scroll min-h-0 flex-1 px-6 pb-8">
+      <div ref={scrollRef} data-tour="gallery-grid" className="scroll min-h-0 flex-1 px-6 pb-8">
         {q.isError && !q.data ? (
           <div className="mt-3 rounded-panel bg-surface">
             <ErrorState error={q.error} onRetry={() => q.refetch()} />

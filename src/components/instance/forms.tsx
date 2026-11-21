@@ -120,7 +120,7 @@ export function MemoryField({
     </div>
   );
   return (
-    <div className="flex flex-col gap-4">
+    <div data-tour="ram" className="flex flex-col gap-4">
       {row(t("form.ram.max"), max, 512, (v, d) => onChange({ min: Math.min(min, v), max: v }, d))}
       {row(t("form.ram.min"), min, 256, (v, d) => onChange({ min: Math.min(v, max), max: Math.max(max, v) }, d))}
       {warn && <p className="text-[12px] text-warn">{t("form.ram.warn", { total: formatMb(total) })}</p>}

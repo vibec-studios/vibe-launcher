@@ -869,7 +869,7 @@ export function AutofixButton({
 }) {
   const t = useT();
   return (
-    <Button size={size} variant={variant} icon={<Wrench size={13} />} className={className} onClick={() => openAutofix(req)}>
+    <Button size={size} variant={variant} data-tour="autofix" icon={<Wrench size={13} />} className={className} onClick={() => openAutofix(req)}>
       {label ?? t("fix.button")}
     </Button>
   );

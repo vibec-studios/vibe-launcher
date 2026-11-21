@@ -26,6 +26,7 @@ import {
 } from "@/components/ui";
 import { runBackupTask } from "./worldActions";
 import { useScopeList } from "./FixBackupPicker";
+import { HelpLink } from "@/features/help/HelpButton";
 
 export const backupKeys = {
   snapshots: (id: string) => ["content", id, "snapshots"] as const,
@@ -290,7 +291,7 @@ export function BackupsTab({ instance }: { instance: Instance }) {
   // Jede Liste hat ihren eigenen Kopf mit den passenden Aktionen (statt eines unbeschrifteten „+“ über allem)
   return (
     <div className="scroll h-full">
-      <div className="flex flex-col gap-7 pb-8 pt-5">
+      <div data-tour="backups-list" className="flex flex-col gap-7 pb-8 pt-5">
         <section>
           <SectionHead
             title={t("backups.snapshots")}
@@ -300,7 +301,8 @@ export function BackupsTab({ instance }: { instance: Instance }) {
                 <IconButton label={t("backups.open_folder")} tip variant="ghost" size="sm" onClick={() => openFolder("snapshots")}>
                   <FolderOpen size={15} />
                 </IconButton>
-                <Button size="sm" variant="accent" icon={<Plus size={15} />} disabled={busy} onClick={() => setCreating(true)}>
+                <HelpLink guide="backups" />
+                <Button size="sm" variant="accent" data-tour="backups-create" icon={<Plus size={15} />} disabled={busy} onClick={() => setCreating(true)}>
                   {t("backups.snapshot.create")}
                 </Button>
               </>

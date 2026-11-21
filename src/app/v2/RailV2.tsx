@@ -145,6 +145,7 @@ export function RailV2() {
         <Tooltip content={wide ? null : t("rail.new_instance")} side="right">
           <button
             aria-label={t("rail.new_instance")}
+            data-tour="new-instance"
             onClick={openNewInstance}
             className={cn(
               "flex shrink-0 items-center rounded-ctl text-dim transition-colors duration-150 hover:bg-[var(--v2-hover)] hover:text-text",

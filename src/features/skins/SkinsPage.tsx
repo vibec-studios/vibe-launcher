@@ -263,7 +263,7 @@ export function SkinsPage() {
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(340px,1fr)_minmax(360px,1.1fr)] gap-4 px-6 pb-6">
         {/* ------------------------------------------------------------ Viewer + aktueller Skin */}
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-card bg-surface">
+        <section data-tour="skins-viewer" className="flex min-h-0 flex-col overflow-hidden rounded-card bg-surface">
           <div className="flex h-12 shrink-0 items-center gap-2 pl-4 pr-2">
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13.5px] font-semibold text-text">
@@ -437,7 +437,7 @@ export function SkinsPage() {
         </section>
 
         {/* ------------------------------------------------------------ Bibliothek */}
-        <section className={cn("relative flex min-h-0 flex-col rounded-card", dragOver && "outline outline-2 outline-accent")}>
+        <section data-tour="skins-library" className={cn("relative flex min-h-0 flex-col rounded-card", dragOver && "outline outline-2 outline-accent")}>
           {mcEnabled && account ? (
             <Tabs
               className="h-9! shrink-0 border-b-0"

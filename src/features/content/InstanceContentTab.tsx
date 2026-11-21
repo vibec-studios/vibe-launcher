@@ -491,7 +491,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
         {!simple && (
           <DropdownMenu
             trigger={
-              <Button variant="ghost" icon={<FilePlus2 size={15} />} className="data-[state=open]:bg-surface3">
+              <Button variant="ghost" data-tour="content-add-files" icon={<FilePlus2 size={15} />} className="data-[state=open]:bg-surface3">
                 <span className="hidden @min-[760px]:inline">{t("content.add_files_short")}</span>
                 <ChevronDown size={14} className="text-dim" />
               </Button>
@@ -500,7 +500,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             {addFilesMenu}
           </DropdownMenu>
         )}
-        <Button variant="accent" icon={<Plus size={16} />} onClick={toDiscover}>
+        <Button variant="accent" data-tour="content-add" icon={<Plus size={16} />} onClick={toDiscover}>
           {t("content.add")}
         </Button>
       </div>
@@ -622,6 +622,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             <Button
               size="sm"
               variant="subtle"
+              data-tour="content-update"
               className="px-2.5 text-accent hover:bg-accent hover:text-[var(--on-accent)]"
               icon={updatesRunning ? <Spinner size={12} /> : <RefreshCw size={14} />}
               disabled={updatesRunning}
@@ -669,6 +670,7 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
           unter drei Shadern). Leer: gestrichelter Rahmen = „hier ablegen“. */}
       <div ref={dropRef} className="relative flex min-h-0 flex-1 flex-col">
       <div
+        data-tour="content-list"
         className={cn(
           "flex min-h-0 flex-col overflow-hidden rounded-card border bg-panel",
           empty ? "flex-1 border-dashed border-line2" : failed || pending || visible.length === 0 ? "flex-1 border-line" : "flex-initial border-line",
@@ -683,14 +685,14 @@ export function InstanceContentTab({ instance, initialType = "all" }: { instance
             text={t(vanilla ? "ipage.ct.empty.resourcepack" : "ipage.ct.empty.mod")}
             action={
               <div className="flex flex-wrap justify-center gap-2">
-                <Button variant="accent" icon={<Plus size={15} />} onClick={toDiscover}>
+                <Button variant="accent" data-tour="content-add" icon={<Plus size={15} />} onClick={toDiscover}>
                   {t("content.add")}
                 </Button>
                 {!simple && (
                 <>
                 <DropdownMenu
                   trigger={
-                    <Button variant="ghost" icon={<FilePlus2 size={15} />}>
+                    <Button variant="ghost" data-tour="content-add-files" icon={<FilePlus2 size={15} />}>
                       {t("content.add_files_short")}
                     </Button>
                   }

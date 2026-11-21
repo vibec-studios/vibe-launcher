@@ -205,11 +205,14 @@ export function DiscoverPage() {
       )}
       <div className="flex min-h-0 flex-1">
         <FilterSidebar type={effectiveType} source={source} sourcePicker={sourcePicker} simple={simple} />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div data-tour="discover-results" className="flex min-w-0 flex-1 flex-col">
           {/* Eine Werkzeugleiste: Typ · Suche (Sortierung über den Ergebnissen, Quelle in der Filterleiste) */}
           <div className="flex shrink-0 flex-wrap items-center gap-2 px-6 pt-3">
-            <Segmented value={effectiveType} onChange={setType} items={typeItems} />
+            <div data-tour="discover-types">
+              <Segmented value={effectiveType} onChange={setType} items={typeItems} />
+            </div>
             <SearchInput
+              data-tour="discover-search"
               value={text}
               onChange={setText}
               placeholder={t(`discover.search.${effectiveType}`)}

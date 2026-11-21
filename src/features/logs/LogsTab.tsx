@@ -579,7 +579,7 @@ export function LogsTab({ instance }: { instance: Instance }) {
             </DropdownCheckItem>
           ))}
         </DropdownMenu>
-        <IconButton label={t("diag.open")} tip variant="ghost" onClick={() => setDiagOpen(true)}>
+        <IconButton label={t("diag.open")} tip variant="ghost" data-tour="logs-diagnose" onClick={() => setDiagOpen(true)}>
           <Stethoscope size={16} />
         </IconButton>
         <IconButton label={t("logs.wrap")} tip variant="ghost" active={wrap} onClick={() => setWrap(!wrap)}>

@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useT } from "@/i18n";
 import { FeedbackButton } from "@/features/feedback/FeedbackDialog";
+import { HelpButton } from "@/features/help/HelpButton";
 import { FriendsPanelToggle } from "@/features/social/FriendsPanel";
 import { TaskDock } from "../TaskDock";
 import { UpdateButton } from "../UpdateNotice";
@@ -31,6 +32,7 @@ export function TopbarV2() {
       <RunningGames />
       <div className="vl2-tools flex h-9 shrink-0 items-center gap-0.5 rounded-ctl bg-surface px-0.5 shadow-[inset_0_0_0_1px_var(--line-1)]">
         <TaskDock />
+        <HelpButton />
         <FeedbackButton />
         <FriendsPanelToggle />
       </div>
