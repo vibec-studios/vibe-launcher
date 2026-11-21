@@ -24,6 +24,11 @@ pub async fn sets_update(state: State<'_, AppState>, id: String, name: Option<St
 }
 
 #[tauri::command]
+pub async fn sets_set_apply_on_create(state: State<'_, AppState>, id: String, enabled: bool) -> AppResult<ModSet> {
+    sets::set_apply_on_create(&state.paths, &id, enabled)
+}
+
+#[tauri::command]
 pub async fn sets_delete(state: State<'_, AppState>, id: String) -> AppResult<()> {
     sets::delete(&state.paths, &id)
 }

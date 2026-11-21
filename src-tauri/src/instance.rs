@@ -447,6 +447,24 @@ impl InstanceStore {
         })
     }
 
+    pub fn set_game_version(&self, id: &str, mc_version: String, loader: Loader) -> AppResult<()> {
+        let mut map = self.map.write();
+        let inst = map.get_mut(id).ok_or_else(|| AppError::NotFound(format!("Instanz {id}")))?;
+        if inst.mc_version == mc_version && inst.loader == loader {
+            return Ok(());
+        }
+        let mut next = inst.clone();
+        next.mc_version = mc_version;
+        next.loader = loader;
+        next.install_state = InstallState::NotInstalled;
+        next.version_id = None;
+        self.persist(&next)?;
+        *inst = next.clone();
+        drop(map);
+        events::emit(&self.app, events::INSTANCE_CHANGED, &next);
+        Ok(())
+    }
+
     /// Instanz mit vorgegebenem Inhalt registrieren (Import). Legt Ordner an.
     pub fn insert_new(&self, mut inst: Instance) -> AppResult<Instance> {
         inst.id = self.unique_id(&inst.name);

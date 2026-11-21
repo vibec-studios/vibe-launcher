@@ -27,11 +27,18 @@ pub async fn instance_create(state: State<'_, AppState>, req: CreateInstance) ->
 
 #[tauri::command]
 pub async fn instance_update(state: State<'_, AppState>, id: String, patch: InstancePatch) -> AppResult<Instance> {
+    if patch.mc_version.is_some() || patch.loader.is_some() {
+        let lock = state.content.lock(&id);
+        let _guard = lock.lock().await;
+        crate::content::migration::guard(&state, &id)?;
+        return state.instances.patch(&id, patch);
+    }
     state.instances.patch(&id, patch)
 }
 
 #[tauri::command]
 pub async fn instance_delete(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    crate::content::migration::guard(&state, &id)?;
     if state.game.is_running(&id) {
         return Err(AppError::Invalid("Die Instanz läuft gerade".into()));
     }

@@ -492,6 +492,7 @@ fn check_file_name(name: &str) -> AppResult<()> {
 }
 
 pub async fn set_enabled(state: &AppState, instance_id: &str, kind: ContentKind, file_name: &str, enabled: bool) -> AppResult<ContentItem> {
+    super::migration::guard(state, instance_id)?;
     check_file_name(file_name)?;
     let dir = state.paths.game_dir(instance_id).join(kind.folder());
     let src = dir.join(file_name);
@@ -514,6 +515,7 @@ pub async fn set_enabled(state: &AppState, instance_id: &str, kind: ContentKind,
 }
 
 pub async fn remove(state: &AppState, instance_id: &str, kind: ContentKind, file_names: &[String]) -> AppResult<()> {
+    super::migration::guard(state, instance_id)?;
     state.instances.get(instance_id)?;
     let dir = state.paths.game_dir(instance_id).join(kind.folder());
     for n in file_names {
@@ -545,6 +547,7 @@ pub async fn remove(state: &AppState, instance_id: &str, kind: ContentKind, file
 }
 
 pub async fn add_files(state: &AppState, instance_id: &str, kind: ContentKind, paths: &[String]) -> AppResult<Vec<ContentItem>> {
+    super::migration::guard(state, instance_id)?;
     state.instances.get(instance_id)?;
     let dir = state.paths.game_dir(instance_id).join(kind.folder());
     let mut added: Vec<String> = Vec::new();

@@ -28,7 +28,7 @@ import { PackIcon } from "@/features/home/Discover";
 import { usePopularModpacks } from "@/features/home/data";
 import { useT } from "@/i18n";
 import { ClientPackPicker, installPackAfterCreate } from "./settings/ClientPacks";
-import { SetPicker, installSetsAfterCreate, useSetCheck } from "@/features/modsets/SetPicker";
+import { SetPicker, installSetsAfterCreate, useNewInstanceSets, useSetCheck } from "@/features/modsets/SetPicker";
 import { useSets } from "@/features/modsets/api";
 import { NewBedrockTab } from "@/features/bedrock/NewBedrockTab";
 
@@ -368,7 +368,7 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
   const [icon, setIcon] = useState<string | null>(randomBlockIcon);
   const [pack, setPack] = useState<string | null>(null);
   // „Mit Mod-Sets starten“: nach dem Anlegen alles Passende aus diesen Sets installieren
-  const [setIds, setSetIds] = useState<string[]>([]);
+  const { setIds, setSetIds, setsLoading } = useNewInstanceSets();
   const setCheck = useSetCheck(setIds, ver.mc, ver.loader);
   const setTotal = (useSets().data ?? []).filter((s) => setIds.includes(s.id)).reduce((n, s) => n + s.entries.length, 0);
   const [busy, setBusy] = useState(false);
@@ -390,7 +390,7 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
   }, [lv.data, ver.loader, ver.mc, ver.loaderVersion]);
 
   const needsLv = ver.loader !== "vanilla";
-  const valid = !!ver.mc && name.trim().length > 0 && (!needsLv || !!ver.loaderVersion);
+  const valid = !setsLoading && !!ver.mc && name.trim().length > 0 && (!needsLv || !!ver.loaderVersion);
 
   const submit = async () => {
     if (!valid || busy) return;
@@ -410,8 +410,10 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
       nav({ to: "/instances/$id", params: { id: inst.id }, search: { tab: "content" } });
       installInstance(inst.id);
       // Client-Pack (falls gewählt) parallel zur Spiel-Installation in mods/ legen
-      if (pack && needsLv) void installPackAfterCreate(t, inst.id, pack);
-      if (setIds.length) void installSetsAfterCreate(t, inst.id, setIds);
+      void (async () => {
+        if (pack && needsLv) await installPackAfterCreate(t, inst.id, pack);
+        if (setIds.length) await installSetsAfterCreate(t, inst.id, setIds);
+      })();
     } catch (e) {
       toast.error(e, t("newinst.failed"));
       setBusy(false);

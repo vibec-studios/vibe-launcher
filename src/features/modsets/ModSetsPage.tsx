@@ -25,6 +25,7 @@ import { ProjectIcon } from "@/components/content/ProjectIcon";
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import {
   Button,
+  Checkbox,
   DropdownItem,
   DropdownLabel,
   DropdownMenu,
@@ -622,6 +623,7 @@ function SetEditor({ id }: { id: string }) {
   const set = data?.find((s) => s.id === id);
   const [tab, setTab] = useState<"content" | "compat">("content");
   const [filter, setFilter] = useState<ProjectType | "all">("all");
+  const [savingTemplate, setSavingTemplate] = useState(false);
   const compat = useQuery({ queryKey: ["mod-sets", "compat", id, set?.updated], queryFn: () => setsApi.compat(id), staleTime: 10 * 60_000, enabled: !!set?.entries.length });
   const compatByKey = useMemo(() => new Map((compat.data?.entries ?? []).map((e) => [e.key, e])), [compat.data]);
 
@@ -637,6 +639,17 @@ function SetEditor({ id }: { id: string }) {
 
   const types = TYPES.filter((k) => set.entries.some((e) => e.project_type === k));
   const shown = set.entries.filter((e) => filter === "all" || e.project_type === filter);
+  const setTemplate = async (enabled: boolean) => {
+    setSavingTemplate(true);
+    try {
+      await setsApi.setApplyOnCreate(set.id, enabled);
+      await invalidateSets();
+    } catch (e) {
+      toast.error(e);
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
   const remove = async (e: SetEntry) => {
     try {
       await setsApi.removeEntries(set.id, [entryKey(e)]);
@@ -679,6 +692,10 @@ function SetEditor({ id }: { id: string }) {
               <SetMenuItems set={set} onDeleted={() => nav({ to: "/modsets", search: {} })} />
             </DropdownMenu>
           </div>
+        </div>
+        <div className="flex w-fit items-center gap-2 text-[13px] text-text">
+          <Checkbox checked={set.apply_on_create} disabled={savingTemplate} onChange={setTemplate} label={t("sets.template")} />
+          {t("sets.template")}
         </div>
         <Tabs
           value={tab}

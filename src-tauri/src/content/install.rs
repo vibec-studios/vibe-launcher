@@ -21,6 +21,26 @@ pub struct Planned {
     pub side: Option<Side>,
 }
 
+impl Planned {
+    pub(super) fn index_entry(&self) -> IndexEntry {
+        IndexEntry {
+            source: self.source,
+            project_id: self.brief.id.clone(),
+            version_id: self.version.id.clone(),
+            sha1: self.file.sha1.clone(),
+            sha512: self.file.sha512.clone(),
+            title: Some(self.brief.title.clone()),
+            icon_url: self.brief.icon_url.clone(),
+            version_number: Some(self.version.version_number.clone()),
+            url: self.file.url.clone(),
+            size: Some(self.file.size),
+            date: Some(self.version.date.clone()),
+            release_type: Some(self.version.release_type.clone()),
+            side: self.side,
+        }
+    }
+}
+
 fn loader_label(inst: &Instance) -> String {
     let l = match inst.loader.kind {
         LoaderKind::Vanilla => "Vanilla",
@@ -146,6 +166,7 @@ fn state_check_limit(n: usize) -> AppResult<()> {
 /// Plan ausführen: herunterladen, alte Versionen ersetzen, Index aktualisieren.
 /// Gesperrte Downloads (CurseForge) landen in `missing.json`.
 pub async fn apply(state: &AppState, inst: &Instance, planned: Vec<Planned>, sub: &SubProgress) -> AppResult<Vec<MissingDownload>> {
+    super::migration::guard(state, &inst.id)?;
     let game_dir = state.paths.game_dir(&inst.id);
     let idx = ContentIndex::load(&state.paths, &inst.id);
     let mut items = Vec::new();
@@ -176,21 +197,7 @@ pub async fn apply(state: &AppState, inst: &Instance, planned: Vec<Planned>, sub
                 !path.exists() && path.with_file_name(format!("{}.disabled", path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default())).exists()
             });
         let file_name = crate::paths::sanitize_file_name(&p.file.filename);
-        let entry = IndexEntry {
-            source: p.source,
-            project_id: p.brief.id.clone(),
-            version_id: p.version.id.clone(),
-            sha1: p.file.sha1.clone(),
-            sha512: p.file.sha512.clone(),
-            title: Some(p.brief.title.clone()),
-            icon_url: p.brief.icon_url.clone(),
-            version_number: Some(p.version.version_number.clone()),
-            url: p.file.url.clone(),
-            size: Some(p.file.size),
-            date: Some(p.version.date.clone()),
-            release_type: Some(p.version.release_type.clone()),
-            side: p.side,
-        };
+        let entry = p.index_entry();
         let Some(url) = p.file.url.clone() else {
             // Gesperrt: als „erwartet“ vormerken; trifft die Datei ein (Download-Ordner), wird sie mit diesem
             // Index-Eintrag übernommen und ersetzt eine ältere Version

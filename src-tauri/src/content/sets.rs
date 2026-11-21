@@ -58,6 +58,8 @@ pub struct ModSet {
     pub created: i64,
     pub updated: i64,
     pub entries: Vec<SetEntry>,
+    #[serde(default)]
+    pub apply_on_create: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -161,7 +163,7 @@ pub fn create(paths: &Paths, name: &str, description: Option<String>, entries: V
     let name = check_name(name)?;
     modify(paths, |s| {
         let now = crate::util::now_ms();
-        let mut set = ModSet { id: uuid::Uuid::new_v4().to_string(), name, description: clean_description(description), created: now, updated: now, entries: vec![] };
+        let mut set = ModSet { id: uuid::Uuid::new_v4().to_string(), name, description: clean_description(description), created: now, updated: now, entries: vec![], apply_on_create: false };
         merge_entries(&mut set.entries, entries);
         s.sets.push(set.clone());
         Ok(set)
@@ -193,6 +195,13 @@ pub fn update(paths: &Paths, id: &str, name: Option<String>, description: Option
 pub fn delete(paths: &Paths, id: &str) -> AppResult<()> {
     modify(paths, |s| {
         s.sets.retain(|x| x.id != id);
+        Ok(())
+    })
+}
+
+pub fn set_apply_on_create(paths: &Paths, id: &str, enabled: bool) -> AppResult<ModSet> {
+    with_set(paths, id, |set| {
+        set.apply_on_create = enabled;
         Ok(())
     })
 }
@@ -757,6 +766,12 @@ pub async fn instance_candidates(state: &AppState, instance_id: &str) -> AppResu
 mod tests {
     use super::*;
 
+    #[test]
+    fn wave3_old_sets_are_opt_in() {
+        let legacy = r#"{"id":"one","name":"Set","created":0,"updated":0,"entries":[]}"#;
+        assert!(!serde_json::from_str::<ModSet>(legacy).unwrap().apply_on_create);
+    }
+
     fn e(src: Source, id: &str, title: &str) -> SetEntry {
         SetEntry { source: src, project_id: id.into(), slug: Some(title.to_lowercase()), title: title.into(), icon_url: None, project_type: ProjectType::Mod, added: 0 }
     }
@@ -809,6 +824,7 @@ mod tests {
             description: Some("Schneller".into()),
             created: 1,
             updated: 2,
+            apply_on_create: true,
             entries: vec![
                 SetEntry { icon_url: Some("https://cdn.modrinth.com/data/AANobbMI/icon.png".into()), ..e(Source::Modrinth, "AANobbMI", "Sodium") },
                 SetEntry { project_type: ProjectType::Shader, ..e(Source::Curseforge, "123", "BSL") },
@@ -816,6 +832,7 @@ mod tests {
         };
         // Datei: mit Icons, Felder wie dokumentiert
         let file = serde_json::to_value(to_shared(&set, true)).unwrap();
+        assert!(file.get("apply_on_create").is_none());
         assert_eq!(file["vibe_mod_set"], 1);
         assert_eq!(file["entries"][0]["type"], "mod");
         assert_eq!(file["entries"][0]["source"], "modrinth");

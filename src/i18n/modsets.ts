@@ -1,6 +1,7 @@
 // OWNER: Content-Agent. Mod-Sets (instanzübergreifende Wunschlisten) und Profile einer Instanz.
 export default {
   de: {
+    "sets.template": "Bei Neuanlage anwenden",
     "nav.modsets": "Mod-Sets",
     "sets.title": "Mod-Sets",
     "sets.intro": "Ein Mod-Set ist deine Liste von Lieblings-Inhalten – z. B. „Performance“ oder „Meine QoL-Mods“. Wende es auf jede Instanz an: Vibe sucht automatisch die passende Version für Minecraft-Version und Loader heraus.",
@@ -191,6 +192,7 @@ export default {
     "imenu.profile_to_set_skipped": "{n} Dateien ohne bekannte Herkunft wurden ausgelassen",
   },
   en: {
+    "sets.template": "Apply to new instances",
     "nav.modsets": "Mod sets",
     "sets.title": "Mod sets",
     "sets.intro": "A mod set is your list of favourite content – e.g. “Performance” or “My QoL mods”. Apply it to any instance: Vibe automatically picks the right version for that Minecraft version and loader.",

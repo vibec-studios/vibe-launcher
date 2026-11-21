@@ -2,7 +2,7 @@
 // öffnen, Backup erstellen, in andere Instanz kopieren, Löschen. Werkzeuge in der gemeinsamen Zeile (PageTools).
 import { memo, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, Copy, FileArchive, FolderOpen, Globe2, MoreHorizontal, Play, Trash2 } from "lucide-react";
+import { Archive, Copy, FileArchive, FolderOpen, Globe2, MoreHorizontal, Package, Play, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
 import type { Instance, World } from "@/lib/types";
@@ -32,6 +32,7 @@ import { CopyWorldDialog, backupWorld, importWorldZip } from "@/features/backups
 import { supportsQuickPlay, useInstanceActions } from "@/components/instance/actions";
 import { useRunPhase } from "@/components/instance/status";
 import { PageTools } from "./toolbar";
+import { WorldDatapacksDialog } from "./WorldDatapacksDialog";
 
 const MODES = ["survival", "creative", "adventure", "spectator", "hardcore"];
 function WorldIcon({ world }: { world: World }) {
@@ -57,7 +58,7 @@ function WorldIcon({ world }: { world: World }) {
 }
 
 /** Aktionen einer Welt – dieselben Einträge im ⋯-Menü und im Rechtsklick-Menü. */
-function WorldMenu({ instance, world, onCopy, Item, Sep }: { instance: Instance; world: World; onCopy: (w: World) => void; Item: (p: MenuItemProps) => React.ReactNode; Sep: () => React.ReactNode }) {
+function WorldMenu({ instance, world, onCopy, onPacks, Item, Sep }: { instance: Instance; world: World; onCopy: (w: World) => void; onPacks: (w: World) => void; Item: (p: MenuItemProps) => React.ReactNode; Sep: () => React.ReactNode }) {
   const t = useT();
   const openDir = () => api.instanceOpenFolder(instance.id, `saves/${world.folder}`).catch((e) => toast.error(e));
   const del = async () => {
@@ -80,6 +81,9 @@ function WorldMenu({ instance, world, onCopy, Item, Sep }: { instance: Instance;
       <Item icon={<FolderOpen size={14} />} onSelect={openDir}>
         {t("common.open_folder")}
       </Item>
+      <Item icon={<Package size={14} />} onSelect={() => onPacks(world)}>
+        {t("dp.world.manage")}
+      </Item>
       <Item icon={<Archive size={14} />} onSelect={() => backupWorld(instance, world)}>
         {t("worlds.backup")}
       </Item>
@@ -94,7 +98,7 @@ function WorldMenu({ instance, world, onCopy, Item, Sep }: { instance: Instance;
   );
 }
 
-const WorldRow = memo(function WorldRow({ instance, world, onCopy }: { instance: Instance; world: World; onCopy: (w: World) => void }) {
+const WorldRow = memo(function WorldRow({ instance, world, onCopy, onPacks }: { instance: Instance; world: World; onCopy: (w: World) => void; onPacks: (w: World) => void }) {
   const t = useT();
   const { launch } = useInstanceActions();
   const { phase } = useRunPhase(instance.id);
@@ -108,7 +112,7 @@ const WorldRow = memo(function WorldRow({ instance, world, onCopy }: { instance:
       content={
         <>
           <ContextLabel>{world.name}</ContextLabel>
-          <WorldMenu instance={instance} world={world} onCopy={onCopy} Item={ContextItem} Sep={ContextSeparator} />
+          <WorldMenu instance={instance} world={world} onCopy={onCopy} onPacks={onPacks} Item={ContextItem} Sep={ContextSeparator} />
         </>
       }
     >
@@ -145,7 +149,7 @@ const WorldRow = memo(function WorldRow({ instance, world, onCopy }: { instance:
             </IconButton>
           }
         >
-          <WorldMenu instance={instance} world={world} onCopy={onCopy} Item={DropdownItem} Sep={DropdownSeparator} />
+          <WorldMenu instance={instance} world={world} onCopy={onCopy} onPacks={onPacks} Item={DropdownItem} Sep={DropdownSeparator} />
         </DropdownMenu>
       </div>
     </ContextMenu>
@@ -157,6 +161,7 @@ export function WorldsTab({ instance }: { instance: Instance }) {
   const q = useQuery({ queryKey: qk.worlds(instance.id), queryFn: () => api.worldsList(instance.id) });
   const [query, setQuery] = useState("");
   const [copying, setCopying] = useState<World | null>(null);
+  const [packsWorld, setPacksWorld] = useState<World | null>(null);
   const dq = useDeferredValue(query.trim().toLowerCase());
   const list = useMemo(
     () =>
@@ -210,12 +215,13 @@ export function WorldsTab({ instance }: { instance: Instance }) {
         ) : (
           <div className="flex flex-col">
             {list.map((w) => (
-              <WorldRow key={w.folder} instance={instance} world={w} onCopy={setCopying} />
+              <WorldRow key={w.folder} instance={instance} world={w} onCopy={setCopying} onPacks={setPacksWorld} />
             ))}
           </div>
         )}
       </div>
       <CopyWorldDialog instance={instance} world={copying} onClose={() => setCopying(null)} />
+      {packsWorld && <WorldDatapacksDialog instanceId={instance.id} world={packsWorld} onClose={() => setPacksWorld(null)} />}
     </div>
   );
 }

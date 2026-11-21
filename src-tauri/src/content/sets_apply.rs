@@ -1068,6 +1068,7 @@ mod tests {
             description: None,
             created: 0,
             updated: 0,
+            apply_on_create: false,
             entries: vec![
                 SetEntry { source: Source::Modrinth, project_id: "a".into(), slug: None, title: "A".into(), icon_url: None, project_type: ProjectType::Mod, added: 0 },
                 SetEntry { source: Source::Modrinth, project_id: "b".into(), slug: None, title: "B".into(), icon_url: None, project_type: ProjectType::Mod, added: 0 },

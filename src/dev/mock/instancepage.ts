@@ -4,6 +4,7 @@ import type { DepIssue, Diagnosis, FileEntry, FixBackup, FixPlan, FixReport, Ins
 import { instances } from "./core";
 import { emptyState, latestState, states } from "./sessions";
 import { fakeTask, type Handlers } from "./util";
+import { mockMigrationSnapshots } from "./userfixes";
 
 const now = Date.now();
 const survival = instances.get("survival");
@@ -355,7 +356,7 @@ const handlers: Handlers = {
   modset_delete: ({ setId }) => (modsets = { ...modsets, active: null, sets: modsets.sets.filter((s) => s.id !== setId) }),
   perf_preview: () => perf,
   perf_install: ({ instanceId }) => fakeTask("perf_install", "Performance-Mods installieren", instanceId as string, 2000),
-  snapshots_list: ({ instanceId }) => (instanceId === "survival" ? snapshots : []),
+  snapshots_list: ({ instanceId }) => [...mockMigrationSnapshots(String(instanceId)), ...(instanceId === "survival" ? snapshots : [])],
   snapshot_create: () => null,
   snapshot_delete: () => null,
   snapshot_restore: () => null,
