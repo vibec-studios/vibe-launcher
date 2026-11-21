@@ -1,0 +1,778 @@
+{
+  "phase": "install",
+  "params": {
+    "runs": 3,
+    "pack": {
+      "name": "Fabulously Optimized 12.3.0 for 1.21.11",
+      "project": "1KVo5zza",
+      "version": "K0lc692U",
+      "url": "https://cdn.modrinth.com/data/1KVo5zza/versions/K0lc692U/Fabulously.Optimized-v13.3.0-mr.1.mrpack",
+      "sha512": "13a3a2a1e9795056ef2ef343baf3c75eff8af7dd2b300e716a382707622943c1201968bf2748e19d7ff64efbe55b6e73c9567d0b555f4bd34b5725d532b08546"
+    },
+    "packIndex": {
+      "name": "Fabulously Optimized",
+      "versionId": "12.3.0",
+      "dependencies": {
+        "fabric-loader": "0.19.3",
+        "minecraft": "1.21.11"
+      },
+      "files": 50,
+      "mods": 48,
+      "downloadBytes": 48172965
+    },
+    "mcVersion": "1.21.11"
+  },
+  "launchers": {
+    "vibe": {
+      "name": "Vibe Launcher",
+      "version": "1.0.0-beta.7",
+      "runs": [
+        {
+          "run": 1,
+          "background": {
+            "at": "2026-11-21T18:53:53.257Z",
+            "cpuPct": 88.7,
+            "freeGb": 5.3,
+            "top": [
+              {
+                "name": "java",
+                "corePct": 384.4
+              },
+              {
+                "name": "node",
+                "corePct": 182.8
+              },
+              {
+                "name": "rustc",
+                "corePct": 164.8
+              },
+              {
+                "name": "find",
+                "corePct": 85.2
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 83.6
+              },
+              {
+                "name": "Discord",
+                "corePct": 55.5
+              },
+              {
+                "name": "claude",
+                "corePct": 9.4
+              },
+              {
+                "name": "audiodg",
+                "corePct": 5.5
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 89 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (384 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "startup": {
+            "firstWindowMs": 884.2375999998767,
+            "windowMs": 884.2408000000287,
+            "readyMs": 2341.6069999998435,
+            "domMs": 954.2983999999706,
+            "domError": null,
+            "title": "Vibe Launcher",
+            "interventions": []
+          },
+          "vanilla": {
+            "createMs": 42.89749999996275,
+            "installMs": 11716.693900000071,
+            "totalMs": 11759.596499999985,
+            "instanceDir": "<work>\\data\\vibe\\install-1\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 525
+          },
+          "pack": {
+            "importMs": 1832.7334999998566,
+            "installMs": 386.8756000001449,
+            "totalMs": 2219.6091000000015,
+            "instanceDir": "<work>\\data\\vibe\\install-1\\instances\\bench-pack",
+            "id": "bench-pack",
+            "instanceMiB": 46.3,
+            "dataGrowthMiB": 50.8
+          },
+          "dataTotalMiB": 590.5
+        },
+        {
+          "run": 2,
+          "background": {
+            "at": "2026-11-21T18:57:56.745Z",
+            "cpuPct": 51.8,
+            "freeGb": 11.6,
+            "top": [
+              {
+                "name": "node",
+                "corePct": 295.3
+              },
+              {
+                "name": "find",
+                "corePct": 99.2
+              },
+              {
+                "name": "rustc",
+                "corePct": 99.2
+              },
+              {
+                "name": "java",
+                "corePct": 98.4
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 50
+              },
+              {
+                "name": "Discord",
+                "corePct": 39.8
+              },
+              {
+                "name": "claude",
+                "corePct": 12.5
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 9.4
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 52 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (98 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "startup": {
+            "firstWindowMs": 1315.157200000016,
+            "windowMs": 1315.1700999999885,
+            "readyMs": 2900.747399999993,
+            "domMs": 1340.347700000042,
+            "domError": null,
+            "title": "Vibe Launcher",
+            "interventions": []
+          },
+          "vanilla": {
+            "createMs": 41.527299999957904,
+            "installMs": 11505.736900000134,
+            "totalMs": 11547.26549999998,
+            "instanceDir": "<work>\\data\\vibe\\install-2\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 525
+          },
+          "pack": {
+            "importMs": 1258.469599999953,
+            "installMs": 354.3200000000652,
+            "totalMs": 1612.7896000000183,
+            "instanceDir": "<work>\\data\\vibe\\install-2\\instances\\bench-pack",
+            "id": "bench-pack",
+            "instanceMiB": 46.3,
+            "dataGrowthMiB": 50.8
+          },
+          "dataTotalMiB": 590.5
+        },
+        {
+          "run": 3,
+          "background": {
+            "at": "2026-11-21T18:58:22.214Z",
+            "cpuPct": 70.5,
+            "freeGb": 11.4,
+            "top": [
+              {
+                "name": "java",
+                "corePct": 91.4
+              },
+              {
+                "name": "rustc",
+                "corePct": 91.4
+              },
+              {
+                "name": "find",
+                "corePct": 89.8
+              },
+              {
+                "name": "Discord",
+                "corePct": 53.1
+              },
+              {
+                "name": "node",
+                "corePct": 37.5
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 32.8
+              },
+              {
+                "name": "claude",
+                "corePct": 15.6
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 8.6
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 70 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (91 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "startup": {
+            "firstWindowMs": 795.6707999999635,
+            "windowMs": 795.6799000001047,
+            "readyMs": 2241.906399999978,
+            "domMs": 809.9753000000492,
+            "domError": null,
+            "title": "Vibe Launcher",
+            "interventions": []
+          },
+          "vanilla": {
+            "createMs": 28.18610000004992,
+            "installMs": 8970.88180000009,
+            "totalMs": 8999.068800000008,
+            "instanceDir": "<work>\\data\\vibe\\install-3\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 525
+          },
+          "pack": {
+            "importMs": 801.2990000001155,
+            "installMs": 244.8788999998942,
+            "totalMs": 1046.1779000000097,
+            "instanceDir": "<work>\\data\\vibe\\install-3\\instances\\bench-pack",
+            "id": "bench-pack",
+            "instanceMiB": 46.3,
+            "dataGrowthMiB": 50.8
+          },
+          "dataTotalMiB": 590.5
+        }
+      ],
+      "summary": {
+        "vanillaCreateMs": {
+          "n": 3,
+          "median": 41.527299999957904,
+          "p25": 34.85670000000391,
+          "p75": 42.212399999960326,
+          "min": 28.18610000004992,
+          "max": 42.89749999996275,
+          "mean": 37.53696666665686,
+          "sd": 8.127016215838312,
+          "cv": 0.21650700462851558
+        },
+        "vanillaInstallMs": {
+          "n": 3,
+          "median": 11505.736900000134,
+          "p25": 10238.309350000112,
+          "p75": 11611.215400000103,
+          "min": 8970.88180000009,
+          "max": 11716.693900000071,
+          "mean": 10731.104200000098,
+          "sd": 1528.042174502584,
+          "cv": 0.14239375054270464
+        },
+        "vanillaTotalMs": {
+          "n": 3,
+          "median": 11547.26549999998,
+          "p25": 10273.167149999994,
+          "p75": 11653.430999999982,
+          "min": 8999.068800000008,
+          "max": 11759.596499999985,
+          "mean": 10768.64359999999,
+          "sd": 1536.169698629186,
+          "cv": 0.1426521069588734
+        },
+        "packImportMs": {
+          "n": 3,
+          "median": 1258.469599999953,
+          "p25": 1029.8843000000343,
+          "p75": 1545.6015499999048,
+          "min": 801.2990000001155,
+          "max": 1832.7334999998566,
+          "mean": 1297.500699999975,
+          "sd": 516.8238113930489,
+          "cv": 0.3983225684526096
+        },
+        "packInstallMs": {
+          "n": 3,
+          "median": 354.3200000000652,
+          "p25": 299.5994499999797,
+          "p75": 370.59780000010505,
+          "min": 244.8788999998942,
+          "max": 386.8756000001449,
+          "mean": 328.69150000003475,
+          "sd": 74.38669714356841,
+          "cv": 0.2263115935263326
+        },
+        "packTotalMs": {
+          "n": 3,
+          "median": 1612.7896000000183,
+          "p25": 1329.483750000014,
+          "p75": 1916.1993500000099,
+          "min": 1046.1779000000097,
+          "max": 2219.6091000000015,
+          "mean": 1626.1922000000097,
+          "sd": 586.8303993049653,
+          "cv": 0.3608616492595167
+        },
+        "vanillaInstanceMiB": {
+          "n": 3,
+          "median": 0,
+          "p25": 0,
+          "p75": 0,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "sd": 0,
+          "cv": 0
+        },
+        "vanillaDataGrowthMiB": {
+          "n": 3,
+          "median": 525,
+          "p25": 525,
+          "p75": 525,
+          "min": 525,
+          "max": 525,
+          "mean": 525,
+          "sd": 0,
+          "cv": 0
+        },
+        "packInstanceMiB": {
+          "n": 3,
+          "median": 46.3,
+          "p25": 46.3,
+          "p75": 46.3,
+          "min": 46.3,
+          "max": 46.3,
+          "mean": 46.29999999999999,
+          "sd": 8.702335715267317e-15,
+          "cv": 1.8795541501657275e-16
+        },
+        "packDataGrowthMiB": {
+          "n": 3,
+          "median": 50.8,
+          "p25": 50.8,
+          "p75": 50.8,
+          "min": 50.8,
+          "max": 50.8,
+          "mean": 50.79999999999999,
+          "sd": 8.702335715267317e-15,
+          "cv": 1.713058211666795e-16
+        },
+        "dataTotalMiB": {
+          "n": 3,
+          "median": 590.5,
+          "p25": 590.5,
+          "p75": 590.5,
+          "min": 590.5,
+          "max": 590.5,
+          "mean": 590.5,
+          "sd": 0,
+          "cv": 0
+        },
+        "domReadyMs": {
+          "n": 3,
+          "median": 954.2983999999706,
+          "p25": 882.1368500000099,
+          "p75": 1147.3230500000063,
+          "min": 809.9753000000492,
+          "max": 1340.347700000042,
+          "mean": 1034.8738000000205,
+          "sd": 274.2134515014064,
+          "cv": 0.2649728416174039
+        },
+        "notes": [],
+        "errors": []
+      }
+    },
+    "prism": {
+      "name": "Prism Launcher",
+      "version": "11.1.1",
+      "runs": [
+        {
+          "run": 1,
+          "background": {
+            "at": "2026-11-21T18:54:19.955Z",
+            "cpuPct": 96.4,
+            "freeGb": 6.8,
+            "top": [
+              {
+                "name": "java",
+                "corePct": 410.2
+              },
+              {
+                "name": "rustc",
+                "corePct": 165.6
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 146.9
+              },
+              {
+                "name": "node",
+                "corePct": 128.1
+              },
+              {
+                "name": "Discord",
+                "corePct": 99.2
+              },
+              {
+                "name": "find",
+                "corePct": 78.1
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 17.2
+              },
+              {
+                "name": "claude",
+                "corePct": 14.8
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 96 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (410 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "startup": {
+            "firstWindowMs": 346.55689999996684,
+            "windowMs": 2701.125100000063,
+            "readyMs": 3929.937900000019,
+            "domMs": null,
+            "domError": null,
+            "title": "Prism Launcher 11.1.1",
+            "interventions": [
+              {
+                "atMs": 2396.3876000000164,
+                "action": "Finish per UI-Automation",
+                "ok": true,
+                "ms": 2049.724600000074
+              }
+            ]
+          },
+          "vanilla": {
+            "createMs": null,
+            "installMs": null,
+            "totalMs": 107227.20200000005,
+            "instanceDir": "<work>\\data\\prism\\install-1\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "note": "Prism lädt beim Import auch die Spieldateien – Anlegen und Spieldateien sind ein Schritt",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 523.7
+          },
+          "pack": {
+            "importMs": null,
+            "installMs": null,
+            "totalMs": 3414.6315999999642,
+            "instanceDir": "<work>\\data\\prism\\install-1\\instances\\pack",
+            "id": "pack",
+            "instanceMiB": 46.4,
+            "dataGrowthMiB": 51.2
+          },
+          "dataTotalMiB": 575.3
+        },
+        {
+          "run": 2,
+          "background": {
+            "at": "2026-11-21T18:56:24.676Z",
+            "cpuPct": 38.8,
+            "freeGb": 12.8,
+            "top": [
+              {
+                "name": "node",
+                "corePct": 139.8
+              },
+              {
+                "name": "find",
+                "corePct": 101.6
+              },
+              {
+                "name": "java",
+                "corePct": 101.6
+              },
+              {
+                "name": "rustc",
+                "corePct": 87.5
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 33.6
+              },
+              {
+                "name": "Discord",
+                "corePct": 32.8
+              },
+              {
+                "name": "claude",
+                "corePct": 14.8
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 4.7
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 39 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (102 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "startup": {
+            "firstWindowMs": 144.46979999984615,
+            "windowMs": 400.0756999999285,
+            "readyMs": 1292.0704999999143,
+            "domMs": null,
+            "domError": null,
+            "title": "Prism Launcher 11.1.1",
+            "interventions": [
+              {
+                "atMs": 181.21450000000186,
+                "action": "Finish per UI-Automation",
+                "ok": true,
+                "ms": 36.68610000004992
+              }
+            ]
+          },
+          "vanilla": {
+            "createMs": null,
+            "installMs": null,
+            "totalMs": 76042.41360000009,
+            "instanceDir": "<work>\\data\\prism\\install-2\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "note": "Prism lädt beim Import auch die Spieldateien – Anlegen und Spieldateien sind ein Schritt",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 523.7
+          },
+          "pack": {
+            "importMs": null,
+            "installMs": null,
+            "totalMs": 3447.2361000000965,
+            "instanceDir": "<work>\\data\\prism\\install-2\\instances\\pack",
+            "id": "pack",
+            "instanceMiB": 46.4,
+            "dataGrowthMiB": 51.2
+          },
+          "dataTotalMiB": 575.3
+        },
+        {
+          "run": 3,
+          "background": {
+            "at": "2026-11-21T18:58:42.296Z",
+            "cpuPct": 28.8,
+            "freeGb": 14.1,
+            "top": [
+              {
+                "name": "find",
+                "corePct": 101.6
+              },
+              {
+                "name": "java",
+                "corePct": 100.8
+              },
+              {
+                "name": "Discord",
+                "corePct": 26.6
+              },
+              {
+                "name": "chrome-headless-shell",
+                "corePct": 23.4
+              },
+              {
+                "name": "node",
+                "corePct": 9.4
+              },
+              {
+                "name": "claude",
+                "corePct": 6.3
+              },
+              {
+                "name": "T3 Code (Nightly)",
+                "corePct": 2.3
+              },
+              {
+                "name": "Wispr Flow",
+                "corePct": 1.6
+              }
+            ],
+            "warnings": [
+              "Hintergrundlast 29 % CPU (gesamt) – Ergebnisse können verfälscht sein",
+              "Fremde Java-Prozesse aktiv (101 % eines Kerns) – evtl. läuft ein anderes Minecraft oder Gradle"
+            ]
+          },
+          "startup": {
+            "firstWindowMs": 143.8003000000026,
+            "windowMs": 2398.4270999999717,
+            "readyMs": 3015.722999999998,
+            "domMs": null,
+            "domError": null,
+            "title": "Prism Launcher 11.1.1",
+            "interventions": [
+              {
+                "atMs": 2186.6809000000358,
+                "action": "Finish per UI-Automation",
+                "ok": true,
+                "ms": 2042.846099999966
+              }
+            ]
+          },
+          "vanilla": {
+            "createMs": null,
+            "installMs": null,
+            "totalMs": 84989.7342999999,
+            "instanceDir": "<work>\\data\\prism\\install-3\\instances\\bench-vanilla",
+            "id": "bench-vanilla",
+            "note": "Prism lädt beim Import auch die Spieldateien – Anlegen und Spieldateien sind ein Schritt",
+            "instanceMiB": 0,
+            "dataGrowthMiB": 523.7
+          },
+          "pack": {
+            "importMs": null,
+            "installMs": null,
+            "totalMs": 4316.353299999842,
+            "instanceDir": "<work>\\data\\prism\\install-3\\instances\\pack",
+            "id": "pack",
+            "instanceMiB": 46.4,
+            "dataGrowthMiB": 51.2
+          },
+          "dataTotalMiB": 575.3
+        }
+      ],
+      "summary": {
+        "vanillaCreateMs": null,
+        "vanillaInstallMs": null,
+        "vanillaTotalMs": {
+          "n": 3,
+          "median": 84989.7342999999,
+          "p25": 80516.07394999999,
+          "p75": 96108.46814999997,
+          "min": 76042.41360000009,
+          "max": 107227.20200000005,
+          "mean": 89419.78330000001,
+          "sd": 16057.45177464328,
+          "cv": 0.1795738166885412
+        },
+        "packImportMs": null,
+        "packInstallMs": null,
+        "packTotalMs": {
+          "n": 3,
+          "median": 3447.2361000000965,
+          "p25": 3430.9338500000304,
+          "p75": 3881.7946999999695,
+          "min": 3414.6315999999642,
+          "max": 4316.353299999842,
+          "mean": 3726.0736666666344,
+          "sd": 511.4570338758228,
+          "cv": 0.13726433764616763
+        },
+        "vanillaInstanceMiB": {
+          "n": 3,
+          "median": 0,
+          "p25": 0,
+          "p75": 0,
+          "min": 0,
+          "max": 0,
+          "mean": 0,
+          "sd": 0,
+          "cv": 0
+        },
+        "vanillaDataGrowthMiB": {
+          "n": 3,
+          "median": 523.7,
+          "p25": 523.7,
+          "p75": 523.7,
+          "min": 523.7,
+          "max": 523.7,
+          "mean": 523.7,
+          "sd": 0,
+          "cv": 0
+        },
+        "packInstanceMiB": {
+          "n": 3,
+          "median": 46.4,
+          "p25": 46.4,
+          "p75": 46.4,
+          "min": 46.4,
+          "max": 46.4,
+          "mean": 46.4,
+          "sd": 0,
+          "cv": 0
+        },
+        "packDataGrowthMiB": {
+          "n": 3,
+          "median": 51.2,
+          "p25": 51.2,
+          "p75": 51.2,
+          "min": 51.2,
+          "max": 51.2,
+          "mean": 51.20000000000001,
+          "sd": 8.702335715267317e-15,
+          "cv": 1.6996749443881474e-16
+        },
+        "dataTotalMiB": {
+          "n": 3,
+          "median": 575.3,
+          "p25": 575.3,
+          "p75": 575.3,
+          "min": 575.3,
+          "max": 575.3,
+          "mean": 575.3,
+          "sd": 0,
+          "cv": 0
+        },
+        "domReadyMs": null,
+        "notes": [
+          "Prism lädt beim Import auch die Spieldateien – Anlegen und Spieldateien sind ein Schritt"
+        ],
+        "errors": []
+      }
+    }
+  },
+  "meta": {
+    "startedAt": "2026-11-21T18:53:51.196Z",
+    "args": [
+      "--phase",
+      "idle,install"
+    ],
+    "pins": {
+      "mcVersion": "1.21.11",
+      "memory": {
+        "minMb": 1024,
+        "maxMb": 4096
+      },
+      "java": {
+        "name": "Eclipse Temurin JRE 21.0.13.1+2",
+        "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13.1%2B2/OpenJDK21U-jre_x64_windows_hotspot_21.0.13.1_2.zip",
+        "sha256": "e15ee1e54a5a3b38027a09cedfa87bc3348d7dd3ce50866dd3d9671d7fffc6c1"
+      },
+      "modpack": {
+        "name": "Fabulously Optimized 12.3.0 for 1.21.11",
+        "project": "1KVo5zza",
+        "version": "K0lc692U",
+        "url": "https://cdn.modrinth.com/data/1KVo5zza/versions/K0lc692U/Fabulously.Optimized-v13.3.0-mr.1.mrpack",
+        "sha512": "13a3a2a1e9795056ef2ef343baf3c75eff8af7dd2b300e716a382707622943c1201968bf2748e19d7ff64efbe55b6e73c9567d0b555f4bd34b5725d532b08546"
+      },
+      "logMarker": "Sound engine started"
+    },
+    "finishedAt": "2026-11-21T19:00:23.170Z",
+    "system": {
+      "platform": "Windows_NT 10.0.26200",
+      "osName": "Microsoft Windows 11 Pro",
+      "osBuild": "26200",
+      "cpu": "12th Gen Intel(R) Core(TM) i5-12600K",
+      "cores": 10,
+      "threads": 16,
+      "ramGb": 31.7,
+      "gpu": [
+        "Intel(R) Arc(TM) A750 Graphics"
+      ],
+      "disks": [
+        "CT2000P3PSSD8 (SSD, NVMe)",
+        "CT500P3SSD8 (SSD, NVMe)"
+      ],
+      "webview2Runtime": "157.0.4341.60",
+      "powerPlan": "Höchstleistung",
+      "node": "v24.15.0"
+    }
+  }
+}

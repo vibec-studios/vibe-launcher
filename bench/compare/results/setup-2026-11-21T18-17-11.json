@@ -1,0 +1,99 @@
+{
+  "phase": "setup",
+  "launchers": {
+    "vibe": {
+      "name": "Vibe Launcher",
+      "version": "1.0.0-beta.7",
+      "source": "https://github.com/vibec-studios/vibe-launcher/releases/tag/v1.0.0-beta.7",
+      "download": {
+        "url": "https://github.com/vibec-studios/vibe-launcher/releases/download/v1.0.0-beta.7/Vibe-Launcher_1.0.0-beta.7_x64-portable.zip",
+        "bytes": 22432934,
+        "sha256": "c67f760426ef1ef429d6be6fed6cf2f9380339d96a8e428c03c75524bd22a221"
+      },
+      "installBytes": 54419146,
+      "installFiles": 2,
+      "notes": [
+        "Nutzt die WebView2-Laufzeit von Windows (nicht mitgezählt)."
+      ]
+    },
+    "prism": {
+      "name": "Prism Launcher",
+      "version": "11.1.1",
+      "source": "https://github.com/PrismLauncher/PrismLauncher/releases/tag/11.1.1",
+      "download": {
+        "url": "https://github.com/PrismLauncher/PrismLauncher/releases/download/11.1.1/PrismLauncher-Windows-MSVC-Portable-11.1.1.zip",
+        "bytes": 20396629,
+        "sha256": "ab35a770fb06d89d2ccc098079db5db329fb4e68f42b72babd8b095efde3d2d7"
+      },
+      "installBytes": 47729752,
+      "installFiles": 43,
+      "notes": [
+        "Qt-Laufzeit im Paket enthalten."
+      ]
+    },
+    "atlauncher": {
+      "name": "ATLauncher",
+      "version": "3.4.42.0",
+      "source": "https://github.com/ATLauncher/ATLauncher/releases/tag/v3.4.42.0",
+      "download": {
+        "url": "https://github.com/ATLauncher/ATLauncher/releases/download/v3.4.42.0/ATLauncher-3.4.42.0.jar",
+        "bytes": 28467291,
+        "sha256": "d88516436120711ceef6cfb835e2ad9a0004caee4892a99d9b7d4ce29514121e"
+      },
+      "installBytes": 28467291,
+      "installFiles": 1,
+      "notes": [
+        "Braucht eine Java-Laufzeit (nicht mitgezählt)."
+      ]
+    }
+  },
+  "meta": {
+    "startedAt": "2026-11-21T18:16:57.262Z",
+    "args": [
+      "--phase",
+      "setup",
+      "--launchers",
+      "vibe,prism,atlauncher"
+    ],
+    "pins": {
+      "mcVersion": "1.21.11",
+      "memory": {
+        "minMb": 1024,
+        "maxMb": 4096
+      },
+      "java": {
+        "name": "Eclipse Temurin JRE 21.0.13.1+2",
+        "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13.1%2B2/OpenJDK21U-jre_x64_windows_hotspot_21.0.13.1_2.zip",
+        "sha256": "e15ee1e54a5a3b38027a09cedfa87bc3348d7dd3ce50866dd3d9671d7fffc6c1"
+      },
+      "modpack": {
+        "name": "Fabulously Optimized 12.3.0 for 1.21.11",
+        "project": "1KVo5zza",
+        "version": "K0lc692U",
+        "url": "https://cdn.modrinth.com/data/1KVo5zza/versions/K0lc692U/Fabulously.Optimized-v13.3.0-mr.1.mrpack",
+        "sha512": "13a3a2a1e9795056ef2ef343baf3c75eff8af7dd2b300e716a382707622943c1201968bf2748e19d7ff64efbe55b6e73c9567d0b555f4bd34b5725d532b08546"
+      },
+      "logMarker": "Sound engine started"
+    },
+    "finishedAt": "2026-11-21T18:17:03.818Z",
+    "system": {
+      "platform": "Windows_NT 10.0.26200",
+      "osName": "Microsoft Windows 11 Pro",
+      "osBuild": "26200",
+      "cpu": "12th Gen Intel(R) Core(TM) i5-12600K",
+      "cores": 10,
+      "threads": 16,
+      "ramGb": 31.7,
+      "gpu": [
+        "Intel(R) Arc(TM) A750 Graphics"
+      ],
+      "disks": [
+        "CT2000P3PSSD8 (SSD, NVMe)",
+        "CT500P3SSD8 (SSD, NVMe)"
+      ],
+      "webview2Runtime": "157.0.4341.60",
+      "powerPlan": "Höchstleistung",
+      "node": "v24.15.0"
+    }
+  }
+}
