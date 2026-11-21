@@ -246,48 +246,6 @@ export const ContentRow = memo(function ContentRow({
   );
 });
 
-/** Simple-Modus: einfache Zeile – Icon, Name, Autor; rechts Aktualisieren, An/Aus, Entfernen. Keine Dateinamen,
- *  Versionen, Auswahl oder Fixieren. */
-export const SimpleContentRow = memo(function SimpleContentRow({ item, update, actions }: { item: ContentItem; update: ContentUpdate | undefined; actions: RowActions }) {
-  const t = useT();
-  const author = item.authors.length ? t("discover.by", { author: item.authors.join(", ") }) : null;
-  return (
-    <div role="row" className="group grid h-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-t border-line px-4 hover:bg-white/[.025]">
-      <div className={cn("flex min-w-0 items-center gap-3 transition-opacity duration-150", !item.enabled && "opacity-45 grayscale")}>
-        <ProjectIcon src={item.icon} size={40} />
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-[14px] font-semibold text-text">{item.name}</span>
-            {item.kind !== "mod" && <Tag className="shrink-0">{t(`content.kind1.${item.kind}`)}</Tag>}
-          </div>
-          <div className="truncate text-[12.5px] leading-5 text-muted">{item.enabled ? (author ?? t("content.local")) : t("simple.content.off")}</div>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {update && !update.manual && !item.pinned && (
-          <button
-            onClick={() => actions.update([item])}
-            className="flex h-8 items-center gap-1.5 rounded-ctl px-2.5 text-[12.5px] font-semibold text-accent transition-colors duration-100 hover:bg-accent hover:text-[var(--on-accent)]"
-          >
-            <ArrowUpCircle size={15} />
-            {t("common.update")}
-          </button>
-        )}
-        <Switch checked={item.enabled} onChange={(v) => actions.setEnabled([item], v)} label={item.enabled ? t("content.menu.disable") : t("content.menu.enable")} />
-        <Tooltip content={t("common.remove")}>
-          <button
-            aria-label={t("common.remove")}
-            onClick={() => actions.remove([item])}
-            className="grid h-8 w-8 place-items-center rounded-ctl text-dim transition-colors duration-100 hover:bg-danger/12 hover:text-danger"
-          >
-            <Trash2 size={15} />
-          </button>
-        </Tooltip>
-      </div>
-    </div>
-  );
-});
-
 export function RowSkeleton() {
   return (
     <div className={cn(GRID, "h-[60px] border-t border-line")}>

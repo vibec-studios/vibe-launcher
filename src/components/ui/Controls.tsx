@@ -6,6 +6,7 @@ import { AlertTriangle, Check, Minus } from "lucide-react";
 import { cn } from "./cn";
 import { Button } from "./Button";
 import { t } from "@/i18n";
+import { errorHint } from "@/lib/errorHints";
 
 /** Checkbox (Akzentfarbe). `mixed`: teilweise gewählt (Strich statt Haken); ein Klick wählt dann alles. */
 export function Checkbox({
@@ -152,11 +153,13 @@ export function EmptyState({ icon, title, text, action, className }: { icon?: Re
 }
 
 export function ErrorState({ error, onRetry, className }: { error: unknown; onRetry?: () => void; className?: string }) {
+  const hint = errorHint(error);
   const msg = typeof error === "string" ? error : error && typeof error === "object" && "message" in error ? String((error as { message: unknown }).message) : String(error);
   return (
     <div className={cn("flex flex-col items-center justify-center gap-3 px-6 py-14 text-center", className)}>
       <AlertTriangle size={28} className="text-danger" />
-      <p className="selectable max-w-[520px] text-[13px] text-muted">{msg}</p>
+      {hint && <p className="max-w-[520px] text-[13.5px] font-medium text-text">{t(`usab.err.${hint}`)}</p>}
+      <p className={cn("selectable max-w-[520px] text-muted", hint ? "text-[12px]" : "text-[13px]")}>{msg}</p>
       {onRetry && (
         <Button size="sm" onClick={onRetry}>
           {t("common.retry")}

@@ -5,11 +5,14 @@ import { useHelpContent } from "./content";
 import { GuideIcon } from "./icons";
 import { TourButton, TourStatus } from "./TourControls";
 import type { GuideId } from "./types";
+import { useSimple } from "@/lib/mode";
+import { ExpertHint } from "@/features/simple/ExpertHint";
 
 export function GuideView({ id }: { id: GuideId }) {
   const t = useT();
   const def = guideById(id);
   const g = useHelpContent().guides[id];
+  const locked = useSimple() && !!def?.expert;
   if (!def || !g) return null;
   return (
     <article className="flex flex-col gap-4" data-testid={`guide-${id}`}>
@@ -22,7 +25,8 @@ export function GuideView({ id }: { id: GuideId }) {
           <p className="mt-0.5 text-[13px] leading-relaxed text-muted">{g.summary}</p>
         </div>
       </header>
-      {def.tour && (
+      {locked && <ExpertHint text={t("usab.expert.guide")} />}
+      {def.tour && !locked && (
         <div className="flex items-center gap-3 rounded-card bg-surface px-4 py-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-[13px] font-semibold text-text">

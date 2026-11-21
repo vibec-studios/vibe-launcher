@@ -9,7 +9,7 @@ import { qk, queryClient, useAccounts, useTask, waitForTask } from "@/lib/querie
 import type { AppError, JoinPreview, PlayLink } from "@/lib/types";
 import { formatBytes } from "@/lib/format";
 import { useVibe } from "@/lib/vibe";
-import { useSimple } from "@/lib/mode";
+import { useExpert } from "@/lib/simple-mode";
 import { Button, Dialog, Progress, Skeleton, Spinner, cn, toast } from "@/components/ui";
 import { PlayerHead } from "@/components/PlayerHead";
 import { ProjectIcon } from "@/components/content/ProjectIcon";
@@ -73,7 +73,7 @@ export function PlayJoinDialog({ code, onDone }: { code: string; onDone: () => v
 
 function JoinBody({ link, onDone }: { link: PlayLink; onDone: () => void }) {
   const t = useT();
-  const simple = useSimple();
+  const tech = useExpert("tech-details");
   const nav = useNavigate();
   const { launch } = useInstanceActions();
   const accounts = useAccounts();
@@ -154,7 +154,7 @@ function JoinBody({ link, onDone }: { link: PlayLink; onDone: () => void }) {
           <div className="flex flex-col divide-y divide-line rounded-card bg-surface">
             <Row label={t("play.row.game")}>
               Minecraft {link.mc_version}
-              {!simple && link.loader.kind !== "vanilla" && (
+              {link.loader.kind !== "vanilla" && (
                 <span className="text-muted">
                   {" "}
                   · {LOADERS[link.loader.kind] ?? link.loader.kind}
@@ -167,7 +167,7 @@ function JoinBody({ link, onDone }: { link: PlayLink; onDone: () => void }) {
                 <span className="flex min-w-0 items-center gap-2">
                   {p?.pack_icon && <ProjectIcon src={p.pack_icon} size={20} />}
                   <span className="truncate">{p?.pack_title ?? link.pack?.title ?? link.pack?.project_id}</span>
-                  {!simple && p?.pack_version && <span className="shrink-0 text-dim">{p.pack_version}</span>}
+                  {p?.pack_version && <span className="shrink-0 text-dim">{p.pack_version}</span>}
                 </span>
               </Row>
             )}
@@ -186,7 +186,7 @@ function JoinBody({ link, onDone }: { link: PlayLink; onDone: () => void }) {
             </div>
           ) : p.problem ? (
             <Notice tone="danger" icon={<AlertTriangle size={16} />} title={t(`play.problem.${p.problem}`)}>
-              {p.problem_detail && !simple && <p className="selectable mt-1 text-meta text-dim">{p.problem_detail}</p>}
+              {p.problem_detail && tech && <p className="selectable mt-1 text-meta text-dim">{p.problem_detail}</p>}
             </Notice>
           ) : (
             <InstallPlan p={p} />

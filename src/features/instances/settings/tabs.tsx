@@ -20,6 +20,8 @@ import { openSettings } from "@/features/settings/store";
 import { useVibe } from "@/lib/vibe";
 import { useT } from "@/i18n";
 import { useSimple } from "@/lib/mode";
+import { useExpert } from "@/lib/simple-mode";
+import { ExpertHint } from "@/features/simple/ExpertHint";
 import { AccentPicker, GroupInput } from "../NewInstanceDialog";
 import { ClientPacks, useClientPacks } from "./ClientPacks";
 import { IconSetting } from "./IconSetting";
@@ -83,8 +85,10 @@ function SimpleGeneralTab({ instance, d, update, local, reset }: TabProps) {
       <div data-tour="instance-perf">
         <SimplePerfCard d={d} update={update} />
       </div>
-      <p className="px-1 text-[12.5px] text-dim">{t("simple.isd.auto")}</p>
+      <AutoUpdateCard d={d} update={update} />
       <ImportSettingsRow instance={instance} />
+      <ShortcutCard instance={instance} />
+      <ExpertHint text={t("usab.expert.instance")} />
       <SettingsCard title={t("isettings.danger")} danger>
         <SettingRow title={t("isettings.delete")} description={t("isettings.delete.desc")}>
           <Button
@@ -106,13 +110,56 @@ function SimpleGeneralTab({ instance, d, update, local, reset }: TabProps) {
   );
 }
 
+function AutoUpdateCard({ d, update }: Pick<TabProps, "d" | "update">) {
+  const t = useT();
+  const { data: settings } = useSettings();
+  return (
+    <SettingsCard title={t("isd.section.content")}>
+      <SettingRow title={t("isettings.auto_update")} description={t("isettings.auto_update.desc")}>
+        <Select<"default" | "on" | "off">
+          className="w-[240px]"
+          value={d.auto_update_content === null || d.auto_update_content === undefined ? "default" : d.auto_update_content ? "on" : "off"}
+          onChange={(v) => update({ auto_update_content: v === "default" ? null : v === "on" })}
+          options={[
+            {
+              value: "default",
+              label: d.source?.project_id
+                ? t("isettings.auto_update.default_pack")
+                : t("isettings.auto_update.default", { state: settings?.auto_update_content ? t("common.on") : t("common.off") }),
+            },
+            { value: "on", label: t("isettings.auto_update.on") },
+            { value: "off", label: t("isettings.auto_update.off") },
+          ]}
+        />
+      </SettingRow>
+    </SettingsCard>
+  );
+}
+
+function ShortcutCard({ instance }: { instance: Instance }) {
+  const t = useT();
+  return (
+    <SettingsCard title={t("isd.section.shortcut")}>
+      <SettingRow title={t("inst.shortcut")} description={t("inst.shortcut.desc")}>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => createShortcut(instance, "desktop")}>
+            {t("inst.shortcut.desktop")}
+          </Button>
+          <Button size="sm" onClick={() => createShortcut(instance, "start_menu")}>
+            {t("inst.shortcut.start_menu")}
+          </Button>
+        </div>
+      </SettingRow>
+    </SettingsCard>
+  );
+}
+
 export function GeneralTab(props: TabProps) {
   return useSimple() ? <SimpleGeneralTab {...props} /> : <ExpertGeneralTab {...props} />;
 }
 
 function ExpertGeneralTab({ instance, d, update, local, reset }: TabProps) {
   const t = useT();
-  const { data: settings } = useSettings();
   const { data: all = [] } = useInstances();
   const groups = [...new Set(all.map((i) => i.group).filter((g): g is string => !!g))].sort();
   const accent = instanceAccent(d.id, d.accent);
@@ -155,40 +202,11 @@ function ExpertGeneralTab({ instance, d, update, local, reset }: TabProps) {
         </SettingRow>
       </SettingsCard>
 
-      <SettingsCard title={t("isd.section.content")}>
-        <SettingRow title={t("isettings.auto_update")} description={t("isettings.auto_update.desc")}>
-          <Select<"default" | "on" | "off">
-            className="w-[240px]"
-            value={d.auto_update_content === null || d.auto_update_content === undefined ? "default" : d.auto_update_content ? "on" : "off"}
-            onChange={(v) => update({ auto_update_content: v === "default" ? null : v === "on" })}
-            options={[
-              {
-                value: "default",
-                label: d.source?.project_id
-                  ? t("isettings.auto_update.default_pack")
-                  : t("isettings.auto_update.default", { state: settings?.auto_update_content ? t("common.on") : t("common.off") }),
-              },
-              { value: "on", label: t("isettings.auto_update.on") },
-              { value: "off", label: t("isettings.auto_update.off") },
-            ]}
-          />
-        </SettingRow>
-      </SettingsCard>
+      <AutoUpdateCard d={d} update={update} />
 
       <ImportSettingsRow instance={instance} />
 
-      <SettingsCard title={t("isd.section.shortcut")}>
-        <SettingRow title={t("inst.shortcut")} description={t("inst.shortcut.desc")}>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => createShortcut(instance, "desktop")}>
-              {t("inst.shortcut.desktop")}
-            </Button>
-            <Button size="sm" onClick={() => createShortcut(instance, "start_menu")}>
-              {t("inst.shortcut.start_menu")}
-            </Button>
-          </div>
-        </SettingRow>
-      </SettingsCard>
+      <ShortcutCard instance={instance} />
     </>
   );
 }
@@ -367,6 +385,7 @@ export function JavaTab({ instance, d, update }: TabProps) {
 
 export function LaunchTab({ d, update }: TabProps) {
   const t = useT();
+  const showHooks = useExpert("launch-hooks");
   const { data: settings } = useSettings();
   const { data: sys } = useSystemInfo();
   const win = (p: Partial<WindowOptions>, delay = 0) => update({ window: { ...d.window, ...p } }, delay);
@@ -410,6 +429,9 @@ export function LaunchTab({ d, update }: TabProps) {
         )}
       </SettingsCard>
 
+      <ExpertHint text={t("usab.expert.hooks")} />
+
+      {showHooks && (
       <SettingsCard title={t("isd.hooks")}>
         <SettingRow title={t("isd.hooks.pre")} description={t("isd.hooks.pre.desc")} stacked>
           <Input className="font-mono text-[12px]" value={hooks.pre_launch ?? ""} placeholder={win32 ? "backup.bat" : "./backup.sh"} onChange={(e) => hook({ pre_launch: e.target.value || null })} />
@@ -433,6 +455,7 @@ export function LaunchTab({ d, update }: TabProps) {
           <span className="font-mono">{t("isd.hooks.vars", { vars })}</span>
         </div>
       </SettingsCard>
+      )}
     </>
   );
 }
@@ -537,13 +560,16 @@ export function AdvancedTab({ instance, d, update }: TabProps) {
   const actions = useInstanceActions();
   const { phase } = useRunPhase(instance.id);
   const running = phase === "running" || phase === "preparing";
+  const env = useExpert("env-vars");
   return (
     <>
-      <SettingsCard title={t("isd.section.process")}>
-        <SettingRow title={t("isettings.env")} description={t("isettings.env.desc")} stacked>
-          <EnvEditor env={d.java.env} onChange={(env, delay) => update({ java: { ...d.java, env } }, delay)} />
-        </SettingRow>
-      </SettingsCard>
+      {env && (
+        <SettingsCard title={t("isd.section.process")}>
+          <SettingRow title={t("isettings.env")} description={t("isettings.env.desc")} stacked>
+            <EnvEditor env={d.java.env} onChange={(env, delay) => update({ java: { ...d.java, env } }, delay)} />
+          </SettingRow>
+        </SettingsCard>
+      )}
 
       <SettingsCard title={t("isd.adv.manage")}>
         <SettingRow title={t("isd.adv.export")} description={t("isd.adv.export.desc")}>

@@ -5,11 +5,13 @@ import { GuideIcon } from "./icons";
 import { openHelp } from "./store";
 import { TourButton, TourStatus } from "./TourControls";
 import { resetTourProgress, useTours } from "./tour/store";
+import { useSimple } from "@/lib/mode";
 
 export function ToursView() {
   const t = useT();
   const content = useHelpContent();
   const any = useTours((s) => Object.keys(s.progress).length > 0);
+  const simple = useSimple();
   return (
     <div className="flex flex-col gap-3">
       <div>
@@ -17,7 +19,7 @@ export function ToursView() {
         <p className="mt-0.5 text-[12.5px] text-muted">{t("help.tours.desc")}</p>
       </div>
       <ul className="flex flex-col divide-y divide-line rounded-card bg-surface" data-testid="tour-list">
-        {TOURS.map((tour) => {
+        {TOURS.filter((tour) => !(simple && tour.guide && guideById(tour.guide)?.expert)).map((tour) => {
           const guide = tour.guide ? guideById(tour.guide) : undefined;
           const text = content.tours[tour.id];
           return (

@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { errorMessage } from "@/lib/api";
+import { errorHint } from "@/lib/errorHints";
 import { t as tr, useT } from "@/i18n";
 import { cn } from "./cn";
 
@@ -39,12 +40,24 @@ export const toast = {
   error: (titleOrError: unknown, text?: ReactNode) => {
     const isNode = typeof titleOrError === "string";
     return useToasts.getState().push(
-      isNode ? { tone: "error", title: titleOrError as string, text } : { tone: "error", title: text ?? tr("common.error"), text: errorMessage(titleOrError) },
+      isNode ? { tone: "error", title: titleOrError as string, text } : { tone: "error", title: text ?? tr("common.error"), text: <ErrorBody error={titleOrError} /> },
       8000,
     );
   },
   dismiss: (id: number) => useToasts.getState().dismiss(id),
 };
+
+export function ErrorBody({ error }: { error: unknown }) {
+  const raw = errorMessage(error);
+  const hint = errorHint(error);
+  if (!hint) return <>{raw}</>;
+  return (
+    <>
+      <span className="block text-text/85">{tr(`usab.err.${hint}`)}</span>
+      <span className="mt-1 block text-[11.5px] text-dim">{raw}</span>
+    </>
+  );
+}
 
 export function Toaster() {
   const t = useT();

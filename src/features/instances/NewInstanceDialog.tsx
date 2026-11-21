@@ -7,6 +7,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import * as Popover from "@radix-ui/react-popover";
+import { Term } from "@/features/help/glossary/Term";
 import { Check, ChevronDown, ChevronRight, Download, FolderInput, HardDriveDownload, ImageIcon, PackageOpen } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGameVersions, useInstances, useSystemInfo } from "@/lib/queries";
@@ -453,7 +454,9 @@ function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: boolean
             </div>
           </div>
           <div className="flex min-h-0 flex-col gap-1.5">
-            <span className="label">{t("newinst.loader")}</span>
+            <span className="label">
+              <Term id="loader">{t("newinst.loader")}</Term>
+            </span>
             <LoaderCards value={ver.loader} onChange={(loader) => loader !== ver.loader && setVer({ ...ver, loader, loaderVersion: null })} />
           </div>
           {ver.loader !== "vanilla" && (

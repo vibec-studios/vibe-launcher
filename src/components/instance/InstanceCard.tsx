@@ -6,7 +6,7 @@ import { ArrowUpCircle, Download } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Instance } from "@/lib/types";
 import { AnimatedNumber, ContextMenu, Progress, cn } from "@/components/ui";
-import { useSimple } from "@/lib/mode";
+
 import { formatDuration, formatRelative, instanceAccent, loaderNames } from "@/lib/format";
 import { BedrockTag } from "@/features/bedrock/parts";
 import { useT } from "@/i18n";
@@ -128,10 +128,8 @@ function IconArea({ instance: i, accent }: { instance: Instance; accent: string 
 /** Raster-Karte der Bibliothek. */
 export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: { instance: Instance; onOpen: (i: Instance) => void }) {
   const accent = instanceAccent(i.id, i.accent);
-  // Simple-Modus: kein Kontextmenü (Ordner, Export …), statt Loader nur die Minecraft-Version
-  const simple = useSimple();
   return (
-    <ContextMenu disabled={simple} content={<InstanceContextMenuContent instance={i} />}>
+    <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
       <div
         role="button"
         tabIndex={0}
@@ -164,7 +162,7 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
           </div>
           <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12px] text-muted">
             {/* Version bleibt ganz lesbar, ein Status dahinter kürzt sich zuerst */}
-            {i.bedrock ? <BedrockTag instance={i} /> : <span className="shrink-0">{simple ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>}
+            {i.bedrock ? <BedrockTag instance={i} /> : <span className="shrink-0">{loaderLine(i)}</span>}
             <StatusDot instance={i} />
           </div>
         </div>
@@ -217,12 +215,11 @@ export const listCols =
 /** Spaltenköpfe der Listenansicht, damit die Zahlen rechts nicht ohne Bedeutung dastehen. */
 export function InstanceListHeader() {
   const t = useT();
-  const simple = useSimple();
   return (
     <div className={cn(listCols, "h-8 text-[12px] font-medium text-dim")} aria-hidden>
       <span />
       <span>{t("instances.col.name")}</span>
-      <span className="hidden @min-[640px]:block">{simple ? t("instances.col.version_simple") : t("instances.col.version")}</span>
+      <span className="hidden @min-[640px]:block">{t("instances.col.version")}</span>
       <span className="hidden @min-[860px]:block">{t("inst.last_played")}</span>
       <span className="hidden text-right @min-[860px]:block">{t("inst.play_time")}</span>
       <span />
@@ -234,10 +231,8 @@ export function InstanceListHeader() {
 export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOpen }: { instance: Instance; onOpen: (i: Instance) => void }) {
   const t = useT();
   const accent = instanceAccent(i.id, i.accent);
-  // Simple-Modus: kein Kontextmenü (Ordner, Export …), statt Loader nur die Minecraft-Version
-  const simple = useSimple();
   return (
-    <ContextMenu disabled={simple} content={<InstanceContextMenuContent instance={i} />}>
+    <ContextMenu content={<InstanceContextMenuContent instance={i} />}>
       <div
         role="button"
         tabIndex={0}
@@ -268,7 +263,7 @@ export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOp
             </div>
           )}
         </div>
-        <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{simple && !i.bedrock ? `Minecraft ${i.mc_version}` : loaderLine(i)}</span>
+        <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{loaderLine(i)}</span>
         <span className="hidden truncate text-[12.5px] text-muted @min-[860px]:block">{i.last_played ? formatRelative(i.last_played) : t("inst.never_played")}</span>
         <span className="hidden truncate text-right text-[12.5px] tabular-nums text-muted @min-[860px]:block">{i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : <span className="text-dim">–</span>}</span>
         <span className="flex justify-end opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">

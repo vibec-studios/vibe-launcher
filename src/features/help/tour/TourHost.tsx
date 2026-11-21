@@ -2,6 +2,7 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useOnboarding } from "@/features/onboarding/store";
+import { useLang } from "@/i18n";
 import { tourById } from "../content/catalog";
 import { useHelpContent } from "../content";
 import type { TourAction, TourDef } from "../types";
@@ -66,6 +67,13 @@ function TourRun({ tour, index }: { tour: TourDef; index: number }) {
   useEffect(() => {
     if (opened.current && opened.current !== step.open) closeAction(opened.current);
     opened.current = step.open;
+    if (step.expert && useLang.getState().simple) {
+      skipped.current.add(index);
+      const next = index + dir.current;
+      if (next >= tour.steps.length) finish(true);
+      else goToStep(Math.max(0, next));
+      return;
+    }
     if (step.route) {
       const href = resolveRoute(step.route);
       if (href && !sameLocation(href, locRef.current)) nav({ href } as never);

@@ -1,4 +1,4 @@
-import { Compass } from "lucide-react";
+import { BookOpen, Compass } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Dialog, SearchInput, cn } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -9,6 +9,7 @@ import { closeHelp, openHelp, useHelp } from "./store";
 import { GuideView } from "./GuideView";
 import { ToursView } from "./ToursView";
 import { matchGuide } from "./search";
+import { GlossaryView } from "./glossary/GlossaryView";
 
 export function HelpCenter() {
   const t = useT();
@@ -41,6 +42,12 @@ function HelpBody({ view }: { view: ReturnType<typeof useHelp.getState>["view"] 
             </span>
             <span className="truncate">{t("help.tours")}</span>
           </button>
+          <button className={item(view === "glossary")} aria-current={view === "glossary" ? "page" : undefined} data-testid="help-glossary" onClick={() => openHelp("glossary")}>
+            <span className={view === "glossary" ? "text-brand" : "text-dim"}>
+              <BookOpen size={16} />
+            </span>
+            <span className="truncate">{t("usab.glossary.title")}</span>
+          </button>
           <div className="px-2.5 pb-1 pt-3 text-[11.5px] font-semibold text-dim">{t("help.guides")}</div>
           {list.map((g) => (
             <button key={g.id} data-guide={g.id} className={item(view === g.id)} aria-current={view === g.id ? "page" : undefined} onClick={() => openHelp(g.id)}>
@@ -54,7 +61,7 @@ function HelpBody({ view }: { view: ReturnType<typeof useHelp.getState>["view"] 
         </div>
       </nav>
       <section key={view} className="scroll min-h-0 animate-fade-in pr-1">
-        {view === "tours" ? <ToursView /> : <GuideView id={view} />}
+        {view === "tours" ? <ToursView /> : view === "glossary" ? <GlossaryView query={q} /> : <GuideView id={view} />}
       </section>
     </div>
   );

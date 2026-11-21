@@ -87,7 +87,7 @@ const de: HelpContent = {
       title: "Backups",
       summary: "Backups sichern Welten oder ganze Instanzen. So kannst du nach einem kaputten Update oder einem Fehler zurück.",
       steps: [
-        "Öffne die Instanz und wechsle in den Bereich „Backups“ (nur im Experten-Modus).",
+        "Öffne die Instanz und wechsle in den Bereich „Backups“.",
         "„Snapshot erstellen“ sichert Mods, Configs, Packs und Optionen, aber keine Welten. Ideal vor einem Update.",
         "Welten sicherst du im Bereich „Welten“: Rechtsklick auf die Welt → „Backup erstellen“. Sie erscheinen unter „Welt-Backups“.",
         "Zum Zurückspielen klickst du beim Snapshot bzw. Backup auf „Wiederherstellen“.",
@@ -132,7 +132,7 @@ const de: HelpContent = {
       title: "Skins und Cosmetics",
       summary: "Skins änderst du direkt im Launcher. Cosmetics wie Umhänge, Hüte und Emotes sehen andere Spieler mit dem Vibey Client.",
       steps: [
-        "Öffne „Skins“ (im Simple-Modus über den Konto-Knopf oben rechts).",
+        "Öffne „Skins“ in der Seitenleiste oder über den Konto-Knopf oben rechts.",
         "Lade einen Skin hoch oder wähle einen aus deiner Bibliothek. Die 3D-Vorschau zeigt, wie er aussieht.",
         "Wähle zwischen klassischem und schmalem Modell und klicke auf „Übernehmen“.",
         "Für Cosmetics öffne „Cosmetics“ in der Seitenleiste, wähle Teile aus und speichere dein Outfit.",
@@ -159,7 +159,7 @@ const de: HelpContent = {
       title: "Galerie und Clips",
       summary: "In der Galerie findest du alle Screenshots und Clips aus deinen Instanzen an einem Ort.",
       steps: [
-        "Öffne „Galerie“ in der Seitenleiste (im Experten-Modus).",
+        "Öffne „Galerie“ in der Seitenleiste.",
         "Schalte oben zwischen „Screenshots“ und „Clips“ um. Clips nimmt der Vibey Client im Spiel auf.",
         "Filtere nach Instanz, um nur Bilder aus einem Spiel zu sehen.",
         "Klicke auf ein Bild oder einen Clip, um ihn groß anzusehen, zu kopieren oder den Ordner zu öffnen.",
@@ -213,7 +213,7 @@ const de: HelpContent = {
       title: "Leistung und RAM einstellen",
       summary: "Wie viel Arbeitsspeicher (RAM) Minecraft bekommt, stellst du für alle Instanzen oder für eine einzelne Instanz ein.",
       steps: [
-        "Für alle Instanzen: Einstellungen → Java & Speicher → Arbeitsspeicher (im Experten-Modus).",
+        "Für alle Instanzen: Einstellungen → Java & Speicher (im einfachen Modus: Arbeitsspeicher).",
         "Für eine Instanz: Instanz öffnen → Zahnrad (Instanz-Einstellungen) → Java → „Eigene Werte“.",
         "Faustregel: Vanilla 2–4 GB, mit Mods 4–6 GB, große Modpacks 6–8 GB.",
         "Gib nie mehr als etwa drei Viertel deines RAMs. Windows und andere Programme brauchen auch Speicher.",

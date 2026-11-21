@@ -59,15 +59,15 @@ import { openFeedback } from "@/features/feedback/store";
 import { AppearanceTab } from "./AppearanceTab";
 import { SETTINGS_TABS, closeSettings, setSettingsTab, useSettingsDialog, type SettingsTab } from "./store";
 import { setMode, useSimple, type UiMode } from "@/lib/mode";
+import { simpleHides, useExpert } from "@/lib/simple-mode";
+import { ExpertHint } from "@/features/simple/ExpertHint";
 import { restartOnboarding, startTour } from "@/features/onboarding/store";
 import { openHelp } from "@/features/help/store";
 import { HelpLink } from "@/features/help/HelpButton";
+import { Term } from "@/features/help/glossary/Term";
 import { PlayerHead } from "@/components/PlayerHead";
 import { useAccounts } from "@/lib/queries";
 import { useNavigate } from "@tanstack/react-router";
-
-/** Simple-Modus: nur das Wichtigste; der Rest erscheint mit „Expert-Modus aktivieren“. */
-const SIMPLE_SETTINGS_TABS: SettingsTab[] = ["general", "appearance", "vibe", "updates", "about"];
 
 const ICONS: Record<SettingsTab, ReactNode> = {
   general: <SlidersHorizontal size={16} />,
@@ -127,7 +127,7 @@ function SettingsBody() {
   const stored = useSettingsDialog((s) => s.tab);
   const narrow = useNarrow();
   const simple = useSimple();
-  const tabs = simple ? SIMPLE_SETTINGS_TABS : SETTINGS_TABS;
+  const tabs = SETTINGS_TABS.filter((x) => !simpleHides.settingsTab(simple, x));
   const tab: SettingsTab = (tabs as readonly SettingsTab[]).includes(stored) ? stored : "general";
 
   const save = async (p: Partial<Settings>) => {
@@ -331,6 +331,7 @@ function AccountCard() {
 
 function GeneralTab({ s, update }: TabProps) {
   const simple = useSimple();
+  const apiKeys = useExpert("api-keys");
   const t = useT();
   const sys = useSystemInfo();
   return (
@@ -353,16 +354,15 @@ function GeneralTab({ s, update }: TabProps) {
         }
       />
 
-      {simple ? (
-        <AccountCard />
-      ) : (
-      <>
+      {simple && <AccountCard />}
+
       <SettingsCard title={t("settings.section.content")}>
         <SettingRow title={t("settings.auto_update")} description={t("settings.auto_update.desc")}>
           <Switch checked={s.auto_update_content} onChange={(v) => update({ auto_update_content: v })} label={t("settings.auto_update")} />
         </SettingRow>
       </SettingsCard>
 
+      {apiKeys && (
       <SettingsCard title={t("settings.section.integrations")}>
         <SettingRow
           title="Microsoft Client-ID"
@@ -383,10 +383,9 @@ function GeneralTab({ s, update }: TabProps) {
           />
         </SettingRow>
       </SettingsCard>
+      )}
 
       <SkinImportSettings />
-      </>
-      )}
     </>
   );
 }
@@ -396,12 +395,15 @@ function JavaTab({ s, update }: TabProps) {
   const sys = useSystemInfo();
   const java = useJavaList();
   const total = sys.data?.total_memory_mb ?? 8192;
+  const jvm = useExpert("jvm-args");
+  const runtime = useExpert("java-runtime");
   return (
     <>
       <SettingsCard title={t("settings.section.memory")} right={<HelpLink guide="performance" />}>
-        <SettingRow title={t("settings.ram")} description={t("settings.ram.desc", { total: Math.round(total / 1024) })} stacked>
+        <SettingRow title={<Term id="ram">{t("settings.ram")}</Term>} description={t("settings.ram.desc", { total: Math.round(total / 1024) })} stacked>
           <MemoryField min={s.min_memory_mb} max={s.max_memory_mb} total={total} onChange={(v, d) => update({ min_memory_mb: v.min, max_memory_mb: v.max }, d)} />
         </SettingRow>
+        {jvm && (
         <SettingRow title={t("isettings.jvm")} description={t("settings.jvm.desc")} stacked>
           <Input
             className="font-mono text-[12px]"
@@ -410,8 +412,12 @@ function JavaTab({ s, update }: TabProps) {
             onChange={(e) => update({ jvm_args: e.target.value }, 700)}
           />
         </SettingRow>
+        )}
       </SettingsCard>
 
+      <ExpertHint text={t("usab.expert.java")} />
+
+      {runtime && (
       <SettingsCard
         title={t("settings.section.java")}
         right={
@@ -475,12 +481,15 @@ function JavaTab({ s, update }: TabProps) {
           </div>
         </SettingRow>
       </SettingsCard>
+      )}
     </>
   );
 }
 
 function GameTab({ s, update }: TabProps) {
   const t = useT();
+  const logs = useExpert("game-logs");
+  const hooks = useExpert("launch-hooks");
   return (
     <>
       <SettingsCard title={t("settings.section.window")}>
@@ -521,23 +530,29 @@ function GameTab({ s, update }: TabProps) {
             options={(["keep", "minimize", "hide"] as const).map((v) => ({ value: v, label: t(`settings.launch_behavior.${v}`) }))}
           />
         </SettingRow>
-        <SettingRow title={t("settings.open_log")} description={t("settings.open_log.desc")}>
-          <Switch checked={s.open_log_on_launch} onChange={(open_log_on_launch) => update({ open_log_on_launch })} label={t("settings.open_log")} />
-        </SettingRow>
-        <SettingRow title={t("settings.console")} description={t("settings.console.desc")}>
-          <Switch checked={s.console_on_launch} onChange={(console_on_launch) => update({ console_on_launch })} label={t("settings.console")} />
-        </SettingRow>
-        <SettingRow title={t("settings.snapshots")} description={t("settings.snapshots.desc")}>
+        {logs && (
+          <SettingRow title={t("settings.open_log")} description={t("settings.open_log.desc")}>
+            <Switch checked={s.open_log_on_launch} onChange={(open_log_on_launch) => update({ open_log_on_launch })} label={t("settings.open_log")} />
+          </SettingRow>
+        )}
+        {logs && (
+          <SettingRow title={t("settings.console")} description={t("settings.console.desc")}>
+            <Switch checked={s.console_on_launch} onChange={(console_on_launch) => update({ console_on_launch })} label={t("settings.console")} />
+          </SettingRow>
+        )}
+        <SettingRow title={<Term id="snapshot">{t("settings.snapshots")}</Term>} description={t("settings.snapshots.desc")}>
           <Switch checked={s.show_snapshots} onChange={(show_snapshots) => update({ show_snapshots })} label={t("settings.snapshots")} />
         </SettingRow>
-        <SettingRow title={t("settings.wrapper")} description={t("settings.wrapper.desc")} stacked>
-          <Input
-            className="font-mono text-[12px]"
-            value={s.wrapper_command ?? ""}
-            placeholder="gamemoderun"
-            onChange={(e) => update({ wrapper_command: e.target.value.trim() ? e.target.value : null }, 700)}
-          />
-        </SettingRow>
+        {hooks && (
+          <SettingRow title={t("settings.wrapper")} description={t("settings.wrapper.desc")} stacked>
+            <Input
+              className="font-mono text-[12px]"
+              value={s.wrapper_command ?? ""}
+              placeholder="gamemoderun"
+              onChange={(e) => update({ wrapper_command: e.target.value.trim() ? e.target.value : null }, 700)}
+            />
+          </SettingRow>
+        )}
       </SettingsCard>
 
       <SettingsCard title={t("settings.section.sync")}>
@@ -632,7 +647,7 @@ function DownloadsTab({ s, update }: TabProps) {
 
 function UpdatesTab({ s, update }: TabProps) {
   const t = useT();
-  const simple = useSimple();
+  const channel = useExpert("update-channel");
   const sys = useSystemInfo();
   const [checking, setChecking] = useState(false);
   const checkUpdates = async () => {
@@ -645,7 +660,7 @@ function UpdatesTab({ s, update }: TabProps) {
   };
   return (
     <SettingsCard title={t("settings.section.updates")} right={sys.data && <span className="text-caption font-semibold tabular-nums text-dim">v{sys.data.version}</span>}>
-      {!simple && (
+      {channel && (
       <SettingRow title={t("settings.channel")} description={s.update_channel === "dev" ? t("settings.channel.dev.desc") : t("settings.channel.release.desc")}>
         <Segmented
           value={s.update_channel}

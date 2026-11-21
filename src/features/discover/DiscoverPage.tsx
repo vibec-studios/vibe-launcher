@@ -15,6 +15,7 @@ import type { Category, Instance, LoaderKind, ProjectHit, ProjectType, SearchQue
 import { InstanceBadge } from "@/components/content/InstanceBadge";
 import { compareMc, compatibility, contentKindOf } from "@/components/content/util";
 import { useSimple } from "@/lib/mode";
+import { useExpert } from "@/lib/simple-mode";
 import { byRecent } from "@/features/home/data";
 import { openNewGame } from "@/components/instance/actions";
 import { LoaderIcon } from "@/components/instance/LoaderIcon";
@@ -45,15 +46,17 @@ export function DiscoverPage() {
   // Simple-Modus: nur Modrinth, nur Kategorie + Suche, Installieren direkt ins gewählte Spiel, Unpassendes ausgeblendet
   const simple = useSimple();
   const sys = useSystemInfo();
-  const cfAvailable = !!sys.data?.curseforge_available && !simple;
+  const cfAvailable = !!sys.data?.curseforge_available;
+  const customStores = useExpert("custom-stores");
+  const apiKeys = useExpert("api-keys");
   const stores = useQuery({ queryKey: ["stores"], queryFn: api.storesList, staleTime: 5 * 60_000 });
-  const enabledStores = (stores.data ?? []).filter((s) => s.enabled && !s.error);
-  const storeSource = !simple && search.source?.startsWith("store:") && enabledStores.some((s) => `store:${s.id}` === search.source) ? search.source : null;
+  const enabledStores = (stores.data ?? []).filter((s) => customStores && s.enabled && !s.error);
+  const storeSource = search.source?.startsWith("store:") && enabledStores.some((s) => `store:${s.id}` === search.source) ? search.source : null;
   const source: Source = storeSource ?? (search.source === "curseforge" && cfAvailable ? "curseforge" : "modrinth");
   const instances = useJavaInstances();
   const target = useMemo(() => (search.instance ? (instances.data?.find((i) => i.id === search.instance) ?? null) : null), [instances.data, search.instance]);
   const rawType: ProjectType = search.type ?? "mod";
-  const type: ProjectType = simple && rawType === "datapack" ? "mod" : rawType;
+  const type: ProjectType = rawType;
   const effectiveType: ProjectType = target && type === "modpack" ? "mod" : type;
 
   // Simple: ohne gewähltes Spiel automatisch das zuletzt gespielte passende nehmen (Modpacks brauchen keins)
@@ -151,7 +154,7 @@ export function DiscoverPage() {
     navigate({ search: (s) => ({ ...s, type: v === "mod" ? undefined : v, instance: simple && v === "modpack" ? undefined : s.instance }), replace: true });
   };
 
-  const typeItems = (simple ? (["mod", "resourcepack", "shader", "modpack"] as ProjectType[]) : (["mod", "modpack", "resourcepack", "shader", "datapack"] as ProjectType[]))
+  const typeItems = (["mod", "modpack", "resourcepack", "shader", "datapack"] as ProjectType[])
     .filter((v) => simple || !(target && v === "modpack"))
     .map((v) => ({ value: v, label: t(`discover.tab.${v}`) }));
 
@@ -180,7 +183,7 @@ export function DiscoverPage() {
           ]}
         />
       </div>
-      {!cfAvailable && !sys.isPending && (
+      {!cfAvailable && !sys.isPending && apiKeys && (
         <Tooltip content={t("discover.cf_disabled")}>
           <Link
             to="/settings"
@@ -199,12 +202,12 @@ export function DiscoverPage() {
     <div className="relative flex h-full flex-col">
       {search.p && <DiscoverProjectOverlay value={search.p} instanceId={search.instance} />}
       {simple ? (
-        type !== "modpack" && !simpleNoTarget && <SimpleTargetBar target={target} options={simpleTargets} />
+        type !== "modpack" && !simpleNoTarget && !instances.isError && <SimpleTargetBar target={target} options={simpleTargets} />
       ) : (
         search.instance && <TargetBanner instanceId={search.instance} type={effectiveType} />
       )}
       <div className="flex min-h-0 flex-1">
-        <FilterSidebar type={effectiveType} source={source} sourcePicker={sourcePicker} simple={simple} />
+        <FilterSidebar type={effectiveType} source={source} sourcePicker={sourcePicker} />
         <div data-tour="discover-results" className="flex min-w-0 flex-1 flex-col">
           {/* Eine Werkzeugleiste: Typ · Suche (Sortierung über den Ergebnissen, Quelle in der Filterleiste) */}
           <div className="flex shrink-0 flex-wrap items-center gap-2 px-6 pt-3">
@@ -232,7 +235,6 @@ export function DiscoverPage() {
               view={view}
               onView={(v) => useDiscoverView.getState().setView(effectiveType, v)}
               cats={catsQ.data}
-              simple={simple}
               canBrowse={!search.q && (source === "modrinth" || source === "curseforge") && !curseforgeBlocked}
               onBrowse={() => {
                 setText("");
@@ -318,9 +320,7 @@ function ResultsBar({
   canBrowse,
   onBrowse,
   cats,
-  simple,
 }: {
-  simple?: boolean;
   /** Kategorienliste (Namen der aktiven Kategorie-Filter) */
   cats?: Category[];
   total: number | null;
@@ -364,7 +364,6 @@ function ResultsBar({
         })}
         {fetching && <Spinner size={11} className="ml-1 text-brand" />}
       </div>
-      {!simple && (
       <>
       <Tooltip content={t("discover.sort")}>
         <div className="w-[164px] shrink-0">
@@ -396,7 +395,6 @@ function ResultsBar({
         ))}
       </div>
       </>
-      )}
     </div>
   );
 }
@@ -653,7 +651,7 @@ function CheckRow({ on, label, onClick, radio, icon }: { on: boolean; label: Rea
   );
 }
 
-function FilterSidebar({ type, source, sourcePicker, simple }: { type: ProjectType; source: Source; sourcePicker: React.ReactNode; simple?: boolean }) {
+function FilterSidebar({ type, source, sourcePicker }: { type: ProjectType; source: Source; sourcePicker: React.ReactNode }) {
   const t = useT();
   const f = useDiscoverFilters();
   const gv = useGameVersions();
@@ -673,7 +671,7 @@ function FilterSidebar({ type, source, sourcePicker, simple }: { type: ProjectTy
     placeholderData: undefined,
   });
 
-  const active = simple ? f.categories.length > 0 : !!(f.version || f.loader || f.categories.length || f.sort !== "relevance" || f.trending);
+  const active = !!(f.version || f.loader || f.categories.length || f.sort !== "relevance" || f.trending);
   const loaderApplies = type === "mod" || type === "modpack";
 
   return (
@@ -686,7 +684,6 @@ function FilterSidebar({ type, source, sourcePicker, simple }: { type: ProjectTy
           </IconButton>
         )}
       </div>
-      {!simple && (
       <>
       <FilterGroup id="source" title={t("discover.source")}>
         {sourcePicker}
@@ -712,7 +709,6 @@ function FilterSidebar({ type, source, sourcePicker, simple }: { type: ProjectTy
         </FilterGroup>
       )}
       </>
-      )}
       <FilterGroup
         id="categories"
         title={t("discover.filter.categories")}

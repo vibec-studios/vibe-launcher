@@ -3,6 +3,7 @@
 //   4. Vibe an/aus   5. Import aus anderen Launchern (nur, wenn etwas gefunden wurde)   6. Erstes Spiel
 // Bestehende Nutzer sehen es nie (Backend setzt `onboarding_done`), es lässt sich aber in den Einstellungen erneut
 // starten. Alle Entscheidungen werden sofort gespeichert; „Fertig“ setzt nur noch das Flag.
+import { openExternal } from "@/components/content/util";
 import * as D from "@radix-ui/react-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -367,11 +368,11 @@ function ModeStep() {
     <>
       <StepHead eyebrow={t("onb.mode.eyebrow")} title={t("onb.mode.title")} lead={t("onb.mode.lead")} />
       <div className="grid grid-cols-2 gap-4" role="radiogroup" aria-label={t("onb.mode.title")}>
-        <Choice selected={mode === "simple"} onClick={() => pick("simple")} title={t("mode.simple")} badge={t("onb.mode.recommended")} icon={<Sparkles size={19} />}>
+        <Choice selected={mode === "simple"} onClick={() => pick("simple")} title={t("onb.mode.simple.title")} badge={t("onb.mode.recommended")} icon={<Sparkles size={19} />}>
           <ModePreview mode="simple" />
           <span className="sr-only">{t("onb.mode.simple.text")}</span>
         </Choice>
-        <Choice selected={mode === "expert"} onClick={() => pick("expert")} title={t("mode.expert")} icon={<Terminal size={18} />}>
+        <Choice selected={mode === "expert"} onClick={() => pick("expert")} title={t("onb.mode.expert.title")} badge={t("onb.mode.expert.badge")} icon={<Terminal size={18} />}>
           <ModePreview mode="expert" />
           <span className="sr-only">{t("onb.mode.expert.text")}</span>
         </Choice>
@@ -394,6 +395,8 @@ function ModeStep() {
 }
 
 // ------------------------------------------------------------------ 3. Microsoft-Konto
+
+const MINECRAFT_STORE = "https://www.minecraft.net/store/minecraft-java-bedrock-edition-pc";
 
 function AccountStep() {
   const t = useT();
@@ -427,6 +430,12 @@ function AccountStep() {
             <Bullet icon={<ShieldCheck size={14} />}>{t("onb.account.b2")}</Bullet>
             <Bullet icon={<Shirt size={14} />}>{t("onb.account.b3")}</Bullet>
           </ul>
+          <p className="text-[12.5px] text-dim">
+            {t("usab.onb.no_game")}{" "}
+            <button type="button" className="font-semibold text-accent hover:underline" onClick={() => void openExternal(MINECRAFT_STORE)}>
+              {t("usab.onb.no_game.cta")}
+            </button>
+          </p>
         </div>
       )}
       <MsaDialog open={msa} onOpenChange={setMsa} />

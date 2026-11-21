@@ -87,7 +87,7 @@ const en: HelpContent = {
       title: "Backups",
       summary: "Backups save worlds or the setup of an instance, so you can go back after a broken update or a mistake.",
       steps: [
-        "Open the instance and switch to the “Backups” area (Expert mode only).",
+        "Open the instance and switch to the “Backups” area.",
         "“Create snapshot” saves mods, configs, packs and options, but no worlds. Ideal before an update.",
         "Back up worlds in the “Worlds” area: right-click the world → “Create backup”. They show up under “World backups”.",
         "To go back, click “Restore” on the snapshot or backup.",
@@ -132,7 +132,7 @@ const en: HelpContent = {
       title: "Skins and cosmetics",
       summary: "Change your skin right in the launcher. Cosmetics like capes, hats and emotes are visible to other players with the Vibey Client.",
       steps: [
-        "Open “Skins” (in Simple mode via the account button at the top right).",
+        "Open “Skins” in the sidebar or via the account button at the top right.",
         "Upload a skin or pick one from your library. The 3D preview shows how it looks.",
         "Choose between the classic and slim model and click “Apply”.",
         "For cosmetics, open “Cosmetics” in the sidebar, pick items and save your outfit.",
@@ -159,7 +159,7 @@ const en: HelpContent = {
       title: "Gallery and clips",
       summary: "The gallery collects all screenshots and clips from your instances in one place.",
       steps: [
-        "Open “Gallery” in the sidebar (Expert mode).",
+        "Open “Gallery” in the sidebar.",
         "Switch between “Screenshots” and “Clips” at the top. Clips are recorded in game by the Vibey Client.",
         "Filter by instance to only see pictures from one game.",
         "Click a picture or clip to view it large, copy it or open its folder.",
@@ -213,7 +213,7 @@ const en: HelpContent = {
       title: "Performance and RAM",
       summary: "Set how much memory (RAM) Minecraft gets, for all instances or for a single one.",
       steps: [
-        "For all instances: Settings → Java & memory → Memory (Expert mode).",
+        "For all instances: Settings → Java & memory (in Simple mode: Memory).",
         "For one instance: open the instance → gear (instance settings) → Java → “Custom values”.",
         "Rule of thumb: vanilla 2–4 GB, with mods 4–6 GB, big modpacks 6–8 GB.",
         "Never give more than about three quarters of your RAM. Windows and other programs need memory too.",

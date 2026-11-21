@@ -19,8 +19,7 @@ import { FriendsBlock, VibeNews } from "./Side";
 import { HomeAside } from "./Aside";
 import { sideWidth, useHeight, useTier } from "./layout";
 import { PopularPacks, StartHere } from "./Discover";
-import { SimpleHome } from "./SimpleHome";
-import { useSimple } from "@/lib/mode";
+import { StarterCard } from "./StarterCard";
 
 function Header({ count, loading }: { count: number; loading?: boolean }) {
   const t = useT();
@@ -62,9 +61,7 @@ function Header({ count, loading }: { count: number; loading?: boolean }) {
 }
 
 export function HomePage() {
-  // Simple-Modus: eigene, ruhige Startseite (großer Spielen-Knopf + „Neues Spiel“-Kacheln); Design v2: eigenes Layout
   const v2 = useLiveAppearance((s) => s.a.design === "v2");
-  if (useSimple()) return <SimpleHome />;
   return v2 ? <HomeV2 /> : <ExpertHome />;
 }
 
@@ -78,6 +75,7 @@ function ExpertHome() {
     <div className="scroll h-full">
       <div ref={ref} className={cn(pageWrap, "flex flex-col gap-6 pb-10 pt-6")}>
         <Header count={list.length} loading={loading} />
+        {!loading && <StarterCard />}
 
         {loading ? (
           // Platzhalter in der Form der echten Seite (Weiterspielen, Zuletzt gespielt, Welten/Server | rechte Spalte)

@@ -12,7 +12,7 @@ import { t, useT } from "@/i18n";
 import { api, errorMessage } from "@/lib/api";
 import { formatLoader, formatRelative, loaderNames } from "@/lib/format";
 import { qk, queryClient, useTask, waitForTask } from "@/lib/queries";
-import { useSimple } from "@/lib/mode";
+import { useExpert } from "@/lib/simple-mode";
 import type { ExtSettingKey, ExternalInstance, ExternalLauncher, LauncherKind } from "@/lib/types";
 import { ImportReportView } from "./ImportReportView";
 import { DEFAULT_KEYS, SETTING_KEYS, hasKey, hookLines, summary } from "./settingsFormat";
@@ -89,7 +89,7 @@ const norm = (p: string) => p.replace(/\//g, "\\").replace(/\\+$/, "").toLowerCa
 
 /** Inhalt + Fußzeile des Launcher-Imports. */
 export function useExternalImport(active: boolean, onClose: () => void): { body: ReactNode; footer: ReactNode; busy: boolean; progressView: boolean } {
-  const simple = useSimple();
+  const tech = useExpert("tech-details");
   const tr = useT();
   const detect = useQuery({ queryKey: ["launchers"], queryFn: api.launchersDetect, enabled: active, staleTime: 0, retry: 0 });
   const [extra, setExtra] = useState<ExternalLauncher[]>([]);
@@ -222,7 +222,7 @@ export function useExternalImport(active: boolean, onClose: () => void): { body:
                   <span className="text-meta tabular-nums text-dim">{l.instances.length}</span>
                   {/* Ordnerpfad nur im Experten-Modus (Simple: Tooltip reicht) */}
                   <span className="selectable min-w-0 flex-1 truncate text-right text-caption text-dim" title={l.path}>
-                    {simple ? "" : l.path}
+                    {tech ? l.path : ""}
                   </span>
                   {extra.some((x) => x.path === l.path) && (
                     <IconButton

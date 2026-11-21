@@ -5,6 +5,7 @@ import { ArrowRight, Download, RotateCcw } from "lucide-react";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Button, Skeleton, cn, pageWrap } from "@/components/ui";
 import { useT } from "@/i18n";
+import { errorHint } from "@/lib/errorHints";
 import { api } from "@/lib/api";
 import { formatCount } from "@/lib/format";
 import { qk } from "@/lib/queries";
@@ -65,11 +66,12 @@ function SectionHead({ title, hint, onAll }: { title: string; hint?: string; onA
   );
 }
 
-function SectionError({ onRetry }: { onRetry: () => void }) {
+function SectionError({ onRetry, error }: { onRetry: () => void; error?: unknown }) {
   const t = useT();
+  const hint = errorHint(error);
   return (
-    <div className="flex h-24 items-center justify-center gap-3 rounded-card bg-surface text-[13px] text-muted">
-      {t("discover.browse.error")}
+    <div className="flex min-h-24 items-center justify-center gap-3 rounded-card bg-surface px-6 py-4 text-[13px] text-muted">
+      <span className="max-w-[560px]">{hint ? t(`usab.err.${hint}`) : t("discover.browse.error")}</span>
       <Button size="sm" variant="ghost" icon={<RotateCcw size={13} />} onClick={onRetry}>
         {t("common.retry")}
       </Button>
@@ -211,12 +213,12 @@ export function Browse({
             hint={isModrinth ? t("discover.browse.trending_hint", { days: TRENDING_DAYS }) : t("discover.browse.trending_hint_cf")}
             onAll={() => onShowAll(isModrinth ? "trending" : "follows")}
           />
-          {trending.isError ? <SectionError onRetry={() => trending.refetch()} /> : <TileRow hits={trending.data?.hits} pending={trending.isPending} cols={cols} {...c} />}
+          {trending.isError ? <SectionError error={trending.error} onRetry={() => trending.refetch()} /> : <TileRow hits={trending.data?.hits} pending={trending.isPending} cols={cols} {...c} />}
         </section>
 
         <section>
           <SectionHead title={t("discover.browse.popular", { kind })} hint={scope ? t("discover.browse.for", { scope }) : t("discover.browse.popular_hint")} onAll={() => onShowAll("downloads")} />
-          {popular.isError ? <SectionError onRetry={() => popular.refetch()} /> : <RankList hits={popular.data?.hits} pending={popular.isPending} {...c} />}
+          {popular.isError ? <SectionError error={popular.error} onRetry={() => popular.refetch()} /> : <RankList hits={popular.data?.hits} pending={popular.isPending} {...c} />}
         </section>
 
         {(cats.isPending || (cats.data?.length ?? 0) > 0) && (
@@ -228,7 +230,7 @@ export function Browse({
 
         <section>
           <SectionHead title={t("discover.browse.new")} hint={t("discover.browse.new_hint")} onAll={() => onShowAll("newest")} />
-          {fresh.isError ? <SectionError onRetry={() => fresh.refetch()} /> : <TileRow hits={fresh.data?.hits} pending={fresh.isPending} cols={cols} {...c} />}
+          {fresh.isError ? <SectionError error={fresh.error} onRetry={() => fresh.refetch()} /> : <TileRow hits={fresh.data?.hits} pending={fresh.isPending} cols={cols} {...c} />}
         </section>
         {footer}
       </div>

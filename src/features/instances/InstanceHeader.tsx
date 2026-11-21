@@ -14,6 +14,7 @@ import { resetIcon, setIcon, setInstanceIcon } from "@/components/instance/actio
 import { IconPopover } from "@/components/instance/blocks/IconPopover";
 import { useT } from "@/i18n";
 import { useSimple } from "@/lib/mode";
+import { Term } from "@/features/help/glossary/Term";
 import { AutofixButton } from "@/features/content/AutoFix";
 import { formatDuration, formatRelative, loaderNames } from "@/lib/format";
 import type { Instance } from "@/lib/types";
@@ -44,13 +45,15 @@ function MetaLine({ instance: i }: { instance: Instance }) {
     : null;
   return (
     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-muted">
-      {/* Simple: nur die Minecraft-Version, kein Mod-Unterbau/keine Loader-Version */}
       <Meta icon={<Box size={15} />}>
-        {i.bedrock
-          ? `${bedrockLine(i, t)} · ${t(i.bedrock.profile === "shared" ? "bedrock.profile.shared" : "bedrock.profile.isolated")}`
-          : simple
-            ? `Minecraft ${i.mc_version}`
-            : `${loader} · Minecraft ${i.mc_version}`}
+        {i.bedrock ? (
+          `${bedrockLine(i, t)} · ${t(i.bedrock.profile === "shared" ? "bedrock.profile.shared" : "bedrock.profile.isolated")}`
+        ) : (
+          <>
+            {simple ? <Term id={i.loader.kind === "vanilla" ? "vanilla" : i.loader.kind}>{loader}</Term> : loader}
+            {` · Minecraft ${i.mc_version}`}
+          </>
+        )}
       </Meta>
       {i.play_time_secs >= 60 && <Meta icon={<Timer size={15} />}>{t("inst.meta.played", { time: formatDuration(i.play_time_secs) })}</Meta>}
       <Meta icon={<Clock size={15} />}>
@@ -60,7 +63,7 @@ function MetaLine({ instance: i }: { instance: Instance }) {
             ? t("ipage.meta.last_now")
             : t("inst.meta.last", { when: formatRelative(i.last_played) })}
       </Meta>
-      {pack && !simple && (
+      {pack && (
         <Meta icon={<Package size={15} />} title={src?.name ?? undefined}>
           {pack}
         </Meta>
@@ -127,17 +130,15 @@ export function InstanceHeader({
           <IconButton label={t("ipage.settings")} tip data-tour="instance-settings" active={settingsActive} className={cn("h-11 w-11", settingsActive && "text-accent")} onClick={onSettings}>
             <Settings size={19} />
           </IconButton>
-          {!simple && (
-            <DropdownMenu
-              trigger={
-                <IconButton label={t("common.more")} tip className="h-11 w-11 data-[state=open]:bg-surface3 data-[state=open]:text-text">
-                  <MoreHorizontal size={19} />
-                </IconButton>
-              }
-            >
-              <InstanceDropdownContent instance={instance} onDeleted={() => nav({ to: "/instances" })} onEdit={onSettings} />
-            </DropdownMenu>
-          )}
+          <DropdownMenu
+            trigger={
+              <IconButton label={t("common.more")} tip className="h-11 w-11 data-[state=open]:bg-surface3 data-[state=open]:text-text">
+                <MoreHorizontal size={19} />
+              </IconButton>
+            }
+          >
+            <InstanceDropdownContent instance={instance} onDeleted={() => nav({ to: "/instances" })} onEdit={onSettings} />
+          </DropdownMenu>
         </div>
       </div>
       {/* Tab-Leiste mit klarer Trennung zum Inhalt; darunter Hinweise mit Text */}
