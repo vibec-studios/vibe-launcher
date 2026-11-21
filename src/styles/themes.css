@@ -59,7 +59,7 @@
   --tint: #8a7440;
   --tint-amt: 8%;
   --tint-text: 6%;
-  --t3-lift: 24%;
+  --t3-lift: 32%;
 }
 
 :root[data-theme="contrast"] {
@@ -99,3 +99,5 @@
 :root[data-tone="light"] .text-brand { --accent: var(--ui-accent); }
 :root[data-tone="light"] .vl-badge { background-color: rgb(255 255 255 / 0.92); box-shadow: 0 1px 3px rgb(15 20 30 / 0.18); }
 :root[data-tone="light"] .mc-tooltip { color: #fff; }
+:root[data-tone="light"] .text-\[\#d6d6dc\] { color: var(--text-1); }
+:root[data-tone="light"] { --tag-l: 0.5; }

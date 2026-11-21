@@ -101,7 +101,7 @@ export const THEMES: Record<ThemeId, ThemeDef> = {
       radius: "slight",
       contrast: "normal",
       cards: "flat",
-      status: { ok: "#0b7f62", warn: "#a86300", danger: "#d4303f" },
+      status: { ok: "#086b53", warn: "#8f5300", danger: "#bd2536" },
     },
     extras: [],
     swatch: { frame: "#e7e8ee", canvas: "#f5f5f9", surface: "#ffffff", surface2: "#eeeef4", text: "#14161b", muted: "#5d6372" },
@@ -109,7 +109,7 @@ export const THEMES: Record<ThemeId, ThemeDef> = {
   midnight: {
     id: "midnight",
     tokens: {
-      accent: "#7b93ff",
+      accent: "#8aa0ff",
       tone: "oled",
       radius: "square",
       contrast: "normal",
@@ -122,7 +122,7 @@ export const THEMES: Record<ThemeId, ThemeDef> = {
   ocean: {
     id: "ocean",
     tokens: {
-      accent: "#36c2e6",
+      accent: "#3cc8ec",
       tone: "dark",
       radius: "slight",
       contrast: "normal",
@@ -148,7 +148,7 @@ export const THEMES: Record<ThemeId, ThemeDef> = {
   sunset: {
     id: "sunset",
     tokens: {
-      accent: "#ff8f5a",
+      accent: "#ff7aa2",
       tone: "dark",
       radius: "round",
       contrast: "normal",
@@ -166,7 +166,7 @@ export const THEMES: Record<ThemeId, ThemeDef> = {
       radius: "round",
       contrast: "normal",
       cards: "flat",
-      status: { ok: "#0b7f62", warn: "#a86300", danger: "#d4303f" },
+      status: { ok: "#086b53", warn: "#8f5300", danger: "#bd2536" },
     },
     extras: [],
     swatch: { frame: "#f5e4ea", canvas: "#fdf3f6", surface: "#fffafc", surface2: "#f8e9ee", text: "#2a1720", muted: "#76606a" },
@@ -174,7 +174,7 @@ export const THEMES: Record<ThemeId, ThemeDef> = {
   nether: {
     id: "nether",
     tokens: {
-      accent: "#ff6a3d",
+      accent: "#ff8a3d",
       tone: "dark",
       radius: "square",
       contrast: "normal",

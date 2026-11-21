@@ -94,7 +94,7 @@ export function SettingsDialog() {
   return (
     <D.Root open={open} onOpenChange={(o) => !o && closeSettings()}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
+        <D.Overlay className="vl-overlay fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
         <D.Content
           aria-describedby={undefined}
           // Kein Fokusrahmen auf dem ersten Tab beim Öffnen; Tastatur-Navigation startet im Dialog
@@ -107,7 +107,7 @@ export function SettingsDialog() {
             "outline-none",
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2",
             "h-[min(780px,calc(100vh-48px))] w-[min(1100px,calc(100vw-48px))] overflow-hidden",
-            "rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
+            "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
         >
           <SettingsBody />
@@ -155,7 +155,7 @@ function SettingsBody() {
                 aria-label={t(`settings.tab.${id}`)}
                 onClick={() => setSettingsTab(id)}
                 className={cn(
-                  "relative flex h-9 shrink-0 items-center gap-3 rounded-ctl px-3 text-left text-[13.5px] font-medium transition-colors duration-100",
+                  "vl-snav relative flex h-9 shrink-0 items-center gap-3 rounded-ctl px-3 text-left text-[13.5px] font-medium transition-colors duration-100",
                   "max-[880px]:h-10 max-[880px]:w-10 max-[880px]:justify-center max-[880px]:px-0",
                   active ? "bg-white/[.08] text-text" : "text-muted hover:bg-white/[.05] hover:text-text",
                 )}

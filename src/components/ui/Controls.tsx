@@ -128,7 +128,7 @@ export function Tag({ children, className, color }: { children: ReactNode; class
   return (
     <span
       className={cn("vl-tag inline-flex h-5 items-center gap-1 rounded-xs bg-white/[.06] px-1.5 text-[11px] font-medium text-muted", className)}
-      style={color ? { color, background: `color-mix(in srgb, ${color} 14%, transparent)` } : undefined}
+      style={color ? { color: `oklch(from ${color} min(l, var(--tag-l, 1)) c h)`, background: `color-mix(in srgb, ${color} 14%, transparent)` } : undefined}
     >
       {children}
     </span>

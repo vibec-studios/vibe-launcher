@@ -41,7 +41,7 @@ export function InstanceSettingsDialog({ instance: inst }: { instance: Instance 
   return (
     <D.Root open={open} onOpenChange={(o) => !o && closeInstanceSettings()}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
+        <D.Overlay className="vl-overlay fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
         <D.Content
           aria-describedby={undefined}
           onOpenAutoFocus={(e) => {
@@ -53,7 +53,7 @@ export function InstanceSettingsDialog({ instance: inst }: { instance: Instance 
             "outline-none",
             "fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2",
             "h-[min(780px,calc(100vh-48px))] w-[min(1100px,calc(100vw-48px))] overflow-hidden",
-            "rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
+            "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
           style={accentVars(instanceAccent(inst.id, inst.accent))}
         >
