@@ -70,6 +70,8 @@ Jeder Workflow fragt zuerst `.github/workflows/pick-runner.yml` (läuft auf dem 
 - Unter **2.600 von 3.000** Freiminuten → `blacksmith-4vcpu-windows-2025`, sonst **`windows-latest`**
   (GitHub-Runner sind für öffentliche Repos kostenlos). Ist der Verbrauch nicht ermittelbar → ebenfalls `windows-latest`.
 - Erzwingen: Repo-Variable **`WINDOWS_RUNNER`** setzen (z. B. `windows-latest`), löschen = wieder automatisch.
+- **Aktuell (seit 22.11.2026):** `WINDOWS_RUNNER=windows-latest` und `LINUX_RUNNER=ubuntu-22.04` sind gesetzt – alle Builds
+  laufen auf den kostenlosen GitHub-Runnern, Blacksmith wird nicht genutzt. Zurück zur Automatik: beide Variablen löschen.
 - Harte Garantie zusätzlich: **keine Zahlungsmethode im Blacksmith-Dashboard hinterlegen.**
 
 ## Caching in Actions

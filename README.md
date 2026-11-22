@@ -1,149 +1,186 @@
 <div align="center">
 
-<img src="branding/vibe-seal-1024.png" width="200" alt="Vibe Launcher – Robbe">
+<img src="branding/vibe-seal-1024.png" width="180" alt="Vibe Launcher – Robbe">
 
 # Vibe Launcher
 
-**Der Minecraft-Launcher von Vibe Craft Studios.**<br>
-Instanzen, Mods, Modpacks, Skins – schnell, aufgeräumt und ohne Schnickschnack.
+### Minecraft. Mods. Freunde. Ein Klick.
 
-[![Neueste Version](https://img.shields.io/github/v/release/vibec-studios/vibe-launcher?include_prereleases&label=Version&color=8b6cff&style=flat-square)](https://github.com/vibec-studios/vibe-launcher/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/vibec-studios/vibe-launcher/total?label=Downloads&color=3fe0c5&style=flat-square)](https://github.com/vibec-studios/vibe-launcher/releases)
-[![CI](https://img.shields.io/github/actions/workflow/status/vibec-studios/vibe-launcher/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/vibec-studios/vibe-launcher/actions/workflows/ci.yml)
-![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0b0b0e?style=flat-square)
+Der Launcher, der dir die Arbeit abnimmt: Modpacks installieren, Fehler beheben,<br>
+mit Freunden spielen und eigene Server hosten – ohne Ordner-Chaos und ohne Frust.
 
-### [⬇ Download für Windows](https://github.com/vibec-studios/vibe-launcher/releases/latest/download/Vibe-Launcher-Setup.exe)
+[![Neueste Version](https://img.shields.io/github/v/release/vibec-studios/vibe-launcher?include_prereleases&label=Version&color=8b6cff&style=for-the-badge)](https://github.com/vibec-studios/vibe-launcher/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/vibec-studios/vibe-launcher/total?label=Downloads&color=3fe0c5&style=for-the-badge)](https://github.com/vibec-studios/vibe-launcher/releases)
+![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-16161a?style=for-the-badge)
 
-<sub>Kostenlos · Installation ohne Admin-Rechte · aktualisiert sich selbst</sub>
+## [⬇&nbsp; Kostenlos herunterladen](https://github.com/vibec-studios/vibe-launcher/releases/latest/download/Vibe-Launcher-Setup.exe)
+
+<sub>Für Windows 10 & 11 · keine Admin-Rechte nötig · aktualisiert sich von selbst</sub>
+
+<br>
+
+<img src="docs/images/readme/home.png" alt="Startseite des Vibe Launchers" width="100%">
 
 </div>
 
 <br>
 
-<img src="docs/images/home.png" alt="Startseite mit Hotbar">
-
 <table>
 <tr>
-<td width="50%"><img src="docs/images/instance.png" alt="Instanz mit Mods"></td>
-<td width="50%"><img src="docs/images/discover.png" alt="Mods entdecken"></td>
-</tr>
-<tr>
-<td width="50%"><img src="docs/images/skins.png" alt="Skins und Capes"></td>
-<td width="50%"><img src="docs/images/project.png" alt="Projektseite"></td>
+<td align="center" width="33%">
+
+### ⚡ Schnell
+Eine neue Vanilla-Instanz ist in **~9 Sekunden** installiert.
+Spiele starten bis zu **40 %** schneller.
+
+</td>
+<td align="center" width="33%">
+
+### 🪶 Leicht
+Beim Spielen verschwindet der Launcher in den Infobereich –
+**~12 MB** statt Hunderte.
+
+</td>
+<td align="center" width="33%">
+
+### 💾 Sparsam
+Gleiche Mods liegen nur **einmal** auf der Platte,
+egal in wie vielen Instanzen.
+
+</td>
 </tr>
 </table>
 
-## Was er kann
+---
+
+## 📚 Alle deine Welten an einem Ort
+
+Vanilla, Fabric, Forge, NeoForge oder Quilt – leg so viele Instanzen an, wie du willst.
+Java lädt der Launcher selbst, RAM stellst du mit einem Schieberegler ein. Fertig.
+
+<img src="docs/images/readme/library.png" alt="Bibliothek mit Instanzen" width="100%">
+
+## 🧭 Mods & Modpacks finden – und mit einem Klick installieren
+
+Tausende Mods, Modpacks, Shader und Resourcepacks von **Modrinth** und **CurseForge**.
+Abhängigkeiten? Erledigt der Launcher. Passende Version? Sucht er dir raus.
+Und das Ganze funktioniert genauso für deine **Server**.
+
+<img src="docs/images/readme/discover.png" alt="Entdecken-Seite mit Mods" width="100%">
+
+## 🔧 Modpack kaputt? „Automatisch beheben“
+
+Fehlende Abhängigkeiten, doppelte Mods, falsche Java-Version, zu wenig RAM:
+Der Launcher erkennt Dutzende typische Probleme und repariert sie auf Knopfdruck.
+Vorher legt er eine Sicherung an – ein Klick und alles ist wie vorher.
+
+<img src="docs/images/readme/instance.png" alt="Instanz mit Mod-Liste und Problem-Hinweisen" width="100%">
+
+## 👋 Zusammen spielen
+
+Freunde hinzufügen, chatten, sehen wer gerade was spielt – und mit **einem Klick beitreten**.
+Deine Welt öffnest du für Freunde, ohne Portfreigabe und ohne Server mieten zu müssen.
+
+<img src="docs/images/readme/friends.png" alt="Freunde, Chats und gehostete Welten" width="100%">
+
+## 🖥️ Eigene Server – zu Hause oder auf dem Root-Server
+
+Mach aus jeder Instanz einen Server, installiere Plugins und Mods über „Entdecken“
+und behalte alles in der Live-Konsole im Blick. Mit **Remote-Servern** steuerst du sogar
+einen Server auf einem anderen PC – aus dem Launcher oder im Browser.
+
+<img src="docs/images/readme/server.png" alt="Server-Konsole" width="100%">
+
+## 👕 Skins, Capes und ein eigener Editor
+
+3D-Vorschau, Skin-Bibliothek, Skins von anderen Spielern übernehmen,
+Capes umschalten – oder direkt im **Skin-Editor** Pixel für Pixel selbst malen.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/images/readme/skins.png" alt="Skins und Capes"></td>
+<td width="50%"><img src="docs/images/readme/skin-editor.png" alt="Skin-Editor"></td>
+</tr>
+</table>
+
+## 🧳 Umziehen in einer Minute
+
+Du hast schon Instanzen in der **Modrinth App**, **Prism**, **CurseForge** oder **ATLauncher**?
+Der Launcher holt sie dir rüber – inklusive Welten und Einstellungen.
+`.mrpack`, CurseForge-ZIPs und MultiMC-Exporte gehen natürlich auch.
+
+<img src="docs/images/readme/import.png" alt="Import-Dialog" width="100%">
+
+## …und noch viel mehr
 
 | | |
 |---|---|
-| 🎮 **Instanzen** | Vanilla, Fabric, Quilt, Forge und NeoForge – je Instanz eigener Ordner, RAM, Java und JVM-Argumente. Java lädt der Launcher selbst. |
-| 🧭 **Entdecken** | Mods, Modpacks, Resource- und Shaderpacks von **Modrinth**, **CurseForge** und eigenen **Stores** (Vibe Craft Studios ist schon drin) – inklusive Abhängigkeiten. |
-| 🔄 **Mod-Updates** | Updates prüfen und mit einem Klick einspielen – oder automatisch vor jedem Start. Einzelne Mods lassen sich fixieren. |
-| 📦 **Import & Export** | `.mrpack`, CurseForge-ZIP, eigenes `.vlpack`, Prism/MultiMC – und **direkt aus anderen Launchern** (Modrinth App, Prism, CurseForge App, ATLauncher). |
-| 🟫 **Hotbar & Direkt in die Welt** | Die Startseite ist eine Minecraft-Hotbar (Tasten 1–9). Ein Klick auf eine Welt startet das Spiel direkt darin. |
-| 👕 **Skins & Capes** | 3D-Vorschau, eigene Skin-Bibliothek, Skins per Datei oder Spielername, Capes umschalten. Dazu **MinecraftCapes**: eigenes (auch animiertes) Cape und Ohren in der Vorschau, die Mod per Schalter je Instanz (abschaltbar; abgefragt wird nur die eigene UUID). |
-| 🖼️ **Screenshots** | Alle Screenshots aller Instanzen an einem Ort – mit Großansicht, Kopieren und Löschen. |
-| 📜 **Logs** | Live-Konsole mit Filtern und Suche, Crash-Erkennung, Upload zu **mclo.gs** mit einem Klick. |
-| 🔐 **Accounts** | Microsoft-Login, mehrere Konten; Tokens liegen im Windows-Tresor, nie im Klartext. |
-| ⬆️ **Updates** | Der Launcher aktualisiert sich selbst – Kanal **Release** (stabil) oder **Dev** (jeder neue Commit). |
+| 🌙 **AFK im Hintergrund** | Starte eine Instanz ohne Fenster und lass deine Farm laufen, während du etwas anderes machst. |
+| 🗺️ **Weltkarten** | Schau dir deine Welten als Karte an – auch mit Xaero's und JourneyMap. |
+| 🔄 **Mod-Updates** | Updates mit einem Klick oder automatisch vor jedem Start. Einzelne Mods lassen sich festhalten. |
+| 🧹 **Speicherplatz** | Sieh auf einen Blick, was wie viel Platz belegt, und räum mit einem Klick auf. |
+| 🖼️ **Screenshots** | Alle Screenshots aus allen Instanzen an einem Ort. |
+| 📜 **Logs & Crashes** | Live-Konsole mit Suche, verständliche Crash-Erklärungen, Log teilen mit einem Klick. |
+| 🎨 **Dein Look** | Hell, dunkel oder im Pixel-Style. |
+| 🌍 **7 Sprachen** | Deutsch, Englisch, Französisch, Spanisch, Polnisch, Portugiesisch und Türkisch. |
+| 🔐 **Sicher** | Login nur mit echtem Microsoft-Konto, Zugangsdaten im Windows-Tresor, Schutz vor Log4Shell. |
 
-## Installation
+## In 3 Schritten spielen
 
-1. **[Vibe-Launcher-Setup.exe](https://github.com/vibec-studios/vibe-launcher/releases/latest/download/Vibe-Launcher-Setup.exe)** herunterladen und starten.
-2. Windows warnt eventuell („Der Computer wurde durch Windows geschützt“), weil der Installer (noch) kein gekauftes
-   Code-Signing-Zertifikat hat → **Weitere Informationen → Trotzdem ausführen**.
-3. Unten links mit dem Microsoft-Konto anmelden, mit dem Minecraft: Java Edition gekauft wurde – fertig.
+1. **[Vibe-Launcher-Setup.exe herunterladen](https://github.com/vibec-studios/vibe-launcher/releases/latest/download/Vibe-Launcher-Setup.exe)** und starten.
+2. Falls Windows warnt („Der Computer wurde durch Windows geschützt“): **Weitere Informationen → Trotzdem ausführen**.
+   Das liegt nur daran, dass wir (noch) kein teures Signatur-Zertifikat haben.
+3. Mit dem Microsoft-Konto anmelden, mit dem du Minecraft: Java Edition gekauft hast – los geht's.
 
-Voraussetzung: Windows 10/11 (64 Bit). Daten liegen unter `%APPDATA%\VibeLauncher`.
+## Häufige Fragen
+
+<details>
+<summary><b>Kostet der Launcher etwas?</b></summary>
+
+Nein. Der Launcher ist kostenlos und quelloffen. Du brauchst nur ein gekauftes Minecraft: Java Edition.
+</details>
+
+<details>
+<summary><b>Gibt es den Launcher für Mac oder Linux?</b></summary>
+
+Im Moment nur für Windows 10 und 11.
+</details>
+
+<details>
+<summary><b>Was ist mit dem Vibey Client?</b></summary>
+
+Der Vibey Client wird nicht mehr weiterentwickelt – wir konzentrieren uns voll auf den Launcher.
+Bestehende Instanzen funktionieren weiter; der Launcher zeigt dir einen Hinweis, mit dem du den Client
+behalten oder entfernen kannst. Mehr dazu: [docs/VIBEY-CLIENT-EINGESTELLT.md](docs/VIBEY-CLIENT-EINGESTELLT.md).
+</details>
+
+<details>
+<summary><b>Wo liegen meine Daten?</b></summary>
+
+Unter `%APPDATA%\VibeLauncher`. Deine Zugangsdaten liegen verschlüsselt im Windows-Tresor, nie im Klartext.
+</details>
+
+<details>
+<summary><b>Ich habe einen Fehler gefunden oder eine Idee.</b></summary>
+
+Im Launcher oben rechts auf das Feedback-Symbol klicken – oder ein
+[Issue auf GitHub](https://github.com/vibec-studios/vibe-launcher/issues) erstellen.
+</details>
+
+## Mitmachen
+
+Du willst am Launcher mitbauen oder ihn übersetzen? Alles Technische steht in
+**[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**, fürs Übersetzen gibt es [docs/TRANSLATING.md](docs/TRANSLATING.md).
 
 ---
 
-## Entwicklung
-
-Benötigt: [Node.js](https://nodejs.org) 22+, [pnpm](https://pnpm.io) 11, [Rust](https://rustup.rs) (stable, MSVC),
-Visual Studio Build Tools („Desktopentwicklung mit C++“).
-
-```bash
-pnpm install
-node scripts/dev-live.mjs        # App mit Live-Reload (lädt dist/ direkt von der Platte)
-pnpm typecheck && pnpm build     # Frontend prüfen/bauen
-cd src-tauri && cargo test       # Backend-Tests
-```
-
-**Testmodus mit eigenem Datenordner:** Ist `VIBE_LAUNCHER_HOME` gesetzt, nutzt der Launcher diesen Ordner statt
-`%APPDATA%\VibeLauncher`, die Single-Instance-Sperre ist aus und Tokens landen unter einem eigenen
-Schlüsselbund-Namen (`VibeLauncher-test-…`). So laufen mehrere Testinstanzen parallel, ohne echte Daten zu berühren:
-
-```powershell
-$env:VIBE_LAUNCHER_HOME = "$env:TEMP\vibe-test"; pnpm tauri dev
-```
-
-**Spielstart ohne Microsoft-Konto (nur Debug-Builds, für automatisierte Tests):** `VIBE_DEV_OFFLINE_ACCOUNT=<Name>`
-setzen – ist kein Account aktiv, startet das Spiel dann mit einem Offline-Profil dieses Namens. Das taucht weder in
-der Oberfläche noch in `accounts.json` auf und ist im Release-Build nicht enthalten.
-
-Frontend ohne Backend (Mock): `VITE_MOCK=1 pnpm vite`. Architektur, Commands und Events: [docs/CONTRACT.md](docs/CONTRACT.md).
-
-## Konfiguration
-
-Zwei Schlüssel werden **beim Kompilieren** aus Umgebungsvariablen eingebettet (siehe [.env.example](.env.example)).
-Nutzer können beide auch in den Einstellungen des Launchers überschreiben.
-
-| Variable | Wofür | Ohne Wert |
-|---|---|---|
-| `CURSEFORGE_API_KEY` | CurseForge-Suche/Downloads | CurseForge ist ausgeblendet, Modrinth funktioniert |
-| `VIBE_MSA_CLIENT_ID` | Microsoft-Login | keine Anmeldung möglich (Spielstart gesperrt) |
-
-### CurseForge-API-Key
-
-1. Auf [console.curseforge.com](https://console.curseforge.com) mit einem CurseForge-/Overwolf-Konto anmelden.
-2. Unter **API keys** einen Key anlegen (für veröffentlichte Apps ggf. das Formular „Apply for API key“ ausfüllen).
-3. Key als `CURSEFORGE_API_KEY` setzen.
-
-### Microsoft-Login: Azure-App registrieren
-
-Der Launcher nutzt den **Device-Code-Flow** (Code auf microsoft.com/link eingeben). Dafür braucht es eine eigene
-Azure-App-Registrierung:
-
-1. [portal.azure.com](https://portal.azure.com) → **Microsoft Entra ID** → **App registrations** → **New registration**.
-2. Name z. B. „Vibe Launcher“. Bei **Supported account types**:
-   **„Personal Microsoft accounts only“** wählen (Minecraft-Konten sind private Microsoft-Konten).
-3. **Redirect URI**: leer lassen – für den Device-Code-Flow nicht nötig. → **Register**.
-4. In der App: **Authentication** → *Advanced settings* → **Allow public client flows** = **Yes** → *Save*.
-5. Kein Client-Secret anlegen (Desktop-Apps sind öffentliche Clients). API-Berechtigungen müssen nicht ergänzt werden –
-   der Scope `XboxLive.signin offline_access` wird beim Login angefragt.
-6. Die **Application (client) ID** (GUID auf der Übersichtsseite) als `VIBE_MSA_CLIENT_ID` setzen.
-7. **Freigabe durch Mojang beantragen:** Neue Client-IDs dürfen die Minecraft-API erst nach Prüfung nutzen.
-   Formular: <https://aka.ms/mce-reviewappid> (Client-ID, Tenant-ID und Projektbeschreibung angeben).
-   Bis zur Freigabe endet der Login nach erfolgreicher Microsoft-/Xbox-Anmeldung mit der Meldung
-   „Die Azure-App ist (noch) nicht für die Minecraft-API freigeschaltet“. Die Freigabe kann einige Tage dauern.
-
-## Release-Prozess & Update-Kanäle
-
-- **Release-Kanal:** Tag `vX.Y.Z` pushen → GitHub Actions baut und veröffentlicht das Release.
-- **Dev-Kanal:** jeder Commit auf `main` → neuer Dev-Build im Vorab-Release `dev`.
-- Im Launcher unter *Einstellungen → Updates* umschaltbar; Updates erscheinen oben rechts als „Update verfügbar“.
-
-Details: [docs/RELEASE.md](docs/RELEASE.md). Der private Updater-Schlüssel gehört **nie** ins Repository.
-
 ## English
 
-**Vibe Launcher** is a Minecraft launcher for Windows by Vibe Craft Studios: instances with Fabric/Quilt/Forge/NeoForge,
-Modrinth & CurseForge browsing, modpack import/export, Microsoft accounts (device code), log upload to
-mclo.gs and signed auto-updates. Download the `…_x64-setup.exe` from the
-[latest release](https://github.com/vibec-studios/vibe-launcher/releases/latest).
-
-**Development:** `pnpm install`, `node scripts/dev-live.mjs` (live reload), `cd src-tauri && cargo test`. Set `VIBE_LAUNCHER_HOME` to use a
-separate data folder (test mode, no single-instance lock, separate keyring namespace).
-
-**Configuration (build time):** `CURSEFORGE_API_KEY` (from console.curseforge.com) and `VIBE_MSA_CLIENT_ID`
-(Azure app registration: *Personal Microsoft accounts only*, *Allow public client flows* = Yes, no redirect URI needed;
-new client IDs must be approved by Mojang via <https://aka.ms/mce-reviewappid> before they can access the Minecraft API).
-
-**Releases:** set the secrets `TAURI_SIGNING_PRIVATE_KEY` (+ optional `_PASSWORD`), `CURSEFORGE_API_KEY`,
-`VIBE_MSA_CLIENT_ID`, bump the version in `package.json` and `src-tauri/Cargo.toml`, push a `vX.Y.Z` tag, then publish the
-draft release created by GitHub Actions. See [docs/RELEASE.md](docs/RELEASE.md).
+**Vibe Launcher** is a free Minecraft launcher for Windows. Install modpacks from Modrinth and CurseForge in one click,
+let it fix broken packs automatically, play with friends, host your own servers (even remote ones), edit skins,
+and move over from the Modrinth App, Prism, CurseForge or ATLauncher in a minute.
+**[Download for Windows](https://github.com/vibec-studios/vibe-launcher/releases/latest/download/Vibe-Launcher-Setup.exe)** ·
+Developers: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 
 ## Lizenz / License
 
@@ -154,10 +191,15 @@ draft release created by GitHub Actions. See [docs/RELEASE.md](docs/RELEASE.md).
 
 - **Namen und Logos** („Vibe“, „Vibey“, „Vibe Craft Studios“, die Robbe): Forks brauchen einen eigenen Namen und
   eigene Logos – [TRADEMARKS.md](https://github.com/vibec-studios/.github/blob/main/TRADEMARKS.md).
-- **Grafiken und Modelle** (Branding, Icons, Robbe, Cosmetics): alle Rechte vorbehalten –
+- **Grafiken und Modelle** (Branding, Icons, Robbe): alle Rechte vorbehalten –
   [ASSETS-POLICY.md](https://github.com/vibec-studios/.github/blob/main/ASSETS-POLICY.md); Pfade in [NOTICE](NOTICE).
-- **Vibe-Dienste** (Backend `vibe.axolite.app`, Relay `relay.axolite.cc`; früher `vibe.henny.dev`/`vibey.henny.dev`, siehe [docs/DOMAINS.md](docs/DOMAINS.md)): nur für offizielle Builds –
-  [SERVICES.md](https://github.com/vibec-studios/.github/blob/main/SERVICES.md).
+- **Vibe-Dienste** (Backend `vibe.axolite.app`, Relay `relay.axolite.cc`, siehe [docs/DOMAINS.md](docs/DOMAINS.md)):
+  nur für offizielle Builds – [SERVICES.md](https://github.com/vibec-studios/.github/blob/main/SERVICES.md).
 
 *English:* the code is Apache-2.0. Our names and logos, the seal, artwork and models, and the Vibe online services are
 not included: forks must use their own name, artwork and backend. See the linked policies.
+
+<div align="center">
+<br>
+<sub>Gemacht mit 💜 von <b>Vibe Craft Studios</b> · Nicht offiziell von Mojang oder Microsoft.</sub>
+</div>
