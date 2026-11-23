@@ -25,6 +25,7 @@ import { RailV2 } from "./v2/RailV2";
 import { TopbarV2 } from "./v2/TopbarV2";
 import { Rail } from "./Rail";
 import { Topbar } from "./Topbar";
+import { ThemeMainLayer } from "@/features/themes/ThemeSlot";
 
 // ------------------------------------------------------------------ Rahmen
 
@@ -45,7 +46,7 @@ export function Shell() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const v2 = useLiveAppearance((s) => s.a.design === "v2");
   return (
-    <div className="flex h-full">
+    <div data-vt-scope="" data-vt-lock="" className="flex h-full">
       <ModeHost />
       <AppearanceHost />
       <LibraryPreload />
@@ -53,7 +54,8 @@ export function Shell() {
       <div className="flex min-w-0 flex-1 flex-col">
         {v2 ? <TopbarV2 /> : <Topbar />}
         <div className="flex min-h-0 flex-1">
-          <main className="vl-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-tl-panel bg-panel">
+          <main data-part="main" className="vl-main relative isolate flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-tl-panel bg-panel">
+            <ThemeMainLayer />
             <ErrorBoundary>
               <NoticeBar />
             </ErrorBoundary>

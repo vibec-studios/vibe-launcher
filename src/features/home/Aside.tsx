@@ -2,6 +2,7 @@ import type { Instance } from "@/lib/types";
 import { cn } from "@/components/ui";
 import { FriendsBlock, UpdatesBlock, VibeNews } from "./Side";
 import { fitRows, sideWidth, useHeight, type Tier } from "./layout";
+import { ThemeSlot } from "@/features/themes/ThemeSlot";
 
 export function HomeAside({ tier, instances, left }: { tier: Tier; instances: Instance[]; left: number }) {
   const [topRef, top] = useHeight<HTMLDivElement>();
@@ -11,6 +12,7 @@ export function HomeAside({ tier, instances, left }: { tier: Tier; instances: In
   return (
     <aside className={cn("flex items-start gap-6", !wide && "flex-col")}>
       <div ref={topRef} className={col}>
+        <ThemeSlot name="home-side" />
         <VibeNews />
         <FriendsBlock />
       </div>

@@ -21,6 +21,7 @@ import { UpdateChecker } from "@/app/UpdateNotice";
 import { LeanBridge } from "@/features/lean/LeanBridge";
 import { i18nReady, useLang } from "@/i18n";
 import { applyCachedAppearance } from "@/lib/appearance";
+import { applyCachedThemeExt } from "@/features/themes/ThemeHost";
 
 // Simuliertes Backend nur für Frontend-Entwicklung im Browser (VITE_MOCK=1)
 if (import.meta.env.VITE_MOCK === "1") await import("@/dev/mock");
@@ -28,6 +29,7 @@ if (import.meta.env.VITE_MOCK === "1") await import("@/dev/mock");
 await i18nReady;
 installGuards();
 applyCachedAppearance();
+applyCachedThemeExt();
 document.documentElement.lang = useLang.getState().lang;
 document.documentElement.dataset.mode = useLang.getState().simple ? "simple" : "expert";
 

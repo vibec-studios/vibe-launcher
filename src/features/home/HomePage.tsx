@@ -20,6 +20,7 @@ import { HomeAside } from "./Aside";
 import { sideWidth, useHeight, useTier } from "./layout";
 import { PopularPacks, StartHere } from "./Discover";
 import { StarterCard } from "./StarterCard";
+import { ThemeSlot } from "@/features/themes/ThemeSlot";
 
 function Header({ count, loading }: { count: number; loading?: boolean }) {
   const t = useT();
@@ -33,7 +34,7 @@ function Header({ count, loading }: { count: number; loading?: boolean }) {
       </header>
     );
   return (
-    <header className="flex min-h-[44px] min-w-0 items-center gap-3">
+    <header data-part="home-header" className="flex min-h-[44px] min-w-0 items-center gap-3">
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-title text-text">{g.title}</h1>
         {count > 0 && (
@@ -73,7 +74,8 @@ function ExpertHome() {
 
   return (
     <div className="scroll h-full">
-      <div ref={ref} className={cn(pageWrap, "flex flex-col gap-6 pb-10 pt-5")}>
+      <div ref={ref} data-part="home" className={cn(pageWrap, "flex flex-col gap-6 pb-10 pt-5")}>
+        <ThemeSlot name="home-hero" />
         <Header count={list.length} loading={loading} />
         {!loading && <StarterCard />}
 

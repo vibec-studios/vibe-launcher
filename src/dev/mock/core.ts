@@ -104,7 +104,7 @@ let settings: Settings = {
   simple_tour_done: mockFlag("vl.mock.tour") !== "1",
   // Screenshots: localStorage vl.mock.notices = 1 -> Umzugs-Hinweis schon weggeklickt
   dismissed_notices: mockFlag("vl.mock.notices") === "1" ? ["domain-move-2026-11"] : [],
-  // Screenshots: vl.mock.design / vl.mock.theme / vl.mock.custom, Variante per window.__VL_MOCK_APPEARANCE (siehe ./appearance.ts)
+  // Screenshots: vl.mock.design / vl.mock.theme / vl.mock.custom / vl.mock.theme2 (ironman|calm), Variante per window.__VL_MOCK_APPEARANCE (siehe ./appearance.ts)
   appearance: mockAppearance(),
   // Screenshots: localStorage vl.mock.afk = "<instanz>" -> AFK-Flag an und diese Instanz läuft im Hintergrund (./afk.ts)
   lean: { enabled: true, reopen: true },

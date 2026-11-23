@@ -43,6 +43,7 @@ export function ConfirmHost() {
   return (
     <Dialog
       open={!!opts}
+      protect
       onOpenChange={(o) => !o && close(false)}
       title={opts?.title ?? ""}
       description={opts?.text}

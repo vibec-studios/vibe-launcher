@@ -40,6 +40,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return (
     <button
       ref={ref}
+      data-part={`button button-${variant}`}
       disabled={disabled || loading}
       className={cn(
         "vl-btn inline-flex shrink-0 items-center justify-center rounded-ctl border font-sans font-semibold whitespace-nowrap",
@@ -81,6 +82,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   const btn = (
     <button
       ref={ref}
+      data-part="icon-button"
       aria-label={label}
       aria-pressed={active}
       className={cn(

@@ -40,6 +40,7 @@ function ApproveDialog({ code, onClose, onDone }: { code: string | null; onClose
   return (
     <Dialog
       open={!!code}
+      protect
       onOpenChange={(o) => !o && onClose()}
       size="md"
       locked={busy}

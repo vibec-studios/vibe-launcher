@@ -141,6 +141,7 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
           if (!e.repeat) onOpen(i);
         }}
         style={accentVars(accent)}
+        data-part="instance-tile"
         className={cn(
           "vl-card vl-inst-card group relative flex min-w-0 flex-col rounded-panel p-1.5 text-left transition-colors duration-100",
           "hover:bg-white/[.04] data-[state=open]:bg-white/[.04]",

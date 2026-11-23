@@ -1,0 +1,52 @@
+{
+  "format": "vibe-launcher-theme",
+  "version": 2,
+  "name": "Stiller See",
+  "author": "Vibe Launcher",
+  "description": "Ruhiges Blaugrün auf weichem Dunkelgrau, runde Formen und ein stiller See mit Begrüßung auf der Startseite.",
+  "values": {
+    "theme": "ocean",
+    "accent": "#7cc4c8",
+    "tone": "dim",
+    "radius": "round",
+    "radius_px": 10,
+    "contrast": "normal",
+    "cards": "raised",
+    "headings": "default",
+    "font": "inter",
+    "font_scale": 100,
+    "status": {
+      "ok": "#7fd6b3",
+      "warn": "#e6c27a",
+      "danger": "#e88b8b"
+    },
+    "glass": 0,
+    "sidebar_style": "floating",
+    "background": {
+      "kind": "none",
+      "gradient": "accent",
+      "animated": "aurora",
+      "color": "#151b1e",
+      "gradient_from": "#151b1e",
+      "gradient_to": "#1d2a30",
+      "gradient_angle": 160,
+      "dim": 40,
+      "blur": 0
+    }
+  },
+  "palette": {
+    "frame": "#11171a",
+    "canvas": "#151b1e",
+    "surface": "#1b2326",
+    "surface2": "#222c30",
+    "surface3": "#2a3539",
+    "overlay": "#1a2225",
+    "text": "#e8f0f0",
+    "muted": "#a9b9ba",
+    "dim": "#80908f"
+  },
+  "css": "@keyframes drift {\n  from { transform: translateX(0); }\n  to { transform: translateX(-50%); }\n}\n\n[data-part=\"button\"] { border-radius: 999px; }\n[data-part=\"button-primary\"] {\n  background-image: none;\n  box-shadow: 0 6px 18px -10px rgb(124 196 200 / .9);\n}\n[data-part=\"button-ghost\"] { background-color: rgb(232 240 240 / .06); box-shadow: none; }\n[data-part=\"card\"], [data-part=\"home-hero\"] {\n  border-radius: 18px;\n  box-shadow: 0 1px 0 rgb(255 255 255 / .04) inset, 0 18px 40px -28px rgb(0 0 0 / .8);\n}\n[data-part=\"nav-item\"] { border-radius: 12px; }\n[data-part=\"nav-item\"][aria-current=\"page\"] { background-color: rgb(124 196 200 / .14); color: #bfe6e8; }\n[data-part=\"input\"] { border-radius: 12px; }\n[data-part=\"tab\"][aria-selected=\"true\"] { box-shadow: inset 0 -2px 0 rgb(124 196 200 / .8); }\n[data-part=\"progress-bar\"] { background-image: linear-gradient(90deg, #5aa6b0, #a7d9c9); }\n\n.lake {\n  position: relative;\n  height: 128px;\n  overflow: hidden;\n  border-radius: 18px;\n  background: linear-gradient(180deg, #1d2a30 0%, #18252a 60%, #15211f 100%);\n}\n.hills { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 70px; }\n.waves { position: absolute; left: 0; bottom: 10px; width: 200%; height: 24px; animation: drift 40s linear infinite; opacity: .5; }\n.hello { position: absolute; left: 24px; top: 22px; }\n.big { font-size: 24px; font-weight: 600; letter-spacing: -.01em; color: #eef6f5; }\n.small { margin-top: 4px; font-size: 13px; color: #a9c3c1; }\n",
+  "slots": {
+    "home-hero": "<div class=\"lake\"><svg class=\"hills\" viewBox=\"0 0 600 70\" preserveAspectRatio=\"none\"><path d=\"M0 50 C80 20 160 30 240 42 C330 56 420 18 600 34 V70 H0 Z\" fill=\"#20352f\"/><path d=\"M0 60 C120 44 220 52 330 58 C430 63 520 50 600 54 V70 H0 Z\" fill=\"#192a26\"/></svg><svg class=\"waves\" viewBox=\"0 0 1200 24\" preserveAspectRatio=\"none\"><path d=\"M0 12 Q50 4 100 12 T200 12 T300 12 T400 12 T500 12 T600 12 T700 12 T800 12 T900 12 T1000 12 T1100 12 T1200 12\" fill=\"none\" stroke=\"#7cc4c8\" stroke-width=\"1.5\"/></svg><div class=\"hello\"><div class=\"big\">{{greeting}}, {{player}}.</div><div class=\"small\">{{date}} · {{friends_online}} Freunde online</div></div></div>"
+  }
+}

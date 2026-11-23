@@ -33,6 +33,7 @@ export function Select<V extends string = string>({
   return (
     <S.Root value={value ?? ""} onValueChange={(v) => v && onChange(v as V)} disabled={disabled}>
       <S.Trigger
+        data-part="input"
         className={cn(
           variant === "ghost" ? "vl-select-ghost" : "vl-field",
           /(^|s)!?w-/.test(className ?? "") ? "" : "w-full",

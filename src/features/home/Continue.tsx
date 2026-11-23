@@ -99,7 +99,7 @@ export function ContinueCard({ instance: i, spot }: { instance: Instance; spot: 
   const meta = continueMeta(i, t);
 
   return (
-    <section aria-label={t("home.continue")} className="@container flex min-w-0 gap-5 rounded-panel bg-surface p-5" style={accentVars(accent)}>
+    <section data-part="home-hero card" aria-label={t("home.continue")} className="@container flex min-w-0 gap-5 rounded-panel bg-surface p-5" style={accentVars(accent)}>
       <div className="min-w-0 flex-1">
         <h2 className="mb-3 text-section text-muted">{t("home.continue")}</h2>
         <ContextMenu content={<InstanceContextMenuContent instance={i} />}>

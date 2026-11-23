@@ -1,3 +1,5 @@
+import type { Palette } from "../themes/palette.ts";
+
 export type UiMode = "simple" | "expert";
 
 /** dark = Schwarz (Standard), dim = Dunkelgrau, oled = auch Flächen fast schwarz */
@@ -53,6 +55,8 @@ export interface CustomTheme {
   id: string;
   name: string;
   values: ThemeValues;
+  palette?: Palette;
+  ext?: string | null;
 }
 export type AppearanceMotion = "normal" | "more";
 /** Einträge der Seitenleiste (Reihenfolge/Sichtbarkeit einstellbar) */

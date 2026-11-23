@@ -7,6 +7,7 @@ import { effectiveAppearance, themeExtra } from "./themeUtils";
 import { hasBackground } from "./background";
 import { merge } from "./normalize";
 import { frostSvg } from "./frost";
+import { PALETTE_CSS_VARS, paletteVars } from "../themes/palette";
 
 const CACHE_KEY = "vl.appearance";
 
@@ -56,12 +57,27 @@ export function applyAppearance(input: Partial<Appearance> | null | undefined) {
     st.setProperty("--frost-l", frostSvg(false));
     st.setProperty("--frost-r", frostSvg(true));
   }
+  applyPalette(a, paletteBlocked);
   setZoom(a.ui_scale);
   useLiveAppearance.setState({ a });
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(saved));
   } catch {
     /* egal */
+  }
+}
+
+let paletteBlocked = false;
+
+export function applyPalette(a: Appearance, blocked: boolean) {
+  paletteBlocked = blocked;
+  const ct = a.active_custom ? a.custom_themes.find((t) => t.id === a.active_custom) : undefined;
+  const vars = new Map(!blocked && ct?.palette && ct.values.tone === a.tone ? paletteVars(ct.palette) : []);
+  const st = document.documentElement.style;
+  for (const name of PALETTE_CSS_VARS) {
+    const v = vars.get(name) ?? (name === "--ui-on-accent" ? onAccent(a.accent) : null);
+    if (v) st.setProperty(name, v);
+    else st.removeProperty(name);
   }
 }
 

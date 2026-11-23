@@ -13,7 +13,7 @@ export const SettingsCard = forwardRef<
         <h3 className={cn("vl-scard-title flex-1 text-[12.5px] font-semibold", danger ? "text-danger" : "text-muted")}>{title}</h3>
         {right}
       </header>
-      <div className={cn("vl-scard-body rounded-card bg-surface", danger && "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-danger)_30%,transparent)]")}>{children}</div>
+      <div data-part="card" className={cn("vl-scard-body rounded-card bg-surface", danger && "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-danger)_30%,transparent)]")}>{children}</div>
     </section>
   );
 });

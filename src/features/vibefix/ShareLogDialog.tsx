@@ -35,6 +35,7 @@ function Preview({ req, onClose }: { req: ShareRequest; onClose: () => void }) {
   return (
     <Dialog
       open
+      protect
       onOpenChange={(o) => !o && !busy && onClose()}
       title={t("vibefix.share.title")}
       description={t("vibefix.share.desc")}

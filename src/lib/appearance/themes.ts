@@ -1,5 +1,5 @@
 import type { Appearance, ThemeId } from "../types";
-import { STATUS_DEFAULT } from "./defaults";
+import { STATUS_DEFAULT } from "./defaults.ts";
 
 // ------------------------------------------------------------------ Themes
 

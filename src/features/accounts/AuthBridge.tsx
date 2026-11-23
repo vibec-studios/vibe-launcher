@@ -38,6 +38,7 @@ export function AuthBridge() {
   return (
     <Dialog
       open={!!offer}
+      protect
       onOpenChange={(o) => !o && !busy && setOffer(null)}
       title={t("accounts.offline.title")}
       size="sm"

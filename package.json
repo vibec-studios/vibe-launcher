@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "node --test \"src/**/*.test.ts\"",
+    "theme:skill": "node scripts/theme-skill-sync.mjs",
     "preview": "vite preview",
     "tauri": "tauri",
     "build:panel": "pnpm --dir panel install --frozen-lockfile && pnpm --dir panel build"

@@ -52,6 +52,7 @@ export function HeroV2({ instance: i, spot }: { instance: Instance; spot: Spot |
   const open = () => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "content" } });
   return (
     <section
+      data-part="home-hero card"
       aria-label={t("home.continue")}
       className="vl2-hero @container relative isolate min-w-0 overflow-hidden rounded-panel bg-surface shadow-e1"
       style={accentVars(accent)}

@@ -17,7 +17,7 @@ export function Topbar() {
   const title = usePageTitle();
   const navBtn = "grid h-7 w-7 place-items-center rounded-ctl text-dim transition-colors duration-100 hover:bg-white/[.06] hover:text-text";
   return (
-    <header data-tauri-drag-region className="flex h-[var(--titlebar-h)] shrink-0 items-center bg-bg pl-2">
+    <header data-tauri-drag-region data-part="header" className="flex h-[var(--titlebar-h)] shrink-0 items-center bg-bg pl-2">
       <div className="flex items-center gap-0.5">
         <button aria-label={t("common.back")} className={navBtn} onClick={goBack}>
           <ChevronLeft size={18} />
