@@ -3,11 +3,13 @@ use super::store::{CheckState, Store};
 use crate::net::{DownloadItem, Net};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
+use tokio_util::sync::CancellationToken;
 
 pub const CHECK_EVERY_MS: i64 = 6 * 3600 * 1000;
 pub const RETRY_AFTER_FAIL_MS: i64 = 10 * 60 * 1000;
 const MANIFEST_TIMEOUT: Duration = Duration::from_secs(8);
 const MAX_MANIFEST: usize = 64 * 1024;
+const MAX_ATTEMPTS: u64 = 5;
 
 pub struct Remote {
     pub manifest: Manifest,
@@ -38,6 +40,9 @@ async fn fetch(client: &reqwest::Client, url: &str) -> Result<Vec<u8>, ModelErro
     let resp = client.get(url).timeout(MANIFEST_TIMEOUT).send().await.map_err(|e| ModelError::Io(e.to_string()))?;
     if !resp.status().is_success() {
         return Err(ModelError::Io(format!("HTTP {}", resp.status())));
+    }
+    if resp.content_length().is_some_and(|l| l > MAX_MANIFEST as u64) {
+        return Err(ModelError::Invalid("zu groß".into()));
     }
     let body = resp.bytes().await.map_err(|e| ModelError::Io(e.to_string()))?;
     if body.len() > MAX_MANIFEST {
@@ -76,8 +81,19 @@ async fn download_into(
     on_progress(0, total);
     for file in &remote.manifest.files {
         let item = DownloadItem::new(asset_url(manifest_url, &file.asset), staging.join(&file.name)).size(Some(file.size));
-        let cb = |n: u64| on_progress(done.fetch_add(n, Ordering::Relaxed) + n, total);
-        net.download(&item, Some(&cb), None).await.map_err(|e| ModelError::Io(e.to_string()))?;
+        let stop = CancellationToken::new();
+        let got = AtomicU64::new(0);
+        let cb = |n: u64| {
+            if got.fetch_add(n, Ordering::Relaxed) + n > file.size.saturating_mul(MAX_ATTEMPTS) {
+                stop.cancel();
+            }
+            on_progress(done.fetch_add(n, Ordering::Relaxed) + n, total);
+        };
+        match net.download(&item, Some(&cb), Some(&stop)).await {
+            Ok(()) => {}
+            Err(_) if stop.is_cancelled() => return Err(ModelError::Mismatch(file.name.clone())),
+            Err(e) => return Err(ModelError::Io(e.to_string())),
+        }
     }
     store.write_manifest(staging, &remote.body, &remote.sig)?;
     let (store, staging, manifest, key) = (store.clone(), staging.to_path_buf(), remote.manifest.clone(), key.to_vec());

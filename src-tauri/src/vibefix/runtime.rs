@@ -1,5 +1,5 @@
 use super::manifest::{decode_key, ModelError};
-use super::store::Store;
+use super::store::{CheckState, Store};
 use super::update::{due, fetch_remote, install, newer};
 use super::{MANIFEST_URL, PUBLIC_KEY, STATUS_EVENT};
 use crate::state::AppState;
@@ -153,6 +153,7 @@ pub async fn prepare(state: &AppState) -> Prepared {
             tracing::warn!("VibeFix: lokales Modell unbrauchbar, wird neu geladen: {e}");
             vf.forget();
             store.reset();
+            store.save_state(&CheckState { failed_at: Some(crate::util::now_ms()), ..Default::default() });
             Prepared::Off(Notice::Unavailable)
         }
     }

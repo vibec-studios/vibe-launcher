@@ -85,6 +85,22 @@ async fn tampered_asset_keeps_previous_model() {
 }
 
 #[tokio::test]
+async fn oversized_asset_is_cut_off() {
+    let t = TestDir::new("vibefix-big");
+    let store = Store::new(t.path());
+    let s = Signer::new();
+    let mut files = release(&s, "4");
+    files.insert("vibefix-v4-tokenizer.json".into(), vec![b'x'; 512 * 1024]);
+    let url = serve(files).await;
+    let net = Net::new(2);
+    let remote = fetch_remote(&net.client, &url, &s.public).await.unwrap();
+    let err = install(&net, &store, &remote, &url, &s.public, &|_, _| {}).await.unwrap_err();
+    assert_eq!(err, ModelError::Mismatch("tokenizer.json".into()));
+    assert_eq!(store.current(), None);
+    assert!(leftovers(&store).is_empty());
+}
+
+#[tokio::test]
 async fn foreign_signature_is_not_downloaded() {
     let s = Signer::new();
     let mut files = release(&s, "4");
