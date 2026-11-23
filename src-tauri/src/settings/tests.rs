@@ -242,6 +242,8 @@ fn custom_themes_sanitize() {
             background: Background { kind: "animated".into(), animated: "custom".into(), video: Some("x.mp4".into()), ..Background::default() },
             ..ThemeValues::default()
         },
+        palette: [("canvas", "#1A0505"), ("text", "red"), ("Böse", "#000000"), ("surface", " #221111 ")].into_iter().map(|(k, v)| (k.to_string(), v.to_string())).collect(),
+        ext: Some("abc123".into()),
     };
     let mut a = Appearance {
         custom_themes: vec![
@@ -264,7 +266,12 @@ fn custom_themes_sanitize() {
     assert_eq!(t.values.sidebar_style, "tinted");
     assert_eq!(t.values.background.animated, "aurora");
     assert_eq!(t.values.background.video, None);
+    assert_eq!(t.palette.len(), 2);
+    assert_eq!(t.palette.get("canvas").map(String::as_str), Some("#1a0505"));
+    assert_eq!(t.palette.get("surface").map(String::as_str), Some("#221111"));
+    assert_eq!(t.ext.as_deref(), Some("abc123"));
     assert_eq!(a.custom_themes[1].name, "Theme");
+    assert!(a.custom_themes[1].palette.is_empty() && a.custom_themes[1].ext.is_none());
     assert_eq!(a.active_custom, None);
 
     let mut many = Appearance {
@@ -284,4 +291,11 @@ fn custom_theme_partial_json() {
     assert_eq!(a.custom_themes[0].values.tone, "dark");
     assert_eq!(a.custom_themes[0].values.background.kind, "none");
     assert_eq!(a.active_custom.as_deref(), Some("a1"));
+    assert!(a.custom_themes[0].palette.is_empty());
+    let json = serde_json::to_string(&a.custom_themes[0]).unwrap();
+    assert!(!json.contains("palette") && !json.contains("\"ext\""));
+    let mut bad: Appearance = serde_json::from_str(r##"{"custom_themes":[{"id":"a2","name":"N","ext":"../x","palette":{"canvas":"#123456"}}]}"##).unwrap();
+    bad.sanitize();
+    assert_eq!(bad.custom_themes[0].ext, None);
+    assert_eq!(bad.custom_themes[0].palette.get("canvas").map(String::as_str), Some("#123456"));
 }
