@@ -6,6 +6,7 @@ import { useFeedback } from "@/features/feedback/store";
 import { useHelp } from "@/features/help/store";
 import { useTours } from "@/features/help/tour/store";
 import { useSetDialogs } from "@/features/modsets/shared";
+import { useShareLog } from "@/features/vibefix/shareStore";
 import { useOnboarding } from "@/features/onboarding/store";
 import { useServerDialogs } from "@/features/servers/actions";
 import { useSocialDialogs } from "@/features/social/dialogStore";
@@ -23,12 +24,14 @@ const loadFeedbackDialog = () => import("@/features/feedback/FeedbackDialog").th
 const loadHelpCenter = () => import("@/features/help/HelpCenter").then((m) => m.HelpCenter);
 const loadTourHost = () => import("@/features/help/tour/TourHost").then((m) => m.TourHost);
 const loadOnboarding = () => import("@/features/onboarding/Onboarding").then((m) => m.Onboarding);
+const loadShareLog = () => import("@/features/vibefix/ShareLogDialog").then((m) => m.ShareLogHost);
 const loadFriendsPanel = () => import("@/features/social/FriendsPanel").then((m) => m.FriendsPanel);
 
 export function DeferredShellHosts() {
   const instance = useInstanceDialogs((s) => s.newOpen || !!s.exportFor || !!s.groupFor || !!s.iconFor);
   const accountConflict = useAccountConflict((s) => !!s.ask);
   const autofix = useAutofix((s) => !!s.req || !!s.pre);
+  const share = useShareLog((s) => !!s.req);
   const server = useServerDialogs((s) => s.newOpen || !!s.eulaFor || s.quit !== null);
   const sets = useSetDialogs((s) => !!s.apply || !!s.fromInstance || s.importOpen || s.createOpen);
   const social = useSocialDialogs((s) => !!(s.inviteFriends || s.accept || s.share || s.pack || s.newGroup || s.addMembers || s.rename));
@@ -43,6 +46,7 @@ export function DeferredShellHosts() {
       <DeferredMount active={sets} load={loadModSetsHost} />
       <DeferredMount active={instance || accountConflict} load={loadInstanceDialogs} />
       <DeferredMount active={autofix} load={loadAutofixHost} />
+      <DeferredMount active={share} load={loadShareLog} />
       <DeferredMount active={server} load={loadServerDialogs} />
       <DeferredMount active={social} load={loadSocialDialogs} />
       <ErrorBoundary>

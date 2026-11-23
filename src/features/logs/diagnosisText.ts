@@ -1,4 +1,5 @@
 import type { Diagnosis } from "@/lib/types";
+import { MODEL_CAUSES } from "@/features/vibefix/causes";
 
 const KNOWN = [
   "missing_dependency",
@@ -23,6 +24,8 @@ const KNOWN = [
   "graphics",
   "suspected_mod",
   "exit_code",
+  "unknown",
+  ...MODEL_CAUSES,
 ];
 
 /** Versionsbereich aus dem Log („15.0.140 or later“, „>=0.16.10“) in der UI-Sprache. */

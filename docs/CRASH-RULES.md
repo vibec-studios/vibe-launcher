@@ -2,6 +2,9 @@
 
 Die Absturzdiagnose prüft lokale Logs und Crash-Reports. Sie erkennt jetzt zusätzlich diese Fehlerbilder und zeigt für Treffer die Logfundstelle.
 
+Ist die KI-Log-Analyse eingeschaltet, wertet zusätzlich das lokale Modell VibeFix aus; die Regeln bleiben Rückfall und
+Ergänzung ([VIBEFIX.md](VIBEFIX.md)).
+
 | Meldung | Handlungsschritt |
 | --- | --- |
 | Laufwerk voll oder Speicherquote erreicht | Platz auf dem betroffenen Laufwerk schaffen. |

@@ -96,6 +96,7 @@ let settings: Settings = {
   world_backup_on_launch: false,
   world_backups_keep: 5,
   minecraftcapes: mockFlag("vl.mock.onboarding") !== "1",
+  vibefix: mockFlag("vl.mock.vibefix") !== "disabled",
   // Screenshots: localStorage vl.mock.mode = simple|expert, vl.mock.onboarding = 1 (Erststart)
   ui_mode: mockFlag("vl.mock.mode") === "simple" ? "simple" : "expert",
   onboarding_done: mockFlag("vl.mock.onboarding") !== "1",

@@ -29,6 +29,38 @@ export interface Diagnosis {
   line?: number | null;
   /** Regel aus patterns.toml */
   rule?: string | null;
+  origin?: "vibefix" | "rules" | "both";
+  model_cause?: string;
+  model_confidence?: number;
+}
+
+export interface AnalysisInfo {
+  engine: "vibefix" | "rules";
+  status: "diagnosed" | "unknown" | "healthy" | null;
+  model_version: string | null;
+  crash_score: number | null;
+  notice: "disabled" | "unavailable" | "error" | null;
+}
+
+export interface CrashAnalysis {
+  diagnoses: Diagnosis[];
+  info: AnalysisInfo;
+}
+
+export type VibeFixPhase = "checking" | "downloading" | "loading" | "analyzing" | "done";
+
+export interface VibeFixStatusEvent {
+  phase: VibeFixPhase;
+  done: number;
+  total: number;
+}
+
+export interface VibeFixStatus {
+  enabled: boolean;
+  version: string | null;
+  remote_version: string | null;
+  checked_at: number | null;
+  loaded: boolean;
 }
 
 export interface ServerEntry {

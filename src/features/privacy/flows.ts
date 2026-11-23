@@ -20,6 +20,7 @@ export const FLOWS: Flow[] = [
   { id: "vibe", group: "auto", hosts: ["vibe.axolite.app"], switchKey: "privacy.sw.vibe" },
   { id: "discord", group: "auto", hosts: ["Discord-App"], switchKey: "privacy.sw.discord" },
   { id: "capes", group: "auto", hosts: ["api.minecraftcapes.net"], switchKey: "privacy.sw.capes" },
+  { id: "vibefix", group: "auto", hosts: ["github.com"], switchKey: "vibefix.setting" },
   { id: "hosting", group: "auto", hosts: ["relay.axolite.cc", "api.playit.gg"] },
   { id: "feedback", group: "click", hosts: ["vibe.axolite.app"] },
   { id: "mclogs", group: "click", hosts: ["api.mclo.gs"] },

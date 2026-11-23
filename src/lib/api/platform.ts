@@ -18,6 +18,9 @@ export const platformApi = {
   // ---------------------------------------------------------------- Plattform (Crash-Analyse, Server, Statistik …)
   crashAnalyze: (instanceId: string, crashReport?: string | null, exitCode?: number | null) =>
     call<T.Diagnosis[]>("crash_analyze", { instanceId, crashReport: crashReport ?? null, exitCode: exitCode ?? null }),
+  crashAnalysis: (instanceId: string, crashReport?: string | null, exitCode?: number | null) =>
+    call<T.CrashAnalysis>("crash_analysis", { instanceId, crashReport: crashReport ?? null, exitCode: exitCode ?? null }),
+  vibefixStatus: () => call<T.VibeFixStatus>("vibefix_status"),
   instanceServersList: (instanceId: string) => call<T.ServerEntry[]>("instance_servers_list", { instanceId }),
   instanceServersSave: (instanceId: string, servers: T.ServerEntry[]) => call<void>("instance_servers_save", { instanceId, servers }),
   /** Domain-Umzug: Adressen `*.vibey.henny.dev` auf `*.axolite.cc` umstellen. Anzahl geänderter Einträge */
