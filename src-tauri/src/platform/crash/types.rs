@@ -51,6 +51,37 @@ pub struct Diagnosis {
     pub line: Option<u32>,
     /// Regel aus `patterns.toml`
     pub rule: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model_cause: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model_confidence: Option<f64>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq)]
+pub struct AnalysisInfo {
+    pub engine: String,
+    pub status: Option<String>,
+    pub model_version: Option<String>,
+    pub crash_score: Option<f64>,
+    pub notice: Option<String>,
+}
+
+impl AnalysisInfo {
+    pub fn rules(notice: Option<&str>) -> Self {
+        AnalysisInfo { engine: "rules".into(), notice: notice.map(Into::into), ..Default::default() }
+    }
+
+    pub fn vibefix(&self) -> bool {
+        self.engine == "vibefix"
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CrashAnalysis {
+    pub diagnoses: Vec<Diagnosis>,
+    pub info: AnalysisInfo,
 }
 
 impl Diagnosis {
@@ -65,6 +96,9 @@ impl Diagnosis {
             source: None,
             line: None,
             rule: None,
+            origin: None,
+            model_cause: None,
+            model_confidence: None,
         }
     }
     pub(super) fn param(mut self, k: &str, v: impl Into<String>) -> Self {

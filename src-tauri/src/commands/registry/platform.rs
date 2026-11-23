@@ -2,6 +2,8 @@ macro_rules! platform_commands {
     ([$($acc:tt)*] $next:ident $($rest:ident)*) => {
         $crate::commands::registry::$next!([$($acc)*
             crate::commands::platform::crash_analyze,
+            crate::commands::platform::crash_analysis,
+            crate::commands::platform::vibefix_status,
             crate::commands::platform::instance_servers_list,
             crate::commands::platform::instance_servers_save,
             crate::commands::platform::instance_servers_modernize,

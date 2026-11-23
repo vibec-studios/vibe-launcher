@@ -68,6 +68,16 @@ pub async fn analyze_instance(
     crash_report: Option<String>,
     exit_code: Option<i32>,
 ) -> crate::error::AppResult<Vec<Diagnosis>> {
+    Ok(analyze_instance_full(state, instance_id, crash_report, exit_code).await?.diagnoses)
+}
+
+pub async fn analyze_instance_full(
+    state: &crate::state::AppState,
+    instance_id: &str,
+    crash_report: Option<String>,
+    exit_code: Option<i32>,
+) -> crate::error::AppResult<CrashAnalysis> {
+    use crate::vibefix::{emit_phase, prepare, Phase, Prepared};
     let inst = state.instances.get(instance_id)?;
     let game = state.paths.game_dir(instance_id);
     let key = state.game.latest_crash(instance_id).map(|s| s.run_id).unwrap_or_else(|| instance_id.to_string());
@@ -85,11 +95,19 @@ pub async fn analyze_instance(
         mc_version: Some(inst.mc_version.clone()),
         loader,
     };
-    tokio::task::spawn_blocking(move || {
+    let loader_version = inst.loader.version.clone();
+    let prepared = prepare(state).await;
+    emit_phase(state, Phase::Analyzing, 0, 0);
+    let result = tokio::task::spawn_blocking(move || {
         let sources = collect_sources(&game, crash_report.as_deref(), started, &session);
         let mods = ModIndex::scan(&game.join("mods"));
-        analyze(&sources, &ctx, &mods)
+        match &prepared {
+            Prepared::Ready(l) => combine(Some((&l.model, &l.version)), None, &sources, &ctx, &mods, loader_version.as_deref()),
+            Prepared::Off(n) => combine(None, Some(n.as_str()), &sources, &ctx, &mods, None),
+        }
     })
     .await
-    .map_err(|e| crate::error::AppError::msg(e.to_string()))
+    .map_err(|e| crate::error::AppError::msg(e.to_string()));
+    emit_phase(state, Phase::Done, 0, 0);
+    result
 }

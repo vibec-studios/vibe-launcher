@@ -48,6 +48,7 @@ impl Default for Settings {
             java_cds: true,
             afk: crate::afk::AfkSettings::default(),
             lean: crate::lean::LeanSettings::default(),
+            vibefix: true,
         }
     }
 }

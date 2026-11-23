@@ -31,6 +31,7 @@ mod need_scan;
 mod quick;
 mod plan;
 mod plan_steps;
+mod gate;
 mod apply;
 mod undo;
 #[cfg(test)]
@@ -42,6 +43,8 @@ pub use need_scan::*;
 pub use quick::*;
 pub use plan::*;
 use plan_steps::*;
+pub use gate::ModelGate;
+use gate::ask_all;
 pub use apply::*;
 pub use undo::*;
 

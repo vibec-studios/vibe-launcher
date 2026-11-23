@@ -7,3 +7,6 @@ tools/afk-agent/src/main/resources/** text eol=lf
 tools/afk-agent/gradlew text eol=lf
 tools/afk-agent/gradlew.bat text eol=crlf
 *.jar binary
+# VibeFix: eingebettete Tabellen und Paritätsdaten byte-genau halten
+crates/vibefix-infer/data/** text eol=lf
+crates/vibefix-infer/tests/parity/** text eol=lf
