@@ -59,7 +59,7 @@ export function AddRemoteDialog() {
     );
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && close()} locked={busy} size="lg" title={t("rmt.wiz.title")} description={t("rmt.wiz.desc")} footer={footer}>
+    <Dialog open={open} protect onOpenChange={(o) => !o && close()} locked={busy} size="lg" title={t("rmt.wiz.title")} description={t("rmt.wiz.desc")} footer={footer}>
       <div className="flex min-h-[380px] flex-col gap-5">
         <Steps steps={[t("rmt.step.install"), t("rmt.step.connect"), t("rmt.step.done")]} current={step} />
         {step === 0 && <InstallStep os={os} onOs={setOs} />}

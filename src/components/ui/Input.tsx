@@ -16,12 +16,13 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ className, leading, trailing, invalid, ...rest }, ref) {
   if (!leading && !trailing) {
-    return <input ref={ref} spellCheck={false} className={cn(base, "h-9 text-[13.5px]", invalid && "border-danger", className)} {...rest} />;
+    return <input ref={ref} data-part="input" spellCheck={false} className={cn(base, "h-9 text-[13.5px]", invalid && "border-danger", className)} {...rest} />;
   }
   return (
     <div className={cn("relative flex items-center", className)}>
       {leading && <span className="pointer-events-none absolute left-3 text-dim">{leading}</span>}
       <input
+        data-part="input"
         ref={ref}
         spellCheck={false}
         className={cn(base, "h-9 text-[13.5px]", leading && "pl-9", trailing && "pr-9", invalid && "border-danger")}
@@ -33,7 +34,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ c
 });
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea({ className, ...rest }, ref) {
-  return <textarea ref={ref} spellCheck={false} className={cn(base, "min-h-24 py-2 text-[13.5px] resize-none scroll", className)} {...rest} />;
+  return <textarea ref={ref} data-part="input" spellCheck={false} className={cn(base, "min-h-24 py-2 text-[13.5px] resize-none scroll", className)} {...rest} />;
 });
 
 export interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {

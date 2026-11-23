@@ -169,6 +169,7 @@ export function AccessInviteDialog({ code, onClose }: { code: string; onClose: (
   return (
     <Dialog
       open
+      protect
       onOpenChange={(o) => !o && onClose()}
       size="md"
       title={t("ainv.redeem.dialog_title")}
@@ -205,7 +206,7 @@ export function RedeemInviteButton() {
         {t("ainv.redeem.have_code")}
       </Button>
       {open && (
-        <Dialog open onOpenChange={setOpen} size="md" title={t("ainv.redeem.title")}>
+        <Dialog open protect onOpenChange={setOpen} size="md" title={t("ainv.redeem.title")}>
           <RedeemInviteRow bare />
         </Dialog>
       )}

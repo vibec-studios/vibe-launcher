@@ -12,6 +12,7 @@ import { InstanceContextMenuContent } from "@/components/instance/InstanceMenu";
 import { openNewInstance } from "@/components/instance/actions";
 import { openSettings } from "@/features/settings/store";
 import { NAV, useInstanceActivity, useRailModel } from "./nav";
+import { ThemeSlot } from "@/features/themes/ThemeSlot";
 
 // ------------------------------------------------------------------ Seitenleiste
 // Kompakt (nur Icons, Standard) oder breit mit Beschriftung; Reihenfolge/Sichtbarkeit der Einträge und die
@@ -36,6 +37,7 @@ function RailButton({
   return (
     <Tooltip content={wide ? null : label} side="right">
       <button
+        data-part="nav-item"
         data-tour={tour}
         aria-label={label}
         aria-current={active ? "page" : undefined}
@@ -117,8 +119,9 @@ export function Rail() {
   const { nav, path, at, wide, keys, recent, serversRunning, socialBadge, settingsOpen } = useRailModel();
   const sep = <div className={cn("my-1.5 h-px shrink-0 bg-line2", wide ? "mx-1.5" : "w-6")} />;
   return (
-    <nav className={cn("vl-rail flex w-[var(--rail-w)] shrink-0 flex-col gap-1 bg-bg py-2", wide ? "items-stretch px-2.5" : "items-center")}>
+    <nav data-part="sidebar" className={cn("vl-rail flex w-[var(--rail-w)] shrink-0 flex-col gap-1 bg-bg py-2", wide ? "items-stretch px-2.5" : "items-center")}>
       <RailLogo wide={wide} />
+      <ThemeSlot name="sidebar-top" />
       {keys.map((k) => {
         const n = NAV[k];
         return (

@@ -7,6 +7,7 @@ Visual Studio Build Tools („Desktopentwicklung mit C++“).
 pnpm install
 node scripts/dev-live.mjs        # App mit Live-Reload (lädt dist/ direkt von der Platte)
 pnpm typecheck && pnpm build     # Frontend prüfen/bauen
+pnpm test                        # Frontend-Unit-Tests (node --test, u. a. Theme-Bereinigung)
 cd src-tauri && cargo test       # Backend-Tests
 ```
 

@@ -1,5 +1,8 @@
 import type { Appearance, CustomTheme, Settings, ThemeId } from "@/lib/types";
 import { DEFAULT_APPEARANCE, THEMES, applyTheme } from "@/lib/appearance";
+import { applyCustom, extRevision, extensionOf, parseThemeInput } from "@/lib/customThemes";
+import ironMan from "../../../skills/vibe-launcher-theme/examples/Iron Man.vibetheme?raw";
+import calmLake from "../../../skills/vibe-launcher-theme/examples/Stiller See.vibetheme?raw";
 import type { Handlers } from "./util";
 
 function flag(k: string): string | null {
@@ -53,11 +56,27 @@ const SAMPLES: CustomTheme[] = [
   },
 ];
 
+const V2_SAMPLES: Record<string, { id: string; content: string }> = {
+  ironman: { id: "mock-ironman", content: ironMan },
+  calm: { id: "mock-calm", content: calmLake },
+};
+const extFiles = new Map<string, string>(Object.values(V2_SAMPLES).map((s) => [s.id, s.content]));
+
+function v2Sample(key: string): CustomTheme | null {
+  const s = V2_SAMPLES[key];
+  if (!s) return null;
+  const { doc } = parseThemeInput(s.content, key);
+  const ext = extensionOf(doc);
+  return { id: s.id, name: doc.name, values: doc.values, palette: doc.palette, ext: ext ? extRevision(ext) : null };
+}
+
 export function mockAppearance(): Settings["appearance"] {
   let a: Appearance = { ...DEFAULT_APPEARANCE, design: flag("vl.mock.design") === "v2" ? "v2" : "v1" };
   const theme = flag("vl.mock.theme");
   if (theme && Object.hasOwn(THEMES, theme)) a = applyTheme(a, theme as ThemeId);
   if (flag("vl.mock.custom") === "1") a = { ...a, custom_themes: SAMPLES };
+  const v2 = v2Sample(flag("vl.mock.theme2") ?? "");
+  if (v2) a = applyCustom({ ...a, custom_themes: [...a.custom_themes, v2] }, v2);
   return { ...a, ...((globalThis as { __VL_MOCK_APPEARANCE?: Partial<Appearance> }).__VL_MOCK_APPEARANCE ?? {}) };
 }
 
@@ -69,4 +88,14 @@ export default {
     return null;
   },
   appearance_theme_read: ({ path }) => files.get(path as string) ?? "",
+  appearance_theme_ext_save: ({ id, content }) => {
+    extFiles.set(id as string, content as string);
+    return null;
+  },
+  appearance_theme_ext_load: ({ id }) => extFiles.get(id as string) ?? null,
+  appearance_theme_ext_delete: ({ id }) => {
+    extFiles.delete(id as string);
+    return null;
+  },
+  appearance_theme_ext_prune: () => 0,
 } satisfies Handlers;

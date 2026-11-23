@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ClipboardCopy, FileDown, MoreHorizontal, Pencil, Save, Trash2 } from "lucide-react";
+import { Check, ClipboardCopy, FileDown, MoreHorizontal, Pencil, Save, Sparkles, Trash2 } from "lucide-react";
 import type { CustomTheme } from "@/lib/types";
 import { THEMES } from "@/lib/appearance";
 import { DropdownItem, DropdownMenu, DropdownSeparator, IconButton, cn } from "@/components/ui";
@@ -18,7 +18,9 @@ function swatchOf(ct: CustomTheme) {
   const v = ct.values;
   const base = THEMES[v.theme] ?? THEMES.standard;
   const light = v.tone === "light";
-  const sw = (base.tokens.tone === "light") === light ? base.swatch : THEMES[light ? "light" : "standard"].swatch;
+  const baseSw = (base.tokens.tone === "light") === light ? base.swatch : THEMES[light ? "light" : "standard"].swatch;
+  const p = ct.palette ?? {};
+  const sw = { frame: p.frame ?? baseSw.frame, canvas: p.canvas ?? baseSw.canvas, surface: p.surface ?? baseSw.surface, surface2: p.surface2 ?? baseSw.surface2, text: p.text ?? baseSw.text, muted: p.muted ?? baseSw.muted };
   const r = v.cards === "pixel" ? 0 : v.radius === "custom" ? Math.min(6, v.radius_px / 3) : { square: 0, slight: 2, round: 4 }[v.radius];
   return { sw, r, accent: v.accent, pixel: v.cards === "pixel", status: v.status, light };
 }
@@ -62,6 +64,11 @@ export function CustomThemeTile({ theme, active, modified, ...act }: { theme: Cu
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: status.danger }} />
           </span>
         </span>
+        {theme.ext && (
+          <span title={t("vt.badge")} className="absolute bottom-1 right-1 grid h-4 w-4 place-items-center rounded-xs bg-black/45 text-white">
+            <Sparkles size={10} />
+          </span>
+        )}
         {active && (
           <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-xs bg-brand text-[var(--ui-on-accent)]">
             <Check size={11} strokeWidth={3} />

@@ -88,6 +88,7 @@ export function MsaDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
   return (
     <Dialog
       open={open}
+      protect
       onOpenChange={(o) => (o ? onOpenChange(true) : close())}
       title={t("accounts.msa.title")}
       size="md"

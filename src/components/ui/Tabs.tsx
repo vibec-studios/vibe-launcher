@@ -23,13 +23,14 @@ export function Tabs<V extends string>({
   right?: ReactNode;
 }) {
   return (
-    <div className={cn("vl-tabs flex h-11 items-stretch gap-1 border-b border-line", className)} role="tablist">
+    <div data-part="tabs" className={cn("vl-tabs flex h-11 items-stretch gap-1 border-b border-line", className)} role="tablist">
       {items.map((it) => {
         const active = it.value === value;
         return (
           <button
             key={it.value}
             role="tab"
+            data-part="tab"
             aria-selected={active}
             onClick={() => onChange(it.value)}
             className={cn(
@@ -67,7 +68,7 @@ export function Segmented<V extends string>({
   label?: string;
 }) {
   return (
-    <div className={cn("vl-seg inline-flex shrink-0 gap-0.5 rounded-ctl bg-field p-0.5", size === "md" && "vl-seg-md", className)} role="radiogroup" aria-label={label}>
+    <div data-part="segmented" className={cn("vl-seg inline-flex shrink-0 gap-0.5 rounded-ctl bg-field p-0.5", size === "md" && "vl-seg-md", className)} role="radiogroup" aria-label={label}>
       {items.map((it) => (
         <button
           key={it.value}

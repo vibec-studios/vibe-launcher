@@ -11,4 +11,4 @@ export type { ThemeTokens, ThemeExtra, ThemeDef } from "./themes";
 export { applyTheme, isThemeModified, isWinterSeason, effectiveAppearance, themeExtra } from "./themeUtils";
 export { GRADIENTS, backgroundCss, hasBackground, isVideoFile } from "./background";
 export { normalizeAppearance } from "./normalize";
-export { useAppearanceDraft, useLiveAppearance, applyAppearance, cachedAppearance, applyCachedAppearance } from "./apply";
+export { useAppearanceDraft, useLiveAppearance, applyAppearance, applyPalette, cachedAppearance, applyCachedAppearance } from "./apply";

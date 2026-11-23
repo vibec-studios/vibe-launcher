@@ -5,6 +5,7 @@ import { useSettings } from "@/lib/queries";
 import { applyAppearance, effectiveAppearance, normalizeAppearance, themeExtra, useAppearanceDraft } from "@/lib/appearance";
 import { Backdrop } from "./Backdrop";
 import { Snowfall } from "./Snowfall";
+import { ThemeHost } from "@/features/themes/ThemeHost";
 
 export function AppearanceHost() {
   const saved = useSettings().data?.appearance;
@@ -20,6 +21,7 @@ export function AppearanceHost() {
   return (
     <>
       <Backdrop appearance={shown} />
+      <ThemeHost />
       {themeExtra(shown, "snow") && <Snowfall amount={shown.effects.snow_amount} settle={shown.effects.snow_settle} />}
     </>
   );

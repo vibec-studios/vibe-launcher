@@ -39,6 +39,15 @@ src/features/<feature>/
 - **Importe stabil halten:** Wird eine viel genutzte Datei geteilt, bleibt an der alten Stelle ein schlanker Re-Export (z. B. `lib/types.ts` → `lib/types/*.ts` + `lib/types/index.ts`, alte Datei exportiert weiter). So müssen andere Bereiche nicht angefasst werden.
 - Pfad-Alias `@/` für alles außerhalb des eigenen Feature-Ordners, relative Pfade innerhalb.
 
+### Eigene Themes (Format v2)
+
+Kern ohne DOM in `lib/themes/` (Format, CSS-Tokenizer und -Bereinigung, Markup-Allowlist, Palette, Kompilieren in den
+Theme-Scope, Tests mit `pnpm test`), Laufzeit in `features/themes/` (`ThemeHost` in `AppearanceHost`, `ThemeSlot` an
+den Deko-Plätzen, Notausgang). Bausteine tragen stabile Haken `data-part="…"`; Scope-Wurzeln sind `data-vt-scope`
+(App-Rahmen, normale Dialoge), Schutzbereiche `data-vt-protected` bzw. `Dialog protect` / `ThemeProtect`. Der
+KI-Skill nutzt denselben Kern als erzeugte Kopie (`skills/vibe-launcher-theme/gen/`, `pnpm theme:skill`).
+Details: [THEMES.md](THEMES.md).
+
 ### Übersetzungen und Mock registrieren sich selbst
 
 - **i18n:** Jede Datei `src/i18n/<bereich>.ts` mit `export default { de: {...}, en: {...} }` wird per `import.meta.glob` automatisch geladen, alphabetisch nach Dateiname. Bei doppelten Schlüsseln gewinnt die alphabetisch spätere Datei – doppelte Schlüssel vermeiden. Neue Bereiche brauchen keinen Eintrag in `index.ts`.

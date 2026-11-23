@@ -1,8 +1,18 @@
+import fs from "node:fs";
+
 export const VARIANTS = {
   "v1-dark": {},
   "v2-light": { "vl.mock.design": "v2", "vl.mock.theme": "light" },
   pixel: { "vl.mock.theme": "pixel" },
 };
+
+export const EXTRA_VARIANTS = {
+  "ironman-v1": { "vl.mock.theme2": "ironman" },
+  "ironman-v2": { "vl.mock.design": "v2", "vl.mock.theme2": "ironman" },
+  "calm-v2": { "vl.mock.design": "v2", "vl.mock.theme2": "calm" },
+};
+
+const IRON_MAN = fs.readFileSync(new URL("../../skills/vibe-launcher-theme/examples/Iron Man.vibetheme", import.meta.url), "utf8");
 
 const INSTANCE = "survival";
 const SERVER = "survival-smp";
@@ -55,6 +65,19 @@ const DIALOGS = [
     act: async (ui) => {
       await ui.click(ui.button("Skin-Editor"));
       await ui.dialog();
+    },
+  },
+  {
+    name: "dialog-theme-import",
+    path: "#/settings?tab=appearance",
+    act: async (ui) => {
+      await ui.dialog();
+      await ui.click(ui.button("Importieren"));
+      await ui.visible(ui.page.getByLabel("Theme-Code"));
+      await ui.page.getByLabel("Theme-Code").fill(IRON_MAN);
+      await ui.step();
+      await ui.click(ui.button("Prüfen"));
+      await ui.visible(ui.page.getByLabel("Vorschau des Themes"));
     },
   },
   {

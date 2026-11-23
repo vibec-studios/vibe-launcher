@@ -7,7 +7,7 @@ import { X } from "lucide-react";
 import { api } from "@/lib/api";
 import { qk, useSettings } from "@/lib/queries";
 import type { Settings } from "@/lib/types";
-import { cn } from "@/components/ui";
+import { ThemeProtect, cn } from "@/components/ui";
 import { useAutoSave } from "@/components/instance/forms";
 import { useSimple } from "@/lib/mode";
 import { simpleHides } from "@/lib/simple-mode";
@@ -25,6 +25,7 @@ export function SettingsDialog() {
       <D.Portal>
         <D.Overlay className="vl-overlay fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-fade-in" />
         <D.Content
+          data-vt-protected=""
           aria-describedby={undefined}
           // Kein Fokusrahmen auf dem ersten Tab beim Öffnen; Tastatur-Navigation startet im Dialog
           onOpenAutoFocus={(e) => {
@@ -42,7 +43,9 @@ export function SettingsDialog() {
             "vl-dialog rounded-panel bg-overlay shadow-e3 data-[state=open]:animate-pop-in",
           )}
         >
-          <SettingsBody />
+          <ThemeProtect>
+            <SettingsBody />
+          </ThemeProtect>
         </D.Content>
       </D.Portal>
     </D.Root>

@@ -1,36 +1,29 @@
 import { useState } from "react";
-import { ClipboardPaste, FileUp } from "lucide-react";
+import { ArrowLeft, ClipboardPaste, FileUp } from "lucide-react";
 import { api } from "@/lib/api";
-import { FILE_EXT, ThemeImportError, parseThemeInput } from "@/lib/customThemes";
-import type { ThemeValues } from "@/lib/types";
+import { FILE_EXT, LIMITS, ThemeImportError, parseThemeInput, type ParsedTheme, type ThemeDoc } from "@/lib/customThemes";
 import { Button, Dialog, Textarea, toast } from "@/components/ui";
 import { useT } from "@/i18n";
+import { ThemeReview } from "./ThemeReview";
 
-export function ImportThemeDialog({
-  open,
-  onOpenChange,
-  onImport,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  onImport: (name: string, values: ThemeValues) => void;
-}) {
+export function ImportThemeDialog({ open, onOpenChange, onImport }: { open: boolean; onOpenChange: (o: boolean) => void; onImport: (doc: ThemeDoc) => void }) {
   const t = useT();
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [parsed, setParsed] = useState<ParsedTheme | null>(null);
 
   const close = (o: boolean) => {
     if (!o) {
       setText("");
       setError(null);
+      setParsed(null);
     }
     onOpenChange(o);
   };
-  const submit = (input = text) => {
+  const check = (input = text) => {
     try {
-      const r = parseThemeInput(input, t("ct.imported_name"));
-      onImport(r.name, r.values);
-      close(false);
+      setParsed(parseThemeInput(input, t("ct.imported_name")));
+      setError(null);
     } catch (e) {
       setError(t(`ct.err.${e instanceof ThemeImportError ? e.code : "format"}`));
     }
@@ -41,8 +34,8 @@ export function ImportThemeDialog({
     if (typeof file !== "string") return;
     try {
       const content = await api.appearanceThemeRead(file);
-      setText(content);
-      submit(content);
+      if (content.length <= LIMITS.code) setText(content);
+      check(content);
     } catch (e) {
       toast.error(e, t("ct.err.read"));
     }
@@ -56,50 +49,73 @@ export function ImportThemeDialog({
     }
     setError(null);
   };
+  const confirm = () => {
+    if (!parsed) return;
+    onImport(parsed.doc);
+    close(false);
+  };
 
   return (
     <Dialog
       open={open}
       onOpenChange={close}
       title={t("ct.import.title")}
-      description={t("ct.import.desc")}
-      size="md"
+      description={parsed ? undefined : t("ct.import.desc")}
+      size={parsed ? "lg" : "md"}
       footer={
-        <>
-          <Button variant="subtle" icon={<FileUp size={14} />} onClick={() => void fromFile()} className="mr-auto">
-            {t("ct.import.file")}
-          </Button>
-          <Button variant="subtle" onClick={() => close(false)}>
-            {t("common.cancel")}
-          </Button>
-          <Button variant="primary" disabled={!text.trim()} onClick={() => submit()}>
-            {t("ct.import.go")}
-          </Button>
-        </>
+        parsed ? (
+          <>
+            <Button variant="subtle" icon={<ArrowLeft size={14} />} onClick={() => setParsed(null)} className="mr-auto">
+              {t("vt.import.back")}
+            </Button>
+            <Button variant="subtle" onClick={() => close(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="primary" onClick={confirm}>
+              {t("ct.import.go")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="subtle" icon={<FileUp size={14} />} onClick={() => void fromFile()} className="mr-auto">
+              {t("ct.import.file")}
+            </Button>
+            <Button variant="subtle" onClick={() => close(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="primary" disabled={!text.trim()} onClick={() => check()}>
+              {t("vt.import.check")}
+            </Button>
+          </>
+        )
       }
     >
-      <div className="flex flex-col gap-2 pb-2">
-        <Textarea
-          aria-label={t("ct.import.code")}
-          value={text}
-          placeholder="VIBE-THEME-1:…"
-          onChange={(e) => {
-            setText(e.target.value);
-            setError(null);
-          }}
-          className="min-h-28 font-mono text-[12px]"
-        />
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="subtle" icon={<ClipboardPaste size={13} />} onClick={() => void paste()}>
-            {t("ct.import.paste")}
-          </Button>
-          {error && (
-            <span role="alert" className="text-[12.5px] text-danger">
-              {error}
-            </span>
-          )}
+      {parsed ? (
+        <ThemeReview parsed={parsed} />
+      ) : (
+        <div className="flex flex-col gap-2 pb-2">
+          <Textarea
+            aria-label={t("ct.import.code")}
+            value={text}
+            placeholder="VIBE-THEME-2:…"
+            onChange={(e) => {
+              setText(e.target.value);
+              setError(null);
+            }}
+            className="min-h-28 font-mono text-[12px]"
+          />
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="subtle" icon={<ClipboardPaste size={13} />} onClick={() => void paste()}>
+              {t("ct.import.paste")}
+            </Button>
+            {error && (
+              <span role="alert" className="text-[12.5px] text-danger">
+                {error}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </Dialog>
   );
 }

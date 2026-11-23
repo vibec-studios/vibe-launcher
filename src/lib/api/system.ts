@@ -9,6 +9,10 @@ export const systemApi = {
   appearanceImportBackground: (path: string, slot: "image" | "video") => call<string>("appearance_import_background", { path, slot }),
   appearanceThemeWrite: (path: string, content: string) => call<void>("appearance_theme_write", { path, content }),
   appearanceThemeRead: (path: string) => call<string>("appearance_theme_read", { path }),
+  appearanceThemeExtSave: (id: string, content: string) => call<void>("appearance_theme_ext_save", { id, content }),
+  appearanceThemeExtLoad: (id: string) => call<string | null>("appearance_theme_ext_load", { id }),
+  appearanceThemeExtDelete: (id: string) => call<void>("appearance_theme_ext_delete", { id }),
+  appearanceThemeExtPrune: (keep: string[]) => call<number>("appearance_theme_ext_prune", { keep }),
   /** Eigenes Bild fürs App-Icon (bzw. `slot` "discord" für den Discord-Status) übernehmen; gibt den gespeicherten Pfad zurück. */
   appIconImport: (path: string, slot?: "discord") => call<string>("app_icon_import", { path, slot: slot ?? null }),
   /** App-Icon-Vorschau als data:-URL. */

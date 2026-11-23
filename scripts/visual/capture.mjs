@@ -3,7 +3,7 @@ import path from "node:path";
 import { loadChromium } from "./playwright.mjs";
 import { serveStatic } from "./server.mjs";
 import { buildMock } from "./build.mjs";
-import { VARIANTS, scenes } from "./scenes.mjs";
+import { EXTRA_VARIANTS, VARIANTS, scenes } from "./scenes.mjs";
 import { Driver, TOTAL_FAKE_MS } from "./driver.mjs";
 import { BASE_FLAGS, FIXED_TIME, FREEZE_CSS, initScript } from "./determinism.mjs";
 
@@ -21,7 +21,7 @@ function parseArgs(argv) {
     else throw new Error(`unbekanntes Argument: ${a}`);
   }
   if (!opts.out) throw new Error("Aufruf: node scripts/visual/capture.mjs <ausgabeordner> [--dist <ordner>] [--only <regex>] [--variants v1-dark,v2-light,pixel] [--jobs 3]");
-  for (const v of opts.variants) if (!VARIANTS[v]) throw new Error(`unbekannte Variante: ${v}`);
+  for (const v of opts.variants) if (!VARIANTS[v] && !EXTRA_VARIANTS[v]) throw new Error(`unbekannte Variante: ${v}`);
   return opts;
 }
 
@@ -51,7 +51,7 @@ async function captureOne(browser, baseUrl, variant, scene) {
   await ctx.route((url) => /^(https?|wss?):$/.test(url.protocol) && url.origin !== origin, (route) => route.abort());
   await ctx.clock.install({ time: new Date(FIXED_TIME).getTime() - 1000 });
   await ctx.clock.pauseAt(FIXED_TIME);
-  await ctx.addInitScript(initScript, { flags: { ...BASE_FLAGS, ...VARIANTS[variant], ...(scene.flags ?? {}) }, css: FREEZE_CSS });
+  await ctx.addInitScript(initScript, { flags: { ...BASE_FLAGS, ...(VARIANTS[variant] ?? EXTRA_VARIANTS[variant]), ...(scene.flags ?? {}) }, css: FREEZE_CSS });
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e?.message ?? e)));

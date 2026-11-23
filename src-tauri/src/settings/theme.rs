@@ -1,10 +1,13 @@
 //! Eigene Themes (Einstellungen → Darstellung → „Eigene Themes“): gespeicherte Darstellungs-Werte.
 use super::{Appearance, Background, StatusColors};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 pub const MAX_CUSTOM_THEMES: usize = 24;
 const MAX_NAME_CHARS: usize = 40;
 const MAX_ID_CHARS: usize = 40;
+const MAX_PALETTE: usize = 24;
+const MAX_REV_CHARS: usize = 32;
 
 /// Ein gespeichertes Theme.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -13,6 +16,10 @@ pub struct CustomTheme {
     pub id: String,
     pub name: String,
     pub values: ThemeValues,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub palette: BTreeMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ext: Option<String>,
 }
 
 /// Werte, die ein eigenes Theme festhält (Layout wie Seitenleisten-Reihenfolge oder App-Icon gehört nicht dazu).
@@ -37,7 +44,7 @@ pub struct ThemeValues {
 
 impl Default for CustomTheme {
     fn default() -> Self {
-        CustomTheme { id: String::new(), name: String::new(), values: ThemeValues::default() }
+        CustomTheme { id: String::new(), name: String::new(), values: ThemeValues::default(), palette: BTreeMap::new(), ext: None }
     }
 }
 
@@ -114,8 +121,26 @@ fn clean_name(name: &str) -> String {
     }
 }
 
-fn valid_id(id: &str) -> bool {
+pub(crate) fn valid_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= MAX_ID_CHARS && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
+fn is_hex(v: &str) -> bool {
+    v.len() == 7 && v.starts_with('#') && v[1..].chars().all(|c| c.is_ascii_hexdigit())
+}
+
+fn clean_palette(palette: BTreeMap<String, String>) -> BTreeMap<String, String> {
+    palette
+        .into_iter()
+        .filter(|(k, _)| !k.is_empty() && k.len() <= 24 && k.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_'))
+        .map(|(k, v)| (k, v.trim().to_ascii_lowercase()))
+        .filter(|(_, v)| is_hex(v))
+        .take(MAX_PALETTE)
+        .collect()
+}
+
+fn clean_rev(rev: Option<String>) -> Option<String> {
+    rev.filter(|r| !r.is_empty() && r.len() <= MAX_REV_CHARS && r.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit()))
 }
 
 /// Eigene Themes bereinigen: gültige Ids (einmalig), Namen begrenzt, Werte wie bei der Darstellung, höchstens
@@ -128,6 +153,8 @@ pub fn sanitize(a: &mut Appearance) {
         }
         t.name = clean_name(&t.name);
         t.values.sanitize();
+        t.palette = clean_palette(std::mem::take(&mut t.palette));
+        t.ext = clean_rev(t.ext.take());
         out.push(t);
         if out.len() >= MAX_CUSTOM_THEMES {
             break;

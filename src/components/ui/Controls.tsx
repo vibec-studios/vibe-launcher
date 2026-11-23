@@ -30,6 +30,7 @@ export function Checkbox({
     <button
       type="button"
       role="checkbox"
+      data-part="checkbox"
       aria-checked={part ? "mixed" : checked}
       aria-label={label}
       disabled={disabled}
@@ -48,6 +49,7 @@ export function Checkbox({
 export function Switch({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label?: string }) {
   return (
     <Sw.Root
+      data-part="switch"
       checked={checked}
       onCheckedChange={onChange}
       disabled={disabled}
@@ -98,11 +100,11 @@ export function Slider({
 export function Progress({ value, className, tone = "accent" }: { value: number | null; className?: string; tone?: "accent" | "danger" | "ok" }) {
   const color = tone === "danger" ? "bg-danger" : tone === "ok" ? "bg-ok" : "bg-accent";
   return (
-    <div className={cn("relative h-1 w-full overflow-hidden rounded-pill bg-white/[.08]", className)} role="progressbar" aria-valuenow={value ?? undefined}>
+    <div data-part="progress" className={cn("relative h-1 w-full overflow-hidden rounded-pill bg-white/[.08]", className)} role="progressbar" aria-valuenow={value ?? undefined}>
       {value === null ? (
-        <div className={cn("absolute inset-y-0 w-2/5", color)} style={{ animation: "indeterminate 1.1s var(--ease-snap) infinite" }} />
+        <div data-part="progress-bar" className={cn("absolute inset-y-0 w-2/5", color)} style={{ animation: "indeterminate 1.1s var(--ease-snap) infinite" }} />
       ) : (
-        <div className={cn("h-full transition-[width] duration-150 ease-linear", color)} style={{ width: `${Math.round(value * 1000) / 10}%` }} />
+        <div data-part="progress-bar" className={cn("h-full transition-[width] duration-150 ease-linear", color)} style={{ width: `${Math.round(value * 1000) / 10}%` }} />
       )}
     </div>
   );
@@ -112,6 +114,7 @@ export function Chip({ children, active, onClick, className }: { children: React
   const Tag = onClick ? "button" : "span";
   return (
     <Tag
+      data-part="chip"
       onClick={onClick}
       className={cn(
         "vl-chip inline-flex h-7 items-center gap-1.5 rounded-pill px-2.5 text-[12px] font-medium transition-colors duration-150",
@@ -129,6 +132,7 @@ export function Chip({ children, active, onClick, className }: { children: React
 export function Tag({ children, className, color }: { children: ReactNode; className?: string; color?: string }) {
   return (
     <span
+      data-part="badge"
       className={cn("vl-tag inline-flex h-5 items-center gap-1 rounded-xs bg-white/[.06] px-1.5 text-[11px] font-medium text-muted", className)}
       style={color ? { color: `oklch(from ${color} min(l, var(--tag-l, 1)) c h)`, background: `color-mix(in srgb, ${color} 14%, transparent)` } : undefined}
     >
@@ -143,7 +147,7 @@ export function Skeleton({ className, style }: { className?: string; style?: Rea
 
 export function EmptyState({ icon, title, text, action, className }: { icon?: ReactNode | PixelMotif; title: ReactNode; text?: ReactNode; action?: ReactNode; className?: string }) {
   return (
-    <div className={cn("vl-empty flex flex-col items-center justify-center gap-3 px-6 py-16 text-center", className)}>
+    <div data-part="empty" className={cn("vl-empty flex flex-col items-center justify-center gap-3 px-6 py-16 text-center", className)}>
       {/* .vl-empty-icon: im Winter-Theme sitzt ein kleines Pixel-Schneehäubchen auf dem Icon (globals.css) */}
       {icon && <div className="vl-empty-icon mb-1 text-dim">{isPixelMotif(icon) ? <PixelIcon name={icon} /> : icon}</div>}
       <div className="vl-empty-title display text-[16px]">{title}</div>
@@ -173,9 +177,9 @@ export function ErrorState({ error, onRetry, className }: { error: unknown; onRe
 /** Abschnitt mit ruhiger Überschrift (ohne Trennlinie). */
 export function Section({ title, right, children, className }: { title: ReactNode; right?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn("vl-section flex flex-col gap-2.5", className)}>
+    <section data-part="section" className={cn("vl-section flex flex-col gap-2.5", className)}>
       <div className="flex min-h-6 items-center gap-3">
-        <h3 className="vl-section-title flex-1 text-section text-text">{title}</h3>
+        <h3 data-part="section-title" className="vl-section-title flex-1 text-section text-text">{title}</h3>
         {right}
       </div>
       {children}

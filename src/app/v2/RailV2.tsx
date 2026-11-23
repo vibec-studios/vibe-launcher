@@ -12,6 +12,7 @@ import { Logo3D } from "@/components/Logo3D";
 import { BEDROCK_TEXT_COLOR } from "@/features/bedrock/parts";
 import { openSettings } from "@/features/settings/store";
 import { NAV, useInstanceActivity, useRailModel } from "../nav";
+import { ThemeSlot } from "@/features/themes/ThemeSlot";
 
 function Item({
   label,
@@ -33,6 +34,7 @@ function Item({
   return (
     <Tooltip content={wide ? null : label} side="right">
       <button
+        data-part="nav-item"
         data-tour={tour}
         aria-label={label}
         aria-current={active ? "page" : undefined}
@@ -94,7 +96,7 @@ export function RailV2() {
   const t = useT();
   const { nav, path, at, wide, keys, recent, serversRunning, socialBadge, settingsOpen } = useRailModel();
   return (
-    <nav className={cn("vl2-rail flex w-[var(--rail-w)] shrink-0 flex-col bg-bg pb-[var(--gutter)] pt-2", wide ? "items-stretch px-3" : "items-center px-2")}>
+    <nav data-part="sidebar" className={cn("vl2-rail flex w-[var(--rail-w)] shrink-0 flex-col bg-bg pb-[var(--gutter)] pt-2", wide ? "items-stretch px-3" : "items-center px-2")}>
       <Tooltip content={wide ? null : "Vibe Launcher"} side="right">
         <button
           aria-label="Vibe Launcher"
@@ -110,6 +112,7 @@ export function RailV2() {
           )}
         </button>
       </Tooltip>
+      <ThemeSlot name="sidebar-top" className="mb-2" />
       <div className={cn("flex flex-col gap-1", wide ? "items-stretch" : "items-center")}>
         {keys.map((k) => {
           const n = NAV[k];

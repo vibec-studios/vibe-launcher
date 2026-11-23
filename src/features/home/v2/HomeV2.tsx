@@ -14,6 +14,7 @@ import { sideWidth, useHeight, useTier } from "../layout";
 import { PopularPacks, StartHere } from "../Discover";
 import { HeroV2 } from "./HeroV2";
 import { StarterCard } from "../StarterCard";
+import { ThemeSlot } from "@/features/themes/ThemeSlot";
 
 function Stat({ icon, children, to }: { icon: ReactNode; children: ReactNode; to?: "/stats" | "/instances" }) {
   const cls =
@@ -44,7 +45,7 @@ function HeaderV2({ count, loading }: { count: number; loading: boolean }) {
       </header>
     );
   return (
-    <header className="flex min-w-0 flex-wrap items-end gap-x-6 gap-y-3">
+    <header data-part="home-header" className="flex min-w-0 flex-wrap items-end gap-x-6 gap-y-3">
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-hero text-text">{g.title}</h1>
         {count > 0 && (
@@ -80,7 +81,8 @@ export function HomeV2() {
 
   return (
     <div className="scroll h-full">
-      <div ref={ref} className={cn(pageWrap, "flex flex-col gap-8 pb-12 pt-7 min-[1600px]:px-9")}>
+      <div ref={ref} data-part="home" className={cn(pageWrap, "flex flex-col gap-8 pb-12 pt-7 min-[1600px]:px-9")}>
+        <ThemeSlot name="home-hero" />
         <HeaderV2 count={list.length} loading={loading} />
         {!loading && <StarterCard />}
         {loading ? (
