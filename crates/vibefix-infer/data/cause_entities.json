@@ -1,0 +1,251 @@
+{
+ "missing_dependency": [
+  "mod_id",
+  "dep_id",
+  "range",
+  "class",
+  "file"
+ ],
+ "outdated_dependency": [
+  "mod_id",
+  "dep_id",
+  "range",
+  "present_version"
+ ],
+ "wrong_minecraft": [
+  "mod_id",
+  "file",
+  "range",
+  "mc_version"
+ ],
+ "wrong_loader": [
+  "mod_id",
+  "file",
+  "loader",
+  "required_loader"
+ ],
+ "loader_version": [
+  "mod_id",
+  "loader",
+  "range",
+  "present_version"
+ ],
+ "mixin": [
+  "mod_id",
+  "class",
+  "file"
+ ],
+ "mixin_conflict": [
+  "mod_id",
+  "other_id",
+  "class"
+ ],
+ "mod_conflict": [
+  "mod_id",
+  "other_id"
+ ],
+ "known_conflict": [
+  "mod_id",
+  "other_id",
+  "file",
+  "other_file",
+  "pair_id"
+ ],
+ "java_version": [
+  "java_major",
+  "present_version",
+  "mc_version"
+ ],
+ "out_of_memory": [
+  "detail"
+ ],
+ "heap_reserve": [
+  "detail"
+ ],
+ "native_memory": [
+  "detail"
+ ],
+ "disk_full": [
+  "file"
+ ],
+ "invalid_jvm_flag": [
+  "detail"
+ ],
+ "corrupt_archive": [
+  "file",
+  "mod_id"
+ ],
+ "locked_world": [
+  "file"
+ ],
+ "duplicate_mod": [
+  "mod_id",
+  "file",
+  "files"
+ ],
+ "broken_config": [
+  "mod_id",
+  "config_path"
+ ],
+ "graphics": [
+  "detail"
+ ],
+ "suspected_mod": [
+  "mod_id",
+  "file"
+ ],
+ "exit_code": [
+  "exit_code",
+  "hint"
+ ],
+ "disabled_dependency": [
+  "mod_id",
+  "dep_id",
+  "range",
+  "file"
+ ],
+ "loader_files": [
+  "loader",
+  "file"
+ ],
+ "forge_mod_on_fabric": [
+  "mod_id",
+  "file",
+  "loader",
+  "required_loader"
+ ],
+ "connector_transform": [
+  "mod_id",
+  "file",
+  "class"
+ ],
+ "connector_dependency": [
+  "mod_id",
+  "dep_id",
+  "range"
+ ],
+ "mixin_target_missing": [
+  "mod_id",
+  "other_id",
+  "class"
+ ],
+ "missing_class": [
+  "class",
+  "mod_id"
+ ],
+ "linkage_error": [
+  "class",
+  "mod_id",
+  "dep_id"
+ ],
+ "wrong_mod_environment": [
+  "class",
+  "mod_id"
+ ],
+ "java_too_old": [
+  "java_major",
+  "present_version"
+ ],
+ "java_too_new": [
+  "java_major",
+  "present_version",
+  "mc_version"
+ ],
+ "metaspace_exhausted": [
+  "detail"
+ ],
+ "direct_buffer_exhausted": [
+  "detail"
+ ],
+ "native_thread_exhausted": [
+  "detail"
+ ],
+ "glfw_context": [
+  "detail"
+ ],
+ "opengl_version": [
+  "range",
+  "present_version"
+ ],
+ "driver_intel": [
+  "file"
+ ],
+ "driver_amd": [
+  "file"
+ ],
+ "driver_nvidia": [
+  "file"
+ ],
+ "shader_compile": [
+  "file",
+  "mod_id"
+ ],
+ "shader_mod_conflict": [
+  "mod_id",
+  "other_id"
+ ],
+ "corrupt_world_nbt": [
+  "file",
+  "class"
+ ],
+ "corrupt_region": [
+  "file"
+ ],
+ "network_timeout": [
+  "class"
+ ],
+ "network_dns": [
+  "class"
+ ],
+ "network_tls": [
+  "class"
+ ],
+ "auth_session": [
+  "detail"
+ ],
+ "datapack_load": [
+  "file",
+  "resource_id"
+ ],
+ "recipe_parse": [
+  "resource_id",
+  "file"
+ ],
+ "native_lwjgl": [
+  "file",
+  "class"
+ ],
+ "native_jvm_crash": [
+  "file",
+  "detail"
+ ],
+ "ticking_entity": [
+  "resource_id",
+  "class",
+  "mod_id"
+ ],
+ "ticking_block_entity": [
+  "resource_id",
+  "class",
+  "mod_id"
+ ],
+ "stack_overflow": [
+  "class",
+  "mod_id"
+ ],
+ "watchdog_hang": [
+  "class",
+  "detail",
+  "mod_id"
+ ],
+ "permission_denied": [
+  "file",
+  "class"
+ ],
+ "registry_duplicate": [
+  "resource_id",
+  "mod_id"
+ ],
+ "healthy": [],
+ "unknown": []
+}

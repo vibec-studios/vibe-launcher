@@ -1,0 +1,424 @@
+# Absturz-Muster für die Crash-Analyse (`platform/crash`). Jede Regel ist ein regulärer Ausdruck (Rust-`regex`,
+# benannte Gruppen) plus eine Auswertung (`kind`), die aus den Gruppen eine Diagnose mit Fix-Vorschlag macht.
+#
+# Felder:
+#   id          Name der Regel (Tests, Protokoll)
+#   kind        Auswertung, siehe `handle()` in mod.rs
+#   confidence  0–100, sortiert die Ursachen
+#   fatal       nur auswerten, wenn das Protokoll einen Absturz zeigt (Crash-Report, Exit-Code ≠ 0, `fatal_markers`)
+#   also        muss zusätzlich irgendwo in derselben Datei stehen
+#   unless      Treffer verwerfen, wenn die gefundene Zeile das enthält
+#   fallback    nur, wenn keine sichere Ursache (≥ 85) gefunden wurde
+#   loader      nur für diese Loader (fabric, quilt, forge, neoforge)
+#   example     Beispielzeile, muss treffen (Test `examples_match`)
+#
+# Gruppen, die die Auswertungen lesen: mod_id, mod_name, dep_id/dep_id2, dep_name, range, present, other_id/
+# other_id2, other_name, file, files, loader, class, runtime, detail, path, ctype, a, b.
+#
+# Normale Warnungen (z. B. „@Redirect conflict“ ohne Folgefehler, „Error loading class“ aus Mixin-Plugins,
+# „Configuration file … is not correct. Correcting“) dürfen nichts auslösen – siehe Fixture normal-*.txt.
+
+# Ein Protokoll gilt als Absturz, wenn eine dieser Zeichenfolgen vorkommt (zusätzlich zu Crash-Report/Exit-Code).
+fatal_markers = [
+  "---- Minecraft Crash Report ----",
+  "#@!@# Game crashed!",
+  "Exception in thread \"main\"",
+  "Exception in thread \"Render thread\"",
+  "A fatal error has been detected by the Java Runtime Environment",
+  "Error occurred during initialization of VM",
+  "Could not create the Java Virtual Machine",
+  "FormattedException",
+  "ModResolutionException",
+  "Incompatible mods found!",
+  "Mod resolution failed",
+  "LoadingFailedException",
+  "ModLoadingException",
+  "Missing or unsupported mandatory dependencies",
+  "Loading errors encountered",
+  "/FATAL]",
+  "Crash report saved to",
+  "This crash report has been saved to",
+  "Preparing crash report with UUID",
+]
+
+# --------------------------------------------------------------------- Abhängigkeiten
+
+[[pattern]]
+id = "fabric_missing"
+kind = "missing_dependency"
+confidence = 95
+regex = '''Mod '(?P<mod_name>[^\n]+?)' \((?P<mod_id>[^)\s]+)\) \S+ requires (?P<range>[^\n]+?) of (?:mod '(?P<dep_name>[^\n]+?)' \((?P<dep_id>[^)\s]+)\)|(?:mod )?(?P<dep_id2>[\w\-.]+)), which is missing'''
+example = "\t - Mod 'Sodium Extra' (sodium-extra) 0.5.4+mc1.20.4 requires any version of fabric-api, which is missing!"
+
+[[pattern]]
+id = "fabric_wrong_version"
+kind = "dependency_version"
+confidence = 93
+regex = '''Mod '(?P<mod_name>[^\n]+?)' \((?P<mod_id>[^)\s]+)\) \S+ requires (?P<range>[^\n]+?) of (?:mod '(?P<dep_name>[^\n]+?)' \((?P<dep_id>[^)\s]+)\)|(?:mod )?(?P<dep_id2>[\w\-.]+)), but only the wrong version is present: (?P<present>[^!\s]+)'''
+example = "\t - Mod 'Xaero's Minimap' (xaerominimap) 24.0.2 requires version 1.20.1 of minecraft, but only the wrong version is present: 1.21.4!"
+
+[[pattern]]
+id = "fabric_breaks"
+kind = "declared_conflict"
+confidence = 92
+regex = '''Mod '(?P<mod_name>[^\n]+?)' \((?P<mod_id>[^)\s]+)\) \S+ is incompatible with [^\n]+? of (?:mod '(?P<other_name>[^\n]+?)' \((?P<other_id>[^)\s]+)\)|(?:mod )?(?P<other_id2>[\w\-.]+)), but a matching version is present'''
+example = "\t - Mod 'Sodium' (sodium) 0.5.8+mc1.20.4 is incompatible with any version of mod 'OptiFabric' (optifabric), but a matching version is present: 1.14.3!"
+
+[[pattern]]
+id = "forge_missing"
+kind = "missing_dependency"
+confidence = 95
+regex = '''Mod ID: '(?P<dep_id>[^']+)', Requested by: '(?P<mod_id>[^']+)', Expected range: '(?P<range>[^']*)', Actual version: '\[MISSING\]''''
+example = "\tMod ID: 'architectury', Requested by: 'roughlyenoughitems', Expected range: '[9.1.12,)', Actual version: '[MISSING]'"
+
+[[pattern]]
+id = "forge_wrong_version"
+kind = "dependency_version"
+confidence = 93
+regex = '''Mod ID: '(?P<dep_id>[^']+)', Requested by: '(?P<mod_id>[^']+)', Expected range: '(?P<range>[^']*)', Actual version: '(?P<present>[^'\[][^']*)''''
+example = "\tMod ID: 'minecraft', Requested by: 'oldmod', Expected range: '[1.19.2,1.19.3)', Actual version: '1.20.1'"
+
+# NeoForge ab 20.5 (Ladefehler-Bildschirm, ins Log geschrieben; Farbcodes werden vorher entfernt)
+[[pattern]]
+id = "neoforge_missing"
+kind = "missing_dependency"
+confidence = 94
+regex = '''Mod (?P<mod_name>[^\n]+?) requires (?P<dep_id>[\w\-.]+) (?P<range>[^\n]*?)\s*\n\s*Currently, [\w\-.]+ is not installed'''
+example = "\t- Mod Sodium Extras requires sodium 0.6.0 or above\n\t\tCurrently, sodium is not installed"
+
+[[pattern]]
+id = "neoforge_wrong_version"
+kind = "dependency_version"
+confidence = 92
+regex = '''Mod (?P<mod_name>[^\n]+?) requires (?P<dep_id>[\w\-.]+) (?P<range>[^\n]*?)\s*\n\s*Currently, [\w\-.]+ is (?P<present>\d[^\s]*)'''
+example = "\t- Mod Create requires flywheel 1.0.1 or above\n\t\tCurrently, flywheel is 1.0.0"
+
+# Klasse einer bekannten Bibliothek fehlt (Tabelle `class_hint` unten)
+[[pattern]]
+id = "missing_class"
+kind = "missing_class"
+confidence = 86
+fatal = true
+unless = "Error loading class"
+regex = '''java\.lang\.(?:NoClassDefFoundError|ClassNotFoundException): (?P<class>[\w/.$]+)'''
+example = "Caused by: java.lang.NoClassDefFoundError: dev/architectury/event/events/common/LifecycleEvent"
+
+# --------------------------------------------------------------------- Falscher Loader / doppelte Mods
+
+[[pattern]]
+id = "wrong_loader_file"
+kind = "wrong_loader_file"
+confidence = 90
+regex = '''File (?P<file>[^\n]+?\.jar) is an? (?P<loader>Fabric|Quilt|Forge|Minecraft Forge|NeoForge|LiteLoader) mod and cannot be loaded'''
+example = "\t- File sodium-fabric-0.6.0+mc1.21.1.jar is a Fabric mod and cannot be loaded"
+
+[[pattern]]
+id = "forge_duplicate"
+kind = "duplicate_files"
+confidence = 93
+regex = '''Mod ID: '(?P<mod_id>[^']+)' from mod files: (?P<files>[^\n]+)'''
+example = "\tMod ID: 'jei' from mod files: jei-1.20.1-forge-15.2.0.27.jar, jei-1.20.1-forge-15.3.0.4.jar"
+
+[[pattern]]
+id = "fabric_duplicate"
+kind = "duplicate_id"
+confidence = 88
+regex = '''(?:Mods share ID (?P<mod_id>[\w\-]+)|Mod '?[^'\n]*'? \((?P<mod_id2>[\w\-]+)\)[^\n]*? is present multiple times|Duplicate mod(?: id)?: '?(?P<mod_id3>[a-z][\w\-]*)'?)'''
+example = "net.fabricmc.loader.impl.discovery.ModResolutionException: Mods share ID sodium, may only load one of them: [sodium-0.5.8.jar, sodium-0.6.0.jar]"
+
+# --------------------------------------------------------------------- Java
+
+[[pattern]]
+id = "java_class_version"
+kind = "java_class_version"
+confidence = 92
+regex = '''UnsupportedClassVersionError: [^\n]*?class file version (?P<class>\d+)\.\d+\)?(?:, this version of the Java Runtime only recognizes class file versions up to (?P<runtime>\d+))?'''
+example = "java.lang.UnsupportedClassVersionError: net/minecraft/client/main/Main has been compiled by a more recent version of the Java Runtime (class file version 65.0), this version of the Java Runtime only recognizes class file versions up to 61.0"
+
+# Laufzeit zu neu für alte Loader (ASM kennt die Klassen nicht)
+[[pattern]]
+id = "java_too_new"
+kind = "java_too_new"
+confidence = 88
+fatal = true
+regex = '''Unsupported class file major version (?P<runtime>\d+)'''
+example = "Caused by: java.lang.IllegalArgumentException: Unsupported class file major version 65"
+
+# Forge bis 1.16 unter Java 9+
+[[pattern]]
+id = "java_8_required"
+kind = "java_8"
+confidence = 90
+regex = '''jdk\.internal\.loader\.ClassLoaders\$AppClassLoader cannot be cast to (?:class )?java\.net\.URLClassLoader'''
+example = "java.lang.ClassCastException: class jdk.internal.loader.ClassLoaders$AppClassLoader cannot be cast to class java.net.URLClassLoader"
+
+# --------------------------------------------------------------------- Arbeitsspeicher
+
+[[pattern]]
+id = "out_of_memory"
+kind = "out_of_memory"
+confidence = 90
+unless = "unable to create (?:new )?native thread|Direct buffer memory|direct buffer memory|Metaspace|Compressed class space"
+regex = '''java\.lang\.OutOfMemoryError(?:: (?P<detail>[^\n]+))?'''
+example = "java.lang.OutOfMemoryError: GC overhead limit exceeded"
+
+[[pattern]]
+id = "heap_reserve"
+kind = "heap_reserve"
+confidence = 90
+regex = '''Could not reserve enough space for (?:\d+KB )?object heap|Invalid maximum heap size|There is insufficient memory for the Java Runtime Environment to continue'''
+example = "Could not reserve enough space for 8388608KB object heap"
+
+[[pattern]]
+id = "native_memory"
+kind = "manual"
+confidence = 94
+fatal = true
+regex = '''java\.lang\.OutOfMemoryError: (?:unable to create (?:new )?native thread|(?:Direct buffer memory|Cannot reserve \d+ bytes of direct buffer memory)|Metaspace|Compressed class space)'''
+example = "java.lang.OutOfMemoryError: unable to create native thread: possibly out of memory or process/resource limits reached"
+
+[[pattern]]
+id = "disk_full"
+kind = "manual"
+confidence = 96
+fatal = true
+regex = '''(?i)(?:IOException|FileSystemException): [^\n]*(?:no space left on device|there is not enough space on the disk|disk quota exceeded|nicht genügend Speicherplatz auf dem Datenträger)'''
+example = "Caused by: java.io.IOException: No space left on device"
+
+[[pattern]]
+id = "invalid_jvm_flag"
+kind = "manual"
+confidence = 96
+fatal = true
+regex = '''(?m)^(?:Unrecognized (?:VM option|option):? |Improperly specified VM option )[^\n]+'''
+example = "Unrecognized VM option 'UseConcMarkSweepGC'"
+
+[[pattern]]
+id = "corrupt_archive"
+kind = "manual"
+confidence = 89
+fatal = true
+regex = '''java\.util\.zip\.ZipException: (?:zip END header not found|invalid (?:CEN|LOC) header|error in opening zip file)'''
+example = "Caused by: java.util.zip.ZipException: zip END header not found"
+
+[[pattern]]
+id = "locked_world"
+kind = "manual"
+confidence = 96
+fatal = true
+regex = '''(?i)(?:LockException: [^\n]*session\.lock: already locked|the save is being accessed from another location)'''
+example = "net.minecraft.util.DirectoryLock$LockException: saves/My world/session.lock: already locked (possibly by other Minecraft instance?)"
+
+# --------------------------------------------------------------------- Mixin
+
+# Ausdrücklicher Konflikt zweier Mods (Mixin meldet ihn als Warnung; zählt nur mit Folgefehler)
+[[pattern]]
+id = "mixin_redirect_conflict"
+kind = "mixin_conflict"
+confidence = 93
+fatal = true
+also = '''InvalidInjectionException|Critical injection failure|MixinApplyError|MixinTransformerError|InjectionError'''
+regex = '''@\w+ conflict\. Skipping (?P<a>[^\n]+?) with priority \d+, already (?:redirected|modified|overwritten) by (?P<b>[^\n]+?) with priority'''
+example = "[main/WARN]: @Redirect conflict. Skipping centeredcrosshair.mixins.json:InGameHudMixin from mod centered-crosshair->@Redirect::redirectCrosshair(Lnet/minecraft/class_332;)V with priority 1000, already redirected by vibeyclient.mixins.json:hud.InGameHudMixin from mod vibeyclient->@Redirect::vibey$crosshair(Lnet/minecraft/class_332;)V with priority 1000"
+
+[[pattern]]
+id = "mixin_failure"
+kind = "mixin_failure"
+confidence = 86
+fatal = true
+regex = '''(?:InvalidInjectionException|InjectionError|MixinApplyError|MixinTransformerError|InvalidMixinException|MixinPreProcessorException|Critical injection failure)[^\n]*'''
+example = "Caused by: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException: Critical injection failure: @Inject annotation on renderSky could not find any targets"
+
+# --------------------------------------------------------------------- Kaputte Config
+
+# (Neo)Forge ConfigTracker – Dateiname relativ zu config/ (SERVER-Configs liegen in der Welt und werden ausgelassen)
+[[pattern]]
+id = "forge_config"
+kind = "broken_config"
+confidence = 88
+fatal = true
+regex = '''Failed (?:loading|to load|reading) config file (?P<path>[^\s,]+?\.toml) of type (?P<ctype>\w+) for modid (?P<mod_id>[\w\-]+)'''
+example = "[main/ERROR] [ne.mi.fm.co.ConfigTracker/CONFIG]: Failed loading config file jei-client.toml of type CLIENT for modid jei"
+
+# Allgemein: Parse-Fehler, der Pfad unter config/ steht in derselben oder einer Nachbarzeile
+[[pattern]]
+id = "config_parse"
+kind = "broken_config"
+confidence = 84
+fatal = true
+regex = '''(?:JsonSyntaxException|MalformedJsonException|JsonParseException|ParsingException|TomlParseException|ConfigParseException|Jankson\w*SyntaxError|SyntaxError|Unterminated (?:object|array|string)|Expected (?:BEGIN_OBJECT|BEGIN_ARRAY|a name|name|value)|Not enough data available|Invalid (?:TOML|JSON)|Unexpected character|could not parse config|Failed to parse config)[^\n]*'''
+example = "Caused by: com.google.gson.stream.MalformedJsonException: Unterminated object at line 12 column 5 path $.quality"
+
+# --------------------------------------------------------------------- Grafik (nur Hinweis)
+
+[[pattern]]
+id = "opengl"
+kind = "graphics"
+confidence = 86
+fatal = true
+regex = '''(?i)(?:WGL: The driver does not appear to support OpenGL|Pixel format not accelerated|GLFW error 6554[23]|No OpenGL context|Failed to create the GLFW window|Couldn't set pixel format|OpenGL 3\.2 (?:is )?not supported|Unsupported OpenGL version)'''
+example = "[Render thread/ERROR]: GLFW error 65542: WGL: The driver does not appear to support OpenGL"
+
+[[pattern]]
+id = "driver_dll"
+kind = "graphics"
+confidence = 82
+also = '''EXCEPTION_ACCESS_VIOLATION|A fatal error has been detected'''
+regex = '''(?i)\b(?P<detail>atio6axx\.dll|atioglxx\.dll|amdxc64\.dll|nvoglv64\.dll|nvoglv32\.dll|ig\d+icd(?:32|64)\.dll|igxelpicd64\.dll|libnvidia-glcore\.so[\w.]*|iris_dri\.so|radeonsi_dri\.so)'''
+example = "# C  [atio6axx.dll+0x1b2f3c]"
+
+# --------------------------------------------------------------------- Unsicher (nur, wenn sonst nichts)
+
+[[pattern]]
+id = "suspected_mods"
+kind = "suspected_mod"
+confidence = 70
+fallback = true
+unless = "Suspected Mods: None"
+regex = '''Suspected Mods?: (?P<detail>[^\n]+)'''
+example = "\tSuspected Mods: Sodium (sodium), Version: 0.5.8+mc1.20.4"
+
+[[pattern]]
+id = "forge_failed"
+kind = "suspected_mod"
+confidence = 70
+fallback = true
+regex = '''Mod (?P<mod_id>\w+) has failed to load correctly'''
+example = "Mod create has failed to load correctly"
+
+[[pattern]]
+id = "transformer"
+kind = "suspected_mod"
+confidence = 55
+fallback = true
+fatal = true
+regex = '''TRANSFORMER/(?P<mod_id>[a-z][\w\-]*)@'''
+example = "\tat TRANSFORMER/sodium@0.5.8/me.jellysquid.Foo"
+
+# --------------------------------------------------------------------- Bibliotheken nach Paket
+
+# Fehlt eine dieser Klassen, fehlt die Bibliothek. `mod` = Modrinth-Slug, `ids` = Mod-IDs, an denen eine bereits
+# installierte Kopie erkannt wird (dann ist die fehlende Klasse ein anderes Problem und es gibt keinen Vorschlag).
+[[class_hint]]
+prefix = "net/fabricmc/fabric/api/"
+mod = "fabric-api"
+name = "Fabric API"
+ids = ["fabric-api", "fabric"]
+loader = ["fabric", "quilt"]
+
+[[class_hint]]
+prefix = "org/quiltmc/qsl/"
+mod = "qsl"
+name = "Quilted Fabric API"
+ids = ["quilted_fabric_api", "qsl"]
+loader = ["quilt"]
+
+[[class_hint]]
+prefix = "dev/architectury/"
+mod = "architectury-api"
+name = "Architectury API"
+ids = ["architectury"]
+
+[[class_hint]]
+prefix = "me/shedaniel/clothconfig2/"
+mod = "cloth-config"
+name = "Cloth Config API"
+ids = ["cloth-config", "cloth_config", "cloth-config2"]
+
+[[class_hint]]
+prefix = "me/shedaniel/autoconfig/"
+mod = "cloth-config"
+name = "Cloth Config API"
+ids = ["cloth-config", "cloth_config", "cloth-config2"]
+
+[[class_hint]]
+prefix = "dev/isxander/yacl3/"
+mod = "yacl"
+name = "YetAnotherConfigLib"
+ids = ["yet_another_config_lib_v3", "yet-another-config-lib", "yacl"]
+
+[[class_hint]]
+prefix = "com/terraformersmc/modmenu/"
+mod = "modmenu"
+name = "Mod Menu"
+ids = ["modmenu"]
+
+[[class_hint]]
+prefix = "software/bernie/geckolib/"
+mod = "geckolib"
+name = "GeckoLib"
+ids = ["geckolib", "geckolib3", "geckolib4"]
+
+[[class_hint]]
+prefix = "net/blay09/mods/balm/"
+mod = "balm"
+name = "Balm"
+ids = ["balm", "balm-fabric", "balm-forge", "balm-neoforge"]
+
+[[class_hint]]
+prefix = "io/wispforest/owo/"
+mod = "owo-lib"
+name = "oωo"
+ids = ["owo", "owo-lib"]
+
+[[class_hint]]
+prefix = "fuzs/puzzleslib/"
+mod = "puzzles-lib"
+name = "Puzzles Lib"
+ids = ["puzzleslib"]
+
+[[class_hint]]
+prefix = "com/teamresourceful/resourcefullib/"
+mod = "resourceful-lib"
+name = "Resourceful Lib"
+ids = ["resourcefullib"]
+
+[[class_hint]]
+prefix = "dev/ftb/mods/ftblibrary/"
+mod = "ftb-library"
+name = "FTB Library"
+ids = ["ftblibrary"]
+
+[[class_hint]]
+prefix = "top/theillusivec4/curios/"
+mod = "curios"
+name = "Curios API"
+ids = ["curios"]
+
+[[class_hint]]
+prefix = "dev/emi/trinkets/"
+mod = "trinkets"
+name = "Trinkets"
+ids = ["trinkets"]
+
+[[class_hint]]
+prefix = "vazkii/patchouli/"
+mod = "patchouli"
+name = "Patchouli"
+ids = ["patchouli"]
+
+[[class_hint]]
+prefix = "terrablender/"
+mod = "terrablender"
+name = "TerraBlender"
+ids = ["terrablender"]
+
+[[class_hint]]
+prefix = "mezz/jei/"
+mod = "jei"
+name = "Just Enough Items"
+ids = ["jei"]
+
+[[class_hint]]
+prefix = "kotlin/"
+mod = "fabric-language-kotlin"
+name = "Fabric Language Kotlin"
+ids = ["fabric-language-kotlin", "fabric_language_kotlin"]
+loader = ["fabric", "quilt"]
+
+[[class_hint]]
+prefix = "kotlin/"
+mod = "kotlin-for-forge"
+name = "Kotlin for Forge"
+ids = ["kotlinforforge"]
+loader = ["forge", "neoforge"]

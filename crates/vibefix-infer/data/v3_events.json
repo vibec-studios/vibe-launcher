@@ -1,0 +1,13 @@
+[
+  "^---- Minecraft Crash Report ----",
+  "^#\\s*(?:A fatal error has been detected by the Java Runtime Environment|There is insufficient memory for the Java Runtime Environment)",
+  "\\b(?:(?:the )?(?:game|minecraft|server) crashed|crash report (?:has been )?saved|crash report is saved to|minecraft has crashed|process crashed)\\b",
+  "\\b(?:incompatible mods found|incompatible mod set|a potential solution has been determined|failed to (?:launch (?:minecraft|the game)|start the (?:minecraft )?server)|could not (?:create the java virtual machine|reserve enough space for (?:object heap|the java heap))|error occurred during initialization of (?:vm|boot layer)|mod loading has failed|failure message: .{0,100}failed to load correctly)\\b",
+  "\\b(?:exception in thread \"(?:main|render thread|server thread)\"|encountered an unexpected exception|reported exception thrown|uncaught exception in thread (?:main|render thread|server thread)|fatal exception (?:occurred|encountered)|crash handler called)\\b",
+  "/(?:error|fatal)\\]|\\[(?:error|fatal)\\]|^[ \\t]*(?:caused by:[ \\t]+)?(?:[\\w$]+\\.)+[\\w$]*(?:Exception|Error)(?:[: \\t\\r]|$)",
+  "^[ \\t]*(?:at[ \\t]+\\S+\\([^\\n]*\\)|caused by:[ \\t]+\\S+|\\.\\.\\. \\d+ (?:more|common frames omitted))",
+  "\\bStopping!|\\b(?:All dimensions are saved|All chunks are saved|Stopped (?:the |the integrated )?Minecraft server|Server stopped|Saving worlds? and quitting)\\b",
+  "\\b(?:Time elapsed: \\d+ ms|Created: \\d+x\\d+x\\d+ [^\\n]*atlas|Reloading ResourceManager|Stopping sound system)\\b",
+  "\\b(?:Preparing spawn area|Done \\([\\d.]+s\\)! For help|Starting integrated minecraft server version|joined the game|logged in with entity id|Connecting to|Successfully (?:joined|connected to)|Saving and pausing game)\\b",
+  "\\bManually triggered debug crash\\b"
+]

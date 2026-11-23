@@ -8,7 +8,7 @@ edition = "2021"
 rust-version = "1.80"
 
 [workspace]
-members = [".", "../crates/vibe-server-core", "../agent"]
+members = [".", "../crates/vibe-server-core", "../crates/vibefix-infer", "../agent"]
 resolver = "2"
 
 [lib]
@@ -20,6 +20,8 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 vibe-server-core = { path = "../crates/vibe-server-core" }
+vibefix-infer = { path = "../crates/vibefix-infer" }
+ring = "0.17"
 tauri = { version = "2", features = ["protocol-asset", "image-png", "tray-icon"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
@@ -66,6 +68,9 @@ trash = "5"
 
 [profile.dev.package."*"]
 opt-level = 2
+
+[profile.dev.package.vibefix-infer]
+opt-level = 3
 
 [profile.release]
 codegen-units = 1

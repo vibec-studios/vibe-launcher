@@ -1,0 +1,37 @@
+# Bekannte unverträgliche Mod-Paare. „Probleme beheben“ bietet an, eine der beiden Mods zu deaktivieren (nur nach
+# Rückfrage). Bitte nur Paare mit belastbarer Quelle eintragen.
+#
+# Je Seite (a/b): `ids` (Mod-IDs aus fabric.mod.json/mods.toml), optional `file` (Regex auf den Dateinamen, für Mods
+# ohne Metadaten wie OptiFine) und `version` (Präfix der Mod-Version, z. B. nur eine bestimmte Version betroffen).
+# Vorgeschlagen wird, Seite `a` zu deaktivieren; Seite `b` ist die Alternative.
+
+[[pair]]
+id = "optifine-sodium"
+a = { name = "OptiFine", ids = ["optifabric", "optifine"], file = '(?i)^(optifine|optifabric)[^/]*\.jar$' }
+b = { name = "Sodium", ids = ["sodium"] }
+source = "https://github.com/CaffeineMC/sodium (fabric.mod.json: breaks optifabric)"
+
+[[pair]]
+id = "optifine-iris"
+a = { name = "OptiFine", ids = ["optifabric", "optifine"], file = '(?i)^(optifine|optifabric)[^/]*\.jar$' }
+b = { name = "Iris", ids = ["iris"] }
+source = "https://github.com/IrisShaders/Iris (fabric.mod.json: breaks optifabric)"
+
+[[pair]]
+id = "optifine-embeddium"
+a = { name = "OptiFine", ids = ["optifine"], file = '(?i)^optifine[^/]*\.jar$' }
+b = { name = "Embeddium/Rubidium", ids = ["embeddium", "rubidium"] }
+source = "https://github.com/embeddedt/embeddium (README: nicht mit OptiFine kompatibel)"
+
+[[pair]]
+id = "optifine-oculus"
+a = { name = "OptiFine", ids = ["optifine"], file = '(?i)^optifine[^/]*\.jar$' }
+b = { name = "Oculus", ids = ["oculus"] }
+source = "https://github.com/Asek3/Oculus (README: nicht mit OptiFine kompatibel)"
+
+# Beide ersetzen dieselbe Fadenkreuz-Darstellung (@Redirect auf InGameHud) – Absturz beim Start.
+[[pair]]
+id = "centeredcrosshair-vibey"
+a = { name = "Centered Crosshair", ids = ["centeredcrosshair", "centered-crosshair", "centered_crosshair"], file = '(?i)^centered[-_ ]?crosshair[^/]*\.jar$' }
+b = { name = "Vibey Client", ids = ["vibeyclient", "vibey", "vibey-client"], file = '(?i)^vibey-?client[^/]*\.jar$', version = "0.3.0" }
+source = "Absturzbericht Vibey Client 0.3.0 (Mixin-Konflikt beim Start)"
