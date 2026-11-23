@@ -23,7 +23,7 @@ node scripts/visual/compare.mjs <baseline-ordner> <neu-ordner>
 | --- | --- |
 | `--dist <ordner>` | Vorhandenen Mock-Build nutzen statt neu zu bauen (`VITE_MOCK=1 pnpm exec vite build --outDir <ordner>`) |
 | `--only <regex>` | Nur passende Szenen, z. B. `--only "^instance-"` oder `--only "settings|dialog-install"` |
-| `--variants a,b` | Nur diese Varianten (`v1-dark`, `v2-light`, `pixel`) |
+| `--variants a,b` | Nur diese Varianten (`v1-dark`, `v2-light`, `pixel`; zusätzlich, nur auf Anfrage: `ironman-v1`, `ironman-v2`, `calm-v2` mit den v2-Beispielthemes) |
 | `--jobs <n>` | Parallele Browser-Tabs (Standard 3) |
 
 `compare.mjs`: `--threshold <0-255>` (Abweichung je Farbkanal, ab der ein Pixel als anders gilt, Standard 8), `--max-pixels <n>` (so viele abweichende Pixel je Bild werden toleriert, Standard 20; `--max-pixels 0` für pixelgenau), `--report <datei.html>`.
@@ -38,7 +38,7 @@ Ein voller Lauf (3 Varianten × 44 Szenen = 132 Bilder) dauert je nach Last 4–
 - Instanz `survival`: alle 9 Tabs
 - Server `survival-smp`: alle 7 Tabs
 - Einstellungen: alle 10 Tabs
-- Dialoge: Neue Instanz, Import, Installieren (Entdecken → Installieren → „Version und Instanz wählen …“), Skin-Editor, Remote hinzufügen, AFK-Start
+- Dialoge: Theme-Import mit Vorschau (Iron Man), Neue Instanz, Import, Installieren (Entdecken → Installieren → „Version und Instanz wählen …“), Skin-Editor, Remote hinzufügen, AFK-Start
 - Konsolenfenster (`console.html`) mit laufender Sitzung
 
 Szenen stehen in [`scenes.mjs`](scenes.mjs). Neue Szene: Eintrag mit `name`, `path` (Hash-Route) bzw. `file`, optional `flags` (localStorage-Schalter des Mocks, siehe `src/dev/mock/*`) und `act(ui)` für Klicks (`ui.click(locator)`, `ui.button(name)`, `ui.menuItem(name)`, `ui.dialog()`).
