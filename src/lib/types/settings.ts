@@ -73,6 +73,7 @@ export interface Settings {
   lean?: { enabled: boolean; reopen: boolean };
   prefer_dgpu?: boolean;
   java_cds?: boolean;
+  vibefix?: boolean;
 }
 
 export interface StoreConfig {

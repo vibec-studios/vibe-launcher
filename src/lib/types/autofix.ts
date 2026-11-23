@@ -1,7 +1,7 @@
 import type { ContentUpdate, MissingDownload, Source } from "./content";
 import type { DepIssue, ModpackUpdate } from "./contentTools";
 import type { JavaOptions, Loader, LoaderKind } from "./instances";
-import type { Diagnosis, SnapshotScope } from "./platform";
+import type { AnalysisInfo, Diagnosis, SnapshotScope } from "./platform";
 
 // ---------------------------------------------------------------- Probleme beheben (Autofix)
 
@@ -90,6 +90,7 @@ export interface FixPlan {
   crash: boolean;
   /** Absturzursachen (sicherste zuerst) mit Erklärung und Fundstelle */
   causes?: Diagnosis[];
+  analysis?: AnalysisInfo | null;
 }
 
 export interface FixReport {

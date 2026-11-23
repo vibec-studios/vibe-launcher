@@ -57,14 +57,21 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
         last_crash(state, instance_id)
     };
     let crash = crash_src.is_some();
-    let diags = match crash_src {
-        Some((r, c)) => crash::analyze_instance(state, instance_id, r, c).await.unwrap_or_default(),
-        None => vec![],
+    let (diags, analysis) = match crash_src {
+        Some((r, c)) => match crash::analyze_instance_full(state, instance_id, r, c).await {
+            Ok(a) => (a.diagnoses, Some(a.info)),
+            Err(e) => {
+                tracing::warn!("Autofix {instance_id}: Absturzanalyse fehlgeschlagen: {e}");
+                (vec![], None)
+            }
+        },
+        None => (vec![], None),
     };
     let (scanned, idx): (Vec<local::Scanned>, ContentIndex) = if modded { local::scan(state, instance_id, ContentKind::Mod).await? } else { (vec![], ContentIndex::default()) };
     let names: HashMap<String, String> = scanned.iter().map(|s| (s.file_name.clone(), s.meta.name.clone().unwrap_or_else(|| display_name(&s.file_name)))).collect();
     let by_file: HashMap<&str, &local::Scanned> = scanned.iter().map(|s| (s.file_name.as_str(), s)).collect();
     let need = needs(&issues, &diags, &names);
+    let gate = ModelGate::new(analysis.as_ref().is_some_and(|a| a.vibefix()), &issues, &names);
     let origin = |file: &str| idx.files.get(&index::key("mods", index::strip_disabled(file))).cloned();
 
     let mut b = Builder { steps: vec![], unfixable: vec![] };
@@ -79,6 +86,8 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
     }
 
     for n in need {
+        let ask = gate.applies(&n);
+        let before = b.steps.len();
         match n {
             Need::Disable { file, name, reason, confirm, alt, cause } => {
                 let alt = alt.map(|(f, n)| (FixAction::Disable { file_name: f }, n));
@@ -232,6 +241,9 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
             }
             Need::Unfixable(u) => b.unfixable.push(u),
         }
+        if ask {
+            ask_all(&mut b.steps[before..]);
+        }
     }
 
     // Loader: Version passt nicht zu den Mods (die aktiv bleiben) / Installation unvollständig
@@ -268,5 +280,5 @@ pub async fn plan(state: &AppState, instance_id: &str, crash_report: Option<Stri
         }
     }
 
-    Ok(FixPlan { steps: b.steps, unfixable: b.unfixable, crash, causes: diags })
+    Ok(FixPlan { steps: b.steps, unfixable: b.unfixable, crash, causes: diags, analysis })
 }

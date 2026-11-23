@@ -3,8 +3,8 @@ import { waitForTask } from "@/lib/queries";
 import type { DiagnosisAction, Instance, LoaderKind } from "@/lib/types";
 import { toast } from "@/components/ui";
 import { t as tt } from "@/i18n";
-import { uploadCrash } from "./source";
 import { openAutofix } from "@/features/content/autofixStore";
+import { openShareLog } from "@/features/vibefix/shareStore";
 
 async function resolveDependency(inst: Instance, modId: string, name: string | null): Promise<{ id: string; title: string } | null> {
   try {
@@ -66,7 +66,7 @@ export async function runAction(a: DiagnosisAction, inst: Instance, crashReport:
       toast.success(tt("diag.done.ram", { mb: a.suggest_mb }));
       return;
     case "upload":
-      await uploadCrash(inst.id, crashReport);
+      openShareLog(inst.id, crashReport);
       return;
     case "update_mod":
     case "reset_config":

@@ -99,6 +99,7 @@ pub struct Settings {
     pub java_cds: bool,
     pub afk: crate::afk::AfkSettings,
     pub lean: crate::lean::LeanSettings,
+    pub vibefix: bool,
 }
 
 /// Sicherung vor automatischen Mod-Änderungen. `mode`: "recommended" (Mods, Configs, Optionen) | "mods" | "all" |

@@ -64,10 +64,10 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Kern | instances_list, instance_get, instance_create, instance_update, instance_delete, instance_duplicate, instance_set_icon, instance_open_folder, settings_get, settings_set, tasks_list, task_cancel, tasks_clear, system_info, open_path, open_data_dir |
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel, auth_msa_window_login |
 | Skins | skins_profile, skin_upload_file, skin_apply_library, skin_set_variant, skin_reset, cape_set, skin_library_list, skin_library_add_file, skin_library_add_current, skin_library_import_player, skin_library_rename, skin_library_set_variant, skin_library_remove, skin_library_export, skin_library_reveal |
-| Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, console_open, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, java_list, java_test, java_install |
+| Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, console_open, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, mclogs_preview, java_list, java_test, java_install |
 | Inhalte | curseforge_available, content_search, content_categories, content_project, content_versions, content_install, content_list, content_set_enabled, content_remove, content_add_files, content_check_updates, content_update, worlds_list, world_delete, modpack_install, import_preview, import_pack, export_entries, export_instance, content_missing, content_missing_dismiss, launchers_detect, launcher_scan_dir, import_external, content_set_pinned, content_update_counts, stores_list, store_add, store_remove, store_set_enabled, modpack_check, modpack_update_preview, modpack_update, content_check_deps, content_sides, modsets_list, modset_create, modset_apply, modset_save, modset_rename, modset_delete, sets_list, sets_create, sets_update, sets_delete, sets_duplicate, sets_add_entries, sets_remove_entries, sets_parse_list, sets_import_text, sets_import_file, sets_export_file, sets_export_code, sets_export_links, sets_instance_candidates, sets_from_profile, sets_preview, sets_apply, sets_install_new, sets_check, sets_compat, sets_news, sets_dismiss_news, perf_preview, perf_install, files_list, files_stat, files_find, files_search, files_read, files_write, files_restore, files_validate, files_image, files_create, files_rename, files_duplicate, files_delete, files_import, files_abs_path, files_reveal |
 | Screenshots | screenshots_list, screenshot_thumb, screenshot_delete, screenshot_copy, screenshot_open_folder (`commands/screenshots.rs`, OWNER Frontend-Agent A) |
-| Plattform | crash_analyze, instance_servers_list, instance_servers_save, server_ping, servers_recent, playtime_sessions, optsync_get, optsync_set_instance, optsync_capture, optsync_apply_all, shortcut_create, app_actions_take, discord_available (`commands/platform.rs`, Logik in `platform/`, OWNER Frontend-Agent A) |
+| Plattform | crash_analyze, crash_analysis, vibefix_status, instance_servers_list, instance_servers_save, server_ping, servers_recent, playtime_sessions, optsync_get, optsync_set_instance, optsync_capture, optsync_apply_all, shortcut_create, app_actions_take, discord_available (`commands/platform.rs`, Logik in `platform/`, OWNER Frontend-Agent A) |
 | Backups | snapshots_list, snapshot_create, snapshot_restore, snapshot_delete, world_backups_list, world_backup_create, world_backup_restore, world_backup_delete, world_copy, world_import_zip, backups_open_folder (`commands/backups.rs`) |
 | Vibe-Dienste | vibe_status, vibe_tokens_get, vibe_tokens_set, vibe_mojang_join, vibe_http, vibe_ws_open, vibe_ws_send, vibe_ws_close, vibe_pack_share, vibe_pack_link, vibe_pack_install (`commands/vibe.rs`, Logik in `vibe/`, Frontend `features/social`) |
 
@@ -296,6 +296,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | `settings://changed` | Settings | Einstellungen gespeichert |
 | `skins://changed` | {scope: "library"} \| {scope: "profile", account_id} | Skin-Bibliothek bzw. Skin/Cape eines Accounts geändert |
 | `vibe://ws` | {type: "open" \| "message" \| "close", id, data?, code?, reason?} | WebSocket-Brücke des Vibe-Gateways |
+| `vibefix://status` | {phase: "checking" \| "downloading" \| "loading" \| "analyzing" \| "done", done, total} | Absturz-Analyse: Modell prüfen/laden (Bytes bei `downloading`), Log auswerten – siehe docs/VIBEFIX.md |
 
 `app/EventBridge.tsx` hält damit React-Query-Caches und Stores aktuell – Seiten brauchen kein Polling.
 
@@ -385,6 +386,13 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 - **Crash-Analyse** `crash_analyze(instance_id, crash_report?, exit_code?) -> Diagnosis[]`: regelbasiert über Crash-Report,
   `logs/latest.log` und Sitzungslog (fehlende Abhängigkeit, falsche MC-/Java-Version, Mixin, OOM, doppelte Mods, Grafik,
   verdächtige Mods, Exit-Codes). Aktionen (`DiagnosisAction`) führt das Frontend mit den vorhandenen Commands aus.
+  Mit VibeFix (docs/VIBEFIX.md) wertet zusätzlich das lokale Modell aus; `Diagnosis` trägt dann optional `origin`
+  (`vibefix` | `rules` | `both`), `model_cause` und `model_confidence` (0–1), bei `id = "unknown"` gibt es nur „Log teilen“.
+- `crash_analysis(instance_id, crash_report?, exit_code?) -> { diagnoses: Diagnosis[], info: AnalysisInfo }` wie
+  `crash_analyze`, `info` = `{engine: "vibefix" | "rules", status, model_version, crash_score, notice}`
+  (`notice`: `disabled` | `unavailable` | `error`, wenn die Regel-Analyse einspringt). `FixPlan.analysis` liefert dasselbe.
+- `vibefix_status() -> {enabled, version, remote_version, checked_at, loaded}`; `mclogs_preview(content) -> string`
+  (geschwärzt und gekürzt, wie es zu mclo.gs ginge).
 - **Server-Liste** `servers.dat` (unkomprimiertes NBT, unbekannte Felder bleiben erhalten); `server_ping` per Server-List-Ping
   (MOTD mit §-Codes, `§#rrggbb` für Hex-Farben). Während das Spiel läuft, ist `instance_servers_save` gesperrt.
 - **Spielzeit**: jede Sitzung landet in `<daten>/sessions.jsonl` (`{instance_id,start,end,world?,server?}`); Quelle ist das

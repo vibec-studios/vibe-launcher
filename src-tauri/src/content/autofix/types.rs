@@ -97,6 +97,7 @@ pub struct FixPlan {
     pub crash: bool,
     /// Absturzursachen (sicherste zuerst) mit Erklärung und Fundstelle; Schritte verweisen per `cause` darauf
     pub causes: Vec<Diagnosis>,
+    pub analysis: Option<crash::AnalysisInfo>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -24,6 +24,8 @@ mod handle;
 mod pairs;
 mod analyze;
 mod sources;
+mod vibefix;
+mod vibefix_map;
 
 pub use types::*;
 pub use mods::*;
@@ -34,6 +36,8 @@ use handle::*;
 pub use pairs::*;
 pub use analyze::*;
 pub use sources::*;
+pub use vibefix::*;
+pub use vibefix_map::*;
 
 #[cfg(test)]
 mod tests;

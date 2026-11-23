@@ -2,6 +2,7 @@ import { AlertTriangle, ExternalLink, ShieldCheck, Undo2 } from "lucide-react";
 import { FixBackupPicker } from "@/features/backups/FixBackupPicker";
 import { useT } from "@/i18n";
 import type { FixBackup, FixPlan, FixStep, LoaderKind } from "@/lib/types";
+import { EngineNote } from "@/features/vibefix/EngineNote";
 import { CauseCard } from "./CauseCard";
 import { StepRow } from "./StepRow";
 import { unfixableText } from "./texts";
@@ -47,6 +48,7 @@ export function PlanView({
   );
   return (
     <div className="flex flex-col gap-4">
+      <EngineNote info={plan.analysis} className="-mb-2" />
       {causes.length > 0 && (
         <section className="flex flex-col gap-2">
           <div>

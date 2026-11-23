@@ -42,6 +42,12 @@ impl LogText {
         }
     }
 
+    pub fn line_at(&self, n: usize) -> Option<(u32, &str)> {
+        let text = self.text.split('\n').nth(n.checked_sub(1)?)?;
+        let no = if self.lines.is_empty() { u32::try_from(n).ok()? } else { *self.lines.get(n - 1)? };
+        Some((no, text))
+    }
+
     /// Datei lesen (große Dateien gestreamt). `None`, wenn sie fehlt oder leer ist.
     pub fn read(path: &Path, name: impl Into<String>) -> Option<LogText> {
         let f = std::fs::File::open(path).ok()?;

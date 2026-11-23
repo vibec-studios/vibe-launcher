@@ -1,7 +1,7 @@
 // Backend-Events (siehe src-tauri/src/events.rs).
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useRef } from "react";
-import type { Account, GameState, Instance, LogLine, ManualArrived, OfflineOffer, Server, ServerStatus, Settings, TaskInfo, VaultWarning, VibeWsEvent } from "./types";
+import type { Account, GameState, Instance, LogLine, ManualArrived, OfflineOffer, Server, ServerStatus, Settings, TaskInfo, VaultWarning, VibeFixStatusEvent, VibeWsEvent } from "./types";
 
 export interface EventMap {
   "task://update": TaskInfo;
@@ -30,6 +30,7 @@ export interface EventMap {
   "servers://close-requested": { running: number };
   /** WebSocket-Brücke des Vibe-Gateways (vibe/ws.rs) */
   "vibe://ws": VibeWsEvent;
+  "vibefix://status": VibeFixStatusEvent;
 }
 
 export type EventName = keyof EventMap;

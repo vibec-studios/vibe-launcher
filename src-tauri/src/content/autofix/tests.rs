@@ -26,6 +26,9 @@ fn diag(id: &str, file: Option<&str>, name: Option<&str>, actions: Vec<CrashActi
         source: None,
         line: None,
         rule: None,
+        origin: None,
+        model_cause: None,
+        model_confidence: None,
     }
 }
 
@@ -261,4 +264,44 @@ fn loader_needs_become_steps_and_hints() {
     assert!(matches!(&s.action, FixAction::SetLoader { loader: LoaderKind::Fabric, to, .. } if to == "0.16.14"));
     assert!(matches!(&b.steps[1].action, FixAction::RepairLoader { .. }));
     assert_eq!(b.unfixable, vec![Unfixable { reason: "loader_offline".into(), name: "Fabric".into(), detail: None, cause: None }]);
+}
+
+#[test]
+fn model_gate_asks_for_crash_needs_but_keeps_static_checks() {
+    let issues = vec![issue(IssueKind::MissingDependency, "a.jar", "A", Some("fabric-api"), None, vec![])];
+    let names = HashMap::new();
+    let diags = vec![
+        diag("missing_dependency", Some("a.jar"), Some("A"), vec![CrashAction::InstallDependency { mod_id: "fabric-api".into(), name: None }]),
+        diag("missing_dependency", Some("b.jar"), Some("B"), vec![CrashAction::InstallDependency { mod_id: "cloth-config".into(), name: None }]),
+        diag("out_of_memory", None, None, vec![CrashAction::IncreaseRam { suggest_mb: 6144 }]),
+    ];
+    let need = needs(&issues, &diags, &names);
+    let gate = ModelGate::new(true, &issues, &names);
+    let asked: Vec<bool> = need.iter().map(|n| gate.applies(n)).collect();
+    let pos = |pred: &dyn Fn(&Need) -> bool| need.iter().position(pred).unwrap();
+    assert!(!asked[pos(&|n| matches!(n, Need::Install { dep_id, .. } if dep_id == "fabric-api"))]);
+    assert!(asked[pos(&|n| matches!(n, Need::Install { dep_id, .. } if dep_id == "cloth-config"))]);
+    assert!(asked[pos(&|n| matches!(n, Need::Ram { .. }))]);
+    let rules = ModelGate::new(false, &issues, &names);
+    assert!(need.iter().all(|n| !rules.applies(n)));
+}
+
+#[test]
+fn asking_deselects_steps() {
+    let mut steps = vec![FixStep {
+        id: "s1".into(),
+        reason: "out_of_memory".into(),
+        name: String::new(),
+        required_by: vec![],
+        action: FixAction::SetRam { mb: 6144 },
+        alt: None,
+        alt_name: None,
+        confirm: false,
+        selected: true,
+        from_crash: true,
+        cause: Some(0),
+        detail: None,
+    }];
+    gate::ask_all(&mut steps);
+    assert!(steps[0].confirm && !steps[0].selected);
 }

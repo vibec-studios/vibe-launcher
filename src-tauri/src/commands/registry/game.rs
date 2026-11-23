@@ -23,6 +23,7 @@ macro_rules! game_commands {
             crate::commands::game::instance_log_files,
             crate::commands::game::instance_log_read,
             crate::commands::game::mclogs_upload,
+            crate::commands::game::mclogs_preview,
             crate::commands::game::java_list,
             crate::commands::game::java_test,
             crate::commands::game::java_install,

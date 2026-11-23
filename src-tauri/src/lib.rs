@@ -33,6 +33,7 @@ pub mod tasks;
 pub mod updater;
 pub mod util;
 pub mod vibe;
+pub mod vibefix;
 
 use state::AppState;
 use tauri::Manager;

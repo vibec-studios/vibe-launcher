@@ -45,9 +45,11 @@ SHA-1-/Murmur2-Prüfsummen aller Inhaltsdateien, MC-Version, Loader), Status-Pin
 | Vibe | Name, UUID, Presence, Activity, Chats; Ankündigungen mit Version + Sprache | `vibe.enabled`, `vibe.presence` usw. | **aus** (neu) |
 | Discord RPC (lokale IPC) | Instanz, MC-Version, Loader, Server/Welt, Kopf-URL mc-heads.net | `discord_rpc`, `discord_details`, `discord_small` | an |
 | MinecraftCapes | eigene UUID | `minecraftcapes` | **aus** (neu) |
+| GitHub VibeFix-Modell (`releases/download/vibefix-model/…`) | nur IP; Manifest und Modelldateien, nur bei einer Absturz-Analyse, höchstens alle 6 h. Logs bleiben lokal (docs/VIBEFIX.md) | `vibefix` | an (Dev-Build) |
 | Relay / playit.gg | Name, UUID, Server-Einstellungen, Spielverkehr | je Server `connection`/`auto_start` | nur wenn eingerichtet |
 
-**Nur auf Klick:** Feedback (`/api/v1/feedback`, auch bei Vibe aus), mclo.gs, Modpack teilen, Play-Links.
+**Nur auf Klick:** Feedback (`/api/v1/feedback`, auch bei Vibe aus), mclo.gs (aus Absturz-Diagnosen mit Vorschau des
+geschwärzten Logs und eigener Bestätigung), Modpack teilen, Play-Links.
 
 **Bilder von Dritten:** `mc-heads.net/avatar/<uuid>` für fremde Köpfe (`components/PlayerHead.tsx`), beliebige `https:`-Bilder und
 YouTube-nocookie in Projektbeschreibungen (CSP `img-src https:`).

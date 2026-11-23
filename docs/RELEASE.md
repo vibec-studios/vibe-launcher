@@ -36,6 +36,11 @@ git push origin main v1.1.0
 Der Workflow „Release“ baut, signiert und veröffentlicht das GitHub-Release (mit `latest.json`). Ab dann bieten alle
 Launcher im Release-Kanal das Update an.
 
+## VibeFix-Modell (`vibefix-model`)
+
+Das Analyse-Modell ist nicht im Installer. Es liegt als eigenes Vorab-Release mit festem Tag `vibefix-model` (nie „latest“)
+und wird vom Launcher bei Bedarf geladen. Neue Modellversionen veröffentlichen: [VIBEFIX.md](VIBEFIX.md#neue-modellversion-veröffentlichen).
+
 ## Server-Agent (`vibe-agent`)
 
 Eigener Release-Strang mit Tags **`agent-v<version>`** (Workflow `.github/workflows/agent-release.yml`): statische

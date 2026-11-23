@@ -26,6 +26,7 @@ pub struct AppState {
     pub content: Arc<ContentState>,
     /// Gefundenes Launcher-Update (zwischen Prüfung und Installation)
     pub pending_update: crate::updater::PendingUpdate,
+    pub vibefix: Arc<crate::vibefix::VibeFix>,
 }
 
 impl std::ops::Deref for AppState {
@@ -52,7 +53,7 @@ impl AppState {
         let auth = AuthState::load(paths.clone(), app.clone());
         let game = GameManager::new(paths.clone(), app.clone());
         let content = ContentState::new(paths, app.clone(), core.http_cache.clone());
-        let state = AppState { core, app, settings, instances, auth, game, content, pending_update: Default::default() };
+        let state = AppState { core, app, settings, instances, auth, game, content, pending_update: Default::default(), vibefix: Default::default() };
         let _ = host.state.set(state.clone());
         state
     }

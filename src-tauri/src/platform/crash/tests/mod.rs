@@ -440,3 +440,5 @@ fn real_crash_report_vibey_0_3_0_with_centered_crosshair() {
     assert!(files.iter().any(|f| f.starts_with("vibeyclient")), "{d:#?}");
 }
 
+
+mod vibefix;

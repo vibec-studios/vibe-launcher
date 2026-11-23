@@ -182,6 +182,13 @@ pub async fn mclogs_upload(state: State<'_, AppState>, content: String) -> AppRe
     logs::mclogs_upload(&state, &content).await
 }
 
+#[tauri::command]
+pub async fn mclogs_preview(content: String) -> AppResult<String> {
+    tokio::task::spawn_blocking(move || logs::prepare_for_mclogs(&content, &crate::feedback::redact::Known::from_env()))
+        .await
+        .map_err(|e| AppError::msg(e.to_string()))
+}
+
 /// Gefundene Java-Installationen (System + vom Launcher verwaltet).
 #[tauri::command]
 pub async fn java_list(state: State<'_, AppState>) -> AppResult<Vec<JavaInstall>> {

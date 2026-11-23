@@ -9,8 +9,10 @@ use tauri::State;
 mod server_list;
 mod sync_info;
 mod sync;
+mod vibefix;
 
 pub use server_list::*;
+pub use vibefix::*;
 pub use sync_info::*;
 pub use sync::*;
 

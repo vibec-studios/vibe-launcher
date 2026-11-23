@@ -4,6 +4,7 @@ import { MasterOptSync, SyncOverview } from "@/components/instance/OptSync";
 import { FixBackupPicker } from "@/features/backups/FixBackupPicker";
 import { AfkSettingsCard } from "@/features/afk/AfkSettingsCard";
 import { LeanSettingsRows } from "@/features/lean/LeanSettingsRows";
+import { VibeFixCard } from "@/features/vibefix/VibeFixCard";
 import { useExpert } from "@/lib/simple-mode";
 import { Term } from "@/features/help/glossary/Term";
 import { useT } from "@/i18n";
@@ -122,6 +123,8 @@ export function GameTab({ s, update }: TabProps) {
         </SettingRow>
       </SettingsCard>
       </div>
+
+      <VibeFixCard s={s} update={update} />
 
       <AfkSettingsCard s={s} update={update} />
     </>

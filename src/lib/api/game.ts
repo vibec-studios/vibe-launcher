@@ -19,6 +19,7 @@ export const gameApi = {
   instanceLogFiles: (id: string) => call<T.LogFile[]>("instance_log_files", { id }),
   instanceLogRead: (id: string, name: string) => call<string>("instance_log_read", { id, name }),
   mclogsUpload: (content: string) => call<T.MclogsResult>("mclogs_upload", { content }),
+  mclogsPreview: (content: string) => call<string>("mclogs_preview", { content }),
   javaList: () => call<T.JavaInstall[]>("java_list"),
   javaTest: (path: string) => call<T.JavaInstall>("java_test", { path }),
   javaInstall: (major: number) => call<string>("java_install", { major }),

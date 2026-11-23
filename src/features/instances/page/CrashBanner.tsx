@@ -10,6 +10,7 @@ import { AutofixButton } from "@/features/content/AutoFix";
 import { ReportProblemButton } from "@/features/feedback/FeedbackButtons";
 import { useSimple } from "@/lib/mode";
 import { HelpLink } from "@/features/help/HelpButton";
+import { AnalysisProgress } from "@/features/vibefix/AnalysisProgress";
 import { route, wrap } from "./route";
 
 export function CrashBanner({ instance }: { instance: Instance }) {
@@ -46,12 +47,14 @@ export function CrashBanner({ instance }: { instance: Instance }) {
     );
   }
   // „Absturz erkannt – automatisch beheben?“: wahrscheinlichste Ursache gleich nennen
-  const found = diag.data?.filter((d) => d.id !== "exit_code") ?? [];
+  const found = diag.data?.filter((d) => d.id !== "exit_code" && d.id !== "unknown") ?? [];
   const offer = found.length
     ? t(found.length === 1 ? "crash.offer.text_1" : "crash.offer.text", { n: found.length, title: diagText(found[0], t).title })
-    : diag.data
-      ? t("crash.offer.none")
-      : null;
+    : diag.data?.some((d) => d.id === "unknown")
+      ? t("vibefix.unknown.offer")
+      : diag.data
+        ? t("crash.offer.none")
+        : null;
   return (
     <div data-tour="crash-banner" className="shrink-0 bg-danger/[.08] shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-danger)_25%,transparent)] animate-fade-in">
       <div className={cn(wrap, "flex items-start gap-3 py-3")}>
@@ -62,6 +65,7 @@ export function CrashBanner({ instance }: { instance: Instance }) {
             <div className="text-[12.5px] leading-relaxed text-muted" title={game?.crash_report?.split(/[\/]/).pop()}>
               {offer ?? (game?.exit_code != null ? t("inst.crash.code", { code: game.exit_code }) : t("inst.crash.text"))}
             </div>
+            {diag.isFetching && <AnalysisProgress compact className="mt-1" />}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <AutofixButton req={{ instanceId: instance.id, crashReport, exitCode: game?.exit_code ?? null }} label={t("crash.offer.fix")} />

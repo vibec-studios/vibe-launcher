@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { Check, Play, RefreshCw, ShieldCheck, Undo2, Wrench } from "lucide-react";
+import { Check, Play, ShieldCheck, Undo2, Wrench } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button, Dialog, Progress, Skeleton, confirm, toast } from "@/components/ui";
 import { useInstanceActions } from "@/components/instance/actions";
 import { DEFAULT_FIX_BACKUP } from "@/features/backups/FixBackupPicker";
+import { AnalysisProgress } from "@/features/vibefix/AnalysisProgress";
+import { EngineNote } from "@/features/vibefix/EngineNote";
 import { useT } from "@/i18n";
 import { api, errorMessage, isCancelled } from "@/lib/api";
 import { patchSettings } from "@/lib/mode";
@@ -200,10 +202,7 @@ export function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () =
       {phase === "preview" ? (
         plan.isPending ? (
           <div className="flex flex-col gap-1.5">
-            <div className="mb-1 flex items-center gap-2 text-[13px] text-muted">
-              <RefreshCw size={13} className="animate-spin" />
-              {t("fix.scanning")}
-            </div>
+            <AnalysisProgress idle={t("fix.scanning")} className="mb-1" />
             {[0, 1, 2].map((i) => (
               <Skeleton key={i} className="h-[58px]" />
             ))}
@@ -217,6 +216,7 @@ export function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () =
             </span>
             <div className="text-[15px] font-semibold text-text">{t("fix.none.title")}</div>
             <p className="max-w-[400px] text-[13px] text-muted">{t("fix.none.text")}</p>
+            <EngineNote info={plan.data.analysis} className="mt-1" />
           </div>
         ) : (
           <PlanView

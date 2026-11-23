@@ -14,20 +14,24 @@ export function showLogFile(instanceId: string, path: string) {
   useLogSource.setState((s) => ({ src: { ...s.src, [instanceId]: path } }));
 }
 
+export async function crashLogContent(instanceId: string, crashPath: string | null): Promise<string> {
+  if (crashPath) {
+    const files = await api.instanceLogFiles(instanceId);
+    const name = matchLogFile(
+      files.map((f) => f.name),
+      crashPath,
+    );
+    if (name) return api.instanceLogRead(instanceId, name);
+  }
+  const run = useGameStore.getState().states[instanceId]?.run_id;
+  const lines = (run ? useGameStore.getState().logs[run] : undefined) ?? (await api.instanceLogSession(instanceId, run));
+  return formatLines(lines);
+}
+
 /** Crash-Report (oder ersatzweise die Sitzung) zu mclo.gs hochladen. */
 export async function uploadCrash(instanceId: string, crashPath: string | null) {
   try {
-    if (crashPath) {
-      const files = await api.instanceLogFiles(instanceId);
-      const name = matchLogFile(
-        files.map((f) => f.name),
-        crashPath,
-      );
-      if (name) return void (await uploadToMclogs(await api.instanceLogRead(instanceId, name)));
-    }
-    const run = useGameStore.getState().states[instanceId]?.run_id;
-    const lines = (run ? useGameStore.getState().logs[run] : undefined) ?? (await api.instanceLogSession(instanceId, run));
-    await uploadToMclogs(formatLines(lines));
+    await uploadToMclogs(await crashLogContent(instanceId, crashPath));
   } catch (e) {
     toast.error(e);
   }
