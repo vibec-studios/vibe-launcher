@@ -14,6 +14,7 @@ export interface DeclContext {
 
 const UNICODE_RANGE = /^\s*[uU]\+[0-9a-fA-F?]{1,6}(-[0-9a-fA-F]{1,6})?(\s*,\s*[uU]\+[0-9a-fA-F?]{1,6}(-[0-9a-fA-F]{1,6})?)*\s*$/;
 const CUSTOM_PROP = /^--[a-zA-Z0-9_-]{1,62}$/;
+const MOTION = /^(-webkit-)?(animation|transition)(-duration|-delay|-iteration-count)?$/;
 const FUNCTION_IDENTS = ["url", "src", "image-set", "-webkit-image-set", "image", "element", "-moz-element", "cross-fade", "paint", "expression", "attr"];
 export const FAMILY = /^[\p{L}\p{N} _-]{1,40}$/u;
 
@@ -156,7 +157,7 @@ function zIndex(list: CV[]): string | null {
 export function declaration(d: Declaration, ctx: DeclContext, fontFace = false): string | null {
   const custom = d.name.startsWith("--");
   const name = custom ? d.name : d.name.toLowerCase();
-  const imp = d.important ? " !important" : "";
+  const imp = d.important && !MOTION.test(name) ? " !important" : "";
   if (custom && !CUSTOM_PROP.test(name)) {
     ctx.report.warn("css.property", name);
     return null;

@@ -2,6 +2,7 @@ import { quote, rawJoin, serialize } from "./serialize.mjs";
 import { CSS_BLOCKED_PROPERTIES, CSS_FONT_DESCRIPTORS, CSS_FUNCTIONS, DANGEROUS, DATA_FONT, DATA_IMAGE, LIMITS } from "../rules.mjs";
 const UNICODE_RANGE = /^\s*[uU]\+[0-9a-fA-F?]{1,6}(-[0-9a-fA-F]{1,6})?(\s*,\s*[uU]\+[0-9a-fA-F?]{1,6}(-[0-9a-fA-F]{1,6})?)*\s*$/;
 const CUSTOM_PROP = /^--[a-zA-Z0-9_-]{1,62}$/;
+const MOTION = /^(-webkit-)?(animation|transition)(-duration|-delay|-iteration-count)?$/;
 const FUNCTION_IDENTS = [
     "url",
     "src",
@@ -169,7 +170,7 @@ function zIndex(list) {
 export function declaration(d, ctx, fontFace = false) {
     const custom = d.name.startsWith("--");
     const name = custom ? d.name : d.name.toLowerCase();
-    const imp = d.important ? " !important" : "";
+    const imp = d.important && !MOTION.test(name) ? " !important" : "";
     if (custom && !CUSTOM_PROP.test(name)) {
         ctx.report.warn("css.property", name);
         return null;

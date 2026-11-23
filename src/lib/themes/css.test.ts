@@ -147,6 +147,13 @@ test("huge and hostile inputs stay bounded", () => {
   assert.ok(Date.now() - t0 < 3000);
 });
 
+test("animations cannot override reduced motion with !important", () => {
+  const r = clean(".a { animation: spin 2s infinite !important; animation-duration: 5s !important; color: red !important }");
+  assert.match(r.css, /animation: spin 2s infinite;/);
+  assert.match(r.css, /animation-duration: 5s;/);
+  assert.match(r.css, /color: red !important;/);
+});
+
 test("style attributes use the same declaration rules", () => {
   const r = new Report();
   assert.equal(sanitizeStyleAttr("color: red; background: url(https://evil); position: fixed; width: 10px", "clean", r), "color: red; width: 10px");

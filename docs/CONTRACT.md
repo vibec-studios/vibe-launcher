@@ -62,6 +62,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 | Bereich | Commands |
 |---|---|
 | Kern | instances_list, instance_get, instance_create, instance_update, instance_delete, instance_duplicate, instance_set_icon, instance_open_folder, settings_get, settings_set, tasks_list, task_cancel, tasks_clear, system_info, open_path, open_data_dir |
+| Darstellung | appearance_import_background, appearance_theme_write, appearance_theme_read (`.vibetheme`/`.json`, max. 1,6 MB), appearance_theme_ext_save, appearance_theme_ext_load, appearance_theme_ext_delete, appearance_theme_ext_prune (Erweiterungen eigener Themes in `<daten>/themes/<id>.vibetheme`, siehe [THEMES.md](THEMES.md)) |
 | Auth | accounts_list, account_remove, account_set_active, account_refresh, auth_msa_available, auth_msa_begin, auth_msa_wait, auth_msa_cancel, auth_msa_window_login |
 | Skins | skins_profile, skin_upload_file, skin_apply_library, skin_set_variant, skin_reset, cape_set, skin_library_list, skin_library_add_file, skin_library_add_current, skin_library_import_player, skin_library_rename, skin_library_set_variant, skin_library_remove, skin_library_export, skin_library_reveal |
 | Spiel | game_versions, loader_game_versions, loader_versions, instance_install, instance_launch, instance_kill, console_open, game_states, instance_log_session, instance_log_files, instance_log_read, mclogs_upload, mclogs_preview, java_list, java_test, java_install |
@@ -369,7 +370,7 @@ Alle in `src/lib/api.ts` typisiert. JS-Argumente in camelCase (Tauri wandelt in 
 
 ## Prüfen
 
-- `pnpm typecheck`, `pnpm build`, `cd src-tauri && cargo check` / `cargo test`
+- `pnpm typecheck`, `pnpm test` (Node-Tests `src/**/*.test.ts`), `pnpm build`, `cd src-tauri && cargo check` / `cargo test`
 - **Echte App testen ohne Vite** (mehrere Testläufe parallel möglich – eigenen Port + eigene Ordner wählen):
   ```bash
   pnpm install && pnpm build                                   # Frontend nach dist/

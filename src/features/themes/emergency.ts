@@ -1,4 +1,5 @@
 import { applyTheme, normalizeAppearance, useAppearanceDraft, useLiveAppearance } from "@/lib/appearance";
+import { api } from "@/lib/api";
 import { patchSettings } from "@/lib/mode";
 import { qk, queryClient } from "@/lib/queries";
 import type { Settings } from "@/lib/types";
@@ -19,7 +20,7 @@ export async function resetThemeExtensions(reason: ResetReason) {
   try {
     const draft = useAppearanceDraft.getState().draft;
     if (draft?.active_custom) useAppearanceDraft.setState({ draft: applyTheme(draft, draft.theme) });
-    const s = queryClient.getQueryData<Settings>(qk.settings);
+    const s = queryClient.getQueryData<Settings>(qk.settings) ?? (await api.settingsGet());
     const a = s?.appearance ? normalizeAppearance(s.appearance) : null;
     if (a?.active_custom) await patchSettings({ appearance: applyTheme(a, a.theme) });
     clearPending();

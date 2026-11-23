@@ -124,7 +124,8 @@ CSS: `src/styles/custom.css` (Anpassungen) und `src/styles/pixel.css` (Vibe Pixe
   „Änderungen speichern / Verwerfen“. Umbenennen (Doppelklick oder Menü), Überschreiben, Löschen (mit Rückfrage).
 - Teilen: **Code** `VIBE-THEME-1:<base64url(JSON)>` in die Zwischenablage, oder **Datei** `*.vibetheme` (JSON
   `{ "format": "vibe-launcher-theme", "version": 1, "name", "values" }`, Rust-Befehle `appearance_theme_write/read`,
-  nur `.vibetheme`/`.json`, max. 64 KB). Geteilte Themes enthalten nie Bildpfade.
+  nur `.vibetheme`/`.json`). Geteilte Themes enthalten nie Bildpfade. Format v2 (Palette, CSS für Parts,
+  Deko-Plätze, `VIBE-THEME-2:`) steht in [THEMES.md](THEMES.md).
 - Import-Validierung (`src/lib/customThemes.ts`): Format/Version geprüft, jede Aufzählung gegen eine Positivliste,
   Farben nur `#rrggbb`, Zahlen begrenzt, fehlende Felder bekommen Standardwerte, unbekannte Felder werden ignoriert,
   max. 20 000 Zeichen. Ungültig → verständliche Meldung, nichts wird übernommen. Rust bereinigt beim Speichern

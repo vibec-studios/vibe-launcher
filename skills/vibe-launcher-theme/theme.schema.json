@@ -2,60 +2,363 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/vibec-studios/vibe-launcher/main/skills/vibe-launcher-theme/theme.schema.json",
   "title": "Vibe Launcher theme (.vibetheme)",
+  "description": "version 1: values only (launcher 1.0.0-beta.6+). version 2: also palette, css and slots (launcher 1.0.0-beta.9+). The launcher sanitizes css and slots; run validate.mjs to see what it keeps.",
   "type": "object",
-  "required": ["format", "version", "name", "values"],
+  "required": [
+    "format",
+    "version",
+    "name",
+    "values"
+  ],
   "additionalProperties": false,
   "$defs": {
-    "hex": { "type": "string", "pattern": "^#[0-9a-f]{6}$" }
-  },
-  "properties": {
-    "format": { "const": "vibe-launcher-theme" },
-    "version": { "const": 1 },
-    "name": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "hex": {
+      "type": "string",
+      "pattern": "^#[0-9a-f]{6}$"
+    },
     "values": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["theme", "accent", "tone", "radius", "radius_px", "contrast", "cards", "headings", "font", "font_scale", "status", "glass", "sidebar_style", "background"],
+      "required": [
+        "theme",
+        "accent",
+        "tone",
+        "radius",
+        "radius_px",
+        "contrast",
+        "cards",
+        "headings",
+        "font",
+        "font_scale",
+        "status",
+        "glass",
+        "sidebar_style",
+        "background"
+      ],
       "properties": {
-        "theme": { "enum": ["standard", "winter", "graphite", "light", "midnight", "ocean", "forest", "sunset", "sakura", "nether", "end", "retro", "pixel", "pixel_light", "contrast"] },
-        "accent": { "$ref": "#/$defs/hex" },
-        "tone": { "enum": ["dark", "dim", "oled", "light"] },
-        "radius": { "enum": ["square", "slight", "round", "custom"] },
-        "radius_px": { "type": "integer", "minimum": 0, "maximum": 24 },
-        "contrast": { "enum": ["normal", "high"] },
-        "cards": { "enum": ["flat", "outlined", "raised", "pixel"] },
-        "headings": { "enum": ["default", "pixel", "pixel_all"] },
-        "font": { "enum": ["inter", "inter_tight", "system", "mono"] },
-        "font_scale": { "type": "integer", "minimum": 90, "maximum": 115 },
+        "theme": {
+          "enum": [
+            "standard",
+            "winter",
+            "graphite",
+            "light",
+            "midnight",
+            "ocean",
+            "forest",
+            "sunset",
+            "sakura",
+            "nether",
+            "end",
+            "retro",
+            "pixel",
+            "pixel_light",
+            "contrast"
+          ]
+        },
+        "accent": {
+          "$ref": "#/$defs/hex"
+        },
+        "tone": {
+          "enum": [
+            "dark",
+            "dim",
+            "oled",
+            "light"
+          ]
+        },
+        "radius": {
+          "enum": [
+            "square",
+            "slight",
+            "round",
+            "custom"
+          ]
+        },
+        "radius_px": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 24
+        },
+        "contrast": {
+          "enum": [
+            "normal",
+            "high"
+          ]
+        },
+        "cards": {
+          "enum": [
+            "flat",
+            "outlined",
+            "raised",
+            "pixel"
+          ]
+        },
+        "headings": {
+          "enum": [
+            "default",
+            "pixel",
+            "pixel_all"
+          ]
+        },
+        "font": {
+          "enum": [
+            "inter",
+            "inter_tight",
+            "system",
+            "mono"
+          ]
+        },
+        "font_scale": {
+          "type": "integer",
+          "minimum": 90,
+          "maximum": 115
+        },
         "status": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["ok", "warn", "danger"],
+          "required": [
+            "ok",
+            "warn",
+            "danger"
+          ],
           "properties": {
-            "ok": { "$ref": "#/$defs/hex" },
-            "warn": { "$ref": "#/$defs/hex" },
-            "danger": { "$ref": "#/$defs/hex" }
+            "ok": {
+              "$ref": "#/$defs/hex"
+            },
+            "warn": {
+              "$ref": "#/$defs/hex"
+            },
+            "danger": {
+              "$ref": "#/$defs/hex"
+            }
           }
         },
-        "glass": { "type": "integer", "minimum": 0, "maximum": 100 },
-        "sidebar_style": { "enum": ["solid", "floating", "tinted"] },
+        "glass": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "sidebar_style": {
+          "enum": [
+            "solid",
+            "floating",
+            "tinted"
+          ]
+        },
         "background": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["kind", "gradient", "animated", "color", "gradient_from", "gradient_to", "gradient_angle", "dim", "blur"],
+          "required": [
+            "kind",
+            "gradient",
+            "animated",
+            "color",
+            "gradient_from",
+            "gradient_to",
+            "gradient_angle",
+            "dim",
+            "blur"
+          ],
           "properties": {
-            "kind": { "enum": ["none", "color", "gradient", "animated"] },
-            "gradient": { "enum": ["accent", "dusk", "ocean", "ember", "forest", "pixel", "custom"] },
-            "animated": { "enum": ["aurora", "particles", "waves", "blocks"] },
-            "color": { "$ref": "#/$defs/hex" },
-            "gradient_from": { "$ref": "#/$defs/hex" },
-            "gradient_to": { "$ref": "#/$defs/hex" },
-            "gradient_angle": { "type": "integer", "minimum": 0, "maximum": 360 },
-            "dim": { "type": "integer", "minimum": 0, "maximum": 90 },
-            "blur": { "type": "integer", "minimum": 0, "maximum": 40 }
+            "kind": {
+              "enum": [
+                "none",
+                "color",
+                "gradient",
+                "animated"
+              ]
+            },
+            "gradient": {
+              "enum": [
+                "accent",
+                "dusk",
+                "ocean",
+                "ember",
+                "forest",
+                "pixel",
+                "custom"
+              ]
+            },
+            "animated": {
+              "enum": [
+                "aurora",
+                "particles",
+                "waves",
+                "blocks"
+              ]
+            },
+            "color": {
+              "$ref": "#/$defs/hex"
+            },
+            "gradient_from": {
+              "$ref": "#/$defs/hex"
+            },
+            "gradient_to": {
+              "$ref": "#/$defs/hex"
+            },
+            "gradient_angle": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 360
+            },
+            "dim": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 90
+            },
+            "blur": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 40
+            }
           }
         }
       }
+    },
+    "palette": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "frame": {
+          "$ref": "#/$defs/hex"
+        },
+        "canvas": {
+          "$ref": "#/$defs/hex"
+        },
+        "surface": {
+          "$ref": "#/$defs/hex"
+        },
+        "surface2": {
+          "$ref": "#/$defs/hex"
+        },
+        "surface3": {
+          "$ref": "#/$defs/hex"
+        },
+        "overlay": {
+          "$ref": "#/$defs/hex"
+        },
+        "border": {
+          "$ref": "#/$defs/hex"
+        },
+        "border2": {
+          "$ref": "#/$defs/hex"
+        },
+        "field": {
+          "$ref": "#/$defs/hex"
+        },
+        "text": {
+          "$ref": "#/$defs/hex"
+        },
+        "muted": {
+          "$ref": "#/$defs/hex"
+        },
+        "dim": {
+          "$ref": "#/$defs/hex"
+        },
+        "on_accent": {
+          "$ref": "#/$defs/hex"
+        }
+      }
+    },
+    "slots": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "type": "string",
+          "maxLength": 260000,
+          "description": "Static HTML/SVG; {{greeting}} {{player}} {{time}} {{date}} {{friends_online}} {{instances}} {{last_played}} {{version}} are filled as text."
+        },
+        "home-hero": {
+          "type": "string",
+          "maxLength": 260000,
+          "description": "Static HTML/SVG; {{greeting}} {{player}} {{time}} {{date}} {{friends_online}} {{instances}} {{last_played}} {{version}} are filled as text."
+        },
+        "home-side": {
+          "type": "string",
+          "maxLength": 260000,
+          "description": "Static HTML/SVG; {{greeting}} {{player}} {{time}} {{date}} {{friends_online}} {{instances}} {{last_played}} {{version}} are filled as text."
+        },
+        "sidebar-top": {
+          "type": "string",
+          "maxLength": 260000,
+          "description": "Static HTML/SVG; {{greeting}} {{player}} {{time}} {{date}} {{friends_online}} {{instances}} {{last_played}} {{version}} are filled as text."
+        },
+        "corner-tl": {
+          "type": "string",
+          "maxLength": 260000,
+          "description": "Static HTML/SVG; {{greeting}} {{player}} {{time}} {{date}} {{friends_online}} {{instances}} {{last_played}} {{version}} are filled as text."
+        },
+        "corner-tr": {
+          "type": "string",
+          "maxLength": 260000,
+          "description": "Static HTML/SVG; {{greeting}} {{player}} {{time}} {{date}} {{friends_online}} {{instances}} {{last_played}} {{version}} are filled as text."
+        },
+        "corner-bl": {
+          "type": "string",
+          "maxLength": 260000,
+          "description": "Static HTML/SVG; {{greeting}} {{player}} {{time}} {{date}} {{friends_online}} {{instances}} {{last_played}} {{version}} are filled as text."
+        },
+        "corner-br": {
+          "type": "string",
+          "maxLength": 260000,
+          "description": "Static HTML/SVG; {{greeting}} {{player}} {{time}} {{date}} {{friends_online}} {{instances}} {{last_played}} {{version}} are filled as text."
+        }
+      }
+    }
+  },
+  "properties": {
+    "format": {
+      "const": "vibe-launcher-theme"
+    },
+    "version": {
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "author": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "values": {
+      "$ref": "#/$defs/values"
+    },
+    "palette": {
+      "$ref": "#/$defs/palette"
+    },
+    "css": {
+      "type": "string",
+      "maxLength": 700000,
+      "description": "CSS against [data-part=…] parts and slot classes. Allowed at-rules: @media @supports @container @keyframes @font-face (embedded data: fonts)."
+    },
+    "slots": {
+      "$ref": "#/$defs/slots"
+    }
+  },
+  "if": {
+    "properties": {
+      "version": {
+        "const": 1
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "author": false,
+      "description": false,
+      "palette": false,
+      "css": false,
+      "slots": false
     }
   }
 }
