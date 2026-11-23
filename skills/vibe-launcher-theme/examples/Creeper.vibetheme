@@ -1,0 +1,31 @@
+{
+  "format": "vibe-launcher-theme",
+  "version": 1,
+  "name": "Creeper",
+  "values": {
+    "theme": "pixel",
+    "accent": "#6fdc5a",
+    "tone": "dark",
+    "radius": "square",
+    "radius_px": 0,
+    "contrast": "normal",
+    "cards": "pixel",
+    "headings": "pixel",
+    "font": "inter_tight",
+    "font_scale": 100,
+    "status": { "ok": "#7fe08a", "warn": "#f2d15c", "danger": "#ff6b5e" },
+    "glass": 0,
+    "sidebar_style": "solid",
+    "background": {
+      "kind": "animated",
+      "gradient": "pixel",
+      "animated": "blocks",
+      "color": "#0d1a0b",
+      "gradient_from": "#0d1a0b",
+      "gradient_to": "#24461c",
+      "gradient_angle": 180,
+      "dim": 55,
+      "blur": 0
+    }
+  }
+}

@@ -121,7 +121,7 @@ Der Launcher holt sie dir rüber – inklusive Welten und Einstellungen.
 | 🧹 **Speicherplatz** | Sieh auf einen Blick, was wie viel Platz belegt, und räum mit einem Klick auf. |
 | 🖼️ **Screenshots** | Alle Screenshots aus allen Instanzen an einem Ort. |
 | 📜 **Logs & Crashes** | Live-Konsole mit Suche, verständliche Crash-Erklärungen, Log teilen mit einem Klick. |
-| 🎨 **Dein Look** | Hell, dunkel oder im Pixel-Style. |
+| 🎨 **Dein Look** | Hell, dunkel oder im Pixel-Style – oder lass dir von einer KI ein eigenes Theme bauen ([so geht's](skills/README.md)). |
 | 🌍 **7 Sprachen** | Deutsch, Englisch, Französisch, Spanisch, Polnisch, Portugiesisch und Türkisch. |
 | 🔐 **Sicher** | Login nur mit echtem Microsoft-Konto, Zugangsdaten im Windows-Tresor, Schutz vor Log4Shell. |
 

@@ -1,0 +1,31 @@
+{
+  "format": "vibe-launcher-theme",
+  "version": 1,
+  "name": "Kirschblüte",
+  "values": {
+    "theme": "sakura",
+    "accent": "#b8336a",
+    "tone": "light",
+    "radius": "round",
+    "radius_px": 10,
+    "contrast": "normal",
+    "cards": "flat",
+    "headings": "default",
+    "font": "inter",
+    "font_scale": 100,
+    "status": { "ok": "#0b6e57", "warn": "#8f5300", "danger": "#b8213f" },
+    "glass": 25,
+    "sidebar_style": "tinted",
+    "background": {
+      "kind": "gradient",
+      "gradient": "custom",
+      "animated": "aurora",
+      "color": "#fdf3f6",
+      "gradient_from": "#fff6f9",
+      "gradient_to": "#f6c9d8",
+      "gradient_angle": 140,
+      "dim": 0,
+      "blur": 0
+    }
+  }
+}

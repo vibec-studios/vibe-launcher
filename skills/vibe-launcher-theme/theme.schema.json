@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/vibec-studios/vibe-launcher/main/skills/vibe-launcher-theme/theme.schema.json",
+  "title": "Vibe Launcher theme (.vibetheme)",
+  "type": "object",
+  "required": ["format", "version", "name", "values"],
+  "additionalProperties": false,
+  "$defs": {
+    "hex": { "type": "string", "pattern": "^#[0-9a-f]{6}$" }
+  },
+  "properties": {
+    "format": { "const": "vibe-launcher-theme" },
+    "version": { "const": 1 },
+    "name": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "values": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["theme", "accent", "tone", "radius", "radius_px", "contrast", "cards", "headings", "font", "font_scale", "status", "glass", "sidebar_style", "background"],
+      "properties": {
+        "theme": { "enum": ["standard", "winter", "graphite", "light", "midnight", "ocean", "forest", "sunset", "sakura", "nether", "end", "retro", "pixel", "pixel_light", "contrast"] },
+        "accent": { "$ref": "#/$defs/hex" },
+        "tone": { "enum": ["dark", "dim", "oled", "light"] },
+        "radius": { "enum": ["square", "slight", "round", "custom"] },
+        "radius_px": { "type": "integer", "minimum": 0, "maximum": 24 },
+        "contrast": { "enum": ["normal", "high"] },
+        "cards": { "enum": ["flat", "outlined", "raised", "pixel"] },
+        "headings": { "enum": ["default", "pixel", "pixel_all"] },
+        "font": { "enum": ["inter", "inter_tight", "system", "mono"] },
+        "font_scale": { "type": "integer", "minimum": 90, "maximum": 115 },
+        "status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ok", "warn", "danger"],
+          "properties": {
+            "ok": { "$ref": "#/$defs/hex" },
+            "warn": { "$ref": "#/$defs/hex" },
+            "danger": { "$ref": "#/$defs/hex" }
+          }
+        },
+        "glass": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "sidebar_style": { "enum": ["solid", "floating", "tinted"] },
+        "background": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "gradient", "animated", "color", "gradient_from", "gradient_to", "gradient_angle", "dim", "blur"],
+          "properties": {
+            "kind": { "enum": ["none", "color", "gradient", "animated"] },
+            "gradient": { "enum": ["accent", "dusk", "ocean", "ember", "forest", "pixel", "custom"] },
+            "animated": { "enum": ["aurora", "particles", "waves", "blocks"] },
+            "color": { "$ref": "#/$defs/hex" },
+            "gradient_from": { "$ref": "#/$defs/hex" },
+            "gradient_to": { "$ref": "#/$defs/hex" },
+            "gradient_angle": { "type": "integer", "minimum": 0, "maximum": 360 },
+            "dim": { "type": "integer", "minimum": 0, "maximum": 90 },
+            "blur": { "type": "integer", "minimum": 0, "maximum": 40 }
+          }
+        }
+      }
+    }
+  }
+}

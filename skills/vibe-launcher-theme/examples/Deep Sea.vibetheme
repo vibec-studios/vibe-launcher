@@ -1,0 +1,31 @@
+{
+  "format": "vibe-launcher-theme",
+  "version": 1,
+  "name": "Deep Sea",
+  "values": {
+    "theme": "ocean",
+    "accent": "#4fd1ff",
+    "tone": "dark",
+    "radius": "round",
+    "radius_px": 6,
+    "contrast": "normal",
+    "cards": "raised",
+    "headings": "default",
+    "font": "inter",
+    "font_scale": 100,
+    "status": { "ok": "#4fe0b0", "warn": "#ffc966", "danger": "#ff7187" },
+    "glass": 35,
+    "sidebar_style": "floating",
+    "background": {
+      "kind": "gradient",
+      "gradient": "custom",
+      "animated": "aurora",
+      "color": "#06131c",
+      "gradient_from": "#021826",
+      "gradient_to": "#0b4f6c",
+      "gradient_angle": 160,
+      "dim": 40,
+      "blur": 0
+    }
+  }
+}
