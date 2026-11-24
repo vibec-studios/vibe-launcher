@@ -27,6 +27,10 @@ macro_rules! game_commands {
             crate::commands::game::java_list,
             crate::commands::game::java_test,
             crate::commands::game::java_install,
+            crate::custom_loader::commands::custom_loader_inspect,
+            crate::custom_loader::commands::custom_loader_import,
+            crate::custom_loader::commands::custom_loaders_list,
+            crate::custom_loader::commands::custom_loader_delete,
         ] $($rest)*)
     };
 }

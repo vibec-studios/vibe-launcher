@@ -41,6 +41,9 @@ pub(super) async fn missing_files(paths: &Paths, r: &Resolved, env: &Env) -> App
 }
 
 fn loader_ready(paths: &Paths, inst: &Instance, mc: &str, version_id: &str) -> bool {
+    if let Some(cl) = &inst.custom_loader {
+        return version_id == crate::custom_loader::version_id(&cl.id, &cl.version, mc);
+    }
     let lv = inst.loader.version.as_deref().unwrap_or("").trim();
     match inst.loader.kind {
         LoaderKind::Vanilla => version_id == mc,

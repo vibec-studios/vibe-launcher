@@ -49,6 +49,7 @@ impl Default for Settings {
             afk: crate::afk::AfkSettings::default(),
             lean: crate::lean::LeanSettings::default(),
             vibefix: true,
+            custom_loaders: false,
         }
     }
 }

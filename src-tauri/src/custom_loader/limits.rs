@@ -1,0 +1,12 @@
+pub const MAX_ENTRIES: usize = 1000;
+pub const MAX_UNPACKED: u64 = 300 * 1024 * 1024;
+pub const MAX_MANIFEST: u64 = 1024 * 1024;
+pub const MAX_ICON: u64 = 512 * 1024;
+pub const MAX_NAME: usize = 40;
+pub const MAX_DESCRIPTION: usize = 300;
+pub const MAX_AUTHOR: usize = 60;
+pub const MAX_LIBRARIES: usize = 500;
+pub const MAX_ARGUMENTS: usize = 200;
+pub const MAX_ARGUMENT_LEN: usize = 2048;
+pub const MAX_MC_VERSIONS: usize = 200;
+pub const MAX_REMOTE_SIZE: u64 = 300 * 1024 * 1024;

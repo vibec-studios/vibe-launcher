@@ -133,6 +133,14 @@ pub struct Instance {
     /// werden bei Bedrock-Instanzen ignoriert, `mc_version` ist dann [`BEDROCK_VERSION`].
     #[serde(default)]
     pub bedrock: Option<BedrockOptions>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_loader: Option<CustomLoaderRef>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CustomLoaderRef {
+    pub id: String,
+    pub version: String,
 }
 
 /// Platzhalter in `mc_version` von Bedrock-Instanzen (passt zu keiner Java-Version).
@@ -141,6 +149,10 @@ pub const BEDROCK_VERSION: &str = "bedrock";
 impl Instance {
     pub fn is_bedrock(&self) -> bool {
         self.bedrock.is_some()
+    }
+
+    pub fn has_custom_loader(&self) -> bool {
+        self.custom_loader.is_some()
     }
 }
 
@@ -152,6 +164,8 @@ pub struct CreateInstance {
     pub icon: Option<String>,
     pub accent: Option<String>,
     pub group: Option<String>,
+    #[serde(default)]
+    pub custom_loader: Option<CustomLoaderRef>,
 }
 
 /// Teil-Update aus dem Frontend. Nur gesetzte Felder werden übernommen.
