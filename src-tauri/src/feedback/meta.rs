@@ -11,6 +11,7 @@ pub(super) fn instance_meta(state: &AppState, id: &str) -> Option<Value> {
         "mc_version": inst.mc_version,
         "loader": loader,
         "loader_version": inst.loader.version,
+        "custom_loader": inst.custom_loader,
         "mod_count": mods,
         "java": java,
     }))

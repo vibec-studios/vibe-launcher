@@ -124,6 +124,9 @@ pub async fn run_apply(state: AppState, task: TaskHandle, instance_id: String, m
                 }
                 FixAction::SetLoader { loader, to: target, .. } => {
                     let cur = state.instances.get(&instance_id)?;
+                    if cur.has_custom_loader() {
+                        return Err(AppError::Invalid("Instanzen mit eigenem Loader werden nicht automatisch umgestellt oder repariert".into()));
+                    }
                     if cur.loader.kind != *loader {
                         return Err(AppError::Invalid("Der Loader der Instanz wurde inzwischen geändert".into()));
                     }
@@ -151,6 +154,9 @@ pub async fn run_apply(state: AppState, task: TaskHandle, instance_id: String, m
                 }
                 FixAction::RepairLoader { loader, .. } => {
                     let cur = state.instances.get(&instance_id)?;
+                    if cur.has_custom_loader() {
+                        return Err(AppError::Invalid("Instanzen mit eigenem Loader werden nicht automatisch umgestellt oder repariert".into()));
+                    }
                     if cur.loader.kind != *loader {
                         return Err(AppError::Invalid("Der Loader der Instanz wurde inzwischen geändert".into()));
                     }

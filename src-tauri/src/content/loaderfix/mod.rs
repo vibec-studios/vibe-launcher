@@ -32,7 +32,7 @@ pub enum LoaderFiles {
 
 /// Loader-Installation prüfen (schnell: nur Dateien lesen bzw. Größe vergleichen, keine Hashes).
 pub fn inspect(paths: &Paths, inst: &Instance) -> LoaderFiles {
-    if inst.loader.kind == LoaderKind::Vanilla {
+    if inst.loader.kind == LoaderKind::Vanilla || inst.has_custom_loader() {
         return LoaderFiles::Ok;
     }
     match inst.install_state {
@@ -106,7 +106,7 @@ pub enum LoaderNeed {
 /// Bedarf für den Loader. `reqs`: Anforderungen der Mods, die aktiv bleiben (deaktivierte/getauschte schon
 /// herausgefiltert). `available`: Loader-Versionen für die Minecraft-Version (`None` = nicht geladen/offline).
 pub fn loader_needs(inst: &Instance, files: &LoaderFiles, reqs: &[LoaderReq], available: Option<&[LoaderVersion]>) -> Vec<LoaderNeed> {
-    if inst.loader.kind == LoaderKind::Vanilla {
+    if inst.loader.kind == LoaderKind::Vanilla || inst.has_custom_loader() {
         return vec![];
     }
     let current = inst.loader.version.clone().filter(|v| !v.trim().is_empty());
@@ -156,7 +156,7 @@ pub fn loader_needs(inst: &Instance, files: &LoaderFiles, reqs: &[LoaderReq], av
 
 /// Muss für den Bedarf die Liste der Loader-Versionen geladen werden?
 pub fn needs_versions(inst: &Instance, files: &LoaderFiles, reqs: &[LoaderReq]) -> bool {
-    if inst.loader.kind == LoaderKind::Vanilla {
+    if inst.loader.kind == LoaderKind::Vanilla || inst.has_custom_loader() {
         return false;
     }
     let unmet = match inst.loader.version.as_deref().filter(|v| !v.trim().is_empty()) {

@@ -95,7 +95,8 @@ pub async fn analyze_instance_full(
         mc_version: Some(inst.mc_version.clone()),
         loader,
     };
-    let loader_version = inst.loader.version.clone();
+    let loader_version = inst.loader.version.clone().filter(|_| !inst.has_custom_loader());
+    let custom = inst.custom_loader.as_ref().map(|c| crate::custom_loader::label(&state.paths, c));
     let prepared = prepare(state).await;
     emit_phase(state, Phase::Analyzing, 0, 0);
     let result = tokio::task::spawn_blocking(move || {
@@ -107,7 +108,15 @@ pub async fn analyze_instance_full(
         }
     })
     .await
-    .map_err(|e| crate::error::AppError::msg(e.to_string()));
+    .map_err(|e| crate::error::AppError::msg(e.to_string()))
+    .map(|mut a| {
+        if let Some(name) = &custom {
+            a.diagnoses.iter_mut().for_each(|d| {
+                d.params.insert("custom_loader".into(), name.clone());
+            });
+        }
+        a
+    });
     emit_phase(state, Phase::Done, 0, 0);
     result
 }

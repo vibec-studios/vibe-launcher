@@ -73,7 +73,7 @@ pub async fn run_undo(state: AppState, task: TaskHandle, instance_id: String) ->
     if let Some(l) = r.prev_loader.clone() {
         // Alte Loader-Version wieder einstellen; deren Dateien sind noch da, der nächste Start prüft sie
         state.instances.modify(&instance_id, |i| {
-            if i.loader.kind == l.kind {
+            if i.loader.kind == l.kind && i.custom_loader.is_none() {
                 i.loader = l;
             }
         })?;

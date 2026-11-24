@@ -23,6 +23,7 @@ pub async fn server_create(state: State<'_, AppState>, req: ServerCreate) -> App
     let mut req = req;
     if let Some(inst_id) = &req.from_instance {
         let inst = state.instances.get(inst_id)?;
+        crate::custom_loader::block(&inst, "Ein Server aus dieser Instanz")?;
         req.mc_version = inst.mc_version.clone();
         req.loader = inst.loader.clone();
     }

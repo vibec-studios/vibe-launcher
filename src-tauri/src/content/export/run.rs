@@ -2,6 +2,7 @@ use super::*;
 
 pub async fn run_export(state: AppState, task: TaskHandle, instance_id: String, opts: ExportOptions) -> AppResult<()> {
     let inst = state.instances.get(&instance_id)?;
+    crate::custom_loader::block(&inst, "Der Export als Modpack")?;
     if opts.dest.trim().is_empty() {
         return Err(AppError::Invalid("Kein Zielpfad angegeben".into()));
     }

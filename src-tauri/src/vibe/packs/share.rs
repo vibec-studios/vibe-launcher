@@ -4,6 +4,7 @@ use super::*;
 pub async fn share(state: &AppState, instance_id: &str, token: &str, opts: ShareOptions) -> AppResult<Value> {
     let base = ensure(state, Feature::Sharing)?;
     let inst = state.instances.get(instance_id)?;
+    crate::custom_loader::block(&inst, "Das Teilen als Pack")?;
     if let Some(c) = &opts.code {
         if !valid_code(c) {
             return Err(AppError::Invalid("Ungültiger Pack-Code".into()));

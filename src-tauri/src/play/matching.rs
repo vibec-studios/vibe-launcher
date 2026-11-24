@@ -6,7 +6,7 @@ pub fn match_score(link: &PlayLink, inst: &Instance, idx: &ContentIndex) -> Opti
     if let Some(vp) = link.vibe_pack.as_ref().filter(|v| v.available) {
         return (vibe_pack_match(vp, inst)? == VibeMatch::Same).then_some(missing_mods(link, idx).len());
     }
-    if inst.mc_version != link.mc_version || loader_kind_str(inst) != link.loader.kind {
+    if inst.has_custom_loader() || inst.mc_version != link.mc_version || loader_kind_str(inst) != link.loader.kind {
         return None;
     }
     let missing = missing_mods(link, idx).len();

@@ -64,7 +64,7 @@ pub(super) fn analyze(inst: &Instance, mods: &[ModInfo], disabled: &[ModInfo]) -
                     }
                     if LOADER_DEP_IDS.contains(&id) {
                         if let (Some(r), Some(lv)) = (&d.range, inst.loader.version.as_deref()) {
-                            if loader_dep_applies(inst, id) && satisfies(r, lv) == Some(false) {
+                            if inst.custom_loader.is_none() && loader_dep_applies(inst, id) && satisfies(r, lv) == Some(false) {
                                 issues.push(DepIssue {
                                     kind: IssueKind::VersionMismatch,
                                     severity: "error".into(),
