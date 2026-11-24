@@ -1,5 +1,4 @@
 {
-  "cl.section": "Experimental",
   "cl.setting": "Loaders próprios (experimental)",
   "cl.setting.desc": "Importe um loader de mods como pacote ZIP e crie instâncias com ele. Feito para desenvolvedores e testes – os loaders integrados continuam sendo a melhor escolha. Desligado: gerenciamento e seleção ficam ocultos, instâncias existentes continuam iniciando.",
   "cl.manage": "Pacotes de loader",

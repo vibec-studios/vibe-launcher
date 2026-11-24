@@ -1,5 +1,4 @@
 {
-  "cl.section": "Eksperymentalne",
   "cl.setting": "Własne loadery (eksperymentalne)",
   "cl.setting.desc": "Zaimportuj loader modów jako paczkę ZIP i twórz z nim instancje. Dla twórców i do testów – wbudowane loadery nadal są lepszym wyborem. Wyłączone: zarządzanie i wybór są ukryte, istniejące instancje dalej się uruchamiają.",
   "cl.manage": "Paczki loaderów",

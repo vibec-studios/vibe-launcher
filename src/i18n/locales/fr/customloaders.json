@@ -1,5 +1,4 @@
 {
-  "cl.section": "Expérimental",
   "cl.setting": "Loaders perso (expérimental)",
   "cl.setting.desc": "Importe un loader de mods sous forme de pack ZIP et crée des instances avec. Pour les devs et les tests – les loaders intégrés restent le meilleur choix. Désactivé : la gestion et le choix sont masqués, les instances existantes continuent de se lancer.",
   "cl.manage": "Packs de loader",

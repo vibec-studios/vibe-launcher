@@ -1,5 +1,5 @@
-import { FlaskConical, PackagePlus, Trash2 } from "lucide-react";
-import { Button, EmptyState, IconButton, SettingRow, SettingsCard, Skeleton, Switch, Tooltip, confirm, toast } from "@/components/ui";
+import { PackagePlus, Trash2 } from "lucide-react";
+import { Button, EmptyState, IconButton, SettingRow, Skeleton, Switch, Tooltip, confirm, toast } from "@/components/ui";
 import type { TabProps } from "@/features/settings/types";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
@@ -68,15 +68,15 @@ function Manager() {
   );
 }
 
-export function CustomLoadersCard({ s, update }: TabProps) {
+export function CustomLoadersRows({ s, update }: TabProps) {
   const t = useT();
   const on = s.custom_loaders === true;
   return (
-    <SettingsCard title={t("cl.section")}>
-      <SettingRow icon={<FlaskConical size={18} className={on ? "text-accent" : "text-dim"} />} title={t("cl.setting")} description={t("cl.setting.desc")}>
+    <>
+      <SettingRow title={t("cl.setting")} description={t("cl.setting.desc")}>
         <Switch checked={on} onChange={(custom_loaders) => update({ custom_loaders })} label={t("cl.setting")} />
       </SettingRow>
       {on && <Manager />}
-    </SettingsCard>
+    </>
   );
 }

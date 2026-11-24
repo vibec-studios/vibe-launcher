@@ -1,6 +1,5 @@
 export default {
   de: {
-    "cl.section": "Experimentell",
     "cl.setting": "Eigene Loader (experimentell)",
     "cl.setting.desc": "Importiere einen Mod-Loader als ZIP-Pack und erstelle Instanzen damit. Für Entwickler und Tests – eingebaute Loader bleiben die bessere Wahl. Aus: Verwaltung und Auswahl sind verborgen, vorhandene Instanzen starten weiter.",
     "cl.manage": "Loader-Packs",
@@ -92,7 +91,6 @@ export default {
     "cl.err.libraries_too_many": "Das Pack hat mehr als {max} Bibliotheken.",
   },
   en: {
-    "cl.section": "Experimental",
     "cl.setting": "Custom loaders (experimental)",
     "cl.setting.desc": "Import a mod loader as a ZIP pack and create instances with it. Meant for developers and testing – the built-in loaders are still the better choice. Off: management and selection are hidden, existing instances keep launching.",
     "cl.manage": "Loader packs",

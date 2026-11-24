@@ -1,5 +1,4 @@
 {
-  "cl.section": "Deneysel",
   "cl.setting": "Özel loader'lar (deneysel)",
   "cl.setting.desc": "Bir mod loader'ı ZIP paketi olarak içe aktar ve onunla örnek oluştur. Geliştiriciler ve testler için – yerleşik loader'lar hâlâ daha iyi seçim. Kapalı: yönetim ve seçim gizlenir, mevcut örnekler açılmaya devam eder.",
   "cl.manage": "Loader paketleri",
