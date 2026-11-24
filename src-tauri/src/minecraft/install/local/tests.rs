@@ -121,3 +121,26 @@ async fn library_replaced_by_loader_is_no_false_alarm() {
     assert!(local.resolved.libraries.iter().all(|l| !l.name.ends_with(":1.0")));
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[tokio::test]
+async fn custom_loader_uses_fast_path() {
+    let (paths, root) = setup();
+    let env = Env::current();
+    let vid = "vibe-example-0.1.0-1.20.1";
+    let profile = json!({
+        "id": vid,
+        "inheritsFrom": "1.20.1",
+        "mainClass": "com.example.loader.Main",
+        "libraries": [{ "name": "com.example:example-loader:0.1.0", "downloads": { "artifact": { "path": "com/example/example-loader/0.1.0/example-loader-0.1.0.jar", "url": "", "size": 3 } } }]
+    });
+    write(&paths.version_json(vid), profile.to_string().as_bytes());
+    let mut inst = instance(LoaderKind::Fabric, Some("0.1.0"), vid);
+    inst.custom_loader = Some(crate::instance::CustomLoaderRef { id: "example".into(), version: "0.1.0".into() });
+    assert!(resolve_local(&paths, &inst, &env).await.unwrap().is_none());
+    write(&paths.libraries().join("com/example/example-loader/0.1.0/example-loader-0.1.0.jar"), b"jar");
+    let local = resolve_local(&paths, &inst, &env).await.unwrap().expect("Schnellpfad");
+    assert_eq!((local.resolved.id.as_str(), local.resolved.main_class.as_str()), (vid, "com.example.loader.Main"));
+    inst.custom_loader = Some(crate::instance::CustomLoaderRef { id: "example".into(), version: "0.2.0".into() });
+    assert!(resolve_local(&paths, &inst, &env).await.unwrap().is_none());
+    let _ = std::fs::remove_dir_all(root);
+}

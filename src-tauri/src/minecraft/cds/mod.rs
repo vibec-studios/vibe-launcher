@@ -62,7 +62,7 @@ fn ensure_copy(src: &Path, dst: &Path) -> bool {
 }
 
 pub fn prepare(state: &AppState, inst: &Instance, prep: &mut Prepared, settings: &Settings) -> Result<Option<Pending>, &'static str> {
-    if !enabled(settings, inst) {
+    if !enabled(settings, inst) || inst.has_custom_loader() {
         return Ok(None);
     }
     let mut user_jvm = split_args(&settings.jvm_args);

@@ -22,6 +22,9 @@ pub async fn instance_get(state: State<'_, AppState>, id: String) -> AppResult<I
 
 #[tauri::command]
 pub async fn instance_create(state: State<'_, AppState>, req: CreateInstance) -> AppResult<Instance> {
+    if req.custom_loader.is_some() && !state.settings().custom_loaders {
+        return Err(AppError::Invalid("Eigene Loader sind ausgeschaltet (Einstellungen → Spiel → Experimentell).".into()));
+    }
     state.instances.create(req)
 }
 

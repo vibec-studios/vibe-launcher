@@ -17,6 +17,7 @@ import { InstanceContextMenuContent } from "./InstanceMenu";
 import { PlayButton } from "./PlayButton";
 import { useRunPhase } from "./status";
 import { accentVars } from "./accent";
+import { CustomLoaderLine } from "@/features/customloaders/LoaderBadge";
 
 /** "Fabric 1.21.4" bzw. "Vanilla 1.21.4" */
 export function loaderLine(i: Instance): string {
@@ -163,7 +164,7 @@ export const InstanceCard = memo(function InstanceCard({ instance: i, onOpen }: 
           </div>
           <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12px] text-muted">
             {/* Version bleibt ganz lesbar, ein Status dahinter kürzt sich zuerst */}
-            {i.bedrock ? <BedrockTag instance={i} /> : <span className="shrink-0">{loaderLine(i)}</span>}
+            {i.bedrock ? <BedrockTag instance={i} /> : i.custom_loader ? <CustomLoaderLine instance={i} suffix={i.mc_version} /> : <span className="shrink-0">{loaderLine(i)}</span>}
             <StatusDot instance={i} />
           </div>
         </div>
@@ -264,7 +265,7 @@ export const InstanceListRow = memo(function InstanceListRow({ instance: i, onOp
             </div>
           )}
         </div>
-        <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{loaderLine(i)}</span>
+        <span className="hidden truncate text-[12.5px] text-muted @min-[640px]:block">{i.custom_loader ? <CustomLoaderLine instance={i} suffix={i.mc_version} /> : loaderLine(i)}</span>
         <span className="hidden truncate text-[12.5px] text-muted @min-[860px]:block">{i.last_played ? formatRelative(i.last_played) : t("inst.never_played")}</span>
         <span className="hidden truncate text-right text-[12.5px] tabular-nums text-muted @min-[860px]:block">{i.play_time_secs >= 60 ? formatDuration(i.play_time_secs) : <span className="text-dim">–</span>}</span>
         <span className="flex justify-end opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">

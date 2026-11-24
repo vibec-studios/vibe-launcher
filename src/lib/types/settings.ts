@@ -74,6 +74,7 @@ export interface Settings {
   prefer_dgpu?: boolean;
   java_cds?: boolean;
   vibefix?: boolean;
+  custom_loaders?: boolean;
 }
 
 export interface StoreConfig {

@@ -14,14 +14,14 @@ export type Filter = "release" | "snapshot" | "old";
 
 export const kindOf = (v: McVersion): Filter => (v.kind === "release" ? "release" : v.kind === "snapshot" ? "snapshot" : "old");
 
-export function VersionList({ loader, value, onChange }: { loader: LoaderKind; value: string | null; onChange: (mc: string) => void }) {
+export function VersionList({ loader, value, onChange, only }: { loader: LoaderKind; value: string | null; onChange: (mc: string) => void; only?: string[] | null }) {
   const t = useT();
   const versions = useGameVersions();
-  const supported = useLoaderGameVersions(loader);
+  const supported = useLoaderGameVersions(only ? "vanilla" : loader);
   const [filter, setFilter] = useState<Filter>("release");
   const [query, setQuery] = useState("");
 
-  const sup = useMemo(() => (loader !== "vanilla" && supported.data ? new Set(supported.data) : null), [loader, supported.data]);
+  const sup = useMemo(() => (only ? new Set(only) : loader !== "vanilla" && supported.data ? new Set(supported.data) : null), [only, loader, supported.data]);
   const avail = useMemo(() => (versions.data ?? []).filter((v) => !sup || sup.has(v.id)), [versions.data, sup]);
   const latest = useMemo(() => avail.find((v) => v.kind === "release")?.id ?? null, [avail]);
   const counts = useMemo(() => {
@@ -35,7 +35,7 @@ export function VersionList({ loader, value, onChange }: { loader: LoaderKind; v
     return avail.filter((v) => (q ? v.id.toLowerCase().includes(q) : kindOf(v) === filter));
   }, [avail, filter, query]);
 
-  const loading = versions.isLoading || (loader !== "vanilla" && supported.isLoading);
+  const loading = versions.isLoading || (!only && loader !== "vanilla" && supported.isLoading);
   const error = versions.isError ? versions : supported.isError ? supported : null;
 
   // Auswahl gültig halten: fällt die gewählte Version beim Loader-Wechsel weg -> neueste Release

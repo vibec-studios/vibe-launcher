@@ -67,7 +67,7 @@ pub fn build_instance_file(inst: &Instance, idx: &ContentIndex, client_pack: Opt
         schema: 1,
         name: inst.name.clone(),
         mc_version: inst.mc_version.clone(),
-        loader: LinkLoader { kind: loader_kind_str(inst), version: inst.loader.version.clone() },
+        loader: LinkLoader { kind: loader_kind_str(inst), version: inst.loader.version.clone().filter(|_| !inst.has_custom_loader()) },
         pack,
         mods,
         client_pack,

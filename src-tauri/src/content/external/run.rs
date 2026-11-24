@@ -135,6 +135,7 @@ pub async fn run_import(
         notes: None,
         auto_update_content: None,
         bedrock: None,
+        custom_loader: None,
     };
     let (prepared, java_note) = extsettings::prepare(&state.settings(), &f.settings, &inst.mc_version, keys.contains("java")).await;
     extsettings::apply(&mut inst, &prepared, &keys);

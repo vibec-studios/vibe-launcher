@@ -5,6 +5,7 @@ import { ChevronDown, PackageOpen, Plus } from "lucide-react";
 import { useInstances } from "@/lib/queries";
 import type { Instance } from "@/lib/types";
 import { loaderNames } from "@/lib/format";
+import { customLoaderName, useCustomLoaders } from "@/features/customloaders/api";
 import { Button, EmptyState, ErrorState, Page, cn } from "@/components/ui";
 import { InstanceCard, InstanceCardSkeleton, InstanceListHeader, InstanceListRow } from "@/components/instance/InstanceCard";
 import { openNewInstance, useInstanceActions } from "@/components/instance/actions";
@@ -82,6 +83,7 @@ export function InstancesPage() {
   const onOpen = useCallback((i: Instance) => open(i), [open]);
 
   const all = data ?? [];
+  const packs = useCustomLoaders().data;
   const counts = useMemo(() => ({ all: all.length, custom: all.filter((i) => !i.source).length, modpacks: all.filter((i) => i.source).length }), [all]);
 
   const groups = useMemo(() => {
@@ -97,7 +99,7 @@ export function InstancesPage() {
         : groupBy === "loader"
           ? i.bedrock
             ? "Bedrock"
-            : loaderNames[i.loader.kind]
+            : (customLoaderName(i, packs) ?? loaderNames[i.loader.kind])
           : groupBy === "version"
             ? i.bedrock
               ? "Bedrock"
@@ -112,7 +114,7 @@ export function InstancesPage() {
     return [...map.entries()].sort(([a], [b]) =>
       a === "" ? -1 : b === "" ? 1 : groupBy === "version" ? cmpVersion(a, b) : a.localeCompare(b, undefined, { numeric: true }),
     );
-  }, [all, q, sort, filter, groupBy]);
+  }, [all, q, sort, filter, groupBy, packs]);
 
   const total = all.length;
   const shown = groups.reduce((n, [, l]) => n + l.length, 0);

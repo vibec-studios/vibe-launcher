@@ -65,6 +65,12 @@ export interface Instance {
   auto_update_content: boolean | null;
   /** Gesetzt = Minecraft-Bedrock-Instanz (Loader/Java/Fenster ohne Bedeutung). Fehlt bei älteren Daten = Java. */
   bedrock?: BedrockOptions | null;
+  custom_loader?: CustomLoaderRef | null;
+}
+
+export interface CustomLoaderRef {
+  id: string;
+  version: string;
 }
 
 export type BedrockChannel = "release" | "preview";
@@ -82,6 +88,7 @@ export interface CreateInstance {
   icon?: string | null;
   accent?: string | null;
   group?: string | null;
+  custom_loader?: CustomLoaderRef | null;
 }
 
 /** Nur gesetzte Felder werden übernommen. `null` bei optionalen Feldern = zurücksetzen. */

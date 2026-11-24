@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { FlaskConical, ShieldAlert } from "lucide-react";
 import { SettingRow, SettingsCard, Switch } from "@/components/ui";
 import { useT } from "@/i18n";
@@ -18,7 +19,7 @@ export function AfkRulesNote({ className }: { className?: string }) {
   );
 }
 
-export function AfkSettingsCard({ s, update }: { s: Settings; update: (p: Partial<Settings>, delay?: number) => void }) {
+export function AfkSettingsCard({ s, update, children }: { s: Settings; update: (p: Partial<Settings>, delay?: number) => void; children?: ReactNode }) {
   const t = useT();
   const a = afkSettings(s);
   const set = (patch: Partial<AfkSettings>) => update({ afk: { ...a, ...patch } });
@@ -55,6 +56,7 @@ export function AfkSettingsCard({ s, update }: { s: Settings; update: (p: Partia
             </div>
           </>
         )}
+        {children}
       </SettingsCard>
     </div>
   );

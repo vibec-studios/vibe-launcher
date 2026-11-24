@@ -69,9 +69,14 @@ async fn do_install(state: &AppState, id: &str, sp: &SubProgress, force: bool, i
 
     // 4. Loader
     let loader_sp = sp.sub(0.75, 0.97);
-    let version_id = match inst.loader.kind {
-        LoaderKind::Vanilla => mc.clone(),
-        kind => {
+    let version_id = match (&inst.custom_loader, inst.loader.kind) {
+        (Some(cl), _) => {
+            sp.message(format!("Eigener Loader {} {} wird eingerichtet …", cl.id, cl.version));
+            let (paths, cl, mc) = (state.paths.clone(), cl.clone(), mc.clone());
+            tokio::task::spawn_blocking(move || crate::custom_loader::ensure_profile(&paths, &cl, &mc)).await??
+        }
+        (None, LoaderKind::Vanilla) => mc.clone(),
+        (None, kind) => {
             let lv = inst.loader.version.clone().filter(|v| !v.trim().is_empty()).ctx("Loader-Version fehlt")?;
             sp.message(format!("{} {lv} wird installiert …", super::loaders::loader_name(kind)));
             match kind {
@@ -118,7 +123,9 @@ async fn do_install(state: &AppState, id: &str, sp: &SubProgress, force: bool, i
 pub async fn install_instance_opts(state: &AppState, id: &str, sp: &SubProgress, force: bool) -> AppResult<Prepared> {
     let inst = state.instances.get(id)?;
     // Loader-Version festlegen, falls offen (vor dem Statuswechsel: Loader-Änderung setzt den Status zurück)
-    if inst.loader.kind != LoaderKind::Vanilla && inst.loader.version.as_deref().is_none_or_empty() {
+    if let Some(cl) = inst.custom_loader.clone().filter(|cl| inst.loader.version.as_deref() != Some(cl.version.as_str())) {
+        state.instances.modify(id, |i| i.loader.version = Some(cl.version))?;
+    } else if inst.custom_loader.is_none() && inst.loader.kind != LoaderKind::Vanilla && inst.loader.version.as_deref().is_none_or_empty() {
         sp.message("Loader-Version wird bestimmt …");
         let v = super::loaders::default_loader_version(state, inst.loader.kind, &inst.mc_version).await?;
         state.instances.modify(id, |i| i.loader.version = Some(v))?;

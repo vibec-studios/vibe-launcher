@@ -137,7 +137,7 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
         ) : choosing ? (
           <>
             <Button variant="subtle" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
-            <Button variant="primary" icon={<ArrowRight size={16} />} onClick={() => setStep("review")}>{t("export.next")}</Button>
+            <Button variant="primary" icon={<ArrowRight size={16} />} onClick={() => setStep("review")} disabled={!!instance.custom_loader}>{t("export.next")}</Button>
           </>
         ) : (
           <>
@@ -150,6 +150,9 @@ export function ExportDialog({ instance, open, onOpenChange }: { instance: Insta
       }
     >
       <div className="flex flex-col gap-5">
+        {choosing && instance.custom_loader && (
+          <p role="alert" className="rounded-card border border-warn/30 bg-warn/[.06] px-4 py-3 text-[13px] text-warn">{t("cl.export.blocked")}</p>
+        )}
         {choosing && <FormatPicker format={format} setFormat={setFormat} />}
         {reviewing && (
           <>

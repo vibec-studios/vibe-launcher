@@ -10,6 +10,7 @@ import { useInstanceActions } from "@/components/instance/actions";
 import { useRunPhase } from "@/components/instance/status";
 import { ShotThumb, openShot, useScreenshots } from "@/features/screenshots/shots";
 import { useT } from "@/i18n";
+import { useCustomLoaders } from "@/features/customloaders/api";
 import { Notice, SpotThumb, continueMeta } from "../Continue";
 import type { Spot } from "../data";
 
@@ -45,6 +46,7 @@ function Backdrop({ instance: i }: { instance: Instance }) {
 
 export function HeroV2({ instance: i, spot }: { instance: Instance; spot: Spot | null }) {
   const t = useT();
+  const packs = useCustomLoaders().data;
   const nav = useNavigate();
   const { launch } = useInstanceActions();
   const { phase } = useRunPhase(i.id);
@@ -69,7 +71,7 @@ export function HeroV2({ instance: i, spot }: { instance: Instance; spot: Spot |
               <button onClick={open} className="block max-w-full truncate text-left text-[32px] font-bold leading-[1.1] tracking-[-0.03em] text-text hover:underline" title={i.name}>
                 {i.name}
               </button>
-              <div className="mt-1.5 truncate text-meta text-muted">{continueMeta(i, t).join(" · ")}</div>
+              <div className="mt-1.5 truncate text-meta text-muted">{continueMeta(i, t, packs).join(" · ")}</div>
               <div className="-ml-2 mt-1 flex min-h-[26px] min-w-0 items-center empty:hidden">
                 <Notice instance={i} />
               </div>

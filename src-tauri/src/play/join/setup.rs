@@ -76,6 +76,7 @@ pub async fn run_setup(state: AppState, task: TaskHandle, link: PlayLink, instan
                     icon: None,
                     accent: None,
                     group: None,
+                    custom_loader: None,
                 })?
             }
         },

@@ -91,6 +91,13 @@ impl InstanceStore {
             return Err(AppError::Invalid("Minecraft-Version fehlt".into()));
         }
         icon::check(req.icon.as_deref())?;
+        let (loader, custom_loader) = match &req.custom_loader {
+            Some(r) => {
+                let (l, r) = crate::custom_loader::resolve(&self.paths, r, req.mc_version.trim())?;
+                (l, Some(r))
+            }
+            None => (req.loader, None),
+        };
         let id = self.unique_id(name);
         let inst = Instance {
             id: id.clone(),
@@ -99,7 +106,7 @@ impl InstanceStore {
             accent: req.accent,
             group: req.group.filter(|g| !g.trim().is_empty()),
             mc_version: req.mc_version,
-            loader: req.loader,
+            loader,
             java: Default::default(),
             window: Default::default(),
             hooks: Default::default(),
@@ -112,6 +119,7 @@ impl InstanceStore {
             notes: None,
             auto_update_content: None,
             bedrock: None,
+            custom_loader,
         };
         std::fs::create_dir_all(self.paths.game_dir(&id))?;
         self.persist(&inst)?;
@@ -148,6 +156,7 @@ impl InstanceStore {
             notes: None,
             auto_update_content: Some(false),
             bedrock: Some(opts),
+            custom_loader: None,
         };
         self.insert_new(inst)
     }
@@ -157,9 +166,12 @@ impl InstanceStore {
         let inst = {
             let mut map = self.map.write();
             let inst = map.get_mut(id).ok_or_else(|| AppError::NotFound(format!("Instanz {id}")))?;
-            let before_version = (inst.mc_version.clone(), inst.loader.clone());
+            let before_version = (inst.mc_version.clone(), inst.loader.clone(), inst.custom_loader.clone());
             f(inst);
-            if (inst.mc_version.clone(), inst.loader.clone()) != before_version {
+            if inst.loader != before_version.1 && inst.custom_loader == before_version.2 {
+                inst.custom_loader = None;
+            }
+            if (inst.mc_version.clone(), inst.loader.clone(), inst.custom_loader.clone()) != before_version {
                 inst.install_state = InstallState::NotInstalled;
                 inst.version_id = None;
             }
@@ -200,6 +212,9 @@ impl InstanceStore {
             return Ok(());
         }
         let mut next = inst.clone();
+        if next.loader != loader {
+            next.custom_loader = None;
+        }
         next.mc_version = mc_version;
         next.loader = loader;
         next.install_state = InstallState::NotInstalled;

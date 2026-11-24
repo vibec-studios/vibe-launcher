@@ -48,6 +48,7 @@ fn new_instance(f: &Found, name: String, mc: String, loader: Loader) -> Instance
         notes: None,
         auto_update_content: None,
         bedrock: None,
+        custom_loader: None,
     }
 }
 

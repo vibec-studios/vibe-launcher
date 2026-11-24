@@ -17,6 +17,9 @@ import { usePing } from "@/components/instance/motd";
 import { useModpackUpdate } from "@/features/content/ModpackUpdate";
 import { ShotThumb, openShot, useScreenshots } from "@/features/screenshots/shots";
 import { useT } from "@/i18n";
+import { instanceLoaderText } from "@/features/customloaders/api";
+import { useCustomLoaders } from "@/features/customloaders/api";
+import type { CustomLoaderPack } from "@/lib/types";
 import { useUpdateCounts, type Spot } from "./data";
 
 /** Kleines Bild eines Einstiegs: Welt-Icon (level icon.png) bzw. Server-Favicon. */
@@ -80,8 +83,8 @@ export function Notice({ instance: i }: { instance: Instance }) {
 }
 
 /** Zeile unter dem Namen: Loader/Version, zuletzt gespielt, Spielzeit. */
-export function continueMeta(i: Instance, t: ReturnType<typeof useT>): string[] {
-  const loader = i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]} ${i.loader.version ?? ""}`.trim();
+export function continueMeta(i: Instance, t: ReturnType<typeof useT>, packs?: CustomLoaderPack[]): string[] {
+  const loader = i.custom_loader ? instanceLoaderText(i, packs) : i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]} ${i.loader.version ?? ""}`.trim();
   return [
     i.bedrock ? (i.bedrock.channel === "preview" ? "Minecraft Bedrock Preview" : "Minecraft Bedrock") : `${loader} · Minecraft ${i.mc_version}`,
     i.last_played ? formatRelative(i.last_played) : t("home.never"),
@@ -96,7 +99,8 @@ export function ContinueCard({ instance: i, spot }: { instance: Instance; spot: 
   const { phase } = useRunPhase(i.id);
   const accent = instanceAccent(i.id, i.accent);
   const open = () => nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: "content" } });
-  const meta = continueMeta(i, t);
+  const packs = useCustomLoaders().data;
+  const meta = continueMeta(i, t, packs);
 
   return (
     <section data-part="home-hero card" aria-label={t("home.continue")} className="@container flex min-w-0 gap-5 rounded-panel bg-surface p-5" style={accentVars(accent)}>

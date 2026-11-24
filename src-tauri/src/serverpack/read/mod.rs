@@ -82,6 +82,7 @@ async fn fill_modrinth_sides(state: &AppState, entries: &mut [Entry]) {
 
 async fn from_instance(state: &AppState, id: &str) -> AppResult<Plan> {
     let inst = state.instances.get(id)?;
+    crate::custom_loader::block(&inst, "Ein Server-Pack")?;
     let game = state.paths.game_dir(id);
     let mods_dir = game.join("mods");
     let md = mods_dir.clone();

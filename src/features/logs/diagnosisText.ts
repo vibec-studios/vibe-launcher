@@ -28,6 +28,8 @@ const KNOWN = [
   ...MODEL_CAUSES,
 ];
 
+const LOADER_CAUSES = ["wrong_loader", "loader_version", "loader_files", "exit_code", "unknown", "mixin", "missing_class", "linkage_error"];
+
 /** Versionsbereich aus dem Log („15.0.140 or later“, „>=0.16.10“) in der UI-Sprache. */
 export function localRange(range: string | undefined, t: (k: string, v?: Record<string, string | number>) => string): string {
   const r = (range ?? "").trim();
@@ -49,6 +51,7 @@ export function diagText(d: Diagnosis, t: (k: string, v?: Record<string, string 
   if (id === "out_of_memory" && d.params.limit) key = "diag.out_of_memory.text_limit";
   let text = t(key, vars);
   if (id === "exit_code") text = t(`diag.exit.${d.params.hint ?? "exit_code"}`, vars);
+  if (d.params.custom_loader && LOADER_CAUSES.includes(d.id)) text = `${text} ${t("cl.diag.note", { name: d.params.custom_loader })}`;
   return { title: t(off ? "diag.missing_dependency.title_disabled" : `diag.${id}.title`, vars), text };
 }
 

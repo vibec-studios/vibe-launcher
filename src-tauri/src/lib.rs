@@ -5,6 +5,7 @@ pub mod bedrock;
 pub mod client_packs;
 pub mod commands;
 pub mod console;
+pub mod custom_loader;
 #[cfg(debug_assertions)]
 mod devlive;
 pub mod content;

@@ -100,6 +100,7 @@ pub struct Settings {
     pub afk: crate::afk::AfkSettings,
     pub lean: crate::lean::LeanSettings,
     pub vibefix: bool,
+    pub custom_loaders: bool,
 }
 
 /// Sicherung vor automatischen Mod-Änderungen. `mode`: "recommended" (Mods, Configs, Optionen) | "mods" | "all" |
