@@ -48,6 +48,12 @@ den Deko-Plätzen, Notausgang). Bausteine tragen stabile Haken `data-part="…"`
 KI-Skill nutzt denselben Kern als erzeugte Kopie (`skills/vibe-launcher-theme/gen/`, `pnpm theme:skill`).
 Details: [THEMES.md](THEMES.md).
 
+### Eigene Loader (experimentell)
+
+Importierte Loader-Packs (ZIP mit `vibeloader.json`) liegen unter `<daten>/loaders/<id>/<version>/`. Backend in
+`src-tauri/src/custom_loader/`, Frontend in `features/customloaders/`, Schalter `settings.custom_loaders`.
+Format, Grenzen und das Verhalten bei Export, Autofix und Play-Links: [CUSTOM-LOADERS.md](CUSTOM-LOADERS.md).
+
 ### Übersetzungen und Mock registrieren sich selbst
 
 - **i18n:** Jede Datei `src/i18n/<bereich>.ts` mit `export default { de: {...}, en: {...} }` wird per `import.meta.glob` automatisch geladen, alphabetisch nach Dateiname. Bei doppelten Schlüsseln gewinnt die alphabetisch spätere Datei – doppelte Schlüssel vermeiden. Neue Bereiche brauchen keinen Eintrag in `index.ts`.
