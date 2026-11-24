@@ -97,6 +97,7 @@ let settings: Settings = {
   world_backups_keep: 5,
   minecraftcapes: mockFlag("vl.mock.onboarding") !== "1",
   vibefix: mockFlag("vl.mock.vibefix") !== "disabled",
+  custom_loaders: mockFlag("vl.mock.customloaders") !== null,
   // Screenshots: localStorage vl.mock.mode = simple|expert, vl.mock.onboarding = 1 (Erststart)
   ui_mode: mockFlag("vl.mock.mode") === "simple" ? "simple" : "expert",
   onboarding_done: mockFlag("vl.mock.onboarding") !== "1",
@@ -120,9 +121,9 @@ const handlers: Handlers = {
     return i;
   },
   instance_create: ({ req }) => {
-    const r = req as { name: string; mc_version: string; loader: Instance["loader"]; icon?: string; accent?: string; group?: string };
+    const r = req as { name: string; mc_version: string; loader: Instance["loader"]; icon?: string; accent?: string; group?: string; custom_loader?: Instance["custom_loader"] };
     const id = r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "instance";
-    const i = inst(id, r.name, r.mc_version, r.loader.kind, r.loader.version, { install_state: "not_installed", icon: r.icon ?? null, accent: r.accent ?? null, group: r.group ?? null, created_at: Date.now() });
+    const i = inst(id, r.name, r.mc_version, r.loader.kind, r.loader.version, { install_state: "not_installed", icon: r.icon ?? null, accent: r.accent ?? null, group: r.group ?? null, created_at: Date.now(), custom_loader: r.custom_loader ?? null });
     instances.set(id, i);
     mockEmit("instance://changed", i);
     return i;

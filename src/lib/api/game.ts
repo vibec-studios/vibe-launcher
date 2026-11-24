@@ -23,4 +23,8 @@ export const gameApi = {
   javaList: () => call<T.JavaInstall[]>("java_list"),
   javaTest: (path: string) => call<T.JavaInstall>("java_test", { path }),
   javaInstall: (major: number) => call<string>("java_install", { major }),
+  customLoaderInspect: (path: string) => call<T.CustomLoaderInspect>("custom_loader_inspect", { path }),
+  customLoaderImport: (path: string, replace: boolean) => call<T.CustomLoaderPack>("custom_loader_import", { path, replace }),
+  customLoadersList: () => call<T.CustomLoaderPack[]>("custom_loaders_list"),
+  customLoaderDelete: (id: string, version: string) => call<void>("custom_loader_delete", { id, version }),
 };

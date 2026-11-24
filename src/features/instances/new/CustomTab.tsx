@@ -17,6 +17,9 @@ import { GroupField, suggestName } from "./fields";
 import { IconPicker } from "./IconPicker";
 import { LoaderCards } from "./LoaderCards";
 import { VersionList } from "./VersionList";
+import { CustomLoaderCards, CustomLoaderVersionSelect, useCustomLoaderChoices } from "@/features/customloaders/LoaderPick";
+import { findPack } from "@/features/customloaders/api";
+import type { CustomLoaderRef } from "@/lib/types";
 
 // ------------------------------------------------------------------ Tab: Eigene
 
@@ -34,6 +37,15 @@ export function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: 
   const [group, setGroup] = useState("");
   const [icon, setIcon] = useState<string | null>(randomBlockIcon);
   const [pack, setPack] = useState<string | null>(null);
+  const customPacks = useCustomLoaderChoices();
+  const [custom, setCustom] = useState<CustomLoaderRef | null>(null);
+  const customPack = findPack(customPacks, custom);
+  const pickCustom = (r: CustomLoaderRef) => {
+    const p = findPack(customPacks, r);
+    if (!p) return;
+    setCustom(r);
+    setVer((v) => ({ mc: v.mc && p.minecraft.includes(v.mc) ? v.mc : null, loader: p.mods, loaderVersion: p.loader_version }));
+  };
   // „Mit Mod-Sets starten“: nach dem Anlegen alles Passende aus diesen Sets installieren
   const { setIds, setSetIds, setsLoading } = useNewInstanceSets();
   const setCheck = useSetCheck(setIds, ver.mc, ver.loader);
@@ -41,23 +53,23 @@ export function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: 
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!nameTouched) setName(suggestName(ver));
-  }, [ver.mc, ver.loader, nameTouched]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!nameTouched) setName(customPack && ver.mc ? `${customPack.name} ${ver.mc}` : suggestName(ver));
+  }, [ver.mc, ver.loader, nameTouched, customPack?.name]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Loader-Version: empfohlene (erste stabile) vorauswählen
-  const lv = useLoaderVersions(ver.loader, ver.mc);
+  const lv = useLoaderVersions(custom ? "vanilla" : ver.loader, ver.mc);
   useEffect(() => {
-    if (ver.loader === "vanilla") return;
+    if (ver.loader === "vanilla" || custom) return;
     const list = lv.data;
     if (!list) return;
     if (!ver.loaderVersion || !list.some((x) => x.version === ver.loaderVersion)) {
       const pick = pickLoaderVersion(list);
       if (pick !== ver.loaderVersion) setVer((v) => ({ ...v, loaderVersion: pick }));
     }
-  }, [lv.data, ver.loader, ver.mc, ver.loaderVersion]);
+  }, [lv.data, ver.loader, ver.mc, ver.loaderVersion, custom]);
 
-  const needsLv = ver.loader !== "vanilla";
-  const gameReady = !!ver.mc && (!needsLv || !!ver.loaderVersion);
+  const needsLv = ver.loader !== "vanilla" && !custom;
+  const gameReady = !!ver.mc && (!needsLv || !!ver.loaderVersion) && (!custom || !!customPack);
   const valid = !setsLoading && gameReady && name.trim().length > 0;
 
   const submit = async () => {
@@ -68,7 +80,8 @@ export function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: 
       const inst = await api.instanceCreate({
         name: name.trim(),
         mc_version: ver.mc!,
-        loader: { kind: ver.loader, version: needsLv ? ver.loaderVersion : null },
+        loader: { kind: ver.loader, version: needsLv || custom ? ver.loaderVersion : null },
+        custom_loader: custom,
         accent,
         icon: isBlockIcon(icon) ? icon : null,
         group: group.trim() || null,
@@ -100,13 +113,27 @@ export function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: 
           <div className="mt-4 grid grid-cols-[minmax(250px,0.8fr)_minmax(0,1.2fr)] gap-5 max-[680px]:grid-cols-1">
             <section className="min-w-0">
               <h3 className="mb-2 text-[14px] font-semibold text-text"><Term id="loader">{t("newinst.loader")}</Term></h3>
-              <LoaderCards value={ver.loader} onChange={(loader) => loader !== ver.loader && setVer({ ...ver, loader, loaderVersion: null })} />
+              <LoaderCards
+                value={custom ? null : ver.loader}
+                onChange={(loader) => {
+                  if (loader === ver.loader && !custom) return;
+                  setCustom(null);
+                  setVer({ ...ver, loader, loaderVersion: null });
+                }}
+              />
+              <CustomLoaderCards packs={customPacks} value={custom} onChange={pickCustom} />
             </section>
             <section className="flex min-w-0 flex-col gap-2">
               <h3 className="text-[14px] font-semibold text-text">{t("newinst.version")}</h3>
               <div className="flex h-[230px] flex-col">
-                <VersionList loader={ver.loader} value={ver.mc} onChange={(mc) => mc !== ver.mc && setVer({ ...ver, mc, loaderVersion: null })} />
+                <VersionList
+                  loader={ver.loader}
+                  only={customPack?.minecraft ?? null}
+                  value={ver.mc}
+                  onChange={(mc) => mc !== ver.mc && setVer({ ...ver, mc, loaderVersion: custom ? ver.loaderVersion : null })}
+                />
               </div>
+              {custom && <CustomLoaderVersionSelect packs={customPacks} value={custom} onChange={pickCustom} />}
               {needsLv && (
                 <details className="rounded-card border border-line bg-surface">
                   <summary className="cursor-pointer px-3 py-2 text-[14px] text-muted">{t("newinst.loader_version", { loader: loaderNames[ver.loader] })}</summary>
@@ -167,7 +194,11 @@ export function CustomTab({ onDone, onBusy }: { onDone: () => void; onBusy: (b: 
         <div className="min-w-0 flex-1">
           {ver.mc && (
             <div className="text-[14px] font-semibold text-text">
-              {needsLv ? t("newinst.summary_loader", { mc: ver.mc, loader: loaderNames[ver.loader], v: ver.loaderVersion ?? "?" }) : t("newinst.summary", { mc: ver.mc })}
+              {customPack
+                ? t("newinst.summary_loader", { mc: ver.mc, loader: customPack.name, v: customPack.loader_version })
+                : needsLv
+                  ? t("newinst.summary_loader", { mc: ver.mc, loader: loaderNames[ver.loader], v: ver.loaderVersion ?? "?" })
+                  : t("newinst.summary", { mc: ver.mc })}
             </div>
           )}
           {step === "details" && (

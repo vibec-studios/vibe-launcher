@@ -19,6 +19,8 @@ import { AutofixButton } from "@/features/content/AutoFix";
 import { formatDuration, formatRelative, loaderNames } from "@/lib/format";
 import type { Instance } from "@/lib/types";
 import { bedrockLine } from "@/features/bedrock/parts";
+import { instanceLoaderText, useCustomLoaders } from "@/features/customloaders/api";
+import { InstanceLoaderIcon } from "@/features/customloaders/LoaderBadge";
 
 export const pageX = "px-6";
 
@@ -36,7 +38,8 @@ function MetaLine({ instance: i }: { instance: Instance }) {
   const t = useT();
   const simple = useSimple();
   const src = i.source;
-  const loader = i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]}${i.loader.version ? ` ${i.loader.version}` : ""}`;
+  const packs = useCustomLoaders().data;
+  const loader = i.custom_loader ? instanceLoaderText(i, packs) : i.loader.kind === "vanilla" ? "Vanilla" : `${loaderNames[i.loader.kind]}${i.loader.version ? ` ${i.loader.version}` : ""}`;
   const packVersion = src?.version_name ?? "";
   const pack = src
     ? !src.name || src.name === i.name
@@ -45,12 +48,12 @@ function MetaLine({ instance: i }: { instance: Instance }) {
     : null;
   return (
     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-muted">
-      <Meta icon={<Box size={15} />}>
+      <Meta icon={i.custom_loader ? <InstanceLoaderIcon instance={i} size={15} /> : <Box size={15} />}>
         {i.bedrock ? (
           `${bedrockLine(i, t)} · ${t(i.bedrock.profile === "shared" ? "bedrock.profile.shared" : "bedrock.profile.isolated")}`
         ) : (
           <>
-            {simple ? <Term id={i.loader.kind === "vanilla" ? "vanilla" : i.loader.kind}>{loader}</Term> : loader}
+            {simple && !i.custom_loader ? <Term id={i.loader.kind === "vanilla" ? "vanilla" : i.loader.kind}>{loader}</Term> : loader}
             {` · Minecraft ${i.mc_version}`}
           </>
         )}

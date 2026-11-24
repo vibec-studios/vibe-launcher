@@ -8,7 +8,7 @@ import { useT } from "@/i18n";
 
 // ------------------------------------------------------------------ Loader-Karten
 
-export function LoaderCards({ value, onChange }: { value: LoaderKind; onChange: (l: LoaderKind) => void }) {
+export function LoaderCards({ value, onChange }: { value: LoaderKind | null; onChange: (l: LoaderKind) => void }) {
   const t = useT();
   return (
     <div className="flex flex-col gap-1" role="radiogroup" aria-label={t("newinst.loader")}>

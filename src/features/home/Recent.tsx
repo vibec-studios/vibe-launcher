@@ -6,6 +6,7 @@ import type { Instance } from "@/lib/types";
 import { formatRelative, instanceAccent } from "@/lib/format";
 import { ContextMenu, IconButton, Skeleton, Tooltip, cn } from "@/components/ui";
 import { InstanceStatus, loaderLine } from "@/components/instance/InstanceCard";
+import { CustomLoaderLine } from "@/features/customloaders/LoaderBadge";
 import { InstanceIcon } from "@/components/instance/InstanceIcon";
 import { InstanceContextMenuContent } from "@/components/instance/InstanceMenu";
 import { accentVars } from "@/components/instance/accent";
@@ -86,7 +87,7 @@ function RecentTile({ instance: i }: { instance: Instance }) {
           <span className="block truncate text-[13.5px] font-semibold text-text" title={i.name}>
             {i.name}
           </span>
-          <span className="block truncate text-[12px] text-muted">{loaderLine(i)}</span>
+          <span className="block truncate text-[12px] text-muted">{i.custom_loader ? <CustomLoaderLine instance={i} suffix={i.mc_version} /> : loaderLine(i)}</span>
           <span className="block truncate text-[12px] text-dim">
             {status ? <InstanceStatus instance={i} compact /> : i.last_played ? formatRelative(i.last_played) : t("home.never")}
           </span>

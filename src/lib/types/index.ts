@@ -20,3 +20,4 @@ export * from "./vibe";
 export * from "./autofix";
 export * from "./clientPacks";
 export * from "./feedback";
+export * from "./customLoaders";
