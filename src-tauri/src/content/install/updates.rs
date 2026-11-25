@@ -36,13 +36,19 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
         let latest = mr::latest_by_hash(state, &hashes, loaders.as_deref(), std::slice::from_ref(&mc)).await?;
         for (s, e, h) in entries {
             let Some(nv) = latest.get(&h.to_ascii_lowercase()) else { continue };
-            if nv.id == e.version_id || nv.project_id != e.project_id {
+            if nv.project_id != e.project_id {
                 continue;
             }
-            if let Some(d) = &e.date {
-                if nv.date_published.as_str() <= d.as_str() {
-                    continue;
-                }
+            let mut nv = mr::convert_version(nv.clone());
+            if wants_release(e) && nv.release_type != "release" {
+                let l = if kind == ContentKind::Mod { Some(loader) } else { None };
+                let Ok((list, pref, _)) = provider::versions_for(state, Source::Modrinth, &e.project_id, Some(&mc), l).await else { continue };
+                let pool: Vec<ProjectVersion> = list.into_iter().filter(|v| v.release_type == "release").collect();
+                let Some(best) = provider::pick_best(&pool, pref.as_deref()) else { continue };
+                nv = best;
+            }
+            if !is_newer(e, Some(&h), &nv) {
+                continue;
             }
             out.push(ContentUpdate {
                 file_name: s.file_name.clone(),
@@ -50,7 +56,7 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
                 source: Source::Modrinth,
                 project_id: e.project_id.clone(),
                 current_version: e.version_number.clone().or(s.meta.version.clone()),
-                new_version: mr::convert_version(nv.clone()),
+                new_version: nv,
                 manual: false,
                 page_url: None,
             });
@@ -68,9 +74,9 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
             async move {
                 let l = if kind == ContentKind::Mod { Some(loader) } else { None };
                 let (list, _, _) = provider::versions_for(state, Source::Curseforge, &e.project_id, Some(&mc), l).await.ok()?;
-                let only_release = e.release_type.as_deref().map_or(true, |r| r == "release");
+                let only_release = wants_release(&e);
                 let nv = list.into_iter().find(|v| !only_release || v.release_type == "release")?;
-                if nv.id == e.version_id || e.date.as_deref().is_some_and(|d| nv.date.as_str() <= d) {
+                if !is_newer(&e, s.meta.sha1.as_deref().or(e.sha1.as_deref()), &nv) {
                     return None;
                 }
                 let manual = nv.files.first().is_some_and(|f| f.url.is_none());
@@ -108,10 +114,10 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
     for (kind, s, e, key) in store_entries {
         let l = if kind == ContentKind::Mod { Some(loader) } else { None };
         let Ok((list, pref, _)) = provider::versions_for(state, Source::Store(key), &e.project_id, Some(&mc), l).await else { continue };
-        let only_release = e.release_type.as_deref().map_or(true, |r| r == "release");
+        let only_release = wants_release(&e);
         let pool: Vec<ProjectVersion> = list.into_iter().filter(|v| !only_release || v.release_type == "release").collect();
         let Some(nv) = provider::pick_best(&pool, pref.as_deref()) else { continue };
-        if nv.id == e.version_id || e.date.as_deref().is_some_and(|d| nv.date.as_str() <= d) {
+        if !is_newer(&e, s.meta.sha1.as_deref().or(e.sha1.as_deref()), &nv) {
             continue;
         }
         out.push(ContentUpdate {
@@ -133,6 +139,19 @@ pub async fn check_updates(state: &AppState, instance_id: &str) -> AppResult<Vec
     out.sort_by_key(|u| u.file_name.to_lowercase());
     Ok(out)
 }
+
+fn wants_release(e: &IndexEntry) -> bool {
+    e.release_type.as_deref().map_or(true, |r| r == "release")
+}
+
+fn is_newer(e: &IndexEntry, sha1: Option<&str>, nv: &ProjectVersion) -> bool {
+    let same_file = sha1.is_some_and(|h| nv.files.iter().any(|f| f.sha1.as_deref().is_some_and(|x| x.eq_ignore_ascii_case(h))));
+    nv.id != e.version_id && !same_file && e.date.as_deref().map_or(true, |d| nv.date.as_str() > d)
+}
+
+#[cfg(test)]
+#[path = "updates_tests.rs"]
+mod tests;
 
 /// Gesperrte CurseForge-Updates: Gibt es die Datei identisch auf Modrinth, wird automatisch aktualisiert;
 /// sonst bleibt das Update manuell und bekommt den Link zur Dateiseite.
