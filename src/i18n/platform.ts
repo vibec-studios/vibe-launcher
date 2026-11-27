@@ -89,11 +89,8 @@ export default {
     "diag.out_of_memory.text_limit": "Minecraft hatte keinen Speicher mehr ({current} MB zugewiesen). Mehr gibt dein PC nicht her ({limit} MB gesamt) – schließe andere Programme, senke die Sichtweite oder entferne große Mods.",
     "diag.where": "{source}, Zeile {line}",
     "diag.act.fix": "Probleme beheben",
-    "crash.offer.title": "Absturz erkannt – automatisch beheben?",
-    "crash.offer.text": "{n} mögliche Ursachen gefunden, wahrscheinlich: {title}",
-    "crash.offer.text_1": "Wahrscheinliche Ursache: {title}",
-    "crash.offer.none": "Keine eindeutige Ursache im Log – „Automatisch beheben“ prüft trotzdem Mods, Abhängigkeiten und Loader.",
-    "crash.offer.fix": "Automatisch beheben",
+    "crash.min.title": "Minecraft ist abgestürzt!",
+    "crash.min.diagnose": "Diagnose starten",
 
     // Server
     "inst.tab.servers": "Server",
@@ -380,11 +377,8 @@ export default {
     "diag.out_of_memory.text_limit": "Minecraft ran out of memory ({current} MB assigned). Your PC can't spare more ({limit} MB total) – close other programs, lower the render distance or remove heavy mods.",
     "diag.where": "{source}, line {line}",
     "diag.act.fix": "Fix problems",
-    "crash.offer.title": "Crash detected – fix it automatically?",
-    "crash.offer.text": "Found {n} possible causes, most likely: {title}",
-    "crash.offer.text_1": "Likely cause: {title}",
-    "crash.offer.none": "No clear cause in the log – “Fix automatically” still checks mods, dependencies and the loader.",
-    "crash.offer.fix": "Fix automatically",
+    "crash.min.title": "Minecraft has crashed!",
+    "crash.min.diagnose": "Run diagnostics",
 
     "inst.tab.servers": "Servers",
     "servers.count": "{n} servers",

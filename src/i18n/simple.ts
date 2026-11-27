@@ -167,8 +167,6 @@ export default {
     "shome.signin.text": "Mit dem Microsoft-Konto, mit dem du Minecraft: Java Edition gekauft hast.",
 
     // ---------------------------------------------------------------- Seiten (Simple)
-    "simple.crash.title": "Das Spiel ist abgestürzt",
-    "simple.crash.text": "Meist liegt es an Mods, die nicht zusammenpassen. „Probleme beheben“ findet und löst das automatisch – alles lässt sich rückgängig machen.",
     "simple.content.off": "Ausgeschaltet",
     "simple.isd.auto": "Java stellt der Launcher automatisch ein. Java-Pfad und JVM-Argumente gibt es im Experten-Modus.",
     "simple.settings.more": "Experten-Modus aktivieren",
@@ -433,8 +431,6 @@ export default {
     "shome.signin.text": "With the Microsoft account you bought Minecraft: Java Edition with.",
 
     // ---------------------------------------------------------------- Pages (Simple)
-    "simple.crash.title": "The game crashed",
-    "simple.crash.text": "Usually mods that don't fit together are the cause. “Fix problems” finds and solves that automatically – and everything can be undone.",
     "simple.content.off": "Turned off",
     "simple.isd.auto": "The launcher sets up Java automatically. Java path and JVM arguments are in Expert mode.",
     "simple.settings.more": "Turn on Expert mode",

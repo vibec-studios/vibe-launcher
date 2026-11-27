@@ -148,8 +148,6 @@
   "shome.all": "Pokaż wszystkie ({n})",
   "shome.signin.title": "Zaloguj się, aby grać",
   "shome.signin.text": "Kontem Microsoft, na którym kupiono Minecraft: Java Edition.",
-  "simple.crash.title": "Gra się wysypała",
-  "simple.crash.text": "Zwykle winne są mody, które do siebie nie pasują. „Napraw problemy” znajdzie i rozwiąże to automatycznie – a wszystko można cofnąć.",
   "simple.content.off": "Wyłączone",
   "simple.isd.auto": "Launcher konfiguruje Javę automatycznie. Ścieżka Javy i argumenty JVM są w trybie eksperta.",
   "simple.settings.more": "Włącz tryb eksperta",

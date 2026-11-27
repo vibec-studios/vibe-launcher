@@ -12,7 +12,6 @@
   "vibefix.engine.unavailable": "Analiz modeli şu an kullanılamıyor – kural analizi kullanıldı.",
   "vibefix.engine.error": "VibeFix analizi başarısız oldu – kural analizi kullanıldı.",
   "vibefix.engine.disabled": "Kural analizi (yapay zekâ ile log analizi kapalı).",
-  "vibefix.unknown.offer": "VibeFix bir çökme görüyor ama kesin bir neden bulamıyor. Birinin sana yardım edebilmesi için logu paylaş.",
   "vibefix.unknown.next": "Logu paylaş – önce tam olarak neyin yükleneceğini görürsün – ya da sorunu bildir.",
   "vibefix.unknown.manual": "Kesin bir neden bulunamadı",
   "vibefix.share.title": "Logu paylaş",

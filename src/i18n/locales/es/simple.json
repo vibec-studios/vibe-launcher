@@ -148,8 +148,6 @@
   "shome.all": "Mostrar los {n}",
   "shome.signin.title": "Inicia sesión para jugar",
   "shome.signin.text": "Con la cuenta de Microsoft con la que compraste Minecraft: Java Edition.",
-  "simple.crash.title": "El juego se ha cerrado inesperadamente",
-  "simple.crash.text": "Normalmente la causa son mods que no encajan entre sí. “Arreglar problemas” lo detecta y lo soluciona automáticamente, y todo se puede deshacer.",
   "simple.content.off": "Desactivado",
   "simple.isd.auto": "El launcher configura Java automáticamente. La ruta de Java y los argumentos de JVM están en el modo experto.",
   "simple.settings.more": "Activar el modo experto",

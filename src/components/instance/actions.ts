@@ -7,7 +7,6 @@ import { qk, queryClient, waitForTask } from "@/lib/queries";
 import type { Account, Instance, Settings } from "@/lib/types";
 import { confirm, toast } from "@/components/ui";
 import { t } from "@/i18n";
-import { askBeforeLaunch, launchCheckSkipped, openAutofix } from "@/features/content/autofixStore";
 import { chooseLaunchAccount } from "./AccountConflict";
 
 export const FOLDERS = ["", "mods", "config", "saves", "resourcepacks", "shaderpacks", "screenshots", "logs"] as const;
@@ -116,22 +115,10 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
   const open = (i: Instance, tab?: "content" | "worlds" | "logs" | "settings") =>
     nav({ to: "/instances/$id", params: { id: i.id }, search: { tab: tab ?? "content" } });
 
-  /** `world`: per Quick Play direkt in diese Welt (Ordnername unter saves/).
-   *  Vor dem Start: bekannte Mod-Probleme -> Rückfrage „Trotzdem starten“ / „Beheben und starten“. */
-  const launch = async (i: Instance, world?: string | null, server?: string | null, opts?: { skipCheck?: boolean; afk?: boolean }) => {
+  /** `world`: per Quick Play direkt in diese Welt (Ordnername unter saves/). */
+  const launch = async (i: Instance, world?: string | null, server?: string | null, opts?: { afk?: boolean }) => {
     const pick = await launchAccount(i);
     if (!pick) return;
-    if (!opts?.skipCheck && i.loader.kind !== "vanilla") {
-      const q = await api.autofixQuick(i.id).catch(() => null);
-      if (q && q.errors > 0 && !launchCheckSkipped(i.id, q.errors)) {
-        const choice = await askBeforeLaunch(i, q);
-        if (choice === "cancel") return;
-        if (choice === "fix") {
-          openAutofix({ instanceId: i.id, launchAfter: true });
-          return;
-        }
-      }
-    }
     try {
       await api.instanceLaunch(i.id, pick.accountId, world ?? null, server ?? null, undefined, opts?.afk);
       const s = queryClient.getQueryData<Settings>(qk.settings);
@@ -170,7 +157,7 @@ function makeActions(nav: ReturnType<typeof useNavigate>) {
     }
   };
 
-  const launchAgain = (i: Instance) => launch(i, null, null, { skipCheck: true });
+  const launchAgain = (i: Instance) => launch(i, null, null);
 
   return { open, launch, launchAgain, duplicate, remove };
 }

@@ -148,8 +148,6 @@
   "shome.all": "{n} öğenin tümünü göster",
   "shome.signin.title": "Oynamak için giriş yap",
   "shome.signin.text": "Minecraft: Java Edition'ı satın aldığın Microsoft hesabıyla.",
-  "simple.crash.title": "Oyun çöktü",
-  "simple.crash.text": "Genelde sebep birbirine uymayan modlardır. “Sorunları düzelt” bunu bulur ve otomatik çözer – ve her şey geri alınabilir.",
   "simple.content.off": "Kapalı",
   "simple.isd.auto": "Launcher Java'yı otomatik ayarlar. Java yolu ve JVM argümanları uzman modunda.",
   "simple.settings.more": "Uzman modunu aç",

@@ -12,7 +12,6 @@
   "vibefix.engine.unavailable": "El modelo de análisis no está disponible ahora mismo; se usó el análisis de reglas.",
   "vibefix.engine.error": "El análisis de VibeFix falló; se usó el análisis de reglas.",
   "vibefix.engine.disabled": "Análisis de reglas (el análisis de logs con IA está desactivado).",
-  "vibefix.unknown.offer": "VibeFix detecta un crasheo, pero no encuentra una causa segura. Comparte el log para que alguien te pueda ayudar.",
   "vibefix.unknown.next": "Comparte el log (antes verás exactamente qué se sube) o informa del problema.",
   "vibefix.unknown.manual": "No se encontró una causa segura",
   "vibefix.share.title": "Compartir log",

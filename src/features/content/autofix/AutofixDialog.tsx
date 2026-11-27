@@ -132,7 +132,7 @@ export function AutofixDialog({ req, onClose }: { req: FixRequest; onClose: () =
 
   const startNow = () => {
     onClose();
-    if (inst) void launch(inst, null, null, { skipCheck: true });
+    if (inst) void launch(inst, null, null);
   };
 
   const busy = phase === "running" || phase === "undoing";

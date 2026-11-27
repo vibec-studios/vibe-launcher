@@ -30,7 +30,7 @@ const loadFriendsPanel = () => import("@/features/social/FriendsPanel").then((m)
 export function DeferredShellHosts() {
   const instance = useInstanceDialogs((s) => s.newOpen || !!s.exportFor || !!s.groupFor || !!s.iconFor);
   const accountConflict = useAccountConflict((s) => !!s.ask);
-  const autofix = useAutofix((s) => !!s.req || !!s.pre);
+  const autofix = useAutofix((s) => !!s.req);
   const share = useShareLog((s) => !!s.req);
   const server = useServerDialogs((s) => s.newOpen || !!s.eulaFor || s.quit !== null);
   const sets = useSetDialogs((s) => !!s.apply || !!s.fromInstance || s.importOpen || s.createOpen);

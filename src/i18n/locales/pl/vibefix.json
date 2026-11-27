@@ -12,7 +12,6 @@
   "vibefix.engine.unavailable": "Model analizy jest teraz niedostępny – użyto analizy regułowej.",
   "vibefix.engine.error": "Analiza VibeFix się nie powiodła – użyto analizy regułowej.",
   "vibefix.engine.disabled": "Analiza regułowa (analiza logów przez AI jest wyłączona).",
-  "vibefix.unknown.offer": "VibeFix widzi awarię, ale nie znajduje pewnej przyczyny. Udostępnij log, żeby ktoś mógł ci pomóc.",
   "vibefix.unknown.next": "Udostępnij log – najpierw zobaczysz dokładnie, co zostanie wysłane – albo zgłoś problem.",
   "vibefix.unknown.manual": "Nie znaleziono pewnej przyczyny",
   "vibefix.share.title": "Udostępnij log",

@@ -148,8 +148,6 @@
   "shome.all": "Mostrar todos os {n}",
   "shome.signin.title": "Entre para jogar",
   "shome.signin.text": "Com a conta Microsoft em que você comprou o Minecraft: Java Edition.",
-  "simple.crash.title": "O jogo crashou",
-  "simple.crash.text": "Normalmente a causa são mods que não combinam entre si. “Corrigir problemas” encontra e resolve isso automaticamente – e tudo pode ser desfeito.",
   "simple.content.off": "Desativado",
   "simple.isd.auto": "O launcher configura o Java automaticamente. O caminho do Java e os argumentos da JVM ficam no modo avançado.",
   "simple.settings.more": "Ativar o modo avançado",

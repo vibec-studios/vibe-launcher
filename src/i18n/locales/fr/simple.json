@@ -148,8 +148,6 @@
   "shome.all": "Tout afficher ({n})",
   "shome.signin.title": "Connecte-toi pour jouer",
   "shome.signin.text": "Avec le compte Microsoft qui t'a servi à acheter Minecraft: Java Edition.",
-  "simple.crash.title": "Le jeu a planté",
-  "simple.crash.text": "En général, ce sont des mods incompatibles entre eux. « Résoudre les problèmes » trouve et règle ça automatiquement, et tout peut être annulé.",
   "simple.content.off": "Désactivé",
   "simple.isd.auto": "Le launcher configure Java automatiquement. Le chemin Java et les arguments JVM sont dans le mode expert.",
   "simple.settings.more": "Activer le mode expert",

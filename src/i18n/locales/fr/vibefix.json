@@ -12,7 +12,6 @@
   "vibefix.engine.unavailable": "Modèle d'analyse indisponible pour l'instant – l'analyse par règles a été utilisée.",
   "vibefix.engine.error": "L'analyse VibeFix a échoué – l'analyse par règles a été utilisée.",
   "vibefix.engine.disabled": "Analyse par règles (l'analyse de logs par IA est désactivée).",
-  "vibefix.unknown.offer": "VibeFix détecte un plantage mais ne trouve pas de cause sûre. Partage le log pour qu'on puisse t'aider.",
   "vibefix.unknown.next": "Partage le log – tu verras d'abord exactement ce qui sera envoyé – ou signale le problème.",
   "vibefix.unknown.manual": "Aucune cause sûre trouvée",
   "vibefix.share.title": "Partager le log",

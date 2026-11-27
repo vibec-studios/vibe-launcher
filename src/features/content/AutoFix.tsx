@@ -2,25 +2,17 @@
 // („Das wird gemacht“) mit abwählbaren Schritten, ausführen (vorher Snapshot) und Zusammenfassung mit „Rückgängig“.
 // Nach einem Absturz stehen die erkannten Ursachen oben (Erklärung, Fundstelle, zugehörige Schritte); der Bericht
 // zeigt je Ursache „behoben“ / „nicht automatisch lösbar“ und bietet „Testen“ (erneute Prüfung ohne den alten Absturz).
-// Außerdem die Rückfrage vor dem Start („Trotzdem starten“ / „Beheben und starten“).
 import { Wrench } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useT } from "@/i18n";
 import { openAutofix, useAutofix, type FixRequest } from "./autofixStore";
 import { AutofixDialog } from "./autofix/AutofixDialog";
-import { PreLaunchDialog } from "./autofix/PreLaunchDialog";
 
 export { causeStatus, type Verify } from "./autofix/status";
 
 export function AutofixHost() {
   const req = useAutofix((s) => s.req);
-  const pre = useAutofix((s) => s.pre);
-  return (
-    <>
-      {req && <AutofixDialog key={`${req.instanceId}:${req.crashReport ?? ""}`} req={req} onClose={() => useAutofix.setState({ req: null })} />}
-      {pre && <PreLaunchDialog inst={pre.inst} q={pre.q} resolve={pre.resolve} />}
-    </>
-  );
+  return req ? <AutofixDialog key={`${req.instanceId}:${req.crashReport ?? ""}`} req={req} onClose={() => useAutofix.setState({ req: null })} /> : null;
 }
 
 /** Knopf „Probleme beheben“ (Hinweiszeile, Crash-Banner, Crash-Dialog). */

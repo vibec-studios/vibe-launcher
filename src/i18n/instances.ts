@@ -113,9 +113,6 @@ export default {
     "inst.tab.logs": "Logs",
     "inst.tab.settings": "Einstellungen",
     "inst.crash.title": "Minecraft ist abgestürzt",
-    "inst.crash.text": "Das Spiel wurde unerwartet beendet.",
-    "inst.crash.code": "Das Spiel wurde mit Exit-Code {code} beendet.",
-    "inst.crash.logs": "Logs öffnen",
 
     // Neue Instanz
     "newinst.title": "Neue Instanz",
@@ -332,9 +329,6 @@ export default {
     "inst.tab.logs": "Logs",
     "inst.tab.settings": "Settings",
     "inst.crash.title": "Minecraft crashed",
-    "inst.crash.text": "The game exited unexpectedly.",
-    "inst.crash.code": "The game exited with code {code}.",
-    "inst.crash.logs": "Open logs",
 
     "newinst.title": "New instance",
     "newinst.step.game": "Set up Minecraft",

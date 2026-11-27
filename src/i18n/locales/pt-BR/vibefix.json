@@ -12,7 +12,6 @@
   "vibefix.engine.unavailable": "O modelo de análise não está disponível agora – foi usada a análise de regras.",
   "vibefix.engine.error": "A análise do VibeFix falhou – foi usada a análise de regras.",
   "vibefix.engine.disabled": "Análise de regras (a análise de logs com IA está desligada).",
-  "vibefix.unknown.offer": "O VibeFix vê um crash, mas não encontra uma causa confiável. Compartilhe o log para que alguém possa te ajudar.",
   "vibefix.unknown.next": "Compartilhe o log – antes você vê exatamente o que será enviado – ou relate o problema.",
   "vibefix.unknown.manual": "Nenhuma causa confiável encontrada",
   "vibefix.share.title": "Compartilhar log",
