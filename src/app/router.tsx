@@ -143,6 +143,15 @@ const socialRoute = createRoute({
   }),
 });
 
+const ticketsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/tickets",
+  component: lazyRouteComponent(() => import("@/features/tickets/TicketsPage"), "TicketsPage"),
+  validateSearch: (s: Record<string, unknown>): { t?: string } => ({
+    t: typeof s.t === "string" && /^[A-Za-z0-9-]{1,64}$/.test(s.t) ? s.t : undefined,
+  }),
+});
+
 const retiredRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/cosmetics/$",
@@ -154,6 +163,7 @@ const retiredRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   retiredRoute,
   socialRoute,
+  ticketsRoute,
   homeRoute,
   instancesRoute,
   instanceRoute,

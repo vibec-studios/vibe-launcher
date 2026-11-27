@@ -29,7 +29,7 @@ pub fn java_from_session(lines: &[crate::minecraft::LogLine]) -> Option<String> 
     })
 }
 
-pub(super) fn os_name() -> String {
+pub fn os_name() -> String {
     sysinfo::System::long_os_version().unwrap_or_else(|| std::env::consts::OS.to_string())
 }
 

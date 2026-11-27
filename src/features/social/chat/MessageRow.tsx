@@ -1,13 +1,14 @@
 import { copyText as writeText } from "@/components/content/util";
 import { ChatShot } from "@/features/shotshare/ChatShot";
 import { withoutShotLink } from "@/features/shotshare/api";
-import { CheckCheck, Clipboard, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { CheckCheck, Clipboard, Flag, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { memo } from "react";
 import { ContextMenu, DropdownMenu, IconButton, cn, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import type { Message, PublicUser } from "@/lib/vibe-sdk";
 import { Avatar, startDm } from "../FriendsList";
 import { errText, requireClient } from "../service";
+import { openChatReport } from "../dialogStore";
 import { EditBox } from "./EditBox";
 import { InviteCardRow } from "./InviteCardRow";
 import { MsgItems, type MsgAction } from "./MsgItems";
@@ -53,6 +54,8 @@ export const MessageRow = memo(function MessageRow({
     },
   ];
   if (mine && !m.deleted && !pending) actions.push({ key: "edit", icon: <Pencil size={14} />, label: t("social.msg.edit"), onSelect: () => setEditing(m.id) });
+  if (!mine && !m.deleted && !pending)
+    actions.push({ key: "report", sep: true, icon: <Flag size={14} />, label: t("tk.report.action"), onSelect: () => openChatReport(m.chatId, [m.id]) });
   if ((mine || canModerate) && !m.deleted && !pending)
     actions.push({
       key: "delete",

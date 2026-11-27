@@ -31,6 +31,7 @@ pub mod settings;
 pub mod state;
 pub mod storage;
 pub mod tasks;
+pub mod tickets;
 pub mod updater;
 pub mod util;
 pub mod vibe;

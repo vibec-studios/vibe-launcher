@@ -1,8 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { Check, Copy } from "lucide-react";
-import { IconButton, Tooltip } from "@/components/ui";
+import { Check, Copy, LifeBuoy } from "lucide-react";
+import { Button, IconButton, Tooltip } from "@/components/ui";
 import { useT } from "@/i18n";
 import { copyText } from "@/features/files/util";
+import { openTicket } from "@/features/tickets/store";
+import { closeFeedback } from "../store";
 
 // ------------------------------------------------------------------ Danke
 
@@ -37,6 +39,18 @@ export function DoneStep({ ticket }: { ticket: string }) {
         </Tooltip>
       </div>
       <p className="max-w-[420px] text-[12.5px] text-muted">{t("fb.done.hint")}</p>
+      <Button
+        size="sm"
+        variant="subtle"
+        icon={<LifeBuoy size={13} />}
+        data-testid="fb-view-ticket"
+        onClick={() => {
+          closeFeedback();
+          openTicket(ticket);
+        }}
+      >
+        {t("tk.view")}
+      </Button>
     </div>
   );
 }

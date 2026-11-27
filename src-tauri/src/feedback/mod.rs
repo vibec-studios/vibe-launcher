@@ -23,6 +23,7 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::{Duration, Instant, SystemTime};
 
+pub mod attach;
 mod draft;
 mod held;
 mod shots;

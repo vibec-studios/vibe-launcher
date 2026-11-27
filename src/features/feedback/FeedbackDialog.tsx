@@ -8,6 +8,7 @@ import type { FeedbackPreview } from "@/lib/types";
 import { Button, Dialog, toast } from "@/components/ui";
 import { useLang, useT } from "@/i18n";
 import { closeFeedback, resetFeedback, useFeedback } from "./store";
+import { loadLocal } from "@/features/tickets/store";
 import { DoneStep } from "./components/DoneStep";
 import { EditStep } from "./components/EditStep";
 import { PreviewStep } from "./components/PreviewStep";
@@ -66,6 +67,7 @@ export function FeedbackDialog() {
       const r = await api.feedbackSend(p.token);
       if (r.status === "sent") {
         resetFeedback();
+        void loadLocal();
         setStep({ s: "done", ticket: r.ticket });
       } else setStep({ s: "preview", p, error: r });
     } catch (e) {

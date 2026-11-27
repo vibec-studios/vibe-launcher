@@ -19,6 +19,7 @@ pub mod files;
 pub mod vibe;
 pub mod play;
 pub mod feedback;
+pub mod tickets;
 pub mod datapacks;
 pub mod perf;
 pub mod datadir;

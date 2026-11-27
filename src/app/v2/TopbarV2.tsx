@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useT } from "@/i18n";
 import { FeedbackButton } from "@/features/feedback/FeedbackButtons";
+import { TicketsButton } from "@/features/tickets/TicketsButton";
 import { HelpButton } from "@/features/help/HelpButton";
 import { FriendsPanelToggle } from "@/features/social/FriendsPanelToggle";
 import { TaskDock } from "../TaskDock";
@@ -33,6 +34,7 @@ export function TopbarV2() {
         <TaskDock />
         <HelpButton />
         <FeedbackButton />
+        <TicketsButton />
         <FriendsPanelToggle />
       </div>
       <RunningGames />

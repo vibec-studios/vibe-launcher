@@ -9,6 +9,7 @@ import { platformApi } from "./platform";
 import { vibeApi } from "./vibe";
 import { filesApi } from "./files";
 import { feedbackApi } from "./feedback";
+import { ticketsApi } from "./tickets";
 
 export const api = {
   ...instancesApi,
@@ -21,4 +22,5 @@ export const api = {
   ...vibeApi,
   ...filesApi,
   ...feedbackApi,
+  ...ticketsApi,
 };

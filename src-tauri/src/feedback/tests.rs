@@ -190,9 +190,11 @@ fn sample(bearer: Option<&str>) -> Prepared {
 
 #[tokio::test]
 async fn send_ok_multipart() {
-    let (url, h) = fake_server("201 Created", "", r#"{"id":"fb_1","ticket":"VB-1042"}"#).await;
+    let (url, h) = fake_server("201 Created", "", r#"{"id":"fb_1","ticket":"VB-1042","token":"vtk_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}"#).await;
     let r = send_prepared(&reqwest::Client::new(), &url, &sample(Some("tok123"))).await;
-    assert_eq!(r, SendResult::Sent { id: "fb_1".into(), ticket: "VB-1042".into() });
+    let token = Some("vtk_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_string());
+    assert_eq!(r, SendResult::Sent { id: "fb_1".into(), ticket: "VB-1042".into(), token });
+    assert!(!serde_json::to_string(&r).unwrap().contains("vtk_"));
     let c = h.await.unwrap();
     let head = c.head.to_ascii_lowercase();
     assert!(head.starts_with("post /api/v1/feedback http/1.1"));

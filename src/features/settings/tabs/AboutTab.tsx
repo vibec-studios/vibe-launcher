@@ -1,9 +1,10 @@
-import { CircleHelp, GitBranch, Globe, MessageSquareWarning } from "lucide-react";
+import { CircleHelp, GitBranch, Globe, LifeBuoy, MessageSquareWarning } from "lucide-react";
 import { WEBSITE, WEBSITE_LABEL } from "@/lib/domains";
 import { useSystemInfo } from "@/lib/queries";
 import { Button, SettingRow, SettingsCard, Spinner } from "@/components/ui";
 import { Logo3D } from "@/components/Logo3D";
 import { openFeedback } from "@/features/feedback/store";
+import { openTicket } from "@/features/tickets/store";
 import { openHelp } from "@/features/help/store";
 import { useT } from "@/i18n";
 import { closeSettings } from "../store";
@@ -53,6 +54,18 @@ export function AboutTab() {
             }}
           >
             {t("fb.button")}
+          </Button>
+        </SettingRow>
+        <SettingRow title={t("tk.title")} description={t("tk.settings_desc")}>
+          <Button
+            size="sm"
+            icon={<LifeBuoy size={13} />}
+            onClick={() => {
+              closeSettings();
+              openTicket();
+            }}
+          >
+            {t("tk.open_list")}
           </Button>
         </SettingRow>
       </SettingsCard>

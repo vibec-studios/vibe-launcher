@@ -1,4 +1,4 @@
-import { LogOut, Mail, MoreHorizontal, Pencil, Play, UserPlus, Users } from "lucide-react";
+import { Flag, LogOut, Mail, MoreHorizontal, Pencil, Play, UserPlus, Users } from "lucide-react";
 import { Button, DropdownItem, DropdownMenu, DropdownSeparator, IconButton, toast } from "@/components/ui";
 import { useT } from "@/i18n";
 import type { Chat } from "@/lib/vibe-sdk";
@@ -6,7 +6,7 @@ import { Avatar } from "../FriendsList";
 import { chatTitle, dmPartner } from "../hooks";
 import { ActivityIcon, isPlaying, usePresenceParts } from "../presence";
 import { errText, requireClient, useSocial } from "../service";
-import { openAddMembers, openInviteAccept, openInviteFriends, openRenameGroup } from "../dialogStore";
+import { openAddMembers, openChatReport, openInviteAccept, openInviteFriends, openRenameGroup } from "../dialogStore";
 import { AvatarStack } from "./AvatarStack";
 
 export function ChatHeader({ chat, meId }: { chat: Chat; meId: string | undefined }) {
@@ -60,39 +60,48 @@ export function ChatHeader({ chat, meId }: { chat: Chat; meId: string | undefine
       <IconButton label={t("social.chat.invite")} tip variant="ghost" size="sm" onClick={() => openInviteFriends(partner ? { userIds: [partner.id] } : { chatId: chat.id })}>
         <Mail size={15} />
       </IconButton>
-      {chat.type === "group" && (
-        <DropdownMenu
-          align="end"
-          trigger={
-            <IconButton label={t("social.chat.more")} tip variant="ghost" size="sm">
-              <MoreHorizontal size={16} />
-            </IconButton>
-          }
-        >
-          <DropdownItem icon={<UserPlus size={14} />} onSelect={() => openAddMembers(chat.id)}>
-            {t("social.group.add_members")}
-          </DropdownItem>
-          {isOwner && (
-            <DropdownItem icon={<Pencil size={14} />} onSelect={() => openRenameGroup(chat.id, chat.name ?? "")}>
-              {t("social.group.rename")}
+      <DropdownMenu
+        align="end"
+        trigger={
+          <IconButton label={t("social.chat.more")} tip variant="ghost" size="sm">
+            <MoreHorizontal size={16} />
+          </IconButton>
+        }
+      >
+        {chat.type === "group" && (
+          <>
+            <DropdownItem icon={<UserPlus size={14} />} onSelect={() => openAddMembers(chat.id)}>
+              {t("social.group.add_members")}
             </DropdownItem>
-          )}
-          <DropdownSeparator />
-          <DropdownItem
-            icon={<LogOut size={14} />}
-            danger
-            onSelect={async () => {
-              try {
-                if (meId) await requireClient().chats.removeMember(chat.id, meId);
-              } catch (e) {
-                toast.error(errText(e));
-              }
-            }}
-          >
-            {t("social.chat.leave")}
-          </DropdownItem>
-        </DropdownMenu>
-      )}
+            {isOwner && (
+              <DropdownItem icon={<Pencil size={14} />} onSelect={() => openRenameGroup(chat.id, chat.name ?? "")}>
+                {t("social.group.rename")}
+              </DropdownItem>
+            )}
+          </>
+        )}
+        <DropdownItem icon={<Flag size={14} />} onSelect={() => openChatReport(chat.id)}>
+          {t("tk.report.chat_action")}
+        </DropdownItem>
+        {chat.type === "group" && (
+          <>
+            <DropdownSeparator />
+            <DropdownItem
+              icon={<LogOut size={14} />}
+              danger
+              onSelect={async () => {
+                try {
+                  if (meId) await requireClient().chats.removeMember(chat.id, meId);
+                } catch (e) {
+                  toast.error(errText(e));
+                }
+              }}
+            >
+              {t("social.chat.leave")}
+            </DropdownItem>
+          </>
+        )}
+      </DropdownMenu>
     </div>
   );
 }

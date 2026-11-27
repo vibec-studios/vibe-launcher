@@ -8,6 +8,7 @@ import { goBack, goForward } from "./backNav";
 import { RunningGames, usePageTitle } from "./nav";
 import { WindowControls } from "./WindowControls";
 import { FeedbackButton } from "@/features/feedback/FeedbackButtons";
+import { TicketsButton } from "@/features/tickets/TicketsButton";
 import { HelpButton } from "@/features/help/HelpButton";
 
 // ------------------------------------------------------------------ Topbar
@@ -35,6 +36,7 @@ export function Topbar() {
         <TaskDock />
         <HelpButton />
         <FeedbackButton />
+        <TicketsButton />
         <FriendsPanelToggle />
         <span className="mx-0.5 h-5 w-px bg-line2" aria-hidden />
         <RunningGames />

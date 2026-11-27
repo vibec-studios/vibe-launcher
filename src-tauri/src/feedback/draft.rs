@@ -77,7 +77,12 @@ pub struct AvailableLog {
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum SendResult {
-    Sent { id: String, ticket: String },
+    Sent {
+        id: String,
+        ticket: String,
+        #[serde(skip)]
+        token: Option<String>,
+    },
     /// 429: zu viele Meldungen
     RateLimited { retry_after_secs: Option<u64>, message: Option<String> },
     /// 400/413/sonstige HTTP-Fehler

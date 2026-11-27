@@ -34,7 +34,7 @@ export function DeferredShellHosts() {
   const share = useShareLog((s) => !!s.req);
   const server = useServerDialogs((s) => s.newOpen || !!s.eulaFor || s.quit !== null);
   const sets = useSetDialogs((s) => !!s.apply || !!s.fromInstance || s.importOpen || s.createOpen);
-  const social = useSocialDialogs((s) => !!(s.inviteFriends || s.accept || s.share || s.pack || s.newGroup || s.addMembers || s.rename));
+  const social = useSocialDialogs((s) => !!(s.inviteFriends || s.accept || s.share || s.pack || s.newGroup || s.addMembers || s.rename || s.report));
   const feedback = useFeedback((s) => s.open);
   const help = useHelp((s) => s.open);
   const tour = useTours((s) => !!s.active);

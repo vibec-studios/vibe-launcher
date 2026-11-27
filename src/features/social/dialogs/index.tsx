@@ -8,6 +8,7 @@ import { InviteFriendsDialog } from "./InviteFriendsDialog";
 import { PackImportDialog } from "./PackImportDialog";
 import { RenameDialog } from "./RenameDialog";
 import { ShareDialog } from "./ShareDialog";
+import { ReportChatDialog } from "@/features/tickets/components/ReportChatDialog";
 
 export { PackIcon } from "./PackIcon";
 export { PackImportDialog } from "./PackImportDialog";
@@ -24,6 +25,7 @@ export function SocialDialogs() {
       {d.newGroup && <GroupDialog onClose={close("newGroup")} />}
       {d.addMembers && <GroupDialog chatId={d.addMembers} onClose={close("addMembers")} />}
       {d.rename && <RenameDialog {...d.rename} onClose={close("rename")} />}
+      {d.report && <ReportChatDialog {...d.report} onClose={close("report")} />}
     </>
   );
 }

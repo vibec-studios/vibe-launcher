@@ -48,7 +48,7 @@ SHA-1-/Murmur2-Prüfsummen aller Inhaltsdateien, MC-Version, Loader), Status-Pin
 | GitHub VibeFix-Modell (`releases/download/vibefix-model/…`) | nur IP; Manifest und Modelldateien, nur bei einer Absturz-Analyse, höchstens alle 6 h. Logs bleiben lokal (docs/VIBEFIX.md) | `vibefix` | an (Dev-Build) |
 | Relay / playit.gg | Name, UUID, Server-Einstellungen, Spielverkehr | je Server `connection`/`auto_start` | nur wenn eingerichtet |
 
-**Nur auf Klick:** Feedback (`/api/v1/feedback`, auch bei Vibe aus), mclo.gs (aus Absturz-Diagnosen mit Vorschau des
+**Nur auf Klick:** Feedback (`/api/v1/feedback`, auch bei Vibe aus), Tickets (`/api/v1/tickets`, bei Vibe aus nur beim Öffnen von „Meine Tickets“; bei Vibe an zusätzlich alle 5 min abgleichen, docs/TICKETS.md), mclo.gs (aus Absturz-Diagnosen mit Vorschau des
 geschwärzten Logs und eigener Bestätigung), Modpack teilen, Play-Links.
 
 **Bilder von Dritten:** `mc-heads.net/avatar/<uuid>` für fremde Köpfe (`components/PlayerHead.tsx`), beliebige `https:`-Bilder und

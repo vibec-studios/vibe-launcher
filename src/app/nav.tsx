@@ -82,6 +82,7 @@ export function usePageTitle(): ReactNode {
   if (path === "/skins") return t("nav.skins");
   if (path === "/screenshots") return t("nav.screenshots");
   if (path === "/social") return t("nav.social");
+  if (path === "/tickets") return t("tk.title");
   return null;
 }
 

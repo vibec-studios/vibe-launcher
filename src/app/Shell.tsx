@@ -9,6 +9,7 @@ import { useLiveAppearance } from "@/lib/appearance";
 import { ActionHost } from "@/components/instance/ActionHost";
 import { PackUpdateHost } from "@/features/packupdate/PackUpdateHost";
 import { VibeExtrasHost } from "@/features/vibe-extras/VibeExtrasHost";
+import { TicketsHost } from "@/features/tickets/TicketsHost";
 import { NoticeBar } from "./Notices";
 import { ModeHost } from "@/lib/mode";
 import { SimpleTour } from "@/features/onboarding/SimpleTour";
@@ -78,6 +79,9 @@ export function Shell() {
       <ActionHost />
       <PackUpdateHost />
       <VibeExtrasHost />
+      <ErrorBoundary>
+        <TicketsHost />
+      </ErrorBoundary>
       <DeferredShellHosts />
       <VibeBridge />
       <AuthBridge />

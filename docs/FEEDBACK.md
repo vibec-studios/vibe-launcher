@@ -64,7 +64,8 @@ in `mods/`. Bedrock: `loader = "bedrock"`, `java = null`.
 `Authorization: Bearer <Vibe-Token>` nur, wenn Vibe eingeschaltet, angemeldet, das Token noch gültig ist **und**
 das Häkchen „Mit meinem Vibe-Konto verknüpfen“ gesetzt ist. Sonst anonym.
 
-Antwort `201 { "id", "ticket" }`; Fehler `400/413/429` mit `{ error: { code, message } }` (429 mit
+Antwort `201 { "id", "ticket", "token" }`; das Ticket-Token speichert Rust im Schlüsselbund, die Oberfläche bekommt es nie
+(Verlauf und Antworten: [TICKETS.md](TICKETS.md)). Fehler `400/413/429` mit `{ error: { code, message } }` (429 mit
 `Retry-After` in Sekunden). Rust liefert der Oberfläche `SendResult`:
 `sent | rate_limited | rejected | offline`.
 
