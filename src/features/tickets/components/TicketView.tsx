@@ -45,7 +45,9 @@ export function TicketView({ ticket }: { ticket: string }) {
   const count = d?.messages.length ?? 0;
 
   useEffect(() => setFulfills([]), [ticket]);
-  useEffect(() => bottom.current?.scrollIntoView({ block: "end" }), [count, ticket]);
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: "end" });
+  }, [count, ticket]);
 
   if (q.isLoading) return <Spinner size={18} className="m-auto text-muted" />;
   if (!d) return <ErrorState error={ticketErrorText(q.error)} onRetry={() => void q.refetch()} className="m-auto" />;
