@@ -8,7 +8,7 @@ export function RequestIcon({ type, size = 14 }: { type: TicketRequestType; size
   return <Icon size={size} />;
 }
 
-export function RequestCard({ r, canReply, onFulfill, compact }: { r: TicketRequest; canReply: boolean; onFulfill: (r: TicketRequest) => void; compact?: boolean }) {
+export function RequestCard({ r, onFulfill, compact }: { r: TicketRequest; onFulfill?: (r: TicketRequest) => void; compact?: boolean }) {
   const t = useT();
   const open = r.status === "open";
   return (
@@ -38,10 +38,10 @@ export function RequestCard({ r, canReply, onFulfill, compact }: { r: TicketRequ
             </span>
           )}
         </div>
-        {r.message && !compact && <p className="selectable mt-0.5 whitespace-pre-wrap break-words text-[12.5px] text-muted">{r.message}</p>}
+        {r.message && <p className={cn("selectable mt-0.5 break-words text-[12.5px] text-muted", compact ? "line-clamp-2" : "whitespace-pre-wrap")}>{r.message}</p>}
         {open && !compact && <p className="mt-0.5 text-[12px] text-dim">{t(`tk.req.hint.${r.type}`)}</p>}
       </div>
-      {open && canReply && (
+      {open && onFulfill && (
         <Button size="sm" variant="primary" icon={<ListTodo size={13} />} onClick={() => onFulfill(r)} data-testid="ticket-fulfill">
           {t(`tk.req.action.${r.type}`)}
         </Button>

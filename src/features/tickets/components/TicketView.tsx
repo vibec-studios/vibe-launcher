@@ -79,12 +79,12 @@ export function TicketView({ ticket }: { ticket: string }) {
         <div className="flex flex-col gap-1.5 border-b border-line bg-warn/[.04] px-5 py-3">
           <span className="text-[12.5px] font-semibold text-warn">{t("tk.waiting.title")}</span>
           {open.map((r) => (
-            <RequestCard key={r.id} r={r} canReply compact onFulfill={fulfill} />
+            <RequestCard key={r.id} r={r} compact onFulfill={fulfill} />
           ))}
         </div>
       )}
       <div className="scroll min-h-0 flex-1 px-5 py-4">
-        <Timeline d={d} onFulfill={fulfill} />
+        <Timeline d={d} />
         <div ref={bottom} />
       </div>
       <div className="px-5 pb-4 pt-1">

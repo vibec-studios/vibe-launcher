@@ -39,7 +39,7 @@ function Body({ text }: { text: string }) {
   return <p className="selectable whitespace-pre-wrap break-words text-[13.5px] leading-[1.45] text-text">{text}</p>;
 }
 
-function Entry({ m, d, onFulfill }: { m: TicketMessage; d: TicketDetail; onFulfill: (r: TicketRequest) => void }) {
+function Entry({ m, d }: { m: TicketMessage; d: TicketDetail }) {
   const t = useT();
   if (m.kind === "status") {
     const to = m.data?.to;
@@ -62,7 +62,7 @@ function Entry({ m, d, onFulfill }: { m: TicketMessage; d: TicketDetail; onFulfi
         </div>
         <div className="w-full max-w-[min(640px,82%)]">
           {r ? (
-            <RequestCard r={{ ...r, message: m.body || r.message }} canReply={d.canReply} onFulfill={onFulfill} />
+            <RequestCard r={{ ...r, message: m.body || r.message }} />
           ) : (
             <Body text={m.body} />
           )}
@@ -98,7 +98,7 @@ function ReportInfo({ d }: { d: TicketDetail }) {
   );
 }
 
-export function Timeline({ d, onFulfill }: { d: TicketDetail; onFulfill: (r: TicketRequest) => void }) {
+export function Timeline({ d }: { d: TicketDetail }) {
   const t = useT();
   const first = d.attachments.filter((a) => a.messageId === null);
   return (
@@ -110,7 +110,7 @@ export function Timeline({ d, onFulfill }: { d: TicketDetail; onFulfill: (r: Tic
         {d.contact && <span className="text-[11.5px] text-dim">{t("tk.contact", { contact: d.contact })}</span>}
       </Bubble>
       {d.messages.map((m) => (
-        <Entry key={m.id} m={m} d={d} onFulfill={onFulfill} />
+        <Entry key={m.id} m={m} d={d} />
       ))}
     </div>
   );
